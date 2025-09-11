@@ -8,6 +8,8 @@ import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/widgets/message_widget.dart';
 
+enum ViewMode { filesystem, organized }
+
 class ExplorerScreen extends StatefulWidget {
   const ExplorerScreen({
     super.key,
@@ -48,6 +50,8 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   late SharedPreferences _prefs;
 
   ProjectNode? _projectRoot;
+
+  ViewMode _viewMode = ViewMode.filesystem;
 
   @override
   void initState() {
@@ -183,9 +187,15 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
               ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.toggle_on),
-            onPressed: () {},
-            tooltip: 'ToggleView',
+            icon: Icon(
+              _viewMode == ViewMode.filesystem
+                  ? Icons.view_list
+                  : Icons.folder_special,
+            ),
+            onPressed: _toggleViewMode,
+            tooltip: _viewMode == ViewMode.filesystem
+                ? 'Switch to Organized View'
+                : 'Switch to Filesystem View',
           ),
         ],
       ),
@@ -307,6 +317,10 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
           ],
         ),
       );
+    }
+
+    if (_viewMode == ViewMode.organized) {
+      return _buildOrganizedView();
     }
 
     return ListView.builder(
@@ -702,5 +716,156 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
 
     await _prefs.setStringList(_mruFoldersKey, _mruFolders);
     setState(() {});
+  }
+
+  void _toggleViewMode() {
+    setState(() {
+      _viewMode = _viewMode == ViewMode.filesystem
+          ? ViewMode.organized
+          : ViewMode.filesystem;
+    });
+  }
+
+  Widget _buildOrganizedView() {
+    if (_projectRoot == null) return const SizedBox();
+
+    // Group files and directories by categories
+    final Map<String, List<ProjectNode>> categories = {
+      'Root': [],
+      'Lib': [],
+      'Tests': [],
+      'Assets': [],
+      'Platforms': [],
+      'Output': [],
+    };
+
+    // Find lib, test, and assets directories
+    ProjectNode? libDir;
+    ProjectNode? testDir;
+    ProjectNode? assetsDir;
+
+    for (final node in _projectRoot!.children) {
+      if (node.name == 'lib' && node.isDirectory) {
+        libDir = node;
+      } else if (node.name == 'test' && node.isDirectory) {
+        testDir = node;
+      } else if (node.name == 'assets' && node.isDirectory) {
+        assetsDir = node;
+      }
+    }
+
+    // Add lib contents if available
+    if (libDir != null && libDir.children.isNotEmpty) {
+      categories['Lib']!.addAll(libDir.children);
+    }
+
+    // Add test contents if available
+    if (testDir != null && testDir.children.isNotEmpty) {
+      categories['Tests']!.addAll(testDir.children);
+    }
+
+    // Add assets contents if available
+    if (assetsDir != null && assetsDir.children.isNotEmpty) {
+      categories['Assets']!.addAll(assetsDir.children);
+    }
+
+    // Categorize remaining nodes
+    for (final node in _projectRoot!.children) {
+      if (node == libDir || node == testDir || node == assetsDir) {
+        // Skip lib, test, and assets directories as we already processed their contents
+        continue;
+      }
+
+      if (node.name == 'android' ||
+          node.name == 'ios' ||
+          node.name == 'web' ||
+          node.name == 'windows' ||
+          node.name == 'macos' ||
+          node.name == 'linux') {
+        categories['Platforms']!.add(node);
+      } else if (node.name == 'build' ||
+          node.name == '.dart_tool' ||
+          node.name == 'benchmark') {
+        categories['Output']!.add(node);
+      } else {
+        categories['Root']!.add(node);
+      }
+    }
+
+    // Build the organized view
+    final List<Widget> sections = [];
+
+    for (final category in [
+      'Root',
+      'Lib',
+      'Tests',
+      'Assets',
+      'Platforms',
+      'Output',
+    ]) {
+      final nodes = categories[category]!;
+      if (nodes.isNotEmpty) {
+        sections.add(_buildCategorySection(category, nodes));
+      }
+    }
+
+    return ListView(children: sections);
+  }
+
+  Widget _buildCategorySection(String category, List<ProjectNode> nodes) {
+    final isExpanded = _expandedState['category_$category'] ?? true;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Category header
+        InkWell(
+          onTap: () {
+            setState(() {
+              _expandedState['category_$category'] = !isExpanded;
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: Row(
+              children: [
+                Icon(
+                  isExpanded ? Icons.expand_more : Icons.chevron_right,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  category,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '(${nodes.length})',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Category content
+        if (isExpanded)
+          Padding(
+            padding: const EdgeInsets.only(left: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: nodes.map((node) => _buildNode(node)).toList(),
+            ),
+          ),
+      ],
+    );
   }
 }
