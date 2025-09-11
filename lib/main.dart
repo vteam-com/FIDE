@@ -51,13 +51,24 @@ class MainLayout extends ConsumerStatefulWidget {
 }
 
 class _MainLayoutState extends ConsumerState<MainLayout> {
-  final double _explorerWidth = 250.0;
+  double _explorerWidth = 250.0;
   final double _outlineWidth = 200.0;
+  final double _minExplorerWidth = 150.0;
+  final double _maxExplorerWidth = 500.0;
 
   @override
   void initState() {
     super.initState();
     // File system service is initialized when first accessed
+  }
+
+  void _onResize(double delta) {
+    setState(() {
+      _explorerWidth = (_explorerWidth + delta).clamp(
+        _minExplorerWidth,
+        _maxExplorerWidth,
+      );
+    });
   }
 
   @override
@@ -77,8 +88,8 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
             ),
           ),
 
-          // Vertical divider
-          const VerticalDivider(width: 1, thickness: 1),
+          // Resizable Splitter
+          ResizableSplitter(onResize: _onResize),
 
           // Main Editor Area
           Expanded(
@@ -139,6 +150,68 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class ResizableSplitter extends StatefulWidget {
+  final Function(double) onResize;
+
+  const ResizableSplitter({super.key, required this.onResize});
+
+  @override
+  State<ResizableSplitter> createState() => _ResizableSplitterState();
+}
+
+class _ResizableSplitterState extends State<ResizableSplitter> {
+  bool _isHovering = false;
+  bool _isDragging = false;
+  double _startX = 0.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: _isHovering || _isDragging
+          ? SystemMouseCursors.resizeLeftRight
+          : MouseCursor.defer,
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      child: GestureDetector(
+        onHorizontalDragStart: (details) {
+          setState(() {
+            _isDragging = true;
+            _startX = details.globalPosition.dx;
+          });
+        },
+        onHorizontalDragUpdate: (details) {
+          if (_isDragging) {
+            final delta = details.globalPosition.dx - _startX;
+            widget.onResize(delta);
+            _startX = details.globalPosition.dx;
+          }
+        },
+        onHorizontalDragEnd: (_) {
+          setState(() => _isDragging = false);
+        },
+        child: Container(
+          width: 8,
+          color: _isHovering || _isDragging
+              ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
+              : Colors.transparent,
+          child: Center(
+            child: Container(
+              width: 4,
+              height: 40,
+              decoration: BoxDecoration(
+                color: _isHovering || _isDragging
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).dividerColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
