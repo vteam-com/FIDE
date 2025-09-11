@@ -3,17 +3,15 @@
 import 'dart:io';
 import 'package:code_text_field/code_text_field.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
 import 'package:highlight/languages/dart.dart';
 import 'package:highlight/languages/yaml.dart';
-import 'package:fide/services/editor_service.dart';
-import 'package:fide/screens/explorer/explorer_screen.dart';
-import 'package:fide/widgets/save_file_dialog.dart';
 
 class EditorScreen extends ConsumerStatefulWidget {
-  const EditorScreen({super.key});
+  final String filePath;
+
+  const EditorScreen({super.key, required this.filePath});
 
   @override
   ConsumerState<EditorScreen> createState() => _EditorScreenState();
@@ -21,36 +19,77 @@ class EditorScreen extends ConsumerStatefulWidget {
 
 class _EditorScreenState extends ConsumerState<EditorScreen> {
   late CodeController _codeController;
-  String _currentFile = 'untitled.dart';
+  late String _currentFile;
   bool _isDirty = false;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    _currentFile = widget.filePath;
     _codeController = CodeController(
-      text: '// Select a file to edit\n',
-      language: dart,
+      text: _currentFile.isNotEmpty
+          ? '// Loading...\n'
+          : '// No file selected\n',
+      language: _getLanguageForFile(_currentFile),
     )..addListener(_onCodeChanged);
+
+    if (_currentFile.isNotEmpty) {
+      _loadFile(_currentFile);
+    }
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Set up file change listener once when the widget is first built
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final currentPath = ref.read(editorServiceProvider);
-      if (currentPath != null) {
-        _loadFile(currentPath);
-      }
+  // Get the appropriate language mode based on file extension
+  dynamic _getLanguageForFile(String filePath) {
+    if (filePath.isEmpty) return null;
+    final extension = filePath.split('.').last.toLowerCase();
+    switch (extension) {
+      case 'dart':
+        return dart;
+      case 'yaml':
+      case 'yml':
+        return yaml;
+      case 'json':
+        return null; // Use plain text for JSON
+      default:
+        return null; // Default to plain text
+    }
+  }
 
-      // Set up listener for future changes
-      ref.listenManual<String?>(editorServiceProvider, (previous, next) {
-        if (next != null) {
-          _loadFile(next);
-        }
-      });
+  Future<void> _loadFile(String filePath) async {
+    if (filePath.isEmpty) return;
+
+    setState(() {
+      _isLoading = true;
+      _currentFile = filePath;
     });
+
+    try {
+      final file = File(filePath);
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        final language = _getLanguageForFile(filePath);
+
+        if (mounted) {
+          setState(() {
+            _codeController.dispose();
+            _codeController = CodeController(text: content, language: language)
+              ..addListener(_onCodeChanged);
+            _isDirty = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading file: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   void _onCodeChanged() {
@@ -59,50 +98,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     }
   }
 
-  Future<void> _loadFile(String filePath) async {
-    if (!mounted) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      final file = File(filePath);
-      final content = await file.readAsString();
-
-      if (!mounted) return;
-
-      setState(() {
-        _currentFile = path.basename(filePath);
-        _codeController = CodeController(
-          text: content,
-          language: _getLanguageForFile(_currentFile) ?? dart,
-        )..addListener(_onCodeChanged);
-        _isDirty = false;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading file: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    }
-  }
-
-  dynamic _getLanguageForFile(String filename) {
-    final ext = filename.split('.').last.toLowerCase();
-    switch (ext) {
-      case 'dart':
-        return dart;
-      case 'yaml':
-      case 'yml':
-        return yaml;
-      default:
-        return null; // Default to plain text
-    }
+  String _getTitleForFile(String filePath) {
+    if (filePath.isEmpty) return 'Untitled';
+    return path.basename(filePath);
   }
 
   String _getFileLanguage() {
@@ -123,166 +121,115 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     }
   }
 
+  Map<String, TextStyle> _getCodeTheme() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseTextColor = isDark ? Colors.white : Colors.black;
+
+    return {
+      'root': TextStyle(color: baseTextColor),
+      'comment': TextStyle(
+        color: isDark ? Colors.green[300] : Colors.green[800],
+      ),
+      'keyword': TextStyle(
+        color: isDark ? Colors.purple[300] : Colors.purple[700],
+        fontWeight: FontWeight.bold,
+      ),
+      'string': TextStyle(color: isDark ? Colors.red[300] : Colors.red[700]),
+      'number': TextStyle(color: isDark ? Colors.blue[300] : Colors.blue[700]),
+      'variable': TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+      'class': TextStyle(
+        color: isDark ? Colors.blue[300] : Colors.blue[700],
+        fontWeight: FontWeight.bold,
+      ),
+      'function': TextStyle(
+        color: isDark ? Colors.blue[200] : Colors.blue[700],
+      ),
+      'operator': TextStyle(color: baseTextColor, fontWeight: FontWeight.bold),
+    };
+  }
+
+  Future<void> _saveFile() async {
+    if (_currentFile.isEmpty) return;
+
+    try {
+      final file = File(_currentFile);
+      await file.writeAsString(_codeController.text);
+
+      if (mounted) {
+        setState(() => _isDirty = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('File saved successfully')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving file: $e')));
+      }
+    }
+  }
+
   @override
   void dispose() {
-    _codeController.removeListener(_onCodeChanged);
     _codeController.dispose();
     super.dispose();
   }
 
-  String? _getCurrentProjectRoot() {
-    final currentPath = ref.read(editorServiceProvider);
-    if (currentPath == null) return null;
-    
-    // If the current path is a file, get its parent directory
-    if (FileSystemEntity.isFileSync(currentPath)) {
-      return Directory(path.dirname(currentPath)).path;
+  @override
+  void didUpdateWidget(EditorScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.filePath != oldWidget.filePath && widget.filePath.isNotEmpty) {
+      _loadFile(widget.filePath);
     }
-    // If it's a directory, use it as is
-    return currentPath;
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final currentProjectRoot = _getCurrentProjectRoot();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Set up keyboard shortcuts
-    return FocusableActionDetector(
-      autofocus: true,
-      shortcuts: {
-        const SingleActivator(LogicalKeyboardKey.keyS, meta: true):
-            const ActivateIntent(),
-        const SingleActivator(LogicalKeyboardKey.keyS, control: true):
-            const ActivateIntent(),
-      },
-      actions: {
-        ButtonActivateIntent: CallbackAction(onInvoke: (_) => _saveFile()),
-      },
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Project Explorer
-          Container(
-            width: 280,
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey[900] : Colors.grey[100],
-              border: Border(
-                right: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                  width: 1,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_getTitleForFile(_currentFile)),
+        actions: [
+          if (_isDirty)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Center(
+                child: Text(
+                  'Unsaved Changes',
+                  style: TextStyle(
+                    color: Colors.orange,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (currentProjectRoot != null)
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.folder, size: 16, color: Colors.blue),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            path.basename(currentProjectRoot),
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                const Divider(height: 1, thickness: 1),
-                Expanded(
-                  child: ExplorerScreen(
-                    onFileSelected: () {
-                      // File opening is handled by the editor service listener
-                    },
-                  ),
-                ),
-              ],
-            ),
+          IconButton(
+            icon: const Icon(Icons.save),
+            onPressed: _isDirty ? _saveFile : null,
+            tooltip: 'Save',
           ),
-          // Main content area
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _currentFile.isEmpty
+          ? const Center(child: Text('No file selected'))
+          : Column(
               children: [
-                // Editor toolbar
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.grey[900] : Colors.grey[100],
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Theme.of(context).dividerColor,
-                        width: 1,
-                      ),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.description,
-                        size: 18,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _currentFile,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const Spacer(),
-                      if (_isDirty)
-                        IconButton(
-                          icon: const Icon(Icons.save, size: 20),
-                          onPressed: _saveFile,
-                          tooltip: 'Save (Ctrl+S / Cmd+S)',
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          iconSize: 20,
-                        ),
-                    ],
-                  ),
-                ),
-                // Code editor
                 Expanded(
-                  child: Stack(
-                    children: [
-                      CodeField(
-                        controller: _codeController,
-                        textStyle: const TextStyle(
-                          fontFamily: 'RobotoMono',
-                          fontSize: 14,
-                          height: 1.5,
-                        ),
-                        background: isDark ? Colors.grey[900] : Colors.grey[50],
-                        expands: true,
-                        wrap: true,
-                        lineNumberStyle: LineNumberStyle(
-                          textStyle: TextStyle(
-                            color: isDark ? Colors.grey[500] : Colors.grey[700],
-                          ),
-                        ),
+                  child: CodeTheme(
+                    data: CodeThemeData(styles: _getCodeTheme()),
+                    child: CodeField(
+                      controller: _codeController,
+                      textStyle: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 14,
                       ),
-                      if (_isLoading)
-                        Container(
-                          color: Colors.black.withOpacity(0.5),
-                          child: const Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        ),
-                    ],
+                      expands: true,
+                      wrap: true,
+                    ),
                   ),
                 ),
                 // Status bar
@@ -303,7 +250,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                   child: Row(
                     children: [
                       Text(
-                        'Ln ${_codeController.selection.base.offset + 1}, ',
+                        'Ln ${_codeController.selection.base.offset + 1}',
                         style: const TextStyle(fontSize: 12),
                       ),
                       const SizedBox(width: 16),
@@ -321,53 +268,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                 ),
               ],
             ),
-          ),
-        ],
-      ),
     );
-  }
-
-  Future<void> _saveFile() async {
-    var currentPath = ref.read(editorServiceProvider);
-
-    // If no file is open, show save dialog
-    final currentContext = context;
-    if (currentPath == null || !await File(currentPath).exists()) {
-      final result = await showDialog<String>(
-        context: currentContext,
-        builder: (context) => SaveFileDialog(initialName: _currentFile),
-      );
-
-      if (result == null || result.isEmpty) return;
-
-      // Update the current path in the editor service
-      ref.read(editorServiceProvider.notifier).updateCurrentPath(result);
-      currentPath = result;
-      setState(() => _currentFile = path.basename(currentPath!));
-    }
-
-    try {
-      final file = File(currentPath);
-      await file.writeAsString(_codeController.text);
-      setState(() => _isDirty = false);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('File saved successfully'),
-            duration: Duration(seconds: 1),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving file: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    }
   }
 }

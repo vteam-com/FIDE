@@ -71,4 +71,27 @@ class FileSystemItem {
       isExpanded = !isExpanded;
     }
   }
+
+  // Read file content as string
+  Future<String> readAsString() async {
+    if (type != FileSystemItemType.file) {
+      throw Exception('Cannot read content of a directory');
+    }
+    final file = File(path);
+    return await file.readAsString();
+  }
+
+  // Get file extension for filtering
+  String get extension {
+    if (type != FileSystemItemType.file) return '';
+    final ext = p.extension(name).toLowerCase();
+    return ext.isNotEmpty ? ext.substring(1) : ''; // Remove the dot
+  }
+
+  // Check if file is supported for outline view
+  bool get isSupportedForOutline {
+    if (type != FileSystemItemType.file) return false;
+    final ext = extension;
+    return const ['dart', 'md', 'markdown', 'yaml', 'yml', 'json'].contains(ext);
+  }
 }

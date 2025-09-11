@@ -1,14 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fide/services/editor_service.dart';
 import 'package:fide/models/project_node.dart';
+import 'package:fide/models/file_system_item.dart';
 
 class ExplorerScreen extends StatefulWidget {
-  final VoidCallback? onFileSelected;
-  
+  final Function(FileSystemItem)? onFileSelected;
+
   const ExplorerScreen({super.key, this.onFileSelected});
 
   @override
@@ -17,7 +16,7 @@ class ExplorerScreen extends StatefulWidget {
 
 class _ExplorerScreenState extends State<ExplorerScreen> {
   static const String _lastOpenedFolderKey = 'last_opened_folder';
-  
+
   ProjectNode? _projectRoot;
   bool _isLoading = false;
   final Map<String, bool> _expandedState = {};
@@ -54,12 +53,14 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final root = await ProjectNode.fromFileSystemEntity(Directory(directoryPath));
+      final root = await ProjectNode.fromFileSystemEntity(
+        Directory(directoryPath),
+      );
       await root.loadChildren();
-      
+
       // Save the opened folder path
       await _prefs.setString(_lastOpenedFolderKey, directoryPath);
-      
+
       setState(() {
         _projectRoot = root;
       });
@@ -75,10 +76,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   void _showError(String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          duration: const Duration(seconds: 3),
-        ),
+        SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
       );
     }
   }
@@ -106,49 +104,70 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _projectRoot == null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.folder_open, size: 64, color: Colors.grey),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'No project opened',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: _pickDirectory,
-                        child: const Text('Open Project'),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.folder_open, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No project opened',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                )
-              : _buildProjectTree(),
+                ],
+              ),
+            )
+          : _buildFileExplorer(),
     );
   }
 
-  Widget _buildProjectTree() {
+  Widget _buildFileExplorer() {
+    if (_projectRoot == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.folder_open, size: 48, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text('No project loaded'),
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+              onPressed: _pickDirectory,
+              icon: const Icon(Icons.folder_open),
+              label: const Text('Open Project'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
-      itemCount: 1, // Only root node
-      itemBuilder: (context, index) => _buildNode(_projectRoot!),
+      itemCount: _projectRoot!.children.length,
+      itemBuilder: (context, index) {
+        final node = _projectRoot!.children[index];
+        return _buildNode(node);
+      },
     );
   }
 
   Widget _buildNode(ProjectNode node) {
+    if (node.isDirectory) {
+      return _buildDirectoryNode(node);
+    } else {
+      return _buildFileNode(node);
+    }
+  }
+
+  Widget _buildDirectoryNode(ProjectNode node) {
     final isExpanded = _expandedState[node.path] ?? false;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ListTile(
-          leading: node.isDirectory 
-              ? const Icon(Icons.folder, color: Colors.blue)
-              : _getFileIcon(node),
+          leading: const Icon(Icons.folder, color: Colors.blue),
           title: Text(node.name),
-          trailing: node.isDirectory
-              ? Icon(isExpanded ? Icons.expand_less : Icons.expand_more)
-              : null,
+          trailing: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
           onTap: () => _onNodeTapped(node, isExpanded),
           onLongPress: () => _showNodeContextMenu(node),
         ),
@@ -158,6 +177,17 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
             child: _buildNodeChildren(node),
           ),
       ],
+    );
+  }
+
+  Widget _buildFileNode(ProjectNode node) {
+    return ListTile(
+      leading: _getFileIcon(node),
+      title: Text(node.name),
+      onTap: () => _handleFileTap(node),
+      dense: true,
+      visualDensity: VisualDensity.compact,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
     );
   }
 
@@ -193,16 +223,15 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
         }
       }
     } else {
-      // Handle file tap
-      if (widget.onFileSelected != null) {
-        widget.onFileSelected!();
-      }
-      
-      // Open file in editor
-      if (mounted) {
-        final ref = ProviderScope.containerOf(context);
-        ref.read(editorServiceProvider.notifier).openFile(node.path);
-      }
+      _handleFileTap(node);
+    }
+  }
+
+  void _handleFileTap(ProjectNode node) {
+    if (widget.onFileSelected != null) {
+      widget.onFileSelected!(
+        FileSystemItem.fromFileSystemEntity(File(node.path)),
+      );
     }
   }
 
@@ -211,24 +240,12 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       context: context,
       position: const RelativeRect.fromLTRB(100, 100, 0, 0),
       items: [
-        const PopupMenuItem(
-          value: 'open',
-          child: Text('Open'),
-        ),
+        const PopupMenuItem(value: 'open', child: Text('Open')),
         if (node.isDirectory) ...[
-          const PopupMenuItem(
-            value: 'new_file',
-            child: Text('New File'),
-          ),
-          const PopupMenuItem(
-            value: 'new_folder',
-            child: Text('New Folder'),
-          ),
+          const PopupMenuItem(value: 'new_file', child: Text('New File')),
+          const PopupMenuItem(value: 'new_folder', child: Text('New Folder')),
         ],
-        const PopupMenuItem(
-          value: 'rename',
-          child: Text('Rename'),
-        ),
+        const PopupMenuItem(value: 'rename', child: Text('Rename')),
         const PopupMenuItem(
           value: 'delete',
           child: Text('Delete', style: TextStyle(color: Colors.red)),
@@ -281,7 +298,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     if (node.isDirectory) {
       return const Icon(Icons.folder, color: Colors.blue);
     }
-    
+
     final ext = node.fileExtension?.toLowerCase() ?? '';
     switch (ext) {
       case '.dart':
@@ -327,5 +344,4 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
         return const Icon(Icons.insert_drive_file, color: Colors.grey);
     }
   }
-  
 }
