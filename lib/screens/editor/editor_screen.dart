@@ -11,11 +11,13 @@ import 'package:highlight/languages/yaml.dart';
 class EditorScreen extends ConsumerStatefulWidget {
   final String filePath;
   final VoidCallback? onContentChanged;
+  final VoidCallback? onClose;
 
   const EditorScreen({
     super.key,
     required this.filePath,
     this.onContentChanged,
+    this.onClose,
   });
 
   @override
@@ -193,8 +195,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       appBar: AppBar(
         title: Text(_getTitleForFile(_currentFile)),
@@ -216,6 +216,11 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
             icon: const Icon(Icons.save),
             onPressed: _isDirty ? _saveFile : null,
             tooltip: 'Save',
+          ),
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: widget.onClose,
+            tooltip: 'Close Editor',
           ),
         ],
       ),
@@ -244,15 +249,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
                     vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.grey[900] : Colors.grey[100],
-                    border: Border(
-                      top: BorderSide(
-                        color: Theme.of(context).dividerColor,
-                        width: 1,
-                      ),
-                    ),
                   ),
                   child: Row(
                     children: [

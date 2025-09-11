@@ -114,66 +114,34 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
           // Main Editor Area
           Expanded(
-            child: Column(
+            child: Row(
               children: [
-                // Toolbar
-                Container(
-                  height: 40,
-                  color: Theme.of(context).colorScheme.secondaryContainer,
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.menu, size: 20),
-                        onPressed: () {
-                          // Toggle explorer panel
-                        },
-                      ),
-                      const Spacer(),
-                      if (selectedFile != null)
-                        Text(
-                          selectedFile.name,
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 20),
-                        onPressed: () {
-                          ref.read(selectedFileProvider.notifier).state = null;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Editor and Outline
+                // Editor
                 Expanded(
-                  child: Row(
-                    children: [
-                      // Editor
-                      Expanded(
-                        child: selectedFile != null
-                            ? EditorScreen(
-                                filePath: selectedFile.path,
-                                onContentChanged: _refreshOutlineCallback,
-                              )
-                            : const Center(child: Text('No file selected')),
-                      ),
-
-                      // Outline View
-                      if (selectedFile != null) ...[
-                        // Resizable Splitter between Editor and Outline
-                        ResizableSplitter(onResize: _onOutlineResize),
-                        SizedBox(
-                          width: _outlineWidth,
-                          child: OutlinePanel(
-                            file: selectedFile,
-                            onOutlineUpdate: _setOutlineRefreshCallback,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+                  child: selectedFile != null
+                      ? EditorScreen(
+                          filePath: selectedFile.path,
+                          onContentChanged: _refreshOutlineCallback,
+                          onClose: () {
+                            ref.read(selectedFileProvider.notifier).state =
+                                null;
+                          },
+                        )
+                      : const Center(child: Text('No file selected')),
                 ),
+
+                // Outline View
+                if (selectedFile != null) ...[
+                  // Resizable Splitter between Editor and Outline
+                  ResizableSplitter(onResize: _onOutlineResize),
+                  SizedBox(
+                    width: _outlineWidth,
+                    child: OutlinePanel(
+                      file: selectedFile,
+                      onOutlineUpdate: _setOutlineRefreshCallback,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
