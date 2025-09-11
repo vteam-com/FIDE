@@ -70,21 +70,54 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   bool _isFileTypeSupported(String filePath) {
     if (filePath.isEmpty) return false;
     final extension = filePath.split('.').last.toLowerCase();
-    const supportedExtensions = [
+
+    // Well-known text file extensions that should open in text editor
+    const supportedTextExtensions = [
+      // Programming languages
       'dart',
-      'yaml',
-      'yml',
-      'json',
-      'txt',
-      'md',
-      'xml',
-      'html',
-      'css',
+      'c',
+      'cc',
+      'cpp',
+      'cxx',
+      'h',
+      'hpp',
+      'rs',
+      'go',
+      'java',
+      'kt',
+      'scala',
+      'swift',
+      'm', // Objective-C
+      'mm', // Objective-C++
+      // Web technologies
       'js',
       'ts',
-      'py',
+      'jsx',
+      'tsx',
+      'vue',
+      'svelte',
+      'html',
+      'xml',
+      'svg',
+      'css',
+      'scss',
+      'sass',
+      'less',
+      // Data formats
+      'json', 'yaml', 'yml', 'toml', 'xml', 'csv', 'dot',
+      // Documentation
+      'md', 'txt', 'rst', 'adoc',
+      // Configuration files
+      'ini', 'cfg', 'conf', 'properties', 'env', 'lock', 'plist',
+      // Scripts
+      'sh', 'bash', 'zsh', 'fish', 'ps1', 'bat', 'cmd',
+      // Python
+      'py', 'pyw', 'pyx', 'pxd', 'pxi',
+      // Other common text files
+      'log', 'out', 'gitignore', 'dockerignore',
     ];
-    return supportedExtensions.contains(extension);
+
+    return supportedTextExtensions.contains(extension);
   }
 
   Future<void> _loadFile(String filePath) async {
@@ -300,8 +333,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            'Currently supported: Dart, YAML, JSON, Text, Markdown,\n'
-            'XML, HTML, CSS, JavaScript, TypeScript, Python',
+            'Currently supported: Most text files including\n'
+            'programming languages, web files, configs, and scripts',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
             ),
