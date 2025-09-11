@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 
 class SaveFileDialog extends StatefulWidget {
-  final String initialName;
-
   const SaveFileDialog({super.key, this.initialName = 'untitled.dart'});
+
+  final String initialName;
 
   @override
   State<SaveFileDialog> createState() => _SaveFileDialogState();
@@ -12,7 +12,9 @@ class SaveFileDialog extends StatefulWidget {
 
 class _SaveFileDialogState extends State<SaveFileDialog> {
   late final TextEditingController _controller;
+
   String? _directory;
+
   final bool _isSaving = false;
 
   @override
@@ -25,13 +27,6 @@ class _SaveFileDialogState extends State<SaveFileDialog> {
   void dispose() {
     _controller.dispose();
     super.dispose();
-  }
-
-  Future<void> _selectDirectory() async {
-    // TODO: Implement directory selection
-    // For now, we'll just use the documents directory
-    final directory = '/path/to/documents';
-    setState(() => _directory = directory);
   }
 
   @override
@@ -98,5 +93,12 @@ class _SaveFileDialogState extends State<SaveFileDialog> {
         ),
       ],
     );
+  }
+
+  Future<void> _selectDirectory() async {
+    // TODO: Implement directory selection
+    // For now, we'll just use the documents directory
+    final directory = '/path/to/documents';
+    setState(() => _directory = directory);
   }
 }

@@ -6,14 +6,6 @@ import 'package:flutter/services.dart';
 enum MessageType { success, warning, error, info }
 
 class MessageWidget extends StatefulWidget {
-  final String message;
-  final MessageType type;
-  final Duration? duration;
-  final bool showCloseButton;
-  final bool showCopyButton;
-  final VoidCallback? onClose;
-  final bool autoDismiss;
-
   const MessageWidget({
     super.key,
     required this.message,
@@ -25,6 +17,20 @@ class MessageWidget extends StatefulWidget {
     this.autoDismiss = true,
   });
 
+  final bool autoDismiss;
+
+  final Duration? duration;
+
+  final String message;
+
+  final VoidCallback? onClose;
+
+  final bool showCloseButton;
+
+  final bool showCopyButton;
+
+  final MessageType type;
+
   @override
   State<MessageWidget> createState() => _MessageWidgetState();
 }
@@ -32,6 +38,7 @@ class MessageWidget extends StatefulWidget {
 class _MessageWidgetState extends State<MessageWidget>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
+
   late Animation<double> _fadeAnimation;
 
   @override
@@ -59,12 +66,6 @@ class _MessageWidgetState extends State<MessageWidget>
   void dispose() {
     _animationController.dispose();
     super.dispose();
-  }
-
-  void _dismiss() {
-    _animationController.reverse().then((_) {
-      widget.onClose?.call();
-    });
   }
 
   @override
@@ -198,6 +199,12 @@ class _MessageWidgetState extends State<MessageWidget>
         ),
       ),
     );
+  }
+
+  void _dismiss() {
+    _animationController.reverse().then((_) {
+      widget.onClose?.call();
+    });
   }
 }
 

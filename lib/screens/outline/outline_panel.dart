@@ -7,19 +7,22 @@ import 'package:analyzer/dart/analysis/features.dart';
 import '../../models/file_system_item.dart';
 
 class OutlinePanel extends StatefulWidget {
-  final FileSystemItem file;
-  final Function(VoidCallback)? onOutlineUpdate;
-
   const OutlinePanel({super.key, required this.file, this.onOutlineUpdate});
+
+  final FileSystemItem file;
+
+  final Function(VoidCallback)? onOutlineUpdate;
 
   @override
   State<OutlinePanel> createState() => _OutlinePanelState();
 }
 
 class _OutlinePanelState extends State<OutlinePanel> {
-  List<OutlineNode> _outlineNodes = [];
-  bool _isLoading = true;
   String _error = '';
+
+  bool _isLoading = true;
+
+  List<OutlineNode> _outlineNodes = [];
 
   @override
   void initState() {
@@ -36,69 +39,6 @@ class _OutlinePanelState extends State<OutlinePanel> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.file.path != widget.file.path) {
       _parseFile();
-    }
-  }
-
-  // Public method to refresh the outline
-  void refreshOutline() {
-    _parseFile();
-  }
-
-  Future<void> _parseFile() async {
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = true;
-      _error = '';
-    });
-
-    try {
-      if (widget.file.path.endsWith('.dart')) {
-        final result = parseFile(
-          path: widget.file.path,
-          featureSet: FeatureSet.latestLanguageVersion(),
-        );
-        final visitor = _OutlineVisitor();
-        result.unit.visitChildren(visitor);
-        setState(() {
-          _outlineNodes = visitor.nodes;
-        });
-      } else if (widget.file.path.endsWith('.md')) {
-        // Parse markdown file for headers
-        final content = await widget.file.readAsString();
-        final lines = content.split('\n');
-        final nodes = <OutlineNode>[];
-
-        for (var i = 0; i < lines.length; i++) {
-          final line = lines[i];
-          if (line.startsWith('#')) {
-            final level = line.split(' ')[0].length;
-            final title = line.substring(level).trim();
-            nodes.add(
-              OutlineNode(
-                name: title,
-                type: 'Heading ${level.clamp(1, 6)}',
-                line: i + 1,
-                level: level - 1,
-              ),
-            );
-          }
-        }
-
-        setState(() {
-          _outlineNodes = nodes;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _error = 'Error parsing file: $e';
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
@@ -167,6 +107,68 @@ class _OutlinePanelState extends State<OutlinePanel> {
         ],
       ),
     );
+  }
+
+  void refreshOutline() {
+    _parseFile();
+  }
+
+  Future<void> _parseFile() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+      _error = '';
+    });
+
+    try {
+      if (widget.file.path.endsWith('.dart')) {
+        final result = parseFile(
+          path: widget.file.path,
+          featureSet: FeatureSet.latestLanguageVersion(),
+        );
+        final visitor = _OutlineVisitor();
+        result.unit.visitChildren(visitor);
+        setState(() {
+          _outlineNodes = visitor.nodes;
+        });
+      } else if (widget.file.path.endsWith('.md')) {
+        // Parse markdown file for headers
+        final content = await widget.file.readAsString();
+        final lines = content.split('\n');
+        final nodes = <OutlineNode>[];
+
+        for (var i = 0; i < lines.length; i++) {
+          final line = lines[i];
+          if (line.startsWith('#')) {
+            final level = line.split(' ')[0].length;
+            final title = line.substring(level).trim();
+            nodes.add(
+              OutlineNode(
+                name: title,
+                type: 'Heading ${level.clamp(1, 6)}',
+                line: i + 1,
+                level: level - 1,
+              ),
+            );
+          }
+        }
+
+        setState(() {
+          _outlineNodes = nodes;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Error parsing file: $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 }
 

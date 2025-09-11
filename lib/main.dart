@@ -1,11 +1,14 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 
 // Screens
 import 'screens/explorer/explorer_screen.dart';
+import 'screens/explorer/welcome_screen.dart';
 import 'screens/editor/editor_screen.dart';
 import 'screens/outline/outline_panel.dart';
 
@@ -17,6 +20,7 @@ import 'theme/app_theme.dart';
 
 // Models
 import 'models/file_system_item.dart';
+import 'models/project_node.dart';
 
 void main() {
   runApp(const ProviderScope(child: FIDE()));
@@ -160,6 +164,15 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 // State management for the selected file
 final selectedFileProvider = StateProvider<FileSystemItem?>((ref) => null);
 
+// State management for project loading
+final projectLoadedProvider = StateProvider<bool>((ref) => false);
+
+// State management for current project path
+final currentProjectPathProvider = StateProvider<String?>((ref) => null);
+
+// State management for current project root
+final currentProjectRootProvider = StateProvider<ProjectNode?>((ref) => null);
+
 // File system service provider
 final fileSystemServiceProvider = Provider<FileSystemService>(
   (ref) => FileSystemService(),
@@ -221,29 +234,81 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     });
   }
 
+  // Method to pick directory - can be called from WelcomeScreen
+  Future<void> _pickDirectory() async {
+    try {
+      final selectedDirectory = await FilePicker.platform.getDirectoryPath();
+      if (selectedDirectory != null) {
+        // Validate that this is a Flutter project
+        final dir = Directory(selectedDirectory);
+        final pubspecFile = File('${dir.path}/pubspec.yaml');
+        final libDir = Directory('${dir.path}/lib');
+
+        if (await pubspecFile.exists() && await libDir.exists()) {
+          final pubspecContent = await pubspecFile.readAsString();
+          if (pubspecContent.contains('flutter:') ||
+              pubspecContent.contains('sdk: flutter')) {
+            // Load the project
+            ref.read(projectLoadedProvider.notifier).state = true;
+            ref.read(currentProjectPathProvider.notifier).state =
+                selectedDirectory;
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Selected folder is not a valid Flutter project'),
+              ),
+            );
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Selected folder is not a valid Flutter project'),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error loading project: $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedFile = ref.watch(selectedFileProvider);
+    final projectLoaded = ref.watch(projectLoadedProvider);
+    final currentProjectPath = ref.watch(currentProjectPathProvider);
 
     return Scaffold(
       body: Row(
         children: [
-          // Project Explorer Panel
-          SizedBox(
-            width: _explorerWidth,
-            child: ExplorerScreen(
-              onFileSelected: (file) {
-                ref.read(selectedFileProvider.notifier).state = file;
-              },
-              selectedFile: selectedFile,
-              onThemeChanged: (themeMode) {
-                ref.read(themeModeProvider.notifier).state = themeMode;
-              },
+          // Project Explorer Panel - Only show when project is loaded
+          if (projectLoaded) ...[
+            SizedBox(
+              width: _explorerWidth,
+              child: ExplorerScreen(
+                onFileSelected: (file) {
+                  ref.read(selectedFileProvider.notifier).state = file;
+                },
+                selectedFile: selectedFile,
+                onThemeChanged: (themeMode) {
+                  ref.read(themeModeProvider.notifier).state = themeMode;
+                },
+                onProjectLoaded: (loaded) {
+                  ref.read(projectLoadedProvider.notifier).state = loaded;
+                  if (!loaded) {
+                    // Clear the current project path when unloaded
+                    ref.read(currentProjectPathProvider.notifier).state = null;
+                  }
+                },
+                initialProjectPath: currentProjectPath,
+              ),
             ),
-          ),
 
-          // Resizable Splitter
-          ResizableSplitter(onResize: _onResize),
+            // Resizable Splitter
+            ResizableSplitter(onResize: _onResize),
+          ],
 
           // Main Editor Area
           Expanded(
@@ -260,7 +325,25 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                                 null;
                           },
                         )
-                      : const Center(child: Text('No file selected')),
+                      : !projectLoaded
+                      ? WelcomeScreen(
+                          onOpenFolder: _pickDirectory,
+                          onCreateProject: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Create new project feature coming soon!',
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : const Center(
+                          child: Text(
+                            'Select a file to start editing',
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                        ),
                 ),
 
                 // Outline View
@@ -285,17 +368,19 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 }
 
 class ResizableSplitter extends StatefulWidget {
-  final Function(double) onResize;
-
   const ResizableSplitter({super.key, required this.onResize});
+
+  final Function(double) onResize;
 
   @override
   State<ResizableSplitter> createState() => _ResizableSplitterState();
 }
 
 class _ResizableSplitterState extends State<ResizableSplitter> {
-  bool _isHovering = false;
   bool _isDragging = false;
+
+  bool _isHovering = false;
+
   double _startX = 0.0;
 
   @override
