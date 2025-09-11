@@ -5,13 +5,12 @@ import 'package:code_text_field/code_text_field.dart';
 import 'package:fide/widgets/message_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:highlight/languages/dart.dart';
 import 'package:highlight/languages/yaml.dart';
 
-class EditorScreen extends ConsumerStatefulWidget {
+class EditorScreen extends StatefulWidget {
   final String filePath;
   final VoidCallback? onContentChanged;
   final VoidCallback? onClose;
@@ -24,10 +23,10 @@ class EditorScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<EditorScreen> createState() => _EditorScreenState();
+  State<EditorScreen> createState() => _EditorScreenState();
 }
 
-class _EditorScreenState extends ConsumerState<EditorScreen> {
+class _EditorScreenState extends State<EditorScreen> {
   late CodeController _codeController;
   late String _currentFile;
   bool _isDirty = false;

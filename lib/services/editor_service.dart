@@ -10,7 +10,7 @@ class EditorService extends StateNotifier<String?> {
   void closeFile() {
     state = null;
   }
-  
+
   void updateCurrentPath(String newPath) {
     if (state != null) {
       state = newPath;

@@ -43,9 +43,10 @@ class FileSystemService {
       final bIsDir = FileSystemEntity.isDirectorySync(b.path);
       if (aIsDir && !bIsDir) return -1;
       if (!aIsDir && bIsDir) return 1;
-      return path.basename(a.path).toLowerCase().compareTo(
-            path.basename(b.path).toLowerCase(),
-          );
+      return path
+          .basename(a.path)
+          .toLowerCase()
+          .compareTo(path.basename(b.path).toLowerCase());
     });
 
     // Convert to FileSystemItem
@@ -111,11 +112,13 @@ class FileSystemService {
   // Get file icon based on extension
   static String getFileIcon(String fileName) {
     final ext = path.extension(fileName).toLowerCase();
-    
+
     // Directories
     if (fileName == '..') return 'assets/icons/folder-up.png';
-    if (FileSystemEntity.isDirectorySync(fileName)) return 'assets/icons/folder.png';
-    
+    if (FileSystemEntity.isDirectorySync(fileName)) {
+      return 'assets/icons/folder.png';
+    }
+
     // File types
     switch (ext) {
       case '.dart':

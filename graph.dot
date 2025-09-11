@@ -1,0 +1,87 @@
+digraph "" {
+  graph [style=rounded fontname="Arial Black" fontsize=13 penwidth=2.6];
+  node [shape=rect style="filled,rounded" fontname=Arial fontsize=15 fillcolor=Lavender penwidth=1.3];
+  edge [penwidth=1.3];
+  "/test/widget_test.dart" [label="widget_test"];
+  "/lib/models/project_node.dart" [label="project_node"];
+  "/lib/models/file_system_item.dart" [label="file_system_item"];
+  "/lib/screens/explorer/explorer_screen.dart" [label="explorer_screen"];
+  "/lib/screens/outline/outline_panel.dart" [label="outline_panel"];
+  "/lib/screens/editor/editor_screen.dart" [label="editor_screen"];
+  "/lib/main.dart" [label="main"];
+  "/lib/theme/app_theme.dart" [label="app_theme"];
+  "/lib/services/file_system_service.dart" [label="file_system_service"];
+  "/lib/services/editor_service.dart" [label="editor_service"];
+  "/lib/widgets/save_file_dialog.dart" [label="save_file_dialog"];
+  "/lib/widgets/explorer/file_explorer.dart" [label="file_explorer"];
+  "/lib/widgets/message_widget.dart" [label="message_widget"];
+  "/tool/sort_source.dart" [label="sort_source"];
+  subgraph "cluster~" {
+    label="fide";
+    subgraph "cluster~/test" {
+      label="test";
+      "/test/widget_test.dart";
+    }
+    subgraph "cluster~/lib" {
+      label="lib";
+      "/lib/main.dart";
+      subgraph "cluster~/lib/models" {
+        label="models";
+        "/lib/models/project_node.dart";
+        "/lib/models/file_system_item.dart";
+      }
+      subgraph "cluster~/lib/screens" {
+        label="screens";
+        subgraph "cluster~/lib/screens/explorer" {
+          label="explorer";
+          "/lib/screens/explorer/explorer_screen.dart";
+        }
+        subgraph "cluster~/lib/screens/outline" {
+          label="outline";
+          "/lib/screens/outline/outline_panel.dart";
+        }
+        subgraph "cluster~/lib/screens/editor" {
+          label="editor";
+          "/lib/screens/editor/editor_screen.dart";
+        }
+      }
+      subgraph "cluster~/lib/theme" {
+        label="theme";
+        "/lib/theme/app_theme.dart";
+      }
+      subgraph "cluster~/lib/services" {
+        label="services";
+        "/lib/services/file_system_service.dart";
+        "/lib/services/editor_service.dart";
+      }
+      subgraph "cluster~/lib/widgets" {
+        label="widgets";
+        "/lib/widgets/save_file_dialog.dart";
+        "/lib/widgets/message_widget.dart";
+        subgraph "cluster~/lib/widgets/explorer" {
+          label="explorer";
+          "/lib/widgets/explorer/file_explorer.dart";
+        }
+      }
+    }
+    subgraph "cluster~/tool" {
+      label="tool";
+      "/tool/sort_source.dart";
+    }
+  }
+  "/test/widget_test.dart" -> "/lib/main.dart";
+  "/lib/screens/explorer/explorer_screen.dart" -> "/lib/models/project_node.dart";
+  "/lib/screens/explorer/explorer_screen.dart" -> "/lib/models/file_system_item.dart";
+  "/lib/screens/explorer/explorer_screen.dart" -> "/lib/widgets/message_widget.dart";
+  "/lib/screens/outline/outline_panel.dart" -> "/lib/models/file_system_item.dart";
+  "/lib/screens/editor/editor_screen.dart" -> "/lib/widgets/message_widget.dart";
+  "/lib/main.dart" -> "/lib/screens/explorer/explorer_screen.dart";
+  "/lib/main.dart" -> "/lib/screens/editor/editor_screen.dart";
+  "/lib/main.dart" -> "/lib/screens/outline/outline_panel.dart";
+  "/lib/main.dart" -> "/lib/services/file_system_service.dart";
+  "/lib/main.dart" -> "/lib/theme/app_theme.dart";
+  "/lib/main.dart" -> "/lib/models/file_system_item.dart";
+  "/lib/services/file_system_service.dart" -> "/lib/models/file_system_item.dart";
+  "/lib/widgets/explorer/file_explorer.dart" -> "/lib/services/file_system_service.dart";
+  "/lib/widgets/explorer/file_explorer.dart" -> "/lib/models/file_system_item.dart";
+}

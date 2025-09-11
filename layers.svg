@@ -1,0 +1,689 @@
+<?xml version="1.0" standalone="no"?>
+<svg width="3300" height="600" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
+  <style>
+    .layerRectangle {
+      stroke: black;
+      stroke-dasharray: 5,5;
+      fill: url('#layers')
+    }
+    .layerText {
+      fill: purple;
+      font-size: 150%;
+      filter: url(#outlineWhite);
+    }
+    .nodeFolder {
+      fill: #aaaaaa;
+      opacity: 0.3;
+      stroke: whitesmoke;
+    }
+    .nodeFile {
+      fill: #ffffff;
+      opacity: 0.9;
+      stroke: gray;
+    }
+    .folderName {
+      font-size: 180%;
+      fill : white;
+      font-weight: bolder;
+      text-anchor: start;
+      letter-spacing : 1px;
+      dominant-baseline: hanging;
+      filter: url(#shadow);
+    }
+    .nodeName {
+      fill : black;
+      font-weight: bold;
+      text-anchor: middle;
+      dominant-baseline: central;
+      filter: url(#outlineWhite);
+    }
+    .line {
+      fill : none;
+      stroke-width: 3;
+      opacity: 0.5;
+    }
+    .line:hover {
+      stroke-width: 6;
+      opacity: 1;
+    }
+</style>
+  <defs id='idSvgDef'>
+    <linearGradient id="layers" gradientTransform="rotate(90)">
+      <stop offset="0%" stop-color="#691872" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#691872" stop-opacity="0.3" />
+    </linearGradient>
+    <filter id="shadow">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+      <feOffset dx="1" dy="1" result="offsetblur"/>
+      <feFlood flood-color="black"/>
+      <feComposite in2="offsetblur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="outlineWhite">
+      <feMorphology in="SourceAlpha" result="DILATED" operator="dilate" radius="2"/>
+      <feFlood flood-color="white" flood-opacity="0.5" result="WHITE"/>
+      <feComposite in="WHITE" in2="DILATED" operator="in" result="OUTLINE"/>
+      <feMerge>
+        <feMergeNode in="OUTLINE" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="outlineBlack">
+      <feMorphology in="SourceAlpha" result="DILATED" operator="dilate" radius="2"/>
+      <feFlood flood-color="black" flood-opacity="0.5" result="BLACK"/>
+      <feComposite in="BLACK" in2="DILATED" operator="in" result="OUTLINE"/>
+      <feMerge>
+        <feMergeNode in="OUTLINE"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <marker id='lineEnd' viewBox= '0 -5 30 10' refX='12' orient='auto'>
+      <path d='M0,-16L32,0L0,16' fill='#3058FF' opacity="0.67"/>
+    </marker>
+    <marker id='lineStart' viewBox= '0 -4 8 8' refX='4' orient='auto'>
+      <circle cx='4' r='4' fill='#377E22'/>
+    </marker>
+  </defs>
+  <rect width="100%" height="100%" fill="white"/>
+  <rect width="100%" height="100%" fill="white"/>
+  <g id='Node_analyzer'>
+    <rect x="4" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
+  <g id='Node_path'>
+    <rect x="4" y="489" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
+  <g id='Node_yaml'>
+    <rect x="4" y="339" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
+  <g id='Node_code_text_field'>
+    <rect x="2404" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
+  <g id='Node_flutter_highlight'>
+    <rect x="304" y="339" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
+  <g id='Node_highlight'>
+    <rect x="304" y="489" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
+  <g id='Node_fide'>
+    <rect x="4" y="39" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
+  <g id='Node_cupertino_icons'>
+    <rect x="604" y="489" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
+  <g id='Node_file_picker'>
+    <rect x="304" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
+  <g id='Node_flutter_markdown'>
+    <rect x="2704" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
+  <g id='Node_flutter_riverpod'>
+    <rect x="2104" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
+  <g id='Node_path_provider'>
+    <rect x="1504" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
+  <g id='Node_process_run'>
+    <rect x="604" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
+  <g id='Node_provider'>
+    <rect x="3004" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
+  <g id='Node_shared_preferences'>
+    <rect x="1204" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
+  <g id='Node_url_launcher'>
+    <rect x="904" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
+  <g id='Node_xterm'>
+    <rect x="1804" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
+  <g id='Edges'>
+    <path class="line" d="M280 245 C 290 375,10 375, 20 505" fill="none" stroke="#377E22">
+      <title>analyzer
+⬇
+path</title>
+    </path>
+    <path class="line" d="M280 245 C 290 300,10 300, 20 355" fill="none" stroke="#377E22">
+      <title>analyzer
+⬇
+yaml</title>
+    </path>
+    <path class="line" d="M2680 245 C 2690 300,310 300, 320 355" fill="none" stroke="#377E22">
+      <title>code_text_field
+⬇
+flutter_highlight</title>
+    </path>
+    <path class="line" d="M2680 245 C 2690 375,310 375, 320 505" fill="none" stroke="#377E22">
+      <title>code_text_field
+⬇
+highlight</title>
+    </path>
+    <path class="line" d="M280 95 C 290 150,10 150, 20 205" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+analyzer</title>
+    </path>
+    <path class="line" d="M280 95 C 290 150,2410 150, 2420 205" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+code_text_field</title>
+    </path>
+    <path class="line" d="M280 95 C 293 300,607 300, 620 505" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+cupertino_icons</title>
+    </path>
+    <path class="line" d="M280 95 C 290 150,310 150, 320 205" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+file_picker</title>
+    </path>
+    <path class="line" d="M280 95 C 290 225,310 225, 320 355" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+flutter_highlight</title>
+    </path>
+    <path class="line" d="M280 95 C 290 150,2710 150, 2720 205" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+flutter_markdown</title>
+    </path>
+    <path class="line" d="M280 95 C 290 150,2110 150, 2120 205" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+flutter_riverpod</title>
+    </path>
+    <path class="line" d="M280 95 C 293 300,307 300, 320 505" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+highlight</title>
+    </path>
+    <path class="line" d="M280 95 C 293 300,7 300, 20 505" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+path</title>
+    </path>
+    <path class="line" d="M280 95 C 290 150,1510 150, 1520 205" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+path_provider</title>
+    </path>
+    <path class="line" d="M280 95 C 290 150,610 150, 620 205" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+process_run</title>
+    </path>
+    <path class="line" d="M280 95 C 290 150,3010 150, 3020 205" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+provider</title>
+    </path>
+    <path class="line" d="M280 95 C 290 150,1210 150, 1220 205" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+shared_preferences</title>
+    </path>
+    <path class="line" d="M280 95 C 290 150,910 150, 920 205" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+url_launcher</title>
+    </path>
+    <path class="line" d="M280 95 C 290 150,1810 150, 1820 205" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+xterm</title>
+    </path>
+    <path class="line" d="M280 95 C 290 225,10 225, 20 355" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+yaml</title>
+    </path>
+    <path class="line" d="M580 245 C 590 375,10 375, 20 505" fill="none" stroke="#377E22">
+      <title>file_picker
+⬇
+path</title>
+    </path>
+    <path class="line" d="M580 395 C 590 450,310 450, 320 505" fill="none" stroke="#377E22">
+      <title>flutter_highlight
+⬇
+highlight</title>
+    </path>
+    <path class="line" d="M2980 245 C 2990 375,10 375, 20 505" fill="none" stroke="#377E22">
+      <title>flutter_markdown
+⬇
+path</title>
+    </path>
+    <path class="line" d="M880 245 C 890 375,10 375, 20 505" fill="none" stroke="#377E22">
+      <title>process_run
+⬇
+path</title>
+    </path>
+    <path class="line" d="M880 245 C 890 300,10 300, 20 355" fill="none" stroke="#377E22">
+      <title>process_run
+⬇
+yaml</title>
+    </path>
+  </g>
+  <g id='Counters_analyzer'>
+    <g>
+      <circle cx="280" cy="245" r="10" fill="green"/>
+      <text x="280" y="245" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">12</text>
+      <title>analyzer
+⬇
+1 /direct/path
+2 /direct/yaml
+3 /transitive/_fe_analyzer_shared
+4 /transitive/collection
+5 /transitive/convert
+6 /transitive/crypto
+7 /transitive/glob
+8 /transitive/meta
+9 /transitive/package_config
+10 /transitive/pub_semver
+11 /transitive/source_span
+12 /transitive/watcher</title>
+    </g>
+    <g>
+      <circle cx="20" cy="205" r="10" fill="blue"/>
+      <text x="20" y="205" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>1 /root/fide
+⬇
+analyzer</title>
+    </g>
+  </g>
+  <g id='Counters_path'>
+    <g>
+      <circle cx="20" cy="505" r="10" fill="blue"/>
+      <text x="20" y="505" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">22</text>
+      <title>1 /dev/flutter_launcher_icons
+2 /dev/flutter_test
+3 /direct/analyzer
+4 /direct/file_picker
+5 /direct/flutter_markdown
+6 /direct/process_run
+7 /root/fide
+8 /transitive/archive
+9 /transitive/cli_util
+10 /transitive/file
+11 /transitive/glob
+12 /transitive/leak_tracker
+13 /transitive/package_config
+14 /transitive/path_provider_linux
+15 /transitive/path_provider_windows
+16 /transitive/posix
+17 /transitive/shared_preferences_linux
+18 /transitive/shared_preferences_windows
+19 /transitive/source_span
+20 /transitive/stack_trace
+21 /transitive/watcher
+22 /transitive/xdg_directories
+⬇
+path</title>
+    </g>
+  </g>
+  <g id='Counters_yaml'>
+    <g>
+      <circle cx="280" cy="395" r="10" fill="green"/>
+      <text x="280" y="395" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">3</text>
+      <title>yaml
+⬇
+1 /transitive/collection
+2 /transitive/source_span
+3 /transitive/string_scanner</title>
+    </g>
+    <g>
+      <circle cx="20" cy="355" r="10" fill="blue"/>
+      <text x="20" y="355" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">5</text>
+      <title>1 /dev/flutter_launcher_icons
+2 /direct/analyzer
+3 /direct/process_run
+4 /root/fide
+5 /transitive/checked_yaml
+⬇
+yaml</title>
+    </g>
+  </g>
+  <g id='Counters_code_text_field'>
+    <g>
+      <circle cx="2680" cy="245" r="10" fill="green"/>
+      <text x="2680" y="245" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">3</text>
+      <title>code_text_field
+⬇
+1 /direct/flutter_highlight
+2 /direct/highlight
+3 /transitive/linked_scroll_controller</title>
+    </g>
+    <g>
+      <circle cx="2420" cy="205" r="10" fill="blue"/>
+      <text x="2420" y="205" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>1 /root/fide
+⬇
+code_text_field</title>
+    </g>
+  </g>
+  <g id='Counters_flutter_highlight'>
+    <g>
+      <circle cx="580" cy="395" r="10" fill="green"/>
+      <text x="580" y="395" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>flutter_highlight
+⬇
+1 /direct/highlight</title>
+    </g>
+    <g>
+      <circle cx="320" cy="355" r="10" fill="blue"/>
+      <text x="320" y="355" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">2</text>
+      <title>1 /direct/code_text_field
+2 /root/fide
+⬇
+flutter_highlight</title>
+    </g>
+  </g>
+  <g id='Counters_highlight'>
+    <g>
+      <circle cx="580" cy="545" r="10" fill="green"/>
+      <text x="580" y="545" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>highlight
+⬇
+1 /transitive/collection</title>
+    </g>
+    <g>
+      <circle cx="320" cy="505" r="10" fill="blue"/>
+      <text x="320" y="505" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">3</text>
+      <title>1 /direct/code_text_field
+2 /direct/flutter_highlight
+3 /root/fide
+⬇
+highlight</title>
+    </g>
+  </g>
+  <g id='Counters_fide'>
+    <g>
+      <circle cx="280" cy="95" r="10" fill="green"/>
+      <text x="280" y="95" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">19</text>
+      <title>fide
+⬇
+1 /dev/flutter_launcher_icons
+2 /dev/flutter_lints
+3 /dev/flutter_test
+4 /direct/analyzer
+5 /direct/code_text_field
+6 /direct/cupertino_icons
+7 /direct/file_picker
+8 /direct/flutter_highlight
+9 /direct/flutter_markdown
+10 /direct/flutter_riverpod
+11 /direct/highlight
+12 /direct/path
+13 /direct/path_provider
+14 /direct/process_run
+15 /direct/provider
+16 /direct/shared_preferences
+17 /direct/url_launcher
+18 /direct/xterm
+19 /direct/yaml</title>
+    </g>
+  </g>
+  <g id='Counters_cupertino_icons'>
+    <g>
+      <circle cx="620" cy="505" r="10" fill="blue"/>
+      <text x="620" y="505" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>1 /root/fide
+⬇
+cupertino_icons</title>
+    </g>
+  </g>
+  <g id='Counters_file_picker'>
+    <g>
+      <circle cx="580" cy="245" r="10" fill="green"/>
+      <text x="580" y="245" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">8</text>
+      <title>file_picker
+⬇
+1 /direct/path
+2 /transitive/cross_file
+3 /transitive/ffi
+4 /transitive/flutter_plugin_android_lifecycle
+5 /transitive/flutter_web_plugins
+6 /transitive/plugin_platform_interface
+7 /transitive/web
+8 /transitive/win32</title>
+    </g>
+    <g>
+      <circle cx="320" cy="205" r="10" fill="blue"/>
+      <text x="320" y="205" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>1 /root/fide
+⬇
+file_picker</title>
+    </g>
+  </g>
+  <g id='Counters_flutter_markdown'>
+    <g>
+      <circle cx="2980" cy="245" r="10" fill="green"/>
+      <text x="2980" y="245" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">3</text>
+      <title>flutter_markdown
+⬇
+1 /direct/path
+2 /transitive/markdown
+3 /transitive/meta</title>
+    </g>
+    <g>
+      <circle cx="2720" cy="205" r="10" fill="blue"/>
+      <text x="2720" y="205" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>1 /root/fide
+⬇
+flutter_markdown</title>
+    </g>
+  </g>
+  <g id='Counters_flutter_riverpod'>
+    <g>
+      <circle cx="2380" cy="245" r="10" fill="green"/>
+      <text x="2380" y="245" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">4</text>
+      <title>flutter_riverpod
+⬇
+1 /transitive/collection
+2 /transitive/meta
+3 /transitive/riverpod
+4 /transitive/state_notifier</title>
+    </g>
+    <g>
+      <circle cx="2120" cy="205" r="10" fill="blue"/>
+      <text x="2120" y="205" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>1 /root/fide
+⬇
+flutter_riverpod</title>
+    </g>
+  </g>
+  <g id='Counters_path_provider'>
+    <g>
+      <circle cx="1780" cy="245" r="10" fill="green"/>
+      <text x="1780" y="245" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">5</text>
+      <title>path_provider
+⬇
+1 /transitive/path_provider_android
+2 /transitive/path_provider_foundation
+3 /transitive/path_provider_linux
+4 /transitive/path_provider_platform_interface
+5 /transitive/path_provider_windows</title>
+    </g>
+    <g>
+      <circle cx="1520" cy="205" r="10" fill="blue"/>
+      <text x="1520" y="205" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>1 /root/fide
+⬇
+path_provider</title>
+    </g>
+  </g>
+  <g id='Counters_process_run'>
+    <g>
+      <circle cx="880" cy="245" r="10" fill="green"/>
+      <text x="880" y="245" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">8</text>
+      <title>process_run
+⬇
+1 /direct/path
+2 /direct/yaml
+3 /transitive/args
+4 /transitive/collection
+5 /transitive/meta
+6 /transitive/pub_semver
+7 /transitive/string_scanner
+8 /transitive/synchronized</title>
+    </g>
+    <g>
+      <circle cx="620" cy="205" r="10" fill="blue"/>
+      <text x="620" y="205" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>1 /root/fide
+⬇
+process_run</title>
+    </g>
+  </g>
+  <g id='Counters_provider'>
+    <g>
+      <circle cx="3280" cy="245" r="10" fill="green"/>
+      <text x="3280" y="245" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">2</text>
+      <title>provider
+⬇
+1 /transitive/collection
+2 /transitive/nested</title>
+    </g>
+    <g>
+      <circle cx="3020" cy="205" r="10" fill="blue"/>
+      <text x="3020" y="205" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>1 /root/fide
+⬇
+provider</title>
+    </g>
+  </g>
+  <g id='Counters_shared_preferences'>
+    <g>
+      <circle cx="1480" cy="245" r="10" fill="green"/>
+      <text x="1480" y="245" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">6</text>
+      <title>shared_preferences
+⬇
+1 /transitive/shared_preferences_android
+2 /transitive/shared_preferences_foundation
+3 /transitive/shared_preferences_linux
+4 /transitive/shared_preferences_platform_interface
+5 /transitive/shared_preferences_web
+6 /transitive/shared_preferences_windows</title>
+    </g>
+    <g>
+      <circle cx="1220" cy="205" r="10" fill="blue"/>
+      <text x="1220" y="205" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>1 /root/fide
+⬇
+shared_preferences</title>
+    </g>
+  </g>
+  <g id='Counters_url_launcher'>
+    <g>
+      <circle cx="1180" cy="245" r="10" fill="green"/>
+      <text x="1180" y="245" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">7</text>
+      <title>url_launcher
+⬇
+1 /transitive/url_launcher_android
+2 /transitive/url_launcher_ios
+3 /transitive/url_launcher_linux
+4 /transitive/url_launcher_macos
+5 /transitive/url_launcher_platform_interface
+6 /transitive/url_launcher_web
+7 /transitive/url_launcher_windows</title>
+    </g>
+    <g>
+      <circle cx="920" cy="205" r="10" fill="blue"/>
+      <text x="920" y="205" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>1 /root/fide
+⬇
+url_launcher</title>
+    </g>
+  </g>
+  <g id='Counters_xterm'>
+    <g>
+      <circle cx="2080" cy="245" r="10" fill="green"/>
+      <text x="2080" y="245" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">5</text>
+      <title>xterm
+⬇
+1 /transitive/convert
+2 /transitive/equatable
+3 /transitive/meta
+4 /transitive/platform_info
+5 /transitive/quiver</title>
+    </g>
+    <g>
+      <circle cx="1820" cy="205" r="10" fill="blue"/>
+      <text x="1820" y="205" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>1 /root/fide
+⬇
+xterm</title>
+    </g>
+  </g>
+  <g id='Labels_analyzer'>
+    <text class="nodeName" x="150" y="225" font-size="120%">analyzer</text>
+    <text class="nodeName" x="150" y="245" font-size="80%">6.4.1</text>
+  </g>
+  <g id='Labels_path'>
+    <text class="nodeName" x="150" y="525" font-size="120%">path</text>
+    <text class="nodeName" x="150" y="545" font-size="80%">1.9.1</text>
+  </g>
+  <g id='Labels_yaml'>
+    <text class="nodeName" x="150" y="375" font-size="120%">yaml</text>
+    <text class="nodeName" x="150" y="395" font-size="80%">3.1.3</text>
+  </g>
+  <g id='Labels_code_text_field'>
+    <text class="nodeName" x="2550" y="225" font-size="120%">code_text_field</text>
+    <text class="nodeName" x="2550" y="245" font-size="80%">1.1.0</text>
+  </g>
+  <g id='Labels_flutter_highlight'>
+    <text class="nodeName" x="450" y="375" font-size="120%">flutter_highlight</text>
+    <text class="nodeName" x="450" y="395" font-size="80%">0.7.0</text>
+  </g>
+  <g id='Labels_highlight'>
+    <text class="nodeName" x="450" y="525" font-size="120%">highlight</text>
+    <text class="nodeName" x="450" y="545" font-size="80%">0.7.0</text>
+  </g>
+  <g id='Labels_fide'>
+    <text class="nodeName" x="150" y="75" font-size="120%">fide</text>
+    <text class="nodeName" x="150" y="95" font-size="80%">1.0.0+1</text>
+  </g>
+  <g id='Labels_cupertino_icons'>
+    <text class="nodeName" x="750" y="525" font-size="120%">cupertino_icons</text>
+    <text class="nodeName" x="750" y="545" font-size="80%">1.0.8</text>
+  </g>
+  <g id='Labels_file_picker'>
+    <text class="nodeName" x="450" y="225" font-size="120%">file_picker</text>
+    <text class="nodeName" x="450" y="245" font-size="80%">8.3.7</text>
+  </g>
+  <g id='Labels_flutter_markdown'>
+    <text class="nodeName" x="2850" y="225" font-size="120%">flutter_markdown</text>
+    <text class="nodeName" x="2850" y="245" font-size="80%">0.6.23</text>
+  </g>
+  <g id='Labels_flutter_riverpod'>
+    <text class="nodeName" x="2250" y="225" font-size="120%">flutter_riverpod</text>
+    <text class="nodeName" x="2250" y="245" font-size="80%">2.6.1</text>
+  </g>
+  <g id='Labels_path_provider'>
+    <text class="nodeName" x="1650" y="225" font-size="120%">path_provider</text>
+    <text class="nodeName" x="1650" y="245" font-size="80%">2.1.5</text>
+  </g>
+  <g id='Labels_process_run'>
+    <text class="nodeName" x="750" y="225" font-size="120%">process_run</text>
+    <text class="nodeName" x="750" y="245" font-size="80%">0.13.3+1</text>
+  </g>
+  <g id='Labels_provider'>
+    <text class="nodeName" x="3150" y="225" font-size="120%">provider</text>
+    <text class="nodeName" x="3150" y="245" font-size="80%">6.1.5+1</text>
+  </g>
+  <g id='Labels_shared_preferences'>
+    <text class="nodeName" x="1350" y="225" font-size="120%">shared_preferences</text>
+    <text class="nodeName" x="1350" y="245" font-size="80%">2.5.3</text>
+  </g>
+  <g id='Labels_url_launcher'>
+    <text class="nodeName" x="1050" y="225" font-size="120%">url_launcher</text>
+    <text class="nodeName" x="1050" y="245" font-size="80%">6.3.2</text>
+  </g>
+  <g id='Labels_xterm'>
+    <text class="nodeName" x="1950" y="225" font-size="120%">xterm</text>
+    <text class="nodeName" x="1950" y="245" font-size="80%">3.5.0</text>
+  </g>
+</svg>

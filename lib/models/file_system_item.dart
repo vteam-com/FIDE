@@ -1,12 +1,7 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
 
-enum FileSystemItemType {
-  file,
-  directory,
-  drive,
-  parent,
-}
+enum FileSystemItemType { file, directory, drive, parent }
 
 class FileSystemItem {
   final String name;
@@ -35,7 +30,9 @@ class FileSystemItem {
     return FileSystemItem(
       name: p.basename(entity.path),
       path: entity.path,
-      type: isDirectory ? FileSystemItemType.directory : FileSystemItemType.file,
+      type: isDirectory
+          ? FileSystemItemType.directory
+          : FileSystemItemType.file,
       modified: stat.modified,
       size: isFile ? stat.size : null,
     );
@@ -62,7 +59,15 @@ class FileSystemItem {
   bool get isCodeFile {
     if (type != FileSystemItemType.file) return false;
     final ext = fileExtension.toLowerCase();
-    return const ['dart', 'yaml', 'json', 'xml', 'html', 'css', 'js'].contains(ext);
+    return const [
+      'dart',
+      'yaml',
+      'json',
+      'xml',
+      'html',
+      'css',
+      'js',
+    ].contains(ext);
   }
 
   // Toggle expanded state
@@ -92,6 +97,13 @@ class FileSystemItem {
   bool get isSupportedForOutline {
     if (type != FileSystemItemType.file) return false;
     final ext = extension;
-    return const ['dart', 'md', 'markdown', 'yaml', 'yml', 'json'].contains(ext);
+    return const [
+      'dart',
+      'md',
+      'markdown',
+      'yaml',
+      'yml',
+      'json',
+    ].contains(ext);
   }
 }

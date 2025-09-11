@@ -3,11 +3,8 @@ import 'package:path/path.dart' as path;
 
 class SaveFileDialog extends StatefulWidget {
   final String initialName;
-  
-  const SaveFileDialog({
-    super.key,
-    this.initialName = 'untitled.dart',
-  });
+
+  const SaveFileDialog({super.key, this.initialName = 'untitled.dart'});
 
   @override
   State<SaveFileDialog> createState() => _SaveFileDialogState();
