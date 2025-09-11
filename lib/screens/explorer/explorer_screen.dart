@@ -69,6 +69,14 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   }) async {
     if (_isLoading && !forceLoad) return;
 
+    // Validate that this is a Flutter project
+    if (!await _isFlutterProject(directoryPath)) {
+      _showError(
+        'This folder is not a valid Flutter project. FIDE is designed specifically for Flutter development. Please select a folder containing a Flutter project with a pubspec.yaml file.',
+      );
+      return;
+    }
+
     // Close current project first
     setState(() {
       _isLoading = true;
@@ -137,6 +145,36 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     });
 
     await _prefs.setStringList(_mruFoldersKey, _mruFolders);
+  }
+
+  Future<bool> _isFlutterProject(String directoryPath) async {
+    try {
+      final dir = Directory(directoryPath);
+
+      // Check if pubspec.yaml exists (required for Flutter projects)
+      final pubspecFile = File('${dir.path}/pubspec.yaml');
+      if (!await pubspecFile.exists()) {
+        return false;
+      }
+
+      // Check if lib directory exists (typical Flutter project structure)
+      final libDir = Directory('${dir.path}/lib');
+      if (!await libDir.exists()) {
+        return false;
+      }
+
+      // Additional check: verify pubspec.yaml contains flutter dependency
+      final pubspecContent = await pubspecFile.readAsString();
+      if (!pubspecContent.contains('flutter:') &&
+          !pubspecContent.contains('sdk: flutter')) {
+        return false;
+      }
+
+      return true;
+    } catch (e) {
+      // If we can't read the directory, it's not accessible anyway
+      return false;
+    }
   }
 
   void _showError(String message) {

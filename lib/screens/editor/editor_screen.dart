@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'package:code_text_field/code_text_field.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
@@ -213,7 +214,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               ),
             ),
           IconButton(
-            icon: const Icon(Icons.save),
+            icon: const Icon(CupertinoIcons.arrow_down_doc),
             onPressed: _isDirty ? _saveFile : null,
             tooltip: 'Save',
           ),
