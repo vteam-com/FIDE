@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -56,10 +58,18 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
   final double _minExplorerWidth = 150.0;
   final double _maxExplorerWidth = 500.0;
 
+  // Callback to refresh outline
+  VoidCallback? _refreshOutlineCallback;
+
   @override
   void initState() {
     super.initState();
     // File system service is initialized when first accessed
+  }
+
+  // Method to set the outline refresh callback
+  void _setOutlineRefreshCallback(VoidCallback callback) {
+    _refreshOutlineCallback = callback;
   }
 
   void _onResize(double delta) {
@@ -131,7 +141,10 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                       // Editor
                       Expanded(
                         child: selectedFile != null
-                            ? EditorScreen(filePath: selectedFile.path)
+                            ? EditorScreen(
+                                filePath: selectedFile.path,
+                                onContentChanged: _refreshOutlineCallback,
+                              )
                             : const Center(child: Text('No file selected')),
                       ),
 
@@ -140,7 +153,10 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                         const VerticalDivider(width: 1, thickness: 1),
                         SizedBox(
                           width: _outlineWidth,
-                          child: OutlinePanel(file: selectedFile),
+                          child: OutlinePanel(
+                            file: selectedFile,
+                            onOutlineUpdate: _setOutlineRefreshCallback,
+                          ),
                         ),
                       ],
                     ],

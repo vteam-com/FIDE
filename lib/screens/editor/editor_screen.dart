@@ -10,8 +10,13 @@ import 'package:highlight/languages/yaml.dart';
 
 class EditorScreen extends ConsumerStatefulWidget {
   final String filePath;
+  final VoidCallback? onContentChanged;
 
-  const EditorScreen({super.key, required this.filePath});
+  const EditorScreen({
+    super.key,
+    required this.filePath,
+    this.onContentChanged,
+  });
 
   @override
   ConsumerState<EditorScreen> createState() => _EditorScreenState();
@@ -96,6 +101,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     if (!_isDirty) {
       setState(() => _isDirty = true);
     }
+    // Notify outline panel to refresh when content changes
+    widget.onContentChanged?.call();
   }
 
   String _getTitleForFile(String filePath) {

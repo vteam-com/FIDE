@@ -8,8 +8,9 @@ import '../../models/file_system_item.dart';
 
 class OutlinePanel extends StatefulWidget {
   final FileSystemItem file;
+  final Function(VoidCallback)? onOutlineUpdate;
 
-  const OutlinePanel({super.key, required this.file});
+  const OutlinePanel({super.key, required this.file, this.onOutlineUpdate});
 
   @override
   State<OutlinePanel> createState() => _OutlinePanelState();
@@ -23,6 +24,23 @@ class _OutlinePanelState extends State<OutlinePanel> {
   @override
   void initState() {
     super.initState();
+    _parseFile();
+    // Set up the callback for external updates
+    if (widget.onOutlineUpdate != null) {
+      widget.onOutlineUpdate!(() => refreshOutline());
+    }
+  }
+
+  @override
+  void didUpdateWidget(OutlinePanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.file.path != widget.file.path) {
+      _parseFile();
+    }
+  }
+
+  // Public method to refresh the outline
+  void refreshOutline() {
     _parseFile();
   }
 
