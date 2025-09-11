@@ -54,9 +54,11 @@ class MainLayout extends ConsumerStatefulWidget {
 
 class _MainLayoutState extends ConsumerState<MainLayout> {
   double _explorerWidth = 250.0;
-  final double _outlineWidth = 200.0;
+  double _outlineWidth = 200.0;
   final double _minExplorerWidth = 150.0;
   final double _maxExplorerWidth = 500.0;
+  final double _minOutlineWidth = 150.0;
+  final double _maxOutlineWidth = 400.0;
 
   // Callback to refresh outline
   VoidCallback? _refreshOutlineCallback;
@@ -77,6 +79,15 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
       _explorerWidth = (_explorerWidth + delta).clamp(
         _minExplorerWidth,
         _maxExplorerWidth,
+      );
+    });
+  }
+
+  void _onOutlineResize(double delta) {
+    setState(() {
+      _outlineWidth = (_outlineWidth - delta).clamp(
+        _minOutlineWidth,
+        _maxOutlineWidth,
       );
     });
   }
@@ -150,7 +161,8 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
                       // Outline View
                       if (selectedFile != null) ...[
-                        const VerticalDivider(width: 1, thickness: 1),
+                        // Resizable Splitter between Editor and Outline
+                        ResizableSplitter(onResize: _onOutlineResize),
                         SizedBox(
                           width: _outlineWidth,
                           child: OutlinePanel(
