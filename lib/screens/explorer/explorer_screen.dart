@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/widgets/message_widget.dart';
 
 class ExplorerScreen extends StatefulWidget {
   final Function(FileSystemItem)? onFileSelected;
@@ -25,6 +26,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   final Map<String, bool> _expandedState = {};
   late SharedPreferences _prefs;
   List<String> _mruFolders = [];
+  final Map<String, bool> _mruAccessStatus = {};
 
   @override
   void initState() {
@@ -35,6 +37,8 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   Future<void> _loadMruFolders() async {
     _prefs = await SharedPreferences.getInstance();
     final mruList = _prefs.getStringList(_mruFoldersKey) ?? [];
+
+    // Keep all folders in MRU but check their access status
     setState(() {
       _mruFolders = mruList
           .where((path) => Directory(path).existsSync())
@@ -75,7 +79,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       final root = await ProjectNode.fromFileSystemEntity(
         Directory(directoryPath),
       );
-      await root.loadChildren();
+      final result = await root.loadChildren();
 
       // Update MRU list
       await _updateMruList(directoryPath);
@@ -83,6 +87,28 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       setState(() {
         _projectRoot = root;
       });
+
+      // Show user-friendly error messages based on the result
+      switch (result) {
+        case LoadChildrenResult.accessDenied:
+          _showError(
+            'Access denied: Cannot read contents of "${root.name}". You may not have permission to view this project folder.',
+          );
+          break;
+        case LoadChildrenResult.fileSystemError:
+          _showError(
+            'File system error: Unable to read contents of "${root.name}". The project folder may be corrupted or inaccessible.',
+          );
+          break;
+        case LoadChildrenResult.unknownError:
+          _showError(
+            'Unable to load project "${root.name}". Please try again or check if the folder exists.',
+          );
+          break;
+        case LoadChildrenResult.success:
+          // No error to show
+          break;
+      }
     } catch (e) {
       _showError('Failed to load project: $e');
     } finally {
@@ -114,9 +140,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
 
   void _showError(String message) {
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
-      );
+      MessageHelper.showError(context, message, showCopyButton: true);
     }
   }
 
@@ -129,9 +153,13 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      _projectRoot?.name ?? 'Project Explorer',
-                      style: const TextStyle(fontSize: 16),
+                    Expanded(
+                      child: Text(
+                        _projectRoot?.name ?? 'Project Explorer',
+                        style: const TextStyle(fontSize: 16),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
                     const Icon(Icons.arrow_drop_down),
                   ],
@@ -148,18 +176,38 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
 
                   for (final path in _mruFolders) {
                     final dirName = path.split('/').last;
+                    final hasAccess =
+                        _mruAccessStatus[path] ??
+                        true; // Default to true if not checked yet
                     items.add(
                       PopupMenuItem<String>(
                         value: path,
                         child: Row(
                           children: [
+                            Icon(
+                              hasAccess ? Icons.folder : Icons.folder_off,
+                              color: hasAccess ? Colors.blue : Colors.red,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 dirName,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: hasAccess ? null : Colors.red,
+                                ),
                               ),
                             ),
+                            if (!hasAccess) ...[
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.lock,
+                                color: Colors.red,
+                                size: 14,
+                              ),
+                            ],
                             IconButton(
                               icon: const Icon(Icons.close, size: 16),
                               onPressed: () {
@@ -186,7 +234,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                         children: [
                           Icon(Icons.add, size: 16),
                           SizedBox(width: 8),
-                          Text('Add Folder'),
+                          Text('Open a folder ...'),
                         ],
                       ),
                     ),
@@ -195,78 +243,11 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                   return items;
                 },
               )
-            : const Text('Project Explorer'),
-        actions: [
-          if (_mruFolders.isNotEmpty && _projectRoot == null) ...[
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.history),
-              tooltip: 'Recent Projects',
-              onSelected: (value) {
-                final parts = value.split('|');
-                final action = parts[0];
-                final path = parts[1];
-
-                if (action == 'open') {
-                  _loadProject(path, forceLoad: true);
-                } else if (action == 'remove') {
-                  _removeMruEntry(path);
-                }
-              },
-              itemBuilder: (context) {
-                final items = <PopupMenuEntry<String>>[];
-                for (final path in _mruFolders) {
-                  final dirName = path.split('/').last;
-                  items.add(
-                    PopupMenuItem<String>(
-                      value: 'open|$path',
-                      child: Row(
-                        children: [
-                          const Icon(Icons.folder_open, size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              dirName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                  items.add(
-                    PopupMenuItem<String>(
-                      value: 'remove|$path',
-                      child: Row(
-                        children: [
-                          const Icon(Icons.remove_circle_outline, size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Remove "$dirName"',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                  if (_mruFolders.last != path) {
-                    items.add(const PopupMenuDivider());
-                  }
-                }
-                return items;
-              },
-            ),
-          ],
-          IconButton(
-            icon: const Icon(Icons.folder_open),
-            onPressed: _pickDirectory,
-            tooltip: 'Open Project',
-          ),
-        ],
+            : ElevatedButton.icon(
+                icon: const Icon(Icons.folder_open),
+                label: const Text('Open Folder'),
+                onPressed: _pickDirectory,
+              ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -327,6 +308,9 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
 
   Widget _buildDirectoryNode(ProjectNode node) {
     final isExpanded = _expandedState[node.path] ?? false;
+    final hasError =
+        node.loadResult != null &&
+        node.loadResult != LoadChildrenResult.success;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -340,15 +324,32 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
             child: Row(
               children: [
-                const Icon(Icons.folder, color: Colors.blue, size: 16),
+                Icon(
+                  hasError ? Icons.folder_off : Icons.folder,
+                  color: hasError ? Colors.red : Colors.blue,
+                  size: 16,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     node.name,
-                    style: const TextStyle(fontSize: 13),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: hasError ? Colors.red : null,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                if (hasError) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    node.loadResult == LoadChildrenResult.accessDenied
+                        ? Icons.lock
+                        : Icons.error,
+                    color: Colors.red,
+                    size: 14,
+                  ),
+                ],
               ],
             ),
           ),

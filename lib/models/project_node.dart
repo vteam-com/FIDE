@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:path/path.dart' as p;
 
 enum ProjectNodeType { file, directory }
+
+enum LoadChildrenResult { success, accessDenied, fileSystemError, unknownError }
 
 class ProjectNode {
   final String name;
@@ -11,6 +12,7 @@ class ProjectNode {
   bool isExpanded;
   final List<ProjectNode> children;
   final String? fileExtension;
+  LoadChildrenResult? loadResult;
 
   ProjectNode({
     required this.name,
@@ -42,8 +44,8 @@ class ProjectNode {
   }
 
   // Load children for a directory node
-  Future<void> loadChildren() async {
-    if (!isDirectory) return;
+  Future<LoadChildrenResult> loadChildren() async {
+    if (!isDirectory) return LoadChildrenResult.success;
 
     try {
       final dir = Directory(path);
@@ -70,14 +72,21 @@ class ProjectNode {
           children.add(await ProjectNode.fromFileSystemEntity(entity));
         }
       }
+      loadResult = LoadChildrenResult.success;
+      return LoadChildrenResult.success;
     } catch (e) {
-      // Handle permission errors gracefully without printing to console
-      if (!e.toString().contains('Operation not permitted') &&
-          !e.toString().contains('Permission denied')) {
-        debugPrint('Error loading children for $path: $e');
+      // Categorize the error for better user experience
+      if (e is PathAccessException ||
+          e.toString().contains('Operation not permitted')) {
+        loadResult = LoadChildrenResult.accessDenied;
+        return LoadChildrenResult.accessDenied;
+      } else if (e is FileSystemException) {
+        loadResult = LoadChildrenResult.fileSystemError;
+        return LoadChildrenResult.fileSystemError;
+      } else {
+        loadResult = LoadChildrenResult.unknownError;
+        return LoadChildrenResult.unknownError;
       }
-      // For permission errors, we silently fail and leave children empty
-      // This will be handled by the UI showing appropriate error messages
     }
   }
 
