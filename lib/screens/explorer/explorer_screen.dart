@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_ide/services/editor_service.dart';
-import 'package:flutter_ide/models/project_node.dart';
+import 'package:fide/services/editor_service.dart';
+import 'package:fide/models/project_node.dart';
 
 class ExplorerScreen extends StatefulWidget {
   final VoidCallback? onFileSelected;

@@ -1,8 +1,39 @@
-Love it — going full-creative mode. Below is a complete outside-the-box design for a Flutter-first IDE that doesn’t look or behave like VSCode/IntelliJ/Xcode. I’ll give you the core concept, UI metaphors, detailed features, developer workflows, architecture/tech choices, and a step-by-step roadmap so you can prototype or build it. No copying of existing IDE models — this is its own animal.
+# FIDE - Flutter Integrated Developer Environment
 
-FIDE — The Flutter IDE (radical design brief)
+FIDE is a lightweight, cross-platform Flutter IDE built with Flutter. It provides a clean, efficient development environment for Flutter applications with features like:
 
-Core premise: build Flutter apps by shaping living UI structures, not by navigating a text-first file tree. FIDE treats code as mutable artifacts in a design ecosystem — widgets are first-class, compositions are tangible, and workflows are sensory, spatial, and visual.
+- Project explorer with file navigation
+- Code editor with syntax highlighting
+- Real-time preview
+- Built-in terminal
+- Git integration
+
+## Features
+
+- **Project Explorer**: Navigate your project files with ease
+- **Code Editor**: Write and edit code with syntax highlighting
+- **Real-time Preview**: See your changes as you code
+- **Terminal**: Run Flutter commands without leaving the IDE
+- **Git Integration**: Basic version control operations
+- **Cross-platform**: Works on Windows, macOS, and Linux
+
+## Getting Started
+
+1. Clone this repository
+2. Run `flutter pub get` to install dependencies
+3. Run `flutter run` to start the app
+
+## Building
+
+To build for your platform, run:
+
+- Windows: `flutter build windows`
+- macOS: `flutter build macos`
+- Linux: `flutter build linux`
+
+## Contributing
+
+Contributions are welcome! Please open an issue first to discuss what you'd like to change.
 
 ⸻
 

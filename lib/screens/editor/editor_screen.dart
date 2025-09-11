@@ -8,9 +8,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
 import 'package:highlight/languages/dart.dart';
 import 'package:highlight/languages/yaml.dart';
-import 'package:flutter_ide/services/editor_service.dart';
-import 'package:flutter_ide/screens/explorer/explorer_screen.dart';
-import 'package:flutter_ide/widgets/save_file_dialog.dart';
+import 'package:fide/services/editor_service.dart';
+import 'package:fide/screens/explorer/explorer_screen.dart';
+import 'package:fide/widgets/save_file_dialog.dart';
 
 class EditorScreen extends ConsumerStatefulWidget {
   const EditorScreen({super.key});

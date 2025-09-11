@@ -9,20 +9,16 @@ import 'screens/editor/editor_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() {
-  runApp(
-    const ProviderScope(
-      child: FlutterIDE(),
-    ),
-  );
+  runApp(const ProviderScope(child: FIDE()));
 }
 
-class FlutterIDE extends StatelessWidget {
-  const FlutterIDE({super.key});
+class FIDE extends StatelessWidget {
+  const FIDE({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter IDE',
+      title: 'FIDE - Flutter Integrated Developer Environment',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

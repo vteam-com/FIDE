@@ -2,8 +2,8 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_ide/services/file_system_service.dart';
-import 'package:flutter_ide/models/file_system_item.dart';
+import 'package:fide/services/file_system_service.dart';
+import 'package:fide/models/file_system_item.dart';
 import 'package:path/path.dart' as path;
 
 class FileExplorer extends StatefulWidget {

@@ -5,18 +5,18 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "flutter_ide",
+      "name": "FIDE",
       "request": "launch",
       "type": "dart"
     },
     {
-      "name": "flutter_ide (profile mode)",
+      "name": "FIDE (profile mode)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "profile"
     },
     {
-      "name": "flutter_ide (release mode)",
+      "name": "FIDE (release mode)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "release"

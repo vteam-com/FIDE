@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:path/path.dart' as path;
-import 'package:flutter_ide/models/file_system_item.dart';
+import 'package:fide/models/file_system_item.dart';
 
 class FileSystemService {
   static final FileSystemService _instance = FileSystemService._internal();
