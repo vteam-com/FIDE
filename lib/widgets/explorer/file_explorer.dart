@@ -538,7 +538,7 @@ class FileExplorerState extends State<FileExplorer> {
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _items.isEmpty
-              ? const Center(child: Text('Empty directory'))
+              ? const Center(child: Text('Empty folder'))
               : ListView.builder(
                   itemCount: _items.length,
                   itemBuilder: (context, index) {

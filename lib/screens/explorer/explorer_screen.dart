@@ -445,7 +445,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 1.0, horizontal: 16.0),
         child: Text(
-          'Empty directory',
+          'Empty folder',
           style: TextStyle(color: Colors.grey, fontSize: 12),
         ),
       );
