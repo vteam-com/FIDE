@@ -1,63 +1,50 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static ThemeData get lightTheme {
-    final baseTheme = ThemeData.light(useMaterial3: true);
-    final cardShape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8),
-      side: BorderSide(color: Colors.grey.shade300, width: 1),
-    );
+  // Single seed color for consistent theming
+  static const Color _seedColor = Colors.blue;
 
-    return baseTheme.copyWith(
-      colorScheme: ColorScheme.light(
-        primary: Colors.blue.shade800,
-        secondary: Colors.blue.shade600,
-        surface: Colors.grey.shade100,
+  static ThemeData get lightTheme {
+    return ThemeData.from(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: _seedColor,
+        brightness: Brightness.light,
       ),
-      dividerColor: Colors.grey.shade300,
-      cardTheme: baseTheme.cardTheme.copyWith(
+      useMaterial3: true,
+    ).copyWith(
+      cardTheme: CardThemeData(
         elevation: 0,
         margin: EdgeInsets.zero,
-        shape: cardShape,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+        ),
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         elevation: 0,
         centerTitle: false,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        titleTextStyle: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
-        ),
+        titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
       ),
     );
   }
 
   static ThemeData get darkTheme {
-    final baseTheme = ThemeData.dark(useMaterial3: true);
-    final cardShape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8),
-      side: BorderSide(color: Colors.grey.shade800, width: 1),
-    );
-
-    return baseTheme.copyWith(
-      colorScheme: ColorScheme.dark(
-        primary: Colors.blue.shade300,
-        secondary: Colors.blue.shade200,
-        surface: const Color(0xFF1E1E1E),
-        onSurface: Colors.white70,
+    return ThemeData.from(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: _seedColor,
+        brightness: Brightness.dark,
       ),
-      dividerColor: Colors.grey.shade800,
-      cardTheme: baseTheme.cardTheme.copyWith(
+      useMaterial3: true,
+    ).copyWith(
+      cardTheme: CardThemeData(
         elevation: 0,
         margin: EdgeInsets.zero,
-        shape: cardShape,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+        ),
       ),
       appBarTheme: const AppBarTheme(
         elevation: 0,
         centerTitle: false,
-        backgroundColor: Color(0xFF1E1E1E),
         titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
       ),
     );

@@ -11,8 +11,14 @@ import 'package:fide/widgets/message_widget.dart';
 class ExplorerScreen extends StatefulWidget {
   final Function(FileSystemItem)? onFileSelected;
   final FileSystemItem? selectedFile;
+  final Function(ThemeMode)? onThemeChanged;
 
-  const ExplorerScreen({super.key, this.onFileSelected, this.selectedFile});
+  const ExplorerScreen({
+    super.key,
+    this.onFileSelected,
+    this.selectedFile,
+    this.onThemeChanged,
+  });
 
   @override
   State<ExplorerScreen> createState() => _ExplorerScreenState();
@@ -177,6 +183,54 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     }
   }
 
+  void _showSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Settings'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Theme'),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(Icons.brightness_auto),
+                title: const Text('System'),
+                onTap: () {
+                  widget.onThemeChanged?.call(ThemeMode.system);
+                  Navigator.of(context).pop();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.brightness_5),
+                title: const Text('Light'),
+                onTap: () {
+                  widget.onThemeChanged?.call(ThemeMode.light);
+                  Navigator.of(context).pop();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.brightness_2),
+                title: const Text('Dark'),
+                onTap: () {
+                  widget.onThemeChanged?.call(ThemeMode.dark);
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showError(String message) {
     if (mounted) {
       MessageHelper.showError(context, message, showCopyButton: true);
@@ -192,15 +246,18 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: Text(
-                        _projectRoot?.name ?? 'Project Explorer',
-                        style: const TextStyle(fontSize: 16),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
+                    Text(
+                      _projectRoot?.name ?? 'Folder...',
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
-                    const Icon(Icons.arrow_drop_down),
+                    Icon(
+                      Icons.arrow_drop_down,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ],
                 ),
                 onSelected: (value) {
@@ -225,7 +282,9 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                           children: [
                             Icon(
                               hasAccess ? Icons.folder : Icons.folder_off,
-                              color: hasAccess ? Colors.blue : Colors.red,
+                              color: hasAccess
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.error,
                               size: 16,
                             ),
                             const SizedBox(width: 8),
@@ -235,20 +294,28 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  color: hasAccess ? null : Colors.red,
+                                  color: hasAccess
+                                      ? Theme.of(context).colorScheme.onSurface
+                                      : Theme.of(context).colorScheme.error,
                                 ),
                               ),
                             ),
                             if (!hasAccess) ...[
                               const SizedBox(width: 4),
-                              const Icon(
+                              Icon(
                                 Icons.lock,
-                                color: Colors.red,
+                                color: Theme.of(context).colorScheme.error,
                                 size: 14,
                               ),
                             ],
                             IconButton(
-                              icon: const Icon(Icons.close, size: 16),
+                              icon: Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
                               onPressed: () {
                                 _removeMruEntry(path);
                                 Navigator.of(context).pop();
@@ -267,13 +334,22 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                   }
 
                   items.add(
-                    const PopupMenuItem<String>(
+                    PopupMenuItem<String>(
                       value: 'add_folder',
                       child: Row(
                         children: [
-                          Icon(Icons.add, size: 16),
-                          SizedBox(width: 8),
-                          Text('Open a folder ...'),
+                          Icon(
+                            Icons.add,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Open a folder ...',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -287,6 +363,13 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                 label: const Text('Open Folder'),
                 onPressed: _pickDirectory,
               ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: _showSettingsDialog,
+            tooltip: 'Settings',
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -365,7 +448,9 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
               children: [
                 Icon(
                   hasError ? Icons.folder_off : Icons.folder,
-                  color: hasError ? Colors.red : Colors.blue,
+                  color: hasError
+                      ? Theme.of(context).colorScheme.error
+                      : Theme.of(context).colorScheme.primary,
                   size: 16,
                 ),
                 const SizedBox(width: 6),
@@ -374,7 +459,9 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                     node.name,
                     style: TextStyle(
                       fontSize: 13,
-                      color: hasError ? Colors.red : null,
+                      color: hasError
+                          ? Theme.of(context).colorScheme.error
+                          : Theme.of(context).colorScheme.onSurface,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -385,7 +472,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                     node.loadResult == LoadChildrenResult.accessDenied
                         ? Icons.lock
                         : Icons.error,
-                    color: Colors.red,
+                    color: Theme.of(context).colorScheme.error,
                     size: 14,
                   ),
                 ],
@@ -412,7 +499,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       hoverColor: Colors.blue.withOpacity(0.1),
       child: Container(
         color: isSelected
-            ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3)
+            ? Theme.of(context).colorScheme.primaryContainer
             : null,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
@@ -540,55 +627,61 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   void _deleteNode(ProjectNode node) {}
 
   Widget _getFileIcon(ProjectNode node) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     if (node.isDirectory) {
-      return const Icon(Icons.folder, color: Colors.blue, size: 16);
+      return Icon(Icons.folder, color: colorScheme.primary, size: 16);
     }
 
     final ext = node.fileExtension?.toLowerCase() ?? '';
     switch (ext) {
       case '.dart':
-        return const Icon(Icons.code, color: Colors.blue, size: 16);
+        return Icon(Icons.code, color: colorScheme.primary, size: 16);
       case '.yaml':
       case '.yml':
-        return const Icon(Icons.settings, color: Colors.blueGrey, size: 16);
+        return Icon(Icons.settings, color: colorScheme.secondary, size: 16);
       case '.md':
-        return const Icon(Icons.article, color: Colors.blueGrey, size: 16);
+        return Icon(Icons.article, color: colorScheme.secondary, size: 16);
       case '.txt':
-        return const Icon(Icons.article, color: Colors.grey, size: 16);
+        return Icon(
+          Icons.article,
+          color: colorScheme.onSurfaceVariant,
+          size: 16,
+        );
       case '.js':
-        return const Icon(Icons.javascript, color: Colors.amber, size: 16);
+        return Icon(Icons.javascript, color: colorScheme.tertiary, size: 16);
       case '.py':
-        return const Icon(Icons.code, color: Colors.blue, size: 16);
+        return Icon(Icons.code, color: colorScheme.primary, size: 16);
       case '.java':
       case '.kt':
-        return const Icon(Icons.code, color: Colors.orange, size: 16);
+        return Icon(Icons.code, color: colorScheme.tertiary, size: 16);
       case '.gradle':
-        return const Icon(Icons.build, color: Colors.grey, size: 16);
+        return Icon(Icons.build, color: colorScheme.onSurfaceVariant, size: 16);
       case '.xml':
       case '.html':
-        return const Icon(Icons.code, color: Colors.green, size: 16);
+        return Icon(Icons.code, color: colorScheme.tertiary, size: 16);
       case '.css':
-        return const Icon(Icons.css, color: Colors.blue, size: 16);
+        return Icon(Icons.css, color: colorScheme.primary, size: 16);
       case '.json':
-        return const Icon(Icons.data_object, color: Colors.amber, size: 16);
+        return Icon(Icons.data_object, color: colorScheme.tertiary, size: 16);
       case '.png':
       case '.jpg':
       case '.jpeg':
       case '.gif':
       case '.svg':
-        return const Icon(Icons.image, color: Colors.purple, size: 16);
+        return Icon(Icons.image, color: colorScheme.tertiary, size: 16);
       case '.pdf':
-        return const Icon(Icons.picture_as_pdf, color: Colors.red, size: 16);
+        return Icon(Icons.picture_as_pdf, color: colorScheme.error, size: 16);
       case '.zip':
       case '.rar':
       case '.7z':
       case '.tar':
       case '.gz':
-        return const Icon(Icons.archive, color: Colors.blueGrey, size: 16);
+        return Icon(Icons.archive, color: colorScheme.secondary, size: 16);
       default:
-        return const Icon(
+        return Icon(
           Icons.insert_drive_file,
-          color: Colors.grey,
+          color: colorScheme.onSurfaceVariant,
           size: 16,
         );
     }

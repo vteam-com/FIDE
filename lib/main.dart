@@ -21,17 +21,19 @@ void main() {
   runApp(const ProviderScope(child: FIDE()));
 }
 
-class FIDE extends StatelessWidget {
+class FIDE extends ConsumerWidget {
   const FIDE({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+
     return MaterialApp(
       title: 'FIDE - Flutter Integrated Developer Environment',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
       home: const MainLayout(),
     );
   }
@@ -44,6 +46,9 @@ final selectedFileProvider = StateProvider<FileSystemItem?>((ref) => null);
 final fileSystemServiceProvider = Provider<FileSystemService>(
   (ref) => FileSystemService(),
 );
+
+// Theme mode provider
+final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 
 class MainLayout extends ConsumerStatefulWidget {
   const MainLayout({super.key});
@@ -107,6 +112,9 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                 ref.read(selectedFileProvider.notifier).state = file;
               },
               selectedFile: selectedFile,
+              onThemeChanged: (themeMode) {
+                ref.read(themeModeProvider.notifier).state = themeMode;
+              },
             ),
           ),
 
