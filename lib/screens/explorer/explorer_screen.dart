@@ -10,8 +10,9 @@ import 'package:fide/widgets/message_widget.dart';
 
 class ExplorerScreen extends StatefulWidget {
   final Function(FileSystemItem)? onFileSelected;
+  final FileSystemItem? selectedFile;
 
-  const ExplorerScreen({super.key, this.onFileSelected});
+  const ExplorerScreen({super.key, this.onFileSelected, this.selectedFile});
 
   @override
   State<ExplorerScreen> createState() => _ExplorerScreenState();
@@ -364,24 +365,38 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   }
 
   Widget _buildFileNode(ProjectNode node) {
+    final isSelected =
+        widget.selectedFile != null && widget.selectedFile!.path == node.path;
+
     return InkWell(
       onTap: () => _handleFileTap(node),
       onLongPress: () => _showNodeContextMenu(node),
       hoverColor: Colors.blue.withOpacity(0.1),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
-        child: Row(
-          children: [
-            _getFileIcon(node),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                node.name,
-                style: const TextStyle(fontSize: 13),
-                overflow: TextOverflow.ellipsis,
+      child: Container(
+        color: isSelected
+            ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3)
+            : null,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+          child: Row(
+            children: [
+              _getFileIcon(node),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  node.name,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w600 : null,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

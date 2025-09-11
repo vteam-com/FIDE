@@ -106,6 +106,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
               onFileSelected: (file) {
                 ref.read(selectedFileProvider.notifier).state = file;
               },
+              selectedFile: selectedFile,
             ),
           ),
 
