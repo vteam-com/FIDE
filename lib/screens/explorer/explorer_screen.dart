@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -91,20 +93,14 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   }
 
   Future<void> _updateMruList(String directoryPath) async {
-    // Remove the path if it already exists (to move it to the front)
-    _mruFolders.remove(directoryPath);
-
-    // Add the new path to the beginning
+    _mruFolders.remove(directoryPath); // Move to front if exists
     _mruFolders.insert(0, directoryPath);
 
-    // Limit the list to max items
     if (_mruFolders.length > _maxMruItems) {
       _mruFolders = _mruFolders.sublist(0, _maxMruItems);
     }
 
-    // Save to SharedPreferences
     await _prefs.setStringList(_mruFoldersKey, _mruFolders);
-
     setState(() {});
   }
 
@@ -113,7 +109,6 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       _mruFolders.remove(directoryPath);
     });
 
-    // Save updated list to SharedPreferences
     await _prefs.setStringList(_mruFoldersKey, _mruFolders);
   }
 
@@ -151,7 +146,6 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                 itemBuilder: (context) {
                   final items = <PopupMenuEntry<String>>[];
 
-                  // Add MRU entries
                   for (final path in _mruFolders) {
                     final dirName = path.split('/').last;
                     items.add(
@@ -170,7 +164,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                               icon: const Icon(Icons.close, size: 16),
                               onPressed: () {
                                 _removeMruEntry(path);
-                                Navigator.of(context).pop(); // Close the menu
+                                Navigator.of(context).pop();
                               },
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
@@ -181,20 +175,18 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                     );
                   }
 
-                  // Add divider if there are MRU entries
                   if (_mruFolders.isNotEmpty) {
                     items.add(const PopupMenuDivider());
                   }
 
-                  // Add "Add Folder" entry
                   items.add(
-                    PopupMenuItem<String>(
+                    const PopupMenuItem<String>(
                       value: 'add_folder',
                       child: Row(
                         children: [
-                          const Icon(Icons.add, size: 16),
-                          const SizedBox(width: 8),
-                          const Text('Add Folder'),
+                          Icon(Icons.add, size: 16),
+                          SizedBox(width: 8),
+                          Text('Add Folder'),
                         ],
                       ),
                     ),
@@ -338,17 +330,32 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        ListTile(
-          leading: const Icon(Icons.folder, color: Colors.blue),
-          title: Text(node.name),
-          trailing: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
+        InkWell(
           onTap: () => _onNodeTapped(node, isExpanded),
           onLongPress: () => _showNodeContextMenu(node),
+          hoverColor: Colors.blue.withOpacity(0.1),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+            child: Row(
+              children: [
+                const Icon(Icons.folder, color: Colors.blue, size: 16),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    node.name,
+                    style: const TextStyle(fontSize: 13),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
         if (node.isDirectory && isExpanded)
           Padding(
-            padding: const EdgeInsets.only(left: 24.0),
+            padding: const EdgeInsets.only(left: 16.0),
             child: _buildNodeChildren(node),
           ),
       ],
@@ -356,21 +363,37 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   }
 
   Widget _buildFileNode(ProjectNode node) {
-    return ListTile(
-      leading: _getFileIcon(node),
-      title: Text(node.name),
+    return InkWell(
       onTap: () => _handleFileTap(node),
-      dense: true,
-      visualDensity: VisualDensity.compact,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
+      onLongPress: () => _showNodeContextMenu(node),
+      hoverColor: Colors.blue.withOpacity(0.1),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+        child: Row(
+          children: [
+            _getFileIcon(node),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                node.name,
+                style: const TextStyle(fontSize: 13),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildNodeChildren(ProjectNode node) {
     if (node.children.isEmpty) {
       return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-        child: Text('Empty directory', style: TextStyle(color: Colors.grey)),
+        padding: EdgeInsets.symmetric(vertical: 1.0, horizontal: 16.0),
+        child: Text(
+          'Empty directory',
+          style: TextStyle(color: Colors.grey, fontSize: 12),
+        ),
       );
     }
 
@@ -386,7 +409,6 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
         _expandedState[node.path] = !isExpanded;
       });
 
-      // Load children if not already loaded
       if (!isExpanded && node.children.isEmpty) {
         try {
           await node.loadChildren();
@@ -394,7 +416,12 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
             setState(() {});
           }
         } catch (e) {
-          _showError('Failed to load directory: $e');
+          if (e.toString().contains('Operation not permitted') ||
+              e.toString().contains('Permission denied')) {
+            _showError('Access denied: ${node.name}');
+          } else {
+            _showError('Failed to load directory: $e');
+          }
         }
       }
     } else {
@@ -453,70 +480,63 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   }
 
   // TODO: Implement these methods
-  void _createNewFile(ProjectNode parent) {
-    // Implementation needed
-  }
-
-  void _createNewFolder(ProjectNode parent) {
-    // Implementation needed
-  }
-
-  void _renameNode(ProjectNode node) {
-    // Implementation needed
-  }
-
-  void _deleteNode(ProjectNode node) {
-    // Implementation needed
-  }
+  void _createNewFile(ProjectNode parent) {}
+  void _createNewFolder(ProjectNode parent) {}
+  void _renameNode(ProjectNode node) {}
+  void _deleteNode(ProjectNode node) {}
 
   Widget _getFileIcon(ProjectNode node) {
     if (node.isDirectory) {
-      return const Icon(Icons.folder, color: Colors.blue);
+      return const Icon(Icons.folder, color: Colors.blue, size: 16);
     }
 
     final ext = node.fileExtension?.toLowerCase() ?? '';
     switch (ext) {
       case '.dart':
-        return const Icon(Icons.code, color: Colors.blue);
+        return const Icon(Icons.code, color: Colors.blue, size: 16);
       case '.yaml':
       case '.yml':
-        return const Icon(Icons.settings, color: Colors.blueGrey);
+        return const Icon(Icons.settings, color: Colors.blueGrey, size: 16);
       case '.md':
-        return const Icon(Icons.article, color: Colors.blueGrey);
+        return const Icon(Icons.article, color: Colors.blueGrey, size: 16);
       case '.txt':
-        return const Icon(Icons.article, color: Colors.grey);
+        return const Icon(Icons.article, color: Colors.grey, size: 16);
       case '.js':
-        return const Icon(Icons.javascript, color: Colors.amber);
+        return const Icon(Icons.javascript, color: Colors.amber, size: 16);
       case '.py':
-        return const Icon(Icons.code, color: Colors.blue);
+        return const Icon(Icons.code, color: Colors.blue, size: 16);
       case '.java':
       case '.kt':
-        return const Icon(Icons.code, color: Colors.orange);
+        return const Icon(Icons.code, color: Colors.orange, size: 16);
       case '.gradle':
-        return const Icon(Icons.build, color: Colors.grey);
+        return const Icon(Icons.build, color: Colors.grey, size: 16);
       case '.xml':
       case '.html':
-        return const Icon(Icons.code, color: Colors.green);
+        return const Icon(Icons.code, color: Colors.green, size: 16);
       case '.css':
-        return const Icon(Icons.css, color: Colors.blue);
+        return const Icon(Icons.css, color: Colors.blue, size: 16);
       case '.json':
-        return const Icon(Icons.data_object, color: Colors.amber);
+        return const Icon(Icons.data_object, color: Colors.amber, size: 16);
       case '.png':
       case '.jpg':
       case '.jpeg':
       case '.gif':
       case '.svg':
-        return const Icon(Icons.image, color: Colors.purple);
+        return const Icon(Icons.image, color: Colors.purple, size: 16);
       case '.pdf':
-        return const Icon(Icons.picture_as_pdf, color: Colors.red);
+        return const Icon(Icons.picture_as_pdf, color: Colors.red, size: 16);
       case '.zip':
       case '.rar':
       case '.7z':
       case '.tar':
       case '.gz':
-        return const Icon(Icons.archive, color: Colors.blueGrey);
+        return const Icon(Icons.archive, color: Colors.blueGrey, size: 16);
       default:
-        return const Icon(Icons.insert_drive_file, color: Colors.grey);
+        return const Icon(
+          Icons.insert_drive_file,
+          color: Colors.grey,
+          size: 16,
+        );
     }
   }
 }
