@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Screens
@@ -34,10 +35,119 @@ class FIDE extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      home: const MainLayout(),
+      navigatorKey: navigatorKey,
+      home: PlatformMenuBar(
+        menus: [
+          PlatformMenu(
+            label: 'File',
+            menus: [
+              PlatformMenuItem(
+                label: 'Settings',
+                shortcut: const SingleActivator(
+                  LogicalKeyboardKey.comma,
+                  meta: true,
+                ),
+                onSelected: () {
+                  _showSettingsDialog(
+                    navigatorKey.currentContext ?? context,
+                    ref,
+                  );
+                },
+              ),
+              PlatformMenuItem(
+                label: 'Save',
+                shortcut: const SingleActivator(
+                  LogicalKeyboardKey.keyS,
+                  meta: true,
+                ),
+                onSelected: () {
+                  debugPrint('Save triggered');
+                },
+              ),
+              PlatformMenuItemGroup(
+                members: [
+                  PlatformMenuItem(
+                    label: 'Quit FIDE',
+                    onSelected: () {
+                      SystemNavigator.pop();
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+          PlatformMenu(
+            label: 'Help',
+            menus: [
+              PlatformMenuItem(
+                label: 'About',
+                onSelected: () {
+                  showAboutDialog(
+                    context: navigatorKey.currentContext ?? context,
+                    applicationName: 'FIDE',
+                    applicationVersion: '1.0.0',
+                    applicationLegalese: '© 2025 FIDE',
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+        child: const MainLayout(),
+      ),
+    );
+  }
+
+  void _showSettingsDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Settings'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Theme'),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(Icons.brightness_auto),
+                title: const Text('System'),
+                onTap: () {
+                  ref.read(themeModeProvider.notifier).state = ThemeMode.system;
+                  Navigator.of(context).pop();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.brightness_5),
+                title: const Text('Light'),
+                onTap: () {
+                  ref.read(themeModeProvider.notifier).state = ThemeMode.light;
+                  Navigator.of(context).pop();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.brightness_2),
+                title: const Text('Dark'),
+                onTap: () {
+                  ref.read(themeModeProvider.notifier).state = ThemeMode.dark;
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 // State management for the selected file
 final selectedFileProvider = StateProvider<FileSystemItem?>((ref) => null);

@@ -183,54 +183,6 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     }
   }
 
-  void _showSettingsDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Settings'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Theme'),
-              const SizedBox(height: 8),
-              ListTile(
-                leading: const Icon(Icons.brightness_auto),
-                title: const Text('System'),
-                onTap: () {
-                  widget.onThemeChanged?.call(ThemeMode.system);
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.brightness_5),
-                title: const Text('Light'),
-                onTap: () {
-                  widget.onThemeChanged?.call(ThemeMode.light);
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.brightness_2),
-                title: const Text('Dark'),
-                onTap: () {
-                  widget.onThemeChanged?.call(ThemeMode.dark);
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _showError(String message) {
     if (mounted) {
       MessageHelper.showError(context, message, showCopyButton: true);
@@ -365,9 +317,9 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
               ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: _showSettingsDialog,
-            tooltip: 'Settings',
+            icon: const Icon(Icons.toggle_on),
+            onPressed: () {},
+            tooltip: 'ToggleView',
           ),
         ],
       ),
