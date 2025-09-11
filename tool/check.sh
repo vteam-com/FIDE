@@ -6,6 +6,7 @@ dart fix --apply
 
 flutter analyze
 
+dart run tool/sort_source.dart
 dart format .
 
 flutter test

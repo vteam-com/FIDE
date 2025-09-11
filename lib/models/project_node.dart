@@ -13,6 +13,7 @@ class ProjectNode {
   final List<ProjectNode> children;
   final String? fileExtension;
   LoadChildrenResult? loadResult;
+  final bool isHidden;
 
   ProjectNode({
     required this.name,
@@ -23,7 +24,8 @@ class ProjectNode {
   }) : children = children ?? [],
        fileExtension = type == ProjectNodeType.file
            ? p.extension(name).toLowerCase()
-           : null;
+           : null,
+       isHidden = name.startsWith('.');
 
   bool get isDirectory => type == ProjectNodeType.directory;
   bool get isFile => type == ProjectNodeType.file;
@@ -67,10 +69,8 @@ class ProjectNode {
 
       children.clear();
       for (final entity in entities) {
-        // Skip hidden files and directories
-        if (!p.basename(entity.path).startsWith('.')) {
-          children.add(await ProjectNode.fromFileSystemEntity(entity));
-        }
+        // Include all files and directories, including hidden ones
+        children.add(await ProjectNode.fromFileSystemEntity(entity));
       }
       loadResult = LoadChildrenResult.success;
       return LoadChildrenResult.success;

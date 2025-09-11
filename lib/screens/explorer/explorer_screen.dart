@@ -221,6 +221,26 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
         node.loadResult != null &&
         node.loadResult != LoadChildrenResult.success;
 
+    // Determine text color based on hidden status and error status
+    Color textColor;
+    if (hasError) {
+      textColor = Theme.of(context).colorScheme.error;
+    } else if (node.isHidden) {
+      textColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.5);
+    } else {
+      textColor = Theme.of(context).colorScheme.onSurface;
+    }
+
+    // Determine icon color
+    Color iconColor;
+    if (hasError) {
+      iconColor = Theme.of(context).colorScheme.error;
+    } else if (node.isHidden) {
+      iconColor = Theme.of(context).colorScheme.primary.withOpacity(0.5);
+    } else {
+      iconColor = Theme.of(context).colorScheme.primary;
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -235,21 +255,14 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
               children: [
                 Icon(
                   hasError ? Icons.folder_off : Icons.folder,
-                  color: hasError
-                      ? Theme.of(context).colorScheme.error
-                      : Theme.of(context).colorScheme.primary,
+                  color: iconColor,
                   size: 16,
                 ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     node.name,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: hasError
-                          ? Theme.of(context).colorScheme.error
-                          : Theme.of(context).colorScheme.onSurface,
-                    ),
+                    style: TextStyle(fontSize: 13, color: textColor),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -309,6 +322,16 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     final isSelected =
         widget.selectedFile != null && widget.selectedFile!.path == node.path;
 
+    // Determine text color based on selection and hidden status
+    Color textColor;
+    if (isSelected) {
+      textColor = Theme.of(context).colorScheme.primary;
+    } else if (node.isHidden) {
+      textColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.5);
+    } else {
+      textColor = Theme.of(context).colorScheme.onSurface;
+    }
+
     return InkWell(
       onTap: () => _handleFileTap(node),
       onLongPress: () => _showNodeContextMenu(node),
@@ -329,9 +352,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w600 : null,
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primary
-                        : null,
+                    color: textColor,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
