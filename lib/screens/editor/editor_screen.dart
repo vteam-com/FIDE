@@ -2,10 +2,12 @@
 
 import 'dart:io';
 import 'package:code_text_field/code_text_field.dart';
+import 'package:fide/widgets/message_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:highlight/languages/dart.dart';
 import 'package:highlight/languages/yaml.dart';
 
@@ -62,6 +64,27 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       default:
         return null; // Default to plain text
     }
+  }
+
+  // Check if the file extension is supported for editing
+  bool _isFileTypeSupported(String filePath) {
+    if (filePath.isEmpty) return false;
+    final extension = filePath.split('.').last.toLowerCase();
+    const supportedExtensions = [
+      'dart',
+      'yaml',
+      'yml',
+      'json',
+      'txt',
+      'md',
+      'xml',
+      'html',
+      'css',
+      'js',
+      'ts',
+      'py',
+    ];
+    return supportedExtensions.contains(extension);
   }
 
   Future<void> _loadFile(String filePath) async {
@@ -180,6 +203,115 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     }
   }
 
+  Widget _buildUnsupportedFileView() {
+    final extension = _currentFile.split('.').last.toLowerCase();
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.insert_drive_file_outlined,
+            size: 64,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          ),
+          const SizedBox(height: 16),
+          RichText(
+            textAlign: TextAlign.center,
+            text: TextSpan(
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+              children: [
+                const TextSpan(text: 'The file type '),
+                TextSpan(
+                  text: '.${extension.toUpperCase()}',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const TextSpan(text: ' is not yet supported'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.primaryContainer.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'Request this feature at',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                InkWell(
+                  onTap: () async {
+                    const urlString =
+                        'https://github.com/vteam-com/FIDE/issues';
+                    try {
+                      final url = Uri.parse(urlString);
+                      if (Platform.isMacOS) {
+                        await launchUrl(url, mode: LaunchMode.platformDefault);
+                      } else {
+                        await launchUrl(
+                          url,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      }
+                    } catch (e) {
+                      // Fallback: try to launch without checking if URL can be launched
+                      try {
+                        final url = Uri.parse(urlString);
+                        await launchUrl(url, mode: LaunchMode.platformDefault);
+                      } catch (fallbackError) {
+                        if (mounted) {
+                          MessageHelper.showError(
+                            context,
+                            'Could not open link: $urlString ${fallbackError.toString()}',
+                            showCopyButton: true,
+                          );
+                        }
+                      }
+                    }
+                  },
+                  child: Text(
+                    'github.com/vteam-com/FIDE/issues',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                      decoration: TextDecoration.underline,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Currently supported: Dart, YAML, JSON, Text, Markdown,\n'
+            'XML, HTML, CSS, JavaScript, TypeScript, Python',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _codeController.dispose();
@@ -229,6 +361,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           ? const Center(child: CircularProgressIndicator())
           : _currentFile.isEmpty
           ? const Center(child: Text('No file selected'))
+          : !_isFileTypeSupported(_currentFile)
+          ? _buildUnsupportedFileView()
           : Column(
               children: [
                 Expanded(
