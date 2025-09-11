@@ -15,24 +15,33 @@ class ExplorerScreen extends StatefulWidget {
 }
 
 class _ExplorerScreenState extends State<ExplorerScreen> {
-  static const String _lastOpenedFolderKey = 'last_opened_folder';
+  static const String _mruFoldersKey = 'mru_folders';
+  static const int _maxMruItems = 5;
 
   ProjectNode? _projectRoot;
   bool _isLoading = false;
   final Map<String, bool> _expandedState = {};
   late SharedPreferences _prefs;
+  List<String> _mruFolders = [];
 
   @override
   void initState() {
     super.initState();
-    _loadLastOpenedFolder();
+    _loadMruFolders();
   }
 
-  Future<void> _loadLastOpenedFolder() async {
+  Future<void> _loadMruFolders() async {
     _prefs = await SharedPreferences.getInstance();
-    final lastFolder = _prefs.getString(_lastOpenedFolderKey);
-    if (lastFolder != null && await Directory(lastFolder).exists()) {
-      await _loadProject(lastFolder);
+    final mruList = _prefs.getStringList(_mruFoldersKey) ?? [];
+    setState(() {
+      _mruFolders = mruList
+          .where((path) => Directory(path).existsSync())
+          .toList();
+    });
+
+    // Load the most recent folder if available
+    if (_mruFolders.isNotEmpty) {
+      await _loadProject(_mruFolders.first);
     }
   }
 
@@ -47,10 +56,18 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     }
   }
 
-  Future<void> _loadProject(String directoryPath) async {
-    if (_isLoading) return;
+  Future<void> _loadProject(
+    String directoryPath, {
+    bool forceLoad = false,
+  }) async {
+    if (_isLoading && !forceLoad) return;
 
-    setState(() => _isLoading = true);
+    // Close current project first
+    setState(() {
+      _isLoading = true;
+      _projectRoot = null;
+      _expandedState.clear();
+    });
 
     try {
       final root = await ProjectNode.fromFileSystemEntity(
@@ -58,8 +75,8 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       );
       await root.loadChildren();
 
-      // Save the opened folder path
-      await _prefs.setString(_lastOpenedFolderKey, directoryPath);
+      // Update MRU list
+      await _updateMruList(directoryPath);
 
       setState(() {
         _projectRoot = root;
@@ -71,6 +88,33 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Future<void> _updateMruList(String directoryPath) async {
+    // Remove the path if it already exists (to move it to the front)
+    _mruFolders.remove(directoryPath);
+
+    // Add the new path to the beginning
+    _mruFolders.insert(0, directoryPath);
+
+    // Limit the list to max items
+    if (_mruFolders.length > _maxMruItems) {
+      _mruFolders = _mruFolders.sublist(0, _maxMruItems);
+    }
+
+    // Save to SharedPreferences
+    await _prefs.setStringList(_mruFoldersKey, _mruFolders);
+
+    setState(() {});
+  }
+
+  Future<void> _removeMruEntry(String directoryPath) async {
+    setState(() {
+      _mruFolders.remove(directoryPath);
+    });
+
+    // Save updated list to SharedPreferences
+    await _prefs.setStringList(_mruFoldersKey, _mruFolders);
   }
 
   void _showError(String message) {
@@ -85,20 +129,151 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Project Explorer'),
+        title: _mruFolders.isNotEmpty
+            ? PopupMenuButton<String>(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _projectRoot?.name ?? 'Project Explorer',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    const Icon(Icons.arrow_drop_down),
+                  ],
+                ),
+                onSelected: (value) {
+                  if (value == 'add_folder') {
+                    _pickDirectory();
+                  } else {
+                    _loadProject(value, forceLoad: true);
+                  }
+                },
+                itemBuilder: (context) {
+                  final items = <PopupMenuEntry<String>>[];
+
+                  // Add MRU entries
+                  for (final path in _mruFolders) {
+                    final dirName = path.split('/').last;
+                    items.add(
+                      PopupMenuItem<String>(
+                        value: path,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                dirName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close, size: 16),
+                              onPressed: () {
+                                _removeMruEntry(path);
+                                Navigator.of(context).pop(); // Close the menu
+                              },
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  // Add divider if there are MRU entries
+                  if (_mruFolders.isNotEmpty) {
+                    items.add(const PopupMenuDivider());
+                  }
+
+                  // Add "Add Folder" entry
+                  items.add(
+                    PopupMenuItem<String>(
+                      value: 'add_folder',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.add, size: 16),
+                          const SizedBox(width: 8),
+                          const Text('Add Folder'),
+                        ],
+                      ),
+                    ),
+                  );
+
+                  return items;
+                },
+              )
+            : const Text('Project Explorer'),
         actions: [
+          if (_mruFolders.isNotEmpty && _projectRoot == null) ...[
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.history),
+              tooltip: 'Recent Projects',
+              onSelected: (value) {
+                final parts = value.split('|');
+                final action = parts[0];
+                final path = parts[1];
+
+                if (action == 'open') {
+                  _loadProject(path, forceLoad: true);
+                } else if (action == 'remove') {
+                  _removeMruEntry(path);
+                }
+              },
+              itemBuilder: (context) {
+                final items = <PopupMenuEntry<String>>[];
+                for (final path in _mruFolders) {
+                  final dirName = path.split('/').last;
+                  items.add(
+                    PopupMenuItem<String>(
+                      value: 'open|$path',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.folder_open, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              dirName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                  items.add(
+                    PopupMenuItem<String>(
+                      value: 'remove|$path',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.remove_circle_outline, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Remove "$dirName"',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                  if (_mruFolders.last != path) {
+                    items.add(const PopupMenuDivider());
+                  }
+                }
+                return items;
+              },
+            ),
+          ],
           IconButton(
             icon: const Icon(Icons.folder_open),
             onPressed: _pickDirectory,
             tooltip: 'Open Project',
           ),
-          if (_projectRoot != null) ...[
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () => _loadProject(_projectRoot!.path),
-              tooltip: 'Refresh',
-            ),
-          ],
         ],
       ),
       body: _isLoading
