@@ -117,7 +117,37 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       'log', 'out', 'gitignore', 'dockerignore',
     ];
 
-    return supportedTextExtensions.contains(extension);
+    // Image file extensions that should display as images
+    const supportedImageExtensions = [
+      'png',
+      'jpg',
+      'jpeg',
+      'gif',
+      'bmp',
+      'webp',
+      'tiff',
+      'tif',
+    ];
+
+    return supportedTextExtensions.contains(extension) ||
+        supportedImageExtensions.contains(extension);
+  }
+
+  // Check if the file is an image that should be displayed
+  bool _isImageFile(String filePath) {
+    if (filePath.isEmpty) return false;
+    final extension = filePath.split('.').last.toLowerCase();
+    const supportedImageExtensions = [
+      'png',
+      'jpg',
+      'jpeg',
+      'gif',
+      'bmp',
+      'webp',
+      'tiff',
+      'tif',
+    ];
+    return supportedImageExtensions.contains(extension);
   }
 
   Future<void> _loadFile(String filePath) async {
@@ -127,6 +157,14 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       _isLoading = true;
       _currentFile = filePath;
     });
+
+    // Skip text loading for image files - they are displayed directly
+    if (_isImageFile(filePath)) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+      return;
+    }
 
     try {
       final file = File(filePath);
@@ -236,6 +274,103 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     }
   }
 
+  Widget _buildImageView() {
+    return Center(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Image display with error handling
+            Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.8,
+                maxHeight: MediaQuery.of(context).size.height * 0.7,
+              ),
+              child: Image.file(
+                File(_currentFile),
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.broken_image,
+                        size: 64,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.error.withOpacity(0.5),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Failed to load image',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'The image file may be corrupted or unsupported',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Image info
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Image Preview',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  FutureBuilder<FileStat>(
+                    future: File(_currentFile).stat(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        final stat = snapshot.data!;
+                        final sizeKB = (stat.size / 1024).round();
+                        return Text(
+                          'Size: ${sizeKB}KB • ${path.extension(_currentFile).toUpperCase().substring(1)}',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildUnsupportedFileView() {
     final extension = _currentFile.split('.').last.toLowerCase();
     return Center(
@@ -334,7 +469,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           const SizedBox(height: 24),
           Text(
             'Currently supported: Most text files including\n'
-            'programming languages, web files, configs, and scripts',
+            'programming languages, web files, configs, scripts, and images',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
             ),
@@ -396,6 +531,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           ? const Center(child: Text('No file selected'))
           : !_isFileTypeSupported(_currentFile)
           ? _buildUnsupportedFileView()
+          : _isImageFile(_currentFile)
+          ? _buildImageView()
           : Column(
               children: [
                 Expanded(
