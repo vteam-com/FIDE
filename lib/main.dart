@@ -22,19 +22,24 @@ void main() {
   runApp(const ProviderScope(child: FIDE()));
 }
 
-class FIDE extends ConsumerWidget {
+class FIDE extends StatefulWidget {
   const FIDE({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
+  State<FIDE> createState() => _FIDEState();
+}
 
+class _FIDEState extends State<FIDE> {
+  ThemeMode _themeMode = ThemeMode.system;
+
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp(
       title: 'FIDE - Flutter Integrated Developer Environment',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode,
+      themeMode: _themeMode,
       navigatorKey: navigatorKey,
       home: PlatformMenuBar(
         menus: [
@@ -48,10 +53,7 @@ class FIDE extends ConsumerWidget {
                   meta: true,
                 ),
                 onSelected: () {
-                  _showSettingsDialog(
-                    navigatorKey.currentContext ?? context,
-                    ref,
-                  );
+                  _showSettingsDialog(navigatorKey.currentContext ?? context);
                 },
               ),
               PlatformMenuItem(
@@ -93,12 +95,18 @@ class FIDE extends ConsumerWidget {
             ],
           ),
         ],
-        child: const MainLayout(),
+        child: ProviderScope(
+          child: MainLayout(
+            onThemeChanged: (themeMode) {
+              setState(() => _themeMode = themeMode);
+            },
+          ),
+        ),
       ),
     );
   }
 
-  void _showSettingsDialog(BuildContext context, WidgetRef ref) {
+  void _showSettingsDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -113,7 +121,7 @@ class FIDE extends ConsumerWidget {
                 leading: const Icon(Icons.brightness_auto),
                 title: const Text('System'),
                 onTap: () {
-                  ref.read(themeModeProvider.notifier).state = ThemeMode.system;
+                  setState(() => _themeMode = ThemeMode.system);
                   Navigator.of(context).pop();
                 },
               ),
@@ -121,7 +129,7 @@ class FIDE extends ConsumerWidget {
                 leading: const Icon(Icons.brightness_5),
                 title: const Text('Light'),
                 onTap: () {
-                  ref.read(themeModeProvider.notifier).state = ThemeMode.light;
+                  setState(() => _themeMode = ThemeMode.light);
                   Navigator.of(context).pop();
                 },
               ),
@@ -129,7 +137,7 @@ class FIDE extends ConsumerWidget {
                 leading: const Icon(Icons.brightness_2),
                 title: const Text('Dark'),
                 onTap: () {
-                  ref.read(themeModeProvider.notifier).state = ThemeMode.dark;
+                  setState(() => _themeMode = ThemeMode.dark);
                   Navigator.of(context).pop();
                 },
               ),
@@ -158,10 +166,16 @@ final fileSystemServiceProvider = Provider<FileSystemService>(
 );
 
 // Theme mode provider
-final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
+final themeModeProvider = StateProvider<ThemeMode>((ref) {
+  // Try to get saved theme mode from shared preferences
+  // For now, default to system
+  return ThemeMode.system;
+});
 
 class MainLayout extends ConsumerStatefulWidget {
-  const MainLayout({super.key});
+  final Function(ThemeMode)? onThemeChanged;
+
+  const MainLayout({super.key, this.onThemeChanged});
 
   @override
   ConsumerState<MainLayout> createState() => _MainLayoutState();
