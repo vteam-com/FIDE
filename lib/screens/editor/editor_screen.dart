@@ -19,6 +19,8 @@ class EditorScreen extends StatefulWidget {
     this.onSave,
   });
 
+  static _EditorScreenState? _currentEditor;
+
   final String filePath;
 
   final VoidCallback? onClose;
@@ -27,16 +29,12 @@ class EditorScreen extends StatefulWidget {
 
   final VoidCallback? onSave;
 
-  // Static reference to current editor state for global save access
-  static _EditorScreenState? _currentEditor;
+  @override
+  State<EditorScreen> createState() => _EditorScreenState();
 
-  // Method to trigger save from global context
   static void saveCurrentEditor() {
     _currentEditor?._saveFile();
   }
-
-  @override
-  State<EditorScreen> createState() => _EditorScreenState();
 }
 
 class _EditorScreenState extends State<EditorScreen> {
