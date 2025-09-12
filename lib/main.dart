@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Screens
 import 'screens/explorer/explorer_screen.dart';
@@ -205,10 +206,24 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
   // Callback to refresh outline
   VoidCallback? _refreshOutlineCallback;
 
+  // MRU (Most Recently Used) folders
+  List<String> _mruFolders = [];
+  static const String _mruFoldersKey = 'mru_folders';
+  static const int _maxMruItems = 5;
+  late SharedPreferences _prefs;
+
   @override
   void initState() {
     super.initState();
-    // File system service is initialized when first accessed
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    // Initialize SharedPreferences
+    _prefs = await SharedPreferences.getInstance();
+
+    // Load MRU folders and try to auto-load the most recent project
+    await _loadMruFolders();
   }
 
   // Method to set the outline refresh callback
@@ -234,6 +249,69 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     });
   }
 
+  // Load MRU folders and try to auto-load the most recent project
+  Future<void> _loadMruFolders() async {
+    final mruList = _prefs.getStringList(_mruFoldersKey) ?? [];
+
+    // Keep all folders in MRU but check their access status
+    setState(() {
+      _mruFolders = mruList
+          .where((path) => Directory(path).existsSync())
+          .toList();
+    });
+
+    // Try to load the most recent folder if available
+    if (_mruFolders.isNotEmpty) {
+      final success = await _tryLoadProject(_mruFolders.first);
+      if (success) {
+        return;
+      }
+
+      // Project failed to load, try the next one
+      for (int i = 1; i < _mruFolders.length; i++) {
+        final success = await _tryLoadProject(_mruFolders[i]);
+        if (success) {
+          return;
+        }
+      }
+
+      // If we get here, all folders failed to load
+      // Clear the MRU list
+      setState(() {
+        _mruFolders.clear();
+      });
+      await _prefs.setStringList(_mruFoldersKey, _mruFolders);
+    }
+  }
+
+  // Try to load a project and return success status
+  Future<bool> _tryLoadProject(String directoryPath) async {
+    try {
+      // Validate that this is a Flutter project
+      final dir = Directory(directoryPath);
+      final pubspecFile = File('${dir.path}/pubspec.yaml');
+      final libDir = Directory('${dir.path}/lib');
+
+      if (!await pubspecFile.exists() || !await libDir.exists()) {
+        return false;
+      }
+
+      final pubspecContent = await pubspecFile.readAsString();
+      if (!pubspecContent.contains('flutter:') &&
+          !pubspecContent.contains('sdk: flutter')) {
+        return false;
+      }
+
+      // Load the project
+      ref.read(projectLoadedProvider.notifier).state = true;
+      ref.read(currentProjectPathProvider.notifier).state = directoryPath;
+      return true;
+    } catch (e) {
+      debugPrint('Failed to load project $directoryPath: $e');
+      return false;
+    }
+  }
+
   // Method to pick directory - can be called from WelcomeScreen
   Future<void> _pickDirectory() async {
     try {
@@ -248,7 +326,8 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
           final pubspecContent = await pubspecFile.readAsString();
           if (pubspecContent.contains('flutter:') ||
               pubspecContent.contains('sdk: flutter')) {
-            // Load the project
+            // Load the project and update MRU
+            await _updateMruList(selectedDirectory);
             ref.read(projectLoadedProvider.notifier).state = true;
             ref.read(currentProjectPathProvider.notifier).state =
                 selectedDirectory;
@@ -271,6 +350,39 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error loading project: $e')));
+    }
+  }
+
+  // Update MRU list with a new project path
+  Future<void> _updateMruList(String directoryPath) async {
+    // Only update if this is a new directory or needs reordering
+    final currentIndex = _mruFolders.indexOf(directoryPath);
+
+    if (currentIndex == 0) {
+      // Already at the front, no need to update
+      return;
+    }
+
+    if (currentIndex > 0) {
+      // Move existing item to front
+      _mruFolders.removeAt(currentIndex);
+    }
+
+    // Add to front (whether it was existing or new)
+    _mruFolders.insert(0, directoryPath);
+
+    if (_mruFolders.length > _maxMruItems) {
+      _mruFolders = _mruFolders.sublist(0, _maxMruItems);
+    }
+
+    // Ensure SharedPreferences is saved
+    final success = await _prefs.setStringList(_mruFoldersKey, _mruFolders);
+    if (!success) {
+      debugPrint('Failed to save MRU list to SharedPreferences');
+    }
+
+    if (mounted) {
+      setState(() {});
     }
   }
 
@@ -301,6 +413,11 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                     // Clear the current project path when unloaded
                     ref.read(currentProjectPathProvider.notifier).state = null;
                   }
+                },
+                onProjectPathChanged: (path) {
+                  // Update MRU list when a new project is loaded
+                  _updateMruList(path);
+                  ref.read(currentProjectPathProvider.notifier).state = path;
                 },
                 initialProjectPath: currentProjectPath,
               ),

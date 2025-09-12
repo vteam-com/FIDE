@@ -17,6 +17,7 @@ class ExplorerScreen extends StatefulWidget {
     this.selectedFile,
     this.onThemeChanged,
     this.onProjectLoaded,
+    this.onProjectPathChanged,
     this.initialProjectPath,
   });
 
@@ -25,6 +26,8 @@ class ExplorerScreen extends StatefulWidget {
   final Function(FileSystemItem)? onFileSelected;
 
   final Function(bool)? onProjectLoaded;
+
+  final Function(String)? onProjectPathChanged;
 
   final Function(ThemeMode)? onThemeChanged;
 
@@ -39,19 +42,13 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
 
   bool _isLoading = false;
 
-  static const int _maxMruItems = 5;
+  final Set<String> _loadingDirectories = {};
 
-  final Map<String, bool> _mruAccessStatus = {};
-
-  List<String> _mruFolders = [];
-
-  static const String _mruFoldersKey = 'mru_folders';
-
-  late SharedPreferences _prefs;
+  SharedPreferences? _prefs;
 
   ProjectNode? _projectRoot;
 
-  ViewMode _viewMode = ViewMode.filesystem;
+  ViewMode _viewMode = ViewMode.organized;
 
   @override
   void initState() {
@@ -63,128 +60,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: _mruFolders.isNotEmpty
-            ? PopupMenuButton<String>(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _projectRoot?.name ?? 'Folder...',
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_drop_down,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ],
-                ),
-                onSelected: (value) {
-                  if (value == 'add_folder') {
-                    _pickDirectory();
-                  } else {
-                    _loadProject(value, forceLoad: true);
-                  }
-                },
-                itemBuilder: (context) {
-                  final items = <PopupMenuEntry<String>>[];
-
-                  for (final path in _mruFolders) {
-                    final dirName = path.split('/').last;
-                    final hasAccess =
-                        _mruAccessStatus[path] ??
-                        true; // Default to true if not checked yet
-                    items.add(
-                      PopupMenuItem<String>(
-                        value: path,
-                        child: Row(
-                          children: [
-                            Icon(
-                              hasAccess ? Icons.folder : Icons.folder_off,
-                              color: hasAccess
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context).colorScheme.error,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                dirName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: hasAccess
-                                      ? Theme.of(context).colorScheme.onSurface
-                                      : Theme.of(context).colorScheme.error,
-                                ),
-                              ),
-                            ),
-                            if (!hasAccess) ...[
-                              const SizedBox(width: 4),
-                              Icon(
-                                Icons.lock,
-                                color: Theme.of(context).colorScheme.error,
-                                size: 14,
-                              ),
-                            ],
-                            IconButton(
-                              icon: Icon(
-                                Icons.close,
-                                size: 16,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
-                              ),
-                              onPressed: () {
-                                _removeMruEntry(path);
-                                Navigator.of(context).pop();
-                              },
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-
-                  if (_mruFolders.isNotEmpty) {
-                    items.add(const PopupMenuDivider());
-                  }
-
-                  items.add(
-                    PopupMenuItem<String>(
-                      value: 'add_folder',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.add,
-                            size: 16,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Open a folder ...',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-
-                  return items;
-                },
-              )
-            : ElevatedButton.icon(
-                icon: const Icon(Icons.folder_open),
-                label: const Text('Open Folder'),
-                onPressed: _pickDirectory,
-              ),
+        title: _buildAppBarTitle(),
         actions: [
           IconButton(
             icon: Icon(
@@ -222,6 +98,195 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
               ),
             )
           : _buildFileExplorer(),
+    );
+  }
+
+  Widget _buildAppBarTitle() {
+    // Load MRU folders for display purposes
+    final mruList = _prefs?.getStringList('mru_folders') ?? [];
+    final mruFolders = mruList
+        .where((path) => Directory(path).existsSync())
+        .toList();
+
+    if (mruFolders.isEmpty) {
+      return Text(
+        _projectRoot?.name ?? 'Explorer',
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+      );
+    }
+
+    return PopupMenuButton<String>(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            _projectRoot?.name ?? 'Folder...',
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+          ),
+          Icon(
+            Icons.arrow_drop_down,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ],
+      ),
+      onSelected: (value) {
+        if (value == 'add_folder') {
+          _pickDirectory();
+        } else if (value.startsWith('remove_')) {
+          // Handle MRU entry removal
+          final pathToRemove = value.substring(7); // Remove 'remove_' prefix
+          _removeMruEntry(pathToRemove);
+        } else {
+          _loadProject(value, forceLoad: true);
+        }
+      },
+      itemBuilder: (context) {
+        final items = <PopupMenuEntry<String>>[];
+
+        for (final path in mruFolders) {
+          final dirName = path.split('/').last;
+          final hasAccess = Directory(path).existsSync();
+          items.add(
+            PopupMenuItem<String>(
+              value: path,
+              child: Row(
+                children: [
+                  Icon(
+                    hasAccess ? Icons.folder : Icons.folder_off,
+                    color: hasAccess
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.error,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      dirName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: hasAccess
+                            ? Theme.of(context).colorScheme.onSurface
+                            : Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+                  if (!hasAccess) ...[
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.lock,
+                      color: Theme.of(context).colorScheme.error,
+                      size: 14,
+                    ),
+                  ],
+                  IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    onPressed: () {
+                      _removeMruEntry(path);
+                      Navigator.of(context).pop();
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        if (mruFolders.isNotEmpty) {
+          items.add(const PopupMenuDivider());
+        }
+
+        items.add(
+          PopupMenuItem<String>(
+            value: 'add_folder',
+            child: Row(
+              children: [
+                Icon(
+                  Icons.add,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Open a folder ...',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+
+        return items;
+      },
+    );
+  }
+
+  Widget _buildCategorySection(String category, List<ProjectNode> nodes) {
+    final isExpanded = _expandedState['category_$category'] ?? false;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Category header
+        InkWell(
+          onTap: () {
+            setState(() {
+              _expandedState['category_$category'] = !isExpanded;
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: Row(
+              children: [
+                Icon(
+                  isExpanded ? Icons.expand_more : Icons.chevron_right,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  category,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '(${nodes.length})',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Category content
+        if (isExpanded)
+          Padding(
+            padding: const EdgeInsets.only(left: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: nodes.map((node) => _buildNode(node)).toList(),
+            ),
+          ),
+      ],
     );
   }
 
@@ -403,11 +468,137 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     );
   }
 
+  Widget _buildOrganizedView() {
+    if (_projectRoot == null) return const SizedBox();
+
+    // Group files and directories by categories
+    final Map<String, List<ProjectNode>> categories = {
+      'Root': [],
+      'Lib': [],
+      'Tests': [],
+      'Assets': [],
+      'Platforms': [],
+      'Output': [],
+    };
+
+    // Find lib, test, and assets directories
+    ProjectNode? libDir;
+    ProjectNode? testDir;
+    ProjectNode? assetsDir;
+
+    for (final node in _projectRoot!.children) {
+      if (node.name == 'lib' && node.isDirectory) {
+        libDir = node;
+      } else if (node.name == 'test' && node.isDirectory) {
+        testDir = node;
+      } else if (node.name == 'assets' && node.isDirectory) {
+        assetsDir = node;
+      }
+    }
+
+    // Ensure lib directory contents are loaded
+    if (libDir != null) {
+      _ensureDirectoryLoaded(libDir);
+      if (libDir.children.isNotEmpty) {
+        categories['Lib']!.addAll(libDir.children);
+      }
+    }
+
+    // Ensure test directory contents are loaded
+    if (testDir != null) {
+      _ensureDirectoryLoaded(testDir);
+      if (testDir.children.isNotEmpty) {
+        categories['Tests']!.addAll(testDir.children);
+      }
+    }
+
+    // Ensure assets directory contents are loaded
+    if (assetsDir != null) {
+      _ensureDirectoryLoaded(assetsDir);
+      if (assetsDir.children.isNotEmpty) {
+        categories['Assets']!.addAll(assetsDir.children);
+      }
+    }
+
+    // Categorize remaining nodes
+    for (final node in _projectRoot!.children) {
+      if (node == libDir || node == testDir || node == assetsDir) {
+        // Skip lib, test, and assets directories as we already processed their contents
+        continue;
+      }
+
+      if (node.name == 'android' ||
+          node.name == 'ios' ||
+          node.name == 'web' ||
+          node.name == 'windows' ||
+          node.name == 'macos' ||
+          node.name == 'linux') {
+        categories['Platforms']!.add(node);
+      } else if (node.name == 'build' ||
+          node.name == '.dart_tool' ||
+          node.name == 'benchmark') {
+        categories['Output']!.add(node);
+      } else {
+        categories['Root']!.add(node);
+      }
+    }
+
+    // Build the organized view
+    final List<Widget> sections = [];
+
+    for (final category in [
+      'Root',
+      'Lib',
+      'Tests',
+      'Assets',
+      'Platforms',
+      'Output',
+    ]) {
+      final nodes = categories[category]!;
+      if (nodes.isNotEmpty) {
+        sections.add(_buildCategorySection(category, nodes));
+      }
+    }
+
+    return ListView(children: sections);
+  }
+
   void _createNewFile(ProjectNode parent) {}
 
   void _createNewFolder(ProjectNode parent) {}
 
   void _deleteNode(ProjectNode node) {}
+
+  Future<void> _ensureDirectoryLoaded(ProjectNode node) async {
+    if (node.children.isEmpty && node.isDirectory) {
+      // Mark this directory as loading
+      _loadingDirectories.add(node.path);
+
+      try {
+        await node.loadChildren();
+
+        // Trigger rebuild when loading is complete
+        if (mounted) {
+          setState(() {
+            _loadingDirectories.remove(node.path);
+          });
+        }
+      } catch (e) {
+        // Silently handle errors for organized view - don't show error messages
+        // The directory will just appear empty in the organized view
+        debugPrint(
+          'Failed to load directory ${node.name} for organized view: $e',
+        );
+
+        // Remove from loading set even on error
+        if (mounted) {
+          setState(() {
+            _loadingDirectories.remove(node.path);
+          });
+        }
+      }
+    }
+  }
 
   Widget _getFileIcon(ProjectNode node) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -505,9 +696,6 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     // If an initial project path is provided, load it first
     if (widget.initialProjectPath != null) {
       await _loadProject(widget.initialProjectPath!, forceLoad: true);
-    } else {
-      // Otherwise, load MRU folders as usual
-      await _loadMruFolders();
     }
   }
 
@@ -541,39 +729,18 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     }
   }
 
-  Future<void> _loadMruFolders() async {
-    final mruList = _prefs.getStringList(_mruFoldersKey) ?? [];
-
-    // Keep all folders in MRU but check their access status
-    setState(() {
-      _mruFolders = mruList
-          .where((path) => Directory(path).existsSync())
-          .toList();
-    });
-
-    // Load the most recent folder if available
-    if (_mruFolders.isNotEmpty) {
-      await _loadProject(_mruFolders.first);
-    } else {
-      // No MRU folders available, notify parent that no project is loaded
-      if (widget.onProjectLoaded != null) {
-        widget.onProjectLoaded!(false);
-      }
-    }
-  }
-
-  Future<void> _loadProject(
+  Future<bool> _loadProject(
     String directoryPath, {
     bool forceLoad = false,
   }) async {
-    if (_isLoading && !forceLoad) return;
+    if (_isLoading && !forceLoad) return false;
 
     // Validate that this is a Flutter project
     if (!await _isFlutterProject(directoryPath)) {
       _showError(
         'This folder is not a valid Flutter project. FIDE is designed specifically for Flutter development. Please select a folder containing a Flutter project with a pubspec.yaml file.',
       );
-      return;
+      return false;
     }
 
     // Close current project first
@@ -589,9 +756,6 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       );
       final result = await root.loadChildren();
 
-      // Update MRU list
-      await _updateMruList(directoryPath);
-
       setState(() {
         _projectRoot = root;
       });
@@ -601,29 +765,35 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
         widget.onProjectLoaded!(true);
       }
 
+      // Notify parent of the new project path for MRU update
+      if (widget.onProjectPathChanged != null) {
+        widget.onProjectPathChanged!(directoryPath);
+      }
+
       // Show user-friendly error messages based on the result
       switch (result) {
         case LoadChildrenResult.accessDenied:
           _showError(
             'Access denied: Cannot read contents of "${root.name}". You may not have permission to view this project folder.',
           );
-          break;
+          return false;
         case LoadChildrenResult.fileSystemError:
           _showError(
             'File system error: Unable to read contents of "${root.name}". The project folder may be corrupted or inaccessible.',
           );
-          break;
+          return false;
         case LoadChildrenResult.unknownError:
           _showError(
             'Unable to load project "${root.name}". Please try again or check if the folder exists.',
           );
-          break;
+          return false;
         case LoadChildrenResult.success:
-          // No error to show
-          break;
+          // Project loaded successfully
+          return true;
       }
     } catch (e) {
       _showError('Failed to load project: $e');
+      return false;
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -669,11 +839,17 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   }
 
   Future<void> _removeMruEntry(String directoryPath) async {
-    setState(() {
-      _mruFolders.remove(directoryPath);
-    });
+    if (_prefs == null) return;
 
-    await _prefs.setStringList(_mruFoldersKey, _mruFolders);
+    final mruList = _prefs!.getStringList('mru_folders') ?? [];
+    mruList.remove(directoryPath);
+
+    await _prefs!.setStringList('mru_folders', mruList);
+
+    // Force a rebuild to update the UI
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _renameNode(ProjectNode node) {}
@@ -706,166 +882,11 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     });
   }
 
-  Future<void> _updateMruList(String directoryPath) async {
-    _mruFolders.remove(directoryPath); // Move to front if exists
-    _mruFolders.insert(0, directoryPath);
-
-    if (_mruFolders.length > _maxMruItems) {
-      _mruFolders = _mruFolders.sublist(0, _maxMruItems);
-    }
-
-    await _prefs.setStringList(_mruFoldersKey, _mruFolders);
-    setState(() {});
-  }
-
   void _toggleViewMode() {
     setState(() {
       _viewMode = _viewMode == ViewMode.filesystem
           ? ViewMode.organized
           : ViewMode.filesystem;
     });
-  }
-
-  Widget _buildOrganizedView() {
-    if (_projectRoot == null) return const SizedBox();
-
-    // Group files and directories by categories
-    final Map<String, List<ProjectNode>> categories = {
-      'Root': [],
-      'Lib': [],
-      'Tests': [],
-      'Assets': [],
-      'Platforms': [],
-      'Output': [],
-    };
-
-    // Find lib, test, and assets directories
-    ProjectNode? libDir;
-    ProjectNode? testDir;
-    ProjectNode? assetsDir;
-
-    for (final node in _projectRoot!.children) {
-      if (node.name == 'lib' && node.isDirectory) {
-        libDir = node;
-      } else if (node.name == 'test' && node.isDirectory) {
-        testDir = node;
-      } else if (node.name == 'assets' && node.isDirectory) {
-        assetsDir = node;
-      }
-    }
-
-    // Add lib contents if available
-    if (libDir != null && libDir.children.isNotEmpty) {
-      categories['Lib']!.addAll(libDir.children);
-    }
-
-    // Add test contents if available
-    if (testDir != null && testDir.children.isNotEmpty) {
-      categories['Tests']!.addAll(testDir.children);
-    }
-
-    // Add assets contents if available
-    if (assetsDir != null && assetsDir.children.isNotEmpty) {
-      categories['Assets']!.addAll(assetsDir.children);
-    }
-
-    // Categorize remaining nodes
-    for (final node in _projectRoot!.children) {
-      if (node == libDir || node == testDir || node == assetsDir) {
-        // Skip lib, test, and assets directories as we already processed their contents
-        continue;
-      }
-
-      if (node.name == 'android' ||
-          node.name == 'ios' ||
-          node.name == 'web' ||
-          node.name == 'windows' ||
-          node.name == 'macos' ||
-          node.name == 'linux') {
-        categories['Platforms']!.add(node);
-      } else if (node.name == 'build' ||
-          node.name == '.dart_tool' ||
-          node.name == 'benchmark') {
-        categories['Output']!.add(node);
-      } else {
-        categories['Root']!.add(node);
-      }
-    }
-
-    // Build the organized view
-    final List<Widget> sections = [];
-
-    for (final category in [
-      'Root',
-      'Lib',
-      'Tests',
-      'Assets',
-      'Platforms',
-      'Output',
-    ]) {
-      final nodes = categories[category]!;
-      if (nodes.isNotEmpty) {
-        sections.add(_buildCategorySection(category, nodes));
-      }
-    }
-
-    return ListView(children: sections);
-  }
-
-  Widget _buildCategorySection(String category, List<ProjectNode> nodes) {
-    final isExpanded = _expandedState['category_$category'] ?? true;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Category header
-        InkWell(
-          onTap: () {
-            setState(() {
-              _expandedState['category_$category'] = !isExpanded;
-            });
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: Row(
-              children: [
-                Icon(
-                  isExpanded ? Icons.expand_more : Icons.chevron_right,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  category,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '(${nodes.length})',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        // Category content
-        if (isExpanded)
-          Padding(
-            padding: const EdgeInsets.only(left: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: nodes.map((node) => _buildNode(node)).toList(),
-            ),
-          ),
-      ],
-    );
   }
 }
