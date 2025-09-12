@@ -7,6 +7,7 @@ import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/analysis/features.dart';
 
 import '../../models/file_system_item.dart';
+import '../editor/editor_screen.dart';
 
 class OutlinePanel extends StatefulWidget {
   const OutlinePanel({super.key, required this.file, this.onOutlineUpdate});
@@ -20,6 +21,8 @@ class OutlinePanel extends StatefulWidget {
 }
 
 class _OutlinePanelState extends State<OutlinePanel> {
+  int _currentHighlightedLine = -1;
+
   String _error = '';
 
   bool _isLoading = true;
@@ -34,6 +37,18 @@ class _OutlinePanelState extends State<OutlinePanel> {
     if (widget.onOutlineUpdate != null) {
       widget.onOutlineUpdate!(() => refreshOutline());
     }
+
+    // Set up cursor position change callback
+    EditorScreen.onCursorPositionChanged = _onCursorPositionChanged;
+  }
+
+  @override
+  void dispose() {
+    // Clean up the callback
+    if (EditorScreen.onCursorPositionChanged == _onCursorPositionChanged) {
+      EditorScreen.onCursorPositionChanged = null;
+    }
+    super.dispose();
   }
 
   @override
@@ -97,6 +112,9 @@ class _OutlinePanelState extends State<OutlinePanel> {
   }
 
   Widget _buildOutlineNode(OutlineNode node) {
+    // Check if this node should be highlighted (cursor is on or near this line)
+    final isHighlighted = _isNodeHighlighted(node);
+
     // Determine icon based on node type
     IconData iconData;
     Color iconColor;
@@ -147,36 +165,80 @@ class _OutlinePanelState extends State<OutlinePanel> {
         iconColor = Theme.of(context).colorScheme.onSurfaceVariant;
     }
 
-    return InkWell(
-      onTap: () {
-        // TODO: Navigate to the corresponding line in the editor
-      },
-      hoverColor: Colors.blue.withOpacity(0.1),
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 16.0 * node.level,
-          top: 2.0,
-          bottom: 2.0,
-        ),
-        child: Row(
-          children: [
-            Icon(iconData, color: iconColor, size: 16),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                node.name,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Theme.of(context).colorScheme.onSurface,
+    return Container(
+      color: isHighlighted
+          ? Theme.of(context).colorScheme.primaryContainer
+          : null,
+      child: InkWell(
+        onTap: () {
+          // Navigate to the corresponding line in the editor
+          EditorScreen.navigateToLine(node.line);
+          // Ensure focus is transferred to the editor
+          // The editor will handle focus internally
+        },
+        hoverColor: Colors.blue,
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 16.0 * node.level,
+            top: 2.0,
+            bottom: 2.0,
+          ),
+          child: Row(
+            children: [
+              Icon(iconData, color: iconColor, size: 16),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  node.name,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: isHighlighted ? FontWeight.w600 : null,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  bool _isNodeHighlighted(OutlineNode node) {
+    if (_currentHighlightedLine == -1) return false;
+
+    // Check if cursor is on the exact line of this node
+    if (_currentHighlightedLine == node.line) return true;
+
+    // For broader highlighting, check if cursor is within the node's range
+    // Find the next node at the same level or higher to determine the range
+    final nodeIndex = _outlineNodes.indexOf(node);
+    if (nodeIndex == -1) return false;
+
+    int endLine = _currentHighlightedLine; // Default to current line
+
+    // Find the next node that would end this node's scope
+    for (int i = nodeIndex + 1; i < _outlineNodes.length; i++) {
+      final nextNode = _outlineNodes[i];
+      if (nextNode.level <= node.level) {
+        endLine = nextNode.line - 1;
+        break;
+      }
+    }
+
+    // Check if cursor is within this node's range
+    return _currentHighlightedLine >= node.line &&
+        _currentHighlightedLine <= endLine;
+  }
+
+  void _onCursorPositionChanged(int lineNumber) {
+    if (mounted) {
+      setState(() {
+        _currentHighlightedLine = lineNumber;
+      });
+    }
   }
 
   Future<void> _parseFile() async {
@@ -193,7 +255,7 @@ class _OutlinePanelState extends State<OutlinePanel> {
           path: widget.file.path,
           featureSet: FeatureSet.latestLanguageVersion(),
         );
-        final visitor = _OutlineVisitor();
+        final visitor = _OutlineVisitor(result.content);
         result.unit.visitChildren(visitor);
         setState(() {
           _outlineNodes = visitor.nodes;
@@ -254,7 +316,10 @@ class OutlineNode {
 
 class _OutlineVisitor extends RecursiveAstVisitor<void> {
   final List<OutlineNode> nodes = [];
+  final String fileContent;
   int _currentLevel = 0;
+
+  _OutlineVisitor(this.fileContent);
 
   @override
   void visitClassDeclaration(ClassDeclaration node) {
@@ -289,10 +354,26 @@ class _OutlineVisitor extends RecursiveAstVisitor<void> {
   }
 
   void _addNode(String name, String type, int offset, int length) {
-    // Calculate line number from offset (approximate)
-    final line = name.split('\n').length;
+    // Calculate the actual line number from the offset
+    // Count the number of newline characters before the offset
+    int lineNumber = 1; // Lines are 1-indexed
+    for (int i = 0; i < offset && i < fileContent.length; i++) {
+      if (fileContent[i] == '\n') {
+        lineNumber++;
+      }
+    }
+
+    print(
+      'Outline: Adding node "$name" at offset $offset, calculated line $lineNumber',
+    );
+
     nodes.add(
-      OutlineNode(name: name, type: type, line: line, level: _currentLevel),
+      OutlineNode(
+        name: name,
+        type: type,
+        line: lineNumber,
+        level: _currentLevel,
+      ),
     );
   }
 }

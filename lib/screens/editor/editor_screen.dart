@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously, avoid_print
 
 import 'dart:io';
 import 'package:code_text_field/code_text_field.dart';
@@ -27,10 +27,18 @@ class EditorScreen extends StatefulWidget {
 
   final VoidCallback? onContentChanged;
 
+  static void Function(int)? onCursorPositionChanged;
+
   final VoidCallback? onSave;
 
   @override
   State<EditorScreen> createState() => _EditorScreenState();
+
+  static void navigateToLine(int lineNumber) {
+    print('EditorScreen.navigateToLine called with lineNumber: $lineNumber');
+    print('Current editor is null: ${_currentEditor == null}');
+    _currentEditor?._navigateToLine(lineNumber);
+  }
 
   static void saveCurrentEditor() {
     _currentEditor?._saveFile();
@@ -40,7 +48,11 @@ class EditorScreen extends StatefulWidget {
 class _EditorScreenState extends State<EditorScreen> {
   late CodeController _codeController;
 
+  final GlobalKey _codeFieldKey = GlobalKey();
+
   late String _currentFile;
+
+  late FocusNode _focusNode;
 
   bool _isDirty = false;
 
@@ -50,6 +62,8 @@ class _EditorScreenState extends State<EditorScreen> {
   void initState() {
     super.initState();
     _currentFile = widget.filePath;
+    _focusNode = FocusNode();
+
     _codeController = CodeController(
       text: _currentFile.isNotEmpty
           ? '// Loading...\n'
@@ -71,6 +85,7 @@ class _EditorScreenState extends State<EditorScreen> {
     if (EditorScreen._currentEditor == this) {
       EditorScreen._currentEditor = null;
     }
+    _focusNode.dispose();
     _codeController.dispose();
     super.dispose();
   }
@@ -127,14 +142,18 @@ class _EditorScreenState extends State<EditorScreen> {
                 Expanded(
                   child: CodeTheme(
                     data: CodeThemeData(styles: _getCodeTheme()),
-                    child: CodeField(
-                      controller: _codeController,
-                      textStyle: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 14,
+                    child: Focus(
+                      focusNode: _focusNode,
+                      child: CodeField(
+                        key: _codeFieldKey,
+                        controller: _codeController,
+                        textStyle: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 14,
+                        ),
+                        expands: true,
+                        wrap: true,
                       ),
-                      expands: true,
-                      wrap: true,
                     ),
                   ),
                 ),
@@ -147,12 +166,12 @@ class _EditorScreenState extends State<EditorScreen> {
                   child: Row(
                     children: [
                       Text(
-                        'Ln ${_codeController.selection.base.offset + 1}',
+                        'Ln ${_getCurrentLineNumber()}',
                         style: const TextStyle(fontSize: 12),
                       ),
                       const SizedBox(width: 16),
                       Text(
-                        'Col ${_codeController.selection.extent.offset - _codeController.selection.start + 1}',
+                        'Col ${_getCurrentColumnNumber()}',
                         style: const TextStyle(fontSize: 12),
                       ),
                       const Spacer(),
@@ -166,6 +185,53 @@ class _EditorScreenState extends State<EditorScreen> {
               ],
             ),
     );
+  }
+
+  EditableText? findEditableText(BuildContext context) {
+    EditableText? result;
+    context.visitChildElements((element) {
+      if (element.widget is EditableText) {
+        result = element.widget as EditableText;
+      } else {
+        result = findEditableText(element);
+      }
+      if (result != null) return;
+    });
+    return result;
+  }
+
+  FocusNode? findFocusableElement(BuildContext context) {
+    FocusNode? result;
+    context.visitChildElements((element) {
+      final widget = element.widget;
+      if (widget is EditableText) {
+        result = widget.focusNode;
+      } else {
+        result = findFocusableElement(element);
+      }
+      if (result != null) return;
+    });
+    return result;
+  }
+
+  BuildContext? _findEditableTextContext(BuildContext root) {
+    BuildContext? result;
+
+    void visitor(Element element) {
+      if (element.widget is EditableText) {
+        result = element;
+        return;
+      }
+      element.visitChildren(visitor);
+    }
+
+    try {
+      (root as Element).visitChildren(visitor);
+    } catch (_) {
+      // ignore
+    }
+
+    return result;
   }
 
   Widget _buildImageView() {
@@ -401,6 +467,35 @@ class _EditorScreenState extends State<EditorScreen> {
     };
   }
 
+  int _getCurrentColumnNumber() {
+    if (_codeController.text.isEmpty) return 1;
+
+    final offset = _codeController.selection.base.offset;
+    if (offset <= 0) return 1;
+
+    final textBeforeCursor = _codeController.text.substring(0, offset);
+    final lastNewlineIndex = textBeforeCursor.lastIndexOf('\n');
+
+    // If no newline found, cursor is on first line
+    if (lastNewlineIndex == -1) {
+      return offset + 1; // +1 because columns are 1-indexed
+    }
+
+    // Return characters from the last newline to cursor position
+    return offset - lastNewlineIndex; // This gives 1-indexed column
+  }
+
+  int _getCurrentLineNumber() {
+    if (_codeController.text.isEmpty) return 1;
+
+    final offset = _codeController.selection.base.offset;
+    if (offset <= 0) return 1;
+
+    final textBeforeCursor = _codeController.text.substring(0, offset);
+    final lines = textBeforeCursor.split('\n');
+    return lines.length;
+  }
+
   String _getFileLanguage() {
     final ext = _currentFile.split('.').last.toLowerCase();
     switch (ext) {
@@ -566,12 +661,98 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  void _onCodeChanged() {
-    if (!_isDirty) {
-      setState(() => _isDirty = true);
+  void _navigateToLine(int lineNumber) {
+    // Basic validation
+    if (_codeController.text.isEmpty || lineNumber < 1) {
+      print('Early return: text is empty or line number invalid');
+      return;
     }
+
+    final lines = _codeController.text.split('\n');
+    if (lineNumber > lines.length) {
+      print(
+        'Line number $lineNumber is greater than total lines ${lines.length}',
+      );
+      return;
+    }
+
+    // Calculate the character offset for the target line
+    int offset = 0;
+    for (int i = 0; i < lineNumber - 1 && i < lines.length; i++) {
+      offset += lines[i].length + 1; // +1 for the newline character
+    }
+
+    // Clamp offset
+    if (offset < 0) offset = 0;
+    if (offset > _codeController.text.length)
+      offset = _codeController.text.length;
+
+    // Use a post-frame callback to set the selection and ensure the caret/line is visible
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+
+      try {
+        _codeController.selection = TextSelection.collapsed(offset: offset);
+      } catch (e) {
+        print('Failed to set selection: $e');
+      }
+
+      // Give focus to the editor so the caret is shown
+      _focusNode.requestFocus();
+
+      // Small delay to allow the editable to update its internal layout
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Try to use bringIntoView if available, with fallback
+      try {
+        // Use dynamic call to bringIntoView
+        await (_codeController as dynamic).bringIntoView(
+          TextPosition(offset: offset),
+        );
+      } on NoSuchMethodError catch (e) {
+        print('bringIntoView not available: $e');
+        // Fallback: use Scrollable.ensureVisible on EditableText
+        final editableContext = _findEditableTextContext(
+          _codeFieldKey.currentContext!,
+        );
+        if (editableContext != null) {
+          try {
+            await Scrollable.ensureVisible(
+              editableContext,
+              alignment: 0.5,
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeInOut,
+            );
+          } catch (err) {
+            print('Scrollable.ensureVisible failed: $err');
+          }
+        } else {
+          print('EditableText context not found for ensureVisible');
+        }
+      } catch (e) {
+        print('bringIntoView failed: $e');
+      }
+
+      // Force a rebuild so the caret position is reflected
+      if (mounted) setState(() {});
+    });
+  }
+
+  void _onCodeChanged() {
+    // Always trigger a rebuild when selection or text changes
+    setState(() {
+      // Mark as dirty if text has changed and wasn't already dirty
+      if (!_isDirty) {
+        _isDirty = true;
+      }
+    });
+
     // Notify outline panel to refresh when content changes
     widget.onContentChanged?.call();
+
+    // Notify cursor position changes
+    final currentLine = _getCurrentLineNumber();
+    EditorScreen.onCursorPositionChanged?.call(currentLine);
   }
 
   Future<void> _saveFile() async {

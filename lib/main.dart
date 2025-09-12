@@ -95,6 +95,21 @@ class _FIDEState extends State<FIDE> {
             ],
           ),
           PlatformMenu(
+            label: 'Edit',
+            menus: [
+              PlatformMenuItem(
+                label: 'Go to Line',
+                shortcut: const SingleActivator(
+                  LogicalKeyboardKey.keyG,
+                  control: true,
+                ),
+                onSelected: () {
+                  _showGotoLineDialog(navigatorKey.currentContext ?? context);
+                },
+              ),
+            ],
+          ),
+          PlatformMenu(
             label: 'Help',
             menus: [
               PlatformMenuItem(
@@ -120,6 +135,74 @@ class _FIDEState extends State<FIDE> {
         ),
       ),
     );
+  }
+
+  void _handleGotoLine(String value, BuildContext context) {
+    if (value.isEmpty) return;
+
+    final lineNumber = int.tryParse(value);
+    if (lineNumber != null && lineNumber > 0) {
+      // Navigate to the line
+      EditorScreen.navigateToLine(lineNumber);
+      Navigator.of(context).pop();
+    } else {
+      // Show error for invalid input
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid line number'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  void _showGotoLineDialog(BuildContext context) {
+    final TextEditingController lineController = TextEditingController();
+    final FocusNode focusNode = FocusNode();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Go to Line'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: lineController,
+                focusNode: focusNode,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Line number',
+                  hintText: 'Enter line number',
+                  border: OutlineInputBorder(),
+                ),
+                onSubmitted: (value) {
+                  _handleGotoLine(value, context);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                _handleGotoLine(lineController.text, context);
+              },
+              child: const Text('Go'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // Focus the text field when dialog opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      focusNode.requestFocus();
+    });
   }
 
   void _showSettingsDialog(BuildContext context) {

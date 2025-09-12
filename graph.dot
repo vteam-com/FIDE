@@ -74,6 +74,7 @@ digraph "" {
   "/lib/screens/explorer/explorer_screen.dart" -> "/lib/models/file_system_item.dart";
   "/lib/screens/explorer/explorer_screen.dart" -> "/lib/widgets/message_widget.dart";
   "/lib/screens/outline/outline_panel.dart" -> "/lib/models/file_system_item.dart";
+  "/lib/screens/outline/outline_panel.dart" -> "/lib/screens/editor/editor_screen.dart";
   "/lib/screens/editor/editor_screen.dart" -> "/lib/widgets/message_widget.dart";
   "/lib/main.dart" -> "/lib/screens/explorer/explorer_screen.dart";
   "/lib/main.dart" -> "/lib/screens/explorer/welcome_screen.dart";
