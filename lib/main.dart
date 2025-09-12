@@ -34,6 +34,12 @@ class FIDE extends StatefulWidget {
   State<FIDE> createState() => _FIDEState();
 }
 
+// Global function for save action
+void triggerSave() {
+  // Call the static method to save the current editor
+  EditorScreen.saveCurrentEditor();
+}
+
 class _FIDEState extends State<FIDE> {
   ThemeMode _themeMode = ThemeMode.system;
 
@@ -68,13 +74,18 @@ class _FIDEState extends State<FIDE> {
                   meta: true,
                 ),
                 onSelected: () {
-                  debugPrint('Save triggered');
+                  triggerSave();
                 },
               ),
               PlatformMenuItemGroup(
                 members: [
                   PlatformMenuItem(
                     label: 'Quit FIDE',
+                    shortcut: const SingleActivator(
+                      LogicalKeyboardKey.keyQ,
+                      meta: true,
+                    ),
+
                     onSelected: () {
                       SystemNavigator.pop();
                     },

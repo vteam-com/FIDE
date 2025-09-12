@@ -16,6 +16,7 @@ class EditorScreen extends StatefulWidget {
     required this.filePath,
     this.onContentChanged,
     this.onClose,
+    this.onSave,
   });
 
   final String filePath;
@@ -23,6 +24,16 @@ class EditorScreen extends StatefulWidget {
   final VoidCallback? onClose;
 
   final VoidCallback? onContentChanged;
+
+  final VoidCallback? onSave;
+
+  // Static reference to current editor state for global save access
+  static _EditorScreenState? _currentEditor;
+
+  // Method to trigger save from global context
+  static void saveCurrentEditor() {
+    _currentEditor?._saveFile();
+  }
 
   @override
   State<EditorScreen> createState() => _EditorScreenState();
@@ -51,10 +62,17 @@ class _EditorScreenState extends State<EditorScreen> {
     if (_currentFile.isNotEmpty) {
       _loadFile(_currentFile);
     }
+
+    // Register this editor as the current editor for global save access
+    EditorScreen._currentEditor = this;
   }
 
   @override
   void dispose() {
+    // Unregister this editor if it's the current one
+    if (EditorScreen._currentEditor == this) {
+      EditorScreen._currentEditor = null;
+    }
     _codeController.dispose();
     super.dispose();
   }
