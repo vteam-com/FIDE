@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
@@ -81,26 +83,7 @@ class _OutlinePanelState extends State<OutlinePanel> {
                 itemCount: _outlineNodes.length,
                 itemBuilder: (context, index) {
                   final node = _outlineNodes[index];
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      left: 16.0 * node.level,
-                      top: 2.0,
-                      bottom: 2.0,
-                    ),
-                    child: ListTile(
-                      dense: true,
-                      visualDensity: VisualDensity.compact,
-                      title: Text(
-                        node.name,
-                        style: Theme.of(context).textTheme.bodySmall,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      onTap: () {
-                        // TODO: Navigate to the corresponding line in the editor
-                      },
-                    ),
-                  );
+                  return _buildOutlineNode(node);
                 },
               ),
             ),
@@ -111,6 +94,89 @@ class _OutlinePanelState extends State<OutlinePanel> {
 
   void refreshOutline() {
     _parseFile();
+  }
+
+  Widget _buildOutlineNode(OutlineNode node) {
+    // Determine icon based on node type
+    IconData iconData;
+    Color iconColor;
+
+    switch (node.type.toLowerCase()) {
+      case 'class':
+        iconData = Icons.class_;
+        iconColor = Theme.of(context).colorScheme.primary;
+        break;
+      case 'function':
+        iconData = Icons.functions;
+        iconColor = Theme.of(context).colorScheme.secondary;
+        break;
+      case 'method':
+        iconData = Icons.functions;
+        iconColor = Theme.of(context).colorScheme.tertiary;
+        break;
+      case 'variable':
+        iconData = Icons.tag;
+        iconColor = Theme.of(context).colorScheme.onSurfaceVariant;
+        break;
+      case 'heading 1':
+        iconData = Icons.looks_one;
+        iconColor = Theme.of(context).colorScheme.primary;
+        break;
+      case 'heading 2':
+        iconData = Icons.looks_two;
+        iconColor = Theme.of(context).colorScheme.secondary;
+        break;
+      case 'heading 3':
+        iconData = Icons.looks_3;
+        iconColor = Theme.of(context).colorScheme.tertiary;
+        break;
+      case 'heading 4':
+        iconData = Icons.looks_4;
+        iconColor = Theme.of(context).colorScheme.primary;
+        break;
+      case 'heading 5':
+        iconData = Icons.looks_5;
+        iconColor = Theme.of(context).colorScheme.secondary;
+        break;
+      case 'heading 6':
+        iconData = Icons.looks_6;
+        iconColor = Theme.of(context).colorScheme.tertiary;
+        break;
+      default:
+        iconData = Icons.circle;
+        iconColor = Theme.of(context).colorScheme.onSurfaceVariant;
+    }
+
+    return InkWell(
+      onTap: () {
+        // TODO: Navigate to the corresponding line in the editor
+      },
+      hoverColor: Colors.blue.withOpacity(0.1),
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 16.0 * node.level,
+          top: 2.0,
+          bottom: 2.0,
+        ),
+        child: Row(
+          children: [
+            Icon(iconData, color: iconColor, size: 16),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                node.name,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _parseFile() async {
