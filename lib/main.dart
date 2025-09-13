@@ -12,9 +12,11 @@ import 'screens/explorer/explorer_screen.dart';
 import 'screens/explorer/welcome_screen.dart';
 import 'screens/editor/editor_screen.dart';
 import 'screens/outline/outline_panel.dart';
+import 'screens/git/git_panel.dart';
 
 // Services
 import 'services/file_system_service.dart';
+import 'services/git_service.dart';
 
 // Theme
 import 'theme/app_theme.dart';
@@ -27,14 +29,14 @@ void main() {
   runApp(const ProviderScope(child: FIDE()));
 }
 
-class FIDE extends StatefulWidget {
+class FIDE extends ConsumerStatefulWidget {
   const FIDE({super.key});
 
   @override
-  State<FIDE> createState() => _FIDEState();
+  ConsumerState<FIDE> createState() => _FIDEState();
 }
 
-class _FIDEState extends State<FIDE> {
+class _FIDEState extends ConsumerState<FIDE> {
   ThemeMode _themeMode = ThemeMode.system;
 
   @override
@@ -80,6 +82,37 @@ class _FIDEState extends State<FIDE> {
                     },
                   ),
                 ],
+              ),
+            ],
+          ),
+          PlatformMenu(
+            label: 'Git',
+            menus: [
+              PlatformMenuItem(
+                label: 'Initialize Repository',
+                onSelected: () async {
+                  final currentPath = ref.read(currentProjectPathProvider);
+                  if (currentPath != null) {
+                    final gitService = GitService();
+                    final result = await gitService.initRepository(currentPath);
+                    if (navigatorKey.currentContext != null) {
+                      ScaffoldMessenger.of(
+                        navigatorKey.currentContext!,
+                      ).showSnackBar(SnackBar(content: Text(result)));
+                    }
+                  }
+                },
+              ),
+              PlatformMenuItem(
+                label: 'Refresh Status',
+                shortcut: const SingleActivator(
+                  LogicalKeyboardKey.keyR,
+                  meta: true,
+                  shift: true,
+                ),
+                onSelected: () {
+                  // This will be handled by the Git panel refresh
+                },
               ),
             ],
           ),
@@ -202,6 +235,9 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
   final double _maxExplorerWidth = 500.0;
   final double _minOutlineWidth = 150.0;
   final double _maxOutlineWidth = 400.0;
+
+  // Active left panel view
+  int _activeLeftPanel = 0; // 0 = Explorer, 1 = Git
 
   // Callback to refresh outline
   VoidCallback? _refreshOutlineCallback;
@@ -395,31 +431,150 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     return Scaffold(
       body: Row(
         children: [
-          // Project Explorer Panel - Only show when project is loaded
+          // Left Panel - Toggle between Explorer and Git
           if (projectLoaded) ...[
             SizedBox(
               width: _explorerWidth,
-              child: ExplorerScreen(
-                onFileSelected: (file) {
-                  ref.read(selectedFileProvider.notifier).state = file;
-                },
-                selectedFile: selectedFile,
-                onThemeChanged: (themeMode) {
-                  ref.read(themeModeProvider.notifier).state = themeMode;
-                },
-                onProjectLoaded: (loaded) {
-                  ref.read(projectLoadedProvider.notifier).state = loaded;
-                  if (!loaded) {
-                    // Clear the current project path when unloaded
-                    ref.read(currentProjectPathProvider.notifier).state = null;
-                  }
-                },
-                onProjectPathChanged: (path) {
-                  // Update MRU list when a new project is loaded
-                  _updateMruList(path);
-                  ref.read(currentProjectPathProvider.notifier).state = path;
-                },
-                initialProjectPath: currentProjectPath,
+              child: Column(
+                children: [
+                  // Tab buttons
+                  Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Theme.of(context).dividerColor,
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => setState(() => _activeLeftPanel = 0),
+                            child: Container(
+                              alignment: Alignment.center,
+                              color: _activeLeftPanel == 0
+                                  ? Theme.of(
+                                      context,
+                                    ).colorScheme.primary.withOpacity(0.1)
+                                  : Colors.transparent,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.folder,
+                                    size: 16,
+                                    color: _activeLeftPanel == 0
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Explorer',
+                                    style: TextStyle(
+                                      color: _activeLeftPanel == 0
+                                          ? Theme.of(
+                                              context,
+                                            ).colorScheme.primary
+                                          : Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          color: Theme.of(context).dividerColor,
+                        ),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => setState(() => _activeLeftPanel = 1),
+                            child: Container(
+                              alignment: Alignment.center,
+                              color: _activeLeftPanel == 1
+                                  ? Theme.of(
+                                      context,
+                                    ).colorScheme.primary.withOpacity(0.1)
+                                  : Colors.transparent,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.account_tree,
+                                    size: 16,
+                                    color: _activeLeftPanel == 1
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Git',
+                                    style: TextStyle(
+                                      color: _activeLeftPanel == 1
+                                          ? Theme.of(
+                                              context,
+                                            ).colorScheme.primary
+                                          : Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Panel content
+                  Expanded(
+                    child: _activeLeftPanel == 0
+                        ? ExplorerScreen(
+                            onFileSelected: (file) {
+                              ref.read(selectedFileProvider.notifier).state =
+                                  file;
+                            },
+                            selectedFile: selectedFile,
+                            onThemeChanged: (themeMode) {
+                              ref.read(themeModeProvider.notifier).state =
+                                  themeMode;
+                            },
+                            onProjectLoaded: (loaded) {
+                              ref.read(projectLoadedProvider.notifier).state =
+                                  loaded;
+                              if (!loaded) {
+                                // Clear the current project path when unloaded
+                                ref
+                                        .read(
+                                          currentProjectPathProvider.notifier,
+                                        )
+                                        .state =
+                                    null;
+                              }
+                            },
+                            onProjectPathChanged: (path) {
+                              // Update MRU list when a new project is loaded
+                              _updateMruList(path);
+                              ref
+                                      .read(currentProjectPathProvider.notifier)
+                                      .state =
+                                  path;
+                            },
+                            initialProjectPath: currentProjectPath,
+                          )
+                        : GitPanel(projectPath: currentProjectPath!),
+                  ),
+                ],
               ),
             ),
 

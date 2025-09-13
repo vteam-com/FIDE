@@ -9,8 +9,10 @@ digraph "" {
   "/lib/screens/explorer/welcome_screen.dart" [label="welcome_screen"];
   "/lib/screens/outline/outline_panel.dart" [label="outline_panel"];
   "/lib/screens/editor/editor_screen.dart" [label="editor_screen"];
+  "/lib/screens/git/git_panel.dart" [label="git_panel"];
   "/lib/main.dart" [label="main"];
   "/lib/theme/app_theme.dart" [label="app_theme"];
+  "/lib/services/git_service.dart" [label="git_service"];
   "/lib/services/file_system_service.dart" [label="file_system_service"];
   "/lib/services/editor_service.dart" [label="editor_service"];
   "/lib/widgets/save_file_dialog.dart" [label="save_file_dialog"];
@@ -18,7 +20,7 @@ digraph "" {
   "/lib/widgets/message_widget.dart" [label="message_widget"];
   "/tool/sort_source.dart" [label="sort_source"];
   subgraph "cluster~" {
-    label="fide";
+    label="FIDE";
     subgraph "cluster~/test" {
       label="test";
       "/test/widget_test.dart";
@@ -46,6 +48,10 @@ digraph "" {
           label="editor";
           "/lib/screens/editor/editor_screen.dart";
         }
+        subgraph "cluster~/lib/screens/git" {
+          label="git";
+          "/lib/screens/git/git_panel.dart";
+        }
       }
       subgraph "cluster~/lib/theme" {
         label="theme";
@@ -53,6 +59,7 @@ digraph "" {
       }
       subgraph "cluster~/lib/services" {
         label="services";
+        "/lib/services/git_service.dart";
         "/lib/services/file_system_service.dart";
         "/lib/services/editor_service.dart";
       }
@@ -77,11 +84,14 @@ digraph "" {
   "/lib/screens/explorer/explorer_screen.dart" -> "/lib/widgets/message_widget.dart";
   "/lib/screens/outline/outline_panel.dart" -> "/lib/models/file_system_item.dart";
   "/lib/screens/editor/editor_screen.dart" -> "/lib/widgets/message_widget.dart";
+  "/lib/screens/git/git_panel.dart" -> "/lib/services/git_service.dart";
   "/lib/main.dart" -> "/lib/screens/explorer/explorer_screen.dart";
   "/lib/main.dart" -> "/lib/screens/explorer/welcome_screen.dart";
   "/lib/main.dart" -> "/lib/screens/editor/editor_screen.dart";
   "/lib/main.dart" -> "/lib/screens/outline/outline_panel.dart";
+  "/lib/main.dart" -> "/lib/screens/git/git_panel.dart";
   "/lib/main.dart" -> "/lib/services/file_system_service.dart";
+  "/lib/main.dart" -> "/lib/services/git_service.dart";
   "/lib/main.dart" -> "/lib/theme/app_theme.dart";
   "/lib/main.dart" -> "/lib/models/file_system_item.dart";
   "/lib/main.dart" -> "/lib/models/project_node.dart";
