@@ -560,6 +560,9 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                                         )
                                         .state =
                                     null;
+                                // Clear the selected file when project is unloaded
+                                ref.read(selectedFileProvider.notifier).state =
+                                    null;
                               }
                             },
                             onProjectPathChanged: (path) {
@@ -607,6 +610,22 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                                   'Create new project feature coming soon!',
                                 ),
                               ),
+                            );
+                          },
+                          mruFolders: _mruFolders,
+                          onOpenMruProject: (path) async {
+                            final success = await _tryLoadProject(path);
+                            if (success) {
+                              await _updateMruList(path);
+                            }
+                          },
+                          onRemoveMruEntry: (path) async {
+                            setState(() {
+                              _mruFolders.remove(path);
+                            });
+                            await _prefs.setStringList(
+                              _mruFoldersKey,
+                              _mruFolders,
                             );
                           },
                         )
