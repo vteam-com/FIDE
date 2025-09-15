@@ -9,9 +9,10 @@ import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/widgets/message_widget.dart';
 import 'package:fide/screens/explorer/welcome_screen.dart';
+import 'package:fide/screens/git/git_panel.dart';
 import 'package:fide/theme/app_theme.dart';
 
-enum ViewMode { filesystem, organized }
+enum PanelMode { filesystem, organized, git }
 
 class ExplorerScreen extends StatefulWidget {
   const ExplorerScreen({
@@ -22,6 +23,8 @@ class ExplorerScreen extends StatefulWidget {
     this.onProjectLoaded,
     this.onProjectPathChanged,
     this.initialProjectPath,
+    this.showGitPanel = false,
+    this.onToggleGitPanel,
   });
 
   final String? initialProjectPath;
@@ -34,7 +37,11 @@ class ExplorerScreen extends StatefulWidget {
 
   final Function(ThemeMode)? onThemeChanged;
 
+  final VoidCallback? onToggleGitPanel;
+
   final FileSystemItem? selectedFile;
+
+  final bool showGitPanel;
 
   @override
   State<ExplorerScreen> createState() => _ExplorerScreenState();
@@ -47,15 +54,15 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
 
   final Set<String> _loadingDirectories = {};
 
+  PanelMode _panelMode = PanelMode.filesystem;
+
+  static const String _panelModeKey = 'explorer_panel_mode';
+
   SharedPreferences? _prefs;
 
   ProjectNode? _projectRoot;
 
   final ScrollController _scrollController = ScrollController();
-
-  ViewMode _viewMode = ViewMode.organized;
-
-  static const String _viewModeKey = 'explorer_view_mode';
 
   @override
   void initState() {
@@ -93,17 +100,64 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       appBar: AppBar(
         title: _buildAppBarTitle(),
         actions: [
-          IconButton(
-            icon: Icon(
-              _viewMode == ViewMode.filesystem
-                  ? Icons.view_list
-                  : Icons.folder_special,
+          // Single header with 3 toggle buttons
+          if (_projectRoot != null)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8.0,
+                vertical: 4.0,
+              ),
+              decoration: BoxDecoration(
+                color: AppTheme.sidePanelSurface(context),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Normal File View Button
+                  _buildToggleButton(
+                    icon: Icons.folder,
+                    tooltip: 'Normal File View',
+                    isSelected:
+                        !widget.showGitPanel &&
+                        _panelMode == PanelMode.filesystem,
+                    onPressed: () {
+                      if (widget.showGitPanel) {
+                        widget.onToggleGitPanel?.call();
+                      }
+                      if (_panelMode != PanelMode.filesystem) {
+                        _togglePanelMode();
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 4),
+                  // Organized File View Button
+                  _buildToggleButton(
+                    icon: Icons.folder_special,
+                    tooltip: 'Organized File View',
+                    isSelected:
+                        !widget.showGitPanel &&
+                        _panelMode == PanelMode.organized,
+                    onPressed: () {
+                      if (widget.showGitPanel) {
+                        widget.onToggleGitPanel?.call();
+                      }
+                      if (_panelMode != PanelMode.organized) {
+                        _togglePanelMode();
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 4),
+                  // Git Panel Button
+                  _buildToggleButton(
+                    icon: Icons.account_tree,
+                    tooltip: 'Git Panel',
+                    isSelected: widget.showGitPanel,
+                    onPressed: widget.onToggleGitPanel ?? () {},
+                  ),
+                ],
+              ),
             ),
-            onPressed: _toggleViewMode,
-            tooltip: _viewMode == ViewMode.filesystem
-                ? 'Switch to Organized View'
-                : 'Switch to Filesystem View',
-          ),
         ],
       ),
       body: Container(
@@ -118,6 +172,8 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                 onOpenMruProject: _loadProject,
                 onRemoveMruEntry: _removeMruEntry,
               )
+            : widget.showGitPanel
+            ? _buildGitPanel()
             : _buildFileExplorer(),
       ),
     );
@@ -468,7 +524,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       );
     }
 
-    if (_viewMode == ViewMode.organized) {
+    if (_panelMode == PanelMode.organized) {
       return _buildOrganizedView();
     }
 
@@ -555,6 +611,17 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildGitPanel() {
+    if (_projectRoot == null) {
+      return Container(
+        color: AppTheme.sidePanelBackground(context),
+        child: const Center(child: Text('No project loaded')),
+      );
+    }
+
+    return GitPanel(projectPath: _projectRoot!.path);
   }
 
   Widget _buildNode(ProjectNode node) {
@@ -675,6 +742,33 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     }
 
     return ListView(controller: _scrollController, children: sections);
+  }
+
+  Widget _buildToggleButton({
+    required IconData icon,
+    required String tooltip,
+    required bool isSelected,
+    required VoidCallback onPressed,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: IconButton(
+        icon: Icon(
+          icon,
+          size: 20,
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        onPressed: onPressed,
+        style: IconButton.styleFrom(
+          backgroundColor: isSelected
+              ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.2)
+              : Colors.transparent,
+          padding: const EdgeInsets.all(8),
+        ),
+      ),
+    );
   }
 
   void _calculateNodePosition(
@@ -853,7 +947,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     if (_projectRoot == null) return;
 
     // For organized view, just expand the relevant category
-    if (_viewMode == ViewMode.organized) {
+    if (_panelMode == PanelMode.organized) {
       final relativePath = path.relative(filePath, from: _projectRoot!.path);
       String targetCategory = 'Root';
 
@@ -905,7 +999,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     final relativePath = path.relative(filePath, from: _projectRoot!.path);
 
     // For organized view, expand the relevant category
-    if (_viewMode == ViewMode.organized) {
+    if (_panelMode == PanelMode.organized) {
       String targetCategory = 'Root';
 
       if (relativePath.startsWith('lib/')) {
@@ -1091,13 +1185,13 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     // Always initialize SharedPreferences first
     _prefs = await SharedPreferences.getInstance();
 
-    // Load saved view mode
-    final savedViewMode = _prefs!.getString(_viewModeKey);
-    if (savedViewMode != null) {
+    // Load saved panel mode
+    final savedPanelMode = _prefs!.getString(_panelModeKey);
+    if (savedPanelMode != null) {
       setState(() {
-        _viewMode = savedViewMode == 'organized'
-            ? ViewMode.organized
-            : ViewMode.filesystem;
+        _panelMode = savedPanelMode == 'organized'
+            ? PanelMode.organized
+            : PanelMode.filesystem;
       });
     }
 
@@ -1282,7 +1376,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     const double itemHeight = 24.0; // Approximate height of each tree item
     const double categoryHeaderHeight = 32.0; // Height of category headers
 
-    if (_viewMode == ViewMode.organized) {
+    if (_panelMode == PanelMode.organized) {
       // Handle organized view scrolling
       final relativePath = path.relative(filePath, from: _projectRoot!.path);
 
@@ -1418,7 +1512,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     // Calculate a simple scroll position
     double scrollOffset = 0.0;
 
-    if (_viewMode == ViewMode.organized) {
+    if (_panelMode == PanelMode.organized) {
       // For organized view, scroll to the category
       final relativePath = path.relative(filePath, from: _projectRoot!.path);
       if (relativePath.startsWith('lib/')) {
@@ -1455,22 +1549,22 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     return input.replaceAll(' ', '_').toLowerCase();
   }
 
-  void _toggleViewMode() {
-    final newViewMode = _viewMode == ViewMode.filesystem
-        ? ViewMode.organized
-        : ViewMode.filesystem;
+  void _togglePanelMode() {
+    final newPanelMode = _panelMode == PanelMode.filesystem
+        ? PanelMode.organized
+        : PanelMode.filesystem;
 
     setState(() {
-      _viewMode = newViewMode;
+      _panelMode = newPanelMode;
     });
 
-    // Save the new view mode to SharedPreferences
+    // Save the new panel mode to SharedPreferences
     _prefs?.setString(
-      _viewModeKey,
-      newViewMode == ViewMode.organized ? 'organized' : 'filesystem',
+      _panelModeKey,
+      newPanelMode == PanelMode.organized ? 'organized' : 'filesystem',
     );
 
-    // After switching view mode, ensure the selected file is still visible
+    // After switching panel mode, ensure the selected file is still visible
     if (widget.selectedFile != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _ensureSelectedFileVisible(widget.selectedFile!.path);

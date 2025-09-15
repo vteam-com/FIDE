@@ -13,7 +13,6 @@ import 'screens/explorer/explorer_screen.dart';
 import 'screens/explorer/welcome_screen.dart';
 import 'screens/editor/editor_screen.dart';
 import 'screens/outline/outline_panel.dart';
-import 'screens/git/git_panel.dart';
 
 // Services
 import 'services/file_system_service.dart';
@@ -627,161 +626,39 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     return Scaffold(
       body: Row(
         children: [
-          // Left Panel - Toggle between Explorer and Git
+          // Left Panel - Explorer with Git toggle
           if (projectLoaded) ...[
             SizedBox(
               width: _explorerWidth,
-              child: Column(
-                children: [
-                  // Tab buttons
-                  Container(
-                    height: 40,
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Theme.of(context).dividerColor,
-                        ),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => setState(() => _activeLeftPanel = 0),
-                            child: Container(
-                              alignment: Alignment.center,
-                              color: _activeLeftPanel == 0
-                                  ? Theme.of(
-                                      context,
-                                    ).colorScheme.primary.withOpacity(0.1)
-                                  : Colors.transparent,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.folder,
-                                    size: 16,
-                                    color: _activeLeftPanel == 0
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Theme.of(
-                                            context,
-                                          ).colorScheme.onSurface,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Flexible(
-                                    child: Text(
-                                      'Explorer',
-                                      style: TextStyle(
-                                        color: _activeLeftPanel == 0
-                                            ? Theme.of(
-                                                context,
-                                              ).colorScheme.primary
-                                            : Theme.of(
-                                                context,
-                                              ).colorScheme.onSurface,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        Container(
-                          width: 1,
-                          color: Theme.of(context).dividerColor,
-                        ),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => setState(() => _activeLeftPanel = 1),
-                            child: Container(
-                              alignment: Alignment.center,
-                              color: _activeLeftPanel == 1
-                                  ? Theme.of(
-                                      context,
-                                    ).colorScheme.primary.withOpacity(0.1)
-                                  : Colors.transparent,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.account_tree,
-                                    size: 16,
-                                    color: _activeLeftPanel == 1
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Theme.of(
-                                            context,
-                                          ).colorScheme.onSurface,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Flexible(
-                                    child: Text(
-                                      'Git',
-                                      style: TextStyle(
-                                        color: _activeLeftPanel == 1
-                                            ? Theme.of(
-                                                context,
-                                              ).colorScheme.primary
-                                            : Theme.of(
-                                                context,
-                                              ).colorScheme.onSurface,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Panel content
-                  Expanded(
-                    child: _activeLeftPanel == 0
-                        ? ExplorerScreen(
-                            onFileSelected: (file) {
-                              ref.read(selectedFileProvider.notifier).state =
-                                  file;
-                            },
-                            selectedFile: selectedFile,
-                            onThemeChanged: (themeMode) {
-                              ref.read(themeModeProvider.notifier).state =
-                                  themeMode;
-                            },
-                            onProjectLoaded: (loaded) {
-                              ref.read(projectLoadedProvider.notifier).state =
-                                  loaded;
-                              if (!loaded) {
-                                // Clear the current project path when unloaded
-                                ref
-                                        .read(
-                                          currentProjectPathProvider.notifier,
-                                        )
-                                        .state =
-                                    null;
-                                // Clear the selected file when project is unloaded
-                                ref.read(selectedFileProvider.notifier).state =
-                                    null;
-                              }
-                            },
-                            onProjectPathChanged: (path) {
-                              // Update MRU list when a new project is loaded
-                              _updateMruList(path);
-                              ref
-                                      .read(currentProjectPathProvider.notifier)
-                                      .state =
-                                  path;
-                            },
-                            initialProjectPath: currentProjectPath,
-                          )
-                        : GitPanel(projectPath: currentProjectPath!),
-                  ),
-                ],
+              child: ExplorerScreen(
+                onFileSelected: (file) {
+                  ref.read(selectedFileProvider.notifier).state = file;
+                },
+                selectedFile: selectedFile,
+                onThemeChanged: (themeMode) {
+                  ref.read(themeModeProvider.notifier).state = themeMode;
+                },
+                onProjectLoaded: (loaded) {
+                  ref.read(projectLoadedProvider.notifier).state = loaded;
+                  if (!loaded) {
+                    // Clear the current project path when unloaded
+                    ref.read(currentProjectPathProvider.notifier).state = null;
+                    // Clear the selected file when project is unloaded
+                    ref.read(selectedFileProvider.notifier).state = null;
+                  }
+                },
+                onProjectPathChanged: (path) {
+                  // Update MRU list when a new project is loaded
+                  _updateMruList(path);
+                  ref.read(currentProjectPathProvider.notifier).state = path;
+                },
+                initialProjectPath: currentProjectPath,
+                showGitPanel: _activeLeftPanel == 1,
+                onToggleGitPanel: () {
+                  setState(
+                    () => _activeLeftPanel = _activeLeftPanel == 0 ? 1 : 0,
+                  );
+                },
               ),
             ),
 

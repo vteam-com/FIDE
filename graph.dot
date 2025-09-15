@@ -86,6 +86,7 @@ digraph "" {
   "/lib/screens/explorer/explorer_screen.dart" -> "/lib/models/file_system_item.dart";
   "/lib/screens/explorer/explorer_screen.dart" -> "/lib/widgets/message_widget.dart";
   "/lib/screens/explorer/explorer_screen.dart" -> "/lib/screens/explorer/welcome_screen.dart";
+  "/lib/screens/explorer/explorer_screen.dart" -> "/lib/screens/git/git_panel.dart";
   "/lib/screens/explorer/explorer_screen.dart" -> "/lib/theme/app_theme.dart";
   "/lib/screens/outline/outline_panel.dart" -> "/lib/theme/app_theme.dart";
   "/lib/screens/outline/outline_panel.dart" -> "/lib/models/file_system_item.dart";
@@ -98,7 +99,6 @@ digraph "" {
   "/lib/main.dart" -> "/lib/screens/explorer/welcome_screen.dart";
   "/lib/main.dart" -> "/lib/screens/editor/editor_screen.dart";
   "/lib/main.dart" -> "/lib/screens/outline/outline_panel.dart";
-  "/lib/main.dart" -> "/lib/screens/git/git_panel.dart";
   "/lib/main.dart" -> "/lib/services/file_system_service.dart";
   "/lib/main.dart" -> "/lib/services/git_service.dart";
   "/lib/main.dart" -> "/lib/theme/app_theme.dart";
