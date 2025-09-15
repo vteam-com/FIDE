@@ -9,6 +9,7 @@ import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:highlight/languages/dart.dart';
 import 'package:highlight/languages/yaml.dart';
+import 'package:fide/utils/file_type_utils.dart';
 
 class EditorScreen extends StatefulWidget {
   const EditorScreen({
@@ -540,85 +541,11 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   bool _isFileTypeSupported(String filePath) {
-    if (filePath.isEmpty) return false;
-    final extension = filePath.split('.').last.toLowerCase();
-
-    // Well-known text file extensions that should open in text editor
-    const supportedTextExtensions = [
-      // Programming languages
-      'dart',
-      'c',
-      'cc',
-      'cpp',
-      'cxx',
-      'h',
-      'hpp',
-      'rs',
-      'go',
-      'java',
-      'kt',
-      'scala',
-      'swift',
-      'm', // Objective-C
-      'mm', // Objective-C++
-      // Web technologies
-      'js',
-      'ts',
-      'jsx',
-      'tsx',
-      'vue',
-      'svelte',
-      'html',
-      'xml',
-      'svg',
-      'css',
-      'scss',
-      'sass',
-      'less',
-      // Data formats
-      'json', 'yaml', 'yml', 'toml', 'xml', 'csv', 'dot',
-      // Documentation
-      'md', 'txt', 'rst', 'adoc',
-      // Configuration files
-      'ini', 'cfg', 'conf', 'properties', 'env', 'lock', 'plist',
-      // Scripts
-      'sh', 'bash', 'zsh', 'fish', 'ps1', 'bat', 'cmd',
-      // Python
-      'py', 'pyw', 'pyx', 'pxd', 'pxi',
-      // Other common text files
-      'log', 'out', 'gitignore', 'dockerignore',
-    ];
-
-    // Image file extensions that should display as images
-    const supportedImageExtensions = [
-      'png',
-      'jpg',
-      'jpeg',
-      'gif',
-      'bmp',
-      'webp',
-      'tiff',
-      'tif',
-    ];
-
-    return supportedTextExtensions.contains(extension) ||
-        supportedImageExtensions.contains(extension);
+    return FileTypeUtils.isSourceFile(filePath);
   }
 
   bool _isImageFile(String filePath) {
-    if (filePath.isEmpty) return false;
-    final extension = filePath.split('.').last.toLowerCase();
-    const supportedImageExtensions = [
-      'png',
-      'jpg',
-      'jpeg',
-      'gif',
-      'bmp',
-      'webp',
-      'tiff',
-      'tif',
-    ];
-    return supportedImageExtensions.contains(extension);
+    return FileTypeUtils.isImageFile(filePath);
   }
 
   Future<void> _loadFile(String filePath) async {

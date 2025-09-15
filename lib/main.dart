@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path/path.dart' as path;
 
 // Screens
 import 'screens/explorer/explorer_screen.dart';
@@ -25,6 +26,9 @@ import 'theme/app_theme.dart';
 import 'models/file_system_item.dart';
 import 'models/project_node.dart';
 
+// Utils
+import 'utils/file_type_utils.dart';
+
 void main() {
   runApp(const ProviderScope(child: FIDE()));
 }
@@ -36,14 +40,31 @@ class FIDE extends ConsumerStatefulWidget {
   ConsumerState<FIDE> createState() => _FIDEState();
 }
 
-// Global function for save action
+// Global functions for menu actions
 void triggerSave() {
   // Call the static method to save the current editor
   EditorScreen.saveCurrentEditor();
 }
 
+void triggerOpenFolder() {
+  // This will be set by MainLayout
+  _mainLayoutKey.currentState?._pickDirectory();
+}
+
+void triggerReopenLastFile() {
+  // This will be set by MainLayout
+  _mainLayoutKey.currentState?._tryReopenLastFile(
+    _mainLayoutKey.currentState?._mruFolders.first ?? '',
+  );
+}
+
+// Global key to access MainLayout
+final GlobalKey<_MainLayoutState> _mainLayoutKey =
+    GlobalKey<_MainLayoutState>();
+
 class _FIDEState extends ConsumerState<FIDE> {
   ThemeMode _themeMode = ThemeMode.system;
+  String? _lastOpenedFileName;
 
   @override
   Widget build(BuildContext context) {
@@ -93,6 +114,28 @@ class _FIDEState extends ConsumerState<FIDE> {
                     },
                   ),
                 ],
+              ),
+            ],
+          ),
+          PlatformMenu(
+            label: 'File',
+            menus: [
+              PlatformMenuItem(
+                label: 'Open folder',
+                onSelected: () async {
+                  triggerOpenFolder();
+                },
+              ),
+              PlatformMenuItem(
+                label: _getLastOpenedFileLabel(),
+                shortcut: const SingleActivator(
+                  LogicalKeyboardKey.keyR,
+                  meta: true,
+                  shift: true,
+                ),
+                onSelected: () {
+                  triggerReopenLastFile();
+                },
               ),
             ],
           ),
@@ -159,12 +202,14 @@ class _FIDEState extends ConsumerState<FIDE> {
             ],
           ),
         ],
-        child: ProviderScope(
-          child: MainLayout(
-            onThemeChanged: (themeMode) {
-              setState(() => _themeMode = themeMode);
-            },
-          ),
+        child: MainLayout(
+          key: _mainLayoutKey,
+          onThemeChanged: (themeMode) {
+            setState(() => _themeMode = themeMode);
+          },
+          onFileOpened: (fileName) {
+            setState(() => _lastOpenedFileName = fileName);
+          },
         ),
       ),
     );
@@ -285,6 +330,14 @@ class _FIDEState extends ConsumerState<FIDE> {
       },
     );
   }
+
+  String _getLastOpenedFileLabel() {
+    // Use the state variable that gets updated when files are opened
+    if (_lastOpenedFileName != null) {
+      return 'Last file opened: $_lastOpenedFileName';
+    }
+    return 'No file opened';
+  }
 }
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -315,8 +368,9 @@ final themeModeProvider = StateProvider<ThemeMode>((ref) {
 
 class MainLayout extends ConsumerStatefulWidget {
   final Function(ThemeMode)? onThemeChanged;
+  final Function(String)? onFileOpened;
 
-  const MainLayout({super.key, this.onThemeChanged});
+  const MainLayout({super.key, this.onThemeChanged, this.onFileOpened});
 
   @override
   ConsumerState<MainLayout> createState() => _MainLayoutState();
@@ -339,21 +393,26 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
   // MRU (Most Recently Used) folders
   List<String> _mruFolders = [];
   static const String _mruFoldersKey = 'mru_folders';
+  static const String _lastOpenedFileKey = 'last_opened_file';
   static const int _maxMruItems = 5;
   late SharedPreferences _prefs;
+  final bool _listenerSetUp = false;
+  String? _lastSelectedFilePath;
 
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    _initializePrefsAndApp();
   }
 
-  Future<void> _initializeApp() async {
+  Future<void> _initializePrefsAndApp() async {
     // Initialize SharedPreferences
     _prefs = await SharedPreferences.getInstance();
 
     // Load MRU folders and try to auto-load the most recent project
     await _loadMruFolders();
+
+    // Listener will be set up in build method
   }
 
   // Method to set the outline refresh callback
@@ -394,6 +453,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     if (_mruFolders.isNotEmpty) {
       final success = await _tryLoadProject(_mruFolders.first);
       if (success) {
+        await _tryReopenLastFile(_mruFolders.first);
         return;
       }
 
@@ -401,6 +461,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
       for (int i = 1; i < _mruFolders.length; i++) {
         final success = await _tryLoadProject(_mruFolders[i]);
         if (success) {
+          await _tryReopenLastFile(_mruFolders[i]);
           return;
         }
       }
@@ -437,8 +498,39 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
       ref.read(currentProjectPathProvider.notifier).state = directoryPath;
       return true;
     } catch (e) {
-      debugPrint('Failed to load project $directoryPath: $e');
       return false;
+    }
+  }
+
+  // Try to reopen the last opened file if it exists and is a source file in the current project
+  Future<void> _tryReopenLastFile(String projectPath) async {
+    final lastFilePath = _prefs.getString(_lastOpenedFileKey);
+    if (lastFilePath == null || lastFilePath.isEmpty) {
+      return;
+    }
+
+    // Check if the file exists
+    final file = File(lastFilePath);
+    if (!await file.exists()) {
+      return;
+    }
+
+    // Check if the file is in the current project
+    if (!path.isWithin(projectPath, lastFilePath)) {
+      return;
+    }
+
+    // Check if it's a source file
+    if (!FileTypeUtils.isSourceFile(lastFilePath)) {
+      return;
+    }
+
+    try {
+      // Create FileSystemItem and set it as selected
+      final fileSystemItem = FileSystemItem.fromFileSystemEntity(file);
+      ref.read(selectedFileProvider.notifier).state = fileSystemItem;
+    } catch (e) {
+      // Silently handle errors
     }
   }
 
@@ -461,6 +553,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
             ref.read(projectLoadedProvider.notifier).state = true;
             ref.read(currentProjectPathProvider.notifier).state =
                 selectedDirectory;
+            await _tryReopenLastFile(selectedDirectory);
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -506,10 +599,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     }
 
     // Ensure SharedPreferences is saved
-    final success = await _prefs.setStringList(_mruFoldersKey, _mruFolders);
-    if (!success) {
-      debugPrint('Failed to save MRU list to SharedPreferences');
-    }
+    await _prefs.setStringList(_mruFoldersKey, _mruFolders);
 
     if (mounted) {
       setState(() {});
@@ -521,6 +611,19 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     final selectedFile = ref.watch(selectedFileProvider);
     final projectLoaded = ref.watch(projectLoadedProvider);
     final currentProjectPath = ref.watch(currentProjectPathProvider);
+
+    // Handle file selection changes
+    if (selectedFile != null && selectedFile.path != _lastSelectedFilePath) {
+      _prefs.setString(_lastOpenedFileKey, selectedFile.path);
+      // Notify the parent widget about the file being opened (defer to avoid setState during build)
+      final fileName = path.basename(selectedFile.path);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onFileOpened?.call(fileName);
+      });
+      _lastSelectedFilePath = selectedFile.path;
+    } else if (selectedFile == null && _lastSelectedFilePath != null) {
+      _lastSelectedFilePath = null;
+    }
 
     return Scaffold(
       body: Row(
@@ -555,6 +658,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                                   : Colors.transparent,
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
                                     Icons.folder,
@@ -566,16 +670,19 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                                           ).colorScheme.onSurface,
                                   ),
                                   const SizedBox(width: 4),
-                                  Text(
-                                    'Explorer',
-                                    style: TextStyle(
-                                      color: _activeLeftPanel == 0
-                                          ? Theme.of(
-                                              context,
-                                            ).colorScheme.primary
-                                          : Theme.of(
-                                              context,
-                                            ).colorScheme.onSurface,
+                                  Flexible(
+                                    child: Text(
+                                      'Explorer',
+                                      style: TextStyle(
+                                        color: _activeLeftPanel == 0
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.primary
+                                            : Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],
@@ -599,6 +706,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                                   : Colors.transparent,
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
                                     Icons.account_tree,
@@ -610,16 +718,19 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                                           ).colorScheme.onSurface,
                                   ),
                                   const SizedBox(width: 4),
-                                  Text(
-                                    'Git',
-                                    style: TextStyle(
-                                      color: _activeLeftPanel == 1
-                                          ? Theme.of(
-                                              context,
-                                            ).colorScheme.primary
-                                          : Theme.of(
-                                              context,
-                                            ).colorScheme.onSurface,
+                                  Flexible(
+                                    child: Text(
+                                      'Git',
+                                      style: TextStyle(
+                                        color: _activeLeftPanel == 1
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.primary
+                                            : Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],
@@ -711,6 +822,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                             final success = await _tryLoadProject(path);
                             if (success) {
                               await _updateMruList(path);
+                              await _tryReopenLastFile(path);
                             }
                           },
                           onRemoveMruEntry: (path) async {

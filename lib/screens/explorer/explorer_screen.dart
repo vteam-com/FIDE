@@ -9,6 +9,7 @@ import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/widgets/message_widget.dart';
 import 'package:fide/screens/explorer/welcome_screen.dart';
+import 'package:fide/theme/app_theme.dart';
 
 enum ViewMode { filesystem, organized }
 
@@ -50,7 +51,11 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
 
   ProjectNode? _projectRoot;
 
+  final ScrollController _scrollController = ScrollController();
+
   ViewMode _viewMode = ViewMode.organized;
+
+  static const String _viewModeKey = 'explorer_view_mode';
 
   @override
   void initState() {
@@ -59,7 +64,31 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   }
 
   @override
+  void didUpdateWidget(ExplorerScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If selectedFile changed, expand the tree to show it
+    if (widget.selectedFile != oldWidget.selectedFile &&
+        widget.selectedFile != null &&
+        _projectRoot != null) {
+      _expandToFile(widget.selectedFile!.path);
+    } else if (widget.selectedFile != oldWidget.selectedFile) {
+      // Force a rebuild to update selection highlighting even if project isn't loaded yet
+      setState(() {});
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Ensure selected file is expanded and visible when building
+    if (widget.selectedFile != null && _projectRoot != null && !_isLoading) {
+      // Use a microtask to ensure this happens after the current build cycle
+      Future.microtask(() {
+        if (mounted) {
+          _expandToFile(widget.selectedFile!.path);
+        }
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: _buildAppBarTitle(),
@@ -78,7 +107,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
         ],
       ),
       body: Container(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        color: AppTheme.sidePanelBackground(context),
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _projectRoot == null
@@ -92,6 +121,17 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
             : _buildFileExplorer(),
       ),
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Also check for selected file when dependencies change
+    if (widget.selectedFile != null && _projectRoot != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _expandToFile(widget.selectedFile!.path);
+      });
+    }
   }
 
   Widget _buildAppBarTitle() {
@@ -289,7 +329,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            color: AppTheme.sidePanelSurface(context),
             child: Row(
               children: [
                 Icon(
@@ -433,6 +473,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     }
 
     return ListView.builder(
+      controller: _scrollController,
       itemCount: _projectRoot!.children.length,
       itemBuilder: (context, index) {
         final node = _projectRoot!.children[index];
@@ -442,8 +483,14 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   }
 
   Widget _buildFileNode(ProjectNode node) {
+    // More robust path comparison using path normalization
     final isSelected =
-        widget.selectedFile != null && widget.selectedFile!.path == node.path;
+        widget.selectedFile != null &&
+        (widget.selectedFile!.path == node.path ||
+            path.normalize(widget.selectedFile!.path) ==
+                path.normalize(node.path) ||
+            path.canonicalize(widget.selectedFile!.path) ==
+                path.canonicalize(node.path));
 
     // Determine text color based on selection and hidden status
     Color textColor;
@@ -455,18 +502,33 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       textColor = Theme.of(context).colorScheme.onSurface;
     }
 
+    // Determine background color for selection
+    Color? backgroundColor;
+    if (isSelected) {
+      backgroundColor = Theme.of(
+        context,
+      ).colorScheme.primaryContainer.withOpacity(0.3);
+    }
+
     return InkWell(
       onTap: () => _handleFileTap(node),
       onLongPress: () => _showNodeContextMenu(node),
       hoverColor: Colors.blue.withOpacity(0.1),
       child: Container(
-        color: isSelected
-            ? Theme.of(context).colorScheme.primaryContainer
-            : null,
+        color: backgroundColor,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
           child: Row(
             children: [
+              // Add selection indicator
+              if (isSelected) ...[
+                Container(
+                  width: 3,
+                  height: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                  margin: const EdgeInsets.only(right: 5),
+                ),
+              ],
               _getFileIcon(node),
               const SizedBox(width: 6),
               Expanded(
@@ -474,12 +536,20 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                   node.name,
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.w600 : null,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                     color: textColor,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              // Add selection checkmark
+              if (isSelected) ...[
+                Icon(
+                  Icons.check,
+                  size: 14,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ],
             ],
           ),
         ),
@@ -604,7 +674,28 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       }
     }
 
-    return ListView(children: sections);
+    return ListView(controller: _scrollController, children: sections);
+  }
+
+  void _calculateNodePosition(
+    ProjectNode node,
+    String targetPath,
+    int position,
+  ) {
+    if (node.path == targetPath) {
+      return;
+    }
+
+    for (final child in node.children) {
+      position++;
+      if (child.path == targetPath) {
+        return;
+      }
+
+      if (child.isDirectory && (_expandedState[child.path] ?? false)) {
+        _calculateNodePosition(child, targetPath, position);
+      }
+    }
   }
 
   void _closeProject() {
@@ -758,6 +849,155 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     }
   }
 
+  void _ensureSelectedFileVisible(String filePath) {
+    if (_projectRoot == null) return;
+
+    // For organized view, just expand the relevant category
+    if (_viewMode == ViewMode.organized) {
+      final relativePath = path.relative(filePath, from: _projectRoot!.path);
+      String targetCategory = 'Root';
+
+      if (relativePath.startsWith('lib/')) {
+        targetCategory = 'Lib';
+      } else if (relativePath.startsWith('test/')) {
+        targetCategory = 'Tests';
+      } else if (relativePath.startsWith('assets/')) {
+        targetCategory = 'Assets';
+      } else if (relativePath.startsWith('android/') ||
+          relativePath.startsWith('ios/') ||
+          relativePath.startsWith('web/') ||
+          relativePath.startsWith('windows/') ||
+          relativePath.startsWith('macos/') ||
+          relativePath.startsWith('linux/')) {
+        targetCategory = 'Platforms';
+      } else if (relativePath.startsWith('build/') ||
+          relativePath.startsWith('.dart_tool/') ||
+          relativePath.startsWith('benchmark/')) {
+        targetCategory = 'Output';
+      }
+
+      setState(() {
+        _expandedState['category_$targetCategory'] = true;
+      });
+    } else {
+      // For filesystem view, expand the directory containing the file
+      final fileDir = path.dirname(filePath);
+      if (fileDir != _projectRoot!.path) {
+        final directoryNode = _findNodeByPath(fileDir);
+        if (directoryNode != null) {
+          setState(() {
+            _expandedState[fileDir] = true;
+          });
+        }
+      }
+    }
+
+    // Simple scroll to make sure the file is visible
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _simpleScrollToFile(filePath);
+    });
+  }
+
+  void _expandToFile(String filePath) {
+    if (_projectRoot == null) return;
+
+    // Get the relative path from project root
+    final relativePath = path.relative(filePath, from: _projectRoot!.path);
+
+    // For organized view, expand the relevant category
+    if (_viewMode == ViewMode.organized) {
+      String targetCategory = 'Root';
+
+      if (relativePath.startsWith('lib/')) {
+        targetCategory = 'Lib';
+      } else if (relativePath.startsWith('test/')) {
+        targetCategory = 'Tests';
+      } else if (relativePath.startsWith('assets/')) {
+        targetCategory = 'Assets';
+      } else if (relativePath.startsWith('android/') ||
+          relativePath.startsWith('ios/') ||
+          relativePath.startsWith('web/') ||
+          relativePath.startsWith('windows/') ||
+          relativePath.startsWith('macos/') ||
+          relativePath.startsWith('linux/')) {
+        targetCategory = 'Platforms';
+      } else if (relativePath.startsWith('build/') ||
+          relativePath.startsWith('.dart_tool/') ||
+          relativePath.startsWith('benchmark/')) {
+        targetCategory = 'Output';
+      }
+
+      // Only expand the category if it's not already expanded (respect user choice)
+      if (_expandedState['category_$targetCategory'] != false) {
+        setState(() {
+          _expandedState['category_$targetCategory'] = true;
+        });
+      }
+
+      // Ensure the directory containing the file is loaded
+      final fileDir = path.dirname(filePath);
+      if (fileDir != _projectRoot!.path) {
+        final directoryNode = _findNodeByPath(fileDir);
+        if (directoryNode != null && directoryNode.children.isEmpty) {
+          _ensureDirectoryLoaded(directoryNode);
+        }
+      }
+    } else {
+      // For filesystem view, expand directories but respect user choices
+      final pathComponents = path.split(relativePath);
+      String currentPath = _projectRoot!.path;
+
+      for (final component in pathComponents) {
+        if (component == path.basename(filePath)) {
+          // This is the file itself, not a directory
+          break;
+        }
+
+        currentPath = path.join(currentPath, component);
+
+        // Only expand if not explicitly collapsed by user
+        if (_expandedState[currentPath] != false) {
+          setState(() {
+            _expandedState[currentPath] = true;
+          });
+        }
+
+        // Find the directory node and ensure it's loaded
+        final directoryNode = _findNodeByPath(currentPath);
+        if (directoryNode != null && directoryNode.children.isEmpty) {
+          _ensureDirectoryLoaded(directoryNode);
+        }
+      }
+    }
+
+    // Scroll to the selected file after a short delay to allow the tree to expand
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToSelectedFile(filePath);
+    });
+  }
+
+  ProjectNode? _findNodeByPath(String targetPath) {
+    if (_projectRoot == null) return null;
+
+    // Helper function to search recursively
+    ProjectNode? findInNode(ProjectNode node) {
+      if (node.path == targetPath) {
+        return node;
+      }
+
+      for (final child in node.children) {
+        final found = findInNode(child);
+        if (found != null) {
+          return found;
+        }
+      }
+
+      return null;
+    }
+
+    return findInNode(_projectRoot!);
+  }
+
   Widget _getFileIcon(ProjectNode node) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -850,6 +1090,16 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   Future<void> _initializeExplorer() async {
     // Always initialize SharedPreferences first
     _prefs = await SharedPreferences.getInstance();
+
+    // Load saved view mode
+    final savedViewMode = _prefs!.getString(_viewModeKey);
+    if (savedViewMode != null) {
+      setState(() {
+        _viewMode = savedViewMode == 'organized'
+            ? ViewMode.organized
+            : ViewMode.filesystem;
+      });
+    }
 
     // If an initial project path is provided, load it first
     if (widget.initialProjectPath != null) {
@@ -948,6 +1198,14 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
           return false;
         case LoadChildrenResult.success:
           // Project loaded successfully
+
+          // Check if there's a last opened file to restore
+          if (widget.selectedFile != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _expandToFile(widget.selectedFile!.path);
+            });
+          }
+
           return true;
       }
     } catch (e) {
@@ -1013,6 +1271,112 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
 
   void _renameNode(ProjectNode node) {}
 
+  void _scrollToSelectedFile(String filePath) {
+    if (_projectRoot == null || !mounted) return;
+
+    // Check if ScrollController is properly attached
+    if (!_scrollController.hasClients) return;
+
+    // Calculate the approximate position of the file in the tree
+    double scrollOffset = 0.0;
+    const double itemHeight = 24.0; // Approximate height of each tree item
+    const double categoryHeaderHeight = 32.0; // Height of category headers
+
+    if (_viewMode == ViewMode.organized) {
+      // Handle organized view scrolling
+      final relativePath = path.relative(filePath, from: _projectRoot!.path);
+
+      // Find which category the file belongs to
+      String targetCategory = 'Root';
+      ProjectNode? parentDir;
+
+      // Check if file is in lib directory
+      final libDir = _projectRoot!.children.firstWhere(
+        (node) => node.name == 'lib' && node.isDirectory,
+        orElse: () =>
+            ProjectNode(name: '', path: '', type: ProjectNodeType.file),
+      );
+      if (libDir.path.isNotEmpty && relativePath.startsWith('lib/')) {
+        targetCategory = 'Lib';
+        parentDir = libDir;
+      }
+
+      // Check if file is in test directory
+      final testDir = _projectRoot!.children.firstWhere(
+        (node) => node.name == 'test' && node.isDirectory,
+        orElse: () =>
+            ProjectNode(name: '', path: '', type: ProjectNodeType.file),
+      );
+      if (testDir.path.isNotEmpty && relativePath.startsWith('test/')) {
+        targetCategory = 'Tests';
+        parentDir = testDir;
+      }
+
+      // Check if file is in assets directory
+      final assetsDir = _projectRoot!.children.firstWhere(
+        (node) => node.name == 'assets' && node.isDirectory,
+        orElse: () =>
+            ProjectNode(name: '', path: '', type: ProjectNodeType.file),
+      );
+      if (assetsDir.path.isNotEmpty && relativePath.startsWith('assets/')) {
+        targetCategory = 'Assets';
+        parentDir = assetsDir;
+      }
+
+      // Calculate scroll position for organized view
+      final categories = [
+        'Root',
+        'Lib',
+        'Tests',
+        'Assets',
+        'Platforms',
+        'Output',
+      ];
+      final categoryIndex = categories.indexOf(targetCategory);
+
+      // Add height for previous categories
+      for (int i = 0; i < categoryIndex; i++) {
+        scrollOffset += categoryHeaderHeight;
+        // Add some space for items in previous categories (approximate)
+        scrollOffset += 50.0;
+      }
+
+      // Add category header height
+      scrollOffset += categoryHeaderHeight;
+
+      // Find the position of the file within its category
+      if (parentDir != null && parentDir.children.isNotEmpty) {
+        final fileIndex = parentDir.children.indexWhere(
+          (node) => node.path == filePath,
+        );
+        if (fileIndex >= 0) {
+          scrollOffset += fileIndex * itemHeight;
+        }
+      }
+    } else {
+      // Handle filesystem view scrolling
+      final fileNode = _findNodeByPath(filePath);
+      if (fileNode != null) {
+        // Calculate position based on tree structure
+        int position = 0;
+        _calculateNodePosition(_projectRoot!, filePath, position);
+        scrollOffset = position * itemHeight;
+      }
+    }
+
+    // Scroll to the calculated position with animation
+    try {
+      _scrollController.animateTo(
+        scrollOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } catch (e) {
+      // Silently handle scroll errors
+      debugPrint('Scroll error in _scrollToSelectedFile: $e');
+    }
+  }
+
   void _showError(String message) {
     if (mounted) {
       MessageHelper.showError(context, message, showCopyButton: true);
@@ -1041,15 +1405,76 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     });
   }
 
+  void _simpleScrollToFile(String filePath) {
+    if (_projectRoot == null || !mounted) return;
+
+    // Check if ScrollController is properly attached
+    if (!_scrollController.hasClients) return;
+
+    // Find the file node
+    final fileNode = _findNodeByPath(filePath);
+    if (fileNode == null) return;
+
+    // Calculate a simple scroll position
+    double scrollOffset = 0.0;
+
+    if (_viewMode == ViewMode.organized) {
+      // For organized view, scroll to the category
+      final relativePath = path.relative(filePath, from: _projectRoot!.path);
+      if (relativePath.startsWith('lib/')) {
+        scrollOffset = 100.0; // Approximate position of Lib category
+      } else if (relativePath.startsWith('test/')) {
+        scrollOffset = 200.0; // Approximate position of Tests category
+      } else if (relativePath.startsWith('assets/')) {
+        scrollOffset = 300.0; // Approximate position of Assets category
+      }
+      // For other categories, keep at top
+    } else {
+      // For filesystem view, scroll to middle of visible area
+      try {
+        scrollOffset = _scrollController.position.maxScrollExtent * 0.3;
+      } catch (e) {
+        // Handle case where position is not available
+        scrollOffset = 0.0;
+      }
+    }
+
+    try {
+      _scrollController.animateTo(
+        scrollOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+      );
+    } catch (e) {
+      // Silently handle scroll errors
+      debugPrint('Scroll error in _simpleScrollToFile: $e');
+    }
+  }
+
   String _toSnakeCase(String input) {
     return input.replaceAll(' ', '_').toLowerCase();
   }
 
   void _toggleViewMode() {
+    final newViewMode = _viewMode == ViewMode.filesystem
+        ? ViewMode.organized
+        : ViewMode.filesystem;
+
     setState(() {
-      _viewMode = _viewMode == ViewMode.filesystem
-          ? ViewMode.organized
-          : ViewMode.filesystem;
+      _viewMode = newViewMode;
     });
+
+    // Save the new view mode to SharedPreferences
+    _prefs?.setString(
+      _viewModeKey,
+      newViewMode == ViewMode.organized ? 'organized' : 'filesystem',
+    );
+
+    // After switching view mode, ensure the selected file is still visible
+    if (widget.selectedFile != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _ensureSelectedFileVisible(widget.selectedFile!.path);
+      });
+    }
   }
 }
