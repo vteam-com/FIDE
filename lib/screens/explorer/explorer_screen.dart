@@ -4,9 +4,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path/path.dart' as path;
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/widgets/message_widget.dart';
+import 'package:fide/screens/explorer/welcome_screen.dart';
 
 enum ViewMode { filesystem, organized }
 
@@ -75,29 +77,20 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _projectRoot == null
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.folder_open, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No project opened',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: _pickDirectory,
-                    icon: const Icon(Icons.folder_open),
-                    label: const Text('Open Flutter Project'),
-                  ),
-                ],
-              ),
-            )
-          : _buildFileExplorer(),
+      body: Container(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _projectRoot == null
+            ? WelcomeScreen(
+                onOpenFolder: _pickDirectory,
+                onCreateProject: _createNewProject,
+                mruFolders: _prefs?.getStringList('mru_folders') ?? [],
+                onOpenMruProject: _loadProject,
+                onRemoveMruEntry: _removeMruEntry,
+              )
+            : _buildFileExplorer(),
+      ),
     );
   }
 
@@ -108,9 +101,9 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
         .where((path) => Directory(path).existsSync())
         .toList();
 
-    if (mruFolders.isEmpty) {
+    if (_projectRoot == null) {
       return Text(
-        _projectRoot?.name ?? 'Explorer',
+        'Explorer',
         overflow: TextOverflow.ellipsis,
         maxLines: 1,
         style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
@@ -136,6 +129,10 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       onSelected: (value) {
         if (value == 'add_folder') {
           _pickDirectory();
+        } else if (value == 'create_project') {
+          _createNewProject();
+        } else if (value == 'close_project') {
+          _closeProject();
         } else if (value.startsWith('remove_')) {
           // Handle MRU entry removal
           final pathToRemove = value.substring(7); // Remove 'remove_' prefix
@@ -219,6 +216,50 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Open a folder ...',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+
+        items.add(
+          PopupMenuItem<String>(
+            value: 'create_project',
+            child: Row(
+              children: [
+                Icon(
+                  Icons.create_new_folder,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Create new Project...',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+
+        items.add(
+          PopupMenuItem<String>(
+            value: 'close_project',
+            child: Row(
+              children: [
+                Icon(
+                  Icons.close,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Close Project',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
@@ -366,20 +407,23 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
 
   Widget _buildFileExplorer() {
     if (_projectRoot == null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.folder_open, size: 48, color: Colors.grey),
-            const SizedBox(height: 16),
-            const Text('No project loaded'),
-            const SizedBox(height: 8),
-            ElevatedButton.icon(
-              onPressed: _pickDirectory,
-              icon: const Icon(Icons.folder_open),
-              label: const Text('Open Project'),
-            ),
-          ],
+      return Container(
+        color: Theme.of(context).colorScheme.inverseSurface,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.folder_open, size: 48, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text('No project loaded'),
+              const SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: _pickDirectory,
+                icon: const Icon(Icons.folder_open),
+                label: const Text('Open Project'),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -563,9 +607,123 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     return ListView(children: sections);
   }
 
+  void _closeProject() {
+    if (_projectRoot == null) return;
+
+    setState(() {
+      _projectRoot = null;
+      _expandedState.clear();
+      _loadingDirectories.clear();
+    });
+
+    // Notify parent that project is closed
+    if (widget.onProjectLoaded != null) {
+      widget.onProjectLoaded!(false);
+    }
+
+    // Notify parent that project path is cleared
+    if (widget.onProjectPathChanged != null) {
+      widget.onProjectPathChanged!('');
+    }
+  }
+
   void _createNewFile(ProjectNode parent) {}
 
   void _createNewFolder(ProjectNode parent) {}
+
+  Future<void> _createNewProject() async {
+    if (_projectRoot == null) {
+      _showError('No current project loaded. Please open a project first.');
+      return;
+    }
+
+    final parentDir = path.dirname(_projectRoot!.path);
+
+    final TextEditingController controller = TextEditingController();
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Create New Flutter Project'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Project Name',
+            hintText: 'Enter project name (will be converted to snake_case)',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == null || result.isEmpty) return;
+
+    final snakeName = _toSnakeCase(result);
+
+    if (snakeName.isEmpty) {
+      _showError('Invalid project name.');
+      return;
+    }
+
+    // Check if directory already exists
+    final projectPath = path.join(parentDir, snakeName);
+    if (Directory(projectPath).existsSync()) {
+      _showError(
+        'A project with this name already exists in the parent directory.',
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // Run flutter create command
+      final result = await Process.run('flutter', [
+        'create',
+        snakeName,
+      ], workingDirectory: parentDir);
+
+      if (result.exitCode == 0) {
+        // Wait a bit for the file system to update
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // Verify the project was created
+        if (Directory(projectPath).existsSync()) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Project "$snakeName" created successfully!'),
+              ),
+            );
+            // Load the new project
+            await _loadProject(projectPath);
+          }
+        } else {
+          _showError(
+            'Project directory was not created. Please check if Flutter is installed and try again.',
+          );
+        }
+      } else {
+        _showError('Failed to create project: ${result.stderr}');
+      }
+    } catch (e) {
+      _showError('Failed to create project: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   void _deleteNode(ProjectNode node) {}
 
@@ -748,6 +906,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       _isLoading = true;
       _projectRoot = null;
       _expandedState.clear();
+      _loadingDirectories.clear();
     });
 
     try {
@@ -880,6 +1039,10 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       if (value == null) return;
       _handleContextMenuAction(value, node);
     });
+  }
+
+  String _toSnakeCase(String input) {
+    return input.replaceAll(' ', '_').toLowerCase();
   }
 
   void _toggleViewMode() {

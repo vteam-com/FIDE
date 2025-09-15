@@ -1,0 +1,238 @@
+import 'dart:io';
+
+class GitService {
+  static final GitService _instance = GitService._internal();
+  factory GitService() => _instance;
+  GitService._internal();
+
+  // Check if Git is available
+  Future<bool> isGitAvailable() async {
+    try {
+      final result = await Process.run('git', ['--version']);
+      return result.exitCode == 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Check if directory is a Git repository
+  Future<bool> isGitRepository(String path) async {
+    try {
+      final result = await Process.run('git', [
+        'rev-parse',
+        '--git-dir',
+      ], workingDirectory: path);
+      return result.exitCode == 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Initialize Git repository
+  Future<String> initRepository(String path) async {
+    try {
+      final result = await Process.run('git', ['init'], workingDirectory: path);
+      if (result.exitCode == 0) {
+        return 'Git repository initialized successfully';
+      } else {
+        return 'Failed to initialize Git repository: ${result.stderr}';
+      }
+    } catch (e) {
+      return 'Error initializing Git repository: $e';
+    }
+  }
+
+  // Get Git status
+  Future<GitStatus> getStatus(String path) async {
+    try {
+      final result = await Process.run('git', [
+        'status',
+        '--porcelain',
+      ], workingDirectory: path);
+      if (result.exitCode == 0) {
+        final lines = result.stdout
+            .toString()
+            .split('\n')
+            .where((line) => line.isNotEmpty);
+        final staged = <String>[];
+        final unstaged = <String>[];
+        final untracked = <String>[];
+
+        for (final line in lines) {
+          if (line.length < 3) continue;
+          final status = line.substring(0, 2);
+          final file = line.substring(3);
+
+          if (status[0] != ' ') {
+            staged.add(file);
+          }
+          if (status[1] != ' ') {
+            if (status[0] == ' ' && status[1] == '?') {
+              untracked.add(file);
+            } else {
+              unstaged.add(file);
+            }
+          }
+        }
+
+        return GitStatus(
+          staged: staged,
+          unstaged: unstaged,
+          untracked: untracked,
+        );
+      } else {
+        throw Exception('Failed to get Git status: ${result.stderr}');
+      }
+    } catch (e) {
+      throw Exception('Error getting Git status: $e');
+    }
+  }
+
+  // Stage files
+  Future<String> stageFiles(String path, List<String> files) async {
+    try {
+      final args = ['add', ...files];
+      final result = await Process.run('git', args, workingDirectory: path);
+      if (result.exitCode == 0) {
+        return 'Files staged successfully';
+      } else {
+        return 'Failed to stage files: ${result.stderr}';
+      }
+    } catch (e) {
+      return 'Error staging files: $e';
+    }
+  }
+
+  // Unstage files
+  Future<String> unstageFiles(String path, List<String> files) async {
+    try {
+      final args = ['reset', 'HEAD', ...files];
+      final result = await Process.run('git', args, workingDirectory: path);
+      if (result.exitCode == 0) {
+        return 'Files unstaged successfully';
+      } else {
+        return 'Failed to unstage files: ${result.stderr}';
+      }
+    } catch (e) {
+      return 'Error unstaging files: $e';
+    }
+  }
+
+  // Commit changes
+  Future<String> commit(String path, String message) async {
+    try {
+      final result = await Process.run('git', [
+        'commit',
+        '-m',
+        message,
+      ], workingDirectory: path);
+      if (result.exitCode == 0) {
+        return 'Changes committed successfully';
+      } else {
+        return 'Failed to commit changes: ${result.stderr}';
+      }
+    } catch (e) {
+      return 'Error committing changes: $e';
+    }
+  }
+
+  // Push to remote
+  Future<String> push(String path) async {
+    try {
+      final result = await Process.run('git', ['push'], workingDirectory: path);
+      if (result.exitCode == 0) {
+        return 'Changes pushed successfully';
+      } else {
+        return 'Failed to push changes: ${result.stderr}';
+      }
+    } catch (e) {
+      return 'Error pushing changes: $e';
+    }
+  }
+
+  // Pull from remote
+  Future<String> pull(String path) async {
+    try {
+      final result = await Process.run('git', ['pull'], workingDirectory: path);
+      if (result.exitCode == 0) {
+        return 'Changes pulled successfully';
+      } else {
+        return 'Failed to pull changes: ${result.stderr}';
+      }
+    } catch (e) {
+      return 'Error pulling changes: $e';
+    }
+  }
+
+  // Get current branch
+  Future<String?> getCurrentBranch(String path) async {
+    try {
+      final result = await Process.run('git', [
+        'branch',
+        '--show-current',
+      ], workingDirectory: path);
+      if (result.exitCode == 0) {
+        return result.stdout.toString().trim();
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+    return null;
+  }
+
+  // Get recent commits
+  Future<List<GitCommit>> getRecentCommits(
+    String path, {
+    int count = 10,
+  }) async {
+    try {
+      final result = await Process.run('git', [
+        'log',
+        '--oneline',
+        '-n',
+        count.toString(),
+      ], workingDirectory: path);
+      if (result.exitCode == 0) {
+        final lines = result.stdout
+            .toString()
+            .split('\n')
+            .where((line) => line.isNotEmpty);
+        return lines.map((line) {
+          final firstSpaceIndex = line.indexOf(' ');
+          final hash = firstSpaceIndex > 0
+              ? line.substring(0, firstSpaceIndex)
+              : line;
+          final message = firstSpaceIndex > 0
+              ? line.substring(firstSpaceIndex + 1)
+              : '';
+          return GitCommit(hash: hash, message: message);
+        }).toList();
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+    return [];
+  }
+}
+
+class GitStatus {
+  final List<String> staged;
+  final List<String> unstaged;
+  final List<String> untracked;
+
+  GitStatus({
+    required this.staged,
+    required this.unstaged,
+    required this.untracked,
+  });
+
+  bool get hasChanges =>
+      staged.isNotEmpty || unstaged.isNotEmpty || untracked.isNotEmpty;
+}
+
+class GitCommit {
+  final String hash;
+  final String message;
+
+  GitCommit({required this.hash, required this.message});
+}
