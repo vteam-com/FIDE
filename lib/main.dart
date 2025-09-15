@@ -396,7 +396,6 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
   static const String _lastOpenedFileKey = 'last_opened_file';
   static const int _maxMruItems = 5;
   late SharedPreferences _prefs;
-  final bool _listenerSetUp = false;
   String? _lastSelectedFilePath;
 
   @override

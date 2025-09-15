@@ -4,6 +4,10 @@ class AppTheme {
   // Single seed color for consistent theming
   static const Color _seedColor = Colors.blue;
 
+  // Side panel specific colors - distinct from main theme
+  static const Color _sidePanelLightBackground = Color(0xFFF8F9FA);
+  static const Color _sidePanelDarkBackground = Color(0xFF1E1E1E);
+
   static ThemeData get lightTheme {
     return ThemeData.from(
       colorScheme: ColorScheme.fromSeed(
@@ -48,5 +52,31 @@ class AppTheme {
         titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
       ),
     );
+  }
+
+  // Side panel background color - distinct from editor background
+  static Color sidePanelBackground(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.light
+        ? _sidePanelLightBackground
+        : _sidePanelDarkBackground;
+  }
+
+  // Side panel surface color for cards/containers within the side panel
+  static Color sidePanelSurface(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.light
+        ? const Color(0xFFFFFFFF) // Pure white for light mode
+        : const Color(
+            0xFF252526,
+          ); // Slightly lighter than background for dark mode
+  }
+
+  // Side panel divider color
+  static Color sidePanelDivider(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.light
+        ? const Color(0xFFE5E5E5) // Light gray divider
+        : const Color(0xFF3E3E42); // Dark gray divider
   }
 }
