@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:fide/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
@@ -62,7 +63,7 @@ class _OutlinePanelState extends State<OutlinePanel> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Theme.of(context).colorScheme.surface,
+      color: AppTheme.sidePanelBackground(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -1,3 +1,4 @@
+import 'package:fide/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/git_service.dart';
@@ -163,7 +164,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     final gitCommits = ref.watch(gitCommitsProvider);
 
     return Container(
-      color: Theme.of(context).colorScheme.surface,
+      color: AppTheme.sidePanelBackground(context),
       child: Column(
         children: [
           // Header
