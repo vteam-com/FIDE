@@ -19,7 +19,7 @@ digraph "" {
   "/lib/widgets/message_widget.dart" [label="message_widget"];
   "/tool/sort_source.dart" [label="sort_source"];
   subgraph "cluster~" {
-    label="FIDE";
+    label="fide";
     subgraph "cluster~/test" {
       label="test";
       "/test/widget_test.dart";

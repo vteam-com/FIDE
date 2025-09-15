@@ -363,10 +363,6 @@ class _OutlineVisitor extends RecursiveAstVisitor<void> {
       }
     }
 
-    print(
-      'Outline: Adding node "$name" at offset $offset, calculated line $lineNumber',
-    );
-
     nodes.add(
       OutlineNode(
         name: name,

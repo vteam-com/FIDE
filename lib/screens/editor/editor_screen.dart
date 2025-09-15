@@ -102,7 +102,10 @@ class _EditorScreenState extends State<EditorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_getTitleForFile(_currentFile)),
+        title: Text(
+          _getTitleForFile(_currentFile),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        ),
         actions: [
           if (_isDirty)
             const Padding(
@@ -147,6 +150,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       child: CodeField(
                         key: _codeFieldKey,
                         controller: _codeController,
+                        background: Theme.of(context).colorScheme.surface,
                         textStyle: const TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 14,
@@ -211,26 +215,6 @@ class _EditorScreenState extends State<EditorScreen> {
       }
       if (result != null) return;
     });
-    return result;
-  }
-
-  BuildContext? _findEditableTextContext(BuildContext root) {
-    BuildContext? result;
-
-    void visitor(Element element) {
-      if (element.widget is EditableText) {
-        result = element;
-        return;
-      }
-      element.visitChildren(visitor);
-    }
-
-    try {
-      (root as Element).visitChildren(visitor);
-    } catch (_) {
-      // ignore
-    }
-
     return result;
   }
 
@@ -438,6 +422,26 @@ class _EditorScreenState extends State<EditorScreen> {
         ],
       ),
     );
+  }
+
+  BuildContext? _findEditableTextContext(BuildContext root) {
+    BuildContext? result;
+
+    void visitor(Element element) {
+      if (element.widget is EditableText) {
+        result = element;
+        return;
+      }
+      element.visitChildren(visitor);
+    }
+
+    try {
+      (root as Element).visitChildren(visitor);
+    } catch (_) {
+      // ignore
+    }
+
+    return result;
   }
 
   Map<String, TextStyle> _getCodeTheme() {
@@ -684,8 +688,9 @@ class _EditorScreenState extends State<EditorScreen> {
 
     // Clamp offset
     if (offset < 0) offset = 0;
-    if (offset > _codeController.text.length)
+    if (offset > _codeController.text.length) {
       offset = _codeController.text.length;
+    }
 
     // Use a post-frame callback to set the selection and ensure the caret/line is visible
     WidgetsBinding.instance.addPostFrameCallback((_) async {

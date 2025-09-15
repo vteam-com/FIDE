@@ -42,7 +42,7 @@ void triggerSave() {
   EditorScreen.saveCurrentEditor();
 }
 
-class _FIDEState extends State<FIDE> {
+class _FIDEState extends ConsumerState<FIDE> {
   ThemeMode _themeMode = ThemeMode.system;
 
   @override
@@ -123,6 +123,21 @@ class _FIDEState extends State<FIDE> {
                 ),
                 onSelected: () {
                   // This will be handled by the Git panel refresh
+                },
+              ),
+            ],
+          ),
+          PlatformMenu(
+            label: 'Edit',
+            menus: [
+              PlatformMenuItem(
+                label: 'Go to Line',
+                shortcut: const SingleActivator(
+                  LogicalKeyboardKey.keyG,
+                  control: true,
+                ),
+                onSelected: () {
+                  _showGotoLineDialog(navigatorKey.currentContext ?? context);
                 },
               ),
             ],
