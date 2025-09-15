@@ -113,6 +113,7 @@ class _EditorScreenState extends State<EditorScreen> {
                     data: CodeThemeData(styles: _getCodeTheme()),
                     child: CodeField(
                       controller: _codeController,
+                      background: Theme.of(context).colorScheme.surface,
                       textStyle: const TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 14,

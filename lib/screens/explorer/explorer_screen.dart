@@ -77,17 +77,20 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _projectRoot == null
-          ? WelcomeScreen(
-              onOpenFolder: _pickDirectory,
-              onCreateProject: _createNewProject,
-              mruFolders: _prefs?.getStringList('mru_folders') ?? [],
-              onOpenMruProject: _loadProject,
-              onRemoveMruEntry: _removeMruEntry,
-            )
-          : _buildFileExplorer(),
+      body: Container(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _projectRoot == null
+            ? WelcomeScreen(
+                onOpenFolder: _pickDirectory,
+                onCreateProject: _createNewProject,
+                mruFolders: _prefs?.getStringList('mru_folders') ?? [],
+                onOpenMruProject: _loadProject,
+                onRemoveMruEntry: _removeMruEntry,
+              )
+            : _buildFileExplorer(),
+      ),
     );
   }
 
@@ -404,20 +407,23 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
 
   Widget _buildFileExplorer() {
     if (_projectRoot == null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.folder_open, size: 48, color: Colors.grey),
-            const SizedBox(height: 16),
-            const Text('No project loaded'),
-            const SizedBox(height: 8),
-            ElevatedButton.icon(
-              onPressed: _pickDirectory,
-              icon: const Icon(Icons.folder_open),
-              label: const Text('Open Project'),
-            ),
-          ],
+      return Container(
+        color: Theme.of(context).colorScheme.inverseSurface,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.folder_open, size: 48, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text('No project loaded'),
+              const SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: _pickDirectory,
+                icon: const Icon(Icons.folder_open),
+                label: const Text('Open Project'),
+              ),
+            ],
+          ),
         ),
       );
     }
