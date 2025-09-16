@@ -82,6 +82,18 @@ class _EditorScreenState extends State<EditorScreen> {
 
   @override
   void dispose() {
+    // Auto-save file if there are unsaved changes
+    if (_isDirty && _currentFile.isNotEmpty) {
+      try {
+        final file = File(_currentFile);
+        file.writeAsStringSync(_codeController.text);
+        // Note: We don't show a snackbar here since the widget is being disposed
+      } catch (e) {
+        // Silently handle save errors during dispose
+        print('Error auto-saving file on close: $e');
+      }
+    }
+
     // Unregister this editor if it's the current one
     if (EditorScreen._currentEditor == this) {
       EditorScreen._currentEditor = null;
