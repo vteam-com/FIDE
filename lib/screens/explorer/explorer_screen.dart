@@ -210,11 +210,13 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            _projectRoot?.name ?? 'Folder...',
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+          Flexible(
+            child: Text(
+              _projectRoot?.name ?? 'Folder...',
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            ),
           ),
           Icon(
             Icons.arrow_drop_down,

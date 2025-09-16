@@ -624,6 +624,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     }
 
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surfaceDim,
       body: Row(
         children: [
           // Left Panel - Explorer with Git toggle

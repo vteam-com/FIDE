@@ -35,7 +35,6 @@ dependencies:
   file_picker: ^8.0.0+1
   path_provider: ^2.1.2
   path: ^1.8.3
-  code_text_field: ^1.1.0
   flutter_highlight: ^0.7.0
   flutter_markdown: ^0.6.18
   yaml: ^3.1.1
@@ -47,6 +46,8 @@ dependencies:
   analyzer: ^6.4.0
   url_launcher: ^6.2.1
   package_info_plus: ^8.0.0
+  code_text_field: ^1.1.0
+  flutter_code_crafter: ^0.3.0
 
 dev_dependencies:
   flutter_launcher_icons: "^0.14.4"

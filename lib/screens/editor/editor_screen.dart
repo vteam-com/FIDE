@@ -1,7 +1,7 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously, avoid_print
 
 import 'dart:io';
-import 'package:code_text_field/code_text_field.dart';
+import 'package:flutter_code_crafter/code_crafter.dart';
 import 'package:fide/widgets/message_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -47,7 +47,7 @@ class EditorScreen extends StatefulWidget {
 }
 
 class _EditorScreenState extends State<EditorScreen> {
-  late CodeController _codeController;
+  late CodeCrafterController _codeController;
 
   final GlobalKey _codeFieldKey = GlobalKey();
 
@@ -65,12 +65,12 @@ class _EditorScreenState extends State<EditorScreen> {
     _currentFile = widget.filePath;
     _focusNode = FocusNode();
 
-    _codeController = CodeController(
-      text: _currentFile.isNotEmpty
-          ? '// Loading...\n'
-          : '// No file selected\n',
-      language: _getLanguageForFile(_currentFile),
-    )..addListener(_onCodeChanged);
+    _codeController = CodeCrafterController();
+    _codeController.text = _currentFile.isNotEmpty
+        ? '// Loading...\n'
+        : '// No file selected\n';
+    _codeController.language = _getLanguageForFile(_currentFile);
+    _codeController.addListener(_onCodeChanged);
 
     if (_currentFile.isNotEmpty) {
       _loadFile(_currentFile);
@@ -144,22 +144,22 @@ class _EditorScreenState extends State<EditorScreen> {
           : Column(
               children: [
                 Expanded(
-                  child: CodeTheme(
-                    data: CodeThemeData(styles: _getCodeTheme()),
-                    child: Focus(
-                      focusNode: _focusNode,
-                      child: CodeField(
-                        key: _codeFieldKey,
-                        controller: _codeController,
-                        background: Theme.of(context).colorScheme.surface,
-                        textStyle: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 14,
-                        ),
-                        expands: true,
-                        wrap: true,
+                  child: CodeCrafter(
+                    controller: _codeController,
+                    focusNode: _focusNode,
+                    gutterStyle: GutterStyle(
+                      lineNumberStyle: TextStyle(
+                        fontFamily: 'monospace',
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
+                    textStyle: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 14,
+                    ),
+                    editorTheme: _getCodeTheme(),
                   ),
                 ),
                 // Status bar
@@ -447,10 +447,13 @@ class _EditorScreenState extends State<EditorScreen> {
 
   Map<String, TextStyle> _getCodeTheme() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseTextColor = isDark ? Colors.white : Colors.black;
+    final baseTextColor = Theme.of(context).colorScheme.onPrimary;
 
     return {
-      'root': TextStyle(color: baseTextColor),
+      'root': TextStyle(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
       'comment': TextStyle(
         color: isDark ? Colors.green[300] : Colors.green[800],
       ),
@@ -473,10 +476,14 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   int _getCurrentColumnNumber() {
-    if (_codeController.text.isEmpty) return 1;
+    if (_codeController.text.isEmpty) {
+      return 1;
+    }
 
     final offset = _codeController.selection.base.offset;
-    if (offset <= 0) return 1;
+    if (offset <= 0) {
+      return 1;
+    }
 
     final textBeforeCursor = _codeController.text.substring(0, offset);
     final lastNewlineIndex = textBeforeCursor.lastIndexOf('\n');
@@ -573,8 +580,10 @@ class _EditorScreenState extends State<EditorScreen> {
         if (mounted) {
           setState(() {
             _codeController.dispose();
-            _codeController = CodeController(text: content, language: language)
-              ..addListener(_onCodeChanged);
+            _codeController = CodeCrafterController();
+            _codeController.text = content;
+            _codeController.language = language;
+            _codeController.addListener(_onCodeChanged);
             _isDirty = false;
           });
         }
