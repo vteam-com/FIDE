@@ -145,6 +145,7 @@ class _EditorScreenState extends State<EditorScreen> {
               children: [
                 Expanded(
                   child: CodeCrafter(
+                    key: _codeFieldKey,
                     controller: _codeController,
                     focusNode: _focusNode,
                     gutterStyle: GutterStyle(
@@ -579,6 +580,7 @@ class _EditorScreenState extends State<EditorScreen> {
 
         if (mounted) {
           setState(() {
+            _focusNode = FocusNode();
             _codeController.dispose();
             _codeController = CodeCrafterController();
             _codeController.text = content;
@@ -653,22 +655,26 @@ class _EditorScreenState extends State<EditorScreen> {
       } on NoSuchMethodError catch (e) {
         print('bringIntoView not available: $e');
         // Fallback: use Scrollable.ensureVisible on EditableText
-        final editableContext = _findEditableTextContext(
-          _codeFieldKey.currentContext!,
-        );
-        if (editableContext != null) {
-          try {
-            await Scrollable.ensureVisible(
-              editableContext,
-              alignment: 0.5,
-              duration: const Duration(milliseconds: 150),
-              curve: Curves.easeInOut,
-            );
-          } catch (err) {
-            print('Scrollable.ensureVisible failed: $err');
+        if (_codeFieldKey.currentContext != null) {
+          final editableContext = _findEditableTextContext(
+            _codeFieldKey.currentContext!,
+          );
+          if (editableContext != null) {
+            try {
+              await Scrollable.ensureVisible(
+                editableContext,
+                alignment: 0.5,
+                duration: const Duration(milliseconds: 150),
+                curve: Curves.easeInOut,
+              );
+            } catch (err) {
+              print('Scrollable.ensureVisible failed: $err');
+            }
+          } else {
+            print('EditableText context not found for ensureVisible');
           }
         } else {
-          print('EditableText context not found for ensureVisible');
+          print('CodeFieldKey context is null');
         }
       } catch (e) {
         print('bringIntoView failed: $e');
