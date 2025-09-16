@@ -49,6 +49,11 @@ void triggerReopenLastFile() {
   );
 }
 
+void triggerCloseDocument() {
+  // Call the static method to close the current editor
+  EditorScreen.closeCurrentEditor();
+}
+
 // Global key to access MainLayout
 final GlobalKey<MainLayoutState> _mainLayoutKey = GlobalKey<MainLayoutState>();
 
@@ -123,6 +128,16 @@ class _FIDEState extends ConsumerState<FIDE> {
                 ),
                 onSelected: () {
                   triggerSave();
+                },
+              ),
+              PlatformMenuItem(
+                label: 'Close Document',
+                shortcut: const SingleActivator(
+                  LogicalKeyboardKey.keyW,
+                  meta: true,
+                ),
+                onSelected: () {
+                  triggerCloseDocument();
                 },
               ),
               PlatformMenuItemGroup(

@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, avoid_print
 
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/services/git_service.dart';
 import 'package:fide/utils/message_helper.dart';
 import 'package:fide/screens/welcome_screen.dart';
 import 'package:fide/screens/git_panel.dart';
@@ -50,6 +51,8 @@ class ExplorerScreen extends StatefulWidget {
 class _ExplorerScreenState extends State<ExplorerScreen> {
   final Map<String, bool> _expandedState = {};
 
+  final GitService _gitService = GitService();
+
   bool _isLoading = false;
 
   final Set<String> _loadingDirectories = {};
@@ -68,6 +71,13 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   void initState() {
     super.initState();
     _initializeExplorer();
+  }
+
+  @override
+  void dispose() {
+    // Cancel any pending operations
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -551,14 +561,18 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
             path.canonicalize(widget.selectedFile!.path) ==
                 path.canonicalize(node.path));
 
-    // Determine text color based on selection and hidden status
+    // Get Git status styling
+    final gitTextStyle = node.getGitStatusTextStyle(context);
+    final badgeText = node.getGitStatusBadge();
+
+    // Determine text color based on selection, hidden status, and Git status
     Color textColor;
     if (isSelected) {
       textColor = Theme.of(context).colorScheme.primary;
     } else if (node.isHidden) {
       textColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.5);
     } else {
-      textColor = Theme.of(context).colorScheme.onSurface;
+      textColor = gitTextStyle.color ?? Theme.of(context).colorScheme.onSurface;
     }
 
     // Determine background color for selection
@@ -579,36 +593,42 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
           child: Row(
             children: [
-              // Add selection indicator
-              if (isSelected) ...[
-                Container(
-                  width: 3,
-                  height: 16,
-                  color: Theme.of(context).colorScheme.primary,
-                  margin: const EdgeInsets.only(right: 5),
-                ),
-              ],
               _getFileIcon(node),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   node.name,
-                  style: TextStyle(
+                  style: gitTextStyle.copyWith(
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: textColor,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : textColor,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // Add selection checkmark
-              if (isSelected) ...[
-                Icon(
-                  Icons.check,
-                  size: 14,
-                  color: Theme.of(context).colorScheme.primary,
+              // Git status indicator
+              if (badgeText.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(left: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: node.getGitStatusColor(context).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    badgeText,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: node.getGitStatusColor(context),
+                    ),
+                  ),
                 ),
-              ],
             ],
           ),
         ),
@@ -1186,7 +1206,14 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   void _handleFileTap(ProjectNode node) {
     final item = FileSystemItem.fromFileSystemEntity(File(node.path));
     if (widget.selectedFile?.path == item.path) return;
-    if (widget.onFileSelected != null) {
+
+    // Seed Git status for the selected file if not already loaded
+    if (node.gitStatus == GitFileStatus.clean && _projectRoot != null) {
+      _seedGitStatusForFile(node);
+    }
+
+    // Only trigger file selection if widget is still mounted
+    if (widget.onFileSelected != null && mounted) {
       widget.onFileSelected!(item);
     }
   }
@@ -1238,6 +1265,31 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     } catch (e) {
       // If we can't read the directory, it's not accessible anyway
       return false;
+    }
+  }
+
+  Future<void> _loadGitStatus() async {
+    if (_projectRoot == null) return;
+
+    try {
+      // Check if current directory is a Git repository
+      final isGitRepo = await _gitService.isGitRepository(_projectRoot!.path);
+      if (!isGitRepo) {
+        print('Not a Git repository: ${_projectRoot!.path}');
+        return;
+      }
+
+      // Get Git status
+      final gitStatus = await _gitService.getStatus(_projectRoot!.path);
+      print(
+        'Git status loaded: ${gitStatus.staged.length} staged, ${gitStatus.unstaged.length} unstaged, ${gitStatus.untracked.length} untracked',
+      );
+
+      // Update all nodes with Git status recursively
+      _updateNodeGitStatus(_projectRoot!, gitStatus);
+    } catch (e) {
+      // Silently handle Git status errors
+      print('Error loading Git status: $e');
     }
   }
 
@@ -1302,6 +1354,9 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
           return false;
         case LoadChildrenResult.success:
           // Project loaded successfully
+
+          // Load Git status for the project
+          await _loadGitStatus();
 
           // Check if there's a last opened file to restore
           if (widget.selectedFile != null) {
@@ -1481,6 +1536,38 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     }
   }
 
+  Future<void> _seedGitStatusForFile(ProjectNode node) async {
+    if (_projectRoot == null || !mounted) return;
+
+    try {
+      // Check if current directory is a Git repository
+      final isGitRepo = await _gitService.isGitRepository(_projectRoot!.path);
+      if (!isGitRepo) return;
+
+      // Get Git status for this specific file
+      final gitStatus = await _gitService.getStatus(_projectRoot!.path);
+      final relativePath = path.relative(node.path, from: _projectRoot!.path);
+
+      if (gitStatus.staged.contains(relativePath)) {
+        node.gitStatus = GitFileStatus.added;
+      } else if (gitStatus.unstaged.contains(relativePath)) {
+        node.gitStatus = GitFileStatus.modified;
+      } else if (gitStatus.untracked.contains(relativePath)) {
+        node.gitStatus = GitFileStatus.untracked;
+      } else {
+        node.gitStatus = GitFileStatus.clean;
+      }
+
+      // Trigger UI update only if still mounted
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      // Silently handle errors
+      print('Error seeding Git status for file: $e');
+    }
+  }
+
   void _showError(String message) {
     if (mounted) {
       MessageHelper.showError(context, message, showCopyButton: true);
@@ -1579,6 +1666,30 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _ensureSelectedFileVisible(widget.selectedFile!.path);
       });
+    }
+  }
+
+  void _updateNodeGitStatus(ProjectNode node, GitStatus gitStatus) {
+    if (node.isFile) {
+      final relativePath = path.relative(node.path, from: _projectRoot!.path);
+
+      if (gitStatus.staged.contains(relativePath)) {
+        node.gitStatus = GitFileStatus.added;
+        print('File ${node.name} marked as ADDED');
+      } else if (gitStatus.unstaged.contains(relativePath)) {
+        node.gitStatus = GitFileStatus.modified;
+        print('File ${node.name} marked as MODIFIED');
+      } else if (gitStatus.untracked.contains(relativePath)) {
+        node.gitStatus = GitFileStatus.untracked;
+        print('File ${node.name} marked as UNTRACKED');
+      } else {
+        node.gitStatus = GitFileStatus.clean;
+      }
+    }
+
+    // Recursively update children
+    for (final child in node.children) {
+      _updateNodeGitStatus(child, gitStatus);
     }
   }
 }

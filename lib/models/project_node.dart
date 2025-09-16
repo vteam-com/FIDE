@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
+import 'package:fide/models/file_system_item.dart';
 
 enum ProjectNodeType { file, directory }
 
@@ -14,6 +16,7 @@ class ProjectNode {
   final String? fileExtension;
   LoadChildrenResult? loadResult;
   final bool isHidden;
+  GitFileStatus gitStatus;
 
   ProjectNode({
     required this.name,
@@ -21,6 +24,7 @@ class ProjectNode {
     required this.type,
     this.isExpanded = false,
     List<ProjectNode>? children,
+    this.gitStatus = GitFileStatus.clean,
   }) : children = children ?? [],
        fileExtension = type == ProjectNodeType.file
            ? p.extension(name).toLowerCase()
@@ -105,5 +109,74 @@ class ProjectNode {
   // Toggle expanded state
   void toggleExpanded() {
     isExpanded = !isExpanded;
+  }
+
+  // Get Git status color
+  Color getGitStatusColor(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    switch (gitStatus) {
+      case GitFileStatus.added:
+        return Colors.green;
+      case GitFileStatus.modified:
+        return Colors.blue;
+      case GitFileStatus.deleted:
+        return Colors.red;
+      case GitFileStatus.untracked:
+        return Colors.grey;
+      case GitFileStatus.ignored:
+        return Colors.grey[600]!;
+      case GitFileStatus.clean:
+      default:
+        return colorScheme.onSurface;
+    }
+  }
+
+  // Get Git status badge text
+  String getGitStatusBadge() {
+    switch (gitStatus) {
+      case GitFileStatus.added:
+        return '+';
+      case GitFileStatus.modified:
+        return '●';
+      case GitFileStatus.deleted:
+        return '−';
+      case GitFileStatus.untracked:
+        return '?';
+      case GitFileStatus.ignored:
+        return '!';
+      case GitFileStatus.clean:
+      default:
+        return '';
+    }
+  }
+
+  // Get Git status text style
+  TextStyle getGitStatusTextStyle(BuildContext context) {
+    final baseStyle = TextStyle(
+      fontSize: 13,
+      color: Theme.of(context).colorScheme.onSurface,
+    );
+
+    switch (gitStatus) {
+      case GitFileStatus.deleted:
+        return baseStyle.copyWith(
+          decoration: TextDecoration.lineThrough,
+          color: Colors.red,
+        );
+      case GitFileStatus.ignored:
+        return baseStyle.copyWith(
+          fontStyle: FontStyle.italic,
+          color: Colors.grey[600],
+        );
+      case GitFileStatus.added:
+        return baseStyle.copyWith(color: Colors.green);
+      case GitFileStatus.modified:
+        return baseStyle.copyWith(color: Colors.blue);
+      case GitFileStatus.untracked:
+        return baseStyle.copyWith(color: Colors.grey);
+      case GitFileStatus.clean:
+      default:
+        return baseStyle;
+    }
   }
 }

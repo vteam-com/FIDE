@@ -1,5 +1,9 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as path;
 import '../services/file_system_service.dart';
+import '../services/git_service.dart';
 import '../models/file_system_item.dart';
 
 class DirectoryContents extends StatefulWidget {
@@ -22,8 +26,13 @@ class DirectoryContents extends StatefulWidget {
 
 class DirectoryContentsState extends State<DirectoryContents> {
   final FileSystemService _fileSystem = FileSystemService();
+
+  final GitService _gitService = GitService();
+
   final bool _isExpanded = true;
+
   bool _isLoading = false;
+
   List<FileSystemItem> _items = [];
 
   @override
@@ -48,23 +57,54 @@ class DirectoryContentsState extends State<DirectoryContents> {
     return Column(
       children: _items.map((item) {
         final isSelected = widget.selectedPath == item.path;
+        final isDirectory = item.type == FileSystemItemType.directory;
+
+        // Get Git status styling
+        final gitTextStyle = item.getGitStatusTextStyle(context);
+        final badgeText = item.getGitStatusBadge();
 
         return Column(
           children: [
             ListTile(
-              leading: item.type == FileSystemItemType.directory
-                  ? const Icon(Icons.folder)
-                  : _getFileIcon(item),
+              leading: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  isDirectory ? const Icon(Icons.folder) : _getFileIcon(item),
+                  if (badgeText.isNotEmpty && !isDirectory)
+                    Container(
+                      margin: const EdgeInsets.only(left: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: item.getGitStatusColor(context).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        badgeText,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: item.getGitStatusColor(context),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               title: Text(
                 item.name,
-                style: TextStyle(
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                style: gitTextStyle.copyWith(
+                  fontWeight: isSelected
+                      ? FontWeight.bold
+                      : gitTextStyle.fontWeight,
                   color: isSelected
                       ? Theme.of(context).colorScheme.primary
-                      : null,
+                      : gitTextStyle.color ??
+                            Theme.of(context).textTheme.bodyMedium?.color,
                 ),
               ),
-              trailing: item.type == FileSystemItemType.directory
+              trailing: isDirectory
                   ? Icon(
                       item.isExpanded
                           ? Icons.keyboard_arrow_down
@@ -72,7 +112,7 @@ class DirectoryContentsState extends State<DirectoryContents> {
                     )
                   : null,
               onTap: () {
-                if (item.type == FileSystemItemType.directory) {
+                if (isDirectory) {
                   setState(() => item.isExpanded = !item.isExpanded);
                 } else {
                   widget.onFileSelected?.call(item.path);
@@ -83,7 +123,7 @@ class DirectoryContentsState extends State<DirectoryContents> {
               contentPadding: const EdgeInsets.symmetric(horizontal: 8.0),
               selected: isSelected,
             ),
-            if (item.type == FileSystemItemType.directory && item.isExpanded)
+            if (isDirectory && item.isExpanded)
               Padding(
                 padding: const EdgeInsets.only(left: 16.0),
                 child: DirectoryContents(
@@ -97,6 +137,19 @@ class DirectoryContentsState extends State<DirectoryContents> {
         );
       }).toList(),
     );
+  }
+
+  Future<String?> _findGitRoot(String startPath) async {
+    String currentPath = startPath;
+
+    while (currentPath != path.dirname(currentPath)) {
+      if (await _gitService.isGitRepository(currentPath)) {
+        return currentPath;
+      }
+      currentPath = path.dirname(currentPath);
+    }
+
+    return null;
   }
 
   Widget _getFileIcon(FileSystemItem item) {
@@ -133,6 +186,9 @@ class DirectoryContentsState extends State<DirectoryContents> {
 
     try {
       _items = await _fileSystem.listDirectory(widget.path);
+
+      // Load Git status for files in this directory
+      await _loadGitStatus();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -143,6 +199,37 @@ class DirectoryContentsState extends State<DirectoryContents> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _loadGitStatus() async {
+    try {
+      // Find the root Git directory by walking up the path
+      String? gitRoot = await _findGitRoot(widget.path);
+      if (gitRoot == null) return;
+
+      // Get Git status
+      final gitStatus = await _gitService.getStatus(gitRoot);
+
+      // Update items with Git status
+      for (var item in _items) {
+        if (item.type == FileSystemItemType.file) {
+          final relativePath = path.relative(item.path, from: gitRoot);
+
+          if (gitStatus.staged.contains(relativePath)) {
+            item.gitStatus = GitFileStatus.added;
+          } else if (gitStatus.unstaged.contains(relativePath)) {
+            item.gitStatus = GitFileStatus.modified;
+          } else if (gitStatus.untracked.contains(relativePath)) {
+            item.gitStatus = GitFileStatus.untracked;
+          } else {
+            item.gitStatus = GitFileStatus.clean;
+          }
+        }
+      }
+    } catch (e) {
+      // Silently handle Git status errors
+      debugPrint('Error loading Git status: $e');
     }
   }
 }

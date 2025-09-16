@@ -34,6 +34,10 @@ class EditorScreen extends StatefulWidget {
 
   final VoidCallback? onSave;
 
+  static void closeCurrentEditor() {
+    _currentEditor?.widget.onClose?.call();
+  }
+
   @override
   State<EditorScreen> createState() => _EditorScreenState();
 

@@ -1,7 +1,20 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
 enum FileSystemItemType { file, directory, drive, parent }
+
+enum GitFileStatus {
+  untracked, // ? - New file, not tracked by Git
+  added, // A - Added to staging area
+  modified, // M - Modified
+  deleted, // D - Deleted
+  renamed, // R - Renamed
+  copied, // C - Copied
+  updated, // U - Updated but unmerged
+  ignored, // ! - Ignored
+  clean, // No changes
+}
 
 class FileSystemItem {
   final String name;
@@ -11,6 +24,7 @@ class FileSystemItem {
   final int? size;
   final List<FileSystemItem>? children;
   bool isExpanded;
+  GitFileStatus gitStatus;
 
   FileSystemItem({
     required this.name,
@@ -20,6 +34,7 @@ class FileSystemItem {
     this.size,
     this.children,
     this.isExpanded = false,
+    this.gitStatus = GitFileStatus.clean,
   });
 
   factory FileSystemItem.fromFileSystemEntity(FileSystemEntity entity) {
@@ -106,4 +121,70 @@ class FileSystemItem {
       'json',
     ].contains(ext);
   }
+
+  // Get color for Git status
+  Color getGitStatusColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    switch (gitStatus) {
+      case GitFileStatus.added:
+        return Colors.green; // 🟩 Green
+      case GitFileStatus.modified:
+        return Colors.blue; // 🟦 Blue
+      case GitFileStatus.deleted:
+        return Colors.red; // 🟥 Red
+      case GitFileStatus.untracked:
+        return isDark ? Colors.grey[600]! : Colors.grey[400]!; // ⚪️ Gray
+      case GitFileStatus.ignored:
+        return isDark ? Colors.grey[700]! : Colors.grey[500]!; // Gray italic
+      default:
+        return Theme.of(context).colorScheme.onSurface; // Default color
+    }
+  }
+
+  // Get badge text for Git status
+  String getGitStatusBadge() {
+    switch (gitStatus) {
+      case GitFileStatus.modified:
+        return '●'; // Dot for modified
+      case GitFileStatus.added:
+        return '＋'; // Plus for added
+      case GitFileStatus.deleted:
+        return '−'; // Minus for deleted
+      case GitFileStatus.untracked:
+        return '?'; // Question mark for untracked
+      case GitFileStatus.ignored:
+        return '!'; // Exclamation for ignored
+      default:
+        return '';
+    }
+  }
+
+  // Get text style for Git status
+  TextStyle getGitStatusTextStyle(BuildContext context) {
+    final baseStyle =
+        Theme.of(context).textTheme.bodyMedium ?? const TextStyle();
+
+    switch (gitStatus) {
+      case GitFileStatus.deleted:
+        return baseStyle.copyWith(
+          decoration: TextDecoration.lineThrough,
+          color: getGitStatusColor(context),
+        );
+      case GitFileStatus.ignored:
+        return baseStyle.copyWith(
+          fontStyle: FontStyle.italic,
+          color: getGitStatusColor(context),
+        );
+      case GitFileStatus.untracked:
+      case GitFileStatus.added:
+      case GitFileStatus.modified:
+        return baseStyle.copyWith(color: getGitStatusColor(context));
+      default:
+        return baseStyle;
+    }
+  }
+
+  // Check if item has Git status changes
+  bool get hasGitChanges => gitStatus != GitFileStatus.clean;
 }

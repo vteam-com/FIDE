@@ -1,8 +1,9 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously, deprecated_member_use, avoid_print
 
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:fide/services/file_system_service.dart';
+import 'package:fide/services/git_service.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:path/path.dart' as path;
 import 'directory_contents.dart';
@@ -31,6 +32,8 @@ class FileExplorerState extends State<FileExplorer> {
   final Map<String, List<FileSystemItem>> _expandedItems = {};
 
   final FileSystemService _fileSystem = FileSystemService();
+
+  final GitService _gitService = GitService();
 
   bool _isLoading = false;
 
@@ -283,19 +286,61 @@ class FileExplorerState extends State<FileExplorer> {
     final isDirectory = item.type == FileSystemItemType.directory;
     final isParent = item.type == FileSystemItemType.parent;
 
+    // Get Git status styling
+    final gitTextStyle = item.getGitStatusTextStyle(context);
+    final badgeText = item.getGitStatusBadge();
+
+    // Debug output
+    if (item.type == FileSystemItemType.file &&
+        item.gitStatus != GitFileStatus.clean) {
+      print(
+        'Building item ${item.name} with Git status: ${item.gitStatus}, badge: $badgeText',
+      );
+    }
+
     return Column(
       children: [
         ListTile(
-          leading: isParent
-              ? const Icon(Icons.folder_special)
-              : isDirectory
-              ? const Icon(Icons.folder)
-              : _getFileIcon(item),
+          leading: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              isParent
+                  ? const Icon(Icons.folder_special)
+                  : isDirectory
+                  ? const Icon(Icons.folder)
+                  : _getFileIcon(item),
+              if (badgeText.isNotEmpty && !isDirectory && !isParent)
+                Container(
+                  margin: const EdgeInsets.only(left: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: item.getGitStatusColor(context).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    badgeText,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: item.getGitStatusColor(context),
+                    ),
+                  ),
+                ),
+            ],
+          ),
           title: Text(
             item.name,
-            style: TextStyle(
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected ? Theme.of(context).colorScheme.primary : null,
+            style: gitTextStyle.copyWith(
+              fontWeight: isSelected
+                  ? FontWeight.bold
+                  : gitTextStyle.fontWeight,
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : gitTextStyle.color ??
+                        Theme.of(context).textTheme.bodyMedium?.color,
             ),
           ),
           trailing: isDirectory
@@ -498,6 +543,9 @@ class FileExplorerState extends State<FileExplorer> {
 
       _items = await _fileSystem.listDirectory(_currentPath);
 
+      // Load Git status for files in this directory
+      await _loadGitStatus();
+
       // Restore expanded state
       if (_expandedItems.containsKey(_currentPath)) {
         final cachedItems = _expandedItems[_currentPath]!;
@@ -524,6 +572,46 @@ class FileExplorerState extends State<FileExplorer> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _loadGitStatus() async {
+    try {
+      // Check if current directory is a Git repository
+      final isGitRepo = await _gitService.isGitRepository(_currentPath);
+      if (!isGitRepo) {
+        print('Not a Git repository: $_currentPath');
+        return;
+      }
+
+      // Get Git status
+      final gitStatus = await _gitService.getStatus(_currentPath);
+      print(
+        'Git status loaded: ${gitStatus.staged.length} staged, ${gitStatus.unstaged.length} unstaged, ${gitStatus.untracked.length} untracked',
+      );
+
+      // Update items with Git status
+      for (var item in _items) {
+        if (item.type == FileSystemItemType.file) {
+          final relativePath = path.relative(item.path, from: _currentPath);
+
+          if (gitStatus.staged.contains(relativePath)) {
+            item.gitStatus = GitFileStatus.added;
+            print('File ${item.name} marked as ADDED');
+          } else if (gitStatus.unstaged.contains(relativePath)) {
+            item.gitStatus = GitFileStatus.modified;
+            print('File ${item.name} marked as MODIFIED');
+          } else if (gitStatus.untracked.contains(relativePath)) {
+            item.gitStatus = GitFileStatus.untracked;
+            print('File ${item.name} marked as UNTRACKED');
+          } else {
+            item.gitStatus = GitFileStatus.clean;
+          }
+        }
+      }
+    } catch (e) {
+      // Silently handle Git status errors
+      debugPrint('Error loading Git status: $e');
     }
   }
 
