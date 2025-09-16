@@ -7,9 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
-import 'package:fide/widgets/message_widget.dart';
-import 'package:fide/screens/explorer/welcome_screen.dart';
-import 'package:fide/screens/git/git_panel.dart';
+import 'package:fide/utils/message_helper.dart';
+import 'package:fide/screens/welcome_screen.dart';
+import 'package:fide/screens/git_panel.dart';
 import 'package:fide/theme/app_theme.dart';
 
 enum PanelMode { filesystem, organized, git }

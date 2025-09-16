@@ -2,7 +2,7 @@
 
 import 'dart:io';
 import 'package:flutter_code_crafter/code_crafter.dart';
-import 'package:fide/widgets/message_widget.dart';
+import 'package:fide/utils/message_helper.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;

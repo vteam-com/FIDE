@@ -7,8 +7,8 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/analysis/features.dart';
 
-import '../../models/file_system_item.dart';
-import '../editor/editor_screen.dart';
+import '../models/file_system_item.dart';
+import 'editor_screen.dart';
 
 class OutlinePanel extends StatefulWidget {
   const OutlinePanel({super.key, required this.file, this.onOutlineUpdate});
