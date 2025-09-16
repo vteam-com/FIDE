@@ -97,10 +97,27 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: _buildAppBarTitle(),
-        actions: [
-          // Single header with 3 toggle buttons
+      appBar: AppBar(title: _buildAppBarTitle(), actions: []),
+      body: Column(
+        children: [
+          Expanded(
+            child: Container(
+              color: AppTheme.sidePanelBackground(context),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _projectRoot == null
+                  ? WelcomeScreen(
+                      onOpenFolder: _pickDirectory,
+                      onCreateProject: _createNewProject,
+                      mruFolders: _prefs?.getStringList('mru_folders') ?? [],
+                      onOpenMruProject: _loadProject,
+                      onRemoveMruEntry: _removeMruEntry,
+                    )
+                  : widget.showGitPanel
+                  ? _buildGitPanel()
+                  : _buildFileExplorer(),
+            ),
+          ),
           if (_projectRoot != null)
             Container(
               padding: const EdgeInsets.symmetric(
@@ -158,28 +175,6 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                 ],
               ),
             ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Container(
-              color: AppTheme.sidePanelBackground(context),
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _projectRoot == null
-                  ? WelcomeScreen(
-                      onOpenFolder: _pickDirectory,
-                      onCreateProject: _createNewProject,
-                      mruFolders: _prefs?.getStringList('mru_folders') ?? [],
-                      onOpenMruProject: _loadProject,
-                      onRemoveMruEntry: _removeMruEntry,
-                    )
-                  : widget.showGitPanel
-                  ? _buildGitPanel()
-                  : _buildFileExplorer(),
-            ),
-          ),
         ],
       ),
     );

@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:fide/screens/editor_screen.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,7 +38,7 @@ class MainLayout extends ConsumerStatefulWidget {
 class MainLayoutState extends ConsumerState<MainLayout> {
   double _explorerWidth = 250.0;
   double _outlineWidth = 200.0;
-  final double _minExplorerWidth = 150.0;
+  final double _minExplorerWidth = 200.0;
   final double _maxExplorerWidth = 500.0;
   final double _minOutlineWidth = 150.0;
   final double _maxOutlineWidth = 400.0;
@@ -363,6 +364,9 @@ class MainLayoutState extends ConsumerState<MainLayout> {
               child: RightPanel(
                 selectedFile: selectedFile,
                 onOutlineUpdate: _setOutlineRefreshCallback,
+                onOutlineNodeSelected: (int line, int column) {
+                  EditorScreen.navigateToLine(line, column: column);
+                },
               ),
             ),
           ],

@@ -37,10 +37,8 @@ class EditorScreen extends StatefulWidget {
   @override
   State<EditorScreen> createState() => _EditorScreenState();
 
-  static void navigateToLine(int lineNumber) {
-    print('EditorScreen.navigateToLine called with lineNumber: $lineNumber');
-    print('Current editor is null: ${_currentEditor == null}');
-    _currentEditor?._navigateToLine(lineNumber);
+  static void navigateToLine(int lineNumber, {int column = 1}) {
+    _currentEditor?._navigateToLine(lineNumber, column: column);
   }
 
   static void saveCurrentEditor() {
@@ -51,7 +49,7 @@ class EditorScreen extends StatefulWidget {
 class _EditorScreenState extends State<EditorScreen> {
   late CodeCrafterController _codeController;
 
-  final GlobalKey _codeFieldKey = GlobalKey();
+  final GlobalKey _codeCrafterKey = GlobalKey();
 
   late String _currentFile;
 
@@ -149,9 +147,7 @@ class _EditorScreenState extends State<EditorScreen> {
               children: [
                 Expanded(
                   child: CodeCrafter(
-                    key: ValueKey(
-                      _currentFile,
-                    ), // Use file path as key to force recreation
+                    key: _codeCrafterKey,
                     controller: _codeController,
                     gutterStyle: GutterStyle(
                       lineNumberStyle: TextStyle(
@@ -213,15 +209,16 @@ class _EditorScreenState extends State<EditorScreen> {
 
   FocusNode? findFocusableElement(BuildContext context) {
     FocusNode? result;
-    context.visitChildElements((element) {
+    void search(Element element) {
       final widget = element.widget;
       if (widget is EditableText) {
         result = widget.focusNode;
-      } else {
-        result = findFocusableElement(element);
+        return;
       }
-      if (result != null) return;
-    });
+      element.visitChildren(search);
+    }
+
+    context.visitChildElements(search);
     return result;
   }
 
@@ -431,26 +428,6 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
-  BuildContext? _findEditableTextContext(BuildContext root) {
-    BuildContext? result;
-
-    void visitor(Element element) {
-      if (element.widget is EditableText) {
-        result = element;
-        return;
-      }
-      element.visitChildren(visitor);
-    }
-
-    try {
-      (root as Element).visitChildren(visitor);
-    } catch (_) {
-      // ignore
-    }
-
-    return result;
-  }
-
   Map<String, TextStyle> _getCodeTheme() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final baseTextColor = Theme.of(context).colorScheme.onPrimary;
@@ -608,18 +585,21 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  void _navigateToLine(int lineNumber) {
+  void _navigateToLine(int lineNumber, {int column = 1}) {
+    // Don't navigate if file is still loading or not loaded
+    if (_isLoading ||
+        _currentFile.isEmpty ||
+        _codeController.text.startsWith('// Loading')) {
+      return;
+    }
+
     // Basic validation
     if (_codeController.text.isEmpty || lineNumber < 1) {
-      print('Early return: text is empty or line number invalid');
       return;
     }
 
     final lines = _codeController.text.split('\n');
     if (lineNumber > lines.length) {
-      print(
-        'Line number $lineNumber is greater than total lines ${lines.length}',
-      );
       return;
     }
 
@@ -629,61 +609,36 @@ class _EditorScreenState extends State<EditorScreen> {
       offset += lines[i].length + 1; // +1 for the newline character
     }
 
+    // Add column offset within the line (column is 1-indexed, so subtract 1)
+    final targetLine = lines[lineNumber - 1];
+    final columnOffset = (column - 1).clamp(0, targetLine.length);
+    offset += columnOffset;
+
     // Clamp offset
     if (offset < 0) offset = 0;
     if (offset > _codeController.text.length) {
       offset = _codeController.text.length;
     }
 
-    // Use a post-frame callback to set the selection and ensure the caret/line is visible
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
+    _codeController.selection = TextSelection.fromPosition(
+      TextPosition(offset: offset),
+    );
+
+    // Force a rebuild to ensure the selection is visible
+    if (mounted) {
+      setState(() {});
+    }
+
+    // Ensure the editor gets focus
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-
-      try {
-        _codeController.selection = TextSelection.collapsed(offset: offset);
-      } catch (e) {
-        print('Failed to set selection: $e');
+      final focusNode = findFocusableElement(context);
+      if (focusNode != null) {
+        focusNode.requestFocus();
+      } else {
+        // Fallback: try to request focus on the current focus scope
+        FocusScope.of(context).requestFocus();
       }
-
-      // Small delay to allow the editable to update its internal layout
-      await Future.delayed(const Duration(milliseconds: 50));
-
-      // Try to use bringIntoView if available, with fallback
-      try {
-        // Use dynamic call to bringIntoView
-        await (_codeController as dynamic).bringIntoView(
-          TextPosition(offset: offset),
-        );
-      } on NoSuchMethodError catch (e) {
-        print('bringIntoView not available: $e');
-        // Fallback: use Scrollable.ensureVisible on EditableText
-        if (_codeFieldKey.currentContext != null) {
-          final editableContext = _findEditableTextContext(
-            _codeFieldKey.currentContext!,
-          );
-          if (editableContext != null) {
-            try {
-              await Scrollable.ensureVisible(
-                editableContext,
-                alignment: 0.5,
-                duration: const Duration(milliseconds: 150),
-                curve: Curves.easeInOut,
-              );
-            } catch (err) {
-              print('Scrollable.ensureVisible failed: $err');
-            }
-          } else {
-            print('EditableText context not found for ensureVisible');
-          }
-        } else {
-          print('CodeFieldKey context is null');
-        }
-      } catch (e) {
-        print('bringIntoView failed: $e');
-      }
-
-      // Force a rebuild so the caret position is reflected
-      if (mounted) setState(() {});
     });
   }
 

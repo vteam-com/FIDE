@@ -110,6 +110,7 @@ digraph "" {
   "/lib/services/file_system_service.dart" -> "/lib/models/file_system_item.dart";
   "/lib/widgets/directory_contents.dart" -> "/lib/services/file_system_service.dart";
   "/lib/widgets/directory_contents.dart" -> "/lib/models/file_system_item.dart";
+  "/lib/widgets/main_layout.dart" -> "/lib/screens/editor_screen.dart";
   "/lib/widgets/main_layout.dart" -> "/lib/providers/app_providers.dart";
   "/lib/widgets/main_layout.dart" -> "/lib/models/file_system_item.dart";
   "/lib/widgets/main_layout.dart" -> "/lib/utils/file_type_utils.dart";

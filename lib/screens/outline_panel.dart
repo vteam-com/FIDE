@@ -11,9 +11,16 @@ import '../models/file_system_item.dart';
 import 'editor_screen.dart';
 
 class OutlinePanel extends StatefulWidget {
-  const OutlinePanel({super.key, required this.file, this.onOutlineUpdate});
+  const OutlinePanel({
+    super.key,
+    required this.file,
+    this.onOutlineUpdate,
+    this.onNodeSelected,
+  });
 
   final FileSystemItem file;
+
+  final Function(int, int)? onNodeSelected;
 
   final Function(VoidCallback)? onOutlineUpdate;
 
@@ -172,8 +179,8 @@ class _OutlinePanelState extends State<OutlinePanel> {
           : null,
       child: InkWell(
         onTap: () {
-          // Navigate to the corresponding line in the editor
-          EditorScreen.navigateToLine(node.line);
+          // Navigate to the corresponding line and column in the editor
+          widget.onNodeSelected?.call(node.line, node.column);
           // Ensure focus is transferred to the editor
           // The editor will handle focus internally
         },
@@ -277,6 +284,7 @@ class _OutlinePanelState extends State<OutlinePanel> {
                 name: title,
                 type: 'Heading ${level.clamp(1, 6)}',
                 line: i + 1,
+                column: level + 1, // Position after the # characters
                 level: level - 1,
               ),
             );
@@ -305,12 +313,14 @@ class OutlineNode {
   final String name;
   final String type;
   final int line;
+  final int column;
   final int level;
 
   OutlineNode({
     required this.name,
     required this.type,
     required this.line,
+    this.column = 1,
     this.level = 0,
   });
 }
@@ -355,20 +365,26 @@ class _OutlineVisitor extends RecursiveAstVisitor<void> {
   }
 
   void _addNode(String name, String type, int offset, int length) {
-    // Calculate the actual line number from the offset
-    // Count the number of newline characters before the offset
+    // Calculate the actual line number and column from the offset
     int lineNumber = 1; // Lines are 1-indexed
+    int lastNewlineIndex = -1;
+
     for (int i = 0; i < offset && i < fileContent.length; i++) {
       if (fileContent[i] == '\n') {
         lineNumber++;
+        lastNewlineIndex = i;
       }
     }
+
+    // Column is 1-indexed: characters from last newline to offset
+    int column = offset - lastNewlineIndex; // This gives 1-indexed column
 
     nodes.add(
       OutlineNode(
         name: name,
         type: type,
         line: lineNumber,
+        column: column,
         level: _currentLevel,
       ),
     );

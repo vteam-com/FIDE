@@ -7,7 +7,14 @@ import '../screens/outline_panel.dart';
 import '../models/file_system_item.dart';
 
 class RightPanel extends StatefulWidget {
-  const RightPanel({super.key, this.selectedFile, this.onOutlineUpdate});
+  const RightPanel({
+    super.key,
+    this.selectedFile,
+    this.onOutlineUpdate,
+    this.onOutlineNodeSelected,
+  });
+
+  final Function(int, int)? onOutlineNodeSelected;
 
   final Function(VoidCallback)? onOutlineUpdate;
 
@@ -25,6 +32,7 @@ class _RightPanelState extends State<RightPanel> {
           ? OutlinePanel(
               file: widget.selectedFile!,
               onOutlineUpdate: widget.onOutlineUpdate,
+              onNodeSelected: widget.onOutlineNodeSelected,
             )
           : Container(
               color: Theme.of(context).colorScheme.surface,
