@@ -64,6 +64,41 @@ final GlobalKey<_MainLayoutState> _mainLayoutKey =
 class _FIDEState extends ConsumerState<FIDE> {
   ThemeMode _themeMode = ThemeMode.system;
   String? _lastOpenedFileName;
+  late SharedPreferences _prefs;
+  static const String _themeModeKey = 'theme_mode';
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeTheme();
+  }
+
+  Future<void> _initializeTheme() async {
+    _prefs = await SharedPreferences.getInstance();
+    final savedThemeMode = _prefs.getString(_themeModeKey);
+    if (savedThemeMode != null) {
+      setState(() {
+        _themeMode = _parseThemeMode(savedThemeMode);
+      });
+    }
+  }
+
+  ThemeMode _parseThemeMode(String themeString) {
+    switch (themeString) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      case 'system':
+      default:
+        return ThemeMode.system;
+    }
+  }
+
+  Future<void> _saveThemeMode(ThemeMode themeMode) async {
+    final themeString = themeMode.name; // 'light', 'dark', or 'system'
+    await _prefs.setString(_themeModeKey, themeString);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -296,24 +331,27 @@ class _FIDEState extends ConsumerState<FIDE> {
               ListTile(
                 leading: const Icon(Icons.brightness_auto),
                 title: const Text('System'),
-                onTap: () {
+                onTap: () async {
                   setState(() => _themeMode = ThemeMode.system);
+                  await _saveThemeMode(ThemeMode.system);
                   Navigator.of(context).pop();
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.brightness_5),
                 title: const Text('Light'),
-                onTap: () {
+                onTap: () async {
                   setState(() => _themeMode = ThemeMode.light);
+                  await _saveThemeMode(ThemeMode.light);
                   Navigator.of(context).pop();
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.brightness_2),
                 title: const Text('Dark'),
-                onTap: () {
+                onTap: () async {
                   setState(() => _themeMode = ThemeMode.dark);
+                  await _saveThemeMode(ThemeMode.dark);
                   Navigator.of(context).pop();
                 },
               ),
