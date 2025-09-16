@@ -629,6 +629,24 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                     ),
                   ),
                 ),
+              // Context menu button for selected files
+              if (isSelected) ...[
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTapDown: (details) =>
+                      _showFileContextMenu(node, details.globalPosition),
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.more_vert,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -1203,6 +1221,167 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     }
   }
 
+  void _handleFileContextMenuAction(String action, ProjectNode node) {
+    switch (action) {
+      case 'reveal':
+        _revealInFileExplorer(node);
+        break;
+      case 'rename':
+        _renameFile(node);
+        break;
+      case 'delete':
+        _deleteFile(node);
+        break;
+    }
+  }
+
+  Future<void> _revealInFileExplorer(ProjectNode node) async {
+    try {
+      final directoryPath = node.isDirectory
+          ? node.path
+          : path.dirname(node.path);
+
+      if (Platform.isMacOS) {
+        // Use 'open' command on macOS
+        await Process.run('open', [directoryPath]);
+      } else if (Platform.isWindows) {
+        // Use 'explorer' command on Windows
+        await Process.run('explorer', [directoryPath]);
+      } else if (Platform.isLinux) {
+        // Use 'xdg-open' command on Linux
+        await Process.run('xdg-open', [directoryPath]);
+      } else {
+        _showError('Reveal in file explorer is not supported on this platform');
+      }
+    } catch (e) {
+      _showError('Failed to open file explorer: $e');
+    }
+  }
+
+  Future<void> _renameFile(ProjectNode node) async {
+    final TextEditingController controller = TextEditingController(
+      text: node.name,
+    );
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Rename File'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'New name',
+            hintText: 'Enter new file name',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Rename'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == null || result.isEmpty || result == node.name) return;
+
+    try {
+      final newPath = path.join(path.dirname(node.path), result);
+
+      // Check if target file already exists
+      if (File(newPath).existsSync() || Directory(newPath).existsSync()) {
+        _showError('A file or folder with this name already exists');
+        return;
+      }
+
+      // Perform the rename operation
+      if (node.isDirectory) {
+        await Directory(node.path).rename(newPath);
+      } else {
+        await File(node.path).rename(newPath);
+      }
+
+      // Update the project tree
+      await _refreshProjectTree();
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Renamed to "$result"')));
+      }
+    } catch (e) {
+      _showError('Failed to rename file: $e');
+    }
+  }
+
+  Future<void> _deleteFile(ProjectNode node) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete File'),
+        content: Text(
+          'Are you sure you want to delete "${node.name}"? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      // Perform the delete operation
+      if (node.isDirectory) {
+        await Directory(node.path).delete(recursive: true);
+      } else {
+        await File(node.path).delete();
+      }
+
+      // Update the project tree
+      await _refreshProjectTree();
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Deleted "${node.name}"')));
+      }
+    } catch (e) {
+      _showError('Failed to delete file: $e');
+    }
+  }
+
+  Future<void> _refreshProjectTree() async {
+    if (_projectRoot == null) return;
+
+    try {
+      // Reload the project tree
+      final result = await _projectRoot!.loadChildren();
+
+      if (result == LoadChildrenResult.success && mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      _showError('Failed to refresh project tree: $e');
+    }
+  }
+
   void _handleFileTap(ProjectNode node) {
     final item = FileSystemItem.fromFileSystemEntity(File(node.path));
     if (widget.selectedFile?.path == item.path) return;
@@ -1572,6 +1751,68 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     if (mounted) {
       MessageHelper.showError(context, message, showCopyButton: true);
     }
+  }
+
+  void _showFileContextMenu(ProjectNode node, Offset position) {
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dx + 1,
+        position.dy + 1,
+      ),
+      items: [
+        PopupMenuItem(
+          value: 'reveal',
+          child: Row(
+            children: [
+              Icon(
+                Platform.isMacOS ? Icons.folder_open : Icons.folder,
+                size: 16,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(Platform.isMacOS ? 'Reveal in Finder' : 'Show in Explorer'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'rename',
+          child: Row(
+            children: [
+              Icon(
+                Icons.edit,
+                size: 16,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              const Text('Rename'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(
+                Icons.delete,
+                size: 16,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Delete',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ).then((value) {
+      if (value == null) return;
+      _handleFileContextMenuAction(value, node);
+    });
   }
 
   void _showNodeContextMenu(ProjectNode node) {
