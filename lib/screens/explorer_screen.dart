@@ -160,21 +160,27 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
             ),
         ],
       ),
-      body: Container(
-        color: AppTheme.sidePanelBackground(context),
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _projectRoot == null
-            ? WelcomeScreen(
-                onOpenFolder: _pickDirectory,
-                onCreateProject: _createNewProject,
-                mruFolders: _prefs?.getStringList('mru_folders') ?? [],
-                onOpenMruProject: _loadProject,
-                onRemoveMruEntry: _removeMruEntry,
-              )
-            : widget.showGitPanel
-            ? _buildGitPanel()
-            : _buildFileExplorer(),
+      body: Column(
+        children: [
+          Expanded(
+            child: Container(
+              color: AppTheme.sidePanelBackground(context),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _projectRoot == null
+                  ? WelcomeScreen(
+                      onOpenFolder: _pickDirectory,
+                      onCreateProject: _createNewProject,
+                      mruFolders: _prefs?.getStringList('mru_folders') ?? [],
+                      onOpenMruProject: _loadProject,
+                      onRemoveMruEntry: _removeMruEntry,
+                    )
+                  : widget.showGitPanel
+                  ? _buildGitPanel()
+                  : _buildFileExplorer(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -623,7 +629,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       );
     }
 
-    return GitPanel(projectPath: _projectRoot!.path);
+    return SizedBox.expand(child: GitPanel(projectPath: _projectRoot!.path));
   }
 
   Widget _buildNode(ProjectNode node) {
@@ -635,19 +641,17 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   }
 
   Widget _buildNodeChildren(ProjectNode node) {
-    if (node.children.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 1.0, horizontal: 16.0),
-        child: Text(
-          'Empty folder',
-          style: TextStyle(color: Colors.grey, fontSize: 12),
-        ),
-      );
+    // Deduplicate children by path to prevent duplicate entries
+    final uniqueChildren = <String, ProjectNode>{};
+    for (final child in node.children) {
+      uniqueChildren[child.path] = child;
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: node.children.map((child) => _buildNode(child)).toList(),
+      children: uniqueChildren.values
+          .map((child) => _buildNode(child))
+          .toList(),
     );
   }
 
@@ -724,6 +728,15 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       } else {
         categories['Root']!.add(node);
       }
+    }
+
+    // Deduplicate categories
+    for (final category in categories.keys) {
+      final uniqueNodes = <String, ProjectNode>{};
+      for (final node in categories[category]!) {
+        uniqueNodes[node.path] = node;
+      }
+      categories[category] = uniqueNodes.values.toList();
     }
 
     // Build the organized view
@@ -1176,10 +1189,10 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   }
 
   void _handleFileTap(ProjectNode node) {
+    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
+    if (widget.selectedFile?.path == item.path) return;
     if (widget.onFileSelected != null) {
-      widget.onFileSelected!(
-        FileSystemItem.fromFileSystemEntity(File(node.path)),
-      );
+      widget.onFileSelected!(item);
     }
   }
 

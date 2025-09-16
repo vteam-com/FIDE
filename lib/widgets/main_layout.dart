@@ -10,11 +10,7 @@ import 'package:path/path.dart' as path;
 // Providers
 import '../providers/app_providers.dart';
 
-// Screens
-import '../screens/explorer_screen.dart';
-import '../screens/welcome_screen.dart';
-import '../screens/editor_screen.dart';
-import '../screens/outline_panel.dart';
+// Screens - Now handled by panel components
 
 // Models
 import '../models/file_system_item.dart';
@@ -24,6 +20,9 @@ import '../utils/file_type_utils.dart';
 
 // Widgets
 import 'resizable_splitter.dart';
+import 'left_panel.dart';
+import 'center_panel.dart';
+import 'right_panel.dart';
 
 class MainLayout extends ConsumerStatefulWidget {
   final Function(ThemeMode)? onThemeChanged;
@@ -287,15 +286,17 @@ class MainLayoutState extends ConsumerState<MainLayout> {
       backgroundColor: Theme.of(context).colorScheme.surfaceDim,
       body: Row(
         children: [
-          // Left Panel - Explorer with Git toggle
+          // Left Panel
           if (projectLoaded) ...[
             SizedBox(
               width: _explorerWidth,
-              child: ExplorerScreen(
+              child: LeftPanel(
+                selectedFile: selectedFile,
+                currentProjectPath: currentProjectPath,
+                projectLoaded: projectLoaded,
                 onFileSelected: (file) {
                   ref.read(selectedFileProvider.notifier).state = file;
                 },
-                selectedFile: selectedFile,
                 onThemeChanged: (themeMode) {
                   ref.read(themeModeProvider.notifier).state = themeMode;
                 },
@@ -313,7 +314,6 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                   _updateMruList(path);
                   ref.read(currentProjectPathProvider.notifier).state = path;
                 },
-                initialProjectPath: currentProjectPath,
                 showGitPanel: _activeLeftPanel == 1,
                 onToggleGitPanel: () {
                   setState(
@@ -323,78 +323,49 @@ class MainLayoutState extends ConsumerState<MainLayout> {
               ),
             ),
 
-            // Resizable Splitter
+            // Resizable Splitter between Left and Center
             ResizableSplitter(onResize: _onResize),
           ],
 
-          // Main Editor Area
+          // Center Panel
           Expanded(
-            child: Row(
-              children: [
-                // Editor
-                Expanded(
-                  child: selectedFile != null
-                      ? EditorScreen(
-                          filePath: selectedFile.path,
-                          onContentChanged: _refreshOutlineCallback,
-                          onClose: () {
-                            ref.read(selectedFileProvider.notifier).state =
-                                null;
-                          },
-                        )
-                      : !projectLoaded
-                      ? WelcomeScreen(
-                          onOpenFolder: pickDirectory,
-                          onCreateProject: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Create new project feature coming soon!',
-                                ),
-                              ),
-                            );
-                          },
-                          mruFolders: mruFolders,
-                          onOpenMruProject: (path) async {
-                            final success = await _tryLoadProject(path);
-                            if (success) {
-                              await _updateMruList(path);
-                              await tryReopenLastFile(path);
-                            }
-                          },
-                          onRemoveMruEntry: (path) async {
-                            setState(() {
-                              mruFolders.remove(path);
-                            });
-                            await _prefs.setStringList(
-                              _mruFoldersKey,
-                              mruFolders,
-                            );
-                          },
-                        )
-                      : const Center(
-                          child: Text(
-                            'Select a file to start editing',
-                            style: TextStyle(fontSize: 16, color: Colors.grey),
-                          ),
-                        ),
-                ),
-
-                // Outline View
-                if (selectedFile != null) ...[
-                  // Resizable Splitter between Editor and Outline
-                  ResizableSplitter(onResize: _onOutlineResize),
-                  SizedBox(
-                    width: _outlineWidth,
-                    child: OutlinePanel(
-                      file: selectedFile,
-                      onOutlineUpdate: _setOutlineRefreshCallback,
-                    ),
-                  ),
-                ],
-              ],
+            child: CenterPanel(
+              selectedFile: selectedFile,
+              projectLoaded: projectLoaded,
+              mruFolders: mruFolders,
+              onOpenFolder: pickDirectory,
+              onOpenMruProject: (path) async {
+                final success = await _tryLoadProject(path);
+                if (success) {
+                  await _updateMruList(path);
+                  await tryReopenLastFile(path);
+                }
+              },
+              onRemoveMruEntry: (path) async {
+                setState(() {
+                  mruFolders.remove(path);
+                });
+                await _prefs.setStringList(_mruFoldersKey, mruFolders);
+              },
+              onContentChanged: _refreshOutlineCallback,
+              onClose: () {
+                ref.read(selectedFileProvider.notifier).state = null;
+              },
             ),
           ),
+
+          // Right Panel
+          if (selectedFile != null) ...[
+            // Resizable Splitter between Center and Right
+            ResizableSplitter(onResize: _onOutlineResize),
+            SizedBox(
+              width: _outlineWidth,
+              child: RightPanel(
+                selectedFile: selectedFile,
+                onOutlineUpdate: _setOutlineRefreshCallback,
+              ),
+            ),
+          ],
         ],
       ),
     );

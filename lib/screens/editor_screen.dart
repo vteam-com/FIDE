@@ -5,6 +5,8 @@ import 'package:flutter_code_crafter/code_crafter.dart';
 import 'package:fide/utils/message_helper.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:highlight/languages/json.dart';
+import 'package:highlight/languages/plaintext.dart';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:highlight/languages/dart.dart';
@@ -53,8 +55,6 @@ class _EditorScreenState extends State<EditorScreen> {
 
   late String _currentFile;
 
-  late FocusNode _focusNode;
-
   bool _isDirty = false;
 
   bool _isLoading = false;
@@ -63,13 +63,15 @@ class _EditorScreenState extends State<EditorScreen> {
   void initState() {
     super.initState();
     _currentFile = widget.filePath;
-    _focusNode = FocusNode();
 
     _codeController = CodeCrafterController();
     _codeController.text = _currentFile.isNotEmpty
         ? '// Loading...\n'
         : '// No file selected\n';
-    _codeController.language = _getLanguageForFile(_currentFile);
+    final initialLanguage = _getLanguageForFile(_currentFile);
+    if (initialLanguage != null) {
+      _codeController.language = initialLanguage;
+    }
     _codeController.addListener(_onCodeChanged);
 
     if (_currentFile.isNotEmpty) {
@@ -86,7 +88,9 @@ class _EditorScreenState extends State<EditorScreen> {
     if (EditorScreen._currentEditor == this) {
       EditorScreen._currentEditor = null;
     }
-    _focusNode.dispose();
+
+    // Remove listener before disposing controller
+    _codeController.removeListener(_onCodeChanged);
     _codeController.dispose();
     super.dispose();
   }
@@ -145,9 +149,10 @@ class _EditorScreenState extends State<EditorScreen> {
               children: [
                 Expanded(
                   child: CodeCrafter(
-                    key: _codeFieldKey,
+                    key: ValueKey(
+                      _currentFile,
+                    ), // Use file path as key to force recreation
                     controller: _codeController,
-                    focusNode: _focusNode,
                     gutterStyle: GutterStyle(
                       lineNumberStyle: TextStyle(
                         fontFamily: 'monospace',
@@ -528,7 +533,9 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   dynamic _getLanguageForFile(String filePath) {
-    if (filePath.isEmpty) return null;
+    if (filePath.isEmpty) {
+      return plaintext;
+    }
     final extension = filePath.split('.').last.toLowerCase();
     switch (extension) {
       case 'dart':
@@ -537,9 +544,9 @@ class _EditorScreenState extends State<EditorScreen> {
       case 'yml':
         return yaml;
       case 'json':
-        return null; // Use plain text for JSON
+        return json; // Use dart highlighting for JSON
       default:
-        return null; // Default to plain text
+        return plaintext; // Default to dart highlighting
     }
   }
 
@@ -580,12 +587,10 @@ class _EditorScreenState extends State<EditorScreen> {
 
         if (mounted) {
           setState(() {
-            _focusNode = FocusNode();
-            _codeController.dispose();
-            _codeController = CodeCrafterController();
             _codeController.text = content;
-            _codeController.language = language;
-            _codeController.addListener(_onCodeChanged);
+            if (language != null) {
+              _codeController.language = language;
+            }
             _isDirty = false;
           });
         }
@@ -640,9 +645,6 @@ class _EditorScreenState extends State<EditorScreen> {
         print('Failed to set selection: $e');
       }
 
-      // Give focus to the editor so the caret is shown
-      _focusNode.requestFocus();
-
       // Small delay to allow the editable to update its internal layout
       await Future.delayed(const Duration(milliseconds: 50));
 
@@ -686,6 +688,9 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _onCodeChanged() {
+    // Check if widget is still mounted before calling setState
+    if (!mounted) return;
+
     // Always trigger a rebuild when selection or text changes
     setState(() {
       // Mark as dirty if text has changed and wasn't already dirty

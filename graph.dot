@@ -23,6 +23,9 @@ digraph "" {
   "/lib/widgets/main_layout.dart" [label="main_layout"];
   "/lib/widgets/file_explorer.dart" [label="file_explorer"];
   "/lib/widgets/message_widget.dart" [label="message_widget"];
+  "/lib/widgets/left_panel.dart" [label="left_panel"];
+  "/lib/widgets/center_panel.dart" [label="center_panel"];
+  "/lib/widgets/right_panel.dart" [label="right_panel"];
   "/tool/sort_source.dart" [label="sort_source"];
   subgraph "cluster~" {
     label="fide";
@@ -72,6 +75,9 @@ digraph "" {
         "/lib/widgets/main_layout.dart";
         "/lib/widgets/file_explorer.dart";
         "/lib/widgets/message_widget.dart";
+        "/lib/widgets/left_panel.dart";
+        "/lib/widgets/center_panel.dart";
+        "/lib/widgets/right_panel.dart";
       }
     }
     subgraph "cluster~/tool" {
@@ -105,14 +111,20 @@ digraph "" {
   "/lib/widgets/directory_contents.dart" -> "/lib/services/file_system_service.dart";
   "/lib/widgets/directory_contents.dart" -> "/lib/models/file_system_item.dart";
   "/lib/widgets/main_layout.dart" -> "/lib/providers/app_providers.dart";
-  "/lib/widgets/main_layout.dart" -> "/lib/screens/explorer_screen.dart";
-  "/lib/widgets/main_layout.dart" -> "/lib/screens/welcome_screen.dart";
-  "/lib/widgets/main_layout.dart" -> "/lib/screens/editor_screen.dart";
-  "/lib/widgets/main_layout.dart" -> "/lib/screens/outline_panel.dart";
   "/lib/widgets/main_layout.dart" -> "/lib/models/file_system_item.dart";
   "/lib/widgets/main_layout.dart" -> "/lib/utils/file_type_utils.dart";
   "/lib/widgets/main_layout.dart" -> "/lib/widgets/resizable_splitter.dart";
+  "/lib/widgets/main_layout.dart" -> "/lib/widgets/left_panel.dart";
+  "/lib/widgets/main_layout.dart" -> "/lib/widgets/center_panel.dart";
+  "/lib/widgets/main_layout.dart" -> "/lib/widgets/right_panel.dart";
   "/lib/widgets/file_explorer.dart" -> "/lib/services/file_system_service.dart";
   "/lib/widgets/file_explorer.dart" -> "/lib/models/file_system_item.dart";
   "/lib/widgets/file_explorer.dart" -> "/lib/widgets/directory_contents.dart";
+  "/lib/widgets/left_panel.dart" -> "/lib/screens/explorer_screen.dart";
+  "/lib/widgets/left_panel.dart" -> "/lib/models/file_system_item.dart";
+  "/lib/widgets/center_panel.dart" -> "/lib/screens/welcome_screen.dart";
+  "/lib/widgets/center_panel.dart" -> "/lib/screens/editor_screen.dart";
+  "/lib/widgets/center_panel.dart" -> "/lib/models/file_system_item.dart";
+  "/lib/widgets/right_panel.dart" -> "/lib/screens/outline_panel.dart";
+  "/lib/widgets/right_panel.dart" -> "/lib/models/file_system_item.dart";
 }
