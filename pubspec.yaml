@@ -48,6 +48,7 @@ dependencies:
   package_info_plus: ^8.0.0
   code_text_field: ^1.1.0
   flutter_code_crafter: ^0.3.0
+  window_manager: ^0.3.9
 
 dev_dependencies:
   flutter_launcher_icons: "^0.14.4"

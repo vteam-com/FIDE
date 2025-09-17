@@ -15,6 +15,9 @@ final currentProjectPathProvider = StateProvider<String?>((ref) => null);
 // State management for current project root
 final currentProjectRootProvider = StateProvider<ProjectNode?>((ref) => null);
 
+// State management for MRU folders
+final mruFoldersProvider = StateProvider<List<String>>((ref) => []);
+
 // Theme mode provider
 final themeModeProvider = StateProvider<ThemeMode>((ref) {
   // Try to get saved theme mode from shared preferences

@@ -78,6 +78,22 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     _refreshOutlineCallback = callback;
   }
 
+  // Method to toggle outline panel visibility
+  void toggleOutlinePanel() {
+    // For now, we'll just show a message since the outline panel
+    // is automatically shown/hidden based on file selection
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Outline panel visibility is controlled by file selection',
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   void _onResize(double delta) {
     setState(() {
       _explorerWidth = (_explorerWidth + delta).clamp(
@@ -109,7 +125,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
 
     // Try to load the most recent folder if available
     if (mruFolders.isNotEmpty) {
-      final success = await _tryLoadProject(mruFolders.first);
+      final success = await tryLoadProject(mruFolders.first);
       if (success) {
         await tryReopenLastFile(mruFolders.first);
         return;
@@ -117,7 +133,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
 
       // Project failed to load, try the next one
       for (int i = 1; i < mruFolders.length; i++) {
-        final success = await _tryLoadProject(mruFolders[i]);
+        final success = await tryLoadProject(mruFolders[i]);
         if (success) {
           await tryReopenLastFile(mruFolders[i]);
           return;
@@ -134,7 +150,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   }
 
   // Try to load a project and return success status
-  Future<bool> _tryLoadProject(String directoryPath) async {
+  Future<bool> tryLoadProject(String directoryPath) async {
     try {
       // Validate that this is a Flutter project
       final dir = Directory(directoryPath);
@@ -336,7 +352,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
               mruFolders: mruFolders,
               onOpenFolder: pickDirectory,
               onOpenMruProject: (path) async {
-                final success = await _tryLoadProject(path);
+                final success = await tryLoadProject(path);
                 if (success) {
                   await _updateMruList(path);
                   await tryReopenLastFile(path);

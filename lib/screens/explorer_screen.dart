@@ -202,12 +202,6 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   }
 
   Widget _buildAppBarTitle() {
-    // Load MRU folders for display purposes
-    final mruList = _prefs?.getStringList('mru_folders') ?? [];
-    final mruFolders = mruList
-        .where((path) => Directory(path).existsSync())
-        .toList();
-
     if (_projectRoot == null) {
       return Text(
         'Explorer',
@@ -217,169 +211,11 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       );
     }
 
-    return PopupMenuButton<String>(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: Text(
-              _projectRoot?.name ?? 'Folder...',
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-            ),
-          ),
-          Icon(
-            Icons.arrow_drop_down,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ],
-      ),
-      onSelected: (value) {
-        if (value == 'add_folder') {
-          _pickDirectory();
-        } else if (value == 'create_project') {
-          _createNewProject();
-        } else if (value == 'close_project') {
-          _closeProject();
-        } else if (value.startsWith('remove_')) {
-          // Handle MRU entry removal
-          final pathToRemove = value.substring(7); // Remove 'remove_' prefix
-          _removeMruEntry(pathToRemove);
-        } else {
-          _loadProject(value, forceLoad: true);
-        }
-      },
-      itemBuilder: (context) {
-        final items = <PopupMenuEntry<String>>[];
-
-        for (final path in mruFolders) {
-          final dirName = path.split('/').last;
-          final hasAccess = Directory(path).existsSync();
-          items.add(
-            PopupMenuItem<String>(
-              value: path,
-              child: Row(
-                children: [
-                  Icon(
-                    hasAccess ? Icons.folder : Icons.folder_off,
-                    color: hasAccess
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.error,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      dirName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: hasAccess
-                            ? Theme.of(context).colorScheme.onSurface
-                            : Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  ),
-                  if (!hasAccess) ...[
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.lock,
-                      color: Theme.of(context).colorScheme.error,
-                      size: 14,
-                    ),
-                  ],
-                  IconButton(
-                    icon: Icon(
-                      Icons.close,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    onPressed: () {
-                      _removeMruEntry(path);
-                      Navigator.of(context).pop();
-                    },
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        if (mruFolders.isNotEmpty) {
-          items.add(const PopupMenuDivider());
-        }
-
-        items.add(
-          PopupMenuItem<String>(
-            value: 'add_folder',
-            child: Row(
-              children: [
-                Icon(
-                  Icons.add,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Open a folder ...',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-
-        items.add(
-          PopupMenuItem<String>(
-            value: 'create_project',
-            child: Row(
-              children: [
-                Icon(
-                  Icons.create_new_folder,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Create new Project...',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-
-        items.add(
-          PopupMenuItem<String>(
-            value: 'close_project',
-            child: Row(
-              children: [
-                Icon(
-                  Icons.close,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Close Project',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-
-        return items;
-      },
+    return Text(
+      _projectRoot?.name ?? 'Folder...',
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
+      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
     );
   }
 
@@ -840,26 +676,6 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     }
   }
 
-  void _closeProject() {
-    if (_projectRoot == null) return;
-
-    setState(() {
-      _projectRoot = null;
-      _expandedState.clear();
-      _loadingDirectories.clear();
-    });
-
-    // Notify parent that project is closed
-    if (widget.onProjectLoaded != null) {
-      widget.onProjectLoaded!(false);
-    }
-
-    // Notify parent that project path is cleared
-    if (widget.onProjectPathChanged != null) {
-      widget.onProjectPathChanged!('');
-    }
-  }
-
   void _createNewFile(ProjectNode parent) {}
 
   void _createNewFolder(ProjectNode parent) {}
@@ -955,6 +771,54 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _deleteFile(ProjectNode node) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete File'),
+        content: Text(
+          'Are you sure you want to delete "${node.name}"? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      // Perform the delete operation
+      if (node.isDirectory) {
+        await Directory(node.path).delete(recursive: true);
+      } else {
+        await File(node.path).delete();
+      }
+
+      // Update the project tree
+      await _refreshProjectTree();
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Deleted "${node.name}"')));
+      }
+    } catch (e) {
+      _showError('Failed to delete file: $e');
     }
   }
 
@@ -1235,153 +1099,6 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     }
   }
 
-  Future<void> _revealInFileExplorer(ProjectNode node) async {
-    try {
-      final directoryPath = node.isDirectory
-          ? node.path
-          : path.dirname(node.path);
-
-      if (Platform.isMacOS) {
-        // Use 'open' command on macOS
-        await Process.run('open', [directoryPath]);
-      } else if (Platform.isWindows) {
-        // Use 'explorer' command on Windows
-        await Process.run('explorer', [directoryPath]);
-      } else if (Platform.isLinux) {
-        // Use 'xdg-open' command on Linux
-        await Process.run('xdg-open', [directoryPath]);
-      } else {
-        _showError('Reveal in file explorer is not supported on this platform');
-      }
-    } catch (e) {
-      _showError('Failed to open file explorer: $e');
-    }
-  }
-
-  Future<void> _renameFile(ProjectNode node) async {
-    final TextEditingController controller = TextEditingController(
-      text: node.name,
-    );
-
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Rename File'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'New name',
-            hintText: 'Enter new file name',
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: const Text('Rename'),
-          ),
-        ],
-      ),
-    );
-
-    if (result == null || result.isEmpty || result == node.name) return;
-
-    try {
-      final newPath = path.join(path.dirname(node.path), result);
-
-      // Check if target file already exists
-      if (File(newPath).existsSync() || Directory(newPath).existsSync()) {
-        _showError('A file or folder with this name already exists');
-        return;
-      }
-
-      // Perform the rename operation
-      if (node.isDirectory) {
-        await Directory(node.path).rename(newPath);
-      } else {
-        await File(node.path).rename(newPath);
-      }
-
-      // Update the project tree
-      await _refreshProjectTree();
-
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Renamed to "$result"')));
-      }
-    } catch (e) {
-      _showError('Failed to rename file: $e');
-    }
-  }
-
-  Future<void> _deleteFile(ProjectNode node) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete File'),
-        content: Text(
-          'Are you sure you want to delete "${node.name}"? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    try {
-      // Perform the delete operation
-      if (node.isDirectory) {
-        await Directory(node.path).delete(recursive: true);
-      } else {
-        await File(node.path).delete();
-      }
-
-      // Update the project tree
-      await _refreshProjectTree();
-
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Deleted "${node.name}"')));
-      }
-    } catch (e) {
-      _showError('Failed to delete file: $e');
-    }
-  }
-
-  Future<void> _refreshProjectTree() async {
-    if (_projectRoot == null) return;
-
-    try {
-      // Reload the project tree
-      final result = await _projectRoot!.loadChildren();
-
-      if (result == LoadChildrenResult.success && mounted) {
-        setState(() {});
-      }
-    } catch (e) {
-      _showError('Failed to refresh project tree: $e');
-    }
-  }
-
   void _handleFileTap(ProjectNode node) {
     final item = FileSystemItem.fromFileSystemEntity(File(node.path));
     if (widget.selectedFile?.path == item.path) return;
@@ -1593,6 +1310,21 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     }
   }
 
+  Future<void> _refreshProjectTree() async {
+    if (_projectRoot == null) return;
+
+    try {
+      // Reload the project tree
+      final result = await _projectRoot!.loadChildren();
+
+      if (result == LoadChildrenResult.success && mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      _showError('Failed to refresh project tree: $e');
+    }
+  }
+
   Future<void> _removeMruEntry(String directoryPath) async {
     if (_prefs == null) return;
 
@@ -1607,7 +1339,91 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     }
   }
 
+  Future<void> _renameFile(ProjectNode node) async {
+    final TextEditingController controller = TextEditingController(
+      text: node.name,
+    );
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Rename File'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'New name',
+            hintText: 'Enter new file name',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Rename'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == null || result.isEmpty || result == node.name) return;
+
+    try {
+      final newPath = path.join(path.dirname(node.path), result);
+
+      // Check if target file already exists
+      if (File(newPath).existsSync() || Directory(newPath).existsSync()) {
+        _showError('A file or folder with this name already exists');
+        return;
+      }
+
+      // Perform the rename operation
+      if (node.isDirectory) {
+        await Directory(node.path).rename(newPath);
+      } else {
+        await File(node.path).rename(newPath);
+      }
+
+      // Update the project tree
+      await _refreshProjectTree();
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Renamed to "$result"')));
+      }
+    } catch (e) {
+      _showError('Failed to rename file: $e');
+    }
+  }
+
   void _renameNode(ProjectNode node) {}
+
+  Future<void> _revealInFileExplorer(ProjectNode node) async {
+    try {
+      final directoryPath = node.isDirectory
+          ? node.path
+          : path.dirname(node.path);
+
+      if (Platform.isMacOS) {
+        // Use 'open' command on macOS
+        await Process.run('open', [directoryPath]);
+      } else if (Platform.isWindows) {
+        // Use 'explorer' command on Windows
+        await Process.run('explorer', [directoryPath]);
+      } else if (Platform.isLinux) {
+        // Use 'xdg-open' command on Linux
+        await Process.run('xdg-open', [directoryPath]);
+      } else {
+        _showError('Reveal in file explorer is not supported on this platform');
+      }
+    } catch (e) {
+      _showError('Failed to open file explorer: $e');
+    }
+  }
 
   void _scrollToSelectedFile(String filePath) {
     if (_projectRoot == null || !mounted) return;

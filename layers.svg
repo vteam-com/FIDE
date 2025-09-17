@@ -1,5 +1,5 @@
 <?xml version="1.0" standalone="no"?>
-<svg width="3900" height="600" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
+<svg width="4200" height="600" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
   <style>
     .layerRectangle {
       stroke: black;
@@ -143,6 +143,9 @@
   <g id='Node_url_launcher'>
     <rect x="1204" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
   </g>
+  <g id='Node_window_manager'>
+    <rect x="3904" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
   <g id='Node_xterm'>
     <rect x="2404" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
   </g>
@@ -247,6 +250,11 @@ shared_preferences</title>
 ⬇
 url_launcher</title>
     </path>
+    <path class="line" d="M280 95 C 290 150,3910 150, 3920 205" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+window_manager</title>
+    </path>
     <path class="line" d="M280 95 C 290 150,2410 150, 2420 205" fill="none" stroke="#377E22">
       <title>fide
 ⬇
@@ -297,6 +305,11 @@ path</title>
 ⬇
 yaml</title>
     </path>
+    <path class="line" d="M4180 245 C 4190 375,10 375, 20 505" fill="none" stroke="#377E22">
+      <title>window_manager
+⬇
+path</title>
+    </path>
   </g>
   <g id='Counters_analyzer'>
     <g>
@@ -328,7 +341,7 @@ analyzer</title>
   <g id='Counters_path'>
     <g>
       <circle cx="20" cy="505" r="10" fill="blue"/>
-      <text x="20" y="505" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">23</text>
+      <text x="20" y="505" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">24</text>
       <title>1 /dev/flutter_launcher_icons
 2 /dev/flutter_test
 3 /direct/analyzer
@@ -336,22 +349,23 @@ analyzer</title>
 5 /direct/flutter_markdown
 6 /direct/package_info_plus
 7 /direct/process_run
-8 /root/fide
-9 /transitive/archive
-10 /transitive/cli_util
-11 /transitive/file
-12 /transitive/glob
-13 /transitive/leak_tracker
-14 /transitive/package_config
-15 /transitive/path_provider_linux
-16 /transitive/path_provider_windows
-17 /transitive/posix
-18 /transitive/shared_preferences_linux
-19 /transitive/shared_preferences_windows
-20 /transitive/source_span
-21 /transitive/stack_trace
-22 /transitive/watcher
-23 /transitive/xdg_directories
+8 /direct/window_manager
+9 /root/fide
+10 /transitive/archive
+11 /transitive/cli_util
+12 /transitive/file
+13 /transitive/glob
+14 /transitive/leak_tracker
+15 /transitive/package_config
+16 /transitive/path_provider_linux
+17 /transitive/path_provider_windows
+18 /transitive/posix
+19 /transitive/shared_preferences_linux
+20 /transitive/shared_preferences_windows
+21 /transitive/source_span
+22 /transitive/stack_trace
+23 /transitive/watcher
+24 /transitive/xdg_directories
 ⬇
 path</title>
     </g>
@@ -436,7 +450,7 @@ highlight</title>
   <g id='Counters_fide'>
     <g>
       <circle cx="280" cy="95" r="10" fill="green"/>
-      <text x="280" y="95" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">21</text>
+      <text x="280" y="95" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">22</text>
       <title>fide
 ⬇
 1 /dev/flutter_launcher_icons
@@ -458,8 +472,9 @@ highlight</title>
 17 /direct/provider
 18 /direct/shared_preferences
 19 /direct/url_launcher
-20 /direct/xterm
-21 /direct/yaml</title>
+20 /direct/window_manager
+21 /direct/xterm
+22 /direct/yaml</title>
     </g>
   </g>
   <g id='Counters_cupertino_icons'>
@@ -678,6 +693,23 @@ shared_preferences</title>
 url_launcher</title>
     </g>
   </g>
+  <g id='Counters_window_manager'>
+    <g>
+      <circle cx="4180" cy="245" r="10" fill="green"/>
+      <text x="4180" y="245" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">2</text>
+      <title>window_manager
+⬇
+1 /direct/path
+2 /transitive/screen_retriever</title>
+    </g>
+    <g>
+      <circle cx="3920" cy="205" r="10" fill="blue"/>
+      <text x="3920" y="205" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>1 /root/fide
+⬇
+window_manager</title>
+    </g>
+  </g>
   <g id='Counters_xterm'>
     <g>
       <circle cx="2680" cy="245" r="10" fill="green"/>
@@ -769,6 +801,10 @@ xterm</title>
   <g id='Labels_url_launcher'>
     <text class="nodeName" x="1350" y="225" font-size="120%">url_launcher</text>
     <text class="nodeName" x="1350" y="245" font-size="80%">6.3.2</text>
+  </g>
+  <g id='Labels_window_manager'>
+    <text class="nodeName" x="4050" y="225" font-size="120%">window_manager</text>
+    <text class="nodeName" x="4050" y="245" font-size="80%">0.3.9</text>
   </g>
   <g id='Labels_xterm'>
     <text class="nodeName" x="2550" y="225" font-size="120%">xterm</text>
