@@ -104,13 +104,14 @@ class MainLayoutState extends ConsumerState<MainLayout> {
         return;
       }
 
-      // Load the project
-      ref.read(projectLoadedProvider.notifier).state = true;
+      // Load the project - set providers in correct order
       ref.read(currentProjectPathProvider.notifier).state = directoryPath;
+      ref.read(projectLoadedProvider.notifier).state = true;
 
       // Try to reopen the last file
       await tryReopenLastFile(directoryPath);
     } catch (e) {
+      debugPrint('Failed to auto-load MRU project: $e');
       // Silently handle errors
     }
   }

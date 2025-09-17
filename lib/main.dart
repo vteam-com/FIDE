@@ -183,10 +183,43 @@ class _FIDEState extends ConsumerState<FIDE> {
         if (mounted) {
           final ref = ProviderScope.containerOf(context);
           ref.read(mruFoldersProvider.notifier).state = validMruFolders;
+
+          // If there are MRU folders, try to load the first one automatically
+          if (validMruFolders.isNotEmpty) {
+            _tryLoadFirstMruProject(ref, validMruFolders.first);
+          }
         }
       });
     } catch (e) {
       // Silently handle errors during initialization
+    }
+  }
+
+  Future<void> _tryLoadFirstMruProject(
+    ProviderContainer container,
+    String projectPath,
+  ) async {
+    try {
+      // Validate that this is a Flutter project
+      final dir = Directory(projectPath);
+      final pubspecFile = File('${dir.path}/pubspec.yaml');
+      final libDir = Directory('${dir.path}/lib');
+
+      if (!await pubspecFile.exists() || !await libDir.exists()) {
+        return;
+      }
+
+      final pubspecContent = await pubspecFile.readAsString();
+      if (!pubspecContent.contains('flutter:') &&
+          !pubspecContent.contains('sdk: flutter')) {
+        return;
+      }
+
+      // Load the project
+      container.read(projectLoadedProvider.notifier).state = true;
+      container.read(currentProjectPathProvider.notifier).state = projectPath;
+    } catch (e) {
+      // Silently handle errors during auto-loading
     }
   }
 
