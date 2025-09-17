@@ -315,13 +315,12 @@ class _ExplorerScreenState extends ConsumerState<FolderPanel> {
       return _buildOrganizedView();
     }
 
-    return ListView.builder(
-      controller: _scrollController,
-      itemCount: _projectRoot!.children.length,
-      itemBuilder: (context, index) {
-        final node = _projectRoot!.children[index];
-        return _buildNode(node);
-      },
+    return SingleChildScrollView(
+      child: Column(
+        children: _projectRoot!.children
+            .map((node) => _buildNode(node))
+            .toList(),
+      ),
     );
   }
 
@@ -560,28 +559,7 @@ class _ExplorerScreenState extends ConsumerState<FolderPanel> {
       }
     }
 
-    return ListView(controller: _scrollController, children: sections);
-  }
-
-  void _calculateNodePosition(
-    ProjectNode node,
-    String targetPath,
-    int position,
-  ) {
-    if (node.path == targetPath) {
-      return;
-    }
-
-    for (final child in node.children) {
-      position++;
-      if (child.path == targetPath) {
-        return;
-      }
-
-      if (child.isDirectory && (_expandedState[child.path] ?? false)) {
-        _calculateNodePosition(child, targetPath, position);
-      }
-    }
+    return SingleChildScrollView(child: Column(children: sections));
   }
 
   void _createNewFile(ProjectNode parent) {}
@@ -711,11 +689,6 @@ class _ExplorerScreenState extends ConsumerState<FolderPanel> {
         }
       }
     }
-
-    // Simple scroll to make sure the file is visible
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _simpleScrollToFile(filePath);
-    });
   }
 
   void _expandToFile(String filePath) {
@@ -793,7 +766,6 @@ class _ExplorerScreenState extends ConsumerState<FolderPanel> {
     // Ensure the selected file is visible and scroll to it after a short delay to allow the tree to expand
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ensureSelectedFileVisible(filePath);
-      _scrollToSelectedFile(filePath);
     });
   }
 
@@ -1213,112 +1185,6 @@ class _ExplorerScreenState extends ConsumerState<FolderPanel> {
     }
   }
 
-  void _scrollToSelectedFile(String filePath) {
-    if (_projectRoot == null || !mounted) return;
-
-    // Check if ScrollController is properly attached
-    if (!_scrollController.hasClients) return;
-
-    // Calculate the approximate position of the file in the tree
-    double scrollOffset = 0.0;
-    const double itemHeight = 24.0; // Approximate height of each tree item
-    const double categoryHeaderHeight = 32.0; // Height of category headers
-
-    if (_panelMode == PanelMode.organized) {
-      // Handle organized view scrolling
-      final relativePath = path.relative(filePath, from: _projectRoot!.path);
-
-      // Find which category the file belongs to
-      String targetCategory = 'Root';
-      ProjectNode? parentDir;
-
-      // Check if file is in lib directory
-      final libDir = _projectRoot!.children.firstWhere(
-        (node) => node.name == 'lib' && node.isDirectory,
-        orElse: () =>
-            ProjectNode(name: '', path: '', type: ProjectNodeType.file),
-      );
-      if (libDir.path.isNotEmpty && relativePath.startsWith('lib/')) {
-        targetCategory = 'Lib';
-        parentDir = libDir;
-      }
-
-      // Check if file is in test directory
-      final testDir = _projectRoot!.children.firstWhere(
-        (node) => node.name == 'test' && node.isDirectory,
-        orElse: () =>
-            ProjectNode(name: '', path: '', type: ProjectNodeType.file),
-      );
-      if (testDir.path.isNotEmpty && relativePath.startsWith('test/')) {
-        targetCategory = 'Tests';
-        parentDir = testDir;
-      }
-
-      // Check if file is in assets directory
-      final assetsDir = _projectRoot!.children.firstWhere(
-        (node) => node.name == 'assets' && node.isDirectory,
-        orElse: () =>
-            ProjectNode(name: '', path: '', type: ProjectNodeType.file),
-      );
-      if (assetsDir.path.isNotEmpty && relativePath.startsWith('assets/')) {
-        targetCategory = 'Assets';
-        parentDir = assetsDir;
-      }
-
-      // Calculate scroll position for organized view
-      final categories = [
-        'Root',
-        'Lib',
-        'Tests',
-        'Assets',
-        'Platforms',
-        'Output',
-      ];
-      final categoryIndex = categories.indexOf(targetCategory);
-
-      // Add height for previous categories
-      for (int i = 0; i < categoryIndex; i++) {
-        scrollOffset += categoryHeaderHeight;
-        // Add some space for items in previous categories (approximate)
-        scrollOffset += 50.0;
-      }
-
-      // Add category header height
-      scrollOffset += categoryHeaderHeight;
-
-      // Find the position of the file within its category
-      if (parentDir != null && parentDir.children.isNotEmpty) {
-        final fileIndex = parentDir.children.indexWhere(
-          (node) => node.path == filePath,
-        );
-        if (fileIndex >= 0) {
-          scrollOffset += fileIndex * itemHeight;
-        }
-      }
-    } else {
-      // Handle filesystem view scrolling
-      final fileNode = _findNodeByPath(filePath);
-      if (fileNode != null) {
-        // Calculate position based on tree structure
-        int position = 0;
-        _calculateNodePosition(_projectRoot!, filePath, position);
-        scrollOffset = position * itemHeight;
-      }
-    }
-
-    // Scroll to the calculated position with animation
-    try {
-      _scrollController.animateTo(
-        scrollOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    } catch (e) {
-      // Silently handle scroll errors
-      debugPrint('Scroll error in _scrollToSelectedFile: $e');
-    }
-  }
-
   Future<void> _seedGitStatusForFile(ProjectNode node) async {
     if (_projectRoot == null || !mounted) return;
 
@@ -1439,52 +1305,6 @@ class _ExplorerScreenState extends ConsumerState<FolderPanel> {
       if (value == null) return;
       _handleContextMenuAction(value, node);
     });
-  }
-
-  void _simpleScrollToFile(String filePath) {
-    if (_projectRoot == null || !mounted) return;
-
-    // Check if ScrollController is properly attached
-    if (!_scrollController.hasClients) return;
-
-    // Find the file node
-    final fileNode = _findNodeByPath(filePath);
-    if (fileNode == null) return;
-
-    // Calculate a simple scroll position
-    double scrollOffset = 0.0;
-
-    if (_panelMode == PanelMode.organized) {
-      // For organized view, scroll to the category
-      final relativePath = path.relative(filePath, from: _projectRoot!.path);
-      if (relativePath.startsWith('lib/')) {
-        scrollOffset = 100.0; // Approximate position of Lib category
-      } else if (relativePath.startsWith('test/')) {
-        scrollOffset = 200.0; // Approximate position of Tests category
-      } else if (relativePath.startsWith('assets/')) {
-        scrollOffset = 300.0; // Approximate position of Assets category
-      }
-      // For other categories, keep at top
-    } else {
-      // For filesystem view, scroll to middle of visible area
-      try {
-        scrollOffset = _scrollController.position.maxScrollExtent * 0.3;
-      } catch (e) {
-        // Handle case where position is not available
-        scrollOffset = 0.0;
-      }
-    }
-
-    try {
-      _scrollController.animateTo(
-        scrollOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-      );
-    } catch (e) {
-      // Silently handle scroll errors
-      debugPrint('Scroll error in _simpleScrollToFile: $e');
-    }
   }
 
   void _updateNodeGitStatus(ProjectNode node, GitStatus gitStatus) {
