@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
@@ -14,10 +13,11 @@ import 'package:fide/utils/message_helper.dart';
 import 'package:fide/screens/git_panel.dart';
 import 'package:fide/theme/app_theme.dart';
 
+// Widgets
+import '../widgets/left_panel.dart';
+
 // Providers
 import '../providers/app_providers.dart';
-
-enum PanelMode { filesystem, organized, git }
 
 class ExplorerScreen extends ConsumerStatefulWidget {
   const ExplorerScreen({
@@ -30,6 +30,7 @@ class ExplorerScreen extends ConsumerStatefulWidget {
     this.initialProjectPath,
     this.showGitPanel = false,
     this.onToggleGitPanel,
+    required this.panelMode,
   });
 
   final String? initialProjectPath;
@@ -48,6 +49,8 @@ class ExplorerScreen extends ConsumerStatefulWidget {
 
   final bool showGitPanel;
 
+  final PanelMode panelMode;
+
   @override
   ConsumerState<ExplorerScreen> createState() => _ExplorerScreenState();
 }
@@ -62,10 +65,6 @@ class _ExplorerScreenState extends ConsumerState<ExplorerScreen> {
   final Set<String> _loadingDirectories = {};
 
   PanelMode _panelMode = PanelMode.filesystem;
-
-  static const String _panelModeKey = 'explorer_panel_mode';
-
-  SharedPreferences? _prefs;
 
   ProjectNode? _projectRoot;
 
@@ -95,6 +94,13 @@ class _ExplorerScreenState extends ConsumerState<ExplorerScreen> {
     } else if (widget.selectedFile != oldWidget.selectedFile) {
       // Force a rebuild to update selection highlighting even if project isn't loaded yet
       setState(() {});
+    }
+
+    // If panel mode changed, update local state
+    if (widget.panelMode != oldWidget.panelMode) {
+      setState(() {
+        _panelMode = widget.panelMode;
+      });
     }
   }
 
@@ -126,76 +132,23 @@ class _ExplorerScreenState extends ConsumerState<ExplorerScreen> {
       });
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (_projectRoot != null)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Normal File View Button
-              _buildToggleButton(
-                icon: Icons.folder,
-                tooltip: 'Normal File View',
-                isSelected:
-                    !widget.showGitPanel && _panelMode == PanelMode.filesystem,
-                onPressed: () {
-                  if (widget.showGitPanel) {
-                    widget.onToggleGitPanel?.call();
-                  }
-                  if (_panelMode != PanelMode.filesystem) {
-                    _togglePanelMode();
-                  }
-                },
+    return Container(
+      color: AppTheme.sidePanelBackground(context),
+      child: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _projectRoot == null
+          ? Container(
+              color: Theme.of(context).colorScheme.surface,
+              child: const Center(
+                child: Text(
+                  'No project loaded',
+                  style: TextStyle(fontSize: 16),
+                ),
               ),
-              const SizedBox(width: 4),
-              // Organized File View Button
-              _buildToggleButton(
-                icon: Icons.folder_special,
-                tooltip: 'Organized File View',
-                isSelected:
-                    !widget.showGitPanel && _panelMode == PanelMode.organized,
-                onPressed: () {
-                  if (widget.showGitPanel) {
-                    widget.onToggleGitPanel?.call();
-                  }
-                  if (_panelMode != PanelMode.organized) {
-                    _togglePanelMode();
-                  }
-                },
-              ),
-              const SizedBox(width: 4),
-              // Git Panel Button
-              _buildToggleButton(
-                icon: Icons.account_tree,
-                tooltip: 'Git Panel',
-                isSelected: widget.showGitPanel,
-                onPressed: widget.onToggleGitPanel ?? () {},
-              ),
-            ],
-          ),
-
-        Expanded(
-          child: Container(
-            color: AppTheme.sidePanelBackground(context),
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _projectRoot == null
-                ? Container(
-                    color: Theme.of(context).colorScheme.surface,
-                    child: const Center(
-                      child: Text(
-                        'No project loaded',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  )
-                : widget.showGitPanel
-                ? _buildGitPanel()
-                : _buildFileExplorer(),
-          ),
-        ),
-      ],
+            )
+          : widget.showGitPanel
+          ? _buildGitPanel()
+          : _buildFileExplorer(),
     );
   }
 
@@ -619,33 +572,6 @@ class _ExplorerScreenState extends ConsumerState<ExplorerScreen> {
     return ListView(controller: _scrollController, children: sections);
   }
 
-  Widget _buildToggleButton({
-    required IconData icon,
-    required String tooltip,
-    required bool isSelected,
-    required VoidCallback onPressed,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      child: IconButton(
-        icon: Icon(
-          icon,
-          size: 20,
-          color: isSelected
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-        onPressed: onPressed,
-        style: IconButton.styleFrom(
-          backgroundColor: isSelected
-              ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.2)
-              : Colors.transparent,
-          padding: const EdgeInsets.all(8),
-        ),
-      ),
-    );
-  }
-
   void _calculateNodePosition(
     ProjectNode node,
     String targetPath,
@@ -873,8 +799,9 @@ class _ExplorerScreenState extends ConsumerState<ExplorerScreen> {
       }
     }
 
-    // Scroll to the selected file after a short delay to allow the tree to expand
+    // Ensure the selected file is visible and scroll to it after a short delay to allow the tree to expand
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureSelectedFileVisible(filePath);
       _scrollToSelectedFile(filePath);
     });
   }
@@ -1012,19 +939,6 @@ class _ExplorerScreenState extends ConsumerState<ExplorerScreen> {
   }
 
   Future<void> _initializeExplorer() async {
-    // Always initialize SharedPreferences first
-    _prefs = await SharedPreferences.getInstance();
-
-    // Load saved panel mode
-    final savedPanelMode = _prefs!.getString(_panelModeKey);
-    if (savedPanelMode != null) {
-      setState(() {
-        _panelMode = savedPanelMode == 'organized'
-            ? PanelMode.organized
-            : PanelMode.filesystem;
-      });
-    }
-
     // If an initial project path is provided, load it first
     if (widget.initialProjectPath != null) {
       await _loadProject(widget.initialProjectPath!, forceLoad: true);
@@ -1579,34 +1493,6 @@ class _ExplorerScreenState extends ConsumerState<ExplorerScreen> {
     } catch (e) {
       // Silently handle scroll errors
       debugPrint('Scroll error in _simpleScrollToFile: $e');
-    }
-  }
-
-  void _togglePanelMode() {
-    final newPanelMode = _panelMode == PanelMode.filesystem
-        ? PanelMode.organized
-        : PanelMode.filesystem;
-
-    setState(() {
-      _panelMode = newPanelMode;
-    });
-
-    // Reset scroll position when switching modes
-    if (_scrollController.hasClients) {
-      _scrollController.jumpTo(0.0);
-    }
-
-    // Save the new panel mode to SharedPreferences
-    _prefs?.setString(
-      _panelModeKey,
-      newPanelMode == PanelMode.organized ? 'organized' : 'filesystem',
-    );
-
-    // After switching panel mode, ensure the selected file is still visible
-    if (widget.selectedFile != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _ensureSelectedFileVisible(widget.selectedFile!.path);
-      });
     }
   }
 
