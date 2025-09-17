@@ -183,27 +183,43 @@ class _TitleBarState extends ConsumerState<TitleBar> {
   }
 
   Future<void> _handleDropdownSelection(String value, WidgetRef ref) async {
+    final projectService = ref.read(projectLoadingServiceProvider);
+
     if (value == 'add_folder') {
-      _mainLayoutKey.currentState?.pickDirectory();
+      // This would need to be implemented - for now show a message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Open folder functionality available in main layout'),
+        ),
+      );
     } else if (value == 'create_project') {
-      // This would need to be implemented in MainLayout
+      // This would need to be implemented
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Create project not yet implemented')),
       );
     } else if (value == 'close_project') {
       ref.read(projectLoadedProvider.notifier).state = false;
       ref.read(currentProjectPathProvider.notifier).state = null;
+      ref.read(selectedFileProvider.notifier).state = null;
     } else if (value.startsWith('remove_')) {
       final pathToRemove = value.substring(7);
       final updatedMru = List<String>.from(ref.read(mruFoldersProvider))
         ..remove(pathToRemove);
       ref.read(mruFoldersProvider.notifier).state = updatedMru;
+
+      // Save to SharedPreferences
+      try {
+        final prefs = await ref.read(sharedPreferencesProvider.future);
+        await prefs.setStringList('mru_folders', updatedMru);
+      } catch (e) {
+        // Silently handle SharedPreferences errors
+      }
     } else {
-      // Load project
-      final success = await _mainLayoutKey.currentState?.tryLoadProject(value);
-      if (success == true) {
-        ref.read(projectLoadedProvider.notifier).state = true;
-        ref.read(currentProjectPathProvider.notifier).state = value;
+      // Load project using the service
+      final success = await projectService.tryLoadProject(value);
+      if (success) {
+        await projectService.updateMruList(value);
+        await projectService.tryReopenLastFile(value);
       }
     }
   }

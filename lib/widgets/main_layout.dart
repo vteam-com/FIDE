@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
 
 // Providers
@@ -49,12 +48,8 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   // Callback to refresh outline
   VoidCallback? _refreshOutlineCallback;
 
-  // MRU (Most Recently Used) folders
-  List<String> mruFolders = [];
-  static const String _mruFoldersKey = 'mru_folders';
   static const String _lastOpenedFileKey = 'last_opened_file';
-  static const int _maxMruItems = 5;
-  late SharedPreferences _prefs;
+  static const String _mruFoldersKey = 'mru_folders';
   String? _lastSelectedFilePath;
 
   @override
@@ -64,13 +59,94 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   }
 
   Future<void> _initializePrefsAndApp() async {
-    // Initialize SharedPreferences
-    _prefs = await SharedPreferences.getInstance();
+    // Load MRU folders into provider and try auto-loading
+    await _loadMruFoldersIntoProvider();
+  }
 
-    // Load MRU folders and try to auto-load the most recent project
-    await _loadMruFolders();
+  // Load MRU folders into provider and try auto-loading most recent project
+  Future<void> _loadMruFoldersIntoProvider() async {
+    try {
+      final prefs = await ref.read(sharedPreferencesProvider.future);
+      final mruList = prefs.getStringList(_mruFoldersKey) ?? [];
 
-    // Listener will be set up in build method
+      // Filter out folders that don't exist
+      final validMruFolders = mruList
+          .where((path) => Directory(path).existsSync())
+          .toList();
+
+      // Update the provider with loaded MRU folders
+      ref.read(mruFoldersProvider.notifier).state = validMruFolders;
+
+      // Try to auto-load the most recent project
+      if (validMruFolders.isNotEmpty) {
+        await _tryAutoLoadProject(validMruFolders.first);
+      }
+    } catch (e) {
+      // Silently handle errors during initialization
+    }
+  }
+
+  // Try to auto-load a project and reopen last file
+  Future<void> _tryAutoLoadProject(String directoryPath) async {
+    try {
+      // Validate that this is a Flutter project
+      final dir = Directory(directoryPath);
+      final pubspecFile = File('${dir.path}/pubspec.yaml');
+      final libDir = Directory('${dir.path}/lib');
+
+      if (!await pubspecFile.exists() || !await libDir.exists()) {
+        return;
+      }
+
+      final pubspecContent = await pubspecFile.readAsString();
+      if (!pubspecContent.contains('flutter:') &&
+          !pubspecContent.contains('sdk: flutter')) {
+        return;
+      }
+
+      // Load the project
+      ref.read(projectLoadedProvider.notifier).state = true;
+      ref.read(currentProjectPathProvider.notifier).state = directoryPath;
+
+      // Try to reopen the last file
+      await tryReopenLastFile(directoryPath);
+    } catch (e) {
+      // Silently handle errors
+    }
+  }
+
+  // Try to reopen the last opened file
+  Future<void> tryReopenLastFile(String projectPath) async {
+    try {
+      final prefs = await ref.read(sharedPreferencesProvider.future);
+      final lastFilePath = prefs.getString(_lastOpenedFileKey);
+
+      if (lastFilePath == null || lastFilePath.isEmpty) {
+        return;
+      }
+
+      // Check if the file exists
+      final file = File(lastFilePath);
+      if (!await file.exists()) {
+        return;
+      }
+
+      // Check if the file is in the current project
+      if (!path.isWithin(projectPath, lastFilePath)) {
+        return;
+      }
+
+      // Check if it's a source file
+      if (!FileTypeUtils.isSourceFile(lastFilePath)) {
+        return;
+      }
+
+      // Create FileSystemItem and set it as selected
+      final fileSystemItem = FileSystemItem.fromFileSystemEntity(file);
+      ref.read(selectedFileProvider.notifier).state = fileSystemItem;
+    } catch (e) {
+      // Silently handle errors
+    }
   }
 
   // Method to set the outline refresh callback
@@ -112,100 +188,10 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     });
   }
 
-  // Load MRU folders and try to auto-load the most recent project
-  Future<void> _loadMruFolders() async {
-    final mruList = _prefs.getStringList(_mruFoldersKey) ?? [];
-
-    // Keep all folders in MRU but check their access status
-    setState(() {
-      mruFolders = mruList
-          .where((path) => Directory(path).existsSync())
-          .toList();
-    });
-
-    // Try to load the most recent folder if available
-    if (mruFolders.isNotEmpty) {
-      final success = await tryLoadProject(mruFolders.first);
-      if (success) {
-        await tryReopenLastFile(mruFolders.first);
-        return;
-      }
-
-      // Project failed to load, try the next one
-      for (int i = 1; i < mruFolders.length; i++) {
-        final success = await tryLoadProject(mruFolders[i]);
-        if (success) {
-          await tryReopenLastFile(mruFolders[i]);
-          return;
-        }
-      }
-
-      // If we get here, all folders failed to load
-      // Clear the MRU list
-      setState(() {
-        mruFolders.clear();
-      });
-      await _prefs.setStringList(_mruFoldersKey, mruFolders);
-    }
-  }
-
   // Try to load a project and return success status
   Future<bool> tryLoadProject(String directoryPath) async {
-    try {
-      // Validate that this is a Flutter project
-      final dir = Directory(directoryPath);
-      final pubspecFile = File('${dir.path}/pubspec.yaml');
-      final libDir = Directory('${dir.path}/lib');
-
-      if (!await pubspecFile.exists() || !await libDir.exists()) {
-        return false;
-      }
-
-      final pubspecContent = await pubspecFile.readAsString();
-      if (!pubspecContent.contains('flutter:') &&
-          !pubspecContent.contains('sdk: flutter')) {
-        return false;
-      }
-
-      // Load the project
-      ref.read(projectLoadedProvider.notifier).state = true;
-      ref.read(currentProjectPathProvider.notifier).state = directoryPath;
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  // Try to reopen the last opened file if it exists and is a source file in the current project
-  Future<void> tryReopenLastFile(String projectPath) async {
-    final lastFilePath = _prefs.getString(_lastOpenedFileKey);
-    if (lastFilePath == null || lastFilePath.isEmpty) {
-      return;
-    }
-
-    // Check if the file exists
-    final file = File(lastFilePath);
-    if (!await file.exists()) {
-      return;
-    }
-
-    // Check if the file is in the current project
-    if (!path.isWithin(projectPath, lastFilePath)) {
-      return;
-    }
-
-    // Check if it's a source file
-    if (!FileTypeUtils.isSourceFile(lastFilePath)) {
-      return;
-    }
-
-    try {
-      // Create FileSystemItem and set it as selected
-      final fileSystemItem = FileSystemItem.fromFileSystemEntity(file);
-      ref.read(selectedFileProvider.notifier).state = fileSystemItem;
-    } catch (e) {
-      // Silently handle errors
-    }
+    final projectService = ref.read(projectLoadingServiceProvider);
+    return await projectService.tryLoadProject(directoryPath);
   }
 
   // Method to pick directory - can be called from WelcomeScreen
@@ -213,28 +199,14 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     try {
       final selectedDirectory = await FilePicker.platform.getDirectoryPath();
       if (selectedDirectory != null) {
-        // Validate that this is a Flutter project
-        final dir = Directory(selectedDirectory);
-        final pubspecFile = File('${dir.path}/pubspec.yaml');
-        final libDir = Directory('${dir.path}/lib');
+        final projectService = ref.read(projectLoadingServiceProvider);
 
-        if (await pubspecFile.exists() && await libDir.exists()) {
-          final pubspecContent = await pubspecFile.readAsString();
-          if (pubspecContent.contains('flutter:') ||
-              pubspecContent.contains('sdk: flutter')) {
-            // Load the project and update MRU
-            await _updateMruList(selectedDirectory);
-            ref.read(projectLoadedProvider.notifier).state = true;
-            ref.read(currentProjectPathProvider.notifier).state =
-                selectedDirectory;
-            await tryReopenLastFile(selectedDirectory);
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Selected folder is not a valid Flutter project'),
-              ),
-            );
-          }
+        // Try to load the project using the service
+        final success = await projectService.tryLoadProject(selectedDirectory);
+        if (success) {
+          // Update MRU and reopen last file
+          await projectService.updateMruList(selectedDirectory);
+          await projectService.tryReopenLastFile(selectedDirectory);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -250,45 +222,17 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     }
   }
 
-  // Update MRU list with a new project path
-  Future<void> _updateMruList(String directoryPath) async {
-    // Only update if this is a new directory or needs reordering
-    final currentIndex = mruFolders.indexOf(directoryPath);
-
-    if (currentIndex == 0) {
-      // Already at the front, no need to update
-      return;
-    }
-
-    if (currentIndex > 0) {
-      // Move existing item to front
-      mruFolders.removeAt(currentIndex);
-    }
-
-    // Add to front (whether it was existing or new)
-    mruFolders.insert(0, directoryPath);
-
-    if (mruFolders.length > _maxMruItems) {
-      mruFolders = mruFolders.sublist(0, _maxMruItems);
-    }
-
-    // Ensure SharedPreferences is saved
-    await _prefs.setStringList(_mruFoldersKey, mruFolders);
-
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final selectedFile = ref.watch(selectedFileProvider);
     final projectLoaded = ref.watch(projectLoadedProvider);
     final currentProjectPath = ref.watch(currentProjectPathProvider);
+    final mruFolders = ref.watch(mruFoldersProvider);
 
     // Handle file selection changes
     if (selectedFile != null && selectedFile.path != _lastSelectedFilePath) {
-      _prefs.setString(_lastOpenedFileKey, selectedFile.path);
+      // Save last opened file to SharedPreferences
+      _saveLastOpenedFile(selectedFile.path);
       // Notify the parent widget about the file being opened (defer to avoid setState during build)
       final fileName = path.basename(selectedFile.path);
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -328,7 +272,10 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                 },
                 onProjectPathChanged: (path) {
                   // Update MRU list when a new project is loaded
-                  _updateMruList(path);
+                  final projectService = ref.read(
+                    projectLoadingServiceProvider,
+                  );
+                  projectService.updateMruList(path);
                   ref.read(currentProjectPathProvider.notifier).state = path;
                 },
                 showGitPanel: _activeLeftPanel == 1,
@@ -352,17 +299,27 @@ class MainLayoutState extends ConsumerState<MainLayout> {
               mruFolders: mruFolders,
               onOpenFolder: pickDirectory,
               onOpenMruProject: (path) async {
-                final success = await tryLoadProject(path);
+                final projectService = ref.read(projectLoadingServiceProvider);
+                final success = await projectService.tryLoadProject(path);
                 if (success) {
-                  await _updateMruList(path);
-                  await tryReopenLastFile(path);
+                  await projectService.updateMruList(path);
+                  await projectService.tryReopenLastFile(path);
                 }
               },
               onRemoveMruEntry: (path) async {
-                setState(() {
-                  mruFolders.remove(path);
-                });
-                await _prefs.setStringList(_mruFoldersKey, mruFolders);
+                final updatedMruFolders = List<String>.from(mruFolders)
+                  ..remove(path);
+                ref.read(mruFoldersProvider.notifier).state = updatedMruFolders;
+
+                // Save to SharedPreferences
+                try {
+                  final prefs = await ref.read(
+                    sharedPreferencesProvider.future,
+                  );
+                  await prefs.setStringList(_mruFoldersKey, updatedMruFolders);
+                } catch (e) {
+                  // Silently handle SharedPreferences errors
+                }
               },
               onContentChanged: _refreshOutlineCallback,
               onClose: () {
@@ -389,5 +346,15 @@ class MainLayoutState extends ConsumerState<MainLayout> {
         ],
       ),
     );
+  }
+
+  // Save last opened file to SharedPreferences
+  Future<void> _saveLastOpenedFile(String filePath) async {
+    try {
+      final prefs = await ref.read(sharedPreferencesProvider.future);
+      await prefs.setString(_lastOpenedFileKey, filePath);
+    } catch (e) {
+      // Silently handle SharedPreferences errors
+    }
   }
 }

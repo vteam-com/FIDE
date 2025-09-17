@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
@@ -9,13 +10,16 @@ import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/utils/message_helper.dart';
-import 'package:fide/screens/welcome_screen.dart';
+
 import 'package:fide/screens/git_panel.dart';
 import 'package:fide/theme/app_theme.dart';
 
+// Providers
+import '../providers/app_providers.dart';
+
 enum PanelMode { filesystem, organized, git }
 
-class ExplorerScreen extends StatefulWidget {
+class ExplorerScreen extends ConsumerStatefulWidget {
   const ExplorerScreen({
     super.key,
     this.onFileSelected,
@@ -45,10 +49,10 @@ class ExplorerScreen extends StatefulWidget {
   final bool showGitPanel;
 
   @override
-  State<ExplorerScreen> createState() => _ExplorerScreenState();
+  ConsumerState<ExplorerScreen> createState() => _ExplorerScreenState();
 }
 
-class _ExplorerScreenState extends State<ExplorerScreen> {
+class _ExplorerScreenState extends ConsumerState<ExplorerScreen> {
   final Map<String, bool> _expandedState = {};
 
   final GitService _gitService = GitService();
@@ -96,6 +100,22 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Watch for project path changes and reload project if needed
+    final currentProjectPath = ref.watch(currentProjectPathProvider);
+
+    // If project path changed and we have a different project loaded, reload it
+    if (currentProjectPath != null &&
+        _projectRoot != null &&
+        currentProjectPath != _projectRoot!.path &&
+        !_isLoading) {
+      // Use a microtask to avoid calling setState during build
+      Future.microtask(() async {
+        if (mounted) {
+          await _loadProject(currentProjectPath, forceLoad: true);
+        }
+      });
+    }
+
     // Ensure selected file is expanded and visible when building
     if (widget.selectedFile != null && _projectRoot != null && !_isLoading) {
       // Use a microtask to ensure this happens after the current build cycle
@@ -161,12 +181,14 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _projectRoot == null
-                ? WelcomeScreen(
-                    onOpenFolder: _pickDirectory,
-                    onCreateProject: _createNewProject,
-                    mruFolders: _prefs?.getStringList('mru_folders') ?? [],
-                    onOpenMruProject: _loadProject,
-                    onRemoveMruEntry: _removeMruEntry,
+                ? Container(
+                    color: Theme.of(context).colorScheme.surface,
+                    child: const Center(
+                      child: Text(
+                        'No project loaded',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
                   )
                 : widget.showGitPanel
                 ? _buildGitPanel()
@@ -186,24 +208,6 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
         _expandToFile(widget.selectedFile!.path);
       });
     }
-  }
-
-  Widget _buildAppBarTitle() {
-    if (_projectRoot == null) {
-      return Text(
-        'Explorer',
-        overflow: TextOverflow.ellipsis,
-        maxLines: 1,
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-      );
-    }
-
-    return Text(
-      _projectRoot?.name ?? 'Folder...',
-      overflow: TextOverflow.ellipsis,
-      maxLines: 1,
-      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-    );
   }
 
   Widget _buildCategorySection(String category, List<ProjectNode> nodes) {
@@ -666,100 +670,6 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   void _createNewFile(ProjectNode parent) {}
 
   void _createNewFolder(ProjectNode parent) {}
-
-  Future<void> _createNewProject() async {
-    if (_projectRoot == null) {
-      _showError('No current project loaded. Please open a project first.');
-      return;
-    }
-
-    final parentDir = path.dirname(_projectRoot!.path);
-
-    final TextEditingController controller = TextEditingController();
-
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Create New Flutter Project'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Project Name',
-            hintText: 'Enter project name (will be converted to snake_case)',
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: const Text('Create'),
-          ),
-        ],
-      ),
-    );
-
-    if (result == null || result.isEmpty) return;
-
-    final snakeName = _toSnakeCase(result);
-
-    if (snakeName.isEmpty) {
-      _showError('Invalid project name.');
-      return;
-    }
-
-    // Check if directory already exists
-    final projectPath = path.join(parentDir, snakeName);
-    if (Directory(projectPath).existsSync()) {
-      _showError(
-        'A project with this name already exists in the parent directory.',
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      // Run flutter create command
-      final result = await Process.run('flutter', [
-        'create',
-        snakeName,
-      ], workingDirectory: parentDir);
-
-      if (result.exitCode == 0) {
-        // Wait a bit for the file system to update
-        await Future.delayed(const Duration(milliseconds: 500));
-
-        // Verify the project was created
-        if (Directory(projectPath).existsSync()) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Project "$snakeName" created successfully!'),
-              ),
-            );
-            // Load the new project
-            await _loadProject(projectPath);
-          }
-        } else {
-          _showError(
-            'Project directory was not created. Please check if Flutter is installed and try again.',
-          );
-        }
-      } else {
-        _showError('Failed to create project: ${result.stderr}');
-      }
-    } catch (e) {
-      _showError('Failed to create project: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
 
   Future<void> _deleteFile(ProjectNode node) async {
     final confirmed = await showDialog<bool>(
@@ -1312,20 +1222,6 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     }
   }
 
-  Future<void> _removeMruEntry(String directoryPath) async {
-    if (_prefs == null) return;
-
-    final mruList = _prefs!.getStringList('mru_folders') ?? [];
-    mruList.remove(directoryPath);
-
-    await _prefs!.setStringList('mru_folders', mruList);
-
-    // Force a rebuild to update the UI
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
   Future<void> _renameFile(ProjectNode node) async {
     final TextEditingController controller = TextEditingController(
       text: node.name,
@@ -1684,10 +1580,6 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       // Silently handle scroll errors
       debugPrint('Scroll error in _simpleScrollToFile: $e');
     }
-  }
-
-  String _toSnakeCase(String input) {
-    return input.replaceAll(' ', '_').toLowerCase();
   }
 
   void _togglePanelMode() {

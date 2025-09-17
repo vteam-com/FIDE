@@ -1,8 +1,10 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -15,6 +17,7 @@ import 'widgets/title_bar.dart';
 
 // Screens
 import 'screens/editor_screen.dart';
+import 'screens/welcome_screen.dart';
 
 // Services
 import 'services/git_service.dart';
@@ -62,9 +65,12 @@ void triggerOpenFolder() {
 
 void triggerReopenLastFile() {
   // This will be set by MainLayout
-  _mainLayoutKey.currentState?.tryReopenLastFile(
-    _mainLayoutKey.currentState?.mruFolders.first ?? '',
+  final currentProjectPath = _mainLayoutKey.currentState?.ref.read(
+    currentProjectPathProvider,
   );
+  if (currentProjectPath != null) {
+    _mainLayoutKey.currentState?.tryReopenLastFile(currentProjectPath);
+  }
 }
 
 void triggerCloseDocument() {
@@ -144,16 +150,43 @@ class _FIDEState extends ConsumerState<FIDE> {
   @override
   void initState() {
     super.initState();
-    _initializeTheme();
+    _initializeApp();
   }
 
-  Future<void> _initializeTheme() async {
+  Future<void> _initializeApp() async {
     _prefs = await SharedPreferences.getInstance();
+
+    // Initialize theme
     final savedThemeMode = _prefs.getString(_themeModeKey);
     if (savedThemeMode != null) {
       setState(() {
         _themeMode = _parseThemeMode(savedThemeMode);
       });
+    }
+
+    // Load MRU folders at app startup
+    await _loadMruFoldersAtStartup();
+  }
+
+  Future<void> _loadMruFoldersAtStartup() async {
+    try {
+      final mruList = _prefs.getStringList('mru_folders') ?? [];
+
+      // Filter out folders that don't exist
+      final validMruFolders = mruList
+          .where((path) => Directory(path).existsSync())
+          .toList();
+
+      // Update the provider with loaded MRU folders
+      // We need to use a post-frame callback to ensure the widget is built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final ref = ProviderScope.containerOf(context);
+          ref.read(mruFoldersProvider.notifier).state = validMruFolders;
+        }
+      });
+    } catch (e) {
+      // Silently handle errors during initialization
     }
   }
 
@@ -340,13 +373,131 @@ class _FIDEState extends ConsumerState<FIDE> {
                     ],
                   ),
                 ],
-                child: MainLayout(
-                  key: _mainLayoutKey,
-                  onThemeChanged: (themeMode) {
-                    setState(() => _themeMode = themeMode);
-                  },
-                  onFileOpened: (fileName) {
-                    setState(() => _lastOpenedFileName = fileName);
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final projectLoaded = ref.watch(projectLoadedProvider);
+                    final mruFolders = ref.watch(mruFoldersProvider);
+
+                    // Project loading functions with access to ref
+                    Future<void> pickDirectory() async {
+                      try {
+                        final selectedDirectory = await FilePicker.platform
+                            .getDirectoryPath();
+                        if (selectedDirectory != null) {
+                          // Validate that this is a Flutter project
+                          final dir = Directory(selectedDirectory);
+                          final pubspecFile = File('${dir.path}/pubspec.yaml');
+                          final libDir = Directory('${dir.path}/lib');
+
+                          if (await pubspecFile.exists() &&
+                              await libDir.exists()) {
+                            final pubspecContent = await pubspecFile
+                                .readAsString();
+                            if (pubspecContent.contains('flutter:') ||
+                                pubspecContent.contains('sdk: flutter')) {
+                              // Load the project
+                              ref.read(projectLoadedProvider.notifier).state =
+                                  true;
+                              ref
+                                      .read(currentProjectPathProvider.notifier)
+                                      .state =
+                                  selectedDirectory;
+                              return;
+                            }
+                          }
+
+                          // Show error if not a valid Flutter project
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Selected folder is not a valid Flutter project',
+                              ),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error loading project: $e')),
+                        );
+                      }
+                    }
+
+                    Future<bool> tryLoadProject(String directoryPath) async {
+                      try {
+                        // Validate that this is a Flutter project
+                        final dir = Directory(directoryPath);
+                        final pubspecFile = File('${dir.path}/pubspec.yaml');
+                        final libDir = Directory('${dir.path}/lib');
+
+                        if (!await pubspecFile.exists() ||
+                            !await libDir.exists()) {
+                          return false;
+                        }
+
+                        final pubspecContent = await pubspecFile.readAsString();
+                        if (!pubspecContent.contains('flutter:') &&
+                            !pubspecContent.contains('sdk: flutter')) {
+                          return false;
+                        }
+
+                        // Load the project
+                        ref.read(projectLoadedProvider.notifier).state = true;
+                        ref.read(currentProjectPathProvider.notifier).state =
+                            directoryPath;
+                        return true;
+                      } catch (e) {
+                        return false;
+                      }
+                    }
+
+                    if (!projectLoaded) {
+                      // Show WelcomeScreen when no project is loaded
+                      return WelcomeScreen(
+                        onOpenFolder: pickDirectory,
+                        onCreateProject: () {
+                          // This would need to be implemented
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Create project not yet implemented',
+                              ),
+                            ),
+                          );
+                        },
+                        mruFolders: mruFolders,
+                        onOpenMruProject: tryLoadProject,
+                        onRemoveMruEntry: (path) async {
+                          final updatedMru = List<String>.from(mruFolders)
+                            ..remove(path);
+                          ref.read(mruFoldersProvider.notifier).state =
+                              updatedMru;
+
+                          // Save to SharedPreferences
+                          try {
+                            final prefs = await ref.read(
+                              sharedPreferencesProvider.future,
+                            );
+                            await prefs.setStringList(
+                              'mru_folders',
+                              updatedMru,
+                            );
+                          } catch (e) {
+                            // Silently handle SharedPreferences errors
+                          }
+                        },
+                      );
+                    } else {
+                      // Show main layout when project is loaded
+                      return MainLayout(
+                        key: _mainLayoutKey,
+                        onThemeChanged: (themeMode) {
+                          setState(() => _themeMode = themeMode);
+                        },
+                        onFileOpened: (fileName) {
+                          setState(() => _lastOpenedFileName = fileName);
+                        },
+                      );
+                    }
                   },
                 ),
               ),
