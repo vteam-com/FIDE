@@ -106,87 +106,74 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       });
     }
 
-    return Scaffold(
-      appBar: AppBar(title: _buildAppBarTitle(), actions: []),
-      body: Column(
-        children: [
-          Expanded(
-            child: Container(
-              color: AppTheme.sidePanelBackground(context),
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _projectRoot == null
-                  ? WelcomeScreen(
-                      onOpenFolder: _pickDirectory,
-                      onCreateProject: _createNewProject,
-                      mruFolders: _prefs?.getStringList('mru_folders') ?? [],
-                      onOpenMruProject: _loadProject,
-                      onRemoveMruEntry: _removeMruEntry,
-                    )
-                  : widget.showGitPanel
-                  ? _buildGitPanel()
-                  : _buildFileExplorer(),
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_projectRoot != null)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Normal File View Button
+              _buildToggleButton(
+                icon: Icons.folder,
+                tooltip: 'Normal File View',
+                isSelected:
+                    !widget.showGitPanel && _panelMode == PanelMode.filesystem,
+                onPressed: () {
+                  if (widget.showGitPanel) {
+                    widget.onToggleGitPanel?.call();
+                  }
+                  if (_panelMode != PanelMode.filesystem) {
+                    _togglePanelMode();
+                  }
+                },
+              ),
+              const SizedBox(width: 4),
+              // Organized File View Button
+              _buildToggleButton(
+                icon: Icons.folder_special,
+                tooltip: 'Organized File View',
+                isSelected:
+                    !widget.showGitPanel && _panelMode == PanelMode.organized,
+                onPressed: () {
+                  if (widget.showGitPanel) {
+                    widget.onToggleGitPanel?.call();
+                  }
+                  if (_panelMode != PanelMode.organized) {
+                    _togglePanelMode();
+                  }
+                },
+              ),
+              const SizedBox(width: 4),
+              // Git Panel Button
+              _buildToggleButton(
+                icon: Icons.account_tree,
+                tooltip: 'Git Panel',
+                isSelected: widget.showGitPanel,
+                onPressed: widget.onToggleGitPanel ?? () {},
+              ),
+            ],
           ),
-          if (_projectRoot != null)
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8.0,
-                vertical: 4.0,
-              ),
-              decoration: BoxDecoration(
-                color: AppTheme.sidePanelSurface(context),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Normal File View Button
-                  _buildToggleButton(
-                    icon: Icons.folder,
-                    tooltip: 'Normal File View',
-                    isSelected:
-                        !widget.showGitPanel &&
-                        _panelMode == PanelMode.filesystem,
-                    onPressed: () {
-                      if (widget.showGitPanel) {
-                        widget.onToggleGitPanel?.call();
-                      }
-                      if (_panelMode != PanelMode.filesystem) {
-                        _togglePanelMode();
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 4),
-                  // Organized File View Button
-                  _buildToggleButton(
-                    icon: Icons.folder_special,
-                    tooltip: 'Organized File View',
-                    isSelected:
-                        !widget.showGitPanel &&
-                        _panelMode == PanelMode.organized,
-                    onPressed: () {
-                      if (widget.showGitPanel) {
-                        widget.onToggleGitPanel?.call();
-                      }
-                      if (_panelMode != PanelMode.organized) {
-                        _togglePanelMode();
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 4),
-                  // Git Panel Button
-                  _buildToggleButton(
-                    icon: Icons.account_tree,
-                    tooltip: 'Git Panel',
-                    isSelected: widget.showGitPanel,
-                    onPressed: widget.onToggleGitPanel ?? () {},
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
+
+        Expanded(
+          child: Container(
+            color: AppTheme.sidePanelBackground(context),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _projectRoot == null
+                ? WelcomeScreen(
+                    onOpenFolder: _pickDirectory,
+                    onCreateProject: _createNewProject,
+                    mruFolders: _prefs?.getStringList('mru_folders') ?? [],
+                    onOpenMruProject: _loadProject,
+                    onRemoveMruEntry: _removeMruEntry,
+                  )
+                : widget.showGitPanel
+                ? _buildGitPanel()
+                : _buildFileExplorer(),
+          ),
+        ),
+      ],
     );
   }
 
