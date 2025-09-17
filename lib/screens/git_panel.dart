@@ -1,4 +1,3 @@
-import 'package:fide/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/git_service.dart';
@@ -163,175 +162,145 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     final gitStatus = ref.watch(gitStatusProvider);
     final gitCommits = ref.watch(gitCommitsProvider);
 
-    return Container(
-      color: AppTheme.sidePanelBackground(context),
-      child: Column(
+    return gitStatus.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(child: Text('Error: $error')),
+      data: (status) => Column(
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.all(8.0),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(color: Theme.of(context).dividerColor),
               ),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.account_tree),
-                const SizedBox(width: 8),
-                const Text(
-                  'Git',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.refresh),
+                      onPressed: _loadGitData,
+                      tooltip: 'Refresh',
+                    ),
+
+                    IconButton(
+                      icon: const Icon(Icons.cloud_upload),
+                      onPressed: _push,
+                      tooltip: 'Push',
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.cloud_download),
+                      onPressed: _pull,
+                      tooltip: 'Pull',
+                    ),
+                  ],
                 ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: _loadGitData,
-                  tooltip: 'Refresh',
-                ),
+
+                if (status.staged.isNotEmpty)
+                  TextField(
+                    controller: _commitController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'Enter commit message...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                if (status.staged.isNotEmpty)
+                  ElevatedButton(
+                    onPressed: _isCommitting ? null : _commit,
+                    child: _isCommitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Commit'),
+                  ),
               ],
             ),
           ),
 
           // Content
           Expanded(
-            child: gitStatus.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(child: Text('Error: $error')),
-              data: (status) => SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Staged files
-                    if (status.staged.isNotEmpty) ...[
-                      _buildFileSection(
-                        'Staged Changes',
-                        status.staged,
-                        onStage: null,
-                        onUnstage: _unstageFiles,
-                      ),
-                    ],
-
-                    // Unstaged files
-                    if (status.unstaged.isNotEmpty) ...[
-                      _buildFileSection(
-                        'Changes',
-                        status.unstaged,
-                        onStage: _stageFiles,
-                        onUnstage: null,
-                      ),
-                    ],
-
-                    // Untracked files
-                    if (status.untracked.isNotEmpty) ...[
-                      _buildFileSection(
-                        'Untracked Files',
-                        status.untracked,
-                        onStage: _stageFiles,
-                        onUnstage: null,
-                      ),
-                    ],
-
-                    // Commit section
-                    if (status.staged.isNotEmpty) ...[
-                      const Divider(),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Commit Message',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 8),
-                            TextField(
-                              controller: _commitController,
-                              maxLines: 3,
-                              decoration: const InputDecoration(
-                                hintText: 'Enter commit message...',
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: _isCommitting ? null : _commit,
-                                    child: _isCommitting
-                                        ? const SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          )
-                                        : const Text('Commit'),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  icon: const Icon(Icons.cloud_upload),
-                                  onPressed: _push,
-                                  tooltip: 'Push',
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.cloud_download),
-                                  onPressed: _pull,
-                                  tooltip: 'Pull',
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-
-                    // Recent commits
-                    const Divider(),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Recent Commits',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          gitCommits.when(
-                            loading: () => const CircularProgressIndicator(),
-                            error: (error, stack) => Text('Error: $error'),
-                            data: (commits) => commits.isEmpty
-                                ? const Text('No commits yet')
-                                : Column(
-                                    children: commits
-                                        .map(
-                                          (commit) => ListTile(
-                                            dense: true,
-                                            leading: const Icon(
-                                              Icons.commit,
-                                              size: 16,
-                                            ),
-                                            title: Text(
-                                              commit.message,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            subtitle: Text(
-                                              commit.hash.substring(0, 7),
-                                            ),
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
-                          ),
-                        ],
-                      ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Staged files
+                  if (status.staged.isNotEmpty) ...[
+                    _buildFileSection(
+                      'Staged Changes',
+                      status.staged,
+                      onStage: null,
+                      onUnstage: _unstageFiles,
                     ),
                   ],
-                ),
+
+                  // Unstaged files
+                  if (status.unstaged.isNotEmpty) ...[
+                    _buildFileSection(
+                      'Changes',
+                      status.unstaged,
+                      onStage: _stageFiles,
+                      onUnstage: null,
+                    ),
+                  ],
+
+                  // Untracked files
+                  if (status.untracked.isNotEmpty) ...[
+                    _buildFileSection(
+                      'Untracked Files',
+                      status.untracked,
+                      onStage: _stageFiles,
+                      onUnstage: null,
+                    ),
+                  ],
+
+                  // Recent commits
+                  const Divider(),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Recent Commits',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        gitCommits.when(
+                          loading: () => const CircularProgressIndicator(),
+                          error: (error, stack) => Text('Error: $error'),
+                          data: (commits) => commits.isEmpty
+                              ? const Text('No commits yet')
+                              : Column(
+                                  children: commits
+                                      .map(
+                                        (commit) => ListTile(
+                                          dense: true,
+                                          leading: const Icon(
+                                            Icons.commit,
+                                            size: 16,
+                                          ),
+                                          title: Text(
+                                            commit.message,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          subtitle: Text(
+                                            commit.hash.substring(0, 7),
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

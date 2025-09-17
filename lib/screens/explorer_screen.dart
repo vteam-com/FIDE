@@ -1591,6 +1591,11 @@ class _ExplorerScreenState extends ConsumerState<ExplorerScreen> {
       _panelMode = newPanelMode;
     });
 
+    // Reset scroll position when switching modes
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(0.0);
+    }
+
     // Save the new panel mode to SharedPreferences
     _prefs?.setString(
       _panelModeKey,

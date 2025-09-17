@@ -90,17 +90,17 @@ digraph "" {
   "/test/widget_test.dart" -> "/lib/main.dart";
   "/lib/providers/app_providers.dart" -> "/lib/models/file_system_item.dart";
   "/lib/providers/app_providers.dart" -> "/lib/models/project_node.dart";
+  "/lib/providers/app_providers.dart" -> "/lib/utils/file_type_utils.dart";
   "/lib/utils/message_helper.dart" -> "/lib/widgets/message_widget.dart";
   "/lib/models/project_node.dart" -> "/lib/models/file_system_item.dart";
-  "/lib/screens/git_panel.dart" -> "/lib/theme/app_theme.dart";
   "/lib/screens/git_panel.dart" -> "/lib/services/git_service.dart";
   "/lib/screens/explorer_screen.dart" -> "/lib/models/project_node.dart";
   "/lib/screens/explorer_screen.dart" -> "/lib/models/file_system_item.dart";
   "/lib/screens/explorer_screen.dart" -> "/lib/services/git_service.dart";
   "/lib/screens/explorer_screen.dart" -> "/lib/utils/message_helper.dart";
-  "/lib/screens/explorer_screen.dart" -> "/lib/screens/welcome_screen.dart";
   "/lib/screens/explorer_screen.dart" -> "/lib/screens/git_panel.dart";
   "/lib/screens/explorer_screen.dart" -> "/lib/theme/app_theme.dart";
+  "/lib/screens/explorer_screen.dart" -> "/lib/providers/app_providers.dart";
   "/lib/screens/outline_panel.dart" -> "/lib/theme/app_theme.dart";
   "/lib/screens/outline_panel.dart" -> "/lib/models/file_system_item.dart";
   "/lib/screens/outline_panel.dart" -> "/lib/screens/editor_screen.dart";
@@ -110,6 +110,7 @@ digraph "" {
   "/lib/main.dart" -> "/lib/widgets/main_layout.dart";
   "/lib/main.dart" -> "/lib/widgets/title_bar.dart";
   "/lib/main.dart" -> "/lib/screens/editor_screen.dart";
+  "/lib/main.dart" -> "/lib/screens/welcome_screen.dart";
   "/lib/main.dart" -> "/lib/services/git_service.dart";
   "/lib/main.dart" -> "/lib/theme/app_theme.dart";
   "/lib/services/file_system_service.dart" -> "/lib/models/file_system_item.dart";
