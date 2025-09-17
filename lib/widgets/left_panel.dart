@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Screens
-import '../screens/explorer_screen.dart';
+import '../screens/folder_panel.dart';
 
 // Widgets
 import 'left_panel_controls.dart';
@@ -47,6 +47,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         border: Border(
           right: BorderSide(color: Theme.of(context).dividerColor, width: 1.0),
         ),
@@ -67,7 +68,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel> {
               ),
             ),
           Expanded(
-            child: ExplorerScreen(
+            child: FolderPanel(
               onFileSelected: widget.onFileSelected,
               selectedFile: widget.selectedFile,
               onThemeChanged: widget.onThemeChanged,

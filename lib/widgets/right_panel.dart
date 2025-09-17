@@ -35,7 +35,7 @@ class _RightPanelState extends State<RightPanel> {
               onNodeSelected: widget.onOutlineNodeSelected,
             )
           : Container(
-              color: Theme.of(context).colorScheme.surface,
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
               child: const Center(
                 child: Text(
                   'Select a file to view outline',

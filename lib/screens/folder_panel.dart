@@ -19,8 +19,8 @@ import '../widgets/left_panel.dart';
 // Providers
 import '../providers/app_providers.dart';
 
-class ExplorerScreen extends ConsumerStatefulWidget {
-  const ExplorerScreen({
+class FolderPanel extends ConsumerStatefulWidget {
+  const FolderPanel({
     super.key,
     this.onFileSelected,
     this.selectedFile,
@@ -52,10 +52,10 @@ class ExplorerScreen extends ConsumerStatefulWidget {
   final PanelMode panelMode;
 
   @override
-  ConsumerState<ExplorerScreen> createState() => _ExplorerScreenState();
+  ConsumerState<FolderPanel> createState() => _ExplorerScreenState();
 }
 
-class _ExplorerScreenState extends ConsumerState<ExplorerScreen> {
+class _ExplorerScreenState extends ConsumerState<FolderPanel> {
   final Map<String, bool> _expandedState = {};
 
   final GitService _gitService = GitService();
@@ -84,7 +84,7 @@ class _ExplorerScreenState extends ConsumerState<ExplorerScreen> {
   }
 
   @override
-  void didUpdateWidget(ExplorerScreen oldWidget) {
+  void didUpdateWidget(FolderPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
     // If selectedFile changed, expand the tree to show it
     if (widget.selectedFile != oldWidget.selectedFile &&
@@ -132,24 +132,18 @@ class _ExplorerScreenState extends ConsumerState<ExplorerScreen> {
       });
     }
 
-    return Container(
-      color: AppTheme.sidePanelBackground(context),
-      child: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _projectRoot == null
-          ? Container(
-              color: Theme.of(context).colorScheme.surface,
-              child: const Center(
-                child: Text(
-                  'No project loaded',
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-            )
-          : widget.showGitPanel
-          ? _buildGitPanel()
-          : _buildFileExplorer(),
-    );
+    return _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : _projectRoot == null
+        ? Container(
+            color: Theme.of(context).colorScheme.surface,
+            child: const Center(
+              child: Text('No project loaded', style: TextStyle(fontSize: 16)),
+            ),
+          )
+        : widget.showGitPanel
+        ? _buildGitPanel()
+        : _buildFileExplorer();
   }
 
   @override
@@ -436,10 +430,7 @@ class _ExplorerScreenState extends ConsumerState<ExplorerScreen> {
 
   Widget _buildGitPanel() {
     if (_projectRoot == null) {
-      return Container(
-        color: AppTheme.sidePanelBackground(context),
-        child: const Center(child: Text('No project loaded')),
-      );
+      return const Center(child: Text('No project loaded'));
     }
 
     return SizedBox.expand(child: GitPanel(projectPath: _projectRoot!.path));
