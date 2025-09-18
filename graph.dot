@@ -5,6 +5,7 @@ digraph "" {
   "/test/widget_test.dart" [label="widget_test"];
   "/lib/providers/app_providers.dart" [label="app_providers"];
   "/lib/panels/right/outline_panel.dart" [label="outline_panel"];
+  "/lib/panels/right/ai_panel.dart" [label="ai_panel"];
   "/lib/panels/right/right_panel.dart" [label="right_panel"];
   "/lib/panels/center/editor_screen.dart" [label="editor_screen"];
   "/lib/panels/center/terminal_panel.dart" [label="terminal_panel"];
@@ -24,6 +25,7 @@ digraph "" {
   "/lib/main.dart" [label="main"];
   "/lib/theme/app_theme.dart" [label="app_theme"];
   "/lib/services/git_service.dart" [label="git_service"];
+  "/lib/services/ai_service.dart" [label="ai_service"];
   "/lib/services/file_system_service.dart" [label="file_system_service"];
   "/lib/services/editor_service.dart" [label="editor_service"];
   "/lib/widgets/resizable_splitter.dart" [label="resizable_splitter"];
@@ -48,6 +50,7 @@ digraph "" {
         subgraph "cluster~/lib/panels/right" {
           label="right";
           "/lib/panels/right/outline_panel.dart";
+          "/lib/panels/right/ai_panel.dart";
           "/lib/panels/right/right_panel.dart";
         }
         subgraph "cluster~/lib/panels/center" {
@@ -88,6 +91,7 @@ digraph "" {
       subgraph "cluster~/lib/services" {
         label="services";
         "/lib/services/git_service.dart";
+        "/lib/services/ai_service.dart";
         "/lib/services/file_system_service.dart";
         "/lib/services/editor_service.dart";
       }
@@ -109,7 +113,10 @@ digraph "" {
   "/lib/providers/app_providers.dart" -> "/lib/utils/file_type_utils.dart";
   "/lib/panels/right/outline_panel.dart" -> "/lib/models/file_system_item.dart";
   "/lib/panels/right/outline_panel.dart" -> "/lib/panels/center/editor_screen.dart";
+  "/lib/panels/right/ai_panel.dart" -> "/lib/services/ai_service.dart";
+  "/lib/panels/right/ai_panel.dart" -> "/lib/models/file_system_item.dart";
   "/lib/panels/right/right_panel.dart" -> "/lib/panels/right/outline_panel.dart";
+  "/lib/panels/right/right_panel.dart" -> "/lib/panels/right/ai_panel.dart";
   "/lib/panels/right/right_panel.dart" -> "/lib/models/file_system_item.dart";
   "/lib/panels/center/editor_screen.dart" -> "/lib/utils/message_helper.dart";
   "/lib/panels/center/editor_screen.dart" -> "/lib/utils/file_type_utils.dart";

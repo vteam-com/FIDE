@@ -50,6 +50,7 @@ dependencies:
   flutter_code_crafter: ^0.3.0
   window_manager: ^0.3.9
   flutter_pty: ^0.4.2
+  http: ^1.1.0
 
 dev_dependencies:
   flutter_launcher_icons: "^0.14.4"
