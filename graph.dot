@@ -143,7 +143,6 @@ digraph "" {
   "/lib/panels/left/file_explorer.dart" -> "/lib/models/file_system_item.dart";
   "/lib/panels/left/file_explorer.dart" -> "/lib/panels/left/directory_contents.dart";
   "/lib/panels/left/left_panel.dart" -> "/lib/panels/left/folder_panel.dart";
-  "/lib/panels/left/left_panel.dart" -> "/lib/panels/left/left_panel_controls.dart";
   "/lib/panels/left/left_panel.dart" -> "/lib/models/file_system_item.dart";
   "/lib/utils/message_helper.dart" -> "/lib/widgets/message_widget.dart";
   "/lib/models/project_node.dart" -> "/lib/models/file_system_item.dart";

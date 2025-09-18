@@ -4,9 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Screens
 import 'folder_panel.dart';
 
-// Widgets
-import 'left_panel_controls.dart';
-
 // Models
 import '../../models/file_system_item.dart';
 
@@ -40,8 +37,42 @@ class LeftPanel extends ConsumerStatefulWidget {
   ConsumerState<LeftPanel> createState() => _LeftPanelState();
 }
 
-class _LeftPanelState extends ConsumerState<LeftPanel> {
+class _LeftPanelState extends ConsumerState<LeftPanel>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   PanelMode _panelMode = PanelMode.filesystem;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(_handleTabChange);
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_handleTabChange);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _handleTabChange() {
+    if (_tabController.indexIsChanging) {
+      final newMode = PanelMode.values[_tabController.index];
+      if (newMode != _panelMode) {
+        setState(() {
+          _panelMode = newMode;
+        });
+
+        // Ensure selected file is visible after mode change
+        if (widget.selectedFile != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            // This will trigger the ExplorerScreen to ensure the file is visible
+          });
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,67 +87,79 @@ class _LeftPanelState extends ConsumerState<LeftPanel> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (widget.projectLoaded)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: LeftPanelControls(
-                showGitPanel: widget.showGitPanel,
-                isFilesystemMode: _panelMode == PanelMode.filesystem,
-                isOrganizedMode: _panelMode == PanelMode.organized,
-                onToggleFilesystem: _toggleFilesystemMode,
-                onToggleOrganized: _toggleOrganizedMode,
-                onToggleGitPanel: widget.onToggleGitPanel ?? () {},
+            Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: Theme.of(context).dividerColor,
+                    width: 1.0,
+                  ),
+                ),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(icon: Icon(Icons.folder)),
+                  Tab(icon: Icon(Icons.folder_special)),
+                  Tab(icon: Icon(Icons.account_tree)),
+                ],
+                labelColor: Theme.of(context).colorScheme.primary,
+                unselectedLabelColor: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant,
+                indicatorColor: Theme.of(context).colorScheme.primary,
+                labelPadding: EdgeInsets.zero,
+                indicatorSize: TabBarIndicatorSize.tab,
+                physics:
+                    const NeverScrollableScrollPhysics(), // Disable swipe gestures
               ),
             ),
           Expanded(
-            child: FolderPanel(
-              onFileSelected: widget.onFileSelected,
-              selectedFile: widget.selectedFile,
-              onThemeChanged: widget.onThemeChanged,
-              onProjectLoaded: widget.onProjectLoaded,
-              onProjectPathChanged: widget.onProjectPathChanged,
-              initialProjectPath: widget.currentProjectPath,
-              showGitPanel: widget.showGitPanel,
-              panelMode: _panelMode,
+            child: TabBarView(
+              controller: _tabController,
+              physics:
+                  const NeverScrollableScrollPhysics(), // Disable swipe gestures
+              children: [
+                // Files tab
+                FolderPanel(
+                  onFileSelected: widget.onFileSelected,
+                  selectedFile: widget.selectedFile,
+                  onThemeChanged: widget.onThemeChanged,
+                  onProjectLoaded: widget.onProjectLoaded,
+                  onProjectPathChanged: widget.onProjectPathChanged,
+                  initialProjectPath: widget.currentProjectPath,
+                  showGitPanel: false,
+                  panelMode: PanelMode.filesystem,
+                ),
+
+                // Organized tab
+                FolderPanel(
+                  onFileSelected: widget.onFileSelected,
+                  selectedFile: widget.selectedFile,
+                  onThemeChanged: widget.onThemeChanged,
+                  onProjectLoaded: widget.onProjectLoaded,
+                  onProjectPathChanged: widget.onProjectPathChanged,
+                  initialProjectPath: widget.currentProjectPath,
+                  showGitPanel: false,
+                  panelMode: PanelMode.organized,
+                ),
+
+                // Git tab
+                FolderPanel(
+                  onFileSelected: widget.onFileSelected,
+                  selectedFile: widget.selectedFile,
+                  onThemeChanged: widget.onThemeChanged,
+                  onProjectLoaded: widget.onProjectLoaded,
+                  onProjectPathChanged: widget.onProjectPathChanged,
+                  initialProjectPath: widget.currentProjectPath,
+                  showGitPanel: true,
+                  panelMode: PanelMode.filesystem,
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
-  }
-
-  void _toggleFilesystemMode() {
-    if (widget.showGitPanel) {
-      widget.onToggleGitPanel?.call();
-    }
-    if (_panelMode != PanelMode.filesystem) {
-      setState(() {
-        _panelMode = PanelMode.filesystem;
-      });
-      // Ensure selected file is visible after mode change
-      if (widget.selectedFile != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          // This will trigger the ExplorerScreen to ensure the file is visible
-          // The ExplorerScreen will receive the panelMode change and handle it
-        });
-      }
-    }
-  }
-
-  void _toggleOrganizedMode() {
-    if (widget.showGitPanel) {
-      widget.onToggleGitPanel?.call();
-    }
-    if (_panelMode != PanelMode.organized) {
-      setState(() {
-        _panelMode = PanelMode.organized;
-      });
-      // Ensure selected file is visible after mode change
-      if (widget.selectedFile != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          // This will trigger the ExplorerScreen to ensure the file is visible
-          // The ExplorerScreen will receive the panelMode change and handle it
-        });
-      }
-    }
   }
 }

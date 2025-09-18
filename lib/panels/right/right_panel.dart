@@ -75,6 +75,8 @@ class _RightPanelState extends State<RightPanel>
           Expanded(
             child: TabBarView(
               controller: _tabController,
+              physics:
+                  const NeverScrollableScrollPhysics(), // Disable swipe gestures
               children: [
                 // Outline tab
                 widget.selectedFile != null

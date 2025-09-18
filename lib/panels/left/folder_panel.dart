@@ -166,9 +166,11 @@ class _ExplorerScreenState extends ConsumerState<FolderPanel> {
         // Category header
         InkWell(
           onTap: () {
-            setState(() {
-              _expandedState['category_$category'] = !isExpanded;
-            });
+            if (mounted) {
+              setState(() {
+                _expandedState['category_$category'] = !isExpanded;
+              });
+            }
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
@@ -657,7 +659,7 @@ class _ExplorerScreenState extends ConsumerState<FolderPanel> {
   }
 
   void _ensureSelectedFileVisible(String filePath) {
-    if (_projectRoot == null) return;
+    if (_projectRoot == null || !mounted) return;
 
     // For organized view, just expand the relevant category
     if (_panelMode == PanelMode.organized) {
@@ -683,15 +685,17 @@ class _ExplorerScreenState extends ConsumerState<FolderPanel> {
         targetCategory = 'Output';
       }
 
-      setState(() {
-        _expandedState['category_$targetCategory'] = true;
-      });
+      if (mounted) {
+        setState(() {
+          _expandedState['category_$targetCategory'] = true;
+        });
+      }
     } else {
       // For filesystem view, expand the directory containing the file
       final fileDir = path.dirname(filePath);
       if (fileDir != _projectRoot!.path) {
         final directoryNode = _findNodeByPath(fileDir);
-        if (directoryNode != null) {
+        if (directoryNode != null && mounted) {
           setState(() {
             _expandedState[fileDir] = true;
           });
@@ -701,7 +705,7 @@ class _ExplorerScreenState extends ConsumerState<FolderPanel> {
   }
 
   void _expandToFile(String filePath) {
-    if (_projectRoot == null) return;
+    if (_projectRoot == null || !mounted) return;
 
     // Get the relative path from project root
     final relativePath = path.relative(filePath, from: _projectRoot!.path);
@@ -730,7 +734,7 @@ class _ExplorerScreenState extends ConsumerState<FolderPanel> {
       }
 
       // Only expand the category if it's not already expanded (respect user choice)
-      if (_expandedState['category_$targetCategory'] != false) {
+      if (_expandedState['category_$targetCategory'] != false && mounted) {
         setState(() {
           _expandedState['category_$targetCategory'] = true;
         });
@@ -758,7 +762,7 @@ class _ExplorerScreenState extends ConsumerState<FolderPanel> {
         currentPath = path.join(currentPath, component);
 
         // Only expand if not explicitly collapsed by user
-        if (_expandedState[currentPath] != false) {
+        if (_expandedState[currentPath] != false && mounted) {
           setState(() {
             _expandedState[currentPath] = true;
           });
@@ -773,9 +777,13 @@ class _ExplorerScreenState extends ConsumerState<FolderPanel> {
     }
 
     // Ensure the selected file is visible and scroll to it after a short delay to allow the tree to expand
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _ensureSelectedFileVisible(filePath);
-    });
+    if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _ensureSelectedFileVisible(filePath);
+        }
+      });
+    }
   }
 
   ProjectNode? _findNodeByPath(String targetPath) {
@@ -1058,9 +1066,11 @@ class _ExplorerScreenState extends ConsumerState<FolderPanel> {
 
   void _onNodeTapped(ProjectNode node, bool isExpanded) async {
     if (node.isDirectory) {
-      setState(() {
-        _expandedState[node.path] = !isExpanded;
-      });
+      if (mounted) {
+        setState(() {
+          _expandedState[node.path] = !isExpanded;
+        });
+      }
 
       if (!isExpanded && node.children.isEmpty) {
         try {
