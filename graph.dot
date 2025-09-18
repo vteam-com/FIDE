@@ -26,6 +26,7 @@ digraph "" {
   "/lib/widgets/file_explorer.dart" [label="file_explorer"];
   "/lib/widgets/message_widget.dart" [label="message_widget"];
   "/lib/widgets/left_panel.dart" [label="left_panel"];
+  "/lib/widgets/desktop_terminal.dart" [label="desktop_terminal"];
   "/lib/widgets/center_panel.dart" [label="center_panel"];
   "/lib/widgets/right_panel.dart" [label="right_panel"];
   "/tool/sort_source.dart" [label="sort_source"];
@@ -80,6 +81,7 @@ digraph "" {
         "/lib/widgets/file_explorer.dart";
         "/lib/widgets/message_widget.dart";
         "/lib/widgets/left_panel.dart";
+        "/lib/widgets/desktop_terminal.dart";
         "/lib/widgets/center_panel.dart";
         "/lib/widgets/right_panel.dart";
       }
@@ -138,6 +140,8 @@ digraph "" {
   "/lib/widgets/left_panel.dart" -> "/lib/models/file_system_item.dart";
   "/lib/widgets/center_panel.dart" -> "/lib/screens/welcome_screen.dart";
   "/lib/widgets/center_panel.dart" -> "/lib/screens/editor_screen.dart";
+  "/lib/widgets/center_panel.dart" -> "/lib/widgets/desktop_terminal.dart";
+  "/lib/widgets/center_panel.dart" -> "/lib/widgets/resizable_splitter.dart";
   "/lib/widgets/center_panel.dart" -> "/lib/models/file_system_item.dart";
   "/lib/widgets/right_panel.dart" -> "/lib/screens/outline_panel.dart";
   "/lib/widgets/right_panel.dart" -> "/lib/models/file_system_item.dart";

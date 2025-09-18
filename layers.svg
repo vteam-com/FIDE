@@ -1,5 +1,5 @@
 <?xml version="1.0" standalone="no"?>
-<svg width="4200" height="600" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
+<svg width="4500" height="600" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
   <style>
     .layerRectangle {
       stroke: black;
@@ -122,6 +122,9 @@
   <g id='Node_flutter_markdown'>
     <rect x="3304" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
   </g>
+  <g id='Node_flutter_pty'>
+    <rect x="4204" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
   <g id='Node_flutter_riverpod'>
     <rect x="2704" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
   </g>
@@ -204,6 +207,11 @@ flutter_highlight</title>
       <title>fide
 ⬇
 flutter_markdown</title>
+    </path>
+    <path class="line" d="M280 95 C 290 150,4210 150, 4220 205" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+flutter_pty</title>
     </path>
     <path class="line" d="M280 95 C 290 150,2710 150, 2720 205" fill="none" stroke="#377E22">
       <title>fide
@@ -450,7 +458,7 @@ highlight</title>
   <g id='Counters_fide'>
     <g>
       <circle cx="280" cy="95" r="10" fill="green"/>
-      <text x="280" y="95" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">22</text>
+      <text x="280" y="95" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">23</text>
       <title>fide
 ⬇
 1 /dev/flutter_launcher_icons
@@ -463,18 +471,19 @@ highlight</title>
 8 /direct/flutter_code_crafter
 9 /direct/flutter_highlight
 10 /direct/flutter_markdown
-11 /direct/flutter_riverpod
-12 /direct/highlight
-13 /direct/package_info_plus
-14 /direct/path
-15 /direct/path_provider
-16 /direct/process_run
-17 /direct/provider
-18 /direct/shared_preferences
-19 /direct/url_launcher
-20 /direct/window_manager
-21 /direct/xterm
-22 /direct/yaml</title>
+11 /direct/flutter_pty
+12 /direct/flutter_riverpod
+13 /direct/highlight
+14 /direct/package_info_plus
+15 /direct/path
+16 /direct/path_provider
+17 /direct/process_run
+18 /direct/provider
+19 /direct/shared_preferences
+20 /direct/url_launcher
+21 /direct/window_manager
+22 /direct/xterm
+23 /direct/yaml</title>
     </g>
   </g>
   <g id='Counters_cupertino_icons'>
@@ -545,6 +554,22 @@ flutter_code_crafter</title>
       <title>1 /root/fide
 ⬇
 flutter_markdown</title>
+    </g>
+  </g>
+  <g id='Counters_flutter_pty'>
+    <g>
+      <circle cx="4480" cy="245" r="10" fill="green"/>
+      <text x="4480" y="245" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>flutter_pty
+⬇
+1 /transitive/ffi</title>
+    </g>
+    <g>
+      <circle cx="4220" cy="205" r="10" fill="blue"/>
+      <text x="4220" y="205" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>1 /root/fide
+⬇
+flutter_pty</title>
     </g>
   </g>
   <g id='Counters_flutter_riverpod'>
@@ -719,8 +744,8 @@ window_manager</title>
 1 /transitive/convert
 2 /transitive/equatable
 3 /transitive/meta
-4 /transitive/platform_info
-5 /transitive/quiver</title>
+4 /transitive/quiver
+5 /transitive/zmodem</title>
     </g>
     <g>
       <circle cx="2420" cy="205" r="10" fill="blue"/>
@@ -774,6 +799,10 @@ xterm</title>
     <text class="nodeName" x="3450" y="225" font-size="120%">flutter_markdown</text>
     <text class="nodeName" x="3450" y="245" font-size="80%">0.6.23</text>
   </g>
+  <g id='Labels_flutter_pty'>
+    <text class="nodeName" x="4350" y="225" font-size="120%">flutter_pty</text>
+    <text class="nodeName" x="4350" y="245" font-size="80%">0.4.2</text>
+  </g>
   <g id='Labels_flutter_riverpod'>
     <text class="nodeName" x="2850" y="225" font-size="120%">flutter_riverpod</text>
     <text class="nodeName" x="2850" y="245" font-size="80%">2.6.1</text>
@@ -808,6 +837,6 @@ xterm</title>
   </g>
   <g id='Labels_xterm'>
     <text class="nodeName" x="2550" y="225" font-size="120%">xterm</text>
-    <text class="nodeName" x="2550" y="245" font-size="80%">3.5.0</text>
+    <text class="nodeName" x="2550" y="245" font-size="80%">4.0.0</text>
   </g>
 </svg>

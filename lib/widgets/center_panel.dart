@@ -5,6 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../screens/welcome_screen.dart';
 import '../screens/editor_screen.dart';
 
+// Widgets
+import 'desktop_terminal.dart';
+import 'resizable_splitter.dart';
+
 // Models
 import '../models/file_system_item.dart';
 
@@ -35,6 +39,19 @@ class CenterPanel extends ConsumerStatefulWidget {
 }
 
 class _CenterPanelState extends ConsumerState<CenterPanel> {
+  double _terminalHeight = 200.0;
+  final double _minTerminalHeight = 100.0;
+  final double _maxTerminalHeight = 400.0;
+
+  void _onTerminalResize(double delta) {
+    setState(() {
+      _terminalHeight = (_terminalHeight - delta).clamp(
+        _minTerminalHeight,
+        _maxTerminalHeight,
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -44,10 +61,27 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
         ),
       ),
       child: widget.selectedFile != null
-          ? EditorScreen(
-              filePath: widget.selectedFile!.path,
-              onContentChanged: widget.onContentChanged,
-              onClose: widget.onClose,
+          ? Column(
+              children: [
+                // Editor takes remaining space
+                Expanded(
+                  child: EditorScreen(
+                    filePath: widget.selectedFile!.path,
+                    onContentChanged: widget.onContentChanged,
+                    onClose: widget.onClose,
+                  ),
+                ),
+                // Resizable splitter
+                ResizableSplitter(
+                  onResize: _onTerminalResize,
+                  isHorizontal: true,
+                ),
+                // Terminal at bottom
+                SizedBox(
+                  height: _terminalHeight,
+                  child: const DesktopTerminal(),
+                ),
+              ],
             )
           : !widget.projectLoaded
           ? WelcomeScreen(
