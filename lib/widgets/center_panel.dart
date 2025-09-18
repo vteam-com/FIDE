@@ -6,7 +6,7 @@ import '../screens/welcome_screen.dart';
 import '../screens/editor_screen.dart';
 
 // Widgets
-import 'desktop_terminal.dart';
+import 'terminal_panel.dart';
 import 'resizable_splitter.dart';
 
 // Models
