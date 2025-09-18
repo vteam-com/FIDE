@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:xterm/xterm.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 
-class DesktopTerminal extends StatefulWidget {
-  const DesktopTerminal({super.key});
+class TerminalPanel extends StatefulWidget {
+  const TerminalPanel({super.key});
 
   @override
-  State<DesktopTerminal> createState() => _DesktopTerminalState();
+  State<TerminalPanel> createState() => _TerminalPanelState();
 }
 
-class _DesktopTerminalState extends State<DesktopTerminal> {
+class _TerminalPanelState extends State<TerminalPanel> {
   TerminalController? controller;
 
   Pty? pty;

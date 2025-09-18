@@ -12,11 +12,11 @@ import 'package:window_manager/window_manager.dart';
 import 'providers/app_providers.dart';
 
 // Widgets
-import 'widgets/main_layout.dart';
+import 'screens/main_layout.dart';
 import 'widgets/title_bar.dart';
 
 // Screens
-import 'screens/editor_screen.dart';
+import 'panels/center/editor_screen.dart';
 import 'screens/welcome_screen.dart';
 
 // Services

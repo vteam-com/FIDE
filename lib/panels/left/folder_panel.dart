@@ -10,14 +10,14 @@ import 'package:fide/models/file_system_item.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/utils/message_helper.dart';
 
-import 'package:fide/screens/git_panel.dart';
+import 'package:fide/panels/left/git_panel.dart';
 import 'package:fide/theme/app_theme.dart';
 
 // Widgets
-import '../widgets/left_panel.dart';
+import 'left_panel.dart';
 
 // Providers
-import '../providers/app_providers.dart';
+import '../../providers/app_providers.dart';
 
 class FolderPanel extends ConsumerStatefulWidget {
   const FolderPanel({

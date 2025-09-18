@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Screens
-import '../screens/welcome_screen.dart';
-import '../screens/editor_screen.dart';
+import '../../screens/welcome_screen.dart';
+import 'editor_screen.dart';
 
 // Widgets
 import 'terminal_panel.dart';
-import 'resizable_splitter.dart';
+import '../../widgets/resizable_splitter.dart';
 
 // Models
-import '../models/file_system_item.dart';
+import '../../models/file_system_item.dart';
 
 class CenterPanel extends ConsumerStatefulWidget {
   final FileSystemItem? selectedFile;
@@ -86,7 +86,7 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
                     height: _terminalHeight,
                     child: ColoredBox(
                       color: Theme.of(context).colorScheme.surfaceContainerLow,
-                      child: const DesktopTerminal(),
+                      child: const TerminalPanel(),
                     ),
                   ),
                 ],

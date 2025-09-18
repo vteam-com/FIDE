@@ -1,6 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:fide/screens/editor_screen.dart';
+import 'package:fide/panels/center/editor_screen.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,10 +19,10 @@ import '../models/file_system_item.dart';
 import '../utils/file_type_utils.dart';
 
 // Widgets
-import 'resizable_splitter.dart';
-import 'left_panel.dart';
-import 'center_panel.dart';
-import 'right_panel.dart';
+import '../widgets/resizable_splitter.dart';
+import '../panels/left/left_panel.dart';
+import '../panels/center/center_panel.dart';
+import '../panels/right/right_panel.dart';
 
 class MainLayout extends ConsumerStatefulWidget {
   final Function(ThemeMode)? onThemeChanged;

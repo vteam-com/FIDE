@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/git_service.dart';
+import '../../services/git_service.dart';
 
 // Git status provider
 final gitStatusProvider =

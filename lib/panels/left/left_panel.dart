@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Screens
-import '../screens/folder_panel.dart';
+import 'folder_panel.dart';
 
 // Widgets
 import 'left_panel_controls.dart';
 
 // Models
-import '../models/file_system_item.dart';
+import '../../models/file_system_item.dart';
 
 enum PanelMode { filesystem, organized, git }
 

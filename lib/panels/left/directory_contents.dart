@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
-import '../services/file_system_service.dart';
-import '../services/git_service.dart';
-import '../models/file_system_item.dart';
+import '../../services/file_system_service.dart';
+import '../../services/git_service.dart';
+import '../../models/file_system_item.dart';
 
 class DirectoryContents extends StatefulWidget {
   const DirectoryContents({

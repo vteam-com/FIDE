@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 // Screens
-import '../screens/outline_panel.dart';
+import 'outline_panel.dart';
 
 // Models
-import '../models/file_system_item.dart';
+import '../../models/file_system_item.dart';
 
 class RightPanel extends StatefulWidget {
   const RightPanel({
