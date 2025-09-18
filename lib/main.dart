@@ -321,8 +321,19 @@ class _FIDEState extends ConsumerState<FIDE> {
               child: PlatformMenuBar(
                 menus: [
                   PlatformMenu(
-                    label: 'File',
+                    label: 'FIDE',
                     menus: [
+                      PlatformMenuItem(
+                        label: 'About',
+                        onSelected: () {
+                          showAboutDialog(
+                            context: navigatorKey.currentContext ?? context,
+                            applicationName: 'FIDE',
+                            applicationVersion: '1.0.0',
+                            applicationLegalese: '© 2025 FIDE',
+                          );
+                        },
+                      ),
                       PlatformMenuItem(
                         label: 'Settings',
                         shortcut: const SingleActivator(
@@ -336,38 +347,14 @@ class _FIDEState extends ConsumerState<FIDE> {
                         },
                       ),
                       PlatformMenuItem(
-                        label: 'Save',
+                        label: 'Quit FIDE',
                         shortcut: const SingleActivator(
-                          LogicalKeyboardKey.keyS,
+                          LogicalKeyboardKey.keyQ,
                           meta: true,
                         ),
                         onSelected: () {
-                          triggerSave();
+                          SystemNavigator.pop();
                         },
-                      ),
-                      PlatformMenuItem(
-                        label: 'Close Document',
-                        shortcut: const SingleActivator(
-                          LogicalKeyboardKey.keyW,
-                          meta: true,
-                        ),
-                        onSelected: () {
-                          triggerCloseDocument();
-                        },
-                      ),
-                      PlatformMenuItemGroup(
-                        members: [
-                          PlatformMenuItem(
-                            label: 'Quit FIDE',
-                            shortcut: const SingleActivator(
-                              LogicalKeyboardKey.keyQ,
-                              meta: true,
-                            ),
-                            onSelected: () {
-                              SystemNavigator.pop();
-                            },
-                          ),
-                        ],
                       ),
                     ],
                   ),
@@ -382,48 +369,85 @@ class _FIDEState extends ConsumerState<FIDE> {
                       ),
                       PlatformMenuItem(
                         label: _getLastOpenedFileLabel(),
-                        shortcut: const SingleActivator(
-                          LogicalKeyboardKey.keyR,
-                          meta: true,
-                          shift: true,
-                        ),
                         onSelected: () {
                           triggerReopenLastFile();
                         },
                       ),
+                      PlatformMenuItemGroup(
+                        members: [
+                          PlatformMenuItem(
+                            label: 'Initialize Repository',
+                            onSelected: () async {
+                              final currentPath = ref.read(
+                                currentProjectPathProvider,
+                              );
+                              if (currentPath != null) {
+                                final gitService = GitService();
+                                final result = await gitService.initRepository(
+                                  currentPath,
+                                );
+                                if (navigatorKey.currentContext != null) {
+                                  ScaffoldMessenger.of(
+                                    navigatorKey.currentContext!,
+                                  ).showSnackBar(
+                                    SnackBar(content: Text(result)),
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                          PlatformMenuItem(
+                            label: 'Refresh Status',
+                            shortcut: const SingleActivator(
+                              LogicalKeyboardKey.keyR,
+                              meta: true,
+                              shift: true,
+                            ),
+                            onSelected: () {
+                              // This will be handled by the Git panel refresh
+                            },
+                          ),
+                        ],
+                      ),
+                      PlatformMenuItemGroup(
+                        members: [
+                          PlatformMenuItem(
+                            label: 'Save',
+                            shortcut: const SingleActivator(
+                              LogicalKeyboardKey.keyS,
+                              meta: true,
+                            ),
+                            onSelected: () {
+                              triggerSave();
+                            },
+                          ),
+                          PlatformMenuItem(
+                            label: 'Close Document',
+                            shortcut: const SingleActivator(
+                              LogicalKeyboardKey.keyW,
+                              meta: true,
+                            ),
+                            onSelected: () {
+                              triggerCloseDocument();
+                            },
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                   PlatformMenu(
-                    label: 'Git',
+                    label: 'Edit',
                     menus: [
                       PlatformMenuItem(
-                        label: 'Initialize Repository',
-                        onSelected: () async {
-                          final currentPath = ref.read(
-                            currentProjectPathProvider,
-                          );
-                          if (currentPath != null) {
-                            final gitService = GitService();
-                            final result = await gitService.initRepository(
-                              currentPath,
-                            );
-                            if (navigatorKey.currentContext != null) {
-                              ScaffoldMessenger.of(
-                                navigatorKey.currentContext!,
-                              ).showSnackBar(SnackBar(content: Text(result)));
-                            }
-                          }
-                        },
-                      ),
-                      PlatformMenuItem(
-                        label: 'Refresh Status',
+                        label: 'Go to Line',
                         shortcut: const SingleActivator(
-                          LogicalKeyboardKey.keyR,
-                          meta: true,
-                          shift: true,
+                          LogicalKeyboardKey.keyG,
+                          control: true,
                         ),
                         onSelected: () {
-                          // This will be handled by the Git panel refresh
+                          _showGotoLineDialog(
+                            navigatorKey.currentContext ?? context,
+                          );
                         },
                       ),
                     ],
@@ -459,39 +483,6 @@ class _FIDEState extends ConsumerState<FIDE> {
                         ),
                         onSelected: () {
                           triggerTogglePanelRight();
-                        },
-                      ),
-                    ],
-                  ),
-                  PlatformMenu(
-                    label: 'Edit',
-                    menus: [
-                      PlatformMenuItem(
-                        label: 'Go to Line',
-                        shortcut: const SingleActivator(
-                          LogicalKeyboardKey.keyG,
-                          control: true,
-                        ),
-                        onSelected: () {
-                          _showGotoLineDialog(
-                            navigatorKey.currentContext ?? context,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  PlatformMenu(
-                    label: 'Help',
-                    menus: [
-                      PlatformMenuItem(
-                        label: 'About',
-                        onSelected: () {
-                          showAboutDialog(
-                            context: navigatorKey.currentContext ?? context,
-                            applicationName: 'FIDE',
-                            applicationVersion: '1.0.0',
-                            applicationLegalese: '© 2025 FIDE',
-                          );
                         },
                       ),
                     ],
