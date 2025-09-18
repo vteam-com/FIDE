@@ -9,22 +9,28 @@ import 'package:path/path.dart' as path;
 import '../providers/app_providers.dart';
 
 // Widgets
-import 'main_layout.dart';
+
+// Global functions from main.dart
 
 class TitleBar extends ConsumerStatefulWidget {
   final ThemeMode themeMode;
   final Function(ThemeMode)? onThemeChanged;
+  final VoidCallback? onToggleOutline;
+  final VoidCallback? onToggleTerminal;
 
-  const TitleBar({super.key, required this.themeMode, this.onThemeChanged});
+  const TitleBar({
+    super.key,
+    required this.themeMode,
+    this.onThemeChanged,
+    this.onToggleOutline,
+    this.onToggleTerminal,
+  });
 
   @override
   ConsumerState<TitleBar> createState() => _TitleBarState();
 }
 
 class _TitleBarState extends ConsumerState<TitleBar> {
-  final GlobalKey<MainLayoutState> _mainLayoutKey =
-      GlobalKey<MainLayoutState>();
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -131,23 +137,9 @@ class _TitleBarState extends ConsumerState<TitleBar> {
     return Row(
       children: [
         IconButton(
-          icon: const Icon(Icons.folder_open, size: 18),
-          onPressed: () {
-            _mainLayoutKey.currentState?.pickDirectory();
-          },
-          tooltip: 'Open Project',
-          style: IconButton.styleFrom(
-            foregroundColor: widget.themeMode == ThemeMode.dark
-                ? Colors.white.withOpacity(0.9)
-                : Colors.black.withOpacity(0.9),
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.save, size: 18),
-          onPressed: () {
-            // This will be handled by the editor screen
-          },
-          tooltip: 'Save',
+          icon: const Icon(Icons.terminal, size: 18),
+          onPressed: widget.onToggleTerminal,
+          tooltip: 'Toggle Terminal',
           style: IconButton.styleFrom(
             foregroundColor: widget.themeMode == ThemeMode.dark
                 ? Colors.white.withOpacity(0.9)
@@ -156,9 +148,7 @@ class _TitleBarState extends ConsumerState<TitleBar> {
         ),
         IconButton(
           icon: const Icon(Icons.visibility, size: 18),
-          onPressed: () {
-            _mainLayoutKey.currentState?.toggleOutlinePanel();
-          },
+          onPressed: widget.onToggleOutline,
           tooltip: 'Toggle Outline',
           style: IconButton.styleFrom(
             foregroundColor: widget.themeMode == ThemeMode.dark
@@ -166,6 +156,7 @@ class _TitleBarState extends ConsumerState<TitleBar> {
                 : Colors.black.withOpacity(0.9),
           ),
         ),
+
         IconButton(
           icon: const Icon(Icons.settings, size: 18),
           onPressed: () {

@@ -78,6 +78,16 @@ void triggerCloseDocument() {
   EditorScreen.closeCurrentEditor();
 }
 
+void triggerToggleOutline() {
+  // Call the toggle outline method on MainLayout
+  _mainLayoutKey.currentState?.toggleOutlinePanel();
+}
+
+void triggerToggleTerminal() {
+  // Call the toggle terminal method on MainLayout
+  _mainLayoutKey.currentState?.toggleTerminalPanel();
+}
+
 // Global key to access MainLayout
 final GlobalKey<MainLayoutState> _mainLayoutKey = GlobalKey<MainLayoutState>();
 
@@ -259,6 +269,8 @@ class _FIDEState extends ConsumerState<FIDE> {
                 setState(() => _themeMode = themeMode);
                 _saveThemeMode(themeMode);
               },
+              onToggleOutline: triggerToggleOutline,
+              onToggleTerminal: triggerToggleTerminal,
             ),
             // Main content with menu bar
             Expanded(
@@ -368,6 +380,31 @@ class _FIDEState extends ConsumerState<FIDE> {
                         ),
                         onSelected: () {
                           // This will be handled by the Git panel refresh
+                        },
+                      ),
+                    ],
+                  ),
+                  PlatformMenu(
+                    label: 'View',
+                    menus: [
+                      PlatformMenuItem(
+                        label: 'Toggle Outline Panel',
+                        shortcut: const SingleActivator(
+                          LogicalKeyboardKey.keyO,
+                          meta: true,
+                        ),
+                        onSelected: () {
+                          triggerToggleOutline();
+                        },
+                      ),
+                      PlatformMenuItem(
+                        label: 'Toggle Terminal Panel',
+                        shortcut: const SingleActivator(
+                          LogicalKeyboardKey.keyT,
+                          meta: true,
+                        ),
+                        onSelected: () {
+                          triggerToggleTerminal();
                         },
                       ),
                     ],

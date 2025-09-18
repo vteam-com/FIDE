@@ -51,6 +51,8 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   static const String _lastOpenedFileKey = 'last_opened_file';
   static const String _mruFoldersKey = 'mru_folders';
   String? _lastSelectedFilePath;
+  bool _outlinePanelVisible = true;
+  bool _terminalPanelVisible = true;
 
   @override
   void initState() {
@@ -157,18 +159,16 @@ class MainLayoutState extends ConsumerState<MainLayout> {
 
   // Method to toggle outline panel visibility
   void toggleOutlinePanel() {
-    // For now, we'll just show a message since the outline panel
-    // is automatically shown/hidden based on file selection
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Outline panel visibility is controlled by file selection',
-          ),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
+    setState(() {
+      _outlinePanelVisible = !_outlinePanelVisible;
+    });
+  }
+
+  // Method to toggle terminal panel visibility
+  void toggleTerminalPanel() {
+    setState(() {
+      _terminalPanelVisible = !_terminalPanelVisible;
+    });
   }
 
   void _onResize(double delta) {
@@ -239,6 +239,12 @@ class MainLayoutState extends ConsumerState<MainLayout> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         widget.onFileOpened?.call(fileName);
       });
+      // Show outline panel by default when a file is selected
+      if (!_outlinePanelVisible) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          setState(() => _outlinePanelVisible = true);
+        });
+      }
       _lastSelectedFilePath = selectedFile.path;
     } else if (selectedFile == null && _lastSelectedFilePath != null) {
       _lastSelectedFilePath = null;
@@ -298,6 +304,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
               selectedFile: selectedFile,
               projectLoaded: projectLoaded,
               mruFolders: mruFolders,
+              terminalVisible: _terminalPanelVisible,
               onOpenFolder: pickDirectory,
               onOpenMruProject: (path) async {
                 final projectService = ref.read(projectLoadingServiceProvider);
@@ -330,7 +337,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
           ),
 
           // Right Panel
-          if (selectedFile != null) ...[
+          if (selectedFile != null && _outlinePanelVisible) ...[
             // Resizable Splitter between Center and Right
             ResizableSplitter(onResize: _onOutlineResize),
             SizedBox(

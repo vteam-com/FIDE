@@ -16,6 +16,7 @@ class CenterPanel extends ConsumerStatefulWidget {
   final FileSystemItem? selectedFile;
   final bool projectLoaded;
   final List<String> mruFolders;
+  final bool terminalVisible;
   final VoidCallback? onOpenFolder;
   final Function(String)? onOpenMruProject;
   final Function(String)? onRemoveMruEntry;
@@ -27,6 +28,7 @@ class CenterPanel extends ConsumerStatefulWidget {
     this.selectedFile,
     required this.projectLoaded,
     required this.mruFolders,
+    required this.terminalVisible,
     this.onOpenFolder,
     this.onOpenMruProject,
     this.onRemoveMruEntry,
@@ -71,16 +73,19 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
                     onClose: widget.onClose,
                   ),
                 ),
-                // Resizable splitter
-                ResizableSplitter(
-                  onResize: _onTerminalResize,
-                  isHorizontal: true,
-                ),
-                // Terminal at bottom
-                SizedBox(
-                  height: _terminalHeight,
-                  child: const DesktopTerminal(),
-                ),
+                // Terminal section (only if visible)
+                if (widget.terminalVisible) ...[
+                  // Resizable splitter
+                  ResizableSplitter(
+                    onResize: _onTerminalResize,
+                    isHorizontal: true,
+                  ),
+                  // Terminal at bottom
+                  SizedBox(
+                    height: _terminalHeight,
+                    child: const DesktopTerminal(),
+                  ),
+                ],
               ],
             )
           : !widget.projectLoaded

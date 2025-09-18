@@ -122,7 +122,6 @@ digraph "" {
   "/lib/widgets/directory_contents.dart" -> "/lib/services/git_service.dart";
   "/lib/widgets/directory_contents.dart" -> "/lib/models/file_system_item.dart";
   "/lib/widgets/title_bar.dart" -> "/lib/providers/app_providers.dart";
-  "/lib/widgets/title_bar.dart" -> "/lib/widgets/main_layout.dart";
   "/lib/widgets/main_layout.dart" -> "/lib/screens/editor_screen.dart";
   "/lib/widgets/main_layout.dart" -> "/lib/providers/app_providers.dart";
   "/lib/widgets/main_layout.dart" -> "/lib/models/file_system_item.dart";
