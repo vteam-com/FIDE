@@ -58,6 +58,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   String? _lastSelectedFilePath;
   bool _outlinePanelVisible = true;
   bool _terminalPanelVisible = true;
+  bool _leftPanelVisible = true;
 
   @override
   void initState() {
@@ -176,6 +177,13 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     });
   }
 
+  // Method to toggle left panel visibility
+  void toggleLeftPanel() {
+    setState(() {
+      _leftPanelVisible = !_leftPanelVisible;
+    });
+  }
+
   void _onResize(double delta) {
     setState(() {
       _explorerWidth = (_explorerWidth + delta).clamp(
@@ -250,7 +258,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
       body: Row(
         children: [
           // Left Panel
-          if (projectLoaded) ...[
+          if (projectLoaded && _leftPanelVisible) ...[
             SizedBox(
               width: _explorerWidth,
               child: LeftPanel(

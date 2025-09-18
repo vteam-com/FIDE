@@ -51,6 +51,7 @@ dependencies:
   window_manager: ^0.3.9
   flutter_pty: ^0.4.2
   http: ^1.1.0
+  flutter_svg: ^2.0.9
 
 dev_dependencies:
   flutter_launcher_icons: "^0.14.4"
@@ -76,6 +77,8 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/app.png
+    - assets/app.svg
+    - assets/
 
 # dart run flutter_launcher_icons
 flutter_launcher_icons:

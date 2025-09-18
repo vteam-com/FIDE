@@ -52,6 +52,11 @@ class FIDE extends ConsumerStatefulWidget {
   ConsumerState<FIDE> createState() => _FIDEState();
 }
 
+// Callbacks for updating visibility in FIDE state
+VoidCallback? _onLeftPanelVisibilityChanged;
+VoidCallback? _onBottomPanelVisibilityChanged;
+VoidCallback? _onRightPanelVisibilityChanged;
+
 // Global functions for menu actions
 void triggerSave() {
   // Call the static method to save the current editor
@@ -78,14 +83,25 @@ void triggerCloseDocument() {
   EditorScreen.closeCurrentEditor();
 }
 
-void triggerToggleOutline() {
-  // Call the toggle outline method on MainLayout
-  _mainLayoutKey.currentState?.toggleOutlinePanel();
+void triggerTogglePanelLeft() {
+  // Call the toggle left panel method on MainLayout
+  _mainLayoutKey.currentState?.toggleLeftPanel();
+  // Update visibility state
+  _onLeftPanelVisibilityChanged?.call();
 }
 
-void triggerToggleTerminal() {
+void triggerTogglePanelBottom() {
   // Call the toggle terminal method on MainLayout
   _mainLayoutKey.currentState?.toggleTerminalPanel();
+  // Update visibility state
+  _onBottomPanelVisibilityChanged?.call();
+}
+
+// Call the toggle outline method on MainLayout
+void triggerTogglePanelRight() {
+  _mainLayoutKey.currentState?.toggleOutlinePanel();
+  // Update visibility state
+  _onRightPanelVisibilityChanged?.call();
 }
 
 // Global key to access MainLayout
@@ -157,10 +173,34 @@ class _FIDEState extends ConsumerState<FIDE> {
   late SharedPreferences _prefs;
   static const String _themeModeKey = 'theme_mode';
 
+  // Panel visibility states
+  bool _leftPanelVisible = true;
+  bool _bottomPanelVisible = true;
+  bool _rightPanelVisible = true;
+
   @override
   void initState() {
     super.initState();
     _initializeApp();
+    _setupVisibilityCallbacks();
+  }
+
+  void _setupVisibilityCallbacks() {
+    _onLeftPanelVisibilityChanged = () {
+      setState(() {
+        _leftPanelVisible = !_leftPanelVisible;
+      });
+    };
+    _onBottomPanelVisibilityChanged = () {
+      setState(() {
+        _bottomPanelVisible = !_bottomPanelVisible;
+      });
+    };
+    _onRightPanelVisibilityChanged = () {
+      setState(() {
+        _rightPanelVisible = !_rightPanelVisible;
+      });
+    };
   }
 
   Future<void> _initializeApp() async {
@@ -269,8 +309,12 @@ class _FIDEState extends ConsumerState<FIDE> {
                 setState(() => _themeMode = themeMode);
                 _saveThemeMode(themeMode);
               },
-              onToggleOutline: triggerToggleOutline,
-              onToggleTerminal: triggerToggleTerminal,
+              onToggleLeftPanel: triggerTogglePanelLeft,
+              onToggleBottomPanel: triggerTogglePanelBottom,
+              onToggleRightPanel: triggerTogglePanelRight,
+              leftPanelVisible: _leftPanelVisible,
+              bottomPanelVisible: _bottomPanelVisible,
+              rightPanelVisible: _rightPanelVisible,
             ),
             // Main content with menu bar
             Expanded(
@@ -388,23 +432,33 @@ class _FIDEState extends ConsumerState<FIDE> {
                     label: 'View',
                     menus: [
                       PlatformMenuItem(
-                        label: 'Toggle Outline Panel',
+                        label: 'Panel Left',
                         shortcut: const SingleActivator(
-                          LogicalKeyboardKey.keyO,
+                          LogicalKeyboardKey.digit1,
                           meta: true,
                         ),
                         onSelected: () {
-                          triggerToggleOutline();
+                          triggerTogglePanelLeft();
                         },
                       ),
                       PlatformMenuItem(
-                        label: 'Toggle Terminal Panel',
+                        label: 'Panel Bottom',
                         shortcut: const SingleActivator(
-                          LogicalKeyboardKey.keyT,
+                          LogicalKeyboardKey.digit2,
                           meta: true,
                         ),
                         onSelected: () {
-                          triggerToggleTerminal();
+                          triggerTogglePanelBottom();
+                        },
+                      ),
+                      PlatformMenuItem(
+                        label: 'Panel Right',
+                        shortcut: const SingleActivator(
+                          LogicalKeyboardKey.digit3,
+                          meta: true,
+                        ),
+                        onSelected: () {
+                          triggerTogglePanelRight();
                         },
                       ),
                     ],

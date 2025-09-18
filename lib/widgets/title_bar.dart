@@ -3,6 +3,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:path/path.dart' as path;
 
 // Providers
@@ -15,15 +16,23 @@ import '../providers/app_providers.dart';
 class TitleBar extends ConsumerStatefulWidget {
   final ThemeMode themeMode;
   final Function(ThemeMode)? onThemeChanged;
-  final VoidCallback? onToggleOutline;
-  final VoidCallback? onToggleTerminal;
+  final VoidCallback? onToggleLeftPanel;
+  final VoidCallback? onToggleBottomPanel;
+  final VoidCallback? onToggleRightPanel;
+  final bool leftPanelVisible;
+  final bool bottomPanelVisible;
+  final bool rightPanelVisible;
 
   const TitleBar({
     super.key,
     required this.themeMode,
     this.onThemeChanged,
-    this.onToggleOutline,
-    this.onToggleTerminal,
+    this.onToggleLeftPanel,
+    this.onToggleBottomPanel,
+    this.onToggleRightPanel,
+    this.leftPanelVisible = true,
+    this.bottomPanelVisible = true,
+    this.rightPanelVisible = true,
   });
 
   @override
@@ -45,7 +54,7 @@ class _TitleBarState extends ConsumerState<TitleBar> {
             const SizedBox(
               width: 80,
             ), // Space for macOS traffic lights (left side)
-          // Project dropdown or app title
+          // Left section: Project dropdown or app title
           Consumer(
             builder: (context, ref, child) {
               final currentProjectPath = ref.watch(currentProjectPathProvider);
@@ -64,10 +73,12 @@ class _TitleBarState extends ConsumerState<TitleBar> {
               }
             },
           ),
-          Spacer(),
 
-          // Control buttons with proper theme colors
-          _buildActionButtons(),
+          // Center section: Panel toggle buttons
+          Expanded(child: Center(child: _buildPanelToggleButtons())),
+
+          // Right section: Settings button
+          _buildSettingsButton(),
 
           // Spacer to push content away from right-side window controls (Windows/Linux)
           if (!Platform.isMacOS) const Spacer(),
@@ -133,43 +144,76 @@ class _TitleBarState extends ConsumerState<TitleBar> {
     );
   }
 
-  Widget _buildActionButtons() {
-    return Row(
-      children: [
-        IconButton(
-          icon: const Icon(Icons.terminal, size: 18),
-          onPressed: widget.onToggleTerminal,
-          tooltip: 'Toggle Terminal',
-          style: IconButton.styleFrom(
-            foregroundColor: widget.themeMode == ThemeMode.dark
-                ? Colors.white.withOpacity(0.9)
-                : Colors.black.withOpacity(0.9),
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.visibility, size: 18),
-          onPressed: widget.onToggleOutline,
-          tooltip: 'Toggle Outline',
-          style: IconButton.styleFrom(
-            foregroundColor: widget.themeMode == ThemeMode.dark
-                ? Colors.white.withOpacity(0.9)
-                : Colors.black.withOpacity(0.9),
-          ),
-        ),
+  Widget _buildPanelToggleButtons() {
+    final colorScheme = Theme.of(context).colorScheme;
 
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Left panel toggle
         IconButton(
-          icon: const Icon(Icons.settings, size: 18),
-          onPressed: () {
-            _showSettingsDialog();
-          },
-          tooltip: 'Settings',
-          style: IconButton.styleFrom(
-            foregroundColor: widget.themeMode == ThemeMode.dark
-                ? Colors.white.withOpacity(0.9)
-                : Colors.black.withOpacity(0.9),
+          icon: SvgPicture.asset(
+            'assets/toggle_panel_left.svg',
+            width: 18,
+            height: 18,
+            colorFilter: ColorFilter.mode(
+              widget.leftPanelVisible
+                  ? colorScheme.primary
+                  : colorScheme.onSurface,
+              BlendMode.srcIn,
+            ),
           ),
+          onPressed: widget.onToggleLeftPanel,
+          tooltip: 'Toggle Left Panel',
+        ),
+        // Bottom panel toggle
+        IconButton(
+          icon: SvgPicture.asset(
+            'assets/toggle_panel_bottom.svg',
+            width: 18,
+            height: 18,
+            colorFilter: ColorFilter.mode(
+              widget.bottomPanelVisible
+                  ? colorScheme.primary
+                  : colorScheme.onSurface,
+              BlendMode.srcIn,
+            ),
+          ),
+          onPressed: widget.onToggleBottomPanel,
+          tooltip: 'Toggle Bottom Panel',
+        ),
+        // Right panel toggle
+        IconButton(
+          icon: SvgPicture.asset(
+            'assets/toggle_panel_right.svg',
+            width: 18,
+            height: 18,
+            colorFilter: ColorFilter.mode(
+              widget.rightPanelVisible
+                  ? colorScheme.primary
+                  : colorScheme.onSurface,
+              BlendMode.srcIn,
+            ),
+          ),
+          onPressed: widget.onToggleRightPanel,
+          tooltip: 'Toggle Right Panel',
         ),
       ],
+    );
+  }
+
+  Widget _buildSettingsButton() {
+    return IconButton(
+      icon: const Icon(Icons.settings, size: 18),
+      onPressed: () {
+        _showSettingsDialog();
+      },
+      tooltip: 'Settings',
+      style: IconButton.styleFrom(
+        foregroundColor: widget.themeMode == ThemeMode.dark
+            ? Colors.white.withOpacity(0.9)
+            : Colors.black.withOpacity(0.9),
+      ),
     );
   }
 
