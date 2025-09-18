@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- License: PD. Made by Icooon Mono: https://icooon-mono.com/ -->
+
+<svg
+   version="1.1"
+   id="_x32_"
+   width="800px"
+   height="800px"
+   viewBox="0 0 512 512"
+   xml:space="preserve"
+   sodipodi:docname="app.svg"
+   inkscape:version="1.4.2 (ebf0e940, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+
+  <sodipodi:namedview
+     id="namedview5"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="0.95029906"
+     inkscape:cx="335.6838"
+     inkscape:cy="424.60318"
+     inkscape:window-width="2056"
+     inkscape:window-height="1212"
+     inkscape:window-x="0"
+     inkscape:window-y="40"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="_x32_" />
+  <defs
+     id="defs3">
+    <linearGradient
+       id="flutterGradient"
+       x1="0%"
+       y1="0%"
+       x2="100%"
+       y2="100%">
+      <stop
+         offset="00%"
+         stop-color="#01579b"
+         id="stop1" />
+      <stop
+         offset="50%"
+         stop-color="#00bcd4"
+         id="stop2" />
+      <stop
+         offset="100%"
+         stop-color="#42a5f5"
+         id="stop3" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#flutterGradient"
+       id="linearGradient5"
+       x1="16.771902"
+       y1="43.25035"
+       x2="223.94038"
+       y2="250.41883"
+       gradientTransform="matrix(3,0,0,0.3,-471,-3)"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff"/>
+      <stop offset="50%" stop-color="#eee"/>
+      <stop offset="100%" stop-color="#aaf"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="64" ry="64" fill="url(#bgGradient)"/>
+  <g transform="translate(256,256) scale(0.8,0.8) translate(-256,-256)" overflow="visible">
+  <g
+     transform="rotate(-90 256 256)"
+     id="g4">
+    <path
+       fill="url(#flutterGradient)"
+       d="M46.162,507.995c2.594,2.594,6.141,4.047,9.813,4s7.172-1.563,9.719-4.219l257.922-264.093l-45.969-45.969   L12.99,455.073c-2.656,2.531-4.188,6.047-4.219,9.719c-0.047,3.672,1.391,7.219,4,9.813L46.162,507.995z"
+       id="path3" />
+    <path
+       fill="url(#flutterGradient)"
+       d="M493.412,332.074c13.469-34.469,20.063-127.641-27.859-175.563c-25.438-25.438-75.844-75.828-75.844-75.828   c-13.234-13.25-26.359-0.953-36.141-10.734s0-25.422-8.813-34.219L312.475,3.449c-4.594-4.594-12.047-4.594-16.625,0   l-44.984,44.969c-4.594,4.594-4.609,12.047,0,16.641l32.281,32.281c8.797,8.813,24.438-0.984,34.219,8.797   c13.219,13.203,10.969,27.609,2.656,35.906l-16.625,16.641l-4.734,18l45.984,45.969l17.438-5.297   c14.672-14.672,31.656-16.75,40.844-7.563c57.719,59.203,58.953,103.953,67.75,125.953   C476.287,349.777,490.24,345.511,493.412,332.074z M402.834,209.699C402.771,209.621,402.74,209.589,402.834,209.699   L402.834,209.699z"
+       id="path4" />
+  </g>
+
+  <!-- middle bar as IDE -->
+  <g
+     id="g5"
+     transform="rotate(-44.936442,405.89085,-248.40422)">
+    <text
+       x="0"
+       y="66"
+       font-family="Courier"
+       font-weight="900"
+       font-size="100px"
+       fill="url(#flutterGradient)"
+       letter-spacing="-3"
+       id="text4"
+       style="fill:url(#linearGradient5)">IDE
+    </text>
+  </g>
+  </g>
+
+</svg>
