@@ -73,17 +73,6 @@ class _OutlinePanelState extends State<OutlinePanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              'OUTLINE',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const Divider(height: 1, thickness: 1),
           if (_isLoading)
             const Center(child: CircularProgressIndicator())
           else if (_error.isNotEmpty)
