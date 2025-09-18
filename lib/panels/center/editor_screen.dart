@@ -1,10 +1,12 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously, avoid_print
 
 import 'dart:io';
+import 'package:fide/providers/app_providers.dart';
 import 'package:flutter_code_crafter/code_crafter.dart';
 import 'package:fide/utils/message_helper.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:highlight/languages/json.dart';
 import 'package:highlight/languages/plaintext.dart';
 import 'package:path/path.dart' as path;
@@ -12,11 +14,13 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:highlight/languages/dart.dart';
 import 'package:highlight/languages/yaml.dart';
 import 'package:fide/utils/file_type_utils.dart';
+import 'package:fide/models/document_state.dart';
 
 class EditorScreen extends StatefulWidget {
   const EditorScreen({
     super.key,
-    required this.filePath,
+    this.filePath,
+    this.documentState,
     this.onContentChanged,
     this.onClose,
     this.onSave,
@@ -24,7 +28,9 @@ class EditorScreen extends StatefulWidget {
 
   static _EditorScreenState? _currentEditor;
 
-  final String filePath;
+  final DocumentState? documentState;
+
+  final String? filePath;
 
   final VoidCallback? onClose;
 
@@ -53,7 +59,7 @@ class EditorScreen extends StatefulWidget {
 class _EditorScreenState extends State<EditorScreen> {
   late CodeCrafterController _codeController;
 
-  final GlobalKey _codeCrafterKey = GlobalKey();
+  late GlobalKey _codeCrafterKey;
 
   late String _currentFile;
 
@@ -64,21 +70,39 @@ class _EditorScreenState extends State<EditorScreen> {
   @override
   void initState() {
     super.initState();
-    _currentFile = widget.filePath;
+    _currentFile = widget.documentState?.filePath ?? widget.filePath ?? '';
+
+    // Create unique key for this editor instance
+    _codeCrafterKey = GlobalKey(
+      debugLabel: 'CodeCrafter-${_currentFile.hashCode}',
+    );
 
     _codeController = CodeCrafterController();
-    _codeController.text = _currentFile.isNotEmpty
-        ? '// Loading...\n'
-        : '// No file selected\n';
-    final initialLanguage = _getLanguageForFile(_currentFile);
-    if (initialLanguage != null) {
-      _codeController.language = initialLanguage;
-    }
-    _codeController.addListener(_onCodeChanged);
 
-    if (_currentFile.isNotEmpty) {
-      _loadFile(_currentFile);
+    if (widget.documentState != null) {
+      // Initialize from document state
+      _codeController.text = widget.documentState!.content;
+      _codeController.selection = widget.documentState!.selection;
+      if (widget.documentState!.language != null) {
+        _codeController.language = widget.documentState!.language;
+      }
+      _isDirty = widget.documentState!.isDirty;
+    } else {
+      // Initialize from file path
+      _codeController.text = _currentFile.isNotEmpty
+          ? '// Loading...\n'
+          : '// No file selected\n';
+      final initialLanguage = _getLanguageForFile(_currentFile);
+      if (initialLanguage != null) {
+        _codeController.language = initialLanguage;
+      }
+
+      if (_currentFile.isNotEmpty) {
+        _loadFile(_currentFile);
+      }
     }
+
+    _codeController.addListener(_onCodeChanged);
 
     // Register this editor as the current editor for global save access
     EditorScreen._currentEditor = this;
@@ -112,101 +136,169 @@ class _EditorScreenState extends State<EditorScreen> {
   @override
   void didUpdateWidget(EditorScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.filePath != oldWidget.filePath && widget.filePath.isNotEmpty) {
-      _loadFile(widget.filePath);
+
+    // Check if document state changed
+    if (widget.documentState != oldWidget.documentState) {
+      if (widget.documentState != null) {
+        // Update to new document state
+        _currentFile = widget.documentState!.filePath;
+
+        // Temporarily remove listener to avoid triggering during programmatic update
+        _codeController.removeListener(_onCodeChanged);
+
+        _codeController.text = widget.documentState!.content;
+        _codeController.selection = widget.documentState!.selection;
+        if (widget.documentState!.language != null) {
+          _codeController.language = widget.documentState!.language;
+        }
+
+        // Re-add listener
+        _codeController.addListener(_onCodeChanged);
+
+        setState(() {
+          _isDirty = widget.documentState!.isDirty;
+          _isLoading = false;
+        });
+      }
+    } else if (widget.filePath != oldWidget.filePath &&
+        widget.filePath?.isNotEmpty == true) {
+      _loadFile(widget.filePath!);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _getTitleForFile(_currentFile),
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-        ),
-        actions: [
-          if (_isDirty)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Center(
-                child: Text(
-                  'Unsaved Changes',
-                  style: TextStyle(
-                    color: Colors.orange,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ),
-            ),
-          IconButton(
-            icon: const Icon(CupertinoIcons.arrow_down_doc),
-            onPressed: _isDirty ? _saveFile : null,
-            tooltip: 'Save',
-          ),
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: widget.onClose,
-            tooltip: 'Close Editor',
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _currentFile.isEmpty
-          ? const Center(child: Text('No file selected'))
-          : !_isFileTypeSupported(_currentFile)
-          ? _buildUnsupportedFileView()
-          : _isImageFile(_currentFile)
-          ? _buildImageView()
-          : Column(
+    return Consumer(
+      builder: (context, ref, child) {
+        final openDocuments = ref.watch(openDocumentsProvider);
+        final activeIndex = ref.watch(activeDocumentIndexProvider);
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Row(
               children: [
-                Expanded(
-                  child: CodeCrafter(
-                    key: _codeCrafterKey,
-                    controller: _codeController,
-                    gutterStyle: GutterStyle(
-                      lineNumberStyle: TextStyle(
-                        fontFamily: 'monospace',
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.6),
-                      ),
+                // Document dropdown
+                if (openDocuments.isNotEmpty)
+                  DropdownButton<int>(
+                    value: activeIndex,
+                    items: openDocuments.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final doc = entry.value;
+                      return DropdownMenuItem<int>(
+                        value: index,
+                        child: Text(
+                          doc.fileName,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 14,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (newIndex) {
+                      if (newIndex != null) {
+                        ref.read(activeDocumentIndexProvider.notifier).state =
+                            newIndex;
+                      }
+                    },
+                    underline: const SizedBox.shrink(),
+                    icon: Icon(
+                      Icons.arrow_drop_down,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
-                    textStyle: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 14,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
-                    editorTheme: _getCodeTheme(),
                   ),
-                ),
-                // Status bar
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Ln ${_getCurrentLineNumber()}',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      const SizedBox(width: 16),
-                      Text(
-                        'Col ${_getCurrentColumnNumber()}',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      const Spacer(),
-                      Text(
-                        _getFileLanguage(),
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
+            actions: [
+              if (_isDirty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Unsaved Changes',
+                      style: TextStyle(
+                        color: Colors.orange,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ),
+              IconButton(
+                icon: const Icon(CupertinoIcons.arrow_down_doc),
+                onPressed: _isDirty ? _saveFile : null,
+                tooltip: 'Save',
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: widget.onClose,
+                tooltip: 'Close Editor',
+              ),
+            ],
+          ),
+          body: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _currentFile.isEmpty
+              ? const Center(child: Text('No file selected'))
+              : !_isFileTypeSupported(_currentFile)
+              ? _buildUnsupportedFileView()
+              : _isImageFile(_currentFile)
+              ? _buildImageView()
+              : Column(
+                  children: [
+                    Expanded(
+                      child: CodeCrafter(
+                        key: _codeCrafterKey,
+                        controller: _codeController,
+                        gutterStyle: GutterStyle(
+                          lineNumberStyle: TextStyle(
+                            fontFamily: 'monospace',
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                        textStyle: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 14,
+                        ),
+                        editorTheme: _getCodeTheme(),
+                      ),
+                    ),
+                    // Status bar
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            'Ln ${_getCurrentLineNumber()}',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            'Col ${_getCurrentColumnNumber()}',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          const Spacer(),
+                          Text(
+                            _getFileLanguage(),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+        );
+      },
     );
   }
 
@@ -543,11 +635,6 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  String _getTitleForFile(String filePath) {
-    if (filePath.isEmpty) return 'Untitled';
-    return path.basename(filePath);
-  }
-
   bool _isFileTypeSupported(String filePath) {
     return FileTypeUtils.isSourceFile(filePath);
   }
@@ -670,6 +757,13 @@ class _EditorScreenState extends State<EditorScreen> {
       }
     });
 
+    // Update document state if we have document state
+    if (widget.documentState != null) {
+      widget.documentState!.content = _codeController.text;
+      widget.documentState!.selection = _codeController.selection;
+      widget.documentState!.isDirty = _isDirty;
+    }
+
     // Notify outline panel to refresh when content changes
     widget.onContentChanged?.call();
 
@@ -687,6 +781,12 @@ class _EditorScreenState extends State<EditorScreen> {
 
       if (mounted) {
         setState(() => _isDirty = false);
+
+        // Update document state if we have document state
+        if (widget.documentState != null) {
+          widget.documentState!.isDirty = false;
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('File saved successfully')),
         );

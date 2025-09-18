@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// Providers
+import '../../providers/app_providers.dart';
+
 // Screens
 import '../../screens/welcome_screen.dart';
 import 'editor_screen.dart';
@@ -56,19 +59,21 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final activeDocument = ref.watch(activeDocumentProvider);
+
     return Container(
       decoration: BoxDecoration(
         border: Border(
           right: BorderSide(color: Theme.of(context).dividerColor, width: 1.0),
         ),
       ),
-      child: widget.selectedFile != null
+      child: activeDocument != null
           ? Column(
               children: [
                 // Editor takes remaining space
                 Expanded(
                   child: EditorScreen(
-                    filePath: widget.selectedFile!.path,
+                    documentState: activeDocument,
                     onContentChanged: widget.onContentChanged,
                     onClose: widget.onClose,
                   ),

@@ -6,6 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
+import 'package:highlight/languages/dart.dart';
+import 'package:highlight/languages/yaml.dart';
+import 'package:highlight/languages/json.dart';
+import 'package:highlight/languages/plaintext.dart';
 
 // Providers
 import '../providers/app_providers.dart';
@@ -14,6 +18,7 @@ import '../providers/app_providers.dart';
 
 // Models
 import '../models/file_system_item.dart';
+import '../models/document_state.dart';
 
 // Utils
 import '../utils/file_type_utils.dart';
@@ -230,25 +235,15 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     final currentProjectPath = ref.watch(currentProjectPathProvider);
     final mruFolders = ref.watch(mruFoldersProvider);
 
-    // Handle file selection changes
-    if (selectedFile != null && selectedFile.path != _lastSelectedFilePath) {
-      // Save last opened file to SharedPreferences
-      _saveLastOpenedFile(selectedFile.path);
-      // Notify the parent widget about the file being opened (defer to avoid setState during build)
-      final fileName = path.basename(selectedFile.path);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        widget.onFileOpened?.call(fileName);
-      });
-      // Show outline panel by default when a file is selected
-      if (!_outlinePanelVisible) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          setState(() => _outlinePanelVisible = true);
+    // Listen for selected file changes to add documents
+    ref.listen<FileSystemItem?>(selectedFileProvider, (previous, next) {
+      if (next != null && next.path != _lastSelectedFilePath) {
+        // Defer async operation to avoid modifying providers during build
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          await _handleFileSelection(next);
         });
       }
-      _lastSelectedFilePath = selectedFile.path;
-    } else if (selectedFile == null && _lastSelectedFilePath != null) {
-      _lastSelectedFilePath = null;
-    }
+    });
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surfaceDim,
@@ -354,6 +349,88 @@ class MainLayoutState extends ConsumerState<MainLayout> {
         ],
       ),
     );
+  }
+
+  // Add file to open documents if not already open
+  Future<void> _addFileToOpenDocuments(String filePath) async {
+    final openDocuments = ref.read(openDocumentsProvider);
+    final existingIndex = openDocuments.indexWhere(
+      (doc) => doc.filePath == filePath,
+    );
+
+    if (existingIndex == -1) {
+      // File not open, create new document state with loaded content
+      final language = _getLanguageForFile(filePath);
+      String content = '';
+      bool isImage = FileTypeUtils.isImageFile(filePath);
+
+      if (!isImage) {
+        try {
+          final file = File(filePath);
+          if (await file.exists()) {
+            content = await file.readAsString();
+          }
+        } catch (e) {
+          // Silently handle file loading errors
+          content = '// Error loading file\n';
+        }
+      }
+
+      final newDocument = DocumentState(
+        filePath: filePath,
+        content: content,
+        language: language,
+      );
+
+      final updatedDocuments = [...openDocuments, newDocument];
+      ref.read(openDocumentsProvider.notifier).state = updatedDocuments;
+
+      // Set as active document
+      ref.read(activeDocumentIndexProvider.notifier).state =
+          updatedDocuments.length - 1;
+    } else {
+      // File already open, just set as active
+      ref.read(activeDocumentIndexProvider.notifier).state = existingIndex;
+    }
+  }
+
+  // Get language for file
+  dynamic _getLanguageForFile(String filePath) {
+    if (filePath.isEmpty) {
+      return plaintext;
+    }
+    final extension = filePath.split('.').last.toLowerCase();
+    switch (extension) {
+      case 'dart':
+        return dart;
+      case 'yaml':
+      case 'yml':
+        return yaml;
+      case 'json':
+        return json;
+      default:
+        return plaintext;
+    }
+  }
+
+  // Handle file selection - called when selectedFileProvider changes
+  Future<void> _handleFileSelection(FileSystemItem file) async {
+    // Save last opened file to SharedPreferences
+    await _saveLastOpenedFile(file.path);
+
+    // Add file to open documents if not already open
+    await _addFileToOpenDocuments(file.path);
+
+    // Notify the parent widget about the file being opened
+    final fileName = path.basename(file.path);
+    widget.onFileOpened?.call(fileName);
+
+    // Show outline panel by default when a file is selected
+    if (!_outlinePanelVisible) {
+      setState(() => _outlinePanelVisible = true);
+    }
+
+    _lastSelectedFilePath = file.path;
   }
 
   // Save last opened file to SharedPreferences

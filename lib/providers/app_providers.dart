@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
 import '../models/file_system_item.dart';
 import '../models/project_node.dart';
+import '../models/document_state.dart';
 import '../utils/file_type_utils.dart';
 
 // SharedPreferences provider
@@ -150,4 +151,20 @@ class ProjectLoadingService {
 // Project loading service provider
 final projectLoadingServiceProvider = Provider<ProjectLoadingService>((ref) {
   return ProjectLoadingService(ref);
+});
+
+// State management for open documents
+final openDocumentsProvider = StateProvider<List<DocumentState>>((ref) => []);
+
+// State management for active document index
+final activeDocumentIndexProvider = StateProvider<int>((ref) => -1);
+
+// Active document provider (computed from open documents and active index)
+final activeDocumentProvider = Provider<DocumentState?>((ref) {
+  final documents = ref.watch(openDocumentsProvider);
+  final activeIndex = ref.watch(activeDocumentIndexProvider);
+  if (activeIndex >= 0 && activeIndex < documents.length) {
+    return documents[activeIndex];
+  }
+  return null;
 });
