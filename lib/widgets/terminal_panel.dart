@@ -35,10 +35,11 @@ class _DesktopTerminalState extends State<DesktopTerminal> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black,
-      constraints: const BoxConstraints(minWidth: 400, minHeight: 300),
-      child: TerminalView(terminal, controller: controller!, autofocus: true),
+    return TerminalView(
+      terminal,
+      controller: controller!,
+      autofocus: true,
+      backgroundOpacity: 1,
     );
   }
 

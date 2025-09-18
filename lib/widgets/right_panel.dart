@@ -28,19 +28,17 @@ class _RightPanelState extends State<RightPanel> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
       child: widget.selectedFile != null
           ? OutlinePanel(
               file: widget.selectedFile!,
               onOutlineUpdate: widget.onOutlineUpdate,
               onNodeSelected: widget.onOutlineNodeSelected,
             )
-          : Container(
-              color: Theme.of(context).colorScheme.surfaceContainerLow,
-              child: const Center(
-                child: Text(
-                  'Select a file to view outline',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
+          : const Center(
+              child: Text(
+                'Select a file to view outline',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
             ),
     );

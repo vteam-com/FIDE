@@ -80,10 +80,14 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
                     onResize: _onTerminalResize,
                     isHorizontal: true,
                   ),
+
                   // Terminal at bottom
                   SizedBox(
                     height: _terminalHeight,
-                    child: const DesktopTerminal(),
+                    child: ColoredBox(
+                      color: Theme.of(context).colorScheme.surfaceContainerLow,
+                      child: const DesktopTerminal(),
+                    ),
                   ),
                 ],
               ],
