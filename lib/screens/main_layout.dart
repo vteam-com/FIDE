@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:highlight/highlight.dart';
+import 'package:highlight/languages/javascript.dart';
 import 'package:path/path.dart' as path;
 import 'package:highlight/languages/dart.dart';
 import 'package:highlight/languages/yaml.dart';
@@ -374,7 +376,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
 
     if (existingIndex == -1) {
       // File not open, create new document state with loaded content
-      final language = _getLanguageForFile(filePath);
+      final Mode language = _getLanguageForFile(filePath);
       String content = '';
       bool isImage = FileTypeUtils.isImageFile(filePath);
 
@@ -409,7 +411,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   }
 
   // Get language for file
-  dynamic _getLanguageForFile(String filePath) {
+  Mode _getLanguageForFile(String filePath) {
     if (filePath.isEmpty) {
       return plaintext;
     }
@@ -422,6 +424,8 @@ class MainLayoutState extends ConsumerState<MainLayout> {
         return yaml;
       case 'json':
         return json;
+      case 'js':
+        return javascript;
       default:
         return plaintext;
     }

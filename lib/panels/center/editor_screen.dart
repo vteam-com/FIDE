@@ -1,25 +1,21 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously, avoid_print
 
 import 'dart:io';
+import 'package:fide/panels/center/large_file_message.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:flutter_code_crafter/code_crafter.dart';
 import 'package:fide/utils/message_helper.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:highlight/languages/json.dart';
-import 'package:highlight/languages/plaintext.dart';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:highlight/languages/dart.dart';
-import 'package:highlight/languages/yaml.dart';
 import 'package:fide/utils/file_type_utils.dart';
 import 'package:fide/models/document_state.dart';
 
 class EditorScreen extends StatefulWidget {
   const EditorScreen({
     super.key,
-    this.filePath,
     this.documentState,
     this.onContentChanged,
     this.onClose,
@@ -29,8 +25,6 @@ class EditorScreen extends StatefulWidget {
   static _EditorScreenState? _currentEditor;
 
   final DocumentState? documentState;
-
-  final String? filePath;
 
   final VoidCallback? onClose;
 
@@ -70,7 +64,7 @@ class _EditorScreenState extends State<EditorScreen> {
   @override
   void initState() {
     super.initState();
-    _currentFile = widget.documentState?.filePath ?? widget.filePath ?? '';
+    _currentFile = widget.documentState?.filePath ?? '';
 
     // Create unique key for this editor instance
     _codeCrafterKey = GlobalKey(
@@ -79,28 +73,13 @@ class _EditorScreenState extends State<EditorScreen> {
 
     _codeController = CodeCrafterController();
 
-    if (widget.documentState != null) {
-      // Initialize from document state
-      _codeController.text = widget.documentState!.content;
-      _codeController.selection = widget.documentState!.selection;
-      if (widget.documentState!.language != null) {
-        _codeController.language = widget.documentState!.language;
-      }
-      _isDirty = widget.documentState!.isDirty;
-    } else {
-      // Initialize from file path
-      _codeController.text = _currentFile.isNotEmpty
-          ? '// Loading...\n'
-          : '// No file selected\n';
-      final initialLanguage = _getLanguageForFile(_currentFile);
-      if (initialLanguage != null) {
-        _codeController.language = initialLanguage;
-      }
-
-      if (_currentFile.isNotEmpty) {
-        _loadFile(_currentFile);
-      }
+    // Initialize from document state (always provided by CenterPanel)
+    _codeController.text = widget.documentState!.content;
+    _codeController.selection = widget.documentState!.selection;
+    if (widget.documentState!.language != null) {
+      _codeController.language = widget.documentState!.language;
     }
+    _isDirty = widget.documentState!.isDirty;
 
     _codeController.addListener(_onCodeChanged);
 
@@ -160,14 +139,27 @@ class _EditorScreenState extends State<EditorScreen> {
           _isLoading = false;
         });
       }
-    } else if (widget.filePath != oldWidget.filePath &&
-        widget.filePath?.isNotEmpty == true) {
-      _loadFile(widget.filePath!);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Check if file is too large to load
+    if (_currentFile.isNotEmpty && !_isImageFile(_currentFile)) {
+      final file = File(_currentFile);
+      if (file.existsSync()) {
+        final stat = file.statSync();
+        final fileSizeMB = stat.size / (1024 * 1024);
+        if (fileSizeMB > 3) {
+          // 10MB threshold
+          return LargeFileMessage(
+            fileName: path.basename(_currentFile),
+            fileSizeMB: fileSizeMB,
+          );
+        }
+      }
+    }
+
     return Consumer(
       builder: (context, ref, child) {
         final openDocuments = ref.watch(openDocumentsProvider);
@@ -609,29 +601,13 @@ class _EditorScreenState extends State<EditorScreen> {
         return 'YAML';
       case 'json':
         return 'JSON';
+      case 'js':
+        return 'js';
       case 'xml':
       case 'html':
         return ext.toUpperCase();
       default:
         return 'Text';
-    }
-  }
-
-  dynamic _getLanguageForFile(String filePath) {
-    if (filePath.isEmpty) {
-      return plaintext;
-    }
-    final extension = filePath.split('.').last.toLowerCase();
-    switch (extension) {
-      case 'dart':
-        return dart;
-      case 'yaml':
-      case 'yml':
-        return yaml;
-      case 'json':
-        return json; // Use dart highlighting for JSON
-      default:
-        return plaintext; // Default to dart highlighting
     }
   }
 
@@ -641,51 +617,6 @@ class _EditorScreenState extends State<EditorScreen> {
 
   bool _isImageFile(String filePath) {
     return FileTypeUtils.isImageFile(filePath);
-  }
-
-  Future<void> _loadFile(String filePath) async {
-    if (filePath.isEmpty) return;
-
-    setState(() {
-      _isLoading = true;
-      _currentFile = filePath;
-    });
-
-    // Skip text loading for image files - they are displayed directly
-    if (_isImageFile(filePath)) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-      return;
-    }
-
-    try {
-      final file = File(filePath);
-      if (await file.exists()) {
-        final content = await file.readAsString();
-        final language = _getLanguageForFile(filePath);
-
-        if (mounted) {
-          setState(() {
-            _codeController.text = content;
-            if (language != null) {
-              _codeController.language = language;
-            }
-            _isDirty = false;
-          });
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error loading file: $e')));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
   }
 
   void _navigateToLine(int lineNumber, {int column = 1}) {

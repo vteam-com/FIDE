@@ -1063,28 +1063,4 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
       _handleContextMenuAction(value, node);
     });
   }
-
-  void _updateNodeGitStatus(ProjectNode node, GitStatus gitStatus) {
-    if (node.isFile) {
-      final relativePath = path.relative(node.path, from: _projectRoot!.path);
-
-      if (gitStatus.staged.contains(relativePath)) {
-        node.gitStatus = GitFileStatus.added;
-        print('File ${node.name} marked as ADDED');
-      } else if (gitStatus.unstaged.contains(relativePath)) {
-        node.gitStatus = GitFileStatus.modified;
-        print('File ${node.name} marked as MODIFIED');
-      } else if (gitStatus.untracked.contains(relativePath)) {
-        node.gitStatus = GitFileStatus.untracked;
-        print('File ${node.name} marked as UNTRACKED');
-      } else {
-        node.gitStatus = GitFileStatus.clean;
-      }
-    }
-
-    // Recursively update children
-    for (final child in node.children) {
-      _updateNodeGitStatus(child, gitStatus);
-    }
-  }
 }

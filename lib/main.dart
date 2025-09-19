@@ -295,12 +295,27 @@ class _FIDEState extends ConsumerState<FIDE> {
       final projectService = container.read(projectServiceProvider);
       final success = await projectService.loadProject(projectPath);
 
+      // Clear loading state after auto-loading completes
+      if (mounted) {
+        setState(() {
+          _isLoadingProject = false;
+          _loadingProjectName = null;
+        });
+      }
+
       if (success) {
         debugPrint('Successfully auto-loaded MRU project: $projectPath');
       } else {
         debugPrint('Failed to auto-load MRU project: $projectPath');
       }
     } catch (e) {
+      // Clear loading state on error
+      if (mounted) {
+        setState(() {
+          _isLoadingProject = false;
+          _loadingProjectName = null;
+        });
+      }
       // Silently handle errors during auto-loading
       debugPrint('Error auto-loading MRU project: $e');
     }

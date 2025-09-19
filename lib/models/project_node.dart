@@ -59,9 +59,15 @@ class ProjectNode {
       final List<FileSystemEntity> entities = await dir.list().toList();
 
       // Sort directories first, then files, both alphabetically
+      // Use async stat calls to avoid blocking UI
+      final stats = <FileSystemEntity, FileStat>{};
+      for (final entity in entities) {
+        stats[entity] = await entity.stat();
+      }
+
       entities.sort((a, b) {
-        final aStat = a.statSync();
-        final bStat = b.statSync();
+        final aStat = stats[a]!;
+        final bStat = stats[b]!;
 
         if (aStat.type == bStat.type) {
           final aName = p.basename(a.path).toLowerCase();
@@ -104,9 +110,15 @@ class ProjectNode {
       final List<FileSystemEntity> entities = await dir.list().toList();
 
       // Sort directories first, then files, both alphabetically
+      // Use async stat calls to avoid blocking UI
+      final stats = <FileSystemEntity, FileStat>{};
+      for (final entity in entities) {
+        stats[entity] = await entity.stat();
+      }
+
       entities.sort((a, b) {
-        final aStat = a.statSync();
-        final bStat = b.statSync();
+        final aStat = stats[a]!;
+        final bStat = stats[b]!;
 
         if (aStat.type == bStat.type) {
           final aName = p.basename(a.path).toLowerCase();

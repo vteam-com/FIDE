@@ -1,3 +1,4 @@
+import 'package:fide/models/document_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -59,7 +60,7 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final activeDocument = ref.watch(activeDocumentProvider);
+    final DocumentState? activeDocument = ref.watch(activeDocumentProvider);
 
     return Container(
       decoration: BoxDecoration(
