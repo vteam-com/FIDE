@@ -182,7 +182,7 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
 
     // Update local state when project data changes
     if (currentProjectRoot != _projectRoot) {
-      print(
+      debugPrint(
         'BasePanel: Project changed from ${_projectRoot?.path} to ${currentProjectRoot?.path}',
       );
       // Use setState to trigger UI rebuild when project changes
@@ -191,7 +191,7 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
           _projectRoot = currentProjectRoot;
           // Clear expanded state when project changes
           _expandedState.clear();
-          print('BasePanel: State updated, triggering UI rebuild');
+          debugPrint('BasePanel: State updated, triggering UI rebuild');
         });
       }
     }
@@ -970,7 +970,7 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
       }
     } catch (e) {
       // Silently handle errors
-      print('Error seeding Git status for file: $e');
+      debugPrint('Error seeding Git status for file: $e');
     }
   }
 

@@ -214,7 +214,7 @@ class _FIDEState extends ConsumerState<FIDE> {
           _loadingProjectName = null;
         });
       }
-      print('Main: tryLoadProject error: $e');
+      debugPrint('Main: tryLoadProject error: $e');
       return false;
     }
   }
@@ -296,13 +296,13 @@ class _FIDEState extends ConsumerState<FIDE> {
       final success = await projectService.loadProject(projectPath);
 
       if (success) {
-        print('Successfully auto-loaded MRU project: $projectPath');
+        debugPrint('Successfully auto-loaded MRU project: $projectPath');
       } else {
-        print('Failed to auto-load MRU project: $projectPath');
+        debugPrint('Failed to auto-load MRU project: $projectPath');
       }
     } catch (e) {
       // Silently handle errors during auto-loading
-      print('Error auto-loading MRU project: $e');
+      debugPrint('Error auto-loading MRU project: $e');
     }
   }
 

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
@@ -58,15 +59,15 @@ class ProjectService {
     try {
       // Validate that this is a Flutter project
       if (!await _isFlutterProject(directoryPath)) {
-        print('Not a valid Flutter project: $directoryPath');
+        debugPrint('Not a valid Flutter project: $directoryPath');
         return false;
       }
 
-      print('Loading project: $directoryPath');
+      debugPrint('Loading project: $directoryPath');
 
       // Unload current project first to ensure clean state
       if (_currentProjectRoot != null) {
-        print('Unloading previous project...');
+        debugPrint('Unloading previous project...');
         unloadProject();
       }
 
@@ -76,11 +77,11 @@ class ProjectService {
       );
 
       // Perform initial recursive enumeration
-      print('Performing initial file enumeration...');
+      debugPrint('Performing initial file enumeration...');
       final result = await root.enumerateContentsRecursive();
 
       if (result != LoadChildrenResult.success) {
-        print('Failed to enumerate project contents: $result');
+        debugPrint('Failed to enumerate project contents: $result');
         return false;
       }
 
@@ -91,39 +92,41 @@ class ProjectService {
       await _loadGitStatus();
 
       // Initialize file system watcher for incremental updates
-      print('Setting up file system watcher...');
+      debugPrint('Setting up file system watcher...');
       _fileSystemWatcher.initialize(_currentProjectRoot!, () {
         // This callback will be called when file system changes occur
         // The UI will be updated through the provider state changes
-        print('File system change detected, updating UI...');
+        debugPrint('File system change detected, updating UI...');
         _notifyProjectUpdated();
       });
 
       // Update providers - ensure proper order
-      print('Updating providers...');
-      print('Setting currentProjectPathProvider to: $directoryPath');
+      debugPrint('Updating providers...');
+      debugPrint('Setting currentProjectPathProvider to: $directoryPath');
       _ref.read(currentProjectPathProvider.notifier).state = directoryPath;
-      print(
+      debugPrint(
         'Setting currentProjectRootProvider to: ${_currentProjectRoot?.path}',
       );
       _ref.read(currentProjectRootProvider.notifier).state =
           _currentProjectRoot;
-      print('Setting projectLoadedProvider to: true');
+      debugPrint('Setting projectLoadedProvider to: true');
       _ref.read(projectLoadedProvider.notifier).state = true;
 
-      print('Project loaded successfully: $directoryPath');
-      print('Total files enumerated: ${_countFiles(_currentProjectRoot!)}');
+      debugPrint('Project loaded successfully: $directoryPath');
+      debugPrint(
+        'Total files enumerated: ${_countFiles(_currentProjectRoot!)}',
+      );
 
       return true;
     } catch (e) {
-      print('Error loading project: $e');
+      debugPrint('Error loading project: $e');
       return false;
     }
   }
 
   /// Unload the current project
   void unloadProject() {
-    print('Unloading project...');
+    debugPrint('Unloading project...');
 
     // Clean up file system watcher
     _fileSystemWatcher.dispose();
@@ -137,7 +140,7 @@ class ProjectService {
     _ref.read(currentProjectRootProvider.notifier).state = null;
     _ref.read(selectedFileProvider.notifier).state = null;
 
-    print('Project unloaded');
+    debugPrint('Project unloaded');
   }
 
   /// Load Git status for the current project
@@ -150,13 +153,13 @@ class ProjectService {
         _currentProjectRoot!.path,
       );
       if (!isGitRepo) {
-        print('Not a Git repository: ${_currentProjectRoot!.path}');
+        debugPrint('Not a Git repository: ${_currentProjectRoot!.path}');
         return;
       }
 
       // Get Git status
       final gitStatus = await _gitService.getStatus(_currentProjectRoot!.path);
-      print(
+      debugPrint(
         'Git status loaded: ${gitStatus.staged.length} staged, ${gitStatus.unstaged.length} unstaged, ${gitStatus.untracked.length} untracked',
       );
 
@@ -164,7 +167,7 @@ class ProjectService {
       _updateNodeGitStatus(_currentProjectRoot!, gitStatus);
     } catch (e) {
       // Silently handle Git status errors
-      print('Error loading Git status: $e');
+      debugPrint('Error loading Git status: $e');
     }
   }
 

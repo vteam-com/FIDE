@@ -55,16 +55,18 @@ class ProjectManager {
   /// Load a project with proper cleanup and MRU management
   Future<bool> loadProject(String directoryPath) async {
     try {
-      print('ProjectManager: Loading project: $directoryPath');
+      debugPrint('ProjectManager: Loading project: $directoryPath');
 
       // Check if there's already a project loaded
       final currentProjectLoaded = ref.read(projectLoadedProvider);
-      print('ProjectManager: Current project loaded: $currentProjectLoaded');
+      debugPrint(
+        'ProjectManager: Current project loaded: $currentProjectLoaded',
+      );
 
       if (currentProjectLoaded) {
-        print('ProjectManager: Unloading current project first...');
+        debugPrint('ProjectManager: Unloading current project first...');
         await unloadProject();
-        print('ProjectManager: Current project unloaded');
+        debugPrint('ProjectManager: Current project unloaded');
       }
 
       // Use ProjectService to load the new project
@@ -72,16 +74,16 @@ class ProjectManager {
       final success = await projectService.loadProject(directoryPath);
 
       if (success) {
-        print('ProjectManager: Project loaded successfully');
+        debugPrint('ProjectManager: Project loaded successfully');
 
         // Update MRU list - move selected project to top
         await _updateMruList(directoryPath);
-        print('ProjectManager: MRU list updated');
+        debugPrint('ProjectManager: MRU list updated');
       }
 
       return success;
     } catch (e) {
-      print('ProjectManager: Error loading project: $e');
+      debugPrint('ProjectManager: Error loading project: $e');
       return false;
     }
   }
@@ -89,7 +91,7 @@ class ProjectManager {
   /// Unload the current project
   Future<void> unloadProject() async {
     try {
-      print('ProjectManager: Unloading project...');
+      debugPrint('ProjectManager: Unloading project...');
 
       // Use ProjectService to unload
       final projectService = ref.read(projectServiceProvider);
@@ -101,9 +103,9 @@ class ProjectManager {
       ref.read(currentProjectRootProvider.notifier).state = null;
       ref.read(selectedFileProvider.notifier).state = null;
 
-      print('ProjectManager: Project unloaded successfully');
+      debugPrint('ProjectManager: Project unloaded successfully');
     } catch (e) {
-      print('ProjectManager: Error unloading project: $e');
+      debugPrint('ProjectManager: Error unloading project: $e');
     }
   }
 
@@ -133,7 +135,7 @@ class ProjectManager {
       final prefs = await ref.read(sharedPreferencesProvider.future);
       await prefs.setStringList('mru_folders', updatedMruFolders);
     } catch (e) {
-      print('ProjectManager: Error saving MRU list: $e');
+      debugPrint('ProjectManager: Error saving MRU list: $e');
     }
   }
 

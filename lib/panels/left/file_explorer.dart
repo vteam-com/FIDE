@@ -293,7 +293,7 @@ class FileExplorerState extends State<FileExplorer> {
     // Debug output
     if (item.type == FileSystemItemType.file &&
         item.gitStatus != GitFileStatus.clean) {
-      print(
+      debugPrint(
         'Building item ${item.name} with Git status: ${item.gitStatus}, badge: $badgeText',
       );
     }
@@ -580,13 +580,13 @@ class FileExplorerState extends State<FileExplorer> {
       // Check if current directory is a Git repository
       final isGitRepo = await _gitService.isGitRepository(_currentPath);
       if (!isGitRepo) {
-        print('Not a Git repository: $_currentPath');
+        debugPrint('Not a Git repository: $_currentPath');
         return;
       }
 
       // Get Git status
       final gitStatus = await _gitService.getStatus(_currentPath);
-      print(
+      debugPrint(
         'Git status loaded: ${gitStatus.staged.length} staged, ${gitStatus.unstaged.length} unstaged, ${gitStatus.untracked.length} untracked',
       );
 
@@ -597,13 +597,13 @@ class FileExplorerState extends State<FileExplorer> {
 
           if (gitStatus.staged.contains(relativePath)) {
             item.gitStatus = GitFileStatus.added;
-            print('File ${item.name} marked as ADDED');
+            debugPrint('File ${item.name} marked as ADDED');
           } else if (gitStatus.unstaged.contains(relativePath)) {
             item.gitStatus = GitFileStatus.modified;
-            print('File ${item.name} marked as MODIFIED');
+            debugPrint('File ${item.name} marked as MODIFIED');
           } else if (gitStatus.untracked.contains(relativePath)) {
             item.gitStatus = GitFileStatus.untracked;
-            print('File ${item.name} marked as UNTRACKED');
+            debugPrint('File ${item.name} marked as UNTRACKED');
           } else {
             item.gitStatus = GitFileStatus.clean;
           }

@@ -118,7 +118,7 @@ class _EditorScreenState extends State<EditorScreen> {
         // Note: We don't show a snackbar here since the widget is being disposed
       } catch (e) {
         // Silently handle save errors during dispose
-        print('Error auto-saving file on close: $e');
+        debugPrint('Error auto-saving file on close: $e');
       }
     }
 

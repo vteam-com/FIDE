@@ -385,7 +385,7 @@ class FolderPanelState extends BasePanelState<FolderPanel> {
       }
     } catch (e) {
       // Silently handle errors
-      print('Error seeding Git status for file: $e');
+      debugPrint('Error seeding Git status for file: $e');
     }
   }
 

@@ -6,9 +6,9 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:flutter/material.dart';
 
 void main(List<String> args) {
-  print('Sort.DART.Files 1.0');
   final Directory dir = Directory('lib');
 
   // Defer scanning until after first print
@@ -29,8 +29,6 @@ void main(List<String> args) {
     }
     return a.path.compareTo(b.path);
   });
-
-  print('Found ${files.length} Dart files under lib/:');
 
   for (final FileSystemEntity fileEntity in files) {
     final File file = fileEntity as File;
@@ -73,9 +71,9 @@ void main(List<String> args) {
 
     if (fileHasChanges) {
       file.writeAsStringSync(newContent);
-      print('$filePath -> Updated');
+      debugPrint('$filePath -> Updated');
     } else {
-      print('$filePath -> No changes needed');
+      debugPrint('$filePath -> No changes needed');
     }
   }
 }
