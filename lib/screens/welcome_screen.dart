@@ -12,7 +12,13 @@ class WelcomeScreen extends StatefulWidget {
     required this.mruFolders,
     required this.onOpenMruProject,
     required this.onRemoveMruEntry,
+    this.isLoadingProject = false,
+    this.loadingProjectName,
   });
+
+  final bool isLoadingProject;
+
+  final String? loadingProjectName;
 
   final List<String> mruFolders;
 
@@ -108,114 +114,175 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   // App Logo
                   SizedBox(height: 200, child: Image.asset('assets/app.png')),
 
-                  // Welcome Message
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surface.withAlpha(100),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.shadow.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      spacing: 16,
-                      children: [
-                        // Action Buttons
-                        // Open Folder Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton.icon(
-                            onPressed: widget.onOpenFolder,
-                            icon: Icon(
-                              Icons.folder_open,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                            label: Text(
-                              'Open Flutter Project',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.primary,
-                              foregroundColor: Theme.of(
-                                context,
-                              ).colorScheme.onPrimary,
-                              elevation: 4,
-                              shadowColor: Theme.of(context).colorScheme.shadow,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                  // Loading State or Welcome Message
+                  if (widget.isLoadingProject) ...[
+                    // Loading State
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surface.withAlpha(100),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.shadow.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        spacing: 16,
+                        children: [
+                          // Loading Spinner
+                          CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Theme.of(context).colorScheme.primary,
                             ),
                           ),
-                        ),
-
-                        // Create Project Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: OutlinedButton.icon(
-                            onPressed: widget.onCreateProject,
-                            icon: Icon(
-                              Icons.add,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                            label: Text(
-                              'Create New Project',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                color: Theme.of(context).colorScheme.primary,
-                                width: 2,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        // Recent Projects Section
-                        if (widget.mruFolders.isNotEmpty) ...[
+                          // Loading Text
                           Text(
-                            'Recent Projects',
+                            widget.loadingProjectName != null
+                                ? 'Loading project: ${widget.loadingProjectName}'
+                                : 'Loading project...',
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(
                                   color: Theme.of(
                                     context,
                                   ).colorScheme.onSurface,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w500,
                                 ),
                             textAlign: TextAlign.center,
                           ),
-                          ..._buildRecentProjectsList(),
+                          // Subtitle
+                          Text(
+                            'Please wait while we set up your workspace',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                            textAlign: TextAlign.center,
+                          ),
                         ],
-                      ],
+                      ),
                     ),
-                  ),
+                  ] else ...[
+                    // Welcome Message with Buttons
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surface.withAlpha(100),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.shadow.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        spacing: 16,
+                        children: [
+                          // Action Buttons
+                          // Open Folder Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton.icon(
+                              onPressed: widget.onOpenFolder,
+                              icon: Icon(
+                                Icons.folder_open,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                              label: Text(
+                                'Open Flutter Project',
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary,
+                                foregroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.onPrimary,
+                                elevation: 4,
+                                shadowColor: Theme.of(
+                                  context,
+                                ).colorScheme.shadow,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // Create Project Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: OutlinedButton.icon(
+                              onPressed: widget.onCreateProject,
+                              icon: Icon(
+                                Icons.add,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              label: Text(
+                                'Create New Project',
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  width: 2,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // Recent Projects Section
+                          if (widget.mruFolders.isNotEmpty) ...[
+                            Text(
+                              'Recent Projects',
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                              textAlign: TextAlign.center,
+                            ),
+                            ..._buildRecentProjectsList(),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -178,6 +178,47 @@ class _FIDEState extends ConsumerState<FIDE> {
   bool _bottomPanelVisible = true;
   bool _rightPanelVisible = true;
 
+  // Loading state for project loading
+  bool _isLoadingProject = false;
+  String? _loadingProjectName;
+
+  // Project loading function accessible by TitleBar
+  Future<bool> tryLoadProject(String directoryPath) async {
+    try {
+      // Set loading state
+      setState(() {
+        _isLoadingProject = true;
+        _loadingProjectName = directoryPath.split('/').last;
+      });
+
+      // Use the unified ProjectManager to handle everything
+      final projectManager = ProviderScope.containerOf(
+        context,
+      ).read(projectManagerProvider);
+      final success = await projectManager.loadProject(directoryPath);
+
+      // Clear loading state
+      if (mounted) {
+        setState(() {
+          _isLoadingProject = false;
+          _loadingProjectName = null;
+        });
+      }
+
+      return success;
+    } catch (e) {
+      // Clear loading state on error
+      if (mounted) {
+        setState(() {
+          _isLoadingProject = false;
+          _loadingProjectName = null;
+        });
+      }
+      print('Main: tryLoadProject error: $e');
+      return false;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -307,6 +348,9 @@ class _FIDEState extends ConsumerState<FIDE> {
               leftPanelVisible: _leftPanelVisible,
               bottomPanelVisible: _bottomPanelVisible,
               rightPanelVisible: _rightPanelVisible,
+              onProjectSwitch: (projectPath) async {
+                await tryLoadProject(projectPath);
+              },
             ),
             // Main content with menu bar
             Expanded(
@@ -517,20 +561,6 @@ class _FIDEState extends ConsumerState<FIDE> {
                       }
                     }
 
-                    Future<bool> tryLoadProject(String directoryPath) async {
-                      try {
-                        // Use the unified ProjectManager to handle everything
-                        final projectManager = ref.read(projectManagerProvider);
-                        final success = await projectManager.loadProject(
-                          directoryPath,
-                        );
-                        return success;
-                      } catch (e) {
-                        print('Main: tryLoadProject error: $e');
-                        return false;
-                      }
-                    }
-
                     if (!projectLoaded) {
                       // Show WelcomeScreen when no project is loaded
                       return WelcomeScreen(
@@ -566,6 +596,8 @@ class _FIDEState extends ConsumerState<FIDE> {
                             // Silently handle SharedPreferences errors
                           }
                         },
+                        isLoadingProject: _isLoadingProject,
+                        loadingProjectName: _loadingProjectName,
                       );
                     } else {
                       // Show main layout when project is loaded

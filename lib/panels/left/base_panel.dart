@@ -47,7 +47,7 @@ abstract class BasePanel extends ConsumerStatefulWidget {
 abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
   final Map<String, bool> _expandedState = {};
   final GitService _gitService = GitService();
-  bool _isLoading = false;
+  final bool _isLoading = false;
   final Set<String> _loadingDirectories = {};
   ProjectNode? _projectRoot;
   final ScrollController _scrollController = ScrollController();

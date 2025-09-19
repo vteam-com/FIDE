@@ -309,10 +309,18 @@ class MainLayoutState extends ConsumerState<MainLayout> {
               terminalVisible: _terminalPanelVisible,
               onOpenFolder: pickDirectory,
               onOpenMruProject: (path) async {
-                final projectManager = ref.read(projectManagerProvider);
-                final success = await projectManager.loadProject(path);
-                if (success) {
-                  await projectManager.tryReopenLastFile(path);
+                // Use the same tryLoadProject function from main.dart for consistency
+                final mainLayoutState = context
+                    .findAncestorStateOfType<MainLayoutState>();
+                if (mainLayoutState != null) {
+                  await mainLayoutState.tryLoadProject(path);
+                } else {
+                  // Fallback if context is not available
+                  final projectManager = ref.read(projectManagerProvider);
+                  final success = await projectManager.loadProject(path);
+                  if (success) {
+                    await projectManager.tryReopenLastFile(path);
+                  }
                 }
               },
               onRemoveMruEntry: (path) async {

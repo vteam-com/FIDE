@@ -23,6 +23,7 @@ class TitleBar extends ConsumerStatefulWidget {
   final bool leftPanelVisible;
   final bool bottomPanelVisible;
   final bool rightPanelVisible;
+  final Function(String)? onProjectSwitch;
 
   const TitleBar({
     super.key,
@@ -34,6 +35,7 @@ class TitleBar extends ConsumerStatefulWidget {
     this.leftPanelVisible = true,
     this.bottomPanelVisible = true,
     this.rightPanelVisible = true,
+    this.onProjectSwitch,
   });
 
   @override
@@ -115,7 +117,9 @@ class _TitleBarState extends ConsumerState<TitleBar> {
     List<String> mruFolders,
     WidgetRef ref,
   ) {
-    return PopupMenuButton<String>(
+    return GestureDetector(
+      onTap: () =>
+          _showProjectMenu(context, currentProjectPath, mruFolders, ref),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -142,12 +146,6 @@ class _TitleBarState extends ConsumerState<TitleBar> {
           ),
         ],
       ),
-      onSelected: (value) async {
-        await _handleDropdownSelection(value, ref);
-      },
-      itemBuilder: (context) {
-        return _buildDropdownMenuItems(mruFolders);
-      },
     );
   }
 
@@ -241,17 +239,11 @@ class _TitleBarState extends ConsumerState<TitleBar> {
     final projectManager = ref.read(projectManagerProvider);
 
     if (value == 'add_folder') {
-      // This would need to be implemented - for now show a message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Open folder functionality available in main layout'),
-        ),
-      );
+      // This functionality is handled in main layout - do nothing here
+      return;
     } else if (value == 'create_project') {
-      // This would need to be implemented
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Create project not yet implemented')),
-      );
+      // This functionality is not yet implemented - do nothing here
+      return;
     } else if (value == 'close_project') {
       ref.read(projectLoadedProvider.notifier).state = false;
       ref.read(currentProjectPathProvider.notifier).state = null;
@@ -270,10 +262,15 @@ class _TitleBarState extends ConsumerState<TitleBar> {
         // Silently handle SharedPreferences errors
       }
     } else {
-      // Load project using the service
-      final success = await projectManager.loadProject(value);
-      if (success) {
-        await projectManager.tryReopenLastFile(value);
+      // Use the callback to load project (this will set loading state)
+      if (widget.onProjectSwitch != null) {
+        await widget.onProjectSwitch!(value);
+      } else {
+        // Fallback to direct loading if no callback provided
+        final success = await projectManager.loadProject(value);
+        if (success) {
+          await projectManager.tryReopenLastFile(value);
+        }
       }
     }
   }
@@ -392,6 +389,31 @@ class _TitleBarState extends ConsumerState<TitleBar> {
     );
 
     return items;
+  }
+
+  void _showProjectMenu(
+    BuildContext context,
+    String currentProjectPath,
+    List<String> mruFolders,
+    WidgetRef ref,
+  ) {
+    final RenderBox button = context.findRenderObject() as RenderBox;
+    final Offset offset = button.localToGlobal(Offset.zero);
+
+    showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        offset.dx,
+        offset.dy + button.size.height,
+        offset.dx + button.size.width,
+        offset.dy + button.size.height,
+      ),
+      items: _buildDropdownMenuItems(mruFolders),
+    ).then((value) async {
+      if (value != null) {
+        await _handleDropdownSelection(value, ref);
+      }
+    });
   }
 
   void _showSettingsDialog() {
