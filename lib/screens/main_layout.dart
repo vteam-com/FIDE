@@ -204,8 +204,8 @@ class MainLayoutState extends ConsumerState<MainLayout> {
 
   // Try to load a project and return success status
   Future<bool> tryLoadProject(String directoryPath) async {
-    final projectService = ref.read(projectLoadingServiceProvider);
-    return await projectService.tryLoadProject(directoryPath);
+    final projectManager = ref.read(projectManagerProvider);
+    return await projectManager.loadProject(directoryPath);
   }
 
   // Method to pick directory - can be called from WelcomeScreen
@@ -213,14 +213,13 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     try {
       final selectedDirectory = await FilePicker.platform.getDirectoryPath();
       if (selectedDirectory != null) {
-        final projectService = ref.read(projectLoadingServiceProvider);
+        final projectManager = ref.read(projectManagerProvider);
 
         // Try to load the project using the service
-        final success = await projectService.tryLoadProject(selectedDirectory);
+        final success = await projectManager.loadProject(selectedDirectory);
         if (success) {
-          // Update MRU and reopen last file
-          await projectService.updateMruList(selectedDirectory);
-          await projectService.tryReopenLastFile(selectedDirectory);
+          // Reopen last file
+          await projectManager.tryReopenLastFile(selectedDirectory);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -282,10 +281,10 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                 },
                 onProjectPathChanged: (path) {
                   // Update MRU list when a new project is loaded
-                  final projectService = ref.read(
-                    projectLoadingServiceProvider,
-                  );
-                  projectService.updateMruList(path);
+                  final projectManager = ref.read(projectManagerProvider);
+                  projectManager.loadProject(
+                    path,
+                  ); // This will handle MRU update
                   ref.read(currentProjectPathProvider.notifier).state = path;
                 },
                 showGitPanel: _activeLeftPanel == 1,
@@ -310,11 +309,10 @@ class MainLayoutState extends ConsumerState<MainLayout> {
               terminalVisible: _terminalPanelVisible,
               onOpenFolder: pickDirectory,
               onOpenMruProject: (path) async {
-                final projectService = ref.read(projectLoadingServiceProvider);
-                final success = await projectService.tryLoadProject(path);
+                final projectManager = ref.read(projectManagerProvider);
+                final success = await projectManager.loadProject(path);
                 if (success) {
-                  await projectService.updateMruList(path);
-                  await projectService.tryReopenLastFile(path);
+                  await projectManager.tryReopenLastFile(path);
                 }
               },
               onRemoveMruEntry: (path) async {

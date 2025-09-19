@@ -6,6 +6,7 @@ import 'package:path/path.dart' as path;
 import '../models/file_system_item.dart';
 import '../models/project_node.dart';
 import '../models/document_state.dart';
+import '../services/project_service.dart';
 import '../utils/file_type_utils.dart';
 
 // SharedPreferences provider
@@ -45,38 +46,98 @@ final themeModeProvider = StateProvider<ThemeMode>((ref) {
   return ThemeMode.system;
 });
 
-// Project loading service provider
-class ProjectLoadingService {
+// Project management service - unified approach for all project operations
+class ProjectManager {
   final Ref ref;
 
-  ProjectLoadingService(this.ref);
+  ProjectManager(this.ref);
 
-  Future<bool> tryLoadProject(String directoryPath) async {
+  /// Load a project with proper cleanup and MRU management
+  Future<bool> loadProject(String directoryPath) async {
     try {
-      // Validate that this is a Flutter project
-      final dir = Directory(directoryPath);
-      final pubspecFile = File('${dir.path}/pubspec.yaml');
-      final libDir = Directory('${dir.path}/lib');
+      print('ProjectManager: Loading project: $directoryPath');
 
-      if (!await pubspecFile.exists() || !await libDir.exists()) {
-        return false;
+      // Check if there's already a project loaded
+      final currentProjectLoaded = ref.read(projectLoadedProvider);
+      print('ProjectManager: Current project loaded: $currentProjectLoaded');
+
+      if (currentProjectLoaded) {
+        print('ProjectManager: Unloading current project first...');
+        await unloadProject();
+        print('ProjectManager: Current project unloaded');
       }
 
-      final pubspecContent = await pubspecFile.readAsString();
-      if (!pubspecContent.contains('flutter:') &&
-          !pubspecContent.contains('sdk: flutter')) {
-        return false;
+      // Use ProjectService to load the new project
+      final projectService = ref.read(projectServiceProvider);
+      final success = await projectService.loadProject(directoryPath);
+
+      if (success) {
+        print('ProjectManager: Project loaded successfully');
+
+        // Update MRU list - move selected project to top
+        await _updateMruList(directoryPath);
+        print('ProjectManager: MRU list updated');
       }
 
-      // Load the project
-      ref.read(projectLoadedProvider.notifier).state = true;
-      ref.read(currentProjectPathProvider.notifier).state = directoryPath;
-      return true;
+      return success;
     } catch (e) {
+      print('ProjectManager: Error loading project: $e');
       return false;
     }
   }
 
+  /// Unload the current project
+  Future<void> unloadProject() async {
+    try {
+      print('ProjectManager: Unloading project...');
+
+      // Use ProjectService to unload
+      final projectService = ref.read(projectServiceProvider);
+      projectService.unloadProject();
+
+      // Clear all project-related providers
+      ref.read(projectLoadedProvider.notifier).state = false;
+      ref.read(currentProjectPathProvider.notifier).state = null;
+      ref.read(currentProjectRootProvider.notifier).state = null;
+      ref.read(selectedFileProvider.notifier).state = null;
+
+      print('ProjectManager: Project unloaded successfully');
+    } catch (e) {
+      print('ProjectManager: Error unloading project: $e');
+    }
+  }
+
+  /// Update MRU list with the selected project at the top
+  Future<void> _updateMruList(String directoryPath) async {
+    final currentMruFolders = ref.read(mruFoldersProvider);
+
+    // Create updated MRU list
+    final updatedMruFolders = List<String>.from(currentMruFolders);
+
+    // Remove if exists (to avoid duplicates)
+    updatedMruFolders.remove(directoryPath);
+
+    // Add to front
+    updatedMruFolders.insert(0, directoryPath);
+
+    // Limit to 5 items
+    if (updatedMruFolders.length > 5) {
+      updatedMruFolders.removeRange(5, updatedMruFolders.length);
+    }
+
+    // Update the provider
+    ref.read(mruFoldersProvider.notifier).state = updatedMruFolders;
+
+    // Save to SharedPreferences
+    try {
+      final prefs = await ref.read(sharedPreferencesProvider.future);
+      await prefs.setStringList('mru_folders', updatedMruFolders);
+    } catch (e) {
+      print('ProjectManager: Error saving MRU list: $e');
+    }
+  }
+
+  /// Try to reopen the last opened file in the project
   Future<void> tryReopenLastFile(String projectPath) async {
     try {
       final prefs = await ref.read(sharedPreferencesProvider.future);
@@ -109,48 +170,16 @@ class ProjectLoadingService {
       // Silently handle errors
     }
   }
-
-  Future<void> updateMruList(String directoryPath) async {
-    final currentMruFolders = ref.read(mruFoldersProvider);
-
-    // Only update if this is a new directory or needs reordering
-    final currentIndex = currentMruFolders.indexOf(directoryPath);
-
-    if (currentIndex == 0) {
-      // Already at the front, no need to update
-      return;
-    }
-
-    final updatedMruFolders = List<String>.from(currentMruFolders);
-
-    if (currentIndex > 0) {
-      // Move existing item to front
-      updatedMruFolders.removeAt(currentIndex);
-    }
-
-    // Add to front (whether it was existing or new)
-    updatedMruFolders.insert(0, directoryPath);
-
-    if (updatedMruFolders.length > 5) {
-      updatedMruFolders.removeRange(5, updatedMruFolders.length);
-    }
-
-    // Update the provider
-    ref.read(mruFoldersProvider.notifier).state = updatedMruFolders;
-
-    // Save to SharedPreferences
-    try {
-      final prefs = await ref.read(sharedPreferencesProvider.future);
-      await prefs.setStringList('mru_folders', updatedMruFolders);
-    } catch (e) {
-      // Silently handle SharedPreferences errors
-    }
-  }
 }
 
-// Project loading service provider
-final projectLoadingServiceProvider = Provider<ProjectLoadingService>((ref) {
-  return ProjectLoadingService(ref);
+// Unified project manager provider
+final projectManagerProvider = Provider<ProjectManager>((ref) {
+  return ProjectManager(ref);
+});
+
+// Project service provider for complete project management
+final projectServiceProvider = Provider<ProjectService>((ref) {
+  return ProjectService(ref);
 });
 
 // State management for open documents

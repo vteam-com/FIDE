@@ -8,7 +8,6 @@ import 'package:path/path.dart' as path;
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/services/git_service.dart';
-import 'package:fide/services/file_system_watcher.dart';
 import 'package:fide/utils/message_helper.dart';
 
 // Widgets
@@ -48,7 +47,6 @@ abstract class BasePanel extends ConsumerStatefulWidget {
 abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
   final Map<String, bool> _expandedState = {};
   final GitService _gitService = GitService();
-  final FileSystemWatcher _fileSystemWatcher = FileSystemWatcher();
   bool _isLoading = false;
   final Set<String> _loadingDirectories = {};
   ProjectNode? _projectRoot;
@@ -178,20 +176,24 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
 
   @override
   Widget build(BuildContext context) {
-    // Watch for project path changes and reload project if needed
-    final currentProjectPath = ref.watch(currentProjectPathProvider);
+    // Watch for project data from ProjectService
+    final currentProjectRoot = ref.watch(currentProjectRootProvider);
+    final isProjectLoaded = ref.watch(projectLoadedProvider);
 
-    // If project path changed and we have a different project loaded, reload it
-    if (currentProjectPath != null &&
-        _projectRoot != null &&
-        currentProjectPath != _projectRoot!.path &&
-        !_isLoading) {
-      // Use a microtask to avoid calling setState during build
-      Future.microtask(() async {
-        if (mounted) {
-          await _loadProject(currentProjectPath, forceLoad: true);
-        }
-      });
+    // Update local state when project data changes
+    if (currentProjectRoot != _projectRoot) {
+      print(
+        'BasePanel: Project changed from ${_projectRoot?.path} to ${currentProjectRoot?.path}',
+      );
+      // Use setState to trigger UI rebuild when project changes
+      if (mounted) {
+        setState(() {
+          _projectRoot = currentProjectRoot;
+          // Clear expanded state when project changes
+          _expandedState.clear();
+          print('BasePanel: State updated, triggering UI rebuild');
+        });
+      }
     }
 
     // Ensure selected file is expanded and visible when building
@@ -204,9 +206,7 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
       });
     }
 
-    return _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : _projectRoot == null
+    return !isProjectLoaded
         ? Container(
             color: Theme.of(context).colorScheme.surface,
             child: const Center(
@@ -796,157 +796,8 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
   }
 
   Future<void> _initializeExplorer() async {
-    // If an initial project path is provided, load it first
-    if (widget.initialProjectPath != null) {
-      await _loadProject(widget.initialProjectPath!, forceLoad: true);
-    }
-  }
-
-  Future<bool> _isFlutterProject(String directoryPath) async {
-    try {
-      final dir = Directory(directoryPath);
-
-      // Check if pubspec.yaml exists (required for Flutter projects)
-      final pubspecFile = File('${dir.path}/pubspec.yaml');
-      if (!await pubspecFile.exists()) {
-        return false;
-      }
-
-      // Check if lib directory exists (typical Flutter project structure)
-      final libDir = Directory('${dir.path}/lib');
-      if (!await libDir.exists()) {
-        return false;
-      }
-
-      // Additional check: verify pubspec.yaml contains flutter dependency
-      final pubspecContent = await pubspecFile.readAsString();
-      if (!pubspecContent.contains('flutter:') &&
-          !pubspecContent.contains('sdk: flutter')) {
-        return false;
-      }
-
-      return true;
-    } catch (e) {
-      // If we can't read the directory, it's not accessible anyway
-      return false;
-    }
-  }
-
-  Future<void> _loadGitStatus() async {
-    if (_projectRoot == null) return;
-
-    try {
-      // Check if current directory is a Git repository
-      final isGitRepo = await _gitService.isGitRepository(_projectRoot!.path);
-      if (!isGitRepo) {
-        print('Not a Git repository: ${_projectRoot!.path}');
-        return;
-      }
-
-      // Get Git status
-      final gitStatus = await _gitService.getStatus(_projectRoot!.path);
-      print(
-        'Git status loaded: ${gitStatus.staged.length} staged, ${gitStatus.unstaged.length} unstaged, ${gitStatus.untracked.length} untracked',
-      );
-
-      // Update all nodes with Git status recursively
-      _updateNodeGitStatus(_projectRoot!, gitStatus);
-    } catch (e) {
-      // Silently handle Git status errors
-      print('Error loading Git status: $e');
-    }
-  }
-
-  Future<bool> _loadProject(
-    String directoryPath, {
-    bool forceLoad = false,
-  }) async {
-    if (_isLoading && !forceLoad) return false;
-
-    // Validate that this is a Flutter project
-    if (!await _isFlutterProject(directoryPath)) {
-      _showError(
-        'This folder is not a valid Flutter project. FIDE is designed specifically for Flutter development. Please select a folder containing a Flutter project with a pubspec.yaml file.',
-      );
-      return false;
-    }
-
-    // Close current project first
-    setState(() {
-      _isLoading = true;
-      _projectRoot = null;
-      _expandedState.clear();
-      _loadingDirectories.clear();
-    });
-
-    try {
-      final root = await ProjectNode.fromFileSystemEntity(
-        Directory(directoryPath),
-      );
-      // Enumerate all files recursively in the background when project opens
-      final result = await root.enumerateContentsRecursive();
-
-      setState(() {
-        _projectRoot = root;
-      });
-
-      // Notify parent that project is loaded
-      if (widget.onProjectLoaded != null) {
-        widget.onProjectLoaded!(true);
-      }
-
-      // Notify parent of the new project path for MRU update
-      if (widget.onProjectPathChanged != null) {
-        widget.onProjectPathChanged!(directoryPath);
-      }
-
-      // Show user-friendly error messages based on the result
-      switch (result) {
-        case LoadChildrenResult.accessDenied:
-          _showError(
-            'Access denied: Cannot read contents of "${root.name}". You may not have permission to view this project folder.',
-          );
-          return false;
-        case LoadChildrenResult.fileSystemError:
-          _showError(
-            'File system error: Unable to read contents of "${root.name}". The project folder may be corrupted or inaccessible.',
-          );
-          return false;
-        case LoadChildrenResult.unknownError:
-          _showError(
-            'Unable to load project "${root.name}". Please try again or check if the folder exists.',
-          );
-          return false;
-        case LoadChildrenResult.success:
-          // Project loaded successfully
-
-          // Load Git status for the project
-          await _loadGitStatus();
-
-          // Initialize file system watcher for incremental updates
-          _fileSystemWatcher.initialize(_projectRoot!, () {
-            if (mounted) {
-              setState(() {});
-            }
-          });
-
-          // Check if there's a last opened file to restore
-          if (widget.selectedFile != null) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _expandToFile(widget.selectedFile!.path);
-            });
-          }
-
-          return true;
-      }
-    } catch (e) {
-      _showError('Failed to load project: $e');
-      return false;
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+    // Project loading is now handled by ProjectService
+    // BasePanel only consumes the loaded project data
   }
 
   void _onNodeTapped(ProjectNode node, bool isExpanded) async {
@@ -981,10 +832,12 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
     try {
       final selectedDirectory = await FilePicker.platform.getDirectoryPath();
       if (selectedDirectory != null) {
-        await _loadProject(selectedDirectory);
+        // Project loading is now handled by ProjectService
+        // This method should be overridden in subclasses if needed
+        _showError('Project loading is handled by the main application');
       }
     } catch (e) {
-      _showError('Error loading project: $e');
+      _showError('Error selecting directory: $e');
     }
   }
 

@@ -238,7 +238,7 @@ class _TitleBarState extends ConsumerState<TitleBar> {
   }
 
   Future<void> _handleDropdownSelection(String value, WidgetRef ref) async {
-    final projectService = ref.read(projectLoadingServiceProvider);
+    final projectManager = ref.read(projectManagerProvider);
 
     if (value == 'add_folder') {
       // This would need to be implemented - for now show a message
@@ -271,10 +271,9 @@ class _TitleBarState extends ConsumerState<TitleBar> {
       }
     } else {
       // Load project using the service
-      final success = await projectService.tryLoadProject(value);
+      final success = await projectManager.loadProject(value);
       if (success) {
-        await projectService.updateMruList(value);
-        await projectService.tryReopenLastFile(value);
+        await projectManager.tryReopenLastFile(value);
       }
     }
   }

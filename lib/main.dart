@@ -250,26 +250,18 @@ class _FIDEState extends ConsumerState<FIDE> {
     String projectPath,
   ) async {
     try {
-      // Validate that this is a Flutter project
-      final dir = Directory(projectPath);
-      final pubspecFile = File('${dir.path}/pubspec.yaml');
-      final libDir = Directory('${dir.path}/lib');
+      // Use ProjectService to load the project (this handles enumeration and watching)
+      final projectService = container.read(projectServiceProvider);
+      final success = await projectService.loadProject(projectPath);
 
-      if (!await pubspecFile.exists() || !await libDir.exists()) {
-        return;
+      if (success) {
+        print('Successfully auto-loaded MRU project: $projectPath');
+      } else {
+        print('Failed to auto-load MRU project: $projectPath');
       }
-
-      final pubspecContent = await pubspecFile.readAsString();
-      if (!pubspecContent.contains('flutter:') &&
-          !pubspecContent.contains('sdk: flutter')) {
-        return;
-      }
-
-      // Load the project
-      container.read(projectLoadedProvider.notifier).state = true;
-      container.read(currentProjectPathProvider.notifier).state = projectPath;
     } catch (e) {
       // Silently handle errors during auto-loading
+      print('Error auto-loading MRU project: $e');
     }
   }
 
@@ -499,36 +491,24 @@ class _FIDEState extends ConsumerState<FIDE> {
                         final selectedDirectory = await FilePicker.platform
                             .getDirectoryPath();
                         if (selectedDirectory != null) {
-                          // Validate that this is a Flutter project
-                          final dir = Directory(selectedDirectory);
-                          final pubspecFile = File('${dir.path}/pubspec.yaml');
-                          final libDir = Directory('${dir.path}/lib');
-
-                          if (await pubspecFile.exists() &&
-                              await libDir.exists()) {
-                            final pubspecContent = await pubspecFile
-                                .readAsString();
-                            if (pubspecContent.contains('flutter:') ||
-                                pubspecContent.contains('sdk: flutter')) {
-                              // Load the project
-                              ref.read(projectLoadedProvider.notifier).state =
-                                  true;
-                              ref
-                                      .read(currentProjectPathProvider.notifier)
-                                      .state =
-                                  selectedDirectory;
-                              return;
-                            }
-                          }
-
-                          // Show error if not a valid Flutter project
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Selected folder is not a valid Flutter project',
-                              ),
-                            ),
+                          // Use ProjectService to load the project
+                          final projectService = ref.read(
+                            projectServiceProvider,
                           );
+                          final success = await projectService.loadProject(
+                            selectedDirectory,
+                          );
+
+                          if (!success) {
+                            // Show error if project loading failed
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Failed to load project. Please ensure it is a valid Flutter project.',
+                                ),
+                              ),
+                            );
+                          }
                         }
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -539,28 +519,14 @@ class _FIDEState extends ConsumerState<FIDE> {
 
                     Future<bool> tryLoadProject(String directoryPath) async {
                       try {
-                        // Validate that this is a Flutter project
-                        final dir = Directory(directoryPath);
-                        final pubspecFile = File('${dir.path}/pubspec.yaml');
-                        final libDir = Directory('${dir.path}/lib');
-
-                        if (!await pubspecFile.exists() ||
-                            !await libDir.exists()) {
-                          return false;
-                        }
-
-                        final pubspecContent = await pubspecFile.readAsString();
-                        if (!pubspecContent.contains('flutter:') &&
-                            !pubspecContent.contains('sdk: flutter')) {
-                          return false;
-                        }
-
-                        // Load the project
-                        ref.read(projectLoadedProvider.notifier).state = true;
-                        ref.read(currentProjectPathProvider.notifier).state =
-                            directoryPath;
-                        return true;
+                        // Use the unified ProjectManager to handle everything
+                        final projectManager = ref.read(projectManagerProvider);
+                        final success = await projectManager.loadProject(
+                          directoryPath,
+                        );
+                        return success;
                       } catch (e) {
+                        print('Main: tryLoadProject error: $e');
                         return false;
                       }
                     }
