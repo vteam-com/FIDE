@@ -8,6 +8,7 @@ import 'package:path/path.dart' as path;
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/services/git_service.dart';
+import 'package:fide/services/file_system_watcher.dart';
 import 'package:fide/utils/message_helper.dart';
 
 // Widgets
@@ -47,6 +48,7 @@ abstract class BasePanel extends ConsumerStatefulWidget {
 abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
   final Map<String, bool> _expandedState = {};
   final GitService _gitService = GitService();
+  final FileSystemWatcher _fileSystemWatcher = FileSystemWatcher();
   bool _isLoading = false;
   final Set<String> _loadingDirectories = {};
   ProjectNode? _projectRoot;
@@ -920,6 +922,13 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
 
           // Load Git status for the project
           await _loadGitStatus();
+
+          // Initialize file system watcher for incremental updates
+          _fileSystemWatcher.initialize(_projectRoot!, () {
+            if (mounted) {
+              setState(() {});
+            }
+          });
 
           // Check if there's a last opened file to restore
           if (widget.selectedFile != null) {

@@ -28,6 +28,7 @@ digraph "" {
   "/lib/main.dart" [label="main"];
   "/lib/theme/app_theme.dart" [label="app_theme"];
   "/lib/services/git_service.dart" [label="git_service"];
+  "/lib/services/file_system_watcher.dart" [label="file_system_watcher"];
   "/lib/services/ai_service.dart" [label="ai_service"];
   "/lib/services/file_system_service.dart" [label="file_system_service"];
   "/lib/services/editor_service.dart" [label="editor_service"];
@@ -97,6 +98,7 @@ digraph "" {
       subgraph "cluster~/lib/services" {
         label="services";
         "/lib/services/git_service.dart";
+        "/lib/services/file_system_watcher.dart";
         "/lib/services/ai_service.dart";
         "/lib/services/file_system_service.dart";
         "/lib/services/editor_service.dart";
@@ -140,6 +142,7 @@ digraph "" {
   "/lib/panels/left/base_panel.dart" -> "/lib/models/project_node.dart";
   "/lib/panels/left/base_panel.dart" -> "/lib/models/file_system_item.dart";
   "/lib/panels/left/base_panel.dart" -> "/lib/services/git_service.dart";
+  "/lib/panels/left/base_panel.dart" -> "/lib/services/file_system_watcher.dart";
   "/lib/panels/left/base_panel.dart" -> "/lib/utils/message_helper.dart";
   "/lib/panels/left/base_panel.dart" -> "/lib/panels/left/git_panel.dart";
   "/lib/panels/left/base_panel.dart" -> "/lib/providers/app_providers.dart";
@@ -178,6 +181,7 @@ digraph "" {
   "/lib/main.dart" -> "/lib/screens/welcome_screen.dart";
   "/lib/main.dart" -> "/lib/services/git_service.dart";
   "/lib/main.dart" -> "/lib/theme/app_theme.dart";
+  "/lib/services/file_system_watcher.dart" -> "/lib/models/project_node.dart";
   "/lib/services/file_system_service.dart" -> "/lib/models/file_system_item.dart";
   "/lib/widgets/title_bar.dart" -> "/lib/providers/app_providers.dart";
 }

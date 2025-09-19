@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:fide/models/file_system_item.dart';
@@ -229,5 +230,51 @@ class ProjectNode {
       default:
         return baseStyle;
     }
+  }
+
+  // Add a child node (for incremental updates)
+  void addChild(ProjectNode child) {
+    // Find the correct insertion position to maintain sorted order
+    int insertIndex = 0;
+    for (int i = 0; i < children.length; i++) {
+      final current = children[i];
+
+      // Directories come before files
+      if (child.isDirectory && !current.isDirectory) {
+        break;
+      } else if (!child.isDirectory && current.isDirectory) {
+        insertIndex = i;
+        break;
+      }
+
+      // Same type: alphabetical order
+      if (child.name.toLowerCase().compareTo(current.name.toLowerCase()) < 0) {
+        break;
+      }
+
+      insertIndex = i + 1;
+    }
+
+    children.insert(insertIndex, child);
+  }
+
+  // Remove a child node by path (for incremental updates)
+  bool removeChild(String childPath) {
+    final index = children.indexWhere((child) => child.path == childPath);
+    if (index != -1) {
+      children.removeAt(index);
+      return true;
+    }
+    return false;
+  }
+
+  // Update a child node (for incremental updates)
+  bool updateChild(String childPath, ProjectNode newChild) {
+    final index = children.indexWhere((child) => child.path == childPath);
+    if (index != -1) {
+      children[index] = newChild;
+      return true;
+    }
+    return false;
   }
 }
