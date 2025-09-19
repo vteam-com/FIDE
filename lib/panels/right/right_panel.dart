@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 // Screens
 import 'outline_panel.dart';
@@ -59,9 +60,24 @@ class _RightPanelState extends State<RightPanel>
             ),
             child: TabBar(
               controller: _tabController,
-              tabs: const [
-                Tab(icon: Icon(Icons.list)),
-                Tab(icon: Icon(Icons.air)),
+              tabs: [
+                const Tab(icon: Icon(Icons.list)),
+                Tab(
+                  icon: Builder(
+                    builder: (context) {
+                      final iconColor = IconTheme.of(context).color!;
+                      return SvgPicture.asset(
+                        'assets/ollama.svg',
+                        width: 24,
+                        height: 24,
+                        colorFilter: ColorFilter.mode(
+                          iconColor,
+                          BlendMode.srcIn,
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ],
               labelColor: Theme.of(context).colorScheme.primary,
               unselectedLabelColor: Theme.of(
