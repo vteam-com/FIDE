@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Screens
 import 'folder_panel.dart';
+import 'organized_panel.dart';
+import 'git_panel.dart';
 
 // Models
 import '../../models/file_system_item.dart';
@@ -100,8 +102,8 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                 controller: _tabController,
                 tabs: const [
                   Tab(icon: Icon(Icons.folder)),
-                  Tab(icon: Icon(Icons.folder_special)),
-                  Tab(icon: Icon(Icons.account_tree)),
+                  Tab(icon: Icon(Icons.category)),
+                  Tab(icon: Icon(Icons.commit)),
                 ],
                 labelColor: Theme.of(context).colorScheme.primary,
                 unselectedLabelColor: Theme.of(
@@ -129,11 +131,10 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                   onProjectPathChanged: widget.onProjectPathChanged,
                   initialProjectPath: widget.currentProjectPath,
                   showGitPanel: false,
-                  panelMode: PanelMode.filesystem,
                 ),
 
                 // Organized tab
-                FolderPanel(
+                OrganizedPanel(
                   onFileSelected: widget.onFileSelected,
                   selectedFile: widget.selectedFile,
                   onThemeChanged: widget.onThemeChanged,
@@ -141,20 +142,17 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                   onProjectPathChanged: widget.onProjectPathChanged,
                   initialProjectPath: widget.currentProjectPath,
                   showGitPanel: false,
-                  panelMode: PanelMode.organized,
                 ),
 
-                // Git tab
-                FolderPanel(
-                  onFileSelected: widget.onFileSelected,
-                  selectedFile: widget.selectedFile,
-                  onThemeChanged: widget.onThemeChanged,
-                  onProjectLoaded: widget.onProjectLoaded,
-                  onProjectPathChanged: widget.onProjectPathChanged,
-                  initialProjectPath: widget.currentProjectPath,
-                  showGitPanel: true,
-                  panelMode: PanelMode.filesystem,
-                ),
+                // Git tab - using dedicated GitPanel
+                widget.currentProjectPath != null
+                    ? GitPanel(projectPath: widget.currentProjectPath!)
+                    : const Center(
+                        child: Text(
+                          'No project loaded',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
               ],
             ),
           ),

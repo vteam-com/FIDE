@@ -12,10 +12,12 @@ digraph "" {
   "/lib/panels/center/center_panel.dart" [label="center_panel"];
   "/lib/panels/left/git_panel.dart" [label="git_panel"];
   "/lib/panels/left/left_panel_controls.dart" [label="left_panel_controls"];
+  "/lib/panels/left/base_panel.dart" [label="base_panel"];
   "/lib/panels/left/directory_contents.dart" [label="directory_contents"];
   "/lib/panels/left/folder_panel.dart" [label="folder_panel"];
   "/lib/panels/left/file_explorer.dart" [label="file_explorer"];
   "/lib/panels/left/left_panel.dart" [label="left_panel"];
+  "/lib/panels/left/organized_panel.dart" [label="organized_panel"];
   "/lib/utils/message_helper.dart" [label="message_helper"];
   "/lib/utils/file_type_utils.dart" [label="file_type_utils"];
   "/lib/models/project_node.dart" [label="project_node"];
@@ -64,10 +66,12 @@ digraph "" {
           label="left";
           "/lib/panels/left/git_panel.dart";
           "/lib/panels/left/left_panel_controls.dart";
+          "/lib/panels/left/base_panel.dart";
           "/lib/panels/left/directory_contents.dart";
           "/lib/panels/left/folder_panel.dart";
           "/lib/panels/left/file_explorer.dart";
           "/lib/panels/left/left_panel.dart";
+          "/lib/panels/left/organized_panel.dart";
         }
       }
       subgraph "cluster~/lib/utils" {
@@ -133,23 +137,27 @@ digraph "" {
   "/lib/panels/center/center_panel.dart" -> "/lib/widgets/resizable_splitter.dart";
   "/lib/panels/center/center_panel.dart" -> "/lib/models/file_system_item.dart";
   "/lib/panels/left/git_panel.dart" -> "/lib/services/git_service.dart";
+  "/lib/panels/left/base_panel.dart" -> "/lib/models/project_node.dart";
+  "/lib/panels/left/base_panel.dart" -> "/lib/models/file_system_item.dart";
+  "/lib/panels/left/base_panel.dart" -> "/lib/services/git_service.dart";
+  "/lib/panels/left/base_panel.dart" -> "/lib/utils/message_helper.dart";
+  "/lib/panels/left/base_panel.dart" -> "/lib/panels/left/git_panel.dart";
+  "/lib/panels/left/base_panel.dart" -> "/lib/providers/app_providers.dart";
   "/lib/panels/left/directory_contents.dart" -> "/lib/services/file_system_service.dart";
   "/lib/panels/left/directory_contents.dart" -> "/lib/services/git_service.dart";
   "/lib/panels/left/directory_contents.dart" -> "/lib/models/file_system_item.dart";
   "/lib/panels/left/folder_panel.dart" -> "/lib/models/project_node.dart";
-  "/lib/panels/left/folder_panel.dart" -> "/lib/models/file_system_item.dart";
-  "/lib/panels/left/folder_panel.dart" -> "/lib/services/git_service.dart";
-  "/lib/panels/left/folder_panel.dart" -> "/lib/utils/message_helper.dart";
-  "/lib/panels/left/folder_panel.dart" -> "/lib/panels/left/git_panel.dart";
-  "/lib/panels/left/folder_panel.dart" -> "/lib/theme/app_theme.dart";
-  "/lib/panels/left/folder_panel.dart" -> "/lib/panels/left/left_panel.dart";
-  "/lib/panels/left/folder_panel.dart" -> "/lib/providers/app_providers.dart";
+  "/lib/panels/left/folder_panel.dart" -> "/lib/panels/left/base_panel.dart";
   "/lib/panels/left/file_explorer.dart" -> "/lib/services/file_system_service.dart";
   "/lib/panels/left/file_explorer.dart" -> "/lib/services/git_service.dart";
   "/lib/panels/left/file_explorer.dart" -> "/lib/models/file_system_item.dart";
   "/lib/panels/left/file_explorer.dart" -> "/lib/panels/left/directory_contents.dart";
   "/lib/panels/left/left_panel.dart" -> "/lib/panels/left/folder_panel.dart";
+  "/lib/panels/left/left_panel.dart" -> "/lib/panels/left/organized_panel.dart";
+  "/lib/panels/left/left_panel.dart" -> "/lib/panels/left/git_panel.dart";
   "/lib/panels/left/left_panel.dart" -> "/lib/models/file_system_item.dart";
+  "/lib/panels/left/organized_panel.dart" -> "/lib/models/project_node.dart";
+  "/lib/panels/left/organized_panel.dart" -> "/lib/panels/left/base_panel.dart";
   "/lib/utils/message_helper.dart" -> "/lib/widgets/message_widget.dart";
   "/lib/models/project_node.dart" -> "/lib/models/file_system_item.dart";
   "/lib/screens/main_layout.dart" -> "/lib/panels/center/editor_screen.dart";
