@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:path/path.dart' as path;
+import 'package:window_manager/window_manager.dart';
 
 // Providers
 import '../providers/app_providers.dart';
@@ -40,52 +41,71 @@ class TitleBar extends ConsumerStatefulWidget {
 }
 
 class _TitleBarState extends ConsumerState<TitleBar> {
+  Future<void> _toggleMaximize() async {
+    try {
+      final isMaximized = await windowManager.isMaximized();
+      if (isMaximized) {
+        await windowManager.unmaximize();
+      } else {
+        await windowManager.maximize();
+      }
+    } catch (e) {
+      // Silently handle window manager errors
+      debugPrint('Error toggling window maximize state: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 40,
-      color: widget.themeMode == ThemeMode.dark
-          ? const Color(0xFF323233) // VS Code dark title bar color
-          : const Color(0xFFECECEC), // VS Code light title bar color
-      child: Row(
-        children: [
-          // Platform-specific spacing for window controls
-          if (Platform.isMacOS)
-            const SizedBox(
-              width: 80,
-            ), // Space for macOS traffic lights (left side)
-          // Left section: Project dropdown or app title
-          Consumer(
-            builder: (context, ref, child) {
-              final currentProjectPath = ref.watch(currentProjectPathProvider);
-              final mruFolders = ref.watch(mruFoldersProvider);
-
-              if (currentProjectPath != null) {
-                // Show project dropdown
-                return _buildProjectDropdown(
-                  currentProjectPath,
-                  mruFolders,
-                  ref,
+    return GestureDetector(
+      onDoubleTap: _toggleMaximize,
+      child: Container(
+        height: 40,
+        color: widget.themeMode == ThemeMode.dark
+            ? const Color(0xFF323233) // VS Code dark title bar color
+            : const Color(0xFFECECEC), // VS Code light title bar color
+        child: Row(
+          children: [
+            // Platform-specific spacing for window controls
+            if (Platform.isMacOS)
+              const SizedBox(
+                width: 80,
+              ), // Space for macOS traffic lights (left side)
+            // Left section: Project dropdown or app title
+            Consumer(
+              builder: (context, ref, child) {
+                final currentProjectPath = ref.watch(
+                  currentProjectPathProvider,
                 );
-              } else {
-                // Show app title when no project is loaded
-                return _buildAppTitle();
-              }
-            },
-          ),
+                final mruFolders = ref.watch(mruFoldersProvider);
 
-          // Center section: Panel toggle buttons
-          Expanded(child: Center(child: _buildPanelToggleButtons())),
+                if (currentProjectPath != null) {
+                  // Show project dropdown
+                  return _buildProjectDropdown(
+                    currentProjectPath,
+                    mruFolders,
+                    ref,
+                  );
+                } else {
+                  // Show app title when no project is loaded
+                  return _buildAppTitle();
+                }
+              },
+            ),
 
-          // Right section: Settings button
-          _buildSettingsButton(),
+            // Center section: Panel toggle buttons
+            Expanded(child: Center(child: _buildPanelToggleButtons())),
 
-          // Spacer to push content away from right-side window controls (Windows/Linux)
-          if (!Platform.isMacOS) const Spacer(),
+            // Right section: Settings button
+            _buildSettingsButton(),
 
-          // Space for Windows/Linux window controls (right side)
-          if (!Platform.isMacOS) const SizedBox(width: 120),
-        ],
+            // Spacer to push content away from right-side window controls (Windows/Linux)
+            if (!Platform.isMacOS) const Spacer(),
+
+            // Space for Windows/Linux window controls (right side)
+            if (!Platform.isMacOS) const SizedBox(width: 120),
+          ],
+        ),
       ),
     );
   }
