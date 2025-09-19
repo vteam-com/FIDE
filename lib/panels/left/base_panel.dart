@@ -508,9 +508,9 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
       _loadingDirectories.add(node.path);
 
       try {
-        await node.loadChildren();
+        await node.enumerateContents();
 
-        // Trigger rebuild when loading is complete
+        // Trigger rebuild when enumeration is complete
         if (mounted) {
           setState(() {
             _loadingDirectories.remove(node.path);
@@ -881,7 +881,8 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
       final root = await ProjectNode.fromFileSystemEntity(
         Directory(directoryPath),
       );
-      final result = await root.loadChildren();
+      // Enumerate all files recursively in the background when project opens
+      final result = await root.enumerateContentsRecursive();
 
       setState(() {
         _projectRoot = root;
@@ -949,7 +950,7 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
 
       if (!isExpanded && node.children.isEmpty) {
         try {
-          await node.loadChildren();
+          await node.enumerateContents();
           if (mounted) {
             setState(() {});
           }
@@ -982,8 +983,8 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
     if (_projectRoot == null) return;
 
     try {
-      // Reload the project tree
-      final result = await _projectRoot!.loadChildren();
+      // Reload the project tree recursively
+      final result = await _projectRoot!.enumerateContentsRecursive();
 
       if (result == LoadChildrenResult.success && mounted) {
         setState(() {});

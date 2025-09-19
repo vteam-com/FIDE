@@ -49,8 +49,8 @@ class ProjectNode {
     );
   }
 
-  // Load children for a directory node
-  Future<LoadChildrenResult> loadChildren() async {
+  // Enumerate contents for a directory node
+  Future<LoadChildrenResult> enumerateContents() async {
     if (!isDirectory) return LoadChildrenResult.success;
 
     try {
@@ -75,6 +75,57 @@ class ProjectNode {
       for (final entity in entities) {
         // Include all files and directories, including hidden ones
         children.add(await ProjectNode.fromFileSystemEntity(entity));
+      }
+      loadResult = LoadChildrenResult.success;
+      return LoadChildrenResult.success;
+    } catch (e) {
+      // Categorize the error for better user experience
+      if (e is PathAccessException ||
+          e.toString().contains('Operation not permitted')) {
+        loadResult = LoadChildrenResult.accessDenied;
+        return LoadChildrenResult.accessDenied;
+      } else if (e is FileSystemException) {
+        loadResult = LoadChildrenResult.fileSystemError;
+        return LoadChildrenResult.fileSystemError;
+      } else {
+        loadResult = LoadChildrenResult.unknownError;
+        return LoadChildrenResult.unknownError;
+      }
+    }
+  }
+
+  // Recursively enumerate all contents for a directory node (background enumeration)
+  Future<LoadChildrenResult> enumerateContentsRecursive() async {
+    if (!isDirectory) return LoadChildrenResult.success;
+
+    try {
+      final dir = Directory(path);
+      final List<FileSystemEntity> entities = await dir.list().toList();
+
+      // Sort directories first, then files, both alphabetically
+      entities.sort((a, b) {
+        final aStat = a.statSync();
+        final bStat = b.statSync();
+
+        if (aStat.type == bStat.type) {
+          final aName = p.basename(a.path).toLowerCase();
+          final bName = p.basename(b.path).toLowerCase();
+          return aName.compareTo(bName);
+        }
+
+        return aStat.type == FileSystemEntityType.directory ? -1 : 1;
+      });
+
+      children.clear();
+      for (final entity in entities) {
+        // Include all files and directories, including hidden ones
+        final childNode = await ProjectNode.fromFileSystemEntity(entity);
+        children.add(childNode);
+
+        // If it's a directory, recursively enumerate its contents
+        if (childNode.isDirectory) {
+          await childNode.enumerateContentsRecursive();
+        }
       }
       loadResult = LoadChildrenResult.success;
       return LoadChildrenResult.success;

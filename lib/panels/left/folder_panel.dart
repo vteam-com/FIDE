@@ -285,7 +285,7 @@ class FolderPanelState extends BasePanelState<FolderPanel> {
 
       if (!isExpanded && node.children.isEmpty) {
         try {
-          await node.loadChildren();
+          await node.enumerateContents();
           if (mounted) {
             setState(() {});
           }

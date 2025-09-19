@@ -147,6 +147,8 @@ digraph "" {
   "/lib/panels/left/directory_contents.dart" -> "/lib/services/git_service.dart";
   "/lib/panels/left/directory_contents.dart" -> "/lib/models/file_system_item.dart";
   "/lib/panels/left/folder_panel.dart" -> "/lib/models/project_node.dart";
+  "/lib/panels/left/folder_panel.dart" -> "/lib/models/file_system_item.dart";
+  "/lib/panels/left/folder_panel.dart" -> "/lib/services/git_service.dart";
   "/lib/panels/left/folder_panel.dart" -> "/lib/panels/left/base_panel.dart";
   "/lib/panels/left/file_explorer.dart" -> "/lib/services/file_system_service.dart";
   "/lib/panels/left/file_explorer.dart" -> "/lib/services/git_service.dart";
