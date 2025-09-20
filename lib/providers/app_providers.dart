@@ -26,6 +26,9 @@ final currentProjectPathProvider = StateProvider<String?>((ref) => null);
 // State management for current project root
 final currentProjectRootProvider = StateProvider<ProjectNode?>((ref) => null);
 
+// State management for project loading state
+final projectLoadingProvider = StateProvider<bool>((ref) => false);
+
 // State management for MRU folders
 final mruFoldersProvider = StateProvider<List<String>>((ref) => []);
 
@@ -55,7 +58,12 @@ class ProjectManager {
   /// Load a project with proper cleanup and MRU management
   Future<bool> loadProject(String directoryPath) async {
     try {
+      debugPrint('ProjectManager: loadProject called with: $directoryPath');
       debugPrint('ProjectManager: Loading project: $directoryPath');
+
+      // Set loading state to true
+      debugPrint('ProjectManager: Setting loading state to true');
+      ref.read(projectLoadingProvider.notifier).state = true;
 
       // Check if there's already a project loaded
       final currentProjectLoaded = ref.read(projectLoadedProvider);
@@ -81,9 +89,15 @@ class ProjectManager {
         debugPrint('ProjectManager: MRU list updated');
       }
 
+      // Set loading state to false
+      debugPrint('ProjectManager: Setting loading state to false');
+      ref.read(projectLoadingProvider.notifier).state = false;
+
       return success;
     } catch (e) {
       debugPrint('ProjectManager: Error loading project: $e');
+      // Set loading state to false on error
+      ref.read(projectLoadingProvider.notifier).state = false;
       return false;
     }
   }

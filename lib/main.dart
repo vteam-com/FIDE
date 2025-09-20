@@ -17,6 +17,7 @@ import 'widgets/title_bar.dart';
 
 // Screens
 import 'panels/center/editor_screen.dart';
+import 'screens/loading_screen.dart';
 import 'screens/welcome_screen.dart';
 
 // Services
@@ -188,7 +189,7 @@ class _FIDEState extends ConsumerState<FIDE> {
       // Set loading state
       setState(() {
         _isLoadingProject = true;
-        _loadingProjectName = directoryPath.split('/').last;
+        _loadingProjectName = directoryPath;
       });
 
       // Use the unified ProjectManager to handle everything
@@ -291,6 +292,14 @@ class _FIDEState extends ConsumerState<FIDE> {
     String projectPath,
   ) async {
     try {
+      // Set loading state before starting project load
+      if (mounted) {
+        setState(() {
+          _isLoadingProject = true;
+          _loadingProjectName = projectPath;
+        });
+      }
+
       // Use ProjectService to load the project (this handles enumeration and watching)
       final projectService = container.read(projectServiceProvider);
       final success = await projectService.loadProject(projectPath);
@@ -576,7 +585,12 @@ class _FIDEState extends ConsumerState<FIDE> {
                       }
                     }
 
-                    if (!projectLoaded) {
+                    if (_isLoadingProject) {
+                      // Show LoadingScreen when project is being loaded
+                      return LoadingScreen(
+                        loadingProjectName: _loadingProjectName,
+                      );
+                    } else if (!projectLoaded) {
                       // Show WelcomeScreen when no project is loaded
                       return WelcomeScreen(
                         onOpenFolder: pickDirectory,
@@ -611,8 +625,6 @@ class _FIDEState extends ConsumerState<FIDE> {
                             // Silently handle SharedPreferences errors
                           }
                         },
-                        isLoadingProject: _isLoadingProject,
-                        loadingProjectName: _loadingProjectName,
                       );
                     } else {
                       // Show main layout when project is loaded
