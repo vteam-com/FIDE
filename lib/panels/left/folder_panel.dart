@@ -59,21 +59,25 @@ class FolderPanelState extends BasePanelState<FolderPanel> {
 
     return Column(
       children: [
-        // Filter bar
-        Container(
-          padding: const EdgeInsets.all(8.0),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: Theme.of(context).dividerColor,
-                width: 1.0,
-              ),
-            ),
+        // File tree
+        Expanded(
+          child: SingleChildScrollView(
+            child: filterQuery.isEmpty
+                ? Column(
+                    children: projectRoot!.children
+                        .map((node) => _buildNode(node))
+                        .toList(),
+                  )
+                : _buildFilteredTree(),
           ),
+        ),
+        // Filter bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
           child: TextField(
             controller: filterController,
             decoration: InputDecoration(
-              hintText: 'Filter files...',
+              hintText: 'Filter...',
               prefixIcon: const Icon(Icons.filter_list, size: 20),
               suffixIcon: filterQuery.isNotEmpty
                   ? IconButton(
@@ -97,18 +101,6 @@ class FolderPanelState extends BasePanelState<FolderPanel> {
               ),
             ),
             style: const TextStyle(fontSize: 13),
-          ),
-        ),
-        // File tree
-        Expanded(
-          child: SingleChildScrollView(
-            child: filterQuery.isEmpty
-                ? Column(
-                    children: projectRoot!.children
-                        .map((node) => _buildNode(node))
-                        .toList(),
-                  )
-                : _buildFilteredTree(),
           ),
         ),
       ],
