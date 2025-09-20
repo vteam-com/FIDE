@@ -21,6 +21,7 @@ digraph "" {
   "/lib/panels/left/organized_panel.dart" [label="organized_panel"];
   "/lib/utils/message_helper.dart" [label="message_helper"];
   "/lib/utils/file_type_utils.dart" [label="file_type_utils"];
+  "/lib/models/file_extension_icon.dart" [label="file_extension_icon"];
   "/lib/models/project_node.dart" [label="project_node"];
   "/lib/models/document_state.dart" [label="document_state"];
   "/lib/models/file_system_item.dart" [label="file_system_item"];
@@ -86,6 +87,7 @@ digraph "" {
       }
       subgraph "cluster~/lib/models" {
         label="models";
+        "/lib/models/file_extension_icon.dart";
         "/lib/models/project_node.dart";
         "/lib/models/document_state.dart";
         "/lib/models/file_system_item.dart";
@@ -147,8 +149,10 @@ digraph "" {
   "/lib/panels/center/center_panel.dart" -> "/lib/panels/center/terminal_panel.dart";
   "/lib/panels/center/center_panel.dart" -> "/lib/widgets/resizable_splitter.dart";
   "/lib/panels/center/center_panel.dart" -> "/lib/models/file_system_item.dart";
+  "/lib/panels/left/git_panel.dart" -> "/lib/models/file_extension_icon.dart";
   "/lib/panels/left/git_panel.dart" -> "/lib/services/git_service.dart";
   "/lib/panels/left/git_panel.dart" -> "/lib/widgets/diff_viewer.dart";
+  "/lib/panels/left/base_panel.dart" -> "/lib/models/file_extension_icon.dart";
   "/lib/panels/left/base_panel.dart" -> "/lib/models/project_node.dart";
   "/lib/panels/left/base_panel.dart" -> "/lib/models/file_system_item.dart";
   "/lib/panels/left/base_panel.dart" -> "/lib/services/git_service.dart";

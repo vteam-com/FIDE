@@ -1,5 +1,7 @@
+import 'package:fide/models/file_extension_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as path;
 import '../../services/git_service.dart';
 import '../../widgets/diff_viewer.dart';
 
@@ -183,6 +185,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
     final gitStatus = ref.watch(gitStatusProvider);
     final gitCommits = ref.watch(gitCommitsProvider);
 
@@ -226,6 +229,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   TextField(
                     controller: _commitController,
                     maxLines: 3,
+                    style: const TextStyle(fontSize: 13),
                     decoration: const InputDecoration(
                       hintText: 'Enter commit message...',
                       border: OutlineInputBorder(),
@@ -255,6 +259,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   // Staged files
                   if (status.staged.isNotEmpty) ...[
                     _buildFileSection(
+                      colorScheme,
                       'Staged Changes',
                       status.staged,
                       onStage: null,
@@ -265,6 +270,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   // Unstaged files
                   if (status.unstaged.isNotEmpty) ...[
                     _buildFileSection(
+                      colorScheme,
                       'Changes',
                       status.unstaged,
                       onStage: _stageFiles,
@@ -275,6 +281,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   // Untracked files
                   if (status.untracked.isNotEmpty) ...[
                     _buildFileSection(
+                      colorScheme,
                       'Untracked Files',
                       status.untracked,
                       onStage: _stageFiles,
@@ -334,19 +341,26 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   }
 
   Widget _buildFileSection(
+    ColorScheme colorScheme,
     String title,
     List<String> files, {
     Function(List<String>)? onStage,
     Function(List<String>)? onUnstage,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
               const Spacer(),
               if (onStage != null)
                 TextButton(
@@ -360,37 +374,47 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                 ),
             ],
           ),
-        ),
-        ...files.map(
-          (file) => ListTile(
-            dense: true,
-            leading: const Icon(Icons.insert_drive_file, size: 16),
-            title: Text(file, maxLines: 1, overflow: TextOverflow.ellipsis),
-            trailing: Row(
+          ...files.map(
+            (file) => Row(
               mainAxisSize: MainAxisSize.min,
+              spacing: 4,
               children: [
+                getIconForFileExtension(
+                  colorScheme,
+                  path.extension(file).toLowerCase(),
+                ),
+                Expanded(
+                  child: Text(
+                    file,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
                 IconButton(
-                  icon: const Icon(Icons.visibility, size: 16),
+                  iconSize: 16,
+                  icon: const Icon(Icons.difference),
                   onPressed: () => _viewDiff(file),
                   tooltip: 'View Diff',
                 ),
                 if (onStage != null)
                   IconButton(
-                    icon: const Icon(Icons.add, size: 16),
+                    iconSize: 16,
+                    icon: const Icon(Icons.add),
                     onPressed: () => onStage([file]),
                     tooltip: 'Stage',
                   ),
                 if (onUnstage != null)
                   IconButton(
-                    icon: const Icon(Icons.remove, size: 16),
+                    iconSize: 16,
+                    icon: const Icon(Icons.remove),
                     onPressed: () => onUnstage([file]),
                     tooltip: 'Unstage',
                   ),
               ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
