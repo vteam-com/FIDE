@@ -40,52 +40,6 @@ class _AIPanelState extends State<AIPanel> {
       child: Column(
         children: [
           // Header with action selector
-          Container(
-            padding: const EdgeInsets.all(8.0),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                  width: 1.0,
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                const Text(
-                  'AI Assistant',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: DropdownButton<String>(
-                    value: _selectedAction,
-                    isExpanded: true,
-                    items: const [
-                      DropdownMenuItem(value: 'ask', child: Text('Ask AI')),
-                      DropdownMenuItem(
-                        value: 'explain',
-                        child: Text('Explain Code'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'generate',
-                        child: Text('Generate Code'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'refactor',
-                        child: Text('Refactor Code'),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => _selectedAction = value);
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
 
           // Setup instructions if no messages
           if (_messages.isEmpty)
@@ -188,50 +142,55 @@ class _AIPanelState extends State<AIPanel> {
                     },
                   ),
           ),
-
+          Divider(),
+          DropdownButton<String>(
+            value: _selectedAction,
+            isExpanded: true,
+            items: const [
+              DropdownMenuItem(value: 'ask', child: Text('Ask AI')),
+              DropdownMenuItem(value: 'explain', child: Text('Explain Code')),
+              DropdownMenuItem(value: 'generate', child: Text('Generate Code')),
+              DropdownMenuItem(value: 'refactor', child: Text('Refactor Code')),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                setState(() => _selectedAction = value);
+              }
+            },
+          ),
           // Input area
-          Container(
-            padding: const EdgeInsets.all(8.0),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                  width: 1.0,
+          Row(
+            spacing: 8,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _promptController,
+                  decoration: InputDecoration(
+                    hintText: _getHintText(),
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                  ),
+                  maxLines: 3,
+                  minLines: 1,
+                  onSubmitted: (_) => _sendMessage(),
                 ),
               ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _promptController,
-                    decoration: InputDecoration(
-                      hintText: _getHintText(),
-                      border: const OutlineInputBorder(),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                    ),
-                    maxLines: 3,
-                    minLines: 1,
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: _isLoading ? null : _sendMessage,
-                  icon: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.send),
-                  tooltip: 'Send',
-                ),
-              ],
-            ),
+
+              IconButton(
+                onPressed: _isLoading ? null : _sendMessage,
+                icon: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.send),
+                tooltip: 'Send',
+              ),
+            ],
           ),
         ],
       ),
