@@ -213,6 +213,98 @@ class GitService {
     }
     return [];
   }
+
+  // Get diff for a specific file
+  Future<String> getFileDiff(String path, String filePath) async {
+    try {
+      final result = await Process.run('git', [
+        'diff',
+        '--no-index',
+        '--',
+        '/dev/null',
+        filePath,
+      ], workingDirectory: path);
+
+      // If the file is new/untracked, git diff --no-index will show it as added
+      if (result.exitCode == 0 || result.exitCode == 1) {
+        return result.stdout.toString();
+      }
+
+      // Try staged diff
+      final stagedResult = await Process.run('git', [
+        'diff',
+        '--cached',
+        '--',
+        filePath,
+      ], workingDirectory: path);
+
+      if (stagedResult.exitCode == 0) {
+        return stagedResult.stdout.toString();
+      }
+
+      // Try unstaged diff
+      final unstagedResult = await Process.run('git', [
+        'diff',
+        '--',
+        filePath,
+      ], workingDirectory: path);
+
+      if (unstagedResult.exitCode == 0) {
+        return unstagedResult.stdout.toString();
+      }
+
+      // If no diff found, check if file is new
+      final file = File(filePath);
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        final lines = content.split('\n');
+        final diffLines = <String>[];
+        diffLines.add('diff --git a/$filePath b/$filePath');
+        diffLines.add('new file mode 100644');
+        diffLines.add('index 0000000..0000000');
+        diffLines.add('--- /dev/null');
+        diffLines.add('+++ b/$filePath');
+        for (int i = 0; i < lines.length; i++) {
+          diffLines.add('@@ -0,0 +${i + 1},1 @@');
+          diffLines.add('+${lines[i]}');
+        }
+        return diffLines.join('\n');
+      }
+
+      return '';
+    } catch (e) {
+      return 'Error getting diff: $e';
+    }
+  }
+
+  // Get diff for staged files
+  Future<String> getStagedDiff(String path, String filePath) async {
+    try {
+      final result = await Process.run('git', [
+        'diff',
+        '--cached',
+        '--',
+        filePath,
+      ], workingDirectory: path);
+      return result.exitCode == 0 ? result.stdout.toString() : '';
+    } catch (e) {
+      return 'Error getting staged diff: $e';
+    }
+  }
+
+  // Get diff for unstaged files
+  Future<String> getUnstagedDiff(String path, String filePath) async {
+    try {
+      final result = await Process.run('git', [
+        'diff',
+        '--',
+        filePath,
+      ], workingDirectory: path);
+      return result.exitCode == 0 ? result.stdout.toString() : '';
+    } catch (e) {
+      return 'Error getting unstaged diff: $e';
+    }
+  }
 }
 
 class GitStatus {

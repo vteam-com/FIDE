@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/git_service.dart';
+import '../../widgets/diff_viewer.dart';
 
 // Git status provider
 final gitStatusProvider =
@@ -155,6 +156,29 @@ class _GitPanelState extends ConsumerState<GitPanel> {
       ).showSnackBar(SnackBar(content: Text(result)));
     }
     _loadGitData();
+  }
+
+  Future<void> _viewDiff(String filePath) async {
+    final gitService = GitService();
+    final diff = await gitService.getFileDiff(widget.projectPath, filePath);
+
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => Dialog(
+          insetPadding: EdgeInsets.zero,
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.9,
+            height: MediaQuery.of(context).size.height * 0.9,
+            child: DiffViewer(
+              diffText: diff,
+              fileName: filePath,
+              onClose: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -345,6 +369,11 @@ class _GitPanelState extends ConsumerState<GitPanel> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                IconButton(
+                  icon: const Icon(Icons.visibility, size: 16),
+                  onPressed: () => _viewDiff(file),
+                  tooltip: 'View Diff',
+                ),
                 if (onStage != null)
                   IconButton(
                     icon: const Icon(Icons.add, size: 16),
