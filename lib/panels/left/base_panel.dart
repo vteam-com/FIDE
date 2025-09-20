@@ -12,6 +12,7 @@ import 'package:fide/utils/message_helper.dart';
 
 // Widgets
 import 'git_panel.dart';
+import 'folder_panel.dart';
 
 // Providers
 import '../../providers/app_providers.dart';
@@ -262,10 +263,10 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        InkWell(
-          onTap: () => _onNodeTapped(node, isExpanded),
-          onLongPress: () => _showNodeContextMenu(node),
-          hoverColor: Colors.blue.withOpacity(0.1),
+        GestureDetector(
+          onTap: () => _onNodeTapped(node, _expandedState[node.path] ?? false),
+          onLongPressStart: (details) =>
+              _showNodeContextMenu(node, details.globalPosition),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
             child: Row(
@@ -283,6 +284,26 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                // Context menu button for expanded directories
+                if (isExpanded && !hasError) ...[
+                  const SizedBox(width: 4),
+                  GestureDetector(
+                    onTapDown: (details) =>
+                        _showNodeContextMenu(node, details.globalPosition),
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.more_vert,
+                        size: 14,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withOpacity(0.7),
+                      ),
+                    ),
+                  ),
+                ],
                 if (hasError) ...[
                   const SizedBox(width: 4),
                   Icon(
@@ -347,10 +368,10 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
       ).colorScheme.primaryContainer.withOpacity(0.3);
     }
 
-    return InkWell(
+    return GestureDetector(
       onTap: () => _handleFileTap(node),
-      onLongPress: () => _showNodeContextMenu(node),
-      hoverColor: Colors.blue.withOpacity(0.1),
+      onLongPressStart: (details) =>
+          _showNodeContextMenu(node, details.globalPosition),
       child: Container(
         color: backgroundColor,
         child: Padding(
@@ -450,9 +471,235 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
     );
   }
 
-  void _createNewFile(ProjectNode parent) {}
+  Future<void> _createNewFile(ProjectNode parent) async {}
 
-  void _createNewFolder(ProjectNode parent) {}
+  Future<void> _createNewFolder(ProjectNode parent) async {}
+
+  // FolderPanel-specific implementations
+  Future<void> _createNewFileForFolderPanel(ProjectNode parent) async {
+    if (!parent.isDirectory) return;
+
+    final TextEditingController controller = TextEditingController();
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('New File'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'File name',
+            hintText: 'Enter file name (e.g., main.dart)',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == null || result.isEmpty) return;
+
+    try {
+      final newFilePath = path.join(parent.path, result);
+
+      // Check if file already exists
+      if (File(newFilePath).existsSync()) {
+        _showError('A file with this name already exists');
+        return;
+      }
+
+      // Create the file
+      final file = File(newFilePath);
+      await file.create(recursive: true);
+
+      // Refresh the project tree
+      await _refreshProjectTree();
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Created file "$result"')));
+      }
+    } catch (e) {
+      _showError('Failed to create file: $e');
+    }
+  }
+
+  Future<void> _createNewFolderForFolderPanel(ProjectNode parent) async {
+    if (!parent.isDirectory) return;
+
+    final TextEditingController controller = TextEditingController();
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('New Folder'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Folder name',
+            hintText: 'Enter folder name',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == null || result.isEmpty) return;
+
+    try {
+      final newFolderPath = path.join(parent.path, result);
+
+      // Check if directory already exists
+      if (Directory(newFolderPath).existsSync()) {
+        _showError('A folder with this name already exists');
+        return;
+      }
+
+      // Create the directory
+      final directory = Directory(newFolderPath);
+      await directory.create(recursive: true);
+
+      // Refresh the project tree
+      await _refreshProjectTree();
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Created folder "$result"')));
+      }
+    } catch (e) {
+      _showError('Failed to create folder: $e');
+    }
+  }
+
+  Future<void> _renameFileForFolderPanel(ProjectNode node) async {
+    final TextEditingController controller = TextEditingController(
+      text: node.name,
+    );
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Rename'),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: 'New name',
+            hintText: 'Enter new ${node.isDirectory ? 'folder' : 'file'} name',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Rename'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == null || result.isEmpty || result == node.name) return;
+
+    try {
+      final newPath = path.join(path.dirname(node.path), result);
+
+      // Check if target already exists
+      if (File(newPath).existsSync() || Directory(newPath).existsSync()) {
+        _showError('A file or folder with this name already exists');
+        return;
+      }
+
+      // Perform the rename operation
+      if (node.isDirectory) {
+        await Directory(node.path).rename(newPath);
+      } else {
+        await File(node.path).rename(newPath);
+      }
+
+      // Refresh the project tree
+      await _refreshProjectTree();
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Renamed to "$result"')));
+      }
+    } catch (e) {
+      _showError('Failed to rename: $e');
+    }
+  }
+
+  Future<void> _deleteFileForFolderPanel(ProjectNode node) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete'),
+        content: Text(
+          'Are you sure you want to delete "${node.name}"? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      // Perform the delete operation
+      if (node.isDirectory) {
+        await Directory(node.path).delete(recursive: true);
+      } else {
+        await File(node.path).delete();
+      }
+
+      // Refresh the project tree
+      await _refreshProjectTree();
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Deleted "${node.name}"')));
+      }
+    } catch (e) {
+      _showError('Failed to delete: $e');
+    }
+  }
 
   Future<void> _deleteFile(ProjectNode node) async {
     final confirmed = await showDialog<bool>(
@@ -501,8 +748,6 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
       _showError('Failed to delete file: $e');
     }
   }
-
-  void _deleteNode(ProjectNode node) {}
 
   Future<void> _ensureDirectoryLoaded(ProjectNode node) async {
     if (node.children.isEmpty && node.isDirectory) {
@@ -747,21 +992,59 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
   }
 
   void _handleContextMenuAction(String action, ProjectNode node) {
+    debugPrint(
+      '🏠 BasePanel: _handleContextMenuAction called with action: $action for ${node.name} (this.runtimeType: ${this.runtimeType})',
+    );
+
+    // Check if this is a FolderPanel and delegate to its implementation
+    if (this.runtimeType.toString() == 'FolderPanelState') {
+      debugPrint(
+        '🏠 BasePanel: Detected FolderPanelState, delegating to FolderPanel implementation',
+      );
+      // Since we can't cast directly, we'll handle the FolderPanel logic here
+      switch (action) {
+        case 'open':
+          _onNodeTapped(node, _expandedState[node.path] ?? false);
+          break;
+        case 'new_file':
+          debugPrint('🏠 BasePanel: Delegating _createNewFile to FolderPanel');
+          _createNewFileForFolderPanel(node);
+          break;
+        case 'new_folder':
+          debugPrint(
+            '🏠 BasePanel: Delegating _createNewFolder to FolderPanel',
+          );
+          _createNewFolderForFolderPanel(node);
+          break;
+        case 'rename':
+          _renameFileForFolderPanel(node);
+          break;
+        case 'delete':
+          _deleteFileForFolderPanel(node);
+          break;
+      }
+      return;
+    }
+
     switch (action) {
       case 'open':
         _onNodeTapped(node, _expandedState[node.path] ?? false);
         break;
       case 'new_file':
+        debugPrint('🏠 BasePanel: Calling _createNewFile');
         _createNewFile(node);
         break;
       case 'new_folder':
+        debugPrint('🏠 BasePanel: Calling _createNewFolder');
         _createNewFolder(node);
         break;
       case 'rename':
-        _renameNode(node);
+        debugPrint('🏠 BasePanel: Calling _renameFile');
+        _renameFile(node);
         break;
       case 'delete':
-        _deleteNode(node);
+        debugPrint('🏠 BasePanel: Calling _deleteFile');
+        _deleteFile(node);
         break;
     }
   }
@@ -917,8 +1200,6 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
     }
   }
 
-  void _renameNode(ProjectNode node) {}
-
   Future<void> _revealInFileExplorer(ProjectNode node) async {
     try {
       final directoryPath = node.isDirectory
@@ -1042,10 +1323,18 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
     });
   }
 
-  void _showNodeContextMenu(ProjectNode node) {
+  void _showNodeContextMenu(ProjectNode node, Offset position) {
+    debugPrint(
+      '🎛️ BasePanel: Showing context menu for ${node.name} at $position',
+    );
     showMenu(
       context: context,
-      position: const RelativeRect.fromLTRB(100, 100, 0, 0),
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dx + 1,
+        position.dy + 1,
+      ),
       items: [
         const PopupMenuItem(value: 'open', child: Text('Open')),
         if (node.isDirectory) ...[
@@ -1060,6 +1349,7 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
       ],
     ).then((value) {
       if (value == null) return;
+      debugPrint('🎯 BasePanel: Context menu selected: $value');
       _handleContextMenuAction(value, node);
     });
   }
