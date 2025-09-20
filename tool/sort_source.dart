@@ -6,7 +6,6 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:flutter/material.dart';
 
 void main(List<String> args) {
   final Directory dir = Directory('lib');
@@ -32,7 +31,6 @@ void main(List<String> args) {
 
   for (final FileSystemEntity fileEntity in files) {
     final File file = fileEntity as File;
-    final String filePath = file.path;
     final String content = file.readAsStringSync();
 
     final ParseStringResult result = parseString(
@@ -71,9 +69,6 @@ void main(List<String> args) {
 
     if (fileHasChanges) {
       file.writeAsStringSync(newContent);
-      debugPrint('$filePath -> Updated');
-    } else {
-      debugPrint('$filePath -> No changes needed');
     }
   }
 }

@@ -131,6 +131,9 @@
   <g id='Node_http'>
     <rect x="4" y="339" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
   </g>
+  <g id='Node_logging'>
+    <rect x="904" y="489" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
+  </g>
   <g id='Node_package_info_plus'>
     <rect x="304" y="189" width="292" height="72" rx="8" ry="8" class="nodeFile"/>
   </g>
@@ -220,6 +223,11 @@ highlight</title>
       <title>fide
 ⬇
 http</title>
+    </path>
+    <path class="line" d="M280 95 C 293 300,907 300, 920 505" fill="none" stroke="#377E22">
+      <title>fide
+⬇
+logging</title>
     </path>
     <path class="line" d="M280 95 C 290 150,310 150, 320 205" fill="none" stroke="#377E22">
       <title>fide
@@ -417,7 +425,7 @@ yaml</title>
   <g id='Counters_fide'>
     <g>
       <circle cx="280" cy="95" r="10" fill="green"/>
-      <text x="280" y="95" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">24</text>
+      <text x="280" y="95" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">25</text>
       <title>fide
 ⬇
 1 /dev/flutter_launcher_icons
@@ -434,16 +442,17 @@ yaml</title>
 12 /direct/flutter_svg
 13 /direct/highlight
 14 /direct/http
-15 /direct/package_info_plus
-16 /direct/path
-17 /direct/path_provider
-18 /direct/process_run
-19 /direct/provider
-20 /direct/shared_preferences
-21 /direct/url_launcher
-22 /direct/window_manager
-23 /direct/xterm
-24 /direct/yaml</title>
+15 /direct/logging
+16 /direct/package_info_plus
+17 /direct/path
+18 /direct/path_provider
+19 /direct/process_run
+20 /direct/provider
+21 /direct/shared_preferences
+22 /direct/url_launcher
+23 /direct/window_manager
+24 /direct/xterm
+25 /direct/yaml</title>
     </g>
   </g>
   <g id='Counters_cupertino_icons'>
@@ -626,6 +635,15 @@ highlight</title>
 5 /transitive/vector_graphics
 ⬇
 http</title>
+    </g>
+  </g>
+  <g id='Counters_logging'>
+    <g>
+      <circle cx="920" cy="505" r="10" fill="blue"/>
+      <text x="920" y="505" fill="white" font-size="10" text-anchor="middle" dominant-baseline="central">1</text>
+      <title>1 /root/fide
+⬇
+logging</title>
     </g>
   </g>
   <g id='Counters_package_info_plus'>
@@ -847,6 +865,10 @@ xterm</title>
   <g id='Labels_http'>
     <text class="nodeName" x="150" y="375" font-size="120%">http</text>
     <text class="nodeName" x="150" y="395" font-size="80%">1.5.0</text>
+  </g>
+  <g id='Labels_logging'>
+    <text class="nodeName" x="1050" y="525" font-size="120%">logging</text>
+    <text class="nodeName" x="1050" y="545" font-size="80%">1.3.0</text>
   </g>
   <g id='Labels_package_info_plus'>
     <text class="nodeName" x="450" y="225" font-size="120%">package_info_plus</text>

@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
@@ -11,6 +11,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Service for managing project operations independently of UI
 class ProjectService {
+  final Logger _logger = Logger('ProjectService');
+
   final Ref _ref;
   final GitService _gitService = GitService();
   final FileSystemWatcher _fileSystemWatcher = FileSystemWatcher();
@@ -59,15 +61,15 @@ class ProjectService {
     try {
       // Validate that this is a Flutter project
       if (!await _isFlutterProject(directoryPath)) {
-        debugPrint('Not a valid Flutter project: $directoryPath');
+        _logger.warning('Not a valid Flutter project: $directoryPath');
         return false;
       }
 
-      debugPrint('Loading project: $directoryPath');
+      _logger.info('Loading project: $directoryPath');
 
       // Unload current project first to ensure clean state
       if (_currentProjectRoot != null) {
-        debugPrint('Unloading previous project...');
+        _logger.info('Unloading previous project...');
         unloadProject();
       }
 
@@ -77,11 +79,11 @@ class ProjectService {
       );
 
       // Perform initial recursive enumeration
-      debugPrint('Performing initial file enumeration...');
+      _logger.info('Performing initial file enumeration...');
       final result = await root.enumerateContentsRecursive();
 
       if (result != LoadChildrenResult.success) {
-        debugPrint('Failed to enumerate project contents: $result');
+        _logger.severe('Failed to enumerate project contents: $result');
         return false;
       }
 
@@ -92,41 +94,41 @@ class ProjectService {
       await _loadGitStatus();
 
       // Initialize file system watcher for incremental updates
-      debugPrint('Setting up file system watcher...');
+      _logger.info('Setting up file system watcher...');
       _fileSystemWatcher.initialize(_currentProjectRoot!, () {
         // This callback will be called when file system changes occur
         // The UI will be updated through the provider state changes
-        debugPrint('File system change detected, updating UI...');
+        _logger.info('File system change detected, updating UI...');
         _notifyProjectUpdated();
       });
 
       // Update providers - ensure proper order
-      debugPrint('Updating providers...');
-      debugPrint('Setting currentProjectPathProvider to: $directoryPath');
+      _logger.info('Updating providers...');
+      _logger.fine('Setting currentProjectPathProvider to: $directoryPath');
       _ref.read(currentProjectPathProvider.notifier).state = directoryPath;
-      debugPrint(
+      _logger.fine(
         'Setting currentProjectRootProvider to: ${_currentProjectRoot?.path}',
       );
       _ref.read(currentProjectRootProvider.notifier).state =
           _currentProjectRoot;
-      debugPrint('Setting projectLoadedProvider to: true');
+      _logger.fine('Setting projectLoadedProvider to: true');
       _ref.read(projectLoadedProvider.notifier).state = true;
 
-      debugPrint('Project loaded successfully: $directoryPath');
-      debugPrint(
+      _logger.info('Project loaded successfully: $directoryPath');
+      _logger.info(
         'Total files enumerated: ${_countFiles(_currentProjectRoot!)}',
       );
 
       return true;
     } catch (e) {
-      debugPrint('Error loading project: $e');
+      _logger.severe('Error loading project: $e');
       return false;
     }
   }
 
   /// Unload the current project
   void unloadProject() {
-    debugPrint('Unloading project...');
+    _logger.info('Unloading project...');
 
     // Clean up file system watcher
     _fileSystemWatcher.dispose();
@@ -140,7 +142,7 @@ class ProjectService {
     _ref.read(currentProjectRootProvider.notifier).state = null;
     _ref.read(selectedFileProvider.notifier).state = null;
 
-    debugPrint('Project unloaded');
+    _logger.info('Project unloaded');
   }
 
   /// Load Git status for the current project
@@ -153,13 +155,13 @@ class ProjectService {
         _currentProjectRoot!.path,
       );
       if (!isGitRepo) {
-        debugPrint('Not a Git repository: ${_currentProjectRoot!.path}');
+        _logger.info('Not a Git repository: ${_currentProjectRoot!.path}');
         return;
       }
 
       // Get Git status
       final gitStatus = await _gitService.getStatus(_currentProjectRoot!.path);
-      debugPrint(
+      _logger.info(
         'Git status loaded: ${gitStatus.staged.length} staged, ${gitStatus.unstaged.length} unstaged, ${gitStatus.untracked.length} untracked',
       );
 
@@ -167,7 +169,7 @@ class ProjectService {
       _updateNodeGitStatus(_currentProjectRoot!, gitStatus);
     } catch (e) {
       // Silently handle Git status errors
-      debugPrint('Error loading Git status: $e');
+      _logger.severe('Error loading Git status: $e');
     }
   }
 

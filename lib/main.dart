@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:logging/logging.dart';
 
 // Providers
 import 'providers/app_providers.dart';
@@ -28,6 +29,13 @@ import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Setup logging
+  Logger.root.level = Level.ALL;
+  Logger.root.onRecord.listen((record) {
+    debugPrint('${record.level.name}: ${record.time}: ${record.message}');
+  });
+
   await windowManager.ensureInitialized();
 
   WindowOptions windowOptions = const WindowOptions(
@@ -169,6 +177,8 @@ class WindowControls extends StatelessWidget {
 }
 
 class _FIDEState extends ConsumerState<FIDE> {
+  final Logger _logger = Logger('_FIDEState');
+
   ThemeMode _themeMode = ThemeMode.system;
   String? _lastOpenedFileName;
   late SharedPreferences _prefs;
@@ -215,7 +225,7 @@ class _FIDEState extends ConsumerState<FIDE> {
           _loadingProjectName = null;
         });
       }
-      debugPrint('Main: tryLoadProject error: $e');
+      _logger.severe('tryLoadProject error: $e');
       return false;
     }
   }
@@ -313,9 +323,9 @@ class _FIDEState extends ConsumerState<FIDE> {
       }
 
       if (success) {
-        debugPrint('Successfully auto-loaded MRU project: $projectPath');
+        _logger.info('Successfully auto-loaded MRU project: $projectPath');
       } else {
-        debugPrint('Failed to auto-load MRU project: $projectPath');
+        _logger.warning('Failed to auto-load MRU project: $projectPath');
       }
     } catch (e) {
       // Clear loading state on error
@@ -326,7 +336,7 @@ class _FIDEState extends ConsumerState<FIDE> {
         });
       }
       // Silently handle errors during auto-loading
-      debugPrint('Error auto-loading MRU project: $e');
+      _logger.severe('Error auto-loading MRU project: $e');
     }
   }
 

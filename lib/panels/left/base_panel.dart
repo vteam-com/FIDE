@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
@@ -12,7 +13,6 @@ import 'package:fide/utils/message_helper.dart';
 
 // Widgets
 import 'git_panel.dart';
-import 'folder_panel.dart';
 
 // Providers
 import '../../providers/app_providers.dart';
@@ -46,6 +46,8 @@ abstract class BasePanel extends ConsumerStatefulWidget {
 }
 
 abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
+  final Logger _logger = Logger('BasePanelState');
+
   final Map<String, bool> _expandedState = {};
   final GitService _gitService = GitService();
   final bool _isLoading = false;
@@ -183,16 +185,12 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
 
     // Update local state when project data changes
     if (currentProjectRoot != _projectRoot) {
-      debugPrint(
-        'BasePanel: Project changed from ${_projectRoot?.path} to ${currentProjectRoot?.path}',
-      );
       // Use setState to trigger UI rebuild when project changes
       if (mounted) {
         setState(() {
           _projectRoot = currentProjectRoot;
           // Clear expanded state when project changes
           _expandedState.clear();
-          debugPrint('BasePanel: State updated, triggering UI rebuild');
         });
       }
     }
@@ -766,7 +764,7 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
       } catch (e) {
         // Silently handle errors for organized view - don't show error messages
         // The directory will just appear empty in the organized view
-        debugPrint(
+        _logger.warning(
           'Failed to load directory ${node.name} for organized view: $e',
         );
 
@@ -992,28 +990,17 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
   }
 
   void _handleContextMenuAction(String action, ProjectNode node) {
-    debugPrint(
-      '🏠 BasePanel: _handleContextMenuAction called with action: $action for ${node.name} (this.runtimeType: ${this.runtimeType})',
-    );
-
     // Check if this is a FolderPanel and delegate to its implementation
-    if (this.runtimeType.toString() == 'FolderPanelState') {
-      debugPrint(
-        '🏠 BasePanel: Detected FolderPanelState, delegating to FolderPanel implementation',
-      );
+    if (runtimeType.toString() == 'FolderPanelState') {
       // Since we can't cast directly, we'll handle the FolderPanel logic here
       switch (action) {
         case 'open':
           _onNodeTapped(node, _expandedState[node.path] ?? false);
           break;
         case 'new_file':
-          debugPrint('🏠 BasePanel: Delegating _createNewFile to FolderPanel');
           _createNewFileForFolderPanel(node);
           break;
         case 'new_folder':
-          debugPrint(
-            '🏠 BasePanel: Delegating _createNewFolder to FolderPanel',
-          );
           _createNewFolderForFolderPanel(node);
           break;
         case 'rename':
@@ -1031,19 +1018,15 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
         _onNodeTapped(node, _expandedState[node.path] ?? false);
         break;
       case 'new_file':
-        debugPrint('🏠 BasePanel: Calling _createNewFile');
         _createNewFile(node);
         break;
       case 'new_folder':
-        debugPrint('🏠 BasePanel: Calling _createNewFolder');
         _createNewFolder(node);
         break;
       case 'rename':
-        debugPrint('🏠 BasePanel: Calling _renameFile');
         _renameFile(node);
         break;
       case 'delete':
-        debugPrint('🏠 BasePanel: Calling _deleteFile');
         _deleteFile(node);
         break;
     }
@@ -1251,7 +1234,7 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
       }
     } catch (e) {
       // Silently handle errors
-      debugPrint('Error seeding Git status for file: $e');
+      _logger.severe('Error seeding Git status for file: $e');
     }
   }
 
@@ -1324,9 +1307,6 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
   }
 
   void _showNodeContextMenu(ProjectNode node, Offset position) {
-    debugPrint(
-      '🎛️ BasePanel: Showing context menu for ${node.name} at $position',
-    );
     showMenu(
       context: context,
       position: RelativeRect.fromLTRB(
@@ -1349,7 +1329,6 @@ abstract class BasePanelState<T extends BasePanel> extends ConsumerState<T> {
       ],
     ).then((value) {
       if (value == null) return;
-      debugPrint('🎯 BasePanel: Context menu selected: $value');
       _handleContextMenuAction(value, node);
     });
   }

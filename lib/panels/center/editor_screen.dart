@@ -9,6 +9,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:fide/utils/file_type_utils.dart';
@@ -52,6 +53,8 @@ class EditorScreen extends StatefulWidget {
 }
 
 class _EditorScreenState extends State<EditorScreen> {
+  final Logger _logger = Logger('EditorScreenState');
+
   late CodeCrafterController _codeController;
 
   late GlobalKey _codeCrafterKey;
@@ -107,7 +110,7 @@ class _EditorScreenState extends State<EditorScreen> {
         // Note: We don't show a snackbar here since the widget is being disposed
       } catch (e) {
         // Silently handle save errors during dispose
-        debugPrint('Error auto-saving file on close: $e');
+        _logger.warning('Error auto-saving file on close: $e');
       }
     }
 
@@ -899,7 +902,7 @@ class _EditorScreenState extends State<EditorScreen> {
           mainEditorScrollable.position.jumpTo(clampedOffset);
         }
       } else {
-        debugPrint('❌ Main editor scrollable not found, using fallback');
+        _logger.warning('Main editor scrollable not found, using fallback');
         // Fallback: Try Scrollable.ensureVisible
         Scrollable.ensureVisible(
           codeCrafterElement,
@@ -909,7 +912,7 @@ class _EditorScreenState extends State<EditorScreen> {
         );
       }
     } catch (e) {
-      debugPrint('💥 Scrolling error: $e');
+      _logger.severe('Scrolling error: $e');
     }
   }
 

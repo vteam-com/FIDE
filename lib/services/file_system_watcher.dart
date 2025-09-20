@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:fide/models/project_node.dart';
 
@@ -9,6 +9,8 @@ class FileSystemWatcher {
   static final FileSystemWatcher _instance = FileSystemWatcher._internal();
   factory FileSystemWatcher() => _instance;
   FileSystemWatcher._internal();
+
+  static final Logger _logger = Logger('FileSystemWatcher');
 
   final Map<String, StreamSubscription<FileSystemEvent>> _watchers = {};
   final Map<String, ProjectNode> _watchedDirectories = {};
@@ -62,7 +64,7 @@ class FileSystemWatcher {
       _watchers[node.path] = subscription;
       _watchedDirectories[node.path] = node;
     } catch (e) {
-      debugPrint('Failed to watch directory ${node.path}: $e');
+      _logger.severe('Failed to watch directory ${node.path}: $e');
     }
   }
 
@@ -94,7 +96,7 @@ class FileSystemWatcher {
       // Notify listeners that the tree has been updated
       _onTreeUpdated?.call();
     } catch (e) {
-      debugPrint('Error handling file system event: $e');
+      _logger.severe('Error handling file system event: $e');
     }
   }
 
@@ -117,7 +119,7 @@ class FileSystemWatcher {
         _watchDirectory(newNode);
       }
     } catch (e) {
-      debugPrint('Error handling file creation: $e');
+      _logger.severe('Error handling file creation: $e');
     }
   }
 
@@ -132,7 +134,7 @@ class FileSystemWatcher {
     }
 
     if (removed) {
-      debugPrint('Removed: $filePath');
+      _logger.info('Removed: $filePath');
     }
   }
 
@@ -148,10 +150,10 @@ class FileSystemWatcher {
 
       if (existingNode != null) {
         // Could update modification time or other metadata here
-        debugPrint('Modified: $filePath');
+        _logger.info('Modified: $filePath');
       }
     } catch (e) {
-      debugPrint('Error handling file modification: $e');
+      _logger.severe('Error handling file modification: $e');
     }
   }
 
@@ -175,7 +177,7 @@ class FileSystemWatcher {
     // Add the new node (this will trigger the create handler)
     _handleFileCreated(toPath, parentNode);
 
-    debugPrint('Moved: $fromPath -> $toPath');
+    _logger.info('Moved: $fromPath -> $toPath');
   }
 
   /// Stop watching a directory and all its subdirectories
@@ -200,7 +202,7 @@ class FileSystemWatcher {
 
   /// Handle watcher errors
   void _handleWatchError(Object error, String directoryPath) {
-    debugPrint('Watcher error for $directoryPath: $error');
+    _logger.severe('Watcher error for $directoryPath: $error');
 
     // Remove the failed watcher
     final subscription = _watchers.remove(directoryPath);

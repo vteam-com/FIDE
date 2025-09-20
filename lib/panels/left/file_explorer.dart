@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:fide/services/file_system_service.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/models/file_system_item.dart';
@@ -27,6 +28,8 @@ class FileExplorer extends StatefulWidget {
 }
 
 class FileExplorerState extends State<FileExplorer> {
+  final Logger _logger = Logger('FileExplorerState');
+
   late String _currentPath;
 
   final Map<String, List<FileSystemItem>> _expandedItems = {};
@@ -293,7 +296,7 @@ class FileExplorerState extends State<FileExplorer> {
     // Debug output
     if (item.type == FileSystemItemType.file &&
         item.gitStatus != GitFileStatus.clean) {
-      debugPrint(
+      _logger.info(
         'Building item ${item.name} with Git status: ${item.gitStatus}, badge: $badgeText',
       );
     }
@@ -580,13 +583,13 @@ class FileExplorerState extends State<FileExplorer> {
       // Check if current directory is a Git repository
       final isGitRepo = await _gitService.isGitRepository(_currentPath);
       if (!isGitRepo) {
-        debugPrint('Not a Git repository: $_currentPath');
+        _logger.info('Not a Git repository: $_currentPath');
         return;
       }
 
       // Get Git status
       final gitStatus = await _gitService.getStatus(_currentPath);
-      debugPrint(
+      _logger.info(
         'Git status loaded: ${gitStatus.staged.length} staged, ${gitStatus.unstaged.length} unstaged, ${gitStatus.untracked.length} untracked',
       );
 
@@ -597,13 +600,13 @@ class FileExplorerState extends State<FileExplorer> {
 
           if (gitStatus.staged.contains(relativePath)) {
             item.gitStatus = GitFileStatus.added;
-            debugPrint('File ${item.name} marked as ADDED');
+            _logger.fine('File ${item.name} marked as ADDED');
           } else if (gitStatus.unstaged.contains(relativePath)) {
             item.gitStatus = GitFileStatus.modified;
-            debugPrint('File ${item.name} marked as MODIFIED');
+            _logger.fine('File ${item.name} marked as MODIFIED');
           } else if (gitStatus.untracked.contains(relativePath)) {
             item.gitStatus = GitFileStatus.untracked;
-            debugPrint('File ${item.name} marked as UNTRACKED');
+            _logger.fine('File ${item.name} marked as UNTRACKED');
           } else {
             item.gitStatus = GitFileStatus.clean;
           }
@@ -611,7 +614,7 @@ class FileExplorerState extends State<FileExplorer> {
       }
     } catch (e) {
       // Silently handle Git status errors
-      debugPrint('Error loading Git status: $e');
+      _logger.severe('Error loading Git status: $e');
     }
   }
 

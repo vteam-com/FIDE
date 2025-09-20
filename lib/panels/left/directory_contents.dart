@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import '../../services/file_system_service.dart';
 import '../../services/git_service.dart';
@@ -25,6 +26,8 @@ class DirectoryContents extends StatefulWidget {
 }
 
 class DirectoryContentsState extends State<DirectoryContents> {
+  final Logger _logger = Logger('DirectoryContentsState');
+
   final FileSystemService _fileSystem = FileSystemService();
 
   final GitService _gitService = GitService();
@@ -229,7 +232,7 @@ class DirectoryContentsState extends State<DirectoryContents> {
       }
     } catch (e) {
       // Silently handle Git status errors
-      debugPrint('Error loading Git status: $e');
+      _logger.severe('Error loading Git status: $e');
     }
   }
 }

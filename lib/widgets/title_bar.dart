@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:window_manager/window_manager.dart';
 
@@ -43,6 +44,8 @@ class TitleBar extends ConsumerStatefulWidget {
 }
 
 class _TitleBarState extends ConsumerState<TitleBar> {
+  final Logger _logger = Logger('_TitleBarState');
+
   Future<void> _toggleMaximize() async {
     try {
       final isMaximized = await windowManager.isMaximized();
@@ -53,7 +56,7 @@ class _TitleBarState extends ConsumerState<TitleBar> {
       }
     } catch (e) {
       // Silently handle window manager errors
-      debugPrint('Error toggling window maximize state: $e');
+      _logger.severe('Error toggling window maximize state: $e');
     }
   }
 

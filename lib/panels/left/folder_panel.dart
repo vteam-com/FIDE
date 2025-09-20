@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
@@ -28,6 +29,8 @@ class FolderPanel extends BasePanel {
 }
 
 class FolderPanelState extends BasePanelState<FolderPanel> {
+  final Logger _logger = Logger('FolderPanelState');
+
   final GitService _gitService = GitService();
 
   @override
@@ -343,19 +346,19 @@ class FolderPanelState extends BasePanelState<FolderPanel> {
   }
 
   void _handleFilteredContextMenuAction(String action, ProjectNode node) {
-    debugPrint(
-      '📋 FolderPanel: Handling filtered context menu action: $action for ${node.name}',
+    _logger.info(
+      'Handling filtered context menu action: $action for ${node.name}',
     );
     switch (action) {
       case 'open':
         _onFilteredNodeTapped(node, expandedState[node.path] ?? false);
         break;
       case 'new_file':
-        debugPrint('📄 Creating new file in ${node.path}');
+        _logger.info('Creating new file in ${node.path}');
         _createNewFile(node);
         break;
       case 'new_folder':
-        debugPrint('📁 Creating new folder in ${node.path}');
+        _logger.info('Creating new folder in ${node.path}');
         _createNewFolder(node);
         break;
       case 'rename':
@@ -363,36 +366,6 @@ class FolderPanelState extends BasePanelState<FolderPanel> {
         break;
       case 'delete':
         _deleteFile(node);
-        break;
-    }
-  }
-
-  @override
-  void _handleContextMenuAction(String action, ProjectNode node) {
-    debugPrint(
-      '🔄 FolderPanel: _handleContextMenuAction OVERRIDE called with action: $action for ${node.name}',
-    );
-    // Override the base class method to use our implementations
-    switch (action) {
-      case 'open':
-        _onFilteredNodeTapped(node, expandedState[node.path] ?? false);
-        break;
-      case 'new_file':
-        debugPrint('📄 FolderPanel: Calling _createNewFile for ${node.name}');
-        _createNewFile(node);
-        break;
-      case 'new_folder':
-        debugPrint('📁 FolderPanel: Calling _createNewFolder for ${node.name}');
-        _createNewFolder(node);
-        break;
-      case 'rename':
-        _renameFile(node);
-        break;
-      case 'delete':
-        _deleteFile(node);
-        break;
-      default:
-        debugPrint('❌ FolderPanel: Unknown action: $action');
         break;
     }
   }
@@ -425,7 +398,7 @@ class FolderPanelState extends BasePanelState<FolderPanel> {
       }
     } catch (e) {
       // Silently handle errors
-      debugPrint('Error seeding Git status for file: $e');
+      _logger.severe('Error seeding Git status for file: $e');
     }
   }
 

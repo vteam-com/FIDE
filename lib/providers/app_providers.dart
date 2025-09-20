@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
 import '../models/file_system_item.dart';
@@ -51,6 +52,8 @@ final themeModeProvider = StateProvider<ThemeMode>((ref) {
 
 // Project management service - unified approach for all project operations
 class ProjectManager {
+  final Logger _logger = Logger('ProjectManager');
+
   final Ref ref;
 
   ProjectManager(this.ref);
@@ -58,23 +61,21 @@ class ProjectManager {
   /// Load a project with proper cleanup and MRU management
   Future<bool> loadProject(String directoryPath) async {
     try {
-      debugPrint('ProjectManager: loadProject called with: $directoryPath');
-      debugPrint('ProjectManager: Loading project: $directoryPath');
+      _logger.info('loadProject called with: $directoryPath');
+      _logger.info('Loading project: $directoryPath');
 
       // Set loading state to true
-      debugPrint('ProjectManager: Setting loading state to true');
+      _logger.fine('Setting loading state to true');
       ref.read(projectLoadingProvider.notifier).state = true;
 
       // Check if there's already a project loaded
       final currentProjectLoaded = ref.read(projectLoadedProvider);
-      debugPrint(
-        'ProjectManager: Current project loaded: $currentProjectLoaded',
-      );
+      _logger.fine('Current project loaded: $currentProjectLoaded');
 
       if (currentProjectLoaded) {
-        debugPrint('ProjectManager: Unloading current project first...');
+        _logger.info('Unloading current project first...');
         await unloadProject();
-        debugPrint('ProjectManager: Current project unloaded');
+        _logger.info('Current project unloaded');
       }
 
       // Use ProjectService to load the new project
@@ -82,20 +83,20 @@ class ProjectManager {
       final success = await projectService.loadProject(directoryPath);
 
       if (success) {
-        debugPrint('ProjectManager: Project loaded successfully');
+        _logger.info('Project loaded successfully');
 
         // Update MRU list - move selected project to top
         await _updateMruList(directoryPath);
-        debugPrint('ProjectManager: MRU list updated');
+        _logger.info('MRU list updated');
       }
 
       // Set loading state to false
-      debugPrint('ProjectManager: Setting loading state to false');
+      _logger.fine('Setting loading state to false');
       ref.read(projectLoadingProvider.notifier).state = false;
 
       return success;
     } catch (e) {
-      debugPrint('ProjectManager: Error loading project: $e');
+      _logger.severe('Error loading project: $e');
       // Set loading state to false on error
       ref.read(projectLoadingProvider.notifier).state = false;
       return false;
@@ -105,7 +106,7 @@ class ProjectManager {
   /// Unload the current project
   Future<void> unloadProject() async {
     try {
-      debugPrint('ProjectManager: Unloading project...');
+      _logger.info('Unloading project...');
 
       // Use ProjectService to unload
       final projectService = ref.read(projectServiceProvider);
@@ -117,9 +118,9 @@ class ProjectManager {
       ref.read(currentProjectRootProvider.notifier).state = null;
       ref.read(selectedFileProvider.notifier).state = null;
 
-      debugPrint('ProjectManager: Project unloaded successfully');
+      _logger.info('Project unloaded successfully');
     } catch (e) {
-      debugPrint('ProjectManager: Error unloading project: $e');
+      _logger.severe('Error unloading project: $e');
     }
   }
 
@@ -149,7 +150,7 @@ class ProjectManager {
       final prefs = await ref.read(sharedPreferencesProvider.future);
       await prefs.setStringList('mru_folders', updatedMruFolders);
     } catch (e) {
-      debugPrint('ProjectManager: Error saving MRU list: $e');
+      _logger.severe('Error saving MRU list: $e');
     }
   }
 

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:highlight/highlight.dart';
 import 'package:highlight/languages/javascript.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:highlight/languages/dart.dart';
 import 'package:highlight/languages/yaml.dart';
@@ -42,6 +43,8 @@ class MainLayout extends ConsumerStatefulWidget {
 }
 
 class MainLayoutState extends ConsumerState<MainLayout> {
+  final Logger _logger = Logger('MainLayoutState');
+
   double _explorerWidth = 250.0;
   double _outlineWidth = 250.0;
   final double _minExplorerWidth = 150.0;
@@ -121,7 +124,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
       // Try to reopen the last file
       await tryReopenLastFile(directoryPath);
     } catch (e) {
-      debugPrint('Failed to auto-load MRU project: $e');
+      _logger.warning('Failed to auto-load MRU project: $e');
       // Silently handle errors
     }
   }

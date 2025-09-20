@@ -51,6 +51,7 @@ dependencies:
   flutter_pty: ^0.4.2
   http: ^1.1.0
   flutter_svg: ^2.0.9
+  logging: ^1.2.0
 
 dev_dependencies:
   flutter_launcher_icons: "^0.14.4"
