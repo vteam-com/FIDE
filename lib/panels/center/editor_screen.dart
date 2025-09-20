@@ -7,6 +7,7 @@ import 'package:flutter_code_crafter/code_crafter.dart';
 import 'package:fide/utils/message_helper.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
@@ -60,6 +61,15 @@ class _EditorScreenState extends State<EditorScreen> {
   bool _isDirty = false;
 
   bool _isLoading = false;
+
+  // Search functionality
+  bool _showSearch = false;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  List<int> _searchMatches = [];
+  int _currentMatchIndex = -1;
+  bool _caseSensitive = false;
+  bool _wholeWord = false;
 
   @override
   void initState() {
@@ -222,6 +232,11 @@ class _EditorScreenState extends State<EditorScreen> {
                   ),
                 ),
               IconButton(
+                icon: const Icon(Icons.search),
+                onPressed: _toggleSearch,
+                tooltip: 'Find (Cmd+F)',
+              ),
+              IconButton(
                 icon: const Icon(CupertinoIcons.arrow_down_doc),
                 onPressed: _isDirty ? _saveFile : null,
                 tooltip: 'Save',
@@ -241,53 +256,67 @@ class _EditorScreenState extends State<EditorScreen> {
               ? _buildUnsupportedFileView()
               : _isImageFile(_currentFile)
               ? _buildImageView()
-              : Column(
-                  children: [
-                    Expanded(
-                      child: CodeCrafter(
-                        key: _codeCrafterKey,
-                        controller: _codeController,
-                        gutterStyle: GutterStyle(
-                          lineNumberStyle: TextStyle(
+              : RawKeyboardListener(
+                  focusNode: FocusNode(),
+                  onKey: _handleKeyEvent,
+                  child: Column(
+                    children: [
+                      // Search bar (only visible when searching)
+                      if (_showSearch) _buildSearchBar(),
+                      // Editor content
+                      Expanded(
+                        child: CodeCrafter(
+                          key: _codeCrafterKey,
+                          controller: _codeController,
+                          gutterStyle: GutterStyle(
+                            lineNumberStyle: TextStyle(
+                              fontFamily: 'monospace',
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                          ),
+                          textStyle: const TextStyle(
                             fontFamily: 'monospace',
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.6),
+                            fontSize: 14,
                           ),
+                          editorTheme: _getCodeTheme(),
                         ),
-                        textStyle: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 14,
+                      ),
+                      // Status bar
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
                         ),
-                        editorTheme: _getCodeTheme(),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Ln ${_getCurrentLineNumber()}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            const SizedBox(width: 16),
+                            Text(
+                              'Col ${_getCurrentColumnNumber()}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            if (_searchMatches.isNotEmpty) ...[
+                              const SizedBox(width: 16),
+                              Text(
+                                '${_currentMatchIndex + 1} of ${_searchMatches.length}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ],
+                            const Spacer(),
+                            Text(
+                              _getFileLanguage(),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    // Status bar
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            'Ln ${_getCurrentLineNumber()}',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          const SizedBox(width: 16),
-                          Text(
-                            'Col ${_getCurrentColumnNumber()}',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          const Spacer(),
-                          Text(
-                            _getFileLanguage(),
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
         );
       },
@@ -729,5 +758,357 @@ class _EditorScreenState extends State<EditorScreen> {
         ).showSnackBar(SnackBar(content: Text('Error saving file: $e')));
       }
     }
+  }
+
+  // Search functionality methods
+  void _performSearch(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        _searchMatches.clear();
+        _currentMatchIndex = -1;
+      });
+      return;
+    }
+
+    final text = _codeController.text;
+    final matches = <int>[];
+    final searchText = _caseSensitive ? query : query.toLowerCase();
+    final content = _caseSensitive ? text : text.toLowerCase();
+
+    int start = 0;
+    while (true) {
+      final index = content.indexOf(searchText, start);
+      if (index == -1) break;
+
+      if (_wholeWord) {
+        // Check if it's a whole word
+        final before =
+            index == 0 || !RegExp(r'\w').hasMatch(content[index - 1]);
+        final after =
+            index + searchText.length == content.length ||
+            !RegExp(r'\w').hasMatch(content[index + searchText.length]);
+        if (before && after) {
+          matches.add(index);
+        }
+      } else {
+        matches.add(index);
+      }
+
+      start = index + 1;
+    }
+
+    setState(() {
+      _searchMatches = matches;
+      _currentMatchIndex = matches.isNotEmpty ? 0 : -1;
+      _searchQuery = query;
+    });
+
+    if (matches.isNotEmpty) {
+      _navigateToMatch(0);
+    }
+  }
+
+  void _navigateToMatch(int index) {
+    if (index < 0 || index >= _searchMatches.length) return;
+
+    final offset = _searchMatches[index];
+
+    // Set selection to highlight the found text
+    _codeController.selection = TextSelection(
+      baseOffset: offset,
+      extentOffset: offset + _searchQuery.length,
+    );
+
+    setState(() {
+      _currentMatchIndex = index;
+    });
+
+    // Ensure the selection is visible and properly displayed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      // Force a rebuild to ensure selection is displayed
+      setState(() {});
+
+      // Find the scrollable widget and ensure the selection is visible
+      _ensureSelectionVisible();
+
+      // Don't request focus on editor during search - keep focus on search field
+      // Focus will only be requested when explicitly navigating with keyboard shortcuts
+    });
+  }
+
+  void _ensureSelectionVisible() {
+    if (!mounted || _codeController.selection.isCollapsed) return;
+
+    try {
+      // Find the CodeCrafter widget in the tree
+      final codeCrafterElement = _codeCrafterKey.currentContext;
+      if (codeCrafterElement == null) return;
+
+      // Calculate line number
+      final text = _codeController.text;
+      final selectionStart = _codeController.selection.baseOffset;
+      final textBeforeSelection = text.substring(0, selectionStart);
+      final lineNumber = textBeforeSelection.split('\n').length;
+
+      // Find all scrollables and choose the best one
+      final List<ScrollableState> allScrollables = [];
+
+      void findAllScrollables(Element element) {
+        if (element.widget is Scrollable) {
+          final scrollableState = element
+              .findAncestorStateOfType<ScrollableState>();
+          if (scrollableState != null) {
+            allScrollables.add(scrollableState);
+          }
+        }
+        element.visitChildElements(findAllScrollables);
+      }
+
+      codeCrafterElement.visitChildElements(findAllScrollables);
+
+      // Choose the best scrollable (one with reasonable max extent, not infinite)
+      ScrollableState? mainEditorScrollable;
+      for (final scrollable in allScrollables) {
+        final maxExtent = scrollable.position.maxScrollExtent;
+        if (maxExtent < 1000000 && maxExtent > 100) {
+          // Reasonable bounds
+          mainEditorScrollable = scrollable;
+          break;
+        }
+      }
+
+      // If no scrollable with reasonable bounds found, use the first one
+      if (mainEditorScrollable == null && allScrollables.isNotEmpty) {
+        mainEditorScrollable = allScrollables.first;
+      }
+
+      // Scroll the main editor scrollable
+      if (mainEditorScrollable != null) {
+        const double lineHeight = 20.0; // More conservative line height
+        final double targetScrollOffset =
+            (lineNumber - 3) * lineHeight; // Start 3 lines above target
+        final double clampedOffset = targetScrollOffset.clamp(
+          0.0,
+          mainEditorScrollable.position.maxScrollExtent,
+        );
+
+        // Only scroll vertically, don't affect horizontal position
+        if (mainEditorScrollable.position.pixels != clampedOffset) {
+          mainEditorScrollable.position.jumpTo(clampedOffset);
+        }
+      } else {
+        debugPrint('❌ Main editor scrollable not found, using fallback');
+        // Fallback: Try Scrollable.ensureVisible
+        Scrollable.ensureVisible(
+          codeCrafterElement,
+          duration: const Duration(milliseconds: 100),
+          curve: Curves.easeOut,
+          alignment: 0.3, // Center the selection in the viewport
+        );
+      }
+    } catch (e) {
+      debugPrint('💥 Scrolling error: $e');
+    }
+  }
+
+  void _nextMatch() {
+    if (_searchMatches.isEmpty) return;
+    final nextIndex = (_currentMatchIndex + 1) % _searchMatches.length;
+    _navigateToMatch(nextIndex);
+
+    // Request focus on editor when navigating with keyboard shortcuts
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final focusNode = findFocusableElement(context);
+        if (focusNode != null) {
+          focusNode.requestFocus();
+        }
+      }
+    });
+  }
+
+  void _previousMatch() {
+    if (_searchMatches.isEmpty) return;
+    final prevIndex = _currentMatchIndex <= 0
+        ? _searchMatches.length - 1
+        : _currentMatchIndex - 1;
+    _navigateToMatch(prevIndex);
+
+    // Request focus on editor when navigating with keyboard shortcuts
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final focusNode = findFocusableElement(context);
+        if (focusNode != null) {
+          focusNode.requestFocus();
+        }
+      }
+    });
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      if (_showSearch) {
+        _closeSearch();
+      } else {
+        _showSearch = true;
+        _searchController.text = _searchQuery;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            // Focus the search field
+            // We'll handle this in the build method
+          }
+        });
+      }
+    });
+  }
+
+  void _closeSearch() {
+    setState(() {
+      _showSearch = false;
+      _searchController.clear();
+      _searchQuery = '';
+      _searchMatches.clear();
+      _currentMatchIndex = -1;
+    });
+  }
+
+  void _handleKeyEvent(RawKeyEvent event) {
+    if (event is RawKeyDownEvent) {
+      final isCmd = event.isMetaPressed || event.isControlPressed;
+      if (isCmd && event.logicalKey == LogicalKeyboardKey.keyF) {
+        _toggleSearch();
+        return;
+      }
+
+      if (_showSearch) {
+        if (event.logicalKey == LogicalKeyboardKey.escape) {
+          _closeSearch();
+        } else if (event.logicalKey == LogicalKeyboardKey.enter) {
+          _nextMatch();
+        } else if (event.logicalKey == LogicalKeyboardKey.f3) {
+          if (event.isShiftPressed) {
+            _previousMatch();
+          } else {
+            _nextMatch();
+          }
+        }
+      }
+    }
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'Find in file...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    isDense: true,
+                    filled: true,
+                    fillColor: Theme.of(context).colorScheme.surface,
+                  ),
+                  onChanged: _performSearch,
+                  onSubmitted: (_) => _nextMatch(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: _closeSearch,
+                tooltip: 'Close (Esc)',
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              SizedBox(
+                height: 24,
+                child: Checkbox(
+                  value: _caseSensitive,
+                  onChanged: (value) {
+                    setState(() {
+                      _caseSensitive = value ?? false;
+                      if (_searchQuery.isNotEmpty) {
+                        _performSearch(_searchQuery);
+                      }
+                    });
+                  },
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+              const Text('Case sensitive', style: TextStyle(fontSize: 12)),
+              const SizedBox(width: 12),
+              SizedBox(
+                height: 24,
+                child: Checkbox(
+                  value: _wholeWord,
+                  onChanged: (value) {
+                    setState(() {
+                      _wholeWord = value ?? false;
+                      if (_searchQuery.isNotEmpty) {
+                        _performSearch(_searchQuery);
+                      }
+                    });
+                  },
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+              const Text('Whole word', style: TextStyle(fontSize: 12)),
+              const Spacer(),
+              if (_searchMatches.isNotEmpty) ...[
+                IconButton(
+                  icon: const Icon(Icons.keyboard_arrow_up, size: 18),
+                  onPressed: _previousMatch,
+                  tooltip: 'Previous (Shift+F3)',
+                  visualDensity: VisualDensity.compact,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+                  onPressed: _nextMatch,
+                  tooltip: 'Next (F3)',
+                  visualDensity: VisualDensity.compact,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${_currentMatchIndex + 1} of ${_searchMatches.length}',
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
