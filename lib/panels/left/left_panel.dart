@@ -1,3 +1,4 @@
+import 'package:fide/panels/left/search_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,13 +10,14 @@ import 'git_panel.dart';
 // Models
 import '../../models/file_system_item.dart';
 
-enum PanelMode { filesystem, organized, git }
+enum PanelMode { filesystem, organized, git, search }
 
 class LeftPanel extends ConsumerStatefulWidget {
   final FileSystemItem? selectedFile;
   final String? currentProjectPath;
   final bool projectLoaded;
   final Function(FileSystemItem)? onFileSelected;
+  final Function(String, int)? onJumpToLine;
   final Function(ThemeMode)? onThemeChanged;
   final Function(bool)? onProjectLoaded;
   final Function(String)? onProjectPathChanged;
@@ -27,6 +29,7 @@ class LeftPanel extends ConsumerStatefulWidget {
     this.currentProjectPath,
     required this.projectLoaded,
     this.onFileSelected,
+    this.onJumpToLine,
     this.onThemeChanged,
     this.onProjectLoaded,
     this.onProjectPathChanged,
@@ -45,7 +48,10 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: PanelMode.values.length,
+      vsync: this,
+    );
     _tabController.addListener(_handleTabChange);
   }
 
@@ -102,6 +108,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                   Tab(icon: Icon(Icons.folder)),
                   Tab(icon: Icon(Icons.category)),
                   Tab(icon: Icon(Icons.commit)),
+                  Tab(icon: Icon(Icons.search)),
                 ],
                 labelColor: Theme.of(context).colorScheme.primary,
                 unselectedLabelColor: Theme.of(
@@ -145,6 +152,13 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                   onFileSelected: widget.onFileSelected,
                   selectedFile: widget.selectedFile,
                   projectPath: widget.currentProjectPath!,
+                ),
+
+                // Search tab - using dedicated SearchPanel
+                SearchPanel(
+                  projectPath: widget.currentProjectPath!,
+                  onFileSelected: widget.onFileSelected,
+                  onJumpToLine: widget.onJumpToLine,
                 ),
               ],
             ),

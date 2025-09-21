@@ -1,6 +1,5 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:fide/panels/center/editor_screen.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +12,9 @@ import 'package:highlight/languages/dart.dart';
 import 'package:highlight/languages/yaml.dart';
 import 'package:highlight/languages/json.dart';
 import 'package:highlight/languages/plaintext.dart';
+
+// Panels
+import '../panels/center/editor_screen.dart';
 
 // Providers
 import '../providers/app_providers.dart';
@@ -279,6 +281,19 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                 projectLoaded: projectLoaded,
                 onFileSelected: (file) {
                   ref.read(selectedFileProvider.notifier).state = file;
+                },
+                onJumpToLine: (filePath, line) async {
+                  // First, select the file
+                  final file = File(filePath);
+                  final fileSystemItem = FileSystemItem.fromFileSystemEntity(
+                    file,
+                  );
+                  ref.read(selectedFileProvider.notifier).state =
+                      fileSystemItem;
+
+                  // Wait a bit for the file to load, then navigate to line
+                  await Future.delayed(const Duration(milliseconds: 100));
+                  EditorScreen.navigateToLine(line);
                 },
                 onThemeChanged: (themeMode) {
                   ref.read(themeModeProvider.notifier).state = themeMode;
