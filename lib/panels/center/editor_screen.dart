@@ -5,7 +5,6 @@ import 'package:fide/panels/center/large_file_message.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:flutter_code_crafter/code_crafter.dart';
 import 'package:fide/utils/message_helper.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -236,7 +235,7 @@ class _EditorScreenState extends State<EditorScreen> {
                 tooltip: 'Find (Cmd+F)',
               ),
               IconButton(
-                icon: const Icon(CupertinoIcons.arrow_down_doc),
+                icon: const Icon(Icons.download),
                 onPressed: _isDirty ? _saveFile : null,
                 tooltip: 'Save',
               ),
