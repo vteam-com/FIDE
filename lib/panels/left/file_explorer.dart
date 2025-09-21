@@ -1,7 +1,7 @@
 // ignore_for_file: use_build_context_synchronously, deprecated_member_use, avoid_print
 
 import 'dart:io';
-import 'package:fide/utils/file_type_utils.dart';
+import 'package:fide/widgets/filename_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:fide/services/file_system_service.dart';
@@ -288,77 +288,23 @@ class FileExplorerState extends State<FileExplorer> {
   Widget _buildItem(FileSystemItem item) {
     final isSelected = _selectedPath == item.path;
     final isDirectory = item.type == FileSystemItemType.directory;
-    final isParent = item.type == FileSystemItemType.parent;
-
-    // Get Git status styling
-    final gitTextStyle = item.getGitStatusTextStyle(context);
-    final badgeText = item.getGitStatusBadge();
 
     // Debug output
     if (item.type == FileSystemItemType.file &&
         item.gitStatus != GitFileStatus.clean) {
       _logger.info(
-        'Building item ${item.name} with Git status: ${item.gitStatus}, badge: $badgeText',
+        'Building item ${item.name} with Git status: ${item.gitStatus}',
       );
     }
 
     return Column(
       children: [
-        ListTile(
-          leading: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              isParent
-                  ? const Icon(Icons.folder_special)
-                  : isDirectory
-                  ? const Icon(Icons.folder)
-                  : FileIconUtils.getFileIcon(item),
-              if (badgeText.isNotEmpty && !isDirectory && !isParent)
-                Container(
-                  margin: const EdgeInsets.only(left: 4),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: item.getGitStatusColor(context).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    badgeText,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: item.getGitStatusColor(context),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          title: Text(
-            item.name,
-            style: gitTextStyle.copyWith(
-              fontWeight: isSelected
-                  ? FontWeight.bold
-                  : gitTextStyle.fontWeight,
-              color: isSelected
-                  ? Theme.of(context).colorScheme.primary
-                  : gitTextStyle.color ??
-                        Theme.of(context).textTheme.bodyMedium?.color,
-            ),
-          ),
-          trailing: isDirectory
-              ? Icon(
-                  item.isExpanded
-                      ? Icons.keyboard_arrow_down
-                      : Icons.keyboard_arrow_right,
-                )
-              : null,
+        FileSystemItemWidget(
+          item: item,
+          isSelected: isSelected,
+          showExpansionIndicator: isDirectory,
           onTap: () => _toggleExpand(item),
           onLongPress: () => _showContextMenu(item),
-          dense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8.0),
-          selected: isSelected,
         ),
         if (isDirectory && item.isExpanded)
           Padding(

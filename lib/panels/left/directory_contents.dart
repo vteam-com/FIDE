@@ -1,6 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
-import 'package:fide/utils/file_type_utils.dart';
+import 'package:fide/widgets/filename_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
@@ -59,64 +59,16 @@ class DirectoryContentsState extends State<DirectoryContents> {
     }
 
     return Column(
-      children: _items.map((item) {
+      children: _items.map((FileSystemItem item) {
         final isSelected = widget.selectedPath == item.path;
         final isDirectory = item.type == FileSystemItemType.directory;
 
-        // Get Git status styling
-        final gitTextStyle = item.getGitStatusTextStyle(context);
-        final badgeText = item.getGitStatusBadge();
-
         return Column(
           children: [
-            ListTile(
-              leading: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  isDirectory
-                      ? const Icon(Icons.folder)
-                      : FileIconUtils.getFileIcon(item),
-                  if (badgeText.isNotEmpty && !isDirectory)
-                    Container(
-                      margin: const EdgeInsets.only(left: 4),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: item.getGitStatusColor(context).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        badgeText,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: item.getGitStatusColor(context),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              title: Text(
-                item.name,
-                style: gitTextStyle.copyWith(
-                  fontWeight: isSelected
-                      ? FontWeight.bold
-                      : gitTextStyle.fontWeight,
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : gitTextStyle.color ??
-                            Theme.of(context).textTheme.bodyMedium?.color,
-                ),
-              ),
-              trailing: isDirectory
-                  ? Icon(
-                      item.isExpanded
-                          ? Icons.keyboard_arrow_down
-                          : Icons.keyboard_arrow_right,
-                    )
-                  : null,
+            FileSystemItemWidget(
+              item: item,
+              isSelected: isSelected,
+              showExpansionIndicator: isDirectory,
               onTap: () {
                 if (isDirectory) {
                   setState(() => item.isExpanded = !item.isExpanded);
@@ -125,9 +77,6 @@ class DirectoryContentsState extends State<DirectoryContents> {
                   widget.onItemSelected?.call(item.path);
                 }
               },
-              dense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8.0),
-              selected: isSelected,
             ),
             if (isDirectory && item.isExpanded)
               Padding(

@@ -11,6 +11,7 @@ import 'package:fide/utils/message_helper.dart';
 import 'shared_panel_utils.dart';
 import 'git_panel.dart';
 import '../../providers/app_providers.dart';
+import '../../widgets/filename_widget.dart';
 
 /// OrganizedPanel provides a categorized view of the project
 class OrganizedPanel extends ConsumerStatefulWidget {
@@ -88,37 +89,6 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     );
   }
 
-  Widget buildDirectoryNode(ProjectNode node) {
-    return NodeBuilder(
-      node: node,
-      selectedFile: widget.selectedFile,
-      expandedState: _panelState.expandedState,
-      onNodeTapped: _onNodeTapped,
-      onShowContextMenu: _showNodeContextMenu,
-      onShowFileContextMenu: _showFileContextMenu,
-      onFileSelected: _handleFileSelection,
-    );
-  }
-
-  Widget buildFileNode(ProjectNode node) {
-    return NodeBuilder(
-      node: node,
-      selectedFile: widget.selectedFile,
-      expandedState: _panelState.expandedState,
-      onNodeTapped: _onNodeTapped,
-      onShowContextMenu: _showNodeContextMenu,
-      onShowFileContextMenu: _showFileContextMenu,
-      onFileSelected: _handleFileSelection,
-    );
-  }
-
-  void _handleFileSelection(ProjectNode node) {
-    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
-    if (widget.onFileSelected != null) {
-      widget.onFileSelected!(item);
-    }
-  }
-
   void _onNodeTapped(ProjectNode node, bool isExpanded) async {
     if (node.isDirectory) {
       if (mounted) {
@@ -167,15 +137,6 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     );
   }
 
-  void _showFileContextMenu(ProjectNode node, Offset position) {
-    ContextMenuHandler.showFileContextMenu(
-      context,
-      node,
-      position,
-      _handleFileContextMenuAction,
-    );
-  }
-
   void _handleContextMenuAction(String action, ProjectNode node) {
     switch (action) {
       case 'open':
@@ -186,20 +147,6 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
         break;
       case 'new_folder':
         FileOperations.createNewFolder(context, node, _refreshProjectTree);
-        break;
-      case 'rename':
-        FileOperations.renameFile(context, node, _refreshProjectTree);
-        break;
-      case 'delete':
-        FileOperations.deleteFile(context, node, _refreshProjectTree);
-        break;
-    }
-  }
-
-  void _handleFileContextMenuAction(String action, ProjectNode node) {
-    switch (action) {
-      case 'reveal':
-        FileOperations.revealInFileExplorer(node);
         break;
       case 'rename':
         FileOperations.renameFile(context, node, _refreshProjectTree);
@@ -445,10 +392,60 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
 
   // Helper method to build node widget
   Widget _buildNode(ProjectNode node) {
+    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
+    // Copy Git status from ProjectNode to FileSystemItem
+    item.gitStatus = node.gitStatus;
+    // Set expansion state
+    item.isExpanded = expandedState[node.path] ?? false;
+
+    final isSelected = widget.selectedFile?.path == item.path;
+
     if (node.isDirectory) {
-      return buildDirectoryNode(node);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FileSystemItemWidget(
+            item: item,
+            isSelected: isSelected,
+            showExpansionIndicator: true,
+            showContextMenuButton: isSelected,
+            onTap: () => _onNodeTapped(node, item.isExpanded),
+            onLongPress: () => _showNodeContextMenu(node, const Offset(0, 0)),
+            onContextMenuTap: (position) =>
+                _showNodeContextMenu(node, position),
+          ),
+          if (item.isExpanded)
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0),
+              child: node.children.isEmpty
+                  ? const Text(
+                      'empty folder',
+                      style: TextStyle(
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey,
+                        fontSize: 12,
+                      ),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: node.children
+                          .map((child) => _buildNode(child))
+                          .toList(),
+                    ),
+            ),
+        ],
+      );
     } else {
-      return buildFileNode(node);
+      return FileSystemItemWidget(
+        item: item,
+        isSelected: isSelected,
+        showExpansionIndicator: false,
+        showContextMenuButton: isSelected,
+        onTap: () => _handleFileTap(node),
+        onLongPress: () => _showNodeContextMenu(node, const Offset(0, 0)),
+        onContextMenuTap: (position) => _showNodeContextMenu(node, position),
+      );
     }
   }
 }
