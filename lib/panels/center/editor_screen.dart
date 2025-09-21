@@ -266,18 +266,21 @@ class _EditorScreenState extends State<EditorScreen> {
                         child: CodeCrafter(
                           key: _codeCrafterKey,
                           controller: _codeController,
+                          enableGutterDivider: false, // they have a bug
                           gutterStyle: GutterStyle(
+                            dividerColor: Colors.grey.withAlpha(100),
+                            dividerThickness: 1,
                             lineNumberStyle: TextStyle(
-                              fontFamily: 'monospace',
+                              // fontFamily: 'monospace',
+                              letterSpacing: -1,
+
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.6),
+                              ).colorScheme.onSurface.withOpacity(0.5),
                             ),
                           ),
-                          textStyle: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 14,
-                          ),
+
+                          // textStyle: const TextStyle(fontFamily: 'monospace'),
                           editorTheme: _getCodeTheme(),
                         ),
                       ),
