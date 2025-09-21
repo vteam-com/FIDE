@@ -1,5 +1,8 @@
 // Utility functions for file type detection
 
+import 'package:fide/models/file_system_item.dart';
+import 'package:flutter/material.dart';
+
 class FileTypeUtils {
   // Well-known text file extensions that should open in text editor
   static const List<String> supportedTextExtensions = [
@@ -82,5 +85,38 @@ class FileTypeUtils {
     final extension = filePath.split('.').last.toLowerCase();
 
     return supportedImageExtensions.contains(extension);
+  }
+}
+
+/// Shared utility for getting file icons
+class FileIconUtils {
+  static Widget getFileIcon(FileSystemItem item, {double size = 16}) {
+    if (item.isCodeFile) {
+      return Icon(Icons.code, size: size);
+    }
+    switch (item.fileExtension.toLowerCase()) {
+      case 'dart':
+        return Icon(Icons.developer_mode, size: size);
+      case 'json':
+        return Icon(Icons.data_object, size: size);
+      case 'md':
+      case 'markdown':
+        return Icon(Icons.text_snippet, size: size);
+      case 'gif':
+      case 'jpeg':
+      case 'jpg':
+      case 'ora':
+      case 'png':
+      case 'svg':
+      case 'webp':
+        return Icon(Icons.image, size: size);
+      case 'sh':
+        return Icon(Icons.attach_money, size: size);
+      case 'yaml':
+      case 'yml':
+        return Icon(Icons.settings_applications, size: size);
+      default:
+        return Icon(Icons.insert_drive_file, size: size);
+    }
   }
 }

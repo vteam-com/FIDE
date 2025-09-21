@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:fide/utils/file_type_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
@@ -72,7 +73,9 @@ class DirectoryContentsState extends State<DirectoryContents> {
               leading: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  isDirectory ? const Icon(Icons.folder) : _getFileIcon(item),
+                  isDirectory
+                      ? const Icon(Icons.folder)
+                      : FileIconUtils.getFileIcon(item),
                   if (badgeText.isNotEmpty && !isDirectory)
                     Container(
                       margin: const EdgeInsets.only(left: 4),
@@ -153,33 +156,6 @@ class DirectoryContentsState extends State<DirectoryContents> {
     }
 
     return null;
-  }
-
-  Widget _getFileIcon(FileSystemItem item) {
-    if (item.isCodeFile) {
-      return const Icon(Icons.code);
-    }
-    switch (item.fileExtension.toLowerCase()) {
-      case 'dart':
-        return const Icon(Icons.developer_mode);
-      case 'yaml':
-      case 'yml':
-        return const Icon(Icons.settings_applications);
-      case 'json':
-        return const Icon(Icons.data_object);
-      case 'md':
-      case 'markdown':
-        return const Icon(Icons.text_snippet);
-      case 'png':
-      case 'jpg':
-      case 'jpeg':
-      case 'gif':
-      case 'svg':
-      case 'webp':
-        return const Icon(Icons.image);
-      default:
-        return const Icon(Icons.insert_drive_file);
-    }
   }
 
   Future<void> _loadDirectory() async {

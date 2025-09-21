@@ -1,12 +1,12 @@
 // ignore_for_file: deprecated_member_use, avoid_print, use_build_context_synchronously
 
 import 'dart:io';
+import 'package:fide/widgets/filename_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
-import 'package:fide/models/file_extension_icon.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/utils/message_helper.dart';
 
@@ -586,19 +586,18 @@ class NodeBuilder extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
           child: Row(
             children: [
-              _getFileIcon(context),
-              const SizedBox(width: 6),
               Expanded(
-                child: Text(
-                  node.name,
-                  style: gitTextStyle.copyWith(
+                child: FileNameWithIcon(
+                  name: node.name,
+                  isDirectory: node.isDirectory,
+                  extension: node.fileExtension?.toLowerCase(),
+                  textStyle: gitTextStyle.copyWith(
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                     color: isSelected
                         ? Theme.of(context).colorScheme.primary
                         : textColor,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               // Git status indicator
@@ -681,17 +680,6 @@ class NodeBuilder extends StatelessWidget {
     if (onFileSelected != null) {
       onFileSelected!(node);
     }
-  }
-
-  Widget _getFileIcon(BuildContext context) {
-    final ColorScheme colorScheme = Theme.of(context).colorScheme;
-
-    if (node.isDirectory) {
-      return Icon(Icons.folder, color: colorScheme.primary, size: 16);
-    }
-
-    final ext = node.fileExtension?.toLowerCase() ?? '';
-    return getIconForFileExtension(colorScheme, ext);
   }
 }
 

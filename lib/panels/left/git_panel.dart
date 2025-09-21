@@ -1,4 +1,4 @@
-import 'package:fide/models/file_extension_icon.dart';
+import 'package:fide/widgets/filename_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
@@ -376,18 +376,13 @@ class _GitPanelState extends ConsumerState<GitPanel> {
           ),
           ...files.map(
             (file) => Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: 4,
               children: [
-                getIconForFileExtension(
-                  colorScheme,
-                  path.extension(file).toLowerCase(),
-                ),
                 Expanded(
-                  child: Text(
-                    file,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: FileNameWithIcon(
+                    name: file,
+                    isDirectory: false,
+                    extension: path.extension(file).toLowerCase(),
+                    textStyle: const TextStyle(),
                   ),
                 ),
                 IconButton(

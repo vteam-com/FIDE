@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously, deprecated_member_use, avoid_print
 
 import 'dart:io';
+import 'package:fide/utils/file_type_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:fide/services/file_system_service.dart';
@@ -311,7 +312,7 @@ class FileExplorerState extends State<FileExplorer> {
                   ? const Icon(Icons.folder_special)
                   : isDirectory
                   ? const Icon(Icons.folder)
-                  : _getFileIcon(item),
+                  : FileIconUtils.getFileIcon(item),
               if (badgeText.isNotEmpty && !isDirectory && !isParent)
                 Container(
                   margin: const EdgeInsets.only(left: 4),
@@ -501,37 +502,6 @@ class FileExplorerState extends State<FileExplorer> {
         ],
       ),
     );
-  }
-
-  Widget _getFileIcon(FileSystemItem item) {
-    final ext = item.fileExtension.toLowerCase();
-
-    // You can replace these with your own icons or use a package like file_icon
-    if (item.isCodeFile) {
-      return const Icon(Icons.code);
-    }
-
-    switch (ext) {
-      case 'dart':
-        return const Icon(Icons.developer_mode);
-      case 'yaml':
-      case 'yml':
-        return const Icon(Icons.settings_applications);
-      case 'json':
-        return const Icon(Icons.data_object);
-      case 'md':
-      case 'markdown':
-        return const Icon(Icons.text_snippet);
-      case 'png':
-      case 'jpg':
-      case 'jpeg':
-      case 'gif':
-      case 'svg':
-      case 'webp':
-        return const Icon(Icons.image);
-      default:
-        return const Icon(Icons.insert_drive_file);
-    }
   }
 
   Future<void> _loadDirectory() async {
