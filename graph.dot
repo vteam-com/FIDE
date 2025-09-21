@@ -2,6 +2,7 @@ digraph "" {
   graph [style=rounded fontname="Arial Black" fontsize=13 penwidth=2.6];
   node [shape=rect style="filled,rounded" fontname=Arial fontsize=15 fillcolor=Lavender penwidth=1.3];
   edge [penwidth=1.3];
+  "/integration_test/integration_test.dart" [label="integration_test"];
   "/test/widget_test.dart" [label="widget_test"];
   "/lib/providers/app_providers.dart" [label="app_providers"];
   "/lib/panels/right/outline_panel.dart" [label="outline_panel"];
@@ -45,6 +46,10 @@ digraph "" {
   "/tool/sort_source.dart" [label="sort_source"];
   subgraph "cluster~" {
     label="fide";
+    subgraph "cluster~/integration_test" {
+      label="integration_test";
+      "/integration_test/integration_test.dart";
+    }
     subgraph "cluster~/test" {
       label="test";
       "/test/widget_test.dart";
@@ -129,6 +134,8 @@ digraph "" {
       "/tool/sort_source.dart";
     }
   }
+  "/integration_test/integration_test.dart" -> "/lib/main.dart";
+  "/integration_test/integration_test.dart" -> "/lib/providers/app_providers.dart";
   "/test/widget_test.dart" -> "/lib/main.dart";
   "/lib/providers/app_providers.dart" -> "/lib/models/file_system_item.dart";
   "/lib/providers/app_providers.dart" -> "/lib/models/project_node.dart";

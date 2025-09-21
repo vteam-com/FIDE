@@ -8,6 +8,7 @@ import 'package:fide/services/git_service.dart';
 import 'package:fide/services/file_system_watcher.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:process_run/process_run.dart';
 
 /// Service for managing project operations independently of UI
 class ProjectService {
@@ -242,6 +243,45 @@ class ProjectService {
       'directories': directoryCount,
       'total': fileCount + directoryCount,
     };
+  }
+
+  /// Create a new Flutter project
+  Future<bool> createProject(String projectName, String parentDirectory) async {
+    try {
+      _logger.info(
+        'Creating new Flutter project: $projectName in $parentDirectory',
+      );
+
+      final projectPath = path.join(parentDirectory, projectName);
+
+      // Check if directory already exists
+      final projectDir = Directory(projectPath);
+      if (await projectDir.exists()) {
+        _logger.warning('Project directory already exists: $projectPath');
+        return false;
+      }
+
+      // Run flutter create command
+      final shell = Shell(workingDirectory: parentDirectory);
+      final results = await shell.run('flutter create $projectName');
+
+      if (results.isEmpty || results.first.exitCode != 0) {
+        _logger.severe(
+          'Failed to create Flutter project: exitCode=${results.isNotEmpty ? results.first.exitCode : "N/A"}, stderr=${results.isNotEmpty ? results.first.stderr : "No output"}, stdout=${results.isNotEmpty ? results.first.stdout : "No output"}',
+        );
+        return false;
+      }
+
+      _logger.info('Flutter create output: ${results.first.stdout}');
+
+      _logger.info('Flutter project created successfully: $projectPath');
+
+      // Load the newly created project
+      return await loadProject(projectPath);
+    } catch (e) {
+      _logger.severe('Error creating project: $e');
+      return false;
+    }
   }
 
   /// Dispose of the service

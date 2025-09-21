@@ -604,15 +604,33 @@ class _FIDEState extends ConsumerState<FIDE> {
                       // Show WelcomeScreen when no project is loaded
                       return WelcomeScreen(
                         onOpenFolder: pickDirectory,
-                        onCreateProject: () {
-                          // This would need to be implemented
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Create project not yet implemented',
-                              ),
-                            ),
+                        onCreateProject: () async {
+                          // Show dialog to get project name and location
+                          final result = await _showCreateProjectDialog(
+                            context,
                           );
+                          if (result != null) {
+                            final projectName = result['name'] as String;
+                            final parentDirectory =
+                                result['directory'] as String;
+
+                            // Use ProjectService to create the project
+                            final projectService = ref.read(
+                              projectServiceProvider,
+                            );
+                            final success = await projectService.createProject(
+                              projectName,
+                              parentDirectory,
+                            );
+
+                            if (!success) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Failed to create project'),
+                                ),
+                              );
+                            }
+                          }
                         },
                         mruFolders: mruFolders,
                         onOpenMruProject: tryLoadProject,
@@ -770,6 +788,82 @@ class _FIDEState extends ConsumerState<FIDE> {
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<Map<String, String>?> _showCreateProjectDialog(
+    BuildContext context,
+  ) async {
+    final TextEditingController nameController = TextEditingController();
+    final TextEditingController directoryController = TextEditingController();
+    String? selectedDirectory;
+
+    return showDialog<Map<String, String>>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Create New Flutter Project'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Project Name',
+                  hintText: 'Enter project name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: directoryController,
+                      decoration: const InputDecoration(
+                        labelText: 'Parent Directory',
+                        hintText: 'Select parent directory',
+                        border: OutlineInputBorder(),
+                      ),
+                      readOnly: true,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final selectedDir = await FilePicker.platform
+                          .getDirectoryPath();
+                      if (selectedDir != null) {
+                        selectedDirectory = selectedDir;
+                        directoryController.text = selectedDir;
+                      }
+                    },
+                    child: const Text('Browse'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (nameController.text.isNotEmpty &&
+                    selectedDirectory != null) {
+                  Navigator.of(context).pop({
+                    'name': nameController.text,
+                    'directory': selectedDirectory!,
+                  });
+                }
+              },
+              child: const Text('Create'),
             ),
           ],
         );
