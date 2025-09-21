@@ -9,7 +9,6 @@ import 'package:fide/models/file_system_item.dart';
 import 'package:fide/utils/message_helper.dart';
 
 import 'shared_panel_utils.dart';
-import 'git_panel.dart';
 import '../../providers/app_providers.dart';
 import '../../widgets/filename_widget.dart';
 
@@ -23,7 +22,6 @@ class OrganizedPanel extends ConsumerStatefulWidget {
     this.onProjectLoaded,
     this.onProjectPathChanged,
     this.initialProjectPath,
-    this.showGitPanel = false,
     this.onToggleGitPanel,
   });
 
@@ -34,7 +32,6 @@ class OrganizedPanel extends ConsumerStatefulWidget {
   final Function(ThemeMode)? onThemeChanged;
   final VoidCallback? onToggleGitPanel;
   final FileSystemItem? selectedFile;
-  final bool showGitPanel;
 
   @override
   ConsumerState<OrganizedPanel> createState() => OrganizedPanelState();
@@ -77,16 +74,6 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
 
   Future<void> ensureDirectoryLoaded(ProjectNode node) async {
     await _panelState.ensureDirectoryLoaded(node);
-  }
-
-  Widget _buildGitPanel() {
-    if (_panelState.projectRoot == null) {
-      return const Center(child: Text('No project loaded'));
-    }
-
-    return SizedBox.expand(
-      child: GitPanel(projectPath: _panelState.projectRoot!.path),
-    );
   }
 
   void _onNodeTapped(ProjectNode node, bool isExpanded) async {
@@ -196,8 +183,6 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
               child: Text('No project loaded', style: TextStyle(fontSize: 16)),
             ),
           )
-        : widget.showGitPanel
-        ? _buildGitPanel()
         : buildPanelContent();
   }
 

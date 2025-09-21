@@ -20,7 +20,6 @@ class LeftPanel extends ConsumerStatefulWidget {
   final Function(bool)? onProjectLoaded;
   final Function(String)? onProjectPathChanged;
   final VoidCallback? onToggleGitPanel;
-  final bool showGitPanel;
 
   const LeftPanel({
     super.key,
@@ -32,7 +31,6 @@ class LeftPanel extends ConsumerStatefulWidget {
     this.onProjectLoaded,
     this.onProjectPathChanged,
     this.onToggleGitPanel,
-    this.showGitPanel = false,
   });
 
   @override
@@ -130,7 +128,6 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                   onProjectLoaded: widget.onProjectLoaded,
                   onProjectPathChanged: widget.onProjectPathChanged,
                   initialProjectPath: widget.currentProjectPath,
-                  showGitPanel: false,
                 ),
 
                 // Organized tab
@@ -141,18 +138,14 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                   onProjectLoaded: widget.onProjectLoaded,
                   onProjectPathChanged: widget.onProjectPathChanged,
                   initialProjectPath: widget.currentProjectPath,
-                  showGitPanel: false,
                 ),
 
                 // Git tab - using dedicated GitPanel
-                widget.currentProjectPath != null
-                    ? GitPanel(projectPath: widget.currentProjectPath!)
-                    : const Center(
-                        child: Text(
-                          'No project loaded',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ),
+                GitPanel(
+                  onFileSelected: widget.onFileSelected,
+                  selectedFile: widget.selectedFile,
+                  projectPath: widget.currentProjectPath!,
+                ),
               ],
             ),
           ),

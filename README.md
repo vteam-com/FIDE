@@ -17,13 +17,23 @@ FIDE is not a general-purpose IDE. It is specifically crafted for Flutter develo
 
 ## Features
 
-- **Project Explorer**: Navigate and manage your Flutter project structure
+- **Project Explorer**: Navigate and manage your Flutter project structure with multiple view modes
+  - **Folder View**: Traditional hierarchical file tree with expansion/collapse
+  - **Organized View**: Categorized project structure (Root, Lib, Tests, Assets, Platforms, Output)
+  - **Git View**: Git status integration with staged, unstaged, and untracked files
 - **Code Editor**: Full-featured code editing with syntax highlighting for Dart/Flutter
 - **Terminal Panel**: Built-in terminal for running Flutter commands
-- **Git Integration**: Initialize repositories, view status, and manage version control
+- **Git Integration**: Comprehensive Git workflow management
+  - View repository status with staged, unstaged, and untracked files
+  - Stage/unstage individual files or all files at once
+  - Commit changes with detailed commit messages
+  - View file diffs and recent commits
+  - Push and pull operations
+  - Click any file in Git view to open it in the editor
 - **AI Panel**: AI-assisted development features
 - **Outline Panel**: Navigate code structure and symbols
 - **Multi-Panel Layout**: Customizable left, center, and right panels
+- **Unified File Rendering**: Consistent file and folder display across all panels with Git status indicators
 - **Theme Support**: Light, dark, and system theme modes
 - **Cross-Platform**: Native builds for Windows, macOS, and Linux
 - **MRU Projects**: Quick access to recently opened Flutter projects

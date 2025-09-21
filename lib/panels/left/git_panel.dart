@@ -1,67 +1,23 @@
-import 'package:fide/widgets/filename_widget.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
 import '../../services/git_service.dart';
 import '../../widgets/diff_viewer.dart';
-
-// Git status provider
-final gitStatusProvider =
-    StateNotifierProvider<GitStatusNotifier, AsyncValue<GitStatus>>((ref) {
-      return GitStatusNotifier();
-    });
-
-class GitStatusNotifier extends StateNotifier<AsyncValue<GitStatus>> {
-  GitStatusNotifier() : super(const AsyncValue.loading());
-
-  final GitService _gitService = GitService();
-
-  Future<void> loadStatus(String projectPath) async {
-    state = const AsyncValue.loading();
-    try {
-      final status = await _gitService.getStatus(projectPath);
-      state = AsyncValue.data(status);
-    } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
-    }
-  }
-
-  Future<void> refreshStatus(String projectPath) async {
-    await loadStatus(projectPath);
-  }
-}
-
-// Git commits provider
-final gitCommitsProvider =
-    StateNotifierProvider<GitCommitsNotifier, AsyncValue<List<GitCommit>>>((
-      ref,
-    ) {
-      return GitCommitsNotifier();
-    });
-
-class GitCommitsNotifier extends StateNotifier<AsyncValue<List<GitCommit>>> {
-  GitCommitsNotifier() : super(const AsyncValue.data([]));
-
-  final GitService _gitService = GitService();
-
-  Future<void> loadCommits(String projectPath, {int count = 10}) async {
-    state = const AsyncValue.loading();
-    try {
-      final commits = await _gitService.getRecentCommits(
-        projectPath,
-        count: count,
-      );
-      state = AsyncValue.data(commits);
-    } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
-    }
-  }
-}
+import '../../models/file_system_item.dart';
+import '../../widgets/filename_widget.dart';
 
 class GitPanel extends ConsumerStatefulWidget {
   final String projectPath;
+  final Function(FileSystemItem)? onFileSelected;
+  final FileSystemItem? selectedFile;
 
-  const GitPanel({super.key, required this.projectPath});
+  const GitPanel({
+    super.key,
+    required this.projectPath,
+    required this.onFileSelected,
+    required this.selectedFile,
+  });
 
   @override
   ConsumerState<GitPanel> createState() => _GitPanelState();
@@ -374,15 +330,35 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                 ),
             ],
           ),
-          ...files.map(
-            (file) => Row(
+          ...files.map((file) {
+            final filePath = path.join(widget.projectPath, file);
+            final item = FileSystemItem.fromFileSystemEntity(File(filePath));
+            // Set Git status based on the section
+            if (onStage != null) {
+              item.gitStatus =
+                  GitFileStatus.untracked; // For untracked/staged sections
+            } else if (onUnstage != null) {
+              item.gitStatus = GitFileStatus.added; // For staged section
+            } else {
+              item.gitStatus = GitFileStatus.modified; // For unstaged section
+            }
+            final isSelected = widget.selectedFile?.path == item.path;
+
+            return Row(
               children: [
                 Expanded(
-                  child: FileNameWithIcon(
-                    name: file,
-                    isDirectory: false,
-                    extension: path.extension(file).toLowerCase(),
-                    textStyle: const TextStyle(),
+                  child: GestureDetector(
+                    onTap: () => widget.onFileSelected?.call(item),
+                    child: FileSystemItemWidget(
+                      item: item,
+                      isSelected: isSelected,
+                      showExpansionIndicator: false,
+                      showContextMenuButton: false,
+                      showGitBadge: false,
+                      onTap: null, // Disable FileSystemItemWidget's tap
+                      onLongPress:
+                          null, // Disable FileSystemItemWidget's long press
+                    ),
                   ),
                 ),
                 IconButton(
@@ -406,8 +382,8 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                     tooltip: 'Unstage',
                   ),
               ],
-            ),
-          ),
+            );
+          }),
         ],
       ),
     );
@@ -417,5 +393,58 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   void dispose() {
     _commitController.dispose();
     super.dispose();
+  }
+}
+
+// Git status provider
+final gitStatusProvider =
+    StateNotifierProvider<GitStatusNotifier, AsyncValue<GitStatus>>((ref) {
+      return GitStatusNotifier();
+    });
+
+class GitStatusNotifier extends StateNotifier<AsyncValue<GitStatus>> {
+  GitStatusNotifier() : super(const AsyncValue.loading());
+
+  final GitService _gitService = GitService();
+
+  Future<void> loadStatus(String projectPath) async {
+    state = const AsyncValue.loading();
+    try {
+      final status = await _gitService.getStatus(projectPath);
+      state = AsyncValue.data(status);
+    } catch (e) {
+      state = AsyncValue.error(e, StackTrace.current);
+    }
+  }
+
+  Future<void> refreshStatus(String projectPath) async {
+    await loadStatus(projectPath);
+  }
+}
+
+// Git commits provider
+final gitCommitsProvider =
+    StateNotifierProvider<GitCommitsNotifier, AsyncValue<List<GitCommit>>>((
+      ref,
+    ) {
+      return GitCommitsNotifier();
+    });
+
+class GitCommitsNotifier extends StateNotifier<AsyncValue<List<GitCommit>>> {
+  GitCommitsNotifier() : super(const AsyncValue.data([]));
+
+  final GitService _gitService = GitService();
+
+  Future<void> loadCommits(String projectPath, {int count = 10}) async {
+    state = const AsyncValue.loading();
+    try {
+      final commits = await _gitService.getRecentCommits(
+        projectPath,
+        count: count,
+      );
+      state = AsyncValue.data(commits);
+    } catch (e) {
+      state = AsyncValue.error(e, StackTrace.current);
+    }
   }
 }

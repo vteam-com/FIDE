@@ -4,16 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class LeftPanelControls extends ConsumerWidget {
-  final bool showGitPanel;
   final bool isFilesystemMode;
   final bool isOrganizedMode;
+  final bool isGitMode;
   final VoidCallback onToggleFilesystem;
   final VoidCallback onToggleOrganized;
   final VoidCallback onToggleGitPanel;
 
   const LeftPanelControls({
     super.key,
-    required this.showGitPanel,
+    required this.isGitMode,
     required this.isFilesystemMode,
     required this.isOrganizedMode,
     required this.onToggleFilesystem,
@@ -31,7 +31,7 @@ class LeftPanelControls extends ConsumerWidget {
           context,
           icon: Icons.folder,
           tooltip: 'Normal File View',
-          isSelected: !showGitPanel && isFilesystemMode,
+          isSelected: isFilesystemMode,
           onPressed: onToggleFilesystem,
         ),
         const SizedBox(width: 4),
@@ -40,7 +40,7 @@ class LeftPanelControls extends ConsumerWidget {
           context,
           icon: Icons.folder_special,
           tooltip: 'Organized File View',
-          isSelected: !showGitPanel && isOrganizedMode,
+          isSelected: isOrganizedMode,
           onPressed: onToggleOrganized,
         ),
         const SizedBox(width: 4),
@@ -49,7 +49,7 @@ class LeftPanelControls extends ConsumerWidget {
           context,
           icon: Icons.account_tree,
           tooltip: 'Git Panel',
-          isSelected: showGitPanel,
+          isSelected: isGitMode,
           onPressed: onToggleGitPanel,
         ),
       ],

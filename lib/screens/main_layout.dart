@@ -300,7 +300,6 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                   ); // This will handle MRU update
                   ref.read(currentProjectPathProvider.notifier).state = path;
                 },
-                showGitPanel: _activeLeftPanel == 1,
                 onToggleGitPanel: () {
                   setState(
                     () => _activeLeftPanel = _activeLeftPanel == 0 ? 1 : 0,
