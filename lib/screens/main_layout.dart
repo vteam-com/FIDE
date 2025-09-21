@@ -25,6 +25,7 @@ import '../models/document_state.dart';
 
 // Utils
 import '../utils/file_type_utils.dart';
+import '../utils/file_utils.dart';
 
 // Widgets
 import '../widgets/resizable_splitter.dart';
@@ -155,8 +156,15 @@ class MainLayoutState extends ConsumerState<MainLayout> {
         return;
       }
 
-      // Create FileSystemItem and set it as selected
-      final fileSystemItem = FileSystemItem.fromFileSystemEntity(file);
+      // Check file size before loading
+      final fileSize = await file.length();
+      if (fileSize > FileUtils.maxFileSize) {
+        // Skip loading large files
+        return;
+      }
+
+      // Create FileSystemItem for MRU loading (avoids file system calls that can hang)
+      final fileSystemItem = FileSystemItem.forMruLoading(lastFilePath);
       ref.read(selectedFileProvider.notifier).state = fileSystemItem;
     } catch (e) {
       // Silently handle errors
@@ -387,7 +395,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
         try {
           final file = File(filePath);
           if (await file.exists()) {
-            content = await file.readAsString();
+            content = await FileUtils.readFileContentSafely(file);
           }
         } catch (e) {
           // Silently handle file loading errors

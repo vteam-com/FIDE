@@ -64,6 +64,8 @@ class _EditorScreenState extends State<EditorScreen> {
   bool _isDirty = false;
 
   bool _isLoading = false;
+  bool _isLargeFile = false;
+  double _fileSizeMB = 0.0;
 
   // Search functionality
   bool _showSearch = false;
@@ -150,6 +152,8 @@ class _EditorScreenState extends State<EditorScreen> {
         setState(() {
           _isDirty = widget.documentState!.isDirty;
           _isLoading = false;
+          _isLargeFile = false; // Reset large file flag for new file
+          _fileSizeMB = 0.0;
         });
       }
     }
@@ -158,19 +162,11 @@ class _EditorScreenState extends State<EditorScreen> {
   @override
   Widget build(BuildContext context) {
     // Check if file is too large to load
-    if (_currentFile.isNotEmpty && !_isImageFile(_currentFile)) {
-      final file = File(_currentFile);
-      if (file.existsSync()) {
-        final stat = file.statSync();
-        final fileSizeMB = stat.size / (1024 * 1024);
-        if (fileSizeMB > 3) {
-          // 10MB threshold
-          return LargeFileMessage(
-            fileName: path.basename(_currentFile),
-            fileSizeMB: fileSizeMB,
-          );
-        }
-      }
+    if (_isLargeFile) {
+      return LargeFileMessage(
+        fileName: path.basename(_currentFile),
+        fileSizeMB: _fileSizeMB,
+      );
     }
 
     return Consumer(
@@ -423,24 +419,13 @@ class _EditorScreenState extends State<EditorScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  FutureBuilder<FileStat>(
-                    future: File(_currentFile).stat(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        final stat = snapshot.data!;
-                        final sizeKB = (stat.size / 1024).round();
-                        return Text(
-                          'Size: ${sizeKB}KB • ${path.extension(_currentFile).toUpperCase().substring(1)}',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(0.7),
-                              ),
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    },
+                  Text(
+                    'Size: ${(widget.documentState!.content.length / 1024).round()}KB • ${path.extension(_currentFile).toUpperCase().substring(1)}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
+                    ),
                   ),
                 ],
               ),

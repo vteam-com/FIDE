@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
+import '../utils/file_utils.dart';
 
 enum FileSystemItemType { file, directory, drive, parent }
 
@@ -38,19 +39,34 @@ class FileSystemItem {
   });
 
   factory FileSystemItem.fromFileSystemEntity(FileSystemEntity entity) {
-    final stat = entity.statSync();
-    final isDirectory = FileSystemEntity.isDirectorySync(entity.path);
-    final isFile = FileSystemEntity.isFileSync(entity.path);
+    try {
+      final stat = entity.statSync();
+      final isDirectory = FileSystemEntity.isDirectorySync(entity.path);
+      final isFile = FileSystemEntity.isFileSync(entity.path);
 
-    return FileSystemItem(
-      name: p.basename(entity.path),
-      path: entity.path,
-      type: isDirectory
-          ? FileSystemItemType.directory
-          : FileSystemItemType.file,
-      modified: stat.modified,
-      size: isFile ? stat.size : null,
-    );
+      return FileSystemItem(
+        name: p.basename(entity.path),
+        path: entity.path,
+        type: isDirectory
+            ? FileSystemItemType.directory
+            : FileSystemItemType.file,
+        modified: stat.modified,
+        size: isFile ? stat.size : null,
+      );
+    } catch (e) {
+      // Handle cases where statSync fails (e.g., large files, permission issues)
+      final isDirectory = FileSystemEntity.isDirectorySync(entity.path);
+
+      return FileSystemItem(
+        name: p.basename(entity.path),
+        path: entity.path,
+        type: isDirectory
+            ? FileSystemItemType.directory
+            : FileSystemItemType.file,
+        modified: null,
+        size: null, // Don't load size for problematic files
+      );
+    }
   }
 
   // Create a parent directory item (for navigation)
@@ -60,6 +76,17 @@ class FileSystemItem {
       name: '..',
       path: parentPath,
       type: FileSystemItemType.parent,
+    );
+  }
+
+  // Create a minimal file item for MRU loading (avoids file system calls)
+  factory FileSystemItem.forMruLoading(String filePath) {
+    return FileSystemItem(
+      name: p.basename(filePath),
+      path: filePath,
+      type: FileSystemItemType.file,
+      modified: null,
+      size: null,
     );
   }
 
@@ -98,7 +125,7 @@ class FileSystemItem {
       throw Exception('Cannot read content of a directory');
     }
     final file = File(path);
-    return await file.readAsString();
+    return await FileUtils.readFileContentSafely(file);
   }
 
   // Get file extension for filtering

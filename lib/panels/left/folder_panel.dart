@@ -2,38 +2,313 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
+import 'package:file_picker/file_picker.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/services/git_service.dart';
+import 'package:fide/utils/message_helper.dart';
 
-import 'base_panel.dart';
+import 'shared_panel_utils.dart';
+import 'git_panel.dart';
+import '../../providers/app_providers.dart';
 
 /// FolderPanel provides a filesystem-style view of the project
-class FolderPanel extends BasePanel {
+class FolderPanel extends ConsumerStatefulWidget {
   const FolderPanel({
     super.key,
-    super.onFileSelected,
-    super.selectedFile,
-    super.onThemeChanged,
-    super.onProjectLoaded,
-    super.onProjectPathChanged,
-    super.initialProjectPath,
-    super.showGitPanel = false,
-    super.onToggleGitPanel,
-  }) : super(panelMode: PanelMode.filesystem);
+    this.onFileSelected,
+    this.selectedFile,
+    this.onThemeChanged,
+    this.onProjectLoaded,
+    this.onProjectPathChanged,
+    this.initialProjectPath,
+    this.showGitPanel = false,
+    this.onToggleGitPanel,
+  });
+
+  final String? initialProjectPath;
+  final Function(FileSystemItem)? onFileSelected;
+  final Function(bool)? onProjectLoaded;
+  final Function(String)? onProjectPathChanged;
+  final Function(ThemeMode)? onThemeChanged;
+  final VoidCallback? onToggleGitPanel;
+  final FileSystemItem? selectedFile;
+  final bool showGitPanel;
 
   @override
-  BasePanelState<FolderPanel> createState() => FolderPanelState();
+  ConsumerState<FolderPanel> createState() => FolderPanelState();
 }
 
-class FolderPanelState extends BasePanelState<FolderPanel> {
+class FolderPanelState extends ConsumerState<FolderPanel> {
   final Logger _logger = Logger('FolderPanelState');
-
+  final PanelStateManager _panelState = PanelStateManager();
   final GitService _gitService = GitService();
 
   @override
+  void initState() {
+    super.initState();
+    _panelState.initialize();
+  }
+
+  @override
+  void dispose() {
+    _panelState.dispose();
+    super.dispose();
+  }
+
+  // Getters for panel state
+  ProjectNode? get projectRoot => _panelState.projectRoot;
+  TextEditingController get filterController => _panelState.filterController;
+  String get filterQuery => _panelState.filterQuery;
+  Map<String, bool> get expandedState => _panelState.expandedState;
+
+  // Helper methods
+  void showError(String message) {
+    MessageHelper.showError(context, message, showCopyButton: true);
+  }
+
+  Future<void> pickDirectory() async {
+    try {
+      final selectedDirectory = await FilePicker.platform.getDirectoryPath();
+      if (selectedDirectory != null) {
+        showError('Project loading is handled by the main application');
+      }
+    } catch (e) {
+      showError('Error selecting directory: $e');
+    }
+  }
+
+  Widget buildDirectoryNode(ProjectNode node) {
+    return NodeBuilder(
+      node: node,
+      selectedFile: widget.selectedFile,
+      expandedState: _panelState.expandedState,
+      onNodeTapped: _onNodeTapped,
+      onShowContextMenu: _showNodeContextMenu,
+      onShowFileContextMenu: _showFileContextMenu,
+      onFileSelected: _handleFileSelection,
+    );
+  }
+
+  Widget buildFileNode(ProjectNode node) {
+    return NodeBuilder(
+      node: node,
+      selectedFile: widget.selectedFile,
+      expandedState: _panelState.expandedState,
+      onNodeTapped: _onNodeTapped,
+      onShowContextMenu: _showNodeContextMenu,
+      onShowFileContextMenu: _showFileContextMenu,
+      onFileSelected: _handleFileSelection,
+    );
+  }
+
+  void _handleFileSelection(ProjectNode node) {
+    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
+    if (widget.onFileSelected != null) {
+      widget.onFileSelected!(item);
+    }
+  }
+
+  void _ensureSelectedFileVisible(String filePath) {
+    if (_panelState.projectRoot == null || !mounted) return;
+
+    // For filesystem view, expand the directory containing the file
+    final fileDir = path.dirname(filePath);
+    if (fileDir != _panelState.projectRoot!.path) {
+      final directoryNode = _findNodeByPath(fileDir);
+      if (directoryNode != null && mounted) {
+        setState(() {
+          _panelState.expandedState[fileDir] = true;
+        });
+      }
+    }
+  }
+
+  Widget _buildGitPanel() {
+    if (_panelState.projectRoot == null) {
+      return const Center(child: Text('No project loaded'));
+    }
+
+    return SizedBox.expand(
+      child: GitPanel(projectPath: _panelState.projectRoot!.path),
+    );
+  }
+
+  void _onNodeTapped(ProjectNode node, bool isExpanded) async {
+    if (node.isDirectory) {
+      if (mounted) {
+        setState(() {
+          _panelState.expandedState[node.path] = !isExpanded;
+        });
+      }
+
+      if (!isExpanded && node.children.isEmpty) {
+        try {
+          await node.enumerateContents();
+          if (mounted) {
+            setState(() {});
+          }
+        } catch (e) {
+          if (e.toString().contains('Operation not permitted') ||
+              e.toString().contains('Permission denied')) {
+            showError('Access denied: ${node.name}');
+          } else {
+            showError('Failed to load directory: $e');
+          }
+        }
+      }
+    } else {
+      _handleFileTap(node);
+    }
+  }
+
+  void _handleFileTap(ProjectNode node) {
+    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
+    if (widget.selectedFile?.path == item.path) return;
+
+    // Seed Git status for the selected file if not already loaded
+    if (node.gitStatus == GitFileStatus.clean &&
+        _panelState.projectRoot != null) {
+      _panelState.seedGitStatusForFile(node);
+    }
+
+    // Only trigger file selection if widget is still mounted
+    if (widget.onFileSelected != null && mounted) {
+      widget.onFileSelected!(item);
+    }
+  }
+
+  void _showNodeContextMenu(ProjectNode node, Offset position) {
+    ContextMenuHandler.showNodeContextMenu(
+      context,
+      node,
+      position,
+      _handleContextMenuAction,
+    );
+  }
+
+  void _showFileContextMenu(ProjectNode node, Offset position) {
+    ContextMenuHandler.showFileContextMenu(
+      context,
+      node,
+      position,
+      _handleFileContextMenuAction,
+    );
+  }
+
+  void _handleContextMenuAction(String action, ProjectNode node) {
+    switch (action) {
+      case 'open':
+        _onNodeTapped(node, _panelState.expandedState[node.path] ?? false);
+        break;
+      case 'new_file':
+        FileOperations.createNewFile(context, node, _refreshProjectTree);
+        break;
+      case 'new_folder':
+        FileOperations.createNewFolder(context, node, _refreshProjectTree);
+        break;
+      case 'rename':
+        FileOperations.renameFile(context, node, _refreshProjectTree);
+        break;
+      case 'delete':
+        FileOperations.deleteFile(context, node, _refreshProjectTree);
+        break;
+    }
+  }
+
+  void _handleFileContextMenuAction(String action, ProjectNode node) {
+    switch (action) {
+      case 'reveal':
+        FileOperations.revealInFileExplorer(node);
+        break;
+      case 'rename':
+        FileOperations.renameFile(context, node, _refreshProjectTree);
+        break;
+      case 'delete':
+        FileOperations.deleteFile(context, node, _refreshProjectTree);
+        break;
+    }
+  }
+
+  ProjectNode? _findNodeByPath(String targetPath) {
+    if (_panelState.projectRoot == null) return null;
+
+    // Helper function to search recursively
+    ProjectNode? findInNode(ProjectNode node) {
+      if (node.path == targetPath) {
+        return node;
+      }
+
+      for (final child in node.children) {
+        final found = findInNode(child);
+        if (found != null) {
+          return found;
+        }
+      }
+
+      return null;
+    }
+
+    return findInNode(_panelState.projectRoot!);
+  }
+
+  Future<void> _refreshProjectTree() async {
+    if (_panelState.projectRoot == null) return;
+
+    try {
+      // Reload the project tree recursively
+      await _panelState.projectRoot!.enumerateContentsRecursive();
+
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      showError('Failed to refresh project tree: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Watch for project data from ProjectService
+    final currentProjectRoot = ref.watch(currentProjectRootProvider);
+    final isProjectLoaded = ref.watch(projectLoadedProvider);
+
+    // Update local state when project data changes
+    if (currentProjectRoot != _panelState.projectRoot) {
+      if (mounted) {
+        setState(() {
+          _panelState.projectRoot = currentProjectRoot;
+          // Clear expanded state when project changes
+          _panelState.expandedState.clear();
+        });
+      }
+    }
+
+    // Ensure selected file is expanded and visible when building
+    if (widget.selectedFile != null && _panelState.projectRoot != null) {
+      // Use a microtask to ensure this happens after the current build cycle
+      Future.microtask(() {
+        if (mounted) {
+          _ensureSelectedFileVisible(widget.selectedFile!.path);
+        }
+      });
+    }
+
+    return !isProjectLoaded
+        ? Container(
+            color: Theme.of(context).colorScheme.surface,
+            child: const Center(
+              child: Text('No project loaded', style: TextStyle(fontSize: 16)),
+            ),
+          )
+        : widget.showGitPanel
+        ? _buildGitPanel()
+        : buildPanelContent();
+  }
+
   Widget buildPanelContent() {
     if (projectRoot == null) {
       return Container(
@@ -626,21 +901,6 @@ class FolderPanelState extends BasePanelState<FolderPanel> {
       }
     } catch (e) {
       showError('Failed to delete: $e');
-    }
-  }
-
-  Future<void> _refreshProjectTree() async {
-    if (projectRoot == null) return;
-
-    try {
-      // Reload the project tree recursively
-      final result = await projectRoot!.enumerateContentsRecursive();
-
-      if (result == LoadChildrenResult.success && mounted) {
-        setState(() {});
-      }
-    } catch (e) {
-      showError('Failed to refresh project tree: $e');
     }
   }
 }

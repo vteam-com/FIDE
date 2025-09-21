@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../utils/file_utils.dart';
 
 class GitService {
   static final GitService _instance = GitService._internal();
@@ -256,7 +257,10 @@ class GitService {
       // If no diff found, check if file is new
       final file = File(filePath);
       if (await file.exists()) {
-        final content = await file.readAsString();
+        final content = await FileUtils.readFileContentSafely(file);
+        if (content == FileUtils.fileTooBigMessage) {
+          return content;
+        }
         final lines = content.split('\n');
         final diffLines = <String>[];
         diffLines.add('diff --git a/$filePath b/$filePath');

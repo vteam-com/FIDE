@@ -1,30 +1,259 @@
 // ignore_for_file: deprecated_member_use, avoid_print
 
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:fide/models/project_node.dart';
+import 'package:fide/models/file_system_item.dart';
+import 'package:fide/utils/message_helper.dart';
 
-import 'base_panel.dart';
+import 'shared_panel_utils.dart';
+import 'git_panel.dart';
+import '../../providers/app_providers.dart';
 
 /// OrganizedPanel provides a categorized view of the project
-class OrganizedPanel extends BasePanel {
+class OrganizedPanel extends ConsumerStatefulWidget {
   const OrganizedPanel({
     super.key,
-    super.onFileSelected,
-    super.selectedFile,
-    super.onThemeChanged,
-    super.onProjectLoaded,
-    super.onProjectPathChanged,
-    super.initialProjectPath,
-    super.showGitPanel = false,
-    super.onToggleGitPanel,
-  }) : super(panelMode: PanelMode.organized);
+    this.onFileSelected,
+    this.selectedFile,
+    this.onThemeChanged,
+    this.onProjectLoaded,
+    this.onProjectPathChanged,
+    this.initialProjectPath,
+    this.showGitPanel = false,
+    this.onToggleGitPanel,
+  });
+
+  final String? initialProjectPath;
+  final Function(FileSystemItem)? onFileSelected;
+  final Function(bool)? onProjectLoaded;
+  final Function(String)? onProjectPathChanged;
+  final Function(ThemeMode)? onThemeChanged;
+  final VoidCallback? onToggleGitPanel;
+  final FileSystemItem? selectedFile;
+  final bool showGitPanel;
 
   @override
-  BasePanelState<OrganizedPanel> createState() => OrganizedPanelState();
+  ConsumerState<OrganizedPanel> createState() => OrganizedPanelState();
 }
 
-class OrganizedPanelState extends BasePanelState<OrganizedPanel> {
+class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
+  final PanelStateManager _panelState = PanelStateManager();
+
   @override
+  void initState() {
+    super.initState();
+    _panelState.initialize();
+  }
+
+  @override
+  void dispose() {
+    _panelState.dispose();
+    super.dispose();
+  }
+
+  // Getters for panel state
+  ProjectNode? get projectRoot => _panelState.projectRoot;
+  Map<String, bool> get expandedState => _panelState.expandedState;
+
+  // Helper methods
+  void showError(String message) {
+    MessageHelper.showError(context, message, showCopyButton: true);
+  }
+
+  Future<void> pickDirectory() async {
+    try {
+      final selectedDirectory = await FilePicker.platform.getDirectoryPath();
+      if (selectedDirectory != null) {
+        showError('Project loading is handled by the main application');
+      }
+    } catch (e) {
+      showError('Error selecting directory: $e');
+    }
+  }
+
+  Future<void> ensureDirectoryLoaded(ProjectNode node) async {
+    await _panelState.ensureDirectoryLoaded(node);
+  }
+
+  Widget _buildGitPanel() {
+    if (_panelState.projectRoot == null) {
+      return const Center(child: Text('No project loaded'));
+    }
+
+    return SizedBox.expand(
+      child: GitPanel(projectPath: _panelState.projectRoot!.path),
+    );
+  }
+
+  Widget buildDirectoryNode(ProjectNode node) {
+    return NodeBuilder(
+      node: node,
+      selectedFile: widget.selectedFile,
+      expandedState: _panelState.expandedState,
+      onNodeTapped: _onNodeTapped,
+      onShowContextMenu: _showNodeContextMenu,
+      onShowFileContextMenu: _showFileContextMenu,
+      onFileSelected: _handleFileSelection,
+    );
+  }
+
+  Widget buildFileNode(ProjectNode node) {
+    return NodeBuilder(
+      node: node,
+      selectedFile: widget.selectedFile,
+      expandedState: _panelState.expandedState,
+      onNodeTapped: _onNodeTapped,
+      onShowContextMenu: _showNodeContextMenu,
+      onShowFileContextMenu: _showFileContextMenu,
+      onFileSelected: _handleFileSelection,
+    );
+  }
+
+  void _handleFileSelection(ProjectNode node) {
+    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
+    if (widget.onFileSelected != null) {
+      widget.onFileSelected!(item);
+    }
+  }
+
+  void _onNodeTapped(ProjectNode node, bool isExpanded) async {
+    if (node.isDirectory) {
+      if (mounted) {
+        setState(() {
+          _panelState.expandedState[node.path] = !isExpanded;
+        });
+      }
+
+      if (!isExpanded && node.children.isEmpty) {
+        try {
+          await _panelState.ensureDirectoryLoaded(node);
+          if (mounted) {
+            setState(() {});
+          }
+        } catch (e) {
+          showError('Failed to load directory: $e');
+        }
+      }
+    } else {
+      _handleFileTap(node);
+    }
+  }
+
+  void _handleFileTap(ProjectNode node) {
+    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
+    if (widget.selectedFile?.path == item.path) return;
+
+    // Seed Git status for the selected file if not already loaded
+    if (node.gitStatus == GitFileStatus.clean &&
+        _panelState.projectRoot != null) {
+      _panelState.seedGitStatusForFile(node);
+    }
+
+    // Only trigger file selection if widget is still mounted
+    if (widget.onFileSelected != null && mounted) {
+      widget.onFileSelected!(item);
+    }
+  }
+
+  void _showNodeContextMenu(ProjectNode node, Offset position) {
+    ContextMenuHandler.showNodeContextMenu(
+      context,
+      node,
+      position,
+      _handleContextMenuAction,
+    );
+  }
+
+  void _showFileContextMenu(ProjectNode node, Offset position) {
+    ContextMenuHandler.showFileContextMenu(
+      context,
+      node,
+      position,
+      _handleFileContextMenuAction,
+    );
+  }
+
+  void _handleContextMenuAction(String action, ProjectNode node) {
+    switch (action) {
+      case 'open':
+        _onNodeTapped(node, _panelState.expandedState[node.path] ?? false);
+        break;
+      case 'new_file':
+        FileOperations.createNewFile(context, node, _refreshProjectTree);
+        break;
+      case 'new_folder':
+        FileOperations.createNewFolder(context, node, _refreshProjectTree);
+        break;
+      case 'rename':
+        FileOperations.renameFile(context, node, _refreshProjectTree);
+        break;
+      case 'delete':
+        FileOperations.deleteFile(context, node, _refreshProjectTree);
+        break;
+    }
+  }
+
+  void _handleFileContextMenuAction(String action, ProjectNode node) {
+    switch (action) {
+      case 'reveal':
+        FileOperations.revealInFileExplorer(node);
+        break;
+      case 'rename':
+        FileOperations.renameFile(context, node, _refreshProjectTree);
+        break;
+      case 'delete':
+        FileOperations.deleteFile(context, node, _refreshProjectTree);
+        break;
+    }
+  }
+
+  Future<void> _refreshProjectTree() async {
+    if (_panelState.projectRoot == null) return;
+
+    try {
+      // Reload the project tree recursively
+      await _panelState.projectRoot!.enumerateContentsRecursive();
+
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      showError('Failed to refresh project tree: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Watch for project data from ProjectService
+    final currentProjectRoot = ref.watch(currentProjectRootProvider);
+    final isProjectLoaded = ref.watch(projectLoadedProvider);
+
+    // Update local state when project data changes
+    if (currentProjectRoot != _panelState.projectRoot) {
+      if (mounted) {
+        setState(() {
+          _panelState.projectRoot = currentProjectRoot;
+          // Clear expanded state when project changes
+          _panelState.expandedState.clear();
+        });
+      }
+    }
+
+    return !isProjectLoaded
+        ? Container(
+            color: Theme.of(context).colorScheme.surface,
+            child: const Center(
+              child: Text('No project loaded', style: TextStyle(fontSize: 16)),
+            ),
+          )
+        : widget.showGitPanel
+        ? _buildGitPanel()
+        : buildPanelContent();
+  }
+
   Widget buildPanelContent() {
     if (projectRoot == null) {
       return Container(
