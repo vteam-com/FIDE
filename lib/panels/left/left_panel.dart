@@ -2,6 +2,9 @@ import 'package:fide/panels/left/search_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// Providers
+import '../../providers/app_providers.dart';
+
 // Screens
 import 'folder_panel.dart';
 import 'organized_panel.dart';
@@ -43,7 +46,6 @@ class LeftPanel extends ConsumerStatefulWidget {
 class _LeftPanelState extends ConsumerState<LeftPanel>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  PanelMode _panelMode = PanelMode.filesystem;
 
   @override
   void initState() {
@@ -64,24 +66,28 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
 
   void _handleTabChange() {
     if (_tabController.indexIsChanging) {
-      final newMode = PanelMode.values[_tabController.index];
-      if (newMode != _panelMode) {
-        setState(() {
-          _panelMode = newMode;
-        });
+      // Update the provider when tab changes
+      ref.read(activeLeftPanelTabProvider.notifier).state =
+          _tabController.index;
 
-        // Ensure selected file is visible after mode change
-        if (widget.selectedFile != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            // This will trigger the ExplorerScreen to ensure the file is visible
-          });
-        }
+      // Ensure selected file is visible after mode change
+      if (widget.selectedFile != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          // This will trigger the ExplorerScreen to ensure the file is visible
+        });
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Listen for changes to the active left panel tab provider
+    ref.listen<int>(activeLeftPanelTabProvider, (previous, next) {
+      if (_tabController.index != next) {
+        _tabController.animateTo(next);
+      }
+    });
+
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerLow,

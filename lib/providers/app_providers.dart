@@ -214,3 +214,6 @@ final activeDocumentProvider = Provider<DocumentState?>((ref) {
   }
   return null;
 });
+
+// State management for active left panel tab
+final activeLeftPanelTabProvider = StateProvider<int>((ref) => 0);

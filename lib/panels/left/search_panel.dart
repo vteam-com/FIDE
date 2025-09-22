@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/widgets/search_toggle_icons.dart';
 
 class SearchResult {
   final String filePath;
@@ -79,6 +80,7 @@ class SearchPanel extends ConsumerStatefulWidget {
 class _SearchPanelState extends ConsumerState<SearchPanel> {
   final TextEditingController _searchController = TextEditingController();
   bool _matchCase = false;
+  bool _wholeWord = false;
   SearchResultNode? _resultsTree;
   bool _isSearching = false;
   final Map<String, bool> _expandedState = {};
@@ -105,7 +107,12 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
 
     try {
       final libPath = path.join(widget.projectPath, 'lib');
-      final results = await _searchInDirectory(libPath, query, _matchCase);
+      final results = await _searchInDirectory(
+        libPath,
+        query,
+        _matchCase,
+        _wholeWord,
+      );
       final tree = _buildResultsTree(results, libPath);
       setState(() {
         _resultsTree = tree;
@@ -123,6 +130,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     String dirPath,
     String query,
     bool matchCase,
+    bool wholeWord,
   ) async {
     final results = <SearchResult>[];
     final directory = Directory(dirPath);
@@ -136,7 +144,12 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
       followLinks: false,
     )) {
       if (entity is File) {
-        final fileResults = await _searchInFile(entity.path, query, matchCase);
+        final fileResults = await _searchInFile(
+          entity.path,
+          query,
+          matchCase,
+          wholeWord,
+        );
         results.addAll(fileResults);
       }
     }
@@ -148,6 +161,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     String filePath,
     String query,
     bool matchCase,
+    bool wholeWord,
   ) async {
     final results = <SearchResult>[];
 
@@ -164,6 +178,22 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
         int startIndex = 0;
         while ((startIndex = searchText.indexOf(searchQuery, startIndex)) !=
             -1) {
+          // Check whole word if required
+          if (wholeWord) {
+            final before =
+                startIndex == 0 ||
+                !RegExp(r'\w').hasMatch(searchText[startIndex - 1]);
+            final after =
+                startIndex + searchQuery.length == searchText.length ||
+                !RegExp(
+                  r'\w',
+                ).hasMatch(searchText[startIndex + searchQuery.length]);
+            if (!before || !after) {
+              startIndex += query.length;
+              continue;
+            }
+          }
+
           results.add(
             SearchResult(
               filePath: filePath,
@@ -292,38 +322,29 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
           const SizedBox(height: 8),
 
           // Options
-          Row(
-            children: [
-              Checkbox(
-                value: _matchCase,
-                onChanged: (value) {
-                  setState(() {
-                    _matchCase = value ?? false;
-                  });
-                  if (_searchController.text.isNotEmpty) {
-                    _performSearch();
-                  }
-                },
-              ),
-              const Text('Match casing'),
-            ],
+          SearchToggleIcons(
+            caseSensitive: _matchCase,
+            wholeWord: _wholeWord,
+            showWholeWord: true,
+            onCaseSensitiveChanged: (value) {
+              setState(() {
+                _matchCase = value;
+              });
+              if (_searchController.text.isNotEmpty) {
+                _performSearch();
+              }
+            },
+            onWholeWordChanged: (value) {
+              setState(() {
+                _wholeWord = value;
+              });
+              if (_searchController.text.isNotEmpty) {
+                _performSearch();
+              }
+            },
           ),
 
-          const SizedBox(height: 8),
-
-          // Search button
-          ElevatedButton(
-            onPressed: _isSearching ? null : _performSearch,
-            child: _isSearching
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Search'),
-          ),
-
-          const SizedBox(height: 16),
+          Divider(),
 
           // Results
           Expanded(

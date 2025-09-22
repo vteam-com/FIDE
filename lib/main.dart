@@ -92,6 +92,21 @@ void triggerCloseDocument() {
   EditorScreen.closeCurrentEditor();
 }
 
+void triggerSearch() {
+  // Call the static method to toggle search in the current editor
+  EditorScreen.toggleSearch();
+}
+
+void triggerSearchNext() {
+  // Call the static method to toggle search in the current editor
+  EditorScreen.findNext();
+}
+
+void triggerSearchPrevious() {
+  // Call the static method to toggle search in the current editor
+  EditorScreen.findPrevious();
+}
+
 void triggerTogglePanelLeft() {
   // Call the toggle left panel method on MainLayout
   _mainLayoutKey.currentState?.toggleLeftPanel();
@@ -509,6 +524,37 @@ class _FIDEState extends ConsumerState<FIDE> {
                     label: 'Edit',
                     menus: [
                       PlatformMenuItem(
+                        label: 'Find',
+                        shortcut: const SingleActivator(
+                          LogicalKeyboardKey.keyF,
+                          meta: true,
+                        ),
+                        onSelected: () {
+                          triggerSearch();
+                        },
+                      ),
+                      PlatformMenuItem(
+                        label: 'Find Next',
+                        shortcut: const SingleActivator(
+                          LogicalKeyboardKey.keyG,
+                          meta: true,
+                        ),
+                        onSelected: () {
+                          triggerSearchNext();
+                        },
+                      ),
+                      PlatformMenuItem(
+                        label: 'Find Previous',
+                        shortcut: const SingleActivator(
+                          LogicalKeyboardKey.keyG,
+                          meta: true,
+                          shift: true,
+                        ),
+                        onSelected: () {
+                          triggerSearchPrevious();
+                        },
+                      ),
+                      PlatformMenuItem(
                         label: 'Go to Line',
                         shortcut: const SingleActivator(
                           LogicalKeyboardKey.keyG,
@@ -554,6 +600,58 @@ class _FIDEState extends ConsumerState<FIDE> {
                         onSelected: () {
                           triggerTogglePanelRight();
                         },
+                      ),
+                      PlatformMenuItemGroup(
+                        members: [
+                          PlatformMenuItem(
+                            label: 'Explorer',
+                            shortcut: const SingleActivator(
+                              LogicalKeyboardKey.keyE,
+                              meta: true,
+                              shift: true,
+                            ),
+                            onSelected: () {
+                              // Switch to Explorer/Folder panel
+                              _switchToPanel(ref, 0);
+                            },
+                          ),
+                          PlatformMenuItem(
+                            label: 'Organized',
+                            shortcut: const SingleActivator(
+                              LogicalKeyboardKey.keyO,
+                              meta: true,
+                              shift: true,
+                            ),
+                            onSelected: () {
+                              // Switch to Organized panel
+                              _switchToPanel(ref, 1);
+                            },
+                          ),
+                          PlatformMenuItem(
+                            label: 'Git',
+                            shortcut: const SingleActivator(
+                              LogicalKeyboardKey.keyG,
+                              meta: true,
+                              shift: true,
+                            ),
+                            onSelected: () {
+                              // Switch to Git panel
+                              _switchToPanel(ref, 2);
+                            },
+                          ),
+                          PlatformMenuItem(
+                            label: 'Search',
+                            shortcut: const SingleActivator(
+                              LogicalKeyboardKey.keyF,
+                              meta: true,
+                              shift: true,
+                            ),
+                            onSelected: () {
+                              // Switch to Search panel
+                              _switchToPanel(ref, 3);
+                            },
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -869,6 +967,12 @@ class _FIDEState extends ConsumerState<FIDE> {
         );
       },
     );
+  }
+
+  void _switchToPanel(WidgetRef ref, int panelIndex) {
+    // Use the provider to switch the active left panel tab
+    // This will be picked up by the LeftPanel widget
+    ref.read(activeLeftPanelTabProvider.notifier).state = panelIndex;
   }
 
   String _getLastOpenedFileLabel() {

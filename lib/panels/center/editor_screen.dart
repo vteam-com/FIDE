@@ -13,6 +13,7 @@ import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:fide/utils/file_type_utils.dart';
 import 'package:fide/models/document_state.dart';
+import 'package:fide/widgets/search_toggle_icons.dart';
 
 class EditorScreen extends StatefulWidget {
   const EditorScreen({
@@ -48,6 +49,18 @@ class EditorScreen extends StatefulWidget {
 
   static void saveCurrentEditor() {
     _currentEditor?._saveFile();
+  }
+
+  static void toggleSearch() {
+    _currentEditor?._toggleSearch();
+  }
+
+  static void findNext() {
+    _currentEditor?._nextMatch();
+  }
+
+  static void findPrevious() {
+    _currentEditor?._previousMatch();
   }
 }
 
@@ -966,23 +979,11 @@ class _EditorScreenState extends State<EditorScreen> {
 
   void _handleKeyEvent(RawKeyEvent event) {
     if (event is RawKeyDownEvent) {
-      final isCmd = event.isMetaPressed || event.isControlPressed;
-      if (isCmd && event.logicalKey == LogicalKeyboardKey.keyF) {
-        _toggleSearch();
-        return;
-      }
-
       if (_showSearch) {
         if (event.logicalKey == LogicalKeyboardKey.escape) {
           _closeSearch();
         } else if (event.logicalKey == LogicalKeyboardKey.enter) {
           _nextMatch();
-        } else if (event.logicalKey == LogicalKeyboardKey.f3) {
-          if (event.isShiftPressed) {
-            _previousMatch();
-          } else {
-            _nextMatch();
-          }
         }
       }
     }
@@ -1040,41 +1041,26 @@ class _EditorScreenState extends State<EditorScreen> {
           const SizedBox(height: 4),
           Row(
             children: [
-              SizedBox(
-                height: 24,
-                child: Checkbox(
-                  value: _caseSensitive,
-                  onChanged: (value) {
-                    setState(() {
-                      _caseSensitive = value ?? false;
-                      if (_searchQuery.isNotEmpty) {
-                        _performSearch(_searchQuery);
-                      }
-                    });
-                  },
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                ),
+              SearchToggleIcons(
+                caseSensitive: _caseSensitive,
+                wholeWord: _wholeWord,
+                onCaseSensitiveChanged: (value) {
+                  setState(() {
+                    _caseSensitive = value;
+                    if (_searchQuery.isNotEmpty) {
+                      _performSearch(_searchQuery);
+                    }
+                  });
+                },
+                onWholeWordChanged: (value) {
+                  setState(() {
+                    _wholeWord = value;
+                    if (_searchQuery.isNotEmpty) {
+                      _performSearch(_searchQuery);
+                    }
+                  });
+                },
               ),
-              const Text('Case sensitive', style: TextStyle(fontSize: 12)),
-              const SizedBox(width: 12),
-              SizedBox(
-                height: 24,
-                child: Checkbox(
-                  value: _wholeWord,
-                  onChanged: (value) {
-                    setState(() {
-                      _wholeWord = value ?? false;
-                      if (_searchQuery.isNotEmpty) {
-                        _performSearch(_searchQuery);
-                      }
-                    });
-                  },
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                ),
-              ),
-              const Text('Whole word', style: TextStyle(fontSize: 12)),
               const Spacer(),
               if (_searchMatches.isNotEmpty) ...[
                 IconButton(
