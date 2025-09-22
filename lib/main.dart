@@ -2,7 +2,6 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,6 +14,7 @@ import 'providers/app_providers.dart';
 // Widgets
 import 'screens/main_layout.dart';
 import 'widgets/title_bar.dart';
+import 'widgets/menu_builder.dart';
 
 // Screens
 import 'panels/center/editor_screen.dart';
@@ -22,7 +22,6 @@ import 'screens/loading_screen.dart';
 import 'screens/welcome_screen.dart';
 
 // Services
-import 'services/git_service.dart';
 
 // Theme
 import 'theme/app_theme.dart';
@@ -404,258 +403,30 @@ class _FIDEState extends ConsumerState<FIDE> {
             // Main content with menu bar
             Expanded(
               child: PlatformMenuBar(
-                menus: [
-                  PlatformMenu(
-                    label: 'FIDE',
-                    menus: [
-                      PlatformMenuItem(
-                        label: 'About',
-                        onSelected: () {
-                          showAboutDialog(
-                            context: navigatorKey.currentContext ?? context,
-                            applicationName: 'FIDE',
-                            applicationVersion: '1.0.0',
-                            applicationLegalese: '© 2025 FIDE',
-                          );
-                        },
-                      ),
-                      PlatformMenuItem(
-                        label: 'Settings',
-                        shortcut: const SingleActivator(
-                          LogicalKeyboardKey.comma,
-                          meta: true,
-                        ),
-                        onSelected: () {
-                          _showSettingsDialog(
-                            navigatorKey.currentContext ?? context,
-                          );
-                        },
-                      ),
-                      PlatformMenuItem(
-                        label: 'Quit FIDE',
-                        shortcut: const SingleActivator(
-                          LogicalKeyboardKey.keyQ,
-                          meta: true,
-                        ),
-                        onSelected: () {
-                          SystemNavigator.pop();
-                        },
-                      ),
-                    ],
+                menus: MenuBuilder(
+                  context: context,
+                  ref: ref,
+                  onOpenFolder: triggerOpenFolder,
+                  onSave: triggerSave,
+                  onCloseDocument: triggerCloseDocument,
+                  onFind: triggerSearch,
+                  onFindNext: triggerSearchNext,
+                  onFindPrevious: triggerSearchPrevious,
+                  onGoToLine: () => _showGotoLineDialog(
+                    navigatorKey.currentContext ?? context,
                   ),
-                  PlatformMenu(
-                    label: 'File',
-                    menus: [
-                      PlatformMenuItem(
-                        label: 'Open folder',
-                        onSelected: () async {
-                          triggerOpenFolder();
-                        },
-                      ),
-                      PlatformMenuItem(
-                        label: _getLastOpenedFileLabel(),
-                        onSelected: () {
-                          triggerReopenLastFile();
-                        },
-                      ),
-                      PlatformMenuItemGroup(
-                        members: [
-                          PlatformMenuItem(
-                            label: 'Initialize Repository',
-                            onSelected: () async {
-                              final currentPath = ref.read(
-                                currentProjectPathProvider,
-                              );
-                              if (currentPath != null) {
-                                final gitService = GitService();
-                                final result = await gitService.initRepository(
-                                  currentPath,
-                                );
-                                if (navigatorKey.currentContext != null) {
-                                  ScaffoldMessenger.of(
-                                    navigatorKey.currentContext!,
-                                  ).showSnackBar(
-                                    SnackBar(content: Text(result)),
-                                  );
-                                }
-                              }
-                            },
-                          ),
-                          PlatformMenuItem(
-                            label: 'Refresh Status',
-                            shortcut: const SingleActivator(
-                              LogicalKeyboardKey.keyR,
-                              meta: true,
-                              shift: true,
-                            ),
-                            onSelected: () {
-                              // This will be handled by the Git panel refresh
-                            },
-                          ),
-                        ],
-                      ),
-                      PlatformMenuItemGroup(
-                        members: [
-                          PlatformMenuItem(
-                            label: 'Save',
-                            shortcut: const SingleActivator(
-                              LogicalKeyboardKey.keyS,
-                              meta: true,
-                            ),
-                            onSelected: () {
-                              triggerSave();
-                            },
-                          ),
-                          PlatformMenuItem(
-                            label: 'Close Document',
-                            shortcut: const SingleActivator(
-                              LogicalKeyboardKey.keyW,
-                              meta: true,
-                            ),
-                            onSelected: () {
-                              triggerCloseDocument();
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  PlatformMenu(
-                    label: 'Edit',
-                    menus: [
-                      PlatformMenuItem(
-                        label: 'Find',
-                        shortcut: const SingleActivator(
-                          LogicalKeyboardKey.keyF,
-                          meta: true,
-                        ),
-                        onSelected: () {
-                          triggerSearch();
-                        },
-                      ),
-                      PlatformMenuItem(
-                        label: 'Find Next',
-                        shortcut: const SingleActivator(
-                          LogicalKeyboardKey.keyG,
-                          meta: true,
-                        ),
-                        onSelected: () {
-                          triggerSearchNext();
-                        },
-                      ),
-                      PlatformMenuItem(
-                        label: 'Find Previous',
-                        shortcut: const SingleActivator(
-                          LogicalKeyboardKey.keyG,
-                          meta: true,
-                          shift: true,
-                        ),
-                        onSelected: () {
-                          triggerSearchPrevious();
-                        },
-                      ),
-                      PlatformMenuItem(
-                        label: 'Go to Line',
-                        shortcut: const SingleActivator(
-                          LogicalKeyboardKey.keyG,
-                          control: true,
-                        ),
-                        onSelected: () {
-                          _showGotoLineDialog(
-                            navigatorKey.currentContext ?? context,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  PlatformMenu(
-                    label: 'View',
-                    menus: [
-                      PlatformMenuItem(
-                        label: 'Panel Left',
-                        shortcut: const SingleActivator(
-                          LogicalKeyboardKey.digit1,
-                          meta: true,
-                        ),
-                        onSelected: () {
-                          triggerTogglePanelLeft();
-                        },
-                      ),
-                      PlatformMenuItem(
-                        label: 'Panel Bottom',
-                        shortcut: const SingleActivator(
-                          LogicalKeyboardKey.digit2,
-                          meta: true,
-                        ),
-                        onSelected: () {
-                          triggerTogglePanelBottom();
-                        },
-                      ),
-                      PlatformMenuItem(
-                        label: 'Panel Right',
-                        shortcut: const SingleActivator(
-                          LogicalKeyboardKey.digit3,
-                          meta: true,
-                        ),
-                        onSelected: () {
-                          triggerTogglePanelRight();
-                        },
-                      ),
-                      PlatformMenuItemGroup(
-                        members: [
-                          PlatformMenuItem(
-                            label: 'Explorer',
-                            shortcut: const SingleActivator(
-                              LogicalKeyboardKey.keyE,
-                              meta: true,
-                              shift: true,
-                            ),
-                            onSelected: () {
-                              // Switch to Explorer/Folder panel
-                              _switchToPanel(ref, 0);
-                            },
-                          ),
-                          PlatformMenuItem(
-                            label: 'Organized',
-                            shortcut: const SingleActivator(
-                              LogicalKeyboardKey.keyO,
-                              meta: true,
-                              shift: true,
-                            ),
-                            onSelected: () {
-                              // Switch to Organized panel
-                              _switchToPanel(ref, 1);
-                            },
-                          ),
-                          PlatformMenuItem(
-                            label: 'Git',
-                            shortcut: const SingleActivator(
-                              LogicalKeyboardKey.keyG,
-                              meta: true,
-                              shift: true,
-                            ),
-                            onSelected: () {
-                              // Switch to Git panel
-                              _switchToPanel(ref, 2);
-                            },
-                          ),
-                          PlatformMenuItem(
-                            label: 'Search',
-                            shortcut: const SingleActivator(
-                              LogicalKeyboardKey.keyF,
-                              meta: true,
-                              shift: true,
-                            ),
-                            onSelected: () {
-                              // Switch to Search panel
-                              _switchToPanel(ref, 3);
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
+                  onToggleLeftPanel: triggerTogglePanelLeft,
+                  onToggleBottomPanel: triggerTogglePanelBottom,
+                  onToggleRightPanel: triggerTogglePanelRight,
+                  onSwitchPanel: (index) => _switchToPanel(ref, index),
+                  onProjectSwitch: (path) async => await tryLoadProject(path),
+                  lastOpenedFileName: _lastOpenedFileName,
+                  onThemeChanged: (themeMode) {
+                    setState(() => _themeMode = themeMode);
+                    _saveThemeMode(themeMode);
+                  },
+                  currentThemeMode: _themeMode,
+                ).buildMenus(),
                 child: Consumer(
                   builder: (context, ref, child) {
                     final projectLoaded = ref.watch(projectLoadedProvider);
@@ -842,57 +613,6 @@ class _FIDEState extends ConsumerState<FIDE> {
     });
   }
 
-  void _showSettingsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Settings'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Theme'),
-              const SizedBox(height: 8),
-              ListTile(
-                leading: const Icon(Icons.brightness_auto),
-                title: const Text('System'),
-                onTap: () async {
-                  setState(() => _themeMode = ThemeMode.system);
-                  await _saveThemeMode(ThemeMode.system);
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.brightness_5),
-                title: const Text('Light'),
-                onTap: () async {
-                  setState(() => _themeMode = ThemeMode.light);
-                  await _saveThemeMode(ThemeMode.light);
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.brightness_2),
-                title: const Text('Dark'),
-                onTap: () async {
-                  setState(() => _themeMode = ThemeMode.dark);
-                  await _saveThemeMode(ThemeMode.dark);
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Future<Map<String, String>?> _showCreateProjectDialog(
     BuildContext context,
   ) async {
@@ -973,14 +693,6 @@ class _FIDEState extends ConsumerState<FIDE> {
     // Use the provider to switch the active left panel tab
     // This will be picked up by the LeftPanel widget
     ref.read(activeLeftPanelTabProvider.notifier).state = panelIndex;
-  }
-
-  String _getLastOpenedFileLabel() {
-    // Use the state variable that gets updated when files are opened
-    if (_lastOpenedFileName != null) {
-      return 'Last file opened: $_lastOpenedFileName';
-    }
-    return 'No file opened';
   }
 }
 

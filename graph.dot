@@ -42,6 +42,7 @@ digraph "" {
   "/lib/widgets/resizable_splitter.dart" [label="resizable_splitter"];
   "/lib/widgets/diff_viewer.dart" [label="diff_viewer"];
   "/lib/widgets/title_bar.dart" [label="title_bar"];
+  "/lib/widgets/menu_builder.dart" [label="menu_builder"];
   "/lib/widgets/message_widget.dart" [label="message_widget"];
   "/lib/widgets/filename_widget.dart" [label="filename_widget"];
   "/tool/sort_source.dart" [label="sort_source"];
@@ -127,6 +128,7 @@ digraph "" {
         "/lib/widgets/resizable_splitter.dart";
         "/lib/widgets/diff_viewer.dart";
         "/lib/widgets/title_bar.dart";
+        "/lib/widgets/menu_builder.dart";
         "/lib/widgets/message_widget.dart";
         "/lib/widgets/filename_widget.dart";
       }
@@ -221,10 +223,10 @@ digraph "" {
   "/lib/main.dart" -> "/lib/providers/app_providers.dart";
   "/lib/main.dart" -> "/lib/screens/main_layout.dart";
   "/lib/main.dart" -> "/lib/widgets/title_bar.dart";
+  "/lib/main.dart" -> "/lib/widgets/menu_builder.dart";
   "/lib/main.dart" -> "/lib/panels/center/editor_screen.dart";
   "/lib/main.dart" -> "/lib/screens/loading_screen.dart";
   "/lib/main.dart" -> "/lib/screens/welcome_screen.dart";
-  "/lib/main.dart" -> "/lib/services/git_service.dart";
   "/lib/main.dart" -> "/lib/theme/app_theme.dart";
   "/lib/services/project_service.dart" -> "/lib/models/project_node.dart";
   "/lib/services/project_service.dart" -> "/lib/models/file_system_item.dart";
@@ -235,6 +237,8 @@ digraph "" {
   "/lib/services/file_system_watcher.dart" -> "/lib/models/project_node.dart";
   "/lib/services/file_system_service.dart" -> "/lib/models/file_system_item.dart";
   "/lib/widgets/title_bar.dart" -> "/lib/providers/app_providers.dart";
+  "/lib/widgets/menu_builder.dart" -> "/lib/providers/app_providers.dart";
+  "/lib/widgets/menu_builder.dart" -> "/lib/services/git_service.dart";
   "/lib/widgets/filename_widget.dart" -> "/lib/models/file_extension_icon.dart";
   "/lib/widgets/filename_widget.dart" -> "/lib/models/file_system_item.dart";
   "/lib/widgets/filename_widget.dart" -> "/lib/utils/file_type_utils.dart";
