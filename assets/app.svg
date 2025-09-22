@@ -10,6 +10,9 @@
    xml:space="preserve"
    sodipodi:docname="app.svg"
    inkscape:version="1.4.2 (ebf0e940, 2025-05-08)"
+   inkscape:export-filename="app.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -17,92 +20,210 @@
    xmlns:svg="http://www.w3.org/2000/svg">
 
   <sodipodi:namedview
-     id="namedview5"
-     pagecolor="#ffffff"
-     bordercolor="#000000"
-     borderopacity="0.25"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     showgrid="false"
-     inkscape:zoom="0.95029906"
-     inkscape:cx="335.6838"
-     inkscape:cy="424.60318"
-     inkscape:window-width="2056"
-     inkscape:window-height="1212"
-     inkscape:window-x="0"
-     inkscape:window-y="40"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="_x32_" />
+   id="namedview5"
+   pagecolor="#ffffff"
+   bordercolor="#000000"
+   borderopacity="0.25"
+   inkscape:showpageshadow="2"
+   inkscape:pageopacity="0.0"
+   inkscape:pagecheckerboard="0"
+   inkscape:deskcolor="#d1d1d1"
+   showgrid="false"
+   inkscape:zoom="0.81210246"
+   inkscape:cx="538.10944"
+   inkscape:cy="356.48211"
+   inkscape:window-width="1680"
+   inkscape:window-height="1050"
+   inkscape:window-x="0"
+   inkscape:window-y="40"
+   inkscape:window-maximized="0"
+   inkscape:current-layer="g6" />
   <defs
-     id="defs3">
-    <linearGradient
-       id="flutterGradient"
-       x1="0%"
-       y1="0%"
-       x2="100%"
-       y2="100%">
+   id="defs3"><linearGradient
+   id="linearGradient1"
+   inkscape:collect="always"><stop
+     style="stop-color:#161629;stop-opacity:1;"
+     offset="0.93387097"
+     id="stop5" /><stop
+     style="stop-color:#393939;stop-opacity:0;"
+     offset="1"
+     id="stop7" /></linearGradient><linearGradient
+   id="linearGradient22"
+   x1="0%"
+   y1="0%"
+   x2="100%"
+   y2="100%">
       <stop
-         offset="00%"
-         stop-color="#01579b"
-         id="stop1" />
+   offset="0.13682093"
+   stop-color="#01579b"
+   id="stop20"
+   style="stop-color:#015191;stop-opacity:1;" />
       <stop
-         offset="50%"
-         stop-color="#00bcd4"
-         id="stop2" />
+   offset="0.6609658"
+   stop-color="#00bcd4"
+   id="stop21" />
       <stop
-         offset="100%"
-         stop-color="#42a5f5"
-         id="stop3" />
+   offset="0.84104627"
+   stop-color="#42a5f5"
+   id="stop22" />
+    </linearGradient><linearGradient
+   id="linearGradient15"
+   x1="0%"
+   y1="0%"
+   x2="100%"
+   y2="100%">
+      <stop
+   offset="0"
+   stop-color="#01579b"
+   id="stop13"
+   style="stop-color:#012d51;stop-opacity:1;" />
+      <stop
+   offset="50%"
+   stop-color="#00bcd4"
+   id="stop14" />
+      <stop
+   offset="100%"
+   stop-color="#42a5f5"
+   id="stop15" />
+    </linearGradient><linearGradient
+   id="linearGradient12"
+   x1="0%"
+   y1="0%"
+   x2="100%"
+   y2="100%">
+      <stop
+   offset="0.30854467"
+   stop-color="#01579b"
+   id="stop10" />
+      
+      <stop
+   offset="0.84784013"
+   stop-color="#42a5f5"
+   id="stop12" />
     </linearGradient>
     <linearGradient
-       inkscape:collect="always"
-       xlink:href="#flutterGradient"
-       id="linearGradient5"
-       x1="16.771902"
-       y1="43.25035"
-       x2="223.94038"
-       y2="250.41883"
-       gradientTransform="matrix(3,0,0,0.3,-471,-3)"
-       gradientUnits="userSpaceOnUse" />
-    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#fff"/>
-      <stop offset="50%" stop-color="#eee"/>
-      <stop offset="100%" stop-color="#aaf"/>
+   id="flutterGradient"
+   x1="0%"
+   y1="0%"
+   x2="100%"
+   y2="100%">
+      <stop
+   offset="00%"
+   stop-color="#01579b"
+   id="stop1" />
+      <stop
+   offset="50%"
+   stop-color="#00bcd4"
+   id="stop2" />
+      <stop
+   offset="100%"
+   stop-color="#42a5f5"
+   id="stop3" />
     </linearGradient>
-  </defs>
+    <linearGradient
+   inkscape:collect="always"
+   xlink:href="#flutterGradient"
+   id="linearGradient5"
+   x1="16.771902"
+   y1="43.25035"
+   x2="223.94038"
+   y2="250.41883"
+   gradientTransform="matrix(3,0,0,0.3,-477.78072,3.7957511)"
+   gradientUnits="userSpaceOnUse" />
+    <linearGradient
+   id="bgGradient"
+   x1="0"
+   y1="0"
+   x2="0"
+   y2="512"
+   gradientUnits="userSpaceOnUse">
+      <stop
+   offset="0"
+   stop-color="#fff"
+   id="stop4"
+   style="stop-color:#dfdfdf;stop-opacity:1;" />
+      
+      <stop
+   offset="1"
+   stop-color="#aaf"
+   id="stop6"
+   style="stop-color:#74a3ff;stop-opacity:1;" />
+    </linearGradient>
+  
+    
+    
+  <linearGradient
+   inkscape:collect="always"
+   xlink:href="#linearGradient1"
+   id="linearGradient7"
+   x1="256"
+   y1="512.5"
+   x2="256"
+   y2="-0.5"
+   gradientUnits="userSpaceOnUse" /></defs>
 
-  <rect width="512" height="512" rx="64" ry="64" fill="url(#bgGradient)"/>
-  <g transform="translate(256,256) scale(0.8,0.8) translate(-256,-256)" overflow="visible">
+  <rect
+   width="512"
+   height="512"
+   rx="64"
+   ry="64"
+   fill="url(#bgGradient)"
+   id="rect6"
+   inkscape:label="Background"
+   style="mix-blend-mode:darken;fill:url(#bgGradient);stroke:url(#linearGradient7);stroke-width:1.92;stroke-dasharray:none"
+   x="0"
+   y="0" />
   <g
-     transform="rotate(-90 256 256)"
-     id="g4">
-    <path
-       fill="url(#flutterGradient)"
-       d="M46.162,507.995c2.594,2.594,6.141,4.047,9.813,4s7.172-1.563,9.719-4.219l257.922-264.093l-45.969-45.969   L12.99,455.073c-2.656,2.531-4.188,6.047-4.219,9.719c-0.047,3.672,1.391,7.219,4,9.813L46.162,507.995z"
-       id="path3" />
-    <path
-       fill="url(#flutterGradient)"
-       d="M493.412,332.074c13.469-34.469,20.063-127.641-27.859-175.563c-25.438-25.438-75.844-75.828-75.844-75.828   c-13.234-13.25-26.359-0.953-36.141-10.734s0-25.422-8.813-34.219L312.475,3.449c-4.594-4.594-12.047-4.594-16.625,0   l-44.984,44.969c-4.594,4.594-4.609,12.047,0,16.641l32.281,32.281c8.797,8.813,24.438-0.984,34.219,8.797   c13.219,13.203,10.969,27.609,2.656,35.906l-16.625,16.641l-4.734,18l45.984,45.969l17.438-5.297   c14.672-14.672,31.656-16.75,40.844-7.563c57.719,59.203,58.953,103.953,67.75,125.953   C476.287,349.777,490.24,345.511,493.412,332.074z M402.834,209.699C402.771,209.621,402.74,209.589,402.834,209.699   L402.834,209.699z"
-       id="path4" />
-  </g>
+   transform="translate(256,256) scale(0.8,0.8) translate(-256,-256)"
+   overflow="visible"
+   id="g6">
+  <g
+   id="g24"
+   inkscape:label="Hammer"><path
+     fill="url(#flutterGradient)"
+     d="m 507.83662,464.35282 c 2.69668,-2.69704 4.2072,-6.38492 4.15834,-10.20277 -0.0489,-3.81785 -1.62487,-7.45686 -4.38601,-10.10503 l -255.0304,-245.38515 -47.78868,47.79485 248.02984,252.38766 c 2.63119,2.76149 6.28637,4.35434 10.10372,4.38658 3.81736,0.0489 7.50477,-1.44625 10.20145,-4.15888 z"
+     id="path3"
+     style="fill:#16417f;fill-opacity:1;stroke-width:1.03965"
+     sodipodi:nodetypes="csccccccc"
+     inkscape:label="Handle" /><path
+     fill="url(#flutterGradient)"
+     d="M 332.074,18.588 C 297.605,5.119 204.433,-1.475 156.511,46.447 c -25.438,25.438 -75.828,75.844 -75.828,75.844 -13.25,13.234 -0.953,26.359 -10.734,36.141 -9.781,9.782 -25.422,0 -34.219,8.813 l -32.281,32.28 c -4.594,4.594 -4.594,12.047 0,16.625 l 44.969,44.984 c 4.594,4.594 12.047,4.609 16.641,0 L 97.34,228.853 c 8.813,-8.797 -0.984,-24.438 8.797,-34.219 13.203,-13.219 27.609,-10.969 35.906,-2.656 l 16.641,16.625 32.4,20.734 45.969,-45.984 -19.697,-33.438 c -14.672,-14.672 -16.75,-31.656 -7.563,-40.844 59.203,-57.719 103.953,-58.953 125.953,-67.75 14.031,-5.608 9.765,-19.561 -3.672,-22.733 z m -122.375,90.578 c -0.078,0.063 -0.11,0.094 0,0 z"
+     id="path4"
+     style="fill:#2467c9;fill-opacity:1"
+     sodipodi:nodetypes="cscsccccccccccccccccc"
+     inkscape:label="HEAD" /></g>
 
   <!-- middle bar as IDE -->
   <g
-     id="g5"
-     transform="rotate(-44.936442,405.89085,-248.40422)">
-    <text
-       x="0"
-       y="66"
-       font-family="Courier"
-       font-weight="900"
-       font-size="100px"
-       fill="url(#flutterGradient)"
-       letter-spacing="-3"
-       id="text4"
-       style="fill:url(#linearGradient5)">IDE
-    </text>
+   id="g5"
+   transform="rotate(-44.936442,356.07485,-210.10982)"
+   style="fill:#fbfbfe;fill-opacity:1">
+    <rect
+   style="fill:#2467c9;stroke:none;stroke-width:3.59417;stroke-linecap:round;stroke-linejoin:round;stroke-dashoffset:2.2799;paint-order:stroke fill markers;fill-opacity:0.83876812"
+   id="rect7"
+   width="192.24852"
+   height="68.454254"
+   x="-20.814251"
+   y="325.34457"
+   rx="91.834709"
+   ry="0"
+   transform="matrix(1.2498965,0.01608628,-0.00932869,1.2499652,-44.492819,-403.38812)"
+   inkscape:label="Banner" /><text
+   x="-6.7806907"
+   y="72.795731"
+   font-family="Courier"
+   font-weight="900"
+   font-size="100px"
+   fill="url(#flutterGradient)"
+   letter-spacing="-3"
+   id="text4"
+   style="white-space:pre;inline-size:340.261;display:inline;fill:#fbfbfe;fill-opacity:1"
+   transform="translate(-12.320783,2.6927479)"
+   inkscape:label="IDE"
+   xml:space="preserve"><tspan
+     x="-6.7806907"
+     y="72.795731"
+     id="tspan2">IDE    </tspan></text>
   </g>
   </g>
 
