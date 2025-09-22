@@ -254,6 +254,13 @@ class ProjectService {
 
       final projectPath = path.join(parentDirectory, projectName);
 
+      // Ensure parent directory exists
+      final parentDir = Directory(parentDirectory);
+      if (!await parentDir.exists()) {
+        await parentDir.create(recursive: true);
+        _logger.info('Created parent directory: $parentDirectory');
+      }
+
       // Check if directory already exists
       final projectDir = Directory(projectPath);
       if (await projectDir.exists()) {

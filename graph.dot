@@ -140,6 +140,7 @@ digraph "" {
   }
   "/integration_test/integration_test.dart" -> "/lib/main.dart";
   "/integration_test/integration_test.dart" -> "/lib/providers/app_providers.dart";
+  "/integration_test/integration_test.dart" -> "/lib/models/file_system_item.dart";
   "/test/widget_test.dart" -> "/lib/main.dart";
   "/lib/providers/app_providers.dart" -> "/lib/models/file_system_item.dart";
   "/lib/providers/app_providers.dart" -> "/lib/models/project_node.dart";
@@ -220,6 +221,7 @@ digraph "" {
   "/lib/screens/main_layout.dart" -> "/lib/panels/left/left_panel.dart";
   "/lib/screens/main_layout.dart" -> "/lib/panels/center/center_panel.dart";
   "/lib/screens/main_layout.dart" -> "/lib/panels/right/right_panel.dart";
+  "/lib/main.dart" -> "/lib/services/project_service.dart";
   "/lib/main.dart" -> "/lib/providers/app_providers.dart";
   "/lib/main.dart" -> "/lib/screens/main_layout.dart";
   "/lib/main.dart" -> "/lib/widgets/title_bar.dart";
