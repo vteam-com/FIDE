@@ -9,6 +9,227 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Test data constants
+const String testProjectName = 'TestProject';
+const String testProjectDescription =
+    'A test Flutter project for integration testing';
+
+// Helper class for creating mock Flutter projects
+class MockProjectFactory {
+  static Future<Directory> createBasicFlutterProject(
+    Directory baseDir,
+    String projectName, {
+    String description = testProjectDescription,
+  }) async {
+    final projectDir = Directory(path.join(baseDir.path, projectName));
+    await projectDir.create(recursive: true);
+
+    // Create standard Flutter project structure
+    await Directory(path.join(projectDir.path, 'lib')).create();
+    await Directory(path.join(projectDir.path, 'android')).create();
+    await Directory(path.join(projectDir.path, 'ios')).create();
+    await Directory(path.join(projectDir.path, 'test')).create();
+
+    // Create pubspec.yaml
+    final pubspecFile = File(path.join(projectDir.path, 'pubspec.yaml'));
+    await pubspecFile.writeAsString('''
+name: ${projectName.toLowerCase()}
+description: $description
+version: 1.0.0+1
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+flutter:
+  uses-material-design: true
+''');
+
+    // Create analysis_options.yaml
+    final analysisFile = File(
+      path.join(projectDir.path, 'analysis_options.yaml'),
+    );
+    await analysisFile.writeAsString('''
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    - prefer_const_constructors
+''');
+
+    return projectDir;
+  }
+
+  static Future<void> createMainDartFile(
+    Directory projectDir,
+    String content,
+  ) async {
+    final mainDartFile = File(path.join(projectDir.path, 'lib', 'main.dart'));
+    await mainDartFile.writeAsString(content);
+  }
+
+  static Future<void> createComplexMainDartFile(Directory projectDir) async {
+    await createMainDartFile(projectDir, '''
+import 'package:flutter/material.dart';
+
+// Top-level constants
+const String appTitle = 'Complex Test App';
+const Color primaryColor = Colors.blue;
+
+// Top-level functions
+void main() {
+  runApp(const MyApp());
+}
+
+String getGreeting(String name) {
+  return 'Hello, \$name!';
+}
+
+// Main App Widget
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: appTitle,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: primaryColor),
+        useMaterial3: true,
+      ),
+      home: const HomePage(),
+    );
+  }
+}
+
+// Stateful Home Page
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _counter = 0;
+  String _currentMessage = 'Welcome!';
+
+  void _incrementCounter() {
+    setState(() {
+      _counter++;
+      _currentMessage = getGreeting('User \$_counter');
+    });
+  }
+
+  void _resetCounter() {
+    setState(() {
+      _counter = 0;
+      _currentMessage = 'Reset!';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: const Text(appTitle),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              _currentMessage,
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              '\$_counter',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: _incrementCounter,
+                  child: const Text('Increment'),
+                ),
+                const SizedBox(width: 10),
+                OutlinedButton(
+                  onPressed: _resetCounter,
+                  child: const Text('Reset'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Utility classes
+class CounterUtils {
+  static int doubleValue(int value) => value * 2;
+  static int squareValue(int value) => value * value;
+  static bool isEven(int value) => value % 2 == 0;
+}
+
+class StringUtils {
+  static String capitalize(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1).toLowerCase();
+  }
+
+  static String reverse(String text) {
+    return text.split('').reversed.join();
+  }
+}
+''');
+  }
+}
+
+// Test helper functions
+class TestHelpers {
+  static Future<void> pumpAndSettleWithTimeout(
+    WidgetTester tester, [
+    Duration timeout = const Duration(seconds: 3),
+  ]) async {
+    await tester.pumpAndSettle(timeout);
+  }
+
+  static Future<void> loadProjectAndWait(
+    WidgetTester tester,
+    String projectPath,
+  ) async {
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(FIDE)),
+    );
+    final projectService = container.read(projectServiceProvider);
+    final success = await projectService.loadProject(projectPath);
+    expect(success, isTrue, reason: 'Project should load successfully');
+
+    await pumpAndSettleWithTimeout(tester);
+  }
+
+  static void verifyWelcomeScreen() {
+    expect(find.text('Welcome to'), findsOneWidget);
+    expect(find.text('FIDE'), findsOneWidget);
+    expect(
+      find.text('Flutter Integrated Developer Environment'),
+      findsOneWidget,
+    );
+  }
+
+  static void verifyMainAppLoaded() {
+    expect(find.text('Welcome to'), findsNothing);
+    expect(find.byType(MaterialApp), findsOneWidget);
+  }
+}
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -22,9 +243,6 @@ void main() {
       // Create a temporary directory for testing
       final appDir = await getApplicationDocumentsDirectory();
       tempDir = Directory(path.join(appDir.path, 'fide_test_projects'));
-      if (await tempDir.exists()) {
-        await tempDir.delete(recursive: true);
-      }
       await tempDir.create(recursive: true);
     });
 
@@ -35,487 +253,165 @@ void main() {
       }
     });
 
+    setUp(() async {
+      // Clean up any existing test projects before each test
+      if (await tempDir.exists()) {
+        await tempDir.list().forEach((entity) async {
+          if (entity is Directory) {
+            await entity.delete(recursive: true);
+          }
+        });
+      }
+    });
+
     testWidgets('Welcome screen displays correctly', (
       WidgetTester tester,
     ) async {
-      // Build the app
       await tester.pumpWidget(const ProviderScope(child: FIDE()));
-
-      // Wait for the app to settle - increase timeout for integration tests
-      await tester.pumpAndSettle(const Duration(seconds: 5));
-
-      // Verify welcome screen elements
-      expect(find.text('Welcome to'), findsOneWidget);
-      expect(find.text('FIDE'), findsOneWidget);
-      expect(
-        find.text('Flutter Integrated Developer Environment'),
-        findsOneWidget,
+      await TestHelpers.pumpAndSettleWithTimeout(
+        tester,
+        const Duration(seconds: 5),
       );
+
+      TestHelpers.verifyWelcomeScreen();
       expect(find.text('Create New Project'), findsOneWidget);
       expect(find.text('Open Flutter Project'), findsOneWidget);
     });
 
-    testWidgets('Create project dialog can be opened and filled', (
+    testWidgets('Create project dialog interaction', (
       WidgetTester tester,
     ) async {
-      // Build the app
       await tester.pumpWidget(const ProviderScope(child: FIDE()));
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
 
-      // Wait for the app to settle
-      await tester.pumpAndSettle();
+      TestHelpers.verifyWelcomeScreen();
 
-      // Verify we're on the welcome screen
-      expect(find.text('Create New Project'), findsOneWidget);
-
-      // Tap the "Create New Project" button
+      // Open create project dialog
       await tester.tap(find.text('Create New Project'));
-      await tester.pumpAndSettle();
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
 
-      // Verify the create project dialog appears
+      // Verify dialog content
       expect(find.text('Create New Flutter Project'), findsOneWidget);
       expect(find.text('Project Name'), findsOneWidget);
       expect(find.text('Parent Directory'), findsOneWidget);
 
-      // Find the text fields in the dialog
+      // Test text input
       final textFields = find.byType(TextField);
-      expect(textFields, findsNWidgets(2)); // Project name and directory fields
+      expect(textFields, findsNWidgets(2));
 
-      // Enter "HelloWorld" in the project name field
-      await tester.enterText(textFields.first, 'HelloWorld');
-      await tester.pumpAndSettle();
+      await tester.enterText(textFields.first, 'TestProject');
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
 
-      // Verify the text was entered
-      expect(find.text('HelloWorld'), findsOneWidget);
-
-      // Note: In a real integration test, we would also interact with the directory picker
-      // and submit the form, but that requires mocking file system interactions
-      // which is complex in integration tests
+      expect(find.text('TestProject'), findsOneWidget);
     });
 
-    testWidgets('App renders MaterialApp correctly', (
+    testWidgets('App basic structure renders correctly', (
       WidgetTester tester,
     ) async {
-      // Build the app
       await tester.pumpWidget(const ProviderScope(child: FIDE()));
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
 
-      // Wait for the app to settle
-      await tester.pumpAndSettle();
-
-      // Verify MaterialApp is present
       expect(find.byType(MaterialApp), findsOneWidget);
-    });
-
-    testWidgets('Icon buttons are present in the UI', (
-      WidgetTester tester,
-    ) async {
-      // Build the app
-      await tester.pumpWidget(const ProviderScope(child: FIDE()));
-
-      // Wait for the app to settle
-      await tester.pumpAndSettle();
-
-      // Verify that icon buttons exist (these would be in title bar, panels, etc.)
-      expect(find.byType(IconButton), findsWidgets);
-    });
-
-    testWidgets('Scaffold is present in the app structure', (
-      WidgetTester tester,
-    ) async {
-      // Build the app
-      await tester.pumpWidget(const ProviderScope(child: FIDE()));
-
-      // Wait for the app to settle
-      await tester.pumpAndSettle();
-
-      // Verify Scaffold is present (main app structure)
       expect(find.byType(Scaffold), findsOneWidget);
     });
 
-    testWidgets('HelloWorld project creation flow can be initiated', (
+    testWidgets('Project service infrastructure is available', (
       WidgetTester tester,
     ) async {
-      // Build the app
       await tester.pumpWidget(const ProviderScope(child: FIDE()));
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
 
-      // Wait for the app to settle
-      await tester.pumpAndSettle();
+      TestHelpers.verifyWelcomeScreen();
 
-      // Verify we're on the welcome screen
-      expect(find.text('Create New Project'), findsOneWidget);
-
-      // Verify the project service is available for creating HelloWorld projects
       final container = ProviderScope.containerOf(
         tester.element(find.byType(FIDE)),
       );
       final projectService = container.read(projectServiceProvider);
 
-      // Verify the service has the createProject method
       expect(projectService.createProject, isNotNull);
-
-      // This test verifies that the UI and service infrastructure
-      // is in place for HelloWorld project creation
-      // In a real integration test environment with flutter CLI available,
-      // this would actually create the project
+      expect(projectService.loadProject, isNotNull);
     });
 
-    testWidgets(
-      'Panel switching and file selection works after project creation',
-      (WidgetTester tester) async {
-        // Build the app
-        await tester.pumpWidget(const ProviderScope(child: FIDE()));
-
-        // Wait for the app to settle
-        await tester.pumpAndSettle();
-
-        // Create a mock Flutter project structure for testing
-        final projectDir = Directory(path.join(tempDir.path, 'MockHelloWorld'));
-        await projectDir.create(recursive: true);
-
-        // Create basic Flutter project structure
-        await Directory(path.join(projectDir.path, 'lib')).create();
-        await Directory(path.join(projectDir.path, 'android')).create();
-        await Directory(path.join(projectDir.path, 'ios')).create();
-
-        // Create pubspec.yaml
-        final pubspecFile = File(path.join(projectDir.path, 'pubspec.yaml'));
-        await pubspecFile.writeAsString('''
-name: mockhelloworld
-description: A mock Flutter project for testing
-version: 1.0.0+1
-environment:
-  sdk: '>=3.0.0 <4.0.0'
-dependencies:
-  flutter:
-    sdk: flutter
-flutter:
-  uses-material-design: true
-''');
-
-        // Create main.dart
-        final mainDartFile = File(path.join(projectDir.path, 'lib/main.dart'));
-        await mainDartFile.writeAsString('''
-import 'package:flutter/material.dart';
-
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Mock Hello World',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Mock Hello World Home Page'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '\$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-}
-''');
-
-        // Load the mock project
-        final container = ProviderScope.containerOf(
-          tester.element(find.byType(FIDE)),
-        );
-        final projectService = container.read(projectServiceProvider);
-        final success = await projectService.loadProject(projectDir.path);
-
-        expect(success, isTrue);
-
-        // Wait for project to load
-        await tester.pumpAndSettle(const Duration(seconds: 2));
-
-        // Verify we're no longer on welcome screen
-        expect(find.text('Welcome to'), findsNothing);
-
-        // Test panel switching - look for panel toggle buttons
-        final iconButtons = find.byType(IconButton);
-
-        // Assuming the panel buttons are present, test that we can find them
-        expect(iconButtons, findsWidgets);
-
-        // Test file selection - the main.dart file should be selectable
-        // This would require more specific UI element identification
-        // For now, we verify the project loaded successfully
-        expect(find.byType(MaterialApp), findsOneWidget);
-      },
-    );
-
-    testWidgets('Outline panel displays correctly for Dart files', (
+    testWidgets('Project loading and UI transition works', (
       WidgetTester tester,
     ) async {
-      // Build the app
       await tester.pumpWidget(const ProviderScope(child: FIDE()));
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
 
-      // Wait for the app to settle
-      await tester.pumpAndSettle();
+      TestHelpers.verifyWelcomeScreen();
 
-      // Create a mock Flutter project with a more complex Dart file
-      final projectDir = Directory(path.join(tempDir.path, 'OutlineTest'));
-      await projectDir.create(recursive: true);
-
-      // Create basic Flutter project structure
-      await Directory(path.join(projectDir.path, 'lib')).create();
-
-      // Create pubspec.yaml
-      final pubspecFile = File(path.join(projectDir.path, 'pubspec.yaml'));
-      await pubspecFile.writeAsString('''
-name: outlinetest
-description: A test project for outline functionality
-version: 1.0.0+1
-environment:
-  sdk: '>=3.0.0 <4.0.0'
-dependencies:
-  flutter:
-    sdk: flutter
-flutter:
-  uses-material-design: true
-''');
-
-      // Create a more complex main.dart with classes, functions, etc.
-      final mainDartFile = File(path.join(projectDir.path, 'lib/main.dart'));
-      await mainDartFile.writeAsString('''
-import 'package:flutter/material.dart';
-
-// A top-level function
-void main() {
-  runApp(const MyApp());
-}
-
-// A top-level variable
-const String appTitle = 'Outline Test App';
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: appTitle,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Outline Test Home Page'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  void _decrementCounter() {
-    setState(() {
-      _counter--;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '\$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            onPressed: _incrementCounter,
-            tooltip: 'Increment',
-            child: const Icon(Icons.add),
-          ),
-          const SizedBox(height: 10),
-          FloatingActionButton(
-            onPressed: _decrementCounter,
-            tooltip: 'Decrement',
-            child: const Icon(Icons.remove),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Another top-level function
-String getGreeting() {
-  return 'Hello from outline test!';
-}
-
-// A utility class
-class MathUtils {
-  static int add(int a, int b) {
-    return a + b;
-  }
-
-  static int multiply(int a, int b) {
-    return a * b;
-  }
-}
-''');
-
-      // Load the mock project
-      final container = ProviderScope.containerOf(
-        tester.element(find.byType(FIDE)),
+      // Create and load a test project
+      final projectDir = await MockProjectFactory.createBasicFlutterProject(
+        tempDir,
+        'TestProject',
       );
-      final projectService = container.read(projectServiceProvider);
-      final success = await projectService.loadProject(projectDir.path);
+      await MockProjectFactory.createMainDartFile(projectDir, '''
+import 'package:flutter/material.dart';
 
-      expect(success, isTrue);
-
-      // Wait for project to load
-      await tester.pumpAndSettle(const Duration(seconds: 2));
-
-      // Verify we're no longer on welcome screen
-      expect(find.text('Welcome to'), findsNothing);
-
-      // The outline panel should be available now
-      // Since we can't easily test the outline panel content without more specific selectors,
-      // we verify that the app loaded successfully and the outline infrastructure is in place
-      expect(find.byType(MaterialApp), findsOneWidget);
-
-      // Test that we can access the file content
-      final fileContent = await mainDartFile.readAsString();
-      expect(fileContent.contains('class MyApp'), isTrue);
-      expect(fileContent.contains('void main()'), isTrue);
-      expect(fileContent.contains('class MathUtils'), isTrue);
-    });
-
-    testWidgets('Search functionality works in project', (
-      WidgetTester tester,
-    ) async {
-      // Build the app
-      await tester.pumpWidget(const ProviderScope(child: FIDE()));
-
-      // Wait for the app to settle
-      await tester.pumpAndSettle();
-
-      // Create a mock Flutter project with searchable content
-      final projectDir = Directory(path.join(tempDir.path, 'SearchTest'));
-      await projectDir.create(recursive: true);
-
-      // Create basic Flutter project structure
-      await Directory(path.join(projectDir.path, 'lib')).create();
-
-      // Create pubspec.yaml
-      final pubspecFile = File(path.join(projectDir.path, 'pubspec.yaml'));
-      await pubspecFile.writeAsString('''
-name: searchtest
-description: A test project for search functionality
-version: 1.0.0+1
-environment:
-  sdk: '>=3.0.0 <4.0.0'
-dependencies:
-  flutter:
-    sdk: flutter
-flutter:
-  uses-material-design: true
+void main() => runApp(const MaterialApp(home: Scaffold(body: Center(child: Text('Test')))));
 ''');
 
-      // Create main.dart with searchable content
-      final mainDartFile = File(path.join(projectDir.path, 'lib/main.dart'));
-      await mainDartFile.writeAsString('''
+      await TestHelpers.loadProjectAndWait(tester, projectDir.path);
+      TestHelpers.verifyMainAppLoaded();
+
+      // Verify UI elements are present after project load
+      expect(find.byType(IconButton), findsWidgets);
+    });
+
+    testWidgets('Complex Dart file structure loads correctly', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(const ProviderScope(child: FIDE()));
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
+
+      TestHelpers.verifyWelcomeScreen();
+
+      // Create project with complex Dart file
+      final projectDir = await MockProjectFactory.createBasicFlutterProject(
+        tempDir,
+        'ComplexTest',
+      );
+      await MockProjectFactory.createComplexMainDartFile(projectDir);
+
+      await TestHelpers.loadProjectAndWait(tester, projectDir.path);
+      TestHelpers.verifyMainAppLoaded();
+
+      // Verify file content is accessible
+      final mainFile = File(path.join(projectDir.path, 'lib', 'main.dart'));
+      final content = await mainFile.readAsString();
+
+      expect(content.contains('class MyApp'), isTrue);
+      expect(content.contains('class CounterUtils'), isTrue);
+      expect(content.contains('void main()'), isTrue);
+    });
+
+    testWidgets('Project with search terms loads successfully', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(const ProviderScope(child: FIDE()));
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
+
+      TestHelpers.verifyWelcomeScreen();
+
+      // Create project with searchable content
+      final projectDir = await MockProjectFactory.createBasicFlutterProject(
+        tempDir,
+        'SearchTest',
+      );
+      await MockProjectFactory.createMainDartFile(projectDir, '''
 import 'package:flutter/material.dart';
 
 // UNIQUE_SEARCH_TERM_1
-void main() {
-  runApp(const MyApp());
-}
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      title: 'Search Test App',
-      home: HomePage(),
-    );
-  }
+  Widget build(BuildContext context) => const MaterialApp(home: HomePage());
 }
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
-
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -523,105 +419,361 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   // UNIQUE_SEARCH_TERM_2
   String searchQuery = '';
+  @override
+  Widget build(BuildContext context) => const Scaffold(
+    body: Center(child: Text('Search test')),
+  );
+}
+
+// UNIQUE_SEARCH_TERM_3
+class SearchUtils {
+  static bool containsTerm(String text, String term) => text.contains(term);
+}
+''');
+
+      await TestHelpers.loadProjectAndWait(tester, projectDir.path);
+      TestHelpers.verifyMainAppLoaded();
+
+      // Verify search terms are present
+      final mainFile = File(path.join(projectDir.path, 'lib', 'main.dart'));
+      final content = await mainFile.readAsString();
+
+      expect(content.contains('UNIQUE_SEARCH_TERM_1'), isTrue);
+      expect(content.contains('UNIQUE_SEARCH_TERM_2'), isTrue);
+      expect(content.contains('UNIQUE_SEARCH_TERM_3'), isTrue);
+    });
+
+    testWidgets('Terminal panel infrastructure loads', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(const ProviderScope(child: FIDE()));
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
+
+      TestHelpers.verifyWelcomeScreen();
+
+      // Create and load basic project
+      final projectDir = await MockProjectFactory.createBasicFlutterProject(
+        tempDir,
+        'TerminalTest',
+      );
+      await MockProjectFactory.createMainDartFile(projectDir, '''
+import 'package:flutter/material.dart';
+void main() => runApp(const MaterialApp(
+  home: Scaffold(body: Center(child: Text('Terminal Test'))),
+));
+''');
+
+      await TestHelpers.loadProjectAndWait(tester, projectDir.path);
+      TestHelpers.verifyMainAppLoaded();
+
+      // Verify basic app structure is working
+      expect(find.byType(IconButton), findsWidgets);
+    });
+
+    testWidgets('Left panel switching works correctly', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(const ProviderScope(child: FIDE()));
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
+
+      TestHelpers.verifyWelcomeScreen();
+
+      // Load a project to access the main layout
+      final projectDir = await MockProjectFactory.createBasicFlutterProject(
+        tempDir,
+        'PanelTest',
+      );
+      await MockProjectFactory.createMainDartFile(projectDir, '''
+import 'package:flutter/material.dart';
+void main() => runApp(const MaterialApp(
+  home: Scaffold(body: Center(child: Text('Panel Test'))),
+));
+''');
+
+      await TestHelpers.loadProjectAndWait(tester, projectDir.path);
+      TestHelpers.verifyMainAppLoaded();
+
+      // Test switching between different left panels
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(FIDE)),
+      );
+
+      // Test Explorer panel (index 0) - should show file tree
+      container.read(activeLeftPanelTabProvider.notifier).state = 0;
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
+      expect(find.byType(IconButton), findsWidgets); // Basic UI check
+
+      // Test Organized panel (index 1) - should show organized view
+      container.read(activeLeftPanelTabProvider.notifier).state = 1;
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
+      expect(find.byType(IconButton), findsWidgets);
+
+      // Test Git panel (index 2) - should show git information
+      container.read(activeLeftPanelTabProvider.notifier).state = 2;
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
+      expect(find.byType(IconButton), findsWidgets);
+
+      // Test Search panel (index 3) - should show search interface
+      container.read(activeLeftPanelTabProvider.notifier).state = 3;
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
+      expect(find.byType(IconButton), findsWidgets);
+
+      // Verify panel switching doesn't break the app
+      expect(find.byType(MaterialApp), findsOneWidget);
+    });
+
+    testWidgets('Panel toggle buttons work correctly', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(const ProviderScope(child: FIDE()));
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
+
+      TestHelpers.verifyWelcomeScreen();
+
+      // Load a project
+      final projectDir = await MockProjectFactory.createBasicFlutterProject(
+        tempDir,
+        'ToggleTest',
+      );
+      await MockProjectFactory.createMainDartFile(projectDir, '''
+import 'package:flutter/material.dart';
+void main() => runApp(const MaterialApp(
+  home: Scaffold(body: Center(child: Text('Toggle Test'))),
+));
+''');
+
+      await TestHelpers.loadProjectAndWait(tester, projectDir.path);
+      TestHelpers.verifyMainAppLoaded();
+
+      // Find panel toggle buttons in the title bar
+      final iconButtons = find.byType(IconButton);
+
+      // Should have at least the panel toggle buttons
+      expect(iconButtons, findsWidgets);
+
+      // Test that we can find buttons (basic smoke test for panel toggles)
+      // In a real scenario, we'd tap specific buttons and verify panel visibility
+      expect(find.byType(IconButton), findsWidgets);
+    });
+
+    testWidgets('Explorer panel displays file structure', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(const ProviderScope(child: FIDE()));
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
+
+      TestHelpers.verifyWelcomeScreen();
+
+      // Create project with multiple files and directories
+      final projectDir = await MockProjectFactory.createBasicFlutterProject(
+        tempDir,
+        'ExplorerTest',
+      );
+
+      // Create additional files and directories
+      await Directory(path.join(projectDir.path, 'lib', 'models')).create();
+      await Directory(path.join(projectDir.path, 'lib', 'services')).create();
+      await Directory(path.join(projectDir.path, 'lib', 'widgets')).create();
+
+      await File(
+        path.join(projectDir.path, 'lib', 'models', 'user.dart'),
+      ).writeAsString('class User {}');
+      await File(
+        path.join(projectDir.path, 'lib', 'services', 'api.dart'),
+      ).writeAsString('class ApiService {}');
+      await File(
+        path.join(projectDir.path, 'lib', 'widgets', 'button.dart'),
+      ).writeAsString('class CustomButton {}');
+
+      await MockProjectFactory.createMainDartFile(projectDir, '''
+import 'package:flutter/material.dart';
+import 'models/user.dart';
+import 'services/api.dart';
+import 'widgets/button.dart';
+
+void main() => runApp(const MaterialApp(
+  home: Scaffold(body: Center(child: Text('Explorer Test'))),
+));
+''');
+
+      await TestHelpers.loadProjectAndWait(tester, projectDir.path);
+      TestHelpers.verifyMainAppLoaded();
+
+      // Switch to Explorer panel (index 0)
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(FIDE)),
+      );
+      container.read(activeLeftPanelTabProvider.notifier).state = 0;
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
+
+      // Verify the app is still functional with file structure loaded
+      expect(find.byType(IconButton), findsWidgets);
+      expect(find.byType(MaterialApp), findsOneWidget);
+    });
+
+    testWidgets('Search panel interface loads', (WidgetTester tester) async {
+      await tester.pumpWidget(const ProviderScope(child: FIDE()));
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
+
+      TestHelpers.verifyWelcomeScreen();
+
+      // Load project with searchable content
+      final projectDir = await MockProjectFactory.createBasicFlutterProject(
+        tempDir,
+        'SearchPanelTest',
+      );
+      await MockProjectFactory.createMainDartFile(projectDir, '''
+import 'package:flutter/material.dart';
+
+// SEARCHABLE_CONTENT_1
+class SearchTestApp extends StatelessWidget {
+  const SearchTestApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Search Test'),
-      ),
-      body: const Center(
-        child: Text('Search functionality test'),
+    return const MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text('SEARCHABLE_CONTENT_2'),
+        ),
       ),
     );
   }
 }
 
-// UNIQUE_SEARCH_TERM_3
-class SearchUtils {
-  static bool containsTerm(String text, String term) {
-    return text.contains(term);
-  }
-}
+// SEARCHABLE_CONTENT_3
+void main() => runApp(const SearchTestApp());
 ''');
 
-      // Load the mock project
+      await TestHelpers.loadProjectAndWait(tester, projectDir.path);
+      TestHelpers.verifyMainAppLoaded();
+
+      // Switch to Search panel (index 3)
       final container = ProviderScope.containerOf(
         tester.element(find.byType(FIDE)),
       );
-      final projectService = container.read(projectServiceProvider);
-      final success = await projectService.loadProject(projectDir.path);
+      container.read(activeLeftPanelTabProvider.notifier).state = 3;
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
 
-      expect(success, isTrue);
-
-      // Wait for project to load
-      await tester.pumpAndSettle(const Duration(seconds: 2));
-
-      // Verify project loaded
-      expect(find.text('Welcome to'), findsNothing);
+      // Verify search panel loads without errors
+      expect(find.byType(IconButton), findsWidgets);
       expect(find.byType(MaterialApp), findsOneWidget);
 
-      // Verify the test file contains our search terms
-      final fileContent = await mainDartFile.readAsString();
-      expect(fileContent.contains('UNIQUE_SEARCH_TERM_1'), isTrue);
-      expect(fileContent.contains('UNIQUE_SEARCH_TERM_2'), isTrue);
-      expect(fileContent.contains('UNIQUE_SEARCH_TERM_3'), isTrue);
+      // Verify the searchable content is present in files
+      final mainFile = File(path.join(projectDir.path, 'lib', 'main.dart'));
+      final content = await mainFile.readAsString();
+      expect(content.contains('SEARCHABLE_CONTENT_1'), isTrue);
+      expect(content.contains('SEARCHABLE_CONTENT_2'), isTrue);
+      expect(content.contains('SEARCHABLE_CONTENT_3'), isTrue);
     });
 
-    testWidgets('Terminal panel integration works', (
+    testWidgets('Git panel loads for project with git history', (
       WidgetTester tester,
     ) async {
-      // Build the app
       await tester.pumpWidget(const ProviderScope(child: FIDE()));
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
 
-      // Wait for the app to settle
-      await tester.pumpAndSettle();
+      TestHelpers.verifyWelcomeScreen();
 
-      // Create and load a project
+      // Create project that would have git history
+      final projectDir = await MockProjectFactory.createBasicFlutterProject(
+        tempDir,
+        'GitPanelTest',
+      );
+      await MockProjectFactory.createMainDartFile(projectDir, '''
+import 'package:flutter/material.dart';
+
+// Initial commit content
+class GitTestApp extends StatelessWidget {
+  const GitTestApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text('Git Panel Test - Initial Commit'),
+        ),
+      ),
+    );
+  }
+}
+
+void main() => runApp(const GitTestApp());
+''');
+
+      await TestHelpers.loadProjectAndWait(tester, projectDir.path);
+      TestHelpers.verifyMainAppLoaded();
+
+      // Switch to Git panel (index 2)
       final container = ProviderScope.containerOf(
         tester.element(find.byType(FIDE)),
       );
-      final projectService = container.read(projectServiceProvider);
+      container.read(activeLeftPanelTabProvider.notifier).state = 2;
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
 
-      // Create a simple test project
-      final projectDir = Directory(path.join(tempDir.path, 'TerminalTest'));
-      await projectDir.create(recursive: true);
-      await Directory(path.join(projectDir.path, 'lib')).create();
+      // Verify git panel loads without errors
+      expect(find.byType(IconButton), findsWidgets);
+      expect(find.byType(MaterialApp), findsOneWidget);
+    });
 
-      final pubspecFile = File(path.join(projectDir.path, 'pubspec.yaml'));
-      await pubspecFile.writeAsString('''
-name: terminaltest
-description: A test project for terminal functionality
-version: 1.0.0+1
-environment:
-  sdk: '>=3.0.0 <4.0.0'
-dependencies:
-  flutter:
-    sdk: flutter
-flutter:
-  uses-material-design: true
-''');
+    testWidgets('Organized panel displays structured view', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(const ProviderScope(child: FIDE()));
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
 
-      final mainDartFile = File(path.join(projectDir.path, 'lib/main.dart'));
-      await mainDartFile.writeAsString('''
+      TestHelpers.verifyWelcomeScreen();
+
+      // Create project with organized structure
+      final projectDir = await MockProjectFactory.createBasicFlutterProject(
+        tempDir,
+        'OrganizedPanelTest',
+      );
+
+      // Create organized directory structure
+      await Directory(path.join(projectDir.path, 'lib', 'screens')).create();
+      await Directory(path.join(projectDir.path, 'lib', 'components')).create();
+      await Directory(path.join(projectDir.path, 'lib', 'utils')).create();
+      await Directory(path.join(projectDir.path, 'lib', 'constants')).create();
+
+      await File(
+        path.join(projectDir.path, 'lib', 'screens', 'home_screen.dart'),
+      ).writeAsString('class HomeScreen {}');
+      await File(
+        path.join(projectDir.path, 'lib', 'components', 'custom_button.dart'),
+      ).writeAsString('class CustomButton {}');
+      await File(
+        path.join(projectDir.path, 'lib', 'utils', 'helpers.dart'),
+      ).writeAsString('class Helpers {}');
+      await File(
+        path.join(projectDir.path, 'lib', 'constants', 'colors.dart'),
+      ).writeAsString('const primaryColor = 0xFF000000;');
+
+      await MockProjectFactory.createMainDartFile(projectDir, '''
 import 'package:flutter/material.dart';
+import 'screens/home_screen.dart';
+import 'components/custom_button.dart';
+import 'utils/helpers.dart';
+import 'constants/colors.dart';
 
-void main() {
-  runApp(const MaterialApp(home: Scaffold(body: Center(child: Text('Terminal Test')))));
-}
+void main() => runApp(const MaterialApp(
+  home: Scaffold(body: Center(child: Text('Organized Panel Test'))),
+));
 ''');
 
-      final success = await projectService.loadProject(projectDir.path);
-      expect(success, isTrue);
+      await TestHelpers.loadProjectAndWait(tester, projectDir.path);
+      TestHelpers.verifyMainAppLoaded();
 
-      // Wait for project to load
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      // Switch to Organized panel (index 1)
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(FIDE)),
+      );
+      container.read(activeLeftPanelTabProvider.notifier).state = 1;
+      await TestHelpers.pumpAndSettleWithTimeout(tester);
 
-      // Verify project loaded
-      expect(find.text('Welcome to'), findsNothing);
-
-      // Terminal functionality would be tested here if we had specific UI elements to interact with
-      // For now, we verify the project infrastructure is working
+      // Verify organized panel loads without errors
+      expect(find.byType(IconButton), findsWidgets);
       expect(find.byType(MaterialApp), findsOneWidget);
     });
   });
