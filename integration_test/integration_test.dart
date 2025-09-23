@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,8 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fide/main.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/widgets/create_project_dialog.dart';
 import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -17,9 +19,10 @@ void main() {
   late Directory tempProjectDir;
 
   setUpAll(() async {
-    final appDir = await getApplicationDocumentsDirectory();
+    // Use system temp directory for test project creation
+    final tempDir = Directory.systemTemp;
     tempProjectDir = await Directory(
-      path.join(appDir.path, 'integration_test_HelloWorld'),
+      path.join(tempDir.path, 'fide_integration_test_HelloWorld'),
     ).create(recursive: true);
   });
 
@@ -40,6 +43,9 @@ void main() {
     expect(find.text('Welcome to'), findsOneWidget);
     expect(find.text('FIDE'), findsOneWidget);
 
+    // Set the test initial directory for the dialog
+    CreateProjectDialog.setTestInitialDirectory(tempProjectDir.path);
+
     // Tap "Create New Project" button
     final createButton = find.text('Create New Project');
     expect(createButton, findsOneWidget);
@@ -55,11 +61,14 @@ void main() {
     await tester.enterText(textFields.first, 'HelloWorld');
     await tester.pumpAndSettle();
 
-    // Click the "Create" button - this will trigger the actual project creation
+    // The directory field is read-only and should already be set to tempProjectDir.path
+    // due to the initialDirectory parameter we can add to the dialog
+
+    // Click the "Create" button
     final createProjectButton = find.text('Create');
     expect(createProjectButton, findsOneWidget);
     await tester.tap(createProjectButton);
-    await tester.pumpAndSettle();
+    await tester.pumpAndSettle(const Duration(seconds: 2));
 
     // Wait for the dialog to disappear and project creation to complete
     expect(find.text('New Flutter Project'), findsNothing);
@@ -67,9 +76,8 @@ void main() {
     // Wait for project creation to complete
     await tester.pumpAndSettle(const Duration(seconds: 3));
 
-    // Get the project path that was created
-    final appDir = await getApplicationDocumentsDirectory();
-    final projectPath = path.join(appDir.path, 'HelloWorld');
+    // Get the project path that was created (using temp directory)
+    final projectPath = path.join(tempProjectDir.path, 'HelloWorld');
 
     // Debug: Check if project directory was created
     final projectDir = Directory(projectPath);
@@ -84,18 +92,18 @@ void main() {
 
     // Since project creation may not load the project automatically in test environment,
     // manually load the created project
-    final container = ProviderScope.containerOf(
+    final container2 = ProviderScope.containerOf(
       tester.element(find.byType(MaterialApp)),
     );
-    final projectService = container.read(projectServiceProvider);
-    final loadSuccess = await projectService.loadProject(projectPath);
+    final projectService2 = container2.read(projectServiceProvider);
+    final loadSuccess = await projectService2.loadProject(projectPath);
     print('Manual project load success: $loadSuccess');
 
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
     // Debug: Check if project is loaded
-    final projectLoaded = container.read(projectLoadedProvider);
-    final currentProjectPath = container.read(currentProjectPathProvider);
+    final projectLoaded = container2.read(projectLoadedProvider);
+    final currentProjectPath = container2.read(currentProjectPathProvider);
     print('Project loaded: $projectLoaded');
     print('Current project path: $currentProjectPath');
 
@@ -145,7 +153,7 @@ void main() {
     // For now, we verify that the search panel can be switched to successfully.
 
     // Test file selection - use programmatic approach since UI interaction is complex
-    final container2 = ProviderScope.containerOf(
+    final container3 = ProviderScope.containerOf(
       tester.element(find.byType(MaterialApp)),
     );
 
@@ -153,11 +161,11 @@ void main() {
     final mainDartPath = path.join(projectPath, 'lib', 'main.dart');
     final mainDartFile2 = File(mainDartPath);
     final mainDartItem = FileSystemItem.fromFileSystemEntity(mainDartFile2);
-    container2.read(selectedFileProvider.notifier).state = mainDartItem;
+    container3.read(selectedFileProvider.notifier).state = mainDartItem;
     await tester.pumpAndSettle();
 
     // Verify file is selected
-    final selectedFile = container2.read(selectedFileProvider);
+    final selectedFile = container3.read(selectedFileProvider);
     expect(selectedFile?.path, equals(mainDartPath));
 
     // Verify file content is accessible
@@ -165,9 +173,9 @@ void main() {
     expect(content.contains('void main()'), isTrue);
 
     // Test closing project - set project loaded to false
-    container2.read(projectLoadedProvider.notifier).state = false;
-    container2.read(currentProjectPathProvider.notifier).state = null;
-    container2.read(selectedFileProvider.notifier).state = null;
+    container3.read(projectLoadedProvider.notifier).state = false;
+    container3.read(currentProjectPathProvider.notifier).state = null;
+    container3.read(selectedFileProvider.notifier).state = null;
     await tester.pumpAndSettle();
 
     // Verify we're back to welcome screen

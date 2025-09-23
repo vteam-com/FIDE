@@ -1,7 +1,6 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
 import 'dart:io';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -13,6 +12,7 @@ import 'package:window_manager/window_manager.dart';
 import '../providers/app_providers.dart';
 
 // Widgets
+import 'create_project_dialog.dart';
 
 // Global functions from main.dart
 
@@ -246,8 +246,27 @@ class _TitleBarState extends ConsumerState<TitleBar> {
       // This functionality is handled in main layout - do nothing here
       return;
     } else if (value == 'create_project') {
-      // Show create project dialog
-      _showCreateProjectDialog(context, ref);
+      // Show create project dialog using the shared dialog
+      final result = await showCreateProjectDialog(context);
+      if (result != null) {
+        final String projectName = result['name'] as String;
+        final String parentDirectory = result['directory'] as String;
+
+        // Use ProjectService to create the project
+        final projectService = ref.read(projectServiceProvider);
+        final success = await projectService.createProject(
+          projectName,
+          parentDirectory,
+        );
+
+        if (!success) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Failed to create project')),
+            );
+          }
+        }
+      }
       return;
     } else if (value == 'close_project') {
       ref.read(projectLoadedProvider.notifier).state = false;
@@ -462,91 +481,6 @@ class _TitleBarState extends ConsumerState<TitleBar> {
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showCreateProjectDialog(BuildContext context, WidgetRef ref) {
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController directoryController = TextEditingController();
-    String? selectedDirectory;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Create New Flutter Project'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Project Name',
-                  hintText: 'Enter project name',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: directoryController,
-                      decoration: const InputDecoration(
-                        labelText: 'Parent Directory',
-                        hintText: 'Select parent directory',
-                        border: OutlineInputBorder(),
-                      ),
-                      readOnly: true,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () async {
-                      final selectedDir = await FilePicker.platform
-                          .getDirectoryPath();
-                      if (selectedDir != null) {
-                        selectedDirectory = selectedDir;
-                        directoryController.text = selectedDir;
-                      }
-                    },
-                    child: const Text('Browse'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                if (nameController.text.isNotEmpty &&
-                    selectedDirectory != null) {
-                  Navigator.of(context).pop();
-
-                  // Use ProjectService to create the project
-                  final projectService = ref.read(projectServiceProvider);
-                  final success = await projectService.createProject(
-                    nameController.text,
-                    selectedDirectory!,
-                  );
-
-                  if (!success) {
-                    // ignore: use_build_context_synchronously
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Failed to create project')),
-                    );
-                  }
-                }
-              },
-              child: const Text('Create'),
             ),
           ],
         );

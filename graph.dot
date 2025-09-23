@@ -42,6 +42,7 @@ digraph "" {
   "/lib/widgets/resizable_splitter.dart" [label="resizable_splitter"];
   "/lib/widgets/diff_viewer.dart" [label="diff_viewer"];
   "/lib/widgets/title_bar.dart" [label="title_bar"];
+  "/lib/widgets/create_project_dialog.dart" [label="create_project_dialog"];
   "/lib/widgets/menu_builder.dart" [label="menu_builder"];
   "/lib/widgets/message_widget.dart" [label="message_widget"];
   "/lib/widgets/filename_widget.dart" [label="filename_widget"];
@@ -128,6 +129,7 @@ digraph "" {
         "/lib/widgets/resizable_splitter.dart";
         "/lib/widgets/diff_viewer.dart";
         "/lib/widgets/title_bar.dart";
+        "/lib/widgets/create_project_dialog.dart";
         "/lib/widgets/menu_builder.dart";
         "/lib/widgets/message_widget.dart";
         "/lib/widgets/filename_widget.dart";
@@ -141,6 +143,7 @@ digraph "" {
   "/integration_test/integration_test.dart" -> "/lib/main.dart";
   "/integration_test/integration_test.dart" -> "/lib/providers/app_providers.dart";
   "/integration_test/integration_test.dart" -> "/lib/models/file_system_item.dart";
+  "/integration_test/integration_test.dart" -> "/lib/widgets/create_project_dialog.dart";
   "/test/widget_test.dart" -> "/lib/main.dart";
   "/lib/providers/app_providers.dart" -> "/lib/models/file_system_item.dart";
   "/lib/providers/app_providers.dart" -> "/lib/models/project_node.dart";
@@ -221,11 +224,13 @@ digraph "" {
   "/lib/screens/main_layout.dart" -> "/lib/panels/left/left_panel.dart";
   "/lib/screens/main_layout.dart" -> "/lib/panels/center/center_panel.dart";
   "/lib/screens/main_layout.dart" -> "/lib/panels/right/right_panel.dart";
+  "/lib/screens/welcome_screen.dart" -> "/lib/providers/app_providers.dart";
   "/lib/main.dart" -> "/lib/services/project_service.dart";
   "/lib/main.dart" -> "/lib/providers/app_providers.dart";
   "/lib/main.dart" -> "/lib/screens/main_layout.dart";
   "/lib/main.dart" -> "/lib/widgets/title_bar.dart";
   "/lib/main.dart" -> "/lib/widgets/menu_builder.dart";
+  "/lib/main.dart" -> "/lib/widgets/create_project_dialog.dart";
   "/lib/main.dart" -> "/lib/panels/center/editor_screen.dart";
   "/lib/main.dart" -> "/lib/screens/loading_screen.dart";
   "/lib/main.dart" -> "/lib/screens/welcome_screen.dart";
@@ -235,10 +240,12 @@ digraph "" {
   "/lib/services/project_service.dart" -> "/lib/services/git_service.dart";
   "/lib/services/project_service.dart" -> "/lib/services/file_system_watcher.dart";
   "/lib/services/project_service.dart" -> "/lib/providers/app_providers.dart";
+  "/lib/services/project_service.dart" -> "/lib/main.dart";
   "/lib/services/git_service.dart" -> "/lib/utils/file_utils.dart";
   "/lib/services/file_system_watcher.dart" -> "/lib/models/project_node.dart";
   "/lib/services/file_system_service.dart" -> "/lib/models/file_system_item.dart";
   "/lib/widgets/title_bar.dart" -> "/lib/providers/app_providers.dart";
+  "/lib/widgets/title_bar.dart" -> "/lib/widgets/create_project_dialog.dart";
   "/lib/widgets/menu_builder.dart" -> "/lib/providers/app_providers.dart";
   "/lib/widgets/menu_builder.dart" -> "/lib/services/git_service.dart";
   "/lib/widgets/filename_widget.dart" -> "/lib/models/file_extension_icon.dart";

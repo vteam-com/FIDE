@@ -8,7 +8,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:logging/logging.dart';
-import 'package:path_provider/path_provider.dart';
 
 // Providers
 import 'providers/app_providers.dart';
@@ -17,6 +16,7 @@ import 'providers/app_providers.dart';
 import 'screens/main_layout.dart';
 import 'widgets/title_bar.dart';
 import 'widgets/menu_builder.dart';
+import 'widgets/create_project_dialog.dart';
 
 // Screens
 import 'panels/center/editor_screen.dart';
@@ -489,14 +489,19 @@ class _FIDEState extends ConsumerState<FIDE> {
                       return WelcomeScreen(
                         onOpenFolder: pickDirectory,
                         onCreateProject: () async {
+                          debugPrint('onCreateProject called');
                           // Show dialog to get project name and location
                           final Map<String, String>? result =
-                              await _showCreateProjectDialog(context);
+                              await showCreateProjectDialog(context);
+                          debugPrint('Dialog result: $result');
                           if (result != null) {
                             final String projectName = result['name'] as String;
                             final String parentDirectory =
                                 result['directory'] as String;
 
+                            debugPrint(
+                              'Creating project: $projectName in $parentDirectory',
+                            );
                             // Use ProjectService to create the project
                             final ProjectService projectService = ref.read(
                               projectServiceProvider,
@@ -504,6 +509,7 @@ class _FIDEState extends ConsumerState<FIDE> {
                             final bool success = await projectService
                                 .createProject(projectName, parentDirectory);
 
+                            debugPrint('Project creation success: $success');
                             if (!success) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
@@ -623,84 +629,6 @@ class _FIDEState extends ConsumerState<FIDE> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       focusNode.requestFocus();
     });
-  }
-
-  Future<Map<String, String>?> _showCreateProjectDialog(
-    BuildContext context,
-  ) async {
-    final TextEditingController nameController = TextEditingController();
-    final directoryPath = (await getApplicationDocumentsDirectory()).path;
-    final TextEditingController directoryController = TextEditingController(
-      text: directoryPath,
-    );
-    String? selectedDirectory;
-
-    return showDialog<Map<String, String>>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('New Flutter Project'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Project Name',
-                  hintText: 'Enter project name',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: directoryController,
-                      decoration: const InputDecoration(
-                        labelText: 'Parent Directory',
-                        hintText: 'Select parent directory',
-                        border: OutlineInputBorder(),
-                      ),
-                      readOnly: true,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  TextButton(
-                    onPressed: () async {
-                      final selectedDir = await FilePicker.platform
-                          .getDirectoryPath();
-                      if (selectedDir != null) {
-                        selectedDirectory = selectedDir;
-                        directoryController.text = selectedDir;
-                      }
-                    },
-                    child: const Text('Browse'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            OutlinedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            OutlinedButton(
-              onPressed: () {
-                final directory = selectedDirectory ?? directoryController.text;
-                if (nameController.text.isNotEmpty && directory.isNotEmpty) {
-                  Navigator.of(
-                    context,
-                  ).pop({'name': nameController.text, 'directory': directory});
-                }
-              },
-              child: const Text('Create'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void _switchToPanel(WidgetRef ref, int panelIndex) {

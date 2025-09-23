@@ -2,7 +2,9 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../providers/app_providers.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({
@@ -39,234 +41,245 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // Main content
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Theme.of(context).colorScheme.surface,
-                Theme.of(
-                  context,
-                ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
-              ],
-            ),
-          ),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return Center(
-                child: SizedBox(
-                  width: 600,
-                  height: constraints.maxHeight,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Fixed content at top (centered)
-                      Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          spacing: 4,
-                          children: [
-                            SizedBox(height: 16),
-                            // App Title
-                            Text(
-                              'Welcome to',
-                              style: Theme.of(context).textTheme.headlineMedium
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                              textAlign: TextAlign.center,
-                            ),
+    return Consumer(
+      builder: (context, ref, child) {
+        // Watch for project creation errors
+        final projectCreationError = ref.watch(projectCreationErrorProvider);
 
-                            Text(
-                              'FIDE',
-                              style: Theme.of(context).textTheme.displayLarge
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: -2.0,
-                                  ),
-                              textAlign: TextAlign.center,
-                            ),
-                            // Version Info
-                            Text(
-                              'Version $_appVersion',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(0.5),
-                                  ),
-                              textAlign: TextAlign.center,
-                            ),
+        // Show error dialog if there's an error
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (projectCreationError != null) {
+            _showErrorDialog(context, projectCreationError);
+            // Clear the error after showing
+            ref.read(projectCreationErrorProvider.notifier).state = null;
+          }
+        });
 
-                            // Subtitle
-                            Text(
-                              'Flutter Integrated Developer Environment',
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(0.7),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Scrollable content taking remaining space
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Center(
-                            child: Container(
-                              width: 600,
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.surface.withAlpha(100),
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.shadow.withOpacity(0.1),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                spacing: 16,
-                                children: [
-                                  // Action Buttons
-                                  //----------------------
-
-                                  // Open Folder Button
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 56,
-                                    child: ElevatedButton.icon(
-                                      onPressed: widget.onOpenFolder,
-                                      icon: Icon(
-                                        Icons.folder_open,
+        return Stack(
+          children: [
+            // Main content
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Theme.of(context).colorScheme.surface,
+                    Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                  ],
+                ),
+              ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Center(
+                    child: SizedBox(
+                      width: 600,
+                      height: constraints.maxHeight,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Fixed content at top (centered)
+                          Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              spacing: 4,
+                              children: [
+                                SizedBox(height: 16),
+                                // App Title
+                                Text(
+                                  'Welcome to',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(
                                         color: Theme.of(
                                           context,
-                                        ).colorScheme.onPrimary,
+                                        ).colorScheme.onSurface,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                      label: Text(
-                                        'Open Flutter Project',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.onPrimary,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                      ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Theme.of(
+                                  textAlign: TextAlign.center,
+                                ),
+                                Text(
+                                  'FIDE',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .displayLarge
+                                      ?.copyWith(
+                                        color: Theme.of(
                                           context,
                                         ).colorScheme.primary,
-                                        foregroundColor: Theme.of(
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: -2.0,
+                                      ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                // Version Info
+                                Text(
+                                  'Version $_appVersion',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withOpacity(0.5),
+                                      ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                // Subtitle
+                                Text(
+                                  'Flutter Integrated Developer Environment',
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withOpacity(0.7),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Scrollable content taking remaining space
+                          Expanded(
+                            child: SingleChildScrollView(
+                              child: Center(
+                                child: Container(
+                                  width: 600,
+                                  padding: const EdgeInsets.all(24),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.surface.withAlpha(100),
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Theme.of(
                                           context,
-                                        ).colorScheme.onPrimary,
-                                        elevation: 4,
-                                        shadowColor: Theme.of(
-                                          context,
-                                        ).colorScheme.shadow,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
+                                        ).colorScheme.shadow.withOpacity(0.1),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    spacing: 16,
+                                    children: [
+                                      // Action Buttons
+                                      // Open Folder Button
+                                      SizedBox(
+                                        width: double.infinity,
+                                        height: 56,
+                                        child: ElevatedButton.icon(
+                                          onPressed: widget.onOpenFolder,
+                                          icon: Icon(
+                                            Icons.folder_open,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimary,
+                                          ),
+                                          label: Text(
+                                            'Open Flutter Project',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).colorScheme.onPrimary,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
+                                            foregroundColor: Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimary,
+                                            elevation: 4,
+                                            shadowColor: Theme.of(
+                                              context,
+                                            ).colorScheme.shadow,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ),
-
-                                  // Create Project Button
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 56,
-                                    child: OutlinedButton.icon(
-                                      onPressed: widget.onCreateProject,
-                                      icon: Icon(
-                                        Icons.add,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary,
-                                      ),
-                                      label: Text(
-                                        'Create New Project',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
+                                      // Create Project Button
+                                      SizedBox(
+                                        width: double.infinity,
+                                        height: 56,
+                                        child: OutlinedButton.icon(
+                                          onPressed: widget.onCreateProject,
+                                          icon: Icon(
+                                            Icons.add,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
+                                          ),
+                                          label: Text(
+                                            'Create New Project',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).colorScheme.primary,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                          ),
+                                          style: OutlinedButton.styleFrom(
+                                            side: BorderSide(
                                               color: Theme.of(
                                                 context,
                                               ).colorScheme.primary,
-                                              fontWeight: FontWeight.w600,
+                                              width: 2,
                                             ),
-                                      ),
-                                      style: OutlinedButton.styleFrom(
-                                        side: BorderSide(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.primary,
-                                          width: 2,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
+                                      // Recent Projects Section
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: _buildRecentProjectsList(),
+                                      ),
+                                    ],
                                   ),
-
-                                  // Recent Projects Section
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: _buildRecentProjectsList(),
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-
-        // Top left icon
-        Positioned(
-          top: 16,
-          left: 16,
-          child: // App Logo
-          SizedBox(
-            height: 120,
-            child: Image.asset('assets/app.png'),
-          ),
-        ),
-      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            // Top left icon
+            Positioned(
+              top: 16,
+              left: 16,
+              child: SizedBox(
+                height: 120,
+                child: Image.asset('assets/app.png'),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -336,6 +349,26 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         ),
       );
     }).toList();
+  }
+
+  void _showErrorDialog(BuildContext context, String errorMessage) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Project Creation Error'),
+          content: SingleChildScrollView(child: Text(errorMessage)),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _loadAppVersion() async {
