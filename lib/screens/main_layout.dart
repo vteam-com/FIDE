@@ -447,6 +447,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
       case 'yaml':
       case 'yml':
         return yaml;
+      case 'arb':
       case 'json':
         return json;
       case 'js':

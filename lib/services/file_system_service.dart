@@ -128,6 +128,8 @@ class FileSystemService {
         return 'assets/icons/file-yaml.png';
       case '.json':
         return 'assets/icons/file-json.png';
+      case '.arb':
+        return 'assets/icons/file-json.png';
       case '.md':
       case '.markdown':
         return 'assets/icons/file-markdown.png';

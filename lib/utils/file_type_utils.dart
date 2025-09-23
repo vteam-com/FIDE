@@ -7,6 +7,7 @@ class FileTypeUtils {
   // Well-known text file extensions that should open in text editor
   static const List<String> supportedTextExtensions = [
     // Programming languages
+    'arb',
     'dart',
     'c',
     'cc',
@@ -64,7 +65,9 @@ class FileTypeUtils {
 
   /// Check if a file is a supported source file that can be opened in the editor
   static bool isSourceFile(String filePath) {
-    if (filePath.isEmpty) return false;
+    if (filePath.isEmpty) {
+      return false;
+    }
     final extension = filePath.split('.').last.toLowerCase();
 
     return supportedTextExtensions.contains(extension) ||

@@ -28,6 +28,7 @@ Icon getIconForFileExtension(
       return Icon(Icons.code, color: colorScheme.tertiary, size: 16);
     case '.css':
       return Icon(Icons.css, color: colorScheme.primary, size: 16);
+    case '.arb':
     case '.json':
       return Icon(Icons.data_object, color: colorScheme.tertiary, size: 16);
     case '.png':

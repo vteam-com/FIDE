@@ -104,6 +104,7 @@ class FileSystemItem {
     return const [
       'dart',
       'yaml',
+      'arb',
       'json',
       'xml',
       'html',
