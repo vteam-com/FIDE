@@ -70,6 +70,9 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
       ref.read(activeLeftPanelTabProvider.notifier).state =
           _tabController.index;
 
+      // Trigger rebuild to update tab icons
+      setState(() {});
+
       // Ensure selected file is visible after mode change
       if (widget.selectedFile != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -110,11 +113,35 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
               ),
               child: TabBar(
                 controller: _tabController,
-                tabs: const [
-                  Tab(icon: Icon(Icons.folder_outlined)),
-                  Tab(icon: Icon(Icons.category_outlined)),
-                  Tab(icon: Icon(Icons.commit_outlined)),
-                  Tab(icon: Icon(Icons.search_outlined)),
+                tabs: [
+                  Tab(
+                    icon: Icon(
+                      _tabController.index == 0
+                          ? Icons.folder
+                          : Icons.folder_outlined,
+                    ),
+                  ),
+                  Tab(
+                    icon: Icon(
+                      _tabController.index == 1
+                          ? Icons.category
+                          : Icons.category_outlined,
+                    ),
+                  ),
+                  Tab(
+                    icon: Icon(
+                      _tabController.index == 2
+                          ? Icons.commit
+                          : Icons.commit_outlined,
+                    ),
+                  ),
+                  Tab(
+                    icon: Icon(
+                      _tabController.index == 3
+                          ? Icons.search
+                          : Icons.search_outlined,
+                    ),
+                  ),
                 ],
                 labelColor: Theme.of(context).colorScheme.primary,
                 unselectedLabelColor: Theme.of(
