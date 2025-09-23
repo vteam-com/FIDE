@@ -374,26 +374,6 @@ class _TitleBarState extends ConsumerState<TitleBar> {
 
     items.add(
       PopupMenuItem<String>(
-        value: 'create_project',
-        child: Row(
-          children: [
-            Icon(
-              Icons.create_new_folder,
-              size: 16,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Create new Project...',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    items.add(
-      PopupMenuItem<String>(
         value: 'close_project',
         child: Row(
           children: [
@@ -405,6 +385,28 @@ class _TitleBarState extends ConsumerState<TitleBar> {
             const SizedBox(width: 8),
             Text(
               'Close Project',
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    items.add(const PopupMenuDivider());
+
+    items.add(
+      PopupMenuItem<String>(
+        value: 'create_project',
+        child: Row(
+          children: [
+            Icon(
+              Icons.create_new_folder,
+              size: 16,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Create new Project...',
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             ),
           ],
