@@ -353,6 +353,35 @@ For detailed instructions, visit: https://flutter.dev/docs/get-started/install
         _logger.info('Flutter project created successfully: $projectPath');
       }
 
+      // Initialize Git repository for the new project
+      try {
+        _logger.info(
+          'Initializing Git repository for new project: $projectPath',
+        );
+        final gitResult = await _gitService.initRepository(projectPath);
+        _logger.info('Git initialization result: $gitResult');
+
+        // Optionally create initial commit with project files
+        if (await _gitService.isGitRepository(projectPath)) {
+          _logger.info(
+            'Git repository initialized successfully, creating initial commit',
+          );
+
+          // Stage all files
+          await _gitService.stageFiles(projectPath, ['.']);
+
+          // Create initial commit
+          final commitResult = await _gitService.commit(
+            projectPath,
+            'Initial commit: $projectName Flutter project',
+          );
+          _logger.info('Initial commit result: $commitResult');
+        }
+      } catch (e) {
+        // Git initialization is not critical for project creation, so we don't fail the whole operation
+        _logger.warning('Failed to initialize Git repository: $e');
+      }
+
       // Load the newly created project
       return await loadProject(projectPath);
     } catch (e) {
@@ -524,6 +553,29 @@ void main() {
   });
 }
 ''');
+
+    // Initialize Git repository for test projects too
+    try {
+      _logger.info(
+        'Initializing Git repository for test project: $projectPath',
+      );
+      final gitResult = await _gitService.initRepository(projectPath);
+      _logger.info('Git initialization result for test project: $gitResult');
+
+      // Create initial commit for test projects
+      if (await _gitService.isGitRepository(projectPath)) {
+        await _gitService.stageFiles(projectPath, ['.']);
+        final commitResult = await _gitService.commit(
+          projectPath,
+          'Initial commit: $projectName Flutter project',
+        );
+        _logger.info('Initial commit result for test project: $commitResult');
+      }
+    } catch (e) {
+      _logger.warning(
+        'Failed to initialize Git repository for test project: $e',
+      );
+    }
   }
 
   /// Dispose of the service

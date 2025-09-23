@@ -37,7 +37,7 @@ void main() {
   ) async {
     // Start the app
     await tester.pumpWidget(const ProviderScope(child: FIDE()));
-    await tester.pumpAndSettle(const Duration(seconds: 3));
+    await tester.pumpAndSettle(const Duration(seconds: 1));
 
     // Verify we're on the welcome screen
     expect(find.text('Welcome to'), findsOneWidget);
