@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -59,7 +61,16 @@ void main() {
     final createProjectButton = find.text('Create');
     expect(createProjectButton, findsOneWidget);
     await tester.tap(createProjectButton);
-    await tester.pumpAndSettle();
+    await tester.pumpAndSettle(
+      const Duration(seconds: 2),
+    ); // Give more time for dialog to close
+
+    // Check if dialog is still open
+    final dialogStillOpen = find
+        .text('New Flutter Project')
+        .evaluate()
+        .isNotEmpty;
+    print('Dialog still open after tapping Create: $dialogStillOpen');
 
     // Wait for the dialog to disappear and project creation to complete
     expect(find.text('New Flutter Project'), findsNothing);
