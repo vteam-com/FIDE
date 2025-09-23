@@ -111,10 +111,10 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
               child: TabBar(
                 controller: _tabController,
                 tabs: const [
-                  Tab(icon: Icon(Icons.folder)),
-                  Tab(icon: Icon(Icons.category)),
-                  Tab(icon: Icon(Icons.commit)),
-                  Tab(icon: Icon(Icons.search)),
+                  Tab(icon: Icon(Icons.folder_outlined)),
+                  Tab(icon: Icon(Icons.category_outlined)),
+                  Tab(icon: Icon(Icons.commit_outlined)),
+                  Tab(icon: Icon(Icons.search_outlined)),
                 ],
                 labelColor: Theme.of(context).colorScheme.primary,
                 unselectedLabelColor: Theme.of(
