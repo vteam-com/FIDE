@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -13,8 +14,6 @@ import '../providers/app_providers.dart';
 
 // Widgets
 import 'create_project_dialog.dart';
-
-// Global functions from main.dart
 
 class TitleBar extends ConsumerStatefulWidget {
   final ThemeMode themeMode;
@@ -243,7 +242,28 @@ class _TitleBarState extends ConsumerState<TitleBar> {
     final projectManager = ref.read(projectManagerProvider);
 
     if (value == 'add_folder') {
-      // This functionality is handled in main layout - do nothing here
+      // Open folder picker first
+      try {
+        final selectedDirectory = await FilePicker.platform.getDirectoryPath();
+        if (selectedDirectory != null && mounted && context.mounted) {
+          // Use the onProjectSwitch callback to load with loading screen
+          if (widget.onProjectSwitch != null) {
+            await widget.onProjectSwitch!(selectedDirectory);
+          } else {
+            // Fallback to direct loading if no callback provided
+            final success = await projectManager.loadProject(selectedDirectory);
+            if (success) {
+              await projectManager.tryReopenLastFile(selectedDirectory);
+            }
+          }
+        }
+      } catch (e) {
+        if (mounted && context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error opening folder: $e')));
+        }
+      }
       return;
     } else if (value == 'create_project') {
       // Show create project dialog using the shared dialog

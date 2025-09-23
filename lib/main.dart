@@ -73,6 +73,60 @@ void triggerSave() {
   EditorScreen.saveCurrentEditor();
 }
 
+// Global function for opening folder picker and loading project
+Future<void> pickDirectoryAndLoadProject(
+  BuildContext context,
+  WidgetRef ref,
+) async {
+  try {
+    final selectedDirectory = await FilePicker.platform.getDirectoryPath();
+    if (selectedDirectory != null && context.mounted) {
+      // Use ProjectManager to load the project
+      final projectManager = ref.read(projectManagerProvider);
+      final success = await projectManager.loadProject(selectedDirectory);
+
+      if (success) {
+        await projectManager.tryReopenLastFile(selectedDirectory);
+
+        // Add to MRU folders
+        final currentMru = List<String>.from(ref.read(mruFoldersProvider));
+        if (!currentMru.contains(selectedDirectory)) {
+          currentMru.insert(0, selectedDirectory); // Add to beginning
+          // Keep only the most recent 10
+          if (currentMru.length > 10) {
+            currentMru.removeRange(10, currentMru.length);
+          }
+          ref.read(mruFoldersProvider.notifier).state = currentMru;
+
+          // Save to SharedPreferences
+          try {
+            final prefs = await ref.read(sharedPreferencesProvider.future);
+            await prefs.setStringList('mru_folders', currentMru);
+          } catch (e) {
+            // Silently handle SharedPreferences errors
+          }
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Failed to load project. Please ensure it is a valid Flutter project.',
+              ),
+            ),
+          );
+        }
+      }
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error loading project: $e')));
+    }
+  }
+}
+
 void triggerOpenFolder() {
   // This will be set by MainLayout
   _mainLayoutKey.currentState?.pickDirectory();
@@ -449,34 +503,7 @@ class _FIDEState extends ConsumerState<FIDE> {
 
                     // Project loading functions with access to ref
                     Future<void> pickDirectory() async {
-                      try {
-                        final selectedDirectory = await FilePicker.platform
-                            .getDirectoryPath();
-                        if (selectedDirectory != null) {
-                          // Use ProjectService to load the project
-                          final projectService = ref.read(
-                            projectServiceProvider,
-                          );
-                          final success = await projectService.loadProject(
-                            selectedDirectory,
-                          );
-
-                          if (!success) {
-                            // Show error if project loading failed
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Failed to load project. Please ensure it is a valid Flutter project.',
-                                ),
-                              ),
-                            );
-                          }
-                        }
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error loading project: $e')),
-                        );
-                      }
+                      await pickDirectoryAndLoadProject(context, ref);
                     }
 
                     if (_isLoadingProject) {
