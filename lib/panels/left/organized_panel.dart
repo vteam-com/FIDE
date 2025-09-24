@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use, avoid_print
 
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
@@ -220,12 +221,13 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
 
     // Define concept-based categories
     final Map<String, List<String>> categoryDirs = {
-      'Screens/Pages': ['lib/screens'],
+      'Screens': ['lib/screens'],
       'Widgets': ['lib/widgets'],
       'Dialogs': ['lib/dialogs'],
       'Models': ['lib/models'],
       'Services': ['lib/services'],
       'Controllers': ['lib/providers'],
+      'Localization': ['lib/l10n', 'l10n'],
     };
 
     // Collect nodes for each category
@@ -242,9 +244,9 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
       }
     }
 
-    // Move files containing 'showDialog' to Dialogs category, except for Screens/Pages
+    // Move files containing 'showDialog' to Dialogs category, except for Screens
     for (final category in categoryNodes.keys.toList()) {
-      if (category == 'Dialogs' || category == 'Screens/Pages') continue;
+      if (category == 'Dialogs' || category == 'Screens') continue;
       final filesToMove = <ProjectNode>[];
       for (final node in categoryNodes[category]!) {
         if (!node.isDirectory && node.path.endsWith('.dart')) {
@@ -265,8 +267,8 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
       }
     }
 
-    // Mark files in Screens/Pages that have showDialog
-    for (final node in categoryNodes['Screens/Pages']!) {
+    // Mark files in Screens that have showDialog
+    for (final node in categoryNodes['Screens']!) {
       if (!node.isDirectory && node.path.endsWith('.dart')) {
         try {
           final content = File(node.path).readAsStringSync();
@@ -336,7 +338,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
           final file = File(node.path);
           final content = file.readAsStringSync();
           if (category == 'Widgets' ||
-              category == 'Screens/Pages' ||
+              category == 'Screens' ||
               category == 'Dialogs') {
             // Count classes that extend something ending with Widget and class name not ending with State
             final classDeclarations = RegExp(
@@ -371,6 +373,16 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
             ).allMatches(content);
             count += functionMatches.length;
           }
+        } catch (e) {
+          // ignore
+        }
+      } else if (node.path.endsWith('.arb') && category == 'Localization') {
+        try {
+          final file = File(node.path);
+          final content = file.readAsStringSync();
+          final json = jsonDecode(content) as Map<String, dynamic>;
+          // Count keys that don't start with @
+          count += json.keys.where((key) => !key.startsWith('@')).length;
         } catch (e) {
           // ignore
         }
@@ -465,7 +477,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     // Set expansion state
     item.isExpanded = expandedState[node.path] ?? false;
     // Set warning if applicable
-    if (_currentCategory == 'Screens/Pages' &&
+    if (_currentCategory == 'Screens' &&
         _filesWithShowDialog[node.path] == true) {
       item = FileSystemItem(
         name: item.name,
