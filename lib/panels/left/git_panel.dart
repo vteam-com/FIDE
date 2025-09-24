@@ -347,18 +347,11 @@ class _GitPanelState extends ConsumerState<GitPanel> {
             return Row(
               children: [
                 Expanded(
-                  child: GestureDetector(
+                  child: FileNameWidget(
+                    item: item,
+                    isSelected: isSelected,
+                    showGitBadge: false,
                     onTap: () => widget.onFileSelected?.call(item),
-                    child: FileNameWidget(
-                      item: item,
-                      isSelected: isSelected,
-                      showExpansionIndicator: false,
-                      showContextMenuButton: false,
-                      showGitBadge: false,
-                      onTap: null, // Disable FileSystemItemWidget's tap
-                      onLongPress:
-                          null, // Disable FileSystemItemWidget's long press
-                    ),
                   ),
                 ),
                 IconButton(

@@ -93,18 +93,30 @@ class FileTypeUtils {
 
 /// Shared utility for getting file icons
 class FileIconUtils {
-  static Widget getFileIcon(FileSystemItem item, {double size = 16}) {
-    if (item.isCodeFile) {
-      return Icon(Icons.code, size: size);
-    }
+  static Widget getFileIcon(
+    FileSystemItem item, {
+    double size = 16,
+    final Color? color,
+  }) {
     switch (item.fileExtension.toLowerCase()) {
       case 'dart':
+      case '.py':
+      case '.java':
+      case '.kt':
+      case 'xml':
+      case 'html':
         return Icon(Icons.developer_mode, size: size);
+      case 'css':
+        return Icon(Icons.css, size: size);
+      case '.js':
+        return Icon(Icons.javascript, size: size);
       case 'json':
+      case 'arb':
         return Icon(Icons.data_object, size: size);
       case 'md':
       case 'markdown':
         return Icon(Icons.text_snippet, size: size);
+      case '.md':
       case 'gif':
       case 'jpeg':
       case 'jpg':
@@ -113,11 +125,22 @@ class FileIconUtils {
       case 'svg':
       case 'webp':
         return Icon(Icons.image, size: size);
+      case '.txt':
+        return Icon(Icons.article, size: size);
       case 'sh':
         return Icon(Icons.attach_money, size: size);
+      case '.pdf':
+        return Icon(Icons.picture_as_pdf, size: size);
+      case '.zip':
+      case '.rar':
+      case '.7z':
+      case '.tar':
+      case '.gz':
+        return Icon(Icons.archive, size: size);
       case 'yaml':
       case 'yml':
-        return Icon(Icons.settings_applications, size: size);
+      case '.gradle':
+        return Icon(Icons.build, size: size);
       default:
         return Icon(Icons.insert_drive_file, size: size);
     }

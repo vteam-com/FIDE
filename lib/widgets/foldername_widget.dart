@@ -1,8 +1,5 @@
 // ignore_for_file: deprecated_member_use
-
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as p;
 import '../models/project_node.dart';
 import '../models/file_system_item.dart';
 
@@ -13,7 +10,6 @@ class FolderNameWidget extends StatelessWidget {
   final bool isFiltered;
   final bool hasError;
   final VoidCallback? onTap;
-  final VoidCallback? onLongPress;
   final Function(Offset)? onShowContextMenu;
   final Function(ProjectNode)? onFileSelected;
 
@@ -24,7 +20,6 @@ class FolderNameWidget extends StatelessWidget {
     this.isFiltered = false,
     this.hasError = false,
     this.onTap,
-    this.onLongPress,
     this.onShowContextMenu,
     this.onFileSelected,
   });
@@ -126,65 +121,22 @@ class FolderNameWidget extends StatelessWidget {
       return Icon(iconData, color: iconColor, size: 16);
     }
 
-    if (node.isDirectory) {
-      iconData = isExpanded ? Icons.folder : Icons.folder_outlined;
-      return Stack(
-        alignment: AlignmentGeometry.center,
-        children: [
-          Icon(iconData, color: iconColor, size: 20),
-          if (node.children.isNotEmpty)
-            Text(
-              node.children.length.toString(),
-              style: TextStyle(
-                fontSize: 8,
-                fontWeight: FontWeight.bold,
-                color: isExpanded ? Colors.black : Colors.white,
-              ),
+    iconData = isExpanded ? Icons.folder : Icons.folder_outlined;
+    return Stack(
+      alignment: AlignmentGeometry.center,
+      children: [
+        Icon(iconData, color: iconColor, size: 20),
+        if (node.children.isNotEmpty)
+          Text(
+            node.children.length.toString(),
+            style: TextStyle(
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+              color: isExpanded ? Colors.black : Colors.white,
             ),
-        ],
-      );
-    }
-
-    // File icon based on extension
-    iconData = _getFileIcon(node.name);
-    return Icon(iconData, color: iconColor, size: 16);
-  }
-
-  IconData _getFileIcon(String fileName) {
-    final extension = p.extension(fileName).toLowerCase();
-
-    switch (extension) {
-      case '.dart':
-        return Icons.code;
-      case '.md':
-        return Icons.description;
-      case '.json':
-        return Icons.data_object;
-      case '.yaml':
-      case '.yml':
-        return Icons.settings;
-      case '.txt':
-        return Icons.text_snippet;
-      case '.png':
-      case '.jpg':
-      case '.jpeg':
-      case '.gif':
-      case '.svg':
-        return Icons.image;
-      case '.mp4':
-      case '.avi':
-      case '.mov':
-        return Icons.video_file;
-      case '.mp3':
-      case '.wav':
-        return Icons.audio_file;
-      case '.zip':
-      case '.tar':
-      case '.gz':
-        return Icons.archive;
-      default:
-        return Icons.insert_drive_file;
-    }
+          ),
+      ],
+    );
   }
 
   Widget _buildGitStatusIcon(ColorScheme colorScheme) {
@@ -210,12 +162,5 @@ class FolderNameWidget extends StatelessWidget {
     }
 
     return Icon(iconData, color: iconColor, size: 12);
-  }
-}
-
-/// Extension to provide easy access to file system item creation
-extension ProjectNodeExtensions on ProjectNode {
-  FileSystemItem toFileSystemItem() {
-    return FileSystemItem.fromFileSystemEntity(File(path));
   }
 }

@@ -10,6 +10,7 @@ import 'package:fide/utils/message_helper.dart';
 
 import 'shared_panel_utils.dart';
 import '../../providers/app_providers.dart';
+import '../../widgets/filename_widget.dart';
 import '../../widgets/foldername_widget.dart';
 
 /// OrganizedPanel provides a categorized view of the project
@@ -377,8 +378,13 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
 
   // Helper method to build node widget
   Widget _buildNode(ProjectNode node) {
-    final isSelected = widget.selectedFile?.path == node.path;
-    final isExpanded = expandedState[node.path] ?? false;
+    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
+    // Copy Git status from ProjectNode to FileSystemItem
+    item.gitStatus = node.gitStatus;
+    // Set expansion state
+    item.isExpanded = expandedState[node.path] ?? false;
+
+    final isSelected = widget.selectedFile?.path == item.path;
 
     if (node.isDirectory) {
       return Column(
@@ -387,13 +393,12 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
         children: [
           FolderNameWidget(
             node: node,
-            isExpanded: isExpanded,
-            onTap: () => _onNodeTapped(node, isExpanded),
-            onLongPress: () => _showNodeContextMenu(node, const Offset(0, 0)),
+            isExpanded: item.isExpanded,
+            onTap: () => _onNodeTapped(node, item.isExpanded),
             onShowContextMenu: (position) =>
                 _showNodeContextMenu(node, position),
           ),
-          if (isExpanded)
+          if (item.isExpanded)
             Padding(
               padding: const EdgeInsets.only(left: 16.0),
               child: node.children.isEmpty
@@ -415,12 +420,11 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
         ],
       );
     } else {
-      return FolderNameWidget(
-        node: node,
-        isExpanded: isSelected,
+      return FileNameWidget(
+        item: item,
+        isSelected: isSelected,
         onTap: () => _handleFileTap(node),
-        onLongPress: () => _showNodeContextMenu(node, const Offset(0, 0)),
-        onShowContextMenu: (position) => _showNodeContextMenu(node, position),
+        onContextMenu: (position) => _showNodeContextMenu(node, position),
       );
     }
   }

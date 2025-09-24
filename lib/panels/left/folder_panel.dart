@@ -967,6 +967,10 @@ class NodeBuilder extends StatelessWidget {
   }
 
   Widget _buildFileNode(BuildContext context) {
+    // Create FileSystemItem from ProjectNode
+    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
+    item.gitStatus = node.gitStatus;
+
     // More robust path comparison using path normalization
     final isSelected =
         selectedFile != null &&
@@ -975,99 +979,11 @@ class NodeBuilder extends StatelessWidget {
             path.canonicalize(selectedFile!.path) ==
                 path.canonicalize(node.path));
 
-    // Get Git status styling
-    final gitTextStyle = node.getGitStatusTextStyle(context);
-    final badgeText = node.getGitStatusBadge();
-
-    // Determine text color based on selection, hidden status, and Git status
-    Color textColor;
-    if (isSelected) {
-      textColor = Theme.of(context).colorScheme.primary;
-    } else if (node.isHidden) {
-      textColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.5);
-    } else {
-      textColor = gitTextStyle.color ?? Theme.of(context).colorScheme.onSurface;
-    }
-
-    // Determine background color for selection
-    Color? backgroundColor;
-    if (isSelected) {
-      backgroundColor = Theme.of(
-        context,
-      ).colorScheme.primaryContainer.withOpacity(0.3);
-    }
-
-    return GestureDetector(
+    return FileNameWidget(
+      item: item,
+      isSelected: isSelected,
       onTap: () => _handleFileTap(context),
-      onLongPressStart: (details) =>
-          onShowContextMenu(node, details.globalPosition),
-      child: Container(
-        color: backgroundColor,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: FileNameWithIcon(
-                  name: node.name,
-                  isDirectory: node.isDirectory,
-                  extension: node.fileExtension?.toLowerCase(),
-                  textStyle: gitTextStyle.copyWith(
-                    fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primary
-                        : textColor,
-                  ),
-                ),
-              ),
-              // Git status indicator
-              if (badgeText.isNotEmpty)
-                Container(
-                  margin: const EdgeInsets.only(left: 4),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: node.getGitStatusColor(context).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    badgeText,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: node.getGitStatusColor(context),
-                    ),
-                  ),
-                ),
-              // Context menu button for selected files
-              if (isSelected) ...[
-                const SizedBox(width: 4),
-                GestureDetector(
-                  onTapDown: (details) =>
-                      onShowFileContextMenu?.call(
-                        node,
-                        details.globalPosition,
-                      ) ??
-                      onShowContextMenu(node, details.globalPosition),
-                  child: Container(
-                    width: 20,
-                    height: 20,
-                    alignment: Alignment.center,
-                    child: Icon(
-                      Icons.more_vert,
-                      size: 14,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
+      onContextMenu: (offset) => onShowContextMenu(node, offset),
     );
   }
 

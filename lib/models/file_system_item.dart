@@ -97,22 +97,6 @@ class FileSystemItem {
     return ext.isNotEmpty ? ext.substring(1) : ''; // Remove the dot
   }
 
-  // Check if the item is a code file
-  bool get isCodeFile {
-    if (type != FileSystemItemType.file) return false;
-    final ext = fileExtension.toLowerCase();
-    return const [
-      'dart',
-      'yaml',
-      'arb',
-      'json',
-      'xml',
-      'html',
-      'css',
-      'js',
-    ].contains(ext);
-  }
-
   // Toggle expanded state
   void toggleExpanded() {
     if (type == FileSystemItemType.directory) {
