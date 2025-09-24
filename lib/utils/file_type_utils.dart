@@ -2,6 +2,7 @@
 
 import 'package:fide/models/file_system_item.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class FileTypeUtils {
   // Well-known text file extensions that should open in text editor
@@ -100,15 +101,23 @@ class FileIconUtils {
   }) {
     switch (item.fileExtension.toLowerCase()) {
       case 'dart':
-      case '.py':
-      case '.java':
-      case '.kt':
+        return SvgPicture.asset(
+          'assets/file_dart.svg',
+          width: size,
+          height: size,
+          colorFilter: color != null
+              ? ColorFilter.mode(color, BlendMode.srcIn)
+              : null,
+        );
+      case 'py':
+      case 'java':
+      case 'kt':
       case 'xml':
       case 'html':
         return Icon(Icons.developer_mode, size: size);
       case 'css':
         return Icon(Icons.css, size: size);
-      case '.js':
+      case 'js':
         return Icon(Icons.javascript, size: size);
       case 'json':
       case 'arb':
@@ -116,7 +125,6 @@ class FileIconUtils {
       case 'md':
       case 'markdown':
         return Icon(Icons.text_snippet, size: size);
-      case '.md':
       case 'gif':
       case 'jpeg':
       case 'jpg':
@@ -125,21 +133,21 @@ class FileIconUtils {
       case 'svg':
       case 'webp':
         return Icon(Icons.image, size: size);
-      case '.txt':
+      case 'txt':
         return Icon(Icons.article, size: size);
       case 'sh':
         return Icon(Icons.attach_money, size: size);
-      case '.pdf':
+      case 'pdf':
         return Icon(Icons.picture_as_pdf, size: size);
-      case '.zip':
-      case '.rar':
-      case '.7z':
-      case '.tar':
-      case '.gz':
+      case 'zip':
+      case 'rar':
+      case '7z':
+      case 'tar':
+      case 'gz':
         return Icon(Icons.archive, size: size);
       case 'yaml':
       case 'yml':
-      case '.gradle':
+      case 'gradle':
         return Icon(Icons.build, size: size);
       default:
         return Icon(Icons.insert_drive_file, size: size);

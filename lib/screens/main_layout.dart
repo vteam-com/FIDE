@@ -19,8 +19,6 @@ import '../panels/center/editor_screen.dart';
 // Providers
 import '../providers/app_providers.dart';
 
-// Screens - Now handled by panel components
-
 // Models
 import '../models/file_system_item.dart';
 import '../models/document_state.dart';
