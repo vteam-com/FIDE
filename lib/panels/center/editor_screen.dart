@@ -263,7 +263,7 @@ class _EditorScreenState extends State<EditorScreen> {
               ? const Center(child: CircularProgressIndicator())
               : _currentFile.isEmpty
               ? const Center(child: Text('No file selected'))
-              : !_isFileTypeSupported(_currentFile)
+              : !FileTypeUtils.isFileSupportedInEditor(_currentFile)
               ? _buildUnsupportedFileView()
               : _isImageFile(_currentFile)
               ? _buildImageView()
@@ -641,10 +641,6 @@ class _EditorScreenState extends State<EditorScreen> {
       default:
         return 'Text';
     }
-  }
-
-  bool _isFileTypeSupported(String filePath) {
-    return FileTypeUtils.isSourceFile(filePath);
   }
 
   bool _isImageFile(String filePath) {

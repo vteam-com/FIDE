@@ -1,0 +1,3 @@
+{
+  "dart.coverageRunTestScript": "${workspaceFolder}/tool/run_test.sh"
+}

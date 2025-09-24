@@ -176,7 +176,7 @@ class ProjectManager {
       }
 
       // Check if it's a source file
-      if (!FileTypeUtils.isSourceFile(lastFilePath)) {
+      if (!FileTypeUtils.isFileSupportedInEditor(lastFilePath)) {
         return;
       }
 

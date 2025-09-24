@@ -93,7 +93,21 @@ class FileSystemItem {
   // Get file extension for icons
   String get fileExtension {
     if (type != FileSystemItemType.file) return '';
-    final ext = p.extension(p.basename(path));
+    final basename = p.basename(path);
+
+    // Handle dotfiles (files starting with .)
+    if (basename.startsWith('.') && basename.length > 1) {
+      final secondDotIndex = basename.indexOf('.', 1);
+      if (secondDotIndex != -1) {
+        // File like .gitignore, .dockerignore
+        return basename.substring(1, secondDotIndex);
+      } else {
+        // File like .env, .bashrc
+        return basename.substring(1);
+      }
+    }
+
+    final ext = p.extension(basename);
     return ext.isNotEmpty ? ext.substring(1) : ''; // Remove the dot
   }
 

@@ -187,5 +187,97 @@ void main() {
       expect(find.byIcon(Icons.check_circle), findsOneWidget);
       expect(find.byIcon(Icons.close), findsOneWidget);
     });
+
+    testWidgets('MessageHelper.showSuccess displays overlay message', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: Placeholder())),
+      );
+
+      final context = tester.element(find.byType(Placeholder));
+
+      // Call MessageHelper.showSuccess
+      MessageHelper.showSuccess(context, 'Test success message');
+
+      // Pump to allow overlay to be inserted
+      await tester.pump();
+
+      // Verify the overlay message is displayed
+      expect(find.text('Test success message'), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+
+      // Pump to advance time and allow auto-removal
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('MessageHelper.showError displays overlay message', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: Placeholder())),
+      );
+
+      final context = tester.element(find.byType(Placeholder));
+
+      // Call MessageHelper.showError
+      MessageHelper.showError(context, 'Test error message');
+
+      // Pump to allow overlay to be inserted
+      await tester.pump();
+
+      // Verify the overlay message is displayed
+      expect(find.text('Test error message'), findsOneWidget);
+      expect(find.byIcon(Icons.error), findsOneWidget);
+
+      // Pump to advance time and allow auto-removal
+      await tester.pump(const Duration(seconds: 9));
+    });
+
+    testWidgets('MessageHelper.showWarning displays overlay message', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: Placeholder())),
+      );
+
+      final context = tester.element(find.byType(Placeholder));
+
+      // Call MessageHelper.showWarning
+      MessageHelper.showWarning(context, 'Test warning message');
+
+      // Pump to allow overlay to be inserted
+      await tester.pump();
+
+      // Verify the overlay message is displayed
+      expect(find.text('Test warning message'), findsOneWidget);
+      expect(find.byIcon(Icons.warning), findsOneWidget);
+
+      // Pump to advance time and allow auto-removal
+      await tester.pump(const Duration(seconds: 7));
+    });
+
+    testWidgets('MessageHelper.showInfo displays overlay message', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: Placeholder())),
+      );
+
+      final context = tester.element(find.byType(Placeholder));
+
+      // Call MessageHelper.showInfo
+      MessageHelper.showInfo(context, 'Test info message');
+
+      // Pump to allow overlay to be inserted
+      await tester.pump();
+
+      // Verify the overlay message is displayed
+      expect(find.text('Test info message'), findsOneWidget);
+      expect(find.byIcon(Icons.info), findsOneWidget);
+
+      // Pump to advance time and allow auto-removal
+      await tester.pump(const Duration(seconds: 5));
+    });
   });
 }

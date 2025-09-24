@@ -21,9 +21,10 @@ class FileTypeUtils {
     'java',
     'kt',
     'scala',
+    // xcode
     'swift',
-    'm', // Objective-C
-    'mm', // Objective-C++
+    'm',
+    'mm',
     // Web technologies
     'js',
     'ts',
@@ -65,7 +66,7 @@ class FileTypeUtils {
   ];
 
   /// Check if a file is a supported source file that can be opened in the editor
-  static bool isSourceFile(String filePath) {
+  static bool isFileSupportedInEditor(String filePath) {
     if (filePath.isEmpty) {
       return false;
     }
@@ -105,26 +106,89 @@ class FileIconUtils {
           'assets/file_dart.svg',
           width: size,
           height: size,
-          colorFilter: color != null
-              ? ColorFilter.mode(color, BlendMode.srcIn)
-              : null,
         );
+      // Programming languages
+      case 'c':
+      case 'cc':
+      case 'cpp':
+      case 'cxx':
+      case 'h':
+      case 'hpp':
+      case 'rs':
+      case 'go':
+      case 'scala':
+      case 'swift':
+      case 'm':
+      case 'mm':
       case 'py':
+      case 'pyw':
+      case 'pyx':
+      case 'pxd':
+      case 'pxi':
       case 'java':
       case 'kt':
-      case 'xml':
-      case 'html':
         return Icon(Icons.developer_mode, size: size);
-      case 'css':
-        return Icon(Icons.css, size: size);
+      // Web technologies
       case 'js':
         return Icon(Icons.javascript, size: size);
+      case 'ts':
+      case 'jsx':
+      case 'tsx':
+      case 'vue':
+      case 'svelte':
+      case 'html':
+      case 'xml':
+        return Icon(Icons.code, size: size);
+      // Stylesheets
+      case 'css':
+      case 'scss':
+      case 'sass':
+      case 'less':
+        return Icon(Icons.css, size: size);
+      // Data formats
       case 'json':
       case 'arb':
+      case 'yaml':
+      case 'yml':
+      case 'toml':
+      case 'csv':
+      case 'dot':
         return Icon(Icons.data_object, size: size);
+      // Documentation
       case 'md':
       case 'markdown':
+      case 'rst':
+      case 'adoc':
         return Icon(Icons.text_snippet, size: size);
+      // Configuration files
+      case 'ini':
+      case 'cfg':
+      case 'conf':
+      case 'properties':
+      case 'env':
+      case 'plist':
+      case 'gradle':
+        return Icon(Icons.build, size: size);
+      // Lock files (JSON-based lock files)
+      case 'lock':
+        return Icon(Icons.lock, size: size);
+      // Scripts
+      case 'sh':
+      case 'bash':
+      case 'zsh':
+      case 'fish':
+      case 'ps1':
+      case 'bat':
+      case 'cmd':
+        return Icon(Icons.terminal, size: size);
+      // Other text files
+      case 'txt':
+      case 'log':
+      case 'out':
+      case 'gitignore':
+      case 'dockerignore':
+        return Icon(Icons.article, size: size);
+      // Images
       case 'gif':
       case 'jpeg':
       case 'jpg':
@@ -132,23 +196,20 @@ class FileIconUtils {
       case 'png':
       case 'svg':
       case 'webp':
+      case 'bmp':
+      case 'tiff':
+      case 'tif':
         return Icon(Icons.image, size: size);
-      case 'txt':
-        return Icon(Icons.article, size: size);
-      case 'sh':
-        return Icon(Icons.attach_money, size: size);
+      // Documents
       case 'pdf':
         return Icon(Icons.picture_as_pdf, size: size);
+      // Archives
       case 'zip':
       case 'rar':
       case '7z':
       case 'tar':
       case 'gz':
         return Icon(Icons.archive, size: size);
-      case 'yaml':
-      case 'yml':
-      case 'gradle':
-        return Icon(Icons.build, size: size);
       default:
         return Icon(Icons.insert_drive_file, size: size);
     }
