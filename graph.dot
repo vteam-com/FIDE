@@ -3,6 +3,7 @@ digraph "" {
   node [shape=rect style="filled,rounded" fontname=Arial fontsize=15 fillcolor=Lavender penwidth=1.3];
   edge [penwidth=1.3];
   "/integration_test/integration_test.dart" [label="integration_test"];
+  "/test/file_type_utils_test.dart" [label="file_type_utils_test"];
   "/test/widget_test.dart" [label="widget_test"];
   "/test/message_helper_test.dart" [label="message_helper_test"];
   "/lib/providers/app_providers.dart" [label="app_providers"];
@@ -54,6 +55,7 @@ digraph "" {
     }
     subgraph "cluster~/test" {
       label="test";
+      "/test/file_type_utils_test.dart";
       "/test/widget_test.dart";
       "/test/message_helper_test.dart";
     }
@@ -142,6 +144,8 @@ digraph "" {
   "/integration_test/integration_test.dart" -> "/lib/providers/app_providers.dart";
   "/integration_test/integration_test.dart" -> "/lib/models/file_system_item.dart";
   "/integration_test/integration_test.dart" -> "/lib/widgets/create_project_dialog.dart";
+  "/test/file_type_utils_test.dart" -> "/lib/models/file_system_item.dart";
+  "/test/file_type_utils_test.dart" -> "/lib/utils/file_type_utils.dart";
   "/test/widget_test.dart" -> "/lib/main.dart";
   "/test/message_helper_test.dart" -> "/lib/utils/message_helper.dart";
   "/test/message_helper_test.dart" -> "/lib/widgets/message_widget.dart";

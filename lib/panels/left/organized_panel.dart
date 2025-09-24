@@ -40,6 +40,8 @@ class OrganizedPanel extends ConsumerStatefulWidget {
 
 class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
   final PanelStateManager _panelState = PanelStateManager();
+  final Map<String, bool> _filesWithShowDialog = {};
+  String _currentCategory = '';
 
   @override
   void initState() {
@@ -216,108 +218,174 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
   Widget _buildOrganizedView() {
     if (projectRoot == null) return const SizedBox();
 
-    // Group files and directories by categories
-    final Map<String, List<ProjectNode>> categories = {
-      'Root': [],
-      'Lib': [],
-      'Tests': [],
-      'Assets': [],
-      'Platforms': [],
-      'Output': [],
+    // Define concept-based categories
+    final Map<String, List<String>> categoryDirs = {
+      'Screens/Pages': ['lib/screens'],
+      'Widgets': ['lib/widgets'],
+      'Dialogs': ['lib/dialogs'],
+      'Models': ['lib/models'],
+      'Services': ['lib/services'],
+      'Controllers': ['lib/providers'],
     };
 
-    // Find lib, test, and assets directories
-    ProjectNode? libDir;
-    ProjectNode? testDir;
-    ProjectNode? assetsDir;
+    // Collect nodes for each category
+    final Map<String, List<ProjectNode>> categoryNodes = {};
 
-    for (final node in projectRoot!.children) {
-      if (node.name == 'lib' && node.isDirectory) {
-        libDir = node;
-      } else if (node.name == 'test' && node.isDirectory) {
-        testDir = node;
-      } else if (node.name == 'assets' && node.isDirectory) {
-        assetsDir = node;
+    for (final category in categoryDirs.keys) {
+      categoryNodes[category] = [];
+      for (final dirPath in categoryDirs[category]!) {
+        final dirNode = _findDirectoryNode(projectRoot!, dirPath);
+        if (dirNode != null) {
+          ensureDirectoryLoaded(dirNode);
+          categoryNodes[category]!.addAll(dirNode.children);
+        }
       }
     }
 
-    // Ensure lib directory contents are loaded
-    if (libDir != null) {
-      ensureDirectoryLoaded(libDir);
-      if (libDir.children.isNotEmpty) {
-        categories['Lib']!.addAll(libDir.children);
+    // Move files containing 'showDialog' to Dialogs category, except for Screens/Pages
+    for (final category in categoryNodes.keys.toList()) {
+      if (category == 'Dialogs' || category == 'Screens/Pages') continue;
+      final filesToMove = <ProjectNode>[];
+      for (final node in categoryNodes[category]!) {
+        if (!node.isDirectory && node.path.endsWith('.dart')) {
+          try {
+            final content = File(node.path).readAsStringSync();
+            if (content.contains('showDialog')) {
+              _filesWithShowDialog[node.path] = true;
+              filesToMove.add(node);
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
+      for (final node in filesToMove) {
+        categoryNodes[category]!.remove(node);
+        categoryNodes['Dialogs']!.add(node);
       }
     }
 
-    // Ensure test directory contents are loaded
-    if (testDir != null) {
-      ensureDirectoryLoaded(testDir);
-      if (testDir.children.isNotEmpty) {
-        categories['Tests']!.addAll(testDir.children);
+    // Mark files in Screens/Pages that have showDialog
+    for (final node in categoryNodes['Screens/Pages']!) {
+      if (!node.isDirectory && node.path.endsWith('.dart')) {
+        try {
+          final content = File(node.path).readAsStringSync();
+          if (content.contains('showDialog')) {
+            _filesWithShowDialog[node.path] = true;
+          }
+        } catch (e) {
+          // ignore
+        }
       }
-    }
-
-    // Ensure assets directory contents are loaded
-    if (assetsDir != null) {
-      ensureDirectoryLoaded(assetsDir);
-      if (assetsDir.children.isNotEmpty) {
-        categories['Assets']!.addAll(assetsDir.children);
-      }
-    }
-
-    // Categorize remaining nodes
-    for (final node in projectRoot!.children) {
-      if (node == libDir || node == testDir || node == assetsDir) {
-        // Skip lib, test, and assets directories as we already processed their contents
-        continue;
-      }
-
-      if (node.name == 'android' ||
-          node.name == 'ios' ||
-          node.name == 'web' ||
-          node.name == 'windows' ||
-          node.name == 'macos' ||
-          node.name == 'linux') {
-        categories['Platforms']!.add(node);
-      } else if (node.name == 'build' ||
-          node.name == '.dart_tool' ||
-          node.name == 'benchmark') {
-        categories['Output']!.add(node);
-      } else {
-        categories['Root']!.add(node);
-      }
-    }
-
-    // Deduplicate categories
-    for (final category in categories.keys) {
-      final uniqueNodes = <String, ProjectNode>{};
-      for (final node in categories[category]!) {
-        uniqueNodes[node.path] = node;
-      }
-      categories[category] = uniqueNodes.values.toList();
     }
 
     // Build the organized view
     final List<Widget> sections = [];
 
-    for (final category in [
-      'Root',
-      'Lib',
-      'Tests',
-      'Assets',
-      'Platforms',
-      'Output',
-    ]) {
-      final nodes = categories[category]!;
+    for (final category in categoryDirs.keys) {
+      final nodes = categoryNodes[category]!;
       if (nodes.isNotEmpty) {
-        sections.add(_buildCategorySection(category, nodes));
+        final fileCount = _countFiles(nodes);
+        final elementCount = _countElements(nodes, category);
+        sections.add(
+          _buildCategorySection(category, nodes, fileCount, elementCount),
+        );
       }
     }
 
     return SingleChildScrollView(child: Column(children: sections));
   }
 
-  Widget _buildCategorySection(String category, List<ProjectNode> nodes) {
+  ProjectNode? _findDirectoryNode(ProjectNode root, String path) {
+    final parts = path.split('/');
+    ProjectNode? current = root;
+    for (final part in parts) {
+      if (part.isEmpty) continue;
+      final candidates = current?.children
+          .where((child) => child.name == part && child.isDirectory)
+          .toList();
+      if (candidates != null && candidates.isNotEmpty) {
+        current = candidates.first;
+      } else {
+        current = null;
+      }
+      if (current == null) return null;
+    }
+    return current;
+  }
+
+  int _countFiles(List<ProjectNode> nodes) {
+    int count = 0;
+    for (final node in nodes) {
+      if (node.isDirectory) {
+        count += _countFiles(node.children);
+      } else {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  int _countElements(List<ProjectNode> nodes, String category) {
+    int count = 0;
+    for (final node in nodes) {
+      if (node.isDirectory) {
+        count += _countElements(node.children, category);
+      } else if (node.path.endsWith('.dart')) {
+        try {
+          final file = File(node.path);
+          final content = file.readAsStringSync();
+          if (category == 'Widgets' ||
+              category == 'Screens/Pages' ||
+              category == 'Dialogs') {
+            // Count classes that extend something ending with Widget and class name not ending with State
+            final classDeclarations = RegExp(
+              r'class\s+(\w+)\s+extends\s+(\w+)',
+              multiLine: true,
+            ).allMatches(content);
+            for (final match in classDeclarations) {
+              final className = match.group(1)!;
+              final baseClass = match.group(2)!;
+              if (baseClass.endsWith('Widget') &&
+                  !className.endsWith('State')) {
+                count++;
+              }
+            }
+          } else if (category == 'Models' || category == 'Services') {
+            // Count all classes
+            final classMatches = RegExp(
+              r'^class\s+\w+',
+              multiLine: true,
+            ).allMatches(content);
+            count += classMatches.length;
+          } else {
+            // Count classes and functions
+            final classMatches = RegExp(
+              r'^class\s+\w+',
+              multiLine: true,
+            ).allMatches(content);
+            count += classMatches.length;
+            final functionMatches = RegExp(
+              r'^\s*(?:static\s+)?(?:\w+\s+)?\w+\s*\([^)]*\)\s*\{',
+              multiLine: true,
+            ).allMatches(content);
+            count += functionMatches.length;
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+    }
+    return count;
+  }
+
+  Widget _buildCategorySection(
+    String category,
+    List<ProjectNode> nodes,
+    int fileCount,
+    int elementCount,
+  ) {
+    _currentCategory = category;
     final isExpanded = expandedState['category_$category'] ?? false;
 
     return Column(
@@ -344,20 +412,33 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  category,
+                  category.toUpperCase(),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.primary,
+                    letterSpacing: -1.0,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const Spacer(),
+                Icon(
+                  Icons.description,
+                  size: 14,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 2),
                 Text(
-                  '(${nodes.length})',
+                  '$fileCount',
                   style: TextStyle(
                     fontSize: 11,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
+                ),
+                const SizedBox(width: 8),
+                Chip(
+                  label: Text('$elementCount', style: TextStyle(fontSize: 10)),
+                  padding: EdgeInsets.zero,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ],
             ),
@@ -366,7 +447,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
         // Category content
         if (isExpanded)
           Padding(
-            padding: const EdgeInsets.only(left: 16.0),
+            padding: const EdgeInsets.only(left: 16.0, bottom: 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: nodes.map((node) => _buildNode(node)).toList(),
@@ -378,11 +459,27 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
 
   // Helper method to build node widget
   Widget _buildNode(ProjectNode node) {
-    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
+    FileSystemItem item = FileSystemItem.fromFileSystemEntity(File(node.path));
     // Copy Git status from ProjectNode to FileSystemItem
     item.gitStatus = node.gitStatus;
     // Set expansion state
     item.isExpanded = expandedState[node.path] ?? false;
+    // Set warning if applicable
+    if (_currentCategory == 'Screens/Pages' &&
+        _filesWithShowDialog[node.path] == true) {
+      item = FileSystemItem(
+        name: item.name,
+        path: item.path,
+        type: item.type,
+        modified: item.modified,
+        size: item.size,
+        children: item.children,
+        isExpanded: item.isExpanded,
+        gitStatus: item.gitStatus,
+        warning:
+            'This file contains showDialog and should be refactored to separate screen and dialog logic.',
+      );
+    }
 
     final isSelected = widget.selectedFile?.path == item.path;
 
@@ -421,7 +518,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
       );
     } else {
       return FileNameWidget(
-        item: item,
+        fileItem: item,
         isSelected: isSelected,
         onTap: () => _handleFileTap(node),
         onContextMenu: (position) => _showNodeContextMenu(node, position),

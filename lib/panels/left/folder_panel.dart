@@ -972,7 +972,7 @@ class NodeBuilder extends StatelessWidget {
                 path.canonicalize(node.path));
 
     return FileNameWidget(
-      item: item,
+      fileItem: item,
       isSelected: isSelected,
       onTap: () => _handleFileTap(context),
       onContextMenu: (offset) => onShowContextMenu(node, offset),

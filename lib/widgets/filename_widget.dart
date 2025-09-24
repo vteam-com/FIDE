@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 /// Widget for rendering FileSystemItem with icon, text, Git status, and interactions
 class FileNameWidget extends StatelessWidget {
-  final FileSystemItem item;
+  final FileSystemItem fileItem;
   final bool isSelected;
   final bool showGitBadge;
   final VoidCallback? onTap;
@@ -13,7 +13,7 @@ class FileNameWidget extends StatelessWidget {
 
   const FileNameWidget({
     super.key,
-    required this.item,
+    required this.fileItem,
     this.isSelected = false,
     this.showGitBadge = true,
     this.onTap,
@@ -23,14 +23,16 @@ class FileNameWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Get Git status styling
-    final gitTextStyle = item.getGitStatusTextStyle(context);
-    final badgeText = showGitBadge ? item.getGitStatusBadge() : '';
+    final gitTextStyle = fileItem.getGitStatusTextStyle(context);
+    final badgeText = showGitBadge ? fileItem.getGitStatusBadge() : '';
 
-    // Determine text color based on selection, hidden status, and Git status
+    // Determine text color based on selection, hidden status, Git status, and warning
     Color textColor;
-    if (isSelected) {
+    if (fileItem.warning != null) {
+      textColor = Colors.orange;
+    } else if (isSelected) {
       textColor = Theme.of(context).colorScheme.primary;
-    } else if (item.hasGitChanges) {
+    } else if (fileItem.hasGitChanges) {
       textColor = gitTextStyle.color ?? Theme.of(context).colorScheme.onSurface;
     } else {
       textColor = Theme.of(context).colorScheme.onSurface;
@@ -59,15 +61,32 @@ class FileNameWidget extends StatelessWidget {
 
               // File/directory name
               Expanded(
-                child: Text(
-                  item.name,
-                  style: gitTextStyle.copyWith(
-                    fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: textColor,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+                child: fileItem.warning != null
+                    ? Tooltip(
+                        message: fileItem.warning!,
+                        child: Text(
+                          fileItem.name,
+                          style: gitTextStyle.copyWith(
+                            fontSize: 13,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                            color: textColor,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      )
+                    : Text(
+                        fileItem.name,
+                        style: gitTextStyle.copyWith(
+                          fontSize: 13,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                          color: textColor,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
               ),
               if (badgeText.isNotEmpty)
                 Container(
@@ -77,7 +96,7 @@ class FileNameWidget extends StatelessWidget {
                     vertical: 1,
                   ),
                   decoration: BoxDecoration(
-                    color: item.getGitStatusColor(context).withOpacity(0.1),
+                    color: fileItem.getGitStatusColor(context).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -85,7 +104,7 @@ class FileNameWidget extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: item.getGitStatusColor(context),
+                      color: fileItem.getGitStatusColor(context),
                     ),
                   ),
                 ),
@@ -115,15 +134,15 @@ class FileNameWidget extends StatelessWidget {
   Widget _getIcon(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
 
-    if (item.type == FileSystemItemType.parent) {
+    if (fileItem.type == FileSystemItemType.parent) {
       return Icon(Icons.folder_special, color: colorScheme.primary, size: 16);
     }
 
-    if (item.type == FileSystemItemType.directory) {
+    if (fileItem.type == FileSystemItemType.directory) {
       return Icon(Icons.folder, color: colorScheme.primary, size: 16);
     }
 
     // For files, use the shared icon utility
-    return FileIconUtils.getFileIcon(item);
+    return FileIconUtils.getFileIcon(fileItem);
   }
 }

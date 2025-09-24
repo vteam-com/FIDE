@@ -339,7 +339,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
               children: [
                 Expanded(
                   child: FileNameWidget(
-                    item: item,
+                    fileItem: item,
                     isSelected: isSelected,
                     showGitBadge: false,
                     onTap: () => widget.onFileSelected?.call(item),

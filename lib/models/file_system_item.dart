@@ -20,6 +20,7 @@ enum GitFileStatus {
 class FileSystemItem {
   final String name;
   final String path;
+  final String? warning;
   final FileSystemItemType type;
   final DateTime? modified;
   final int? size;
@@ -36,6 +37,7 @@ class FileSystemItem {
     this.children,
     this.isExpanded = false,
     this.gitStatus = GitFileStatus.clean,
+    this.warning,
   });
 
   factory FileSystemItem.fromFileSystemEntity(FileSystemEntity entity) {
@@ -174,9 +176,9 @@ class FileSystemItem {
       case GitFileStatus.modified:
         return '●'; // Dot for modified
       case GitFileStatus.added:
-        return '＋'; // Plus for added
+        return '+'; // Plus for added
       case GitFileStatus.deleted:
-        return '−'; // Minus for deleted
+        return '-'; // Minus for deleted
       case GitFileStatus.untracked:
         return '?'; // Question mark for untracked
       case GitFileStatus.ignored:
