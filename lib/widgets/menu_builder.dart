@@ -8,6 +8,9 @@ import '../providers/app_providers.dart';
 // Services
 import '../services/git_service.dart';
 
+// Utils
+import '../utils/message_helper.dart';
+
 class MenuBuilder {
   final BuildContext context;
   final WidgetRef ref;
@@ -113,9 +116,7 @@ class MenuBuilder {
                   final gitService = GitService();
                   final result = await gitService.initRepository(currentPath);
                   if (context.mounted) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(result)));
+                    MessageHelper.showInfo(context, result);
                   }
                 }
               },

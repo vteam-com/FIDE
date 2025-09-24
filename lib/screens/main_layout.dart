@@ -28,6 +28,7 @@ import '../models/document_state.dart';
 // Utils
 import '../utils/file_type_utils.dart';
 import '../utils/file_utils.dart';
+import '../utils/message_helper.dart';
 
 // Widgets
 import '../widgets/resizable_splitter.dart';
@@ -236,17 +237,14 @@ class MainLayoutState extends ConsumerState<MainLayout> {
           // Reopen last file
           await projectManager.tryReopenLastFile(selectedDirectory);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Selected folder is not a valid Flutter project'),
-            ),
+          MessageHelper.showError(
+            context,
+            'Selected folder is not a valid Flutter project',
           );
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error loading project: $e')));
+      MessageHelper.showError(context, 'Error loading project: $e');
     }
   }
 

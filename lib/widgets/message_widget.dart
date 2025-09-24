@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../utils/message_helper.dart';
 
 enum MessageType { success, warning, error, info }
 
@@ -156,15 +157,9 @@ class _MessageWidgetState extends State<MessageWidget>
                       );
                       // Show a brief confirmation that text was copied
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Message copied to clipboard',
-                              style: TextStyle(color: foregroundColor),
-                            ),
-                            duration: const Duration(seconds: 2),
-                            backgroundColor: backgroundColor,
-                          ),
+                        MessageHelper.showInfo(
+                          context,
+                          'Message copied to clipboard',
                         );
                       }
                     },

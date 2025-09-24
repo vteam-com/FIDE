@@ -12,6 +12,9 @@ import 'package:logging/logging.dart';
 // Providers
 import 'providers/app_providers.dart';
 
+// Utils
+import 'utils/message_helper.dart';
+
 // Widgets
 import 'screens/main_layout.dart';
 import 'widgets/title_bar.dart';
@@ -108,21 +111,16 @@ Future<void> pickDirectoryAndLoadProject(
         }
       } else {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Failed to load project. Please ensure it is a valid Flutter project.',
-              ),
-            ),
+          MessageHelper.showError(
+            context,
+            'Failed to load project. Please ensure it is a valid Flutter project.',
           );
         }
       }
     }
   } catch (e) {
     if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error loading project: $e')));
+      MessageHelper.showError(context, 'Error loading project: $e');
     }
   }
 }
@@ -538,10 +536,9 @@ class _FIDEState extends ConsumerState<FIDE> {
 
                             debugPrint('Project creation success: $success');
                             if (!success) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Failed to create project'),
-                                ),
+                              MessageHelper.showError(
+                                context,
+                                'Failed to create project',
                               );
                             }
                           }
@@ -600,12 +597,7 @@ class _FIDEState extends ConsumerState<FIDE> {
       Navigator.of(context).pop();
     } else {
       // Show error for invalid input
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid line number'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      MessageHelper.showError(context, 'Please enter a valid line number');
     }
   }
 

@@ -6,6 +6,7 @@ import '../../services/git_service.dart';
 import '../../widgets/diff_viewer.dart';
 import '../../models/file_system_item.dart';
 import '../../widgets/filename_widget.dart';
+import '../../utils/message_helper.dart';
 
 class GitPanel extends ConsumerStatefulWidget {
   final String projectPath;
@@ -52,9 +53,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     final gitService = GitService();
     final result = await gitService.stageFiles(widget.projectPath, files);
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result)));
+      MessageHelper.showInfo(context, result);
     }
     _loadGitData();
   }
@@ -63,9 +62,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     final gitService = GitService();
     final result = await gitService.unstageFiles(widget.projectPath, files);
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result)));
+      MessageHelper.showInfo(context, result);
     }
     _loadGitData();
   }
@@ -81,9 +78,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
         _commitController.text,
       );
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(result)));
+        MessageHelper.showInfo(context, result);
       }
       _commitController.clear();
       _loadGitData();
@@ -98,9 +93,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     final gitService = GitService();
     final result = await gitService.push(widget.projectPath);
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result)));
+      MessageHelper.showInfo(context, result);
     }
     _loadGitData();
   }
@@ -109,9 +102,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     final gitService = GitService();
     final result = await gitService.pull(widget.projectPath);
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result)));
+      MessageHelper.showInfo(context, result);
     }
     _loadGitData();
   }

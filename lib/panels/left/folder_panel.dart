@@ -719,9 +719,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
       await _refreshProjectTree();
 
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Created file "$result"')));
+        MessageHelper.showSuccess(context, 'Created file "$result"');
       }
     } catch (e) {
       showError('Failed to create file: $e');
@@ -777,9 +775,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
       await _refreshProjectTree();
 
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Created folder "$result"')));
+        MessageHelper.showSuccess(context, 'Created folder "$result"');
       }
     } catch (e) {
       showError('Failed to create folder: $e');
@@ -838,9 +834,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
       await _refreshProjectTree();
 
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Renamed to "$result"')));
+        MessageHelper.showSuccess(context, 'Renamed to "$result"');
       }
     } catch (e) {
       showError('Failed to rename: $e');
@@ -886,9 +880,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
       await _refreshProjectTree();
 
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Deleted "${node.name}"')));
+        MessageHelper.showSuccess(context, 'Deleted "${node.name}"');
       }
     } catch (e) {
       showError('Failed to delete: $e');

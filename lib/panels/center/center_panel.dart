@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Providers
 import '../../providers/app_providers.dart';
 
+// Utils
+import '../../utils/message_helper.dart';
+
 // Screens
 import '../../screens/welcome_screen.dart';
 import 'editor_screen.dart';
@@ -102,10 +105,9 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
           ? WelcomeScreen(
               onOpenFolder: widget.onOpenFolder ?? () {},
               onCreateProject: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Create new project feature coming soon!'),
-                  ),
+                MessageHelper.showInfo(
+                  context,
+                  'Create new project feature coming soon!',
                 );
               },
               mruFolders: widget.mruFolders,

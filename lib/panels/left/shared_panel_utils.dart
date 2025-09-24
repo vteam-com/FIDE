@@ -193,9 +193,7 @@ class FileOperations {
       onRefresh();
 
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Created file "$result"')));
+        MessageHelper.showSuccess(context, 'Created file "$result"');
       }
     } catch (e) {
       MessageHelper.showError(context, 'Failed to create file: $e');
@@ -258,9 +256,7 @@ class FileOperations {
       onRefresh();
 
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Created folder "$result"')));
+        MessageHelper.showSuccess(context, 'Created folder "$result"');
       }
     } catch (e) {
       MessageHelper.showError(context, 'Failed to create folder: $e');
@@ -326,9 +322,7 @@ class FileOperations {
       onRefresh();
 
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Renamed to "$result"')));
+        MessageHelper.showSuccess(context, 'Renamed to "$result"');
       }
     } catch (e) {
       MessageHelper.showError(context, 'Failed to rename: $e');
@@ -378,9 +372,7 @@ class FileOperations {
       onRefresh();
 
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Deleted "${node.name}"')));
+        MessageHelper.showSuccess(context, 'Deleted "${node.name}"');
       }
     } catch (e) {
       MessageHelper.showError(context, 'Failed to delete: $e');

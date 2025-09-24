@@ -750,15 +750,11 @@ class _EditorScreenState extends State<EditorScreen> {
           widget.documentState!.isDirty = false;
         }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('File saved successfully')),
-        );
+        MessageHelper.showSuccess(context, 'File saved successfully');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error saving file: $e')));
+        MessageHelper.showError(context, 'Error saving file: $e');
       }
     }
   }
