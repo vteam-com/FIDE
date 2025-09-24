@@ -2,12 +2,14 @@
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/utils/file_type_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 
 /// Widget for rendering FileSystemItem with icon, text, Git status, and interactions
 class FileNameWidget extends StatelessWidget {
   final FileSystemItem fileItem;
   final bool isSelected;
   final bool showGitBadge;
+  final String? rootPath;
   final VoidCallback? onTap;
   final Function(Offset)? onContextMenu;
 
@@ -16,6 +18,7 @@ class FileNameWidget extends StatelessWidget {
     required this.fileItem,
     this.isSelected = false,
     this.showGitBadge = true,
+    this.rootPath,
     this.onTap,
     this.onContextMenu,
   });
@@ -61,32 +64,22 @@ class FileNameWidget extends StatelessWidget {
 
               // File/directory name
               Expanded(
-                child: fileItem.warning != null
-                    ? Tooltip(
-                        message: fileItem.warning!,
-                        child: Text(
-                          fileItem.name,
-                          style: gitTextStyle.copyWith(
-                            fontSize: 13,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                            color: textColor,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      )
-                    : Text(
-                        fileItem.name,
-                        style: gitTextStyle.copyWith(
-                          fontSize: 13,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                          color: textColor,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                child: Tooltip(
+                  message: fileItem.warning != null
+                      ? '${p.relative(fileItem.path, from: rootPath)}\n\n${fileItem.warning}'
+                      : p.join('.', p.relative(fileItem.path, from: rootPath)),
+                  child: Text(
+                    fileItem.name,
+                    style: gitTextStyle.copyWith(
+                      fontSize: 13,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                      color: textColor,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ),
               if (badgeText.isNotEmpty)
                 Container(

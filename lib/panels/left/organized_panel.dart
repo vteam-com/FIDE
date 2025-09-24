@@ -244,7 +244,33 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
       }
     }
 
-    // Move files containing 'showDialog' to Dialogs category, except for Screens
+    // Find unmatched Dart files and categorize based on content
+    final Set<String> categorizedFiles = {};
+    for (final nodes in categoryNodes.values) {
+      _collectFilePaths(nodes, categorizedFiles);
+    }
+
+    // Only search for unmatched files within the lib directory
+    final libDir = _findDirectoryNode(projectRoot!, 'lib');
+    final unmatchedFiles = libDir != null
+        ? _findUnmatchedDartFiles(libDir, categorizedFiles)
+        : <ProjectNode>[];
+    for (final fileNode in unmatchedFiles) {
+      try {
+        final content = File(fileNode.path).readAsStringSync();
+        if (content.contains('MaterialApp(')) {
+          categoryNodes['Screens']!.add(fileNode);
+          categorizedFiles.add(fileNode.path);
+        } else if (_isWidgetClass(content)) {
+          categoryNodes['Widgets']!.add(fileNode);
+          categorizedFiles.add(fileNode.path);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    // Move files containing 'showDialog' to Dialogs category, except for Screens/Pages
     for (final category in categoryNodes.keys.toList()) {
       if (category == 'Dialogs' || category == 'Screens') continue;
       final filesToMove = <ProjectNode>[];
@@ -296,6 +322,54 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     }
 
     return SingleChildScrollView(child: Column(children: sections));
+  }
+
+  void _collectFilePaths(List<ProjectNode> nodes, Set<String> filePaths) {
+    for (final node in nodes) {
+      if (node.isDirectory) {
+        _collectFilePaths(node.children, filePaths);
+      } else {
+        filePaths.add(node.path);
+      }
+    }
+  }
+
+  List<ProjectNode> _findUnmatchedDartFiles(
+    ProjectNode root,
+    Set<String> categorizedFiles,
+  ) {
+    final List<ProjectNode> unmatched = [];
+    _findDartFilesRecursive(root, unmatched, categorizedFiles);
+    return unmatched;
+  }
+
+  void _findDartFilesRecursive(
+    ProjectNode node,
+    List<ProjectNode> unmatched,
+    Set<String> categorizedFiles,
+  ) {
+    if (node.isDirectory) {
+      for (final child in node.children) {
+        _findDartFilesRecursive(child, unmatched, categorizedFiles);
+      }
+    } else if (node.path.endsWith('.dart') &&
+        !categorizedFiles.contains(node.path)) {
+      unmatched.add(node);
+    }
+  }
+
+  bool _isWidgetClass(String content) {
+    final classDeclarations = RegExp(
+      r'class\s+(\w+)\s+extends\s+(\w+)',
+      multiLine: true,
+    ).allMatches(content);
+    for (final match in classDeclarations) {
+      final baseClass = match.group(2)!;
+      if (baseClass.endsWith('Widget')) {
+        return true;
+      }
+    }
+    return false;
   }
 
   ProjectNode? _findDirectoryNode(ProjectNode root, String path) {
@@ -489,7 +563,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
         isExpanded: item.isExpanded,
         gitStatus: item.gitStatus,
         warning:
-            'This file contains showDialog and should be refactored to separate screen and dialog logic.',
+            'This file contains a showDialog, we suggest to move dialog related code to single file with dialog logic.',
       );
     }
 
@@ -532,6 +606,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
       return FileNameWidget(
         fileItem: item,
         isSelected: isSelected,
+        rootPath: projectRoot!.path,
         onTap: () => _handleFileTap(node),
         onContextMenu: (position) => _showNodeContextMenu(node, position),
       );
