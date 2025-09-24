@@ -5,6 +5,7 @@ import 'package:path/path.dart' as path;
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
+import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
 
 class SearchResult {
   final String filePath;
@@ -383,33 +384,14 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GestureDetector(
+        FolderNameWidget(
+          node: node,
+          isExpanded: isExpanded,
           onTap: () {
             setState(() {
               _expandedState[node.path] = !isExpanded;
             });
           },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-            child: Row(
-              children: [
-                Icon(
-                  isExpanded ? Icons.folder_open : Icons.folder,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 16,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  node.name,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
         if (isExpanded)
           Padding(

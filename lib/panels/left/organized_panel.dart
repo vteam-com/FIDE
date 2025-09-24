@@ -10,7 +10,7 @@ import 'package:fide/utils/message_helper.dart';
 
 import 'shared_panel_utils.dart';
 import '../../providers/app_providers.dart';
-import '../../widgets/filename_widget.dart';
+import '../../widgets/foldername_widget.dart';
 
 /// OrganizedPanel provides a categorized view of the project
 class OrganizedPanel extends ConsumerStatefulWidget {
@@ -377,30 +377,23 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
 
   // Helper method to build node widget
   Widget _buildNode(ProjectNode node) {
-    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
-    // Copy Git status from ProjectNode to FileSystemItem
-    item.gitStatus = node.gitStatus;
-    // Set expansion state
-    item.isExpanded = expandedState[node.path] ?? false;
-
-    final isSelected = widget.selectedFile?.path == item.path;
+    final isSelected = widget.selectedFile?.path == node.path;
+    final isExpanded = expandedState[node.path] ?? false;
 
     if (node.isDirectory) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          FileSystemItemWidget(
-            item: item,
-            isSelected: isSelected,
-            showExpansionIndicator: true,
-            showContextMenuButton: isSelected,
-            onTap: () => _onNodeTapped(node, item.isExpanded),
+          FolderNameWidget(
+            node: node,
+            isExpanded: isExpanded,
+            onTap: () => _onNodeTapped(node, isExpanded),
             onLongPress: () => _showNodeContextMenu(node, const Offset(0, 0)),
-            onContextMenuTap: (position) =>
+            onShowContextMenu: (position) =>
                 _showNodeContextMenu(node, position),
           ),
-          if (item.isExpanded)
+          if (isExpanded)
             Padding(
               padding: const EdgeInsets.only(left: 16.0),
               child: node.children.isEmpty
@@ -422,14 +415,12 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
         ],
       );
     } else {
-      return FileSystemItemWidget(
-        item: item,
-        isSelected: isSelected,
-        showExpansionIndicator: false,
-        showContextMenuButton: isSelected,
+      return FolderNameWidget(
+        node: node,
+        isExpanded: isSelected,
         onTap: () => _handleFileTap(node),
         onLongPress: () => _showNodeContextMenu(node, const Offset(0, 0)),
-        onContextMenuTap: (position) => _showNodeContextMenu(node, position),
+        onShowContextMenu: (position) => _showNodeContextMenu(node, position),
       );
     }
   }

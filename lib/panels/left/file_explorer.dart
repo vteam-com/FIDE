@@ -299,7 +299,7 @@ class FileExplorerState extends State<FileExplorer> {
 
     return Column(
       children: [
-        FileSystemItemWidget(
+        FileNameWidget(
           item: item,
           isSelected: isSelected,
           showExpansionIndicator: isDirectory,

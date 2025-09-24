@@ -46,7 +46,7 @@ class FileNameWithIcon extends StatelessWidget {
 }
 
 /// Widget for rendering FileSystemItem with icon, text, Git status, and interactions
-class FileSystemItemWidget extends StatelessWidget {
+class FileNameWidget extends StatelessWidget {
   final FileSystemItem item;
   final bool isSelected;
   final bool showExpansionIndicator;
@@ -56,7 +56,7 @@ class FileSystemItemWidget extends StatelessWidget {
   final VoidCallback? onLongPress;
   final Function(Offset)? onContextMenuTap;
 
-  const FileSystemItemWidget({
+  const FileNameWidget({
     super.key,
     required this.item,
     this.isSelected = false,

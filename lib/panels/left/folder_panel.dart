@@ -1,6 +1,8 @@
 // ignore_for_file: deprecated_member_use, avoid_print
 
 import 'dart:io';
+import 'package:fide/widgets/filename_widget.dart';
+import 'package:fide/widgets/foldername_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
@@ -78,30 +80,6 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     }
   }
 
-  Widget buildDirectoryNode(ProjectNode node) {
-    return NodeBuilder(
-      node: node,
-      selectedFile: widget.selectedFile,
-      expandedState: _panelState.expandedState,
-      onNodeTapped: _onNodeTapped,
-      onShowContextMenu: _showNodeContextMenu,
-      onShowFileContextMenu: _showFileContextMenu,
-      onFileSelected: _handleFileSelection,
-    );
-  }
-
-  Widget buildFileNode(ProjectNode node) {
-    return NodeBuilder(
-      node: node,
-      selectedFile: widget.selectedFile,
-      expandedState: _panelState.expandedState,
-      onNodeTapped: _onNodeTapped,
-      onShowContextMenu: _showNodeContextMenu,
-      onShowFileContextMenu: _showFileContextMenu,
-      onFileSelected: _handleFileSelection,
-    );
-  }
-
   void _handleFileSelection(ProjectNode node) {
     final item = FileSystemItem.fromFileSystemEntity(File(node.path));
     if (widget.onFileSelected != null) {
@@ -126,6 +104,18 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
 
   void _onNodeTapped(ProjectNode node, bool isExpanded) async {
     if (node.isDirectory) {
+      // Handle directory selection first
+      final FileSystemItem item = FileSystemItem.fromFileSystemEntity(
+        File(node.path),
+      );
+      final bool isCurrentlySelected = widget.selectedFile?.path == item.path;
+
+      // If not currently selected, select it
+      if (!isCurrentlySelected && widget.onFileSelected != null && mounted) {
+        widget.onFileSelected!(item);
+      }
+
+      // Handle expansion/collapse
       if (mounted) {
         setState(() {
           _panelState.expandedState[node.path] = !isExpanded;
@@ -657,9 +647,25 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
   // Helper method to build node widget
   Widget _buildNode(ProjectNode node) {
     if (node.isDirectory) {
-      return buildDirectoryNode(node);
+      return NodeBuilder(
+        node: node,
+        selectedFile: widget.selectedFile,
+        expandedState: _panelState.expandedState,
+        onNodeTapped: _onNodeTapped,
+        onShowContextMenu: _showNodeContextMenu,
+        onShowFileContextMenu: _showFileContextMenu,
+        onFileSelected: _handleFileSelection,
+      );
     } else {
-      return buildFileNode(node);
+      return NodeBuilder(
+        node: node,
+        selectedFile: widget.selectedFile,
+        expandedState: _panelState.expandedState,
+        onNodeTapped: _onNodeTapped,
+        onShowContextMenu: _showNodeContextMenu,
+        onShowFileContextMenu: _showFileContextMenu,
+        onFileSelected: _handleFileSelection,
+      );
     }
   }
 
@@ -886,6 +892,214 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
       }
     } catch (e) {
       showError('Failed to delete: $e');
+    }
+  }
+}
+
+/// Shared node builder widget
+class NodeBuilder extends StatelessWidget {
+  final ProjectNode node;
+  final FileSystemItem? selectedFile;
+  final Map<String, bool> expandedState;
+  final Function(ProjectNode, bool) onNodeTapped;
+  final Function(ProjectNode, Offset) onShowContextMenu;
+  final Function(ProjectNode, Offset)? onShowFileContextMenu;
+  final Function(ProjectNode)? onFileSelected;
+  final bool isFilteredView;
+
+  const NodeBuilder({
+    super.key,
+    required this.node,
+    this.selectedFile,
+    required this.expandedState,
+    required this.onNodeTapped,
+    required this.onShowContextMenu,
+    this.onShowFileContextMenu,
+    this.onFileSelected,
+    this.isFilteredView = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (node.isDirectory) {
+      return _buildDirectoryNode(context);
+    } else {
+      return _buildFileNode(context);
+    }
+  }
+
+  Widget _buildDirectoryNode(BuildContext context) {
+    final isExpanded = expandedState[node.path] ?? false;
+    final hasError =
+        node.loadResult != null &&
+        node.loadResult != LoadChildrenResult.success;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FolderNameWidget(
+          node: node,
+          onTap: () => onNodeTapped(node, isExpanded),
+          isExpanded: isExpanded && !hasError,
+          onShowContextMenu: (offset) => onShowContextMenu(node, offset),
+          hasError:
+              node.loadResult != null &&
+              node.loadResult != LoadChildrenResult.success,
+        ),
+
+        if (node.isDirectory && isExpanded)
+          Padding(
+            padding: EdgeInsets.only(left: node.children.isEmpty ? 32 : 16.0),
+            child: node.children.isEmpty
+                ? const Text(
+                    'empty folder',
+                    style: TextStyle(
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey,
+                      fontSize: 12,
+                    ),
+                  )
+                : _buildNodeChildren(context),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildFileNode(BuildContext context) {
+    // More robust path comparison using path normalization
+    final isSelected =
+        selectedFile != null &&
+        (selectedFile!.path == node.path ||
+            path.normalize(selectedFile!.path) == path.normalize(node.path) ||
+            path.canonicalize(selectedFile!.path) ==
+                path.canonicalize(node.path));
+
+    // Get Git status styling
+    final gitTextStyle = node.getGitStatusTextStyle(context);
+    final badgeText = node.getGitStatusBadge();
+
+    // Determine text color based on selection, hidden status, and Git status
+    Color textColor;
+    if (isSelected) {
+      textColor = Theme.of(context).colorScheme.primary;
+    } else if (node.isHidden) {
+      textColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.5);
+    } else {
+      textColor = gitTextStyle.color ?? Theme.of(context).colorScheme.onSurface;
+    }
+
+    // Determine background color for selection
+    Color? backgroundColor;
+    if (isSelected) {
+      backgroundColor = Theme.of(
+        context,
+      ).colorScheme.primaryContainer.withOpacity(0.3);
+    }
+
+    return GestureDetector(
+      onTap: () => _handleFileTap(context),
+      onLongPressStart: (details) =>
+          onShowContextMenu(node, details.globalPosition),
+      child: Container(
+        color: backgroundColor,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: FileNameWithIcon(
+                  name: node.name,
+                  isDirectory: node.isDirectory,
+                  extension: node.fileExtension?.toLowerCase(),
+                  textStyle: gitTextStyle.copyWith(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : textColor,
+                  ),
+                ),
+              ),
+              // Git status indicator
+              if (badgeText.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(left: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: node.getGitStatusColor(context).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    badgeText,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: node.getGitStatusColor(context),
+                    ),
+                  ),
+                ),
+              // Context menu button for selected files
+              if (isSelected) ...[
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTapDown: (details) =>
+                      onShowFileContextMenu?.call(
+                        node,
+                        details.globalPosition,
+                      ) ??
+                      onShowContextMenu(node, details.globalPosition),
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.more_vert,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNodeChildren(BuildContext context) {
+    // Deduplicate children by path to prevent duplicate entries
+    final uniqueChildren = <String, ProjectNode>{};
+    for (final child in node.children) {
+      uniqueChildren[child.path] = child;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: uniqueChildren.values
+          .map(
+            (child) => NodeBuilder(
+              node: child,
+              selectedFile: selectedFile,
+              expandedState: expandedState,
+              onNodeTapped: onNodeTapped,
+              onShowContextMenu: onShowContextMenu,
+              onShowFileContextMenu: onShowFileContextMenu,
+              onFileSelected: onFileSelected,
+              isFilteredView: isFilteredView,
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  void _handleFileTap(BuildContext context) {
+    if (onFileSelected != null) {
+      onFileSelected!(node);
     }
   }
 }

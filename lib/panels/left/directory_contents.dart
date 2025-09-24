@@ -65,7 +65,7 @@ class DirectoryContentsState extends State<DirectoryContents> {
 
         return Column(
           children: [
-            FileSystemItemWidget(
+            FileNameWidget(
               item: item,
               isSelected: isSelected,
               showExpansionIndicator: isDirectory,
