@@ -89,8 +89,8 @@ class _EditorScreenState extends State<EditorScreen> {
   bool _caseSensitive = false;
   bool _wholeWord = false;
 
-  // Track previous text to detect actual content changes
-  late String _previousText;
+  // Track the saved text to determine if file is dirty
+  late String _savedText;
 
   @override
   void initState() {
@@ -112,7 +112,7 @@ class _EditorScreenState extends State<EditorScreen> {
       _codeController.language = widget.documentState!.language;
     }
     _isDirty = widget.documentState!.isDirty;
-    _previousText = widget.documentState!.content;
+    _savedText = widget.documentState!.content;
 
     _codeController.addListener(_onCodeChanged);
 
@@ -170,7 +170,7 @@ class _EditorScreenState extends State<EditorScreen> {
 
         setState(() {
           _isDirty = widget.documentState!.isDirty;
-          _previousText = widget.documentState!.content;
+          _savedText = widget.documentState!.content;
           _isLoading = false;
           _isLargeFile = false; // Reset large file flag for new file
           _fileSizeMB = 0.0;
@@ -720,14 +720,9 @@ class _EditorScreenState extends State<EditorScreen> {
 
     // Always trigger a rebuild when selection or text changes
     setState(() {
-      // Mark as dirty only if text has actually changed and wasn't already dirty
-      if (!_isDirty && currentText != _previousText) {
-        _isDirty = true;
-      }
+      // Mark as dirty if current text differs from saved text
+      _isDirty = currentText != _savedText;
     });
-
-    // Update previous text
-    _previousText = currentText;
 
     // Update document state if we have document state
     if (widget.documentState != null) {
@@ -753,8 +748,8 @@ class _EditorScreenState extends State<EditorScreen> {
 
       if (mounted) {
         setState(() {
+          _savedText = _codeController.text;
           _isDirty = false;
-          _previousText = _codeController.text;
         });
 
         // Update document state if we have document state
