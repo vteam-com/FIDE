@@ -45,6 +45,7 @@ digraph "" {
   "/lib/widgets/menu_builder.dart" [label="menu_builder"];
   "/lib/widgets/message_widget.dart" [label="message_widget"];
   "/lib/widgets/filename_widget.dart" [label="filename_widget"];
+  "/lib/widgets/full_path_widget.dart" [label="full_path_widget"];
   "/lib/widgets/foldername_widget.dart" [label="foldername_widget"];
   "/tool/sort_source.dart" [label="sort_source"];
   subgraph "cluster~" {
@@ -132,6 +133,7 @@ digraph "" {
         "/lib/widgets/menu_builder.dart";
         "/lib/widgets/message_widget.dart";
         "/lib/widgets/filename_widget.dart";
+        "/lib/widgets/full_path_widget.dart";
         "/lib/widgets/foldername_widget.dart";
       }
     }
@@ -225,6 +227,7 @@ digraph "" {
   "/lib/screens/main_layout.dart" -> "/lib/panels/left/left_panel.dart";
   "/lib/screens/main_layout.dart" -> "/lib/panels/center/center_panel.dart";
   "/lib/screens/main_layout.dart" -> "/lib/panels/right/right_panel.dart";
+  "/lib/screens/loading_screen.dart" -> "/lib/widgets/full_path_widget.dart";
   "/lib/screens/welcome_screen.dart" -> "/lib/providers/app_providers.dart";
   "/lib/main.dart" -> "/lib/services/project_service.dart";
   "/lib/main.dart" -> "/lib/providers/app_providers.dart";
