@@ -82,6 +82,7 @@ class _EditorScreenState extends State<EditorScreen> {
   // Search functionality
   bool _showSearch = false;
   final TextEditingController _searchController = TextEditingController();
+  late FocusNode _searchFocusNode;
   String _searchQuery = '';
   List<int> _searchMatches = [];
   int _currentMatchIndex = -1;
@@ -99,6 +100,7 @@ class _EditorScreenState extends State<EditorScreen> {
     );
 
     _codeController = CodeCrafterController();
+    _searchFocusNode = FocusNode();
 
     // Initialize from document state (always provided by CenterPanel)
     _codeController.text = widget.documentState!.content;
@@ -136,6 +138,7 @@ class _EditorScreenState extends State<EditorScreen> {
     // Remove listener before disposing controller
     _codeController.removeListener(_onCodeChanged);
     _codeController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -951,8 +954,7 @@ class _EditorScreenState extends State<EditorScreen> {
         _searchController.text = _searchQuery;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            // Focus the search field
-            // We'll handle this in the build method
+            _searchFocusNode.requestFocus();
           }
         });
       }
@@ -967,6 +969,7 @@ class _EditorScreenState extends State<EditorScreen> {
       _searchMatches.clear();
       _currentMatchIndex = -1;
     });
+    _searchFocusNode.unfocus();
   }
 
   void _handleKeyEvent(RawKeyEvent event) {
@@ -1003,7 +1006,7 @@ class _EditorScreenState extends State<EditorScreen> {
               Expanded(
                 child: TextField(
                   controller: _searchController,
-                  autofocus: true,
+                  focusNode: _searchFocusNode,
                   decoration: InputDecoration(
                     hintText: 'Find in file...',
                     border: OutlineInputBorder(
