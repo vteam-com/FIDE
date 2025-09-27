@@ -15,6 +15,7 @@ import 'package:fide/utils/file_type_utils.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
 import 'package:fide/widgets/diff_counter.dart';
+import 'package:fide/widgets/side_by_side_diff.dart';
 import 'package:fide/services/git_service.dart';
 
 class EditorScreen extends StatefulWidget {
@@ -759,7 +760,23 @@ class _EditorScreenState extends State<EditorScreen> {
         return;
       }
 
-      // Show diff in a dialog
+      // Get the original file content (HEAD version) for oldText
+      String oldText = '';
+      try {
+        oldText = await gitService.getFileContentAtRevision(
+          path.dirname(_currentFile),
+          _currentFile,
+          'HEAD',
+        );
+      } catch (e) {
+        // If HEAD doesn't exist (new file), oldText remains empty
+        _logger.info('Could not get HEAD version of file: $e');
+      }
+
+      // Current file content for newText
+      final newText = _codeController.text;
+
+      // Show diff in a dialog with side-by-side comparison
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -767,12 +784,7 @@ class _EditorScreenState extends State<EditorScreen> {
           content: SizedBox(
             width: MediaQuery.of(context).size.width * 0.8,
             height: MediaQuery.of(context).size.height * 0.6,
-            child: SingleChildScrollView(
-              child: SelectableText(
-                diff,
-                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-              ),
-            ),
+            child: SideBySideDiff(oldText: oldText, newText: newText),
           ),
           actions: [
             TextButton(

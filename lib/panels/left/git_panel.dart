@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
 import '../../services/git_service.dart';
-import '../../widgets/diff_viewer.dart';
+import '../../widgets/side_by_side_diff.dart';
 import '../../models/file_system_item.dart';
 import '../../widgets/filename_widget.dart';
 import '../../utils/message_helper.dart';
@@ -109,22 +109,47 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
   Future<void> _viewDiff(String filePath) async {
     final gitService = GitService();
-    final diff = await gitService.getFileDiff(widget.projectPath, filePath);
+    final fullFilePath = path.join(widget.projectPath, filePath);
+
+    // Get the original file content (HEAD version) for oldText
+    String oldText = '';
+    try {
+      oldText = await gitService.getFileContentAtRevision(
+        widget.projectPath,
+        fullFilePath,
+        'HEAD',
+      );
+    } catch (e) {
+      // If HEAD doesn't exist (new file), oldText remains empty
+    }
+
+    // Get the current file content for newText
+    String newText = '';
+    try {
+      final file = File(fullFilePath);
+      if (await file.exists()) {
+        newText = await file.readAsString();
+      }
+    } catch (e) {
+      // If file doesn't exist or can't be read, newText remains empty
+    }
 
     if (mounted) {
       showDialog(
         context: context,
-        builder: (context) => Dialog(
-          insetPadding: EdgeInsets.zero,
-          child: SizedBox(
-            width: MediaQuery.of(context).size.width * 0.9,
-            height: MediaQuery.of(context).size.height * 0.9,
-            child: DiffViewer(
-              diffText: diff,
-              fileName: filePath,
-              onClose: () => Navigator.of(context).pop(),
-            ),
+        builder: (context) => AlertDialog(
+          title: Text('Git Diff: ${path.basename(filePath)}'),
+          content: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.8,
+            height: MediaQuery.of(context).size.height * 0.6,
+            child: SideBySideDiff(oldText: oldText, newText: newText),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
         ),
       );
     }

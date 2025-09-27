@@ -41,8 +41,9 @@ dependencies:
   http: ^1.1.0
   logging: ^1.2.0
   package_info_plus: ^8.0.0
-  path: ^1.8.3  
+  path: ^1.8.3
   path_provider: ^2.1.2
+  diff_match_patch: ^0.4.1
   provider: ^6.1.1
   process_run: ^0.13.0+1
   shared_preferences: ^2.2.2

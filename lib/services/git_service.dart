@@ -310,6 +310,28 @@ class GitService {
     }
   }
 
+  // Get file content at a specific revision
+  Future<String> getFileContentAtRevision(
+    String path,
+    String filePath,
+    String revision,
+  ) async {
+    try {
+      final result = await Process.run('git', [
+        'show',
+        '$revision:$filePath',
+      ], workingDirectory: path);
+
+      if (result.exitCode == 0) {
+        return result.stdout.toString();
+      } else {
+        throw Exception('Failed to get file content: ${result.stderr}');
+      }
+    } catch (e) {
+      throw Exception('Error getting file content at revision: $e');
+    }
+  }
+
   // Get diff stats for a file (added/removed lines)
   Future<GitDiffStats> getFileDiffStats(String path, String filePath) async {
     try {
