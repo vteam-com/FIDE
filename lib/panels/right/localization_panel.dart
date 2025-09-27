@@ -951,8 +951,11 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                           ),
                         ),
                         TextButton.icon(
-                          icon: const Icon(Icons.edit, size: 16),
-                          label: const Text('Edit'),
+                          icon: const Icon(Icons.edit, size: 14),
+                          label: const Text(
+                            'Edit',
+                            style: TextStyle(fontSize: 12),
+                          ),
                           onPressed: () {
                             // Open the file in FIDE's editor
                             final fileSystemItem =
@@ -963,8 +966,9 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                                 fileSystemItem;
                           },
                           style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            minimumSize: const Size(60, 32),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            minimumSize: const Size(50, 28),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
                         ),
                       ],

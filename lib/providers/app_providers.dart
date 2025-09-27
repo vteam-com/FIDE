@@ -118,6 +118,10 @@ class ProjectManager {
       ref.read(currentProjectRootProvider.notifier).state = null;
       ref.read(selectedFileProvider.notifier).state = null;
 
+      // Clear all open documents and reset active document index
+      ref.read(openDocumentsProvider.notifier).state = [];
+      ref.read(activeDocumentIndexProvider.notifier).state = -1;
+
       _logger.info('Project unloaded successfully');
     } catch (e) {
       _logger.severe('Error unloading project: $e');
