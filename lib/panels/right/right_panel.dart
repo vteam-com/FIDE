@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 // Screens
 import 'outline_panel.dart';
 import 'ai_panel.dart';
+import 'localization_panel.dart';
 
 // Models
 import '../../models/file_system_item.dart';
@@ -33,7 +34,7 @@ class _RightPanelState extends State<RightPanel>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -62,6 +63,7 @@ class _RightPanelState extends State<RightPanel>
               controller: _tabController,
               tabs: [
                 const Tab(icon: Icon(Icons.list)),
+                const Tab(icon: Icon(Icons.translate)),
                 Tab(
                   icon: Builder(
                     builder: (context) {
@@ -107,6 +109,9 @@ class _RightPanelState extends State<RightPanel>
                           style: TextStyle(fontSize: 14, color: Colors.grey),
                         ),
                       ),
+
+                // ARB tab
+                LocalizationPanel(selectedFile: widget.selectedFile),
 
                 // AI tab
                 AIPanel(selectedFile: widget.selectedFile),
