@@ -241,6 +241,7 @@ digraph "" {
   "/lib/screens/main_layout.dart" -> "/lib/panels/center/center_panel.dart";
   "/lib/screens/main_layout.dart" -> "/lib/panels/right/right_panel.dart";
   "/lib/screens/loading_screen.dart" -> "/lib/widgets/full_path_widget.dart";
+  "/lib/screens/loading_screen.dart" -> "/lib/providers/app_providers.dart";
   "/lib/screens/welcome_screen.dart" -> "/lib/providers/app_providers.dart";
   "/lib/main.dart" -> "/lib/services/project_service.dart";
   "/lib/main.dart" -> "/lib/providers/app_providers.dart";

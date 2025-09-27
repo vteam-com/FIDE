@@ -59,42 +59,66 @@ class ProjectService {
 
   /// Load a project completely independently of UI
   Future<bool> loadProject(String directoryPath) async {
+    final Duration duration = const Duration(milliseconds: 500);
+
     try {
+      // Clear loading actions
+      _ref.read(loadingActionsProvider.notifier).state = [];
+      int step = 1;
+
       // Validate that this is a Flutter project
+      _addLoadingAction(step++, 'Validating Flutter project');
       if (!await _isFlutterProject(directoryPath)) {
         _logger.warning('Not a valid Flutter project: $directoryPath');
+        _updateLoadingActionStatus(step - 1, LoadingStatus.failed);
         return false;
       }
+      _updateLoadingActionStatus(step - 1, LoadingStatus.success);
+      await Future.delayed(duration);
 
       _logger.info('Loading project: $directoryPath');
 
       // Unload current project first to ensure clean state
       if (_currentProjectRoot != null) {
+        _addLoadingAction(step++, 'Unloading previous project');
         _logger.info('Unloading previous project...');
         unloadProject();
+        _updateLoadingActionStatus(step - 1, LoadingStatus.success);
+        await Future.delayed(duration);
       }
 
       // Create project root node
+      _addLoadingAction(step++, 'Creating project structure');
       final root = await ProjectNode.fromFileSystemEntity(
         Directory(directoryPath),
       );
+      _updateLoadingActionStatus(step - 1, LoadingStatus.success);
+      await Future.delayed(duration);
 
       // Perform initial recursive enumeration
+      _addLoadingAction(step++, 'Enumerating project files');
       _logger.info('Performing initial file enumeration...');
       final result = await root.enumerateContentsRecursive();
 
       if (result != LoadChildrenResult.success) {
         _logger.severe('Failed to enumerate project contents: $result');
+        _updateLoadingActionStatus(step - 1, LoadingStatus.failed);
         return false;
       }
+      _updateLoadingActionStatus(step - 1, LoadingStatus.success);
+      await Future.delayed(duration);
 
       // Store the project root
       _currentProjectRoot = root;
 
       // Load Git status for the project
+      _addLoadingAction(step++, 'Loading Git status');
       await _loadGitStatus();
+      _updateLoadingActionStatus(step - 1, LoadingStatus.success);
+      await Future.delayed(duration);
 
       // Initialize file system watcher for incremental updates
+      _addLoadingAction(step++, 'Setting up file system watcher');
       _logger.info('Setting up file system watcher...');
       _fileSystemWatcher.initialize(_currentProjectRoot!, () {
         // This callback will be called when file system changes occur
@@ -102,8 +126,11 @@ class ProjectService {
         _logger.info('File system change detected, updating UI...');
         _notifyProjectUpdated();
       });
+      _updateLoadingActionStatus(step - 1, LoadingStatus.success);
+      await Future.delayed(duration);
 
       // Update providers - ensure proper order
+      _addLoadingAction(step++, 'Updating application state');
       _logger.info('Updating providers...');
       _logger.fine('Setting currentProjectPathProvider to: $directoryPath');
       _ref.read(currentProjectPathProvider.notifier).state = directoryPath;
@@ -114,6 +141,10 @@ class ProjectService {
           _currentProjectRoot;
       _logger.fine('Setting projectLoadedProvider to: true');
       _ref.read(projectLoadedProvider.notifier).state = true;
+      _updateLoadingActionStatus(step - 1, LoadingStatus.success);
+      await Future.delayed(duration);
+      await Future.delayed(duration);
+      await Future.delayed(duration);
 
       _logger.info('Project loaded successfully: $directoryPath');
       _logger.info(
@@ -123,6 +154,12 @@ class ProjectService {
       return true;
     } catch (e) {
       _logger.severe('Error loading project: $e');
+      // Mark the last action as failed if any
+      final actions = _ref.read(loadingActionsProvider);
+      if (actions.isNotEmpty) {
+        _updateLoadingActionStatus(actions.last.step, LoadingStatus.failed);
+        await Future.delayed(duration);
+      }
       return false;
     }
   }
@@ -576,6 +613,26 @@ void main() {
         'Failed to initialize Git repository for test project: $e',
       );
     }
+  }
+
+  /// Add a loading action to the log
+  void _addLoadingAction(int step, String text) {
+    final currentActions = _ref.read(loadingActionsProvider);
+    final updatedActions = List<LoadingAction>.from(currentActions)
+      ..add(LoadingAction(step, text, LoadingStatus.pending));
+    _ref.read(loadingActionsProvider.notifier).state = updatedActions;
+  }
+
+  /// Update the status of a loading action
+  void _updateLoadingActionStatus(int step, LoadingStatus status) {
+    final currentActions = _ref.read(loadingActionsProvider);
+    final updatedActions = currentActions.map((action) {
+      if (action.step == step) {
+        return LoadingAction(action.step, action.text, status);
+      }
+      return action;
+    }).toList();
+    _ref.read(loadingActionsProvider.notifier).state = updatedActions;
   }
 
   /// Dispose of the service

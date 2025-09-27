@@ -220,3 +220,18 @@ final activeLeftPanelTabProvider = StateProvider<int>((ref) => 0);
 
 // State management for project creation errors
 final projectCreationErrorProvider = StateProvider<String?>((ref) => null);
+
+// Loading action status
+enum LoadingStatus { pending, success, failed }
+
+// Loading action model
+class LoadingAction {
+  final int step;
+  final String text;
+  LoadingStatus status;
+
+  LoadingAction(this.step, this.text, this.status);
+}
+
+// State management for loading actions log
+final loadingActionsProvider = StateProvider<List<LoadingAction>>((ref) => []);
