@@ -256,6 +256,16 @@ class _EditorScreenState extends State<EditorScreen> {
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
+                // Git diff button next to dropdown
+                if (openDocuments.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.difference, size: 18),
+                    onPressed: _showGitDiff,
+                    tooltip: 'Show Git Diff',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    visualDensity: VisualDensity.compact,
+                  ),
               ],
             ),
             actions: [
@@ -717,6 +727,65 @@ class _EditorScreenState extends State<EditorScreen> {
     await Future.wait(futures);
     if (mounted) {
       setState(() {});
+    }
+  }
+
+  Future<void> _showGitDiff() async {
+    if (_currentFile.isEmpty) {
+      MessageHelper.showError(context, 'No file selected');
+      return;
+    }
+
+    try {
+      final gitService = GitService();
+      final isGitRepo = await gitService.isGitRepository(
+        path.dirname(_currentFile),
+      );
+
+      if (!isGitRepo) {
+        MessageHelper.showError(context, 'Not a Git repository');
+        return;
+      }
+
+      final diff = await gitService.getFileDiff(
+        path.dirname(_currentFile),
+        _currentFile,
+      );
+
+      if (!mounted) return;
+
+      if (diff.isEmpty || diff.startsWith('Error')) {
+        MessageHelper.showInfo(context, 'No changes to show');
+        return;
+      }
+
+      // Show diff in a dialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Git Diff: ${path.basename(_currentFile)}'),
+          content: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.8,
+            height: MediaQuery.of(context).size.height * 0.6,
+            child: SingleChildScrollView(
+              child: SelectableText(
+                diff,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        MessageHelper.showError(context, 'Error getting diff: $e');
+      }
     }
   }
 
