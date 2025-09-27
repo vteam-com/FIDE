@@ -814,22 +814,6 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
   Widget _buildCompleteView() {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(
-                Icons.check_circle,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Localization Complete',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ],
-          ),
-        ),
         Expanded(
           child: _arbFiles.isEmpty
               ? const Center(child: Text('No ARB files found'))
