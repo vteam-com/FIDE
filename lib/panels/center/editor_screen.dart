@@ -14,6 +14,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:fide/utils/file_type_utils.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
+import 'package:fide/widgets/diff_counter.dart';
+import 'package:fide/services/git_service.dart';
 
 class EditorScreen extends StatefulWidget {
   const EditorScreen({
@@ -92,6 +94,9 @@ class _EditorScreenState extends State<EditorScreen> {
   // Track the saved text to determine if file is dirty
   late String _savedText;
 
+  // Git diff stats for all open documents
+  final Map<String, GitDiffStats?> _allGitDiffStats = {};
+
   @override
   void initState() {
     super.initState();
@@ -115,6 +120,9 @@ class _EditorScreenState extends State<EditorScreen> {
     _savedText = widget.documentState!.content;
 
     _codeController.addListener(_onCodeChanged);
+
+    // Load git diff stats for the file
+    _loadGitDiffStatsForFile(_currentFile);
 
     // Register this editor as the current editor for global save access
     EditorScreen._currentEditor = this;
@@ -175,6 +183,9 @@ class _EditorScreenState extends State<EditorScreen> {
           _isLargeFile = false; // Reset large file flag for new file
           _fileSizeMB = 0.0;
         });
+
+        // Load git diff stats for the new file
+        _loadGitDiffStatsForFile(_currentFile);
       }
     }
   }
@@ -194,6 +205,11 @@ class _EditorScreenState extends State<EditorScreen> {
         final openDocuments = ref.watch(openDocumentsProvider);
         final activeIndex = ref.watch(activeDocumentIndexProvider);
 
+        // Load git stats for all documents if not already loaded
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _loadGitDiffStatsForAllDocuments(openDocuments);
+        });
+
         return Scaffold(
           appBar: AppBar(
             title: Row(
@@ -205,14 +221,23 @@ class _EditorScreenState extends State<EditorScreen> {
                     items: openDocuments.asMap().entries.map((entry) {
                       final index = entry.key;
                       final doc = entry.value;
+                      final gitStats = _allGitDiffStats[doc.filePath];
+
                       return DropdownMenuItem<int>(
                         value: index,
-                        child: Text(
-                          doc.fileName,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontSize: 14,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              doc.fileName,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            DiffCounter(gitStats: gitStats),
+                          ],
                         ),
                       );
                     }).toList(),
@@ -653,6 +678,46 @@ class _EditorScreenState extends State<EditorScreen> {
 
   bool _isImageFile(String filePath) {
     return FileTypeUtils.isImageFile(filePath);
+  }
+
+  Future<void> _loadGitDiffStatsForFile(String filePath) async {
+    if (filePath.isEmpty) {
+      _allGitDiffStats[filePath] = null;
+      return;
+    }
+
+    try {
+      final gitService = GitService();
+      final isGitRepo = await gitService.isGitRepository(
+        path.dirname(filePath),
+      );
+      if (!isGitRepo) {
+        _allGitDiffStats[filePath] = null;
+        return;
+      }
+
+      final stats = await gitService.getFileDiffStats(
+        path.dirname(filePath),
+        filePath,
+      );
+      _allGitDiffStats[filePath] = stats;
+    } catch (e) {
+      _logger.warning('Error loading git diff stats for $filePath: $e');
+      _allGitDiffStats[filePath] = null;
+    }
+  }
+
+  Future<void> _loadGitDiffStatsForAllDocuments(
+    List<DocumentState> documents,
+  ) async {
+    final futures = <Future>[];
+    for (final doc in documents) {
+      futures.add(_loadGitDiffStatsForFile(doc.filePath));
+    }
+    await Future.wait(futures);
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _navigateToLine(int lineNumber, {int column = 1}) {

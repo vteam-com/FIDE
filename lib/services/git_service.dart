@@ -309,6 +309,85 @@ class GitService {
       return 'Error getting unstaged diff: $e';
     }
   }
+
+  // Get diff stats for a file (added/removed lines)
+  Future<GitDiffStats> getFileDiffStats(String path, String filePath) async {
+    try {
+      // First check if file is tracked
+      final isTrackedResult = await Process.run('git', [
+        'ls-files',
+        '--error-unmatch',
+        filePath,
+      ], workingDirectory: path);
+
+      final isTracked = isTrackedResult.exitCode == 0;
+
+      if (!isTracked) {
+        // For untracked files, count all lines as additions
+        final file = File(filePath);
+        if (await file.exists()) {
+          final content = await FileUtils.readFileContentSafely(file);
+          if (content == FileUtils.fileTooBigMessage) {
+            return GitDiffStats(added: 0, removed: 0, isNewFile: true);
+          }
+          final lines = content.split('\n');
+          return GitDiffStats(added: lines.length, removed: 0, isNewFile: true);
+        }
+        return GitDiffStats(added: 0, removed: 0, isNewFile: true);
+      }
+
+      // For tracked files, get diff stats
+      final result = await Process.run('git', [
+        'diff',
+        '--numstat',
+        '--',
+        filePath,
+      ], workingDirectory: path);
+
+      if (result.exitCode == 0) {
+        final output = result.stdout.toString().trim();
+        if (output.isEmpty) {
+          // No changes
+          return GitDiffStats(added: 0, removed: 0, isNewFile: false);
+        }
+
+        final parts = output.split('\t');
+        if (parts.length >= 2) {
+          final added = int.tryParse(parts[0]) ?? 0;
+          final removed = int.tryParse(parts[1]) ?? 0;
+          return GitDiffStats(added: added, removed: removed, isNewFile: false);
+        }
+      }
+
+      // Fallback: parse diff output
+      final diffResult = await Process.run('git', [
+        'diff',
+        '--',
+        filePath,
+      ], workingDirectory: path);
+
+      if (diffResult.exitCode == 0) {
+        final diff = diffResult.stdout.toString();
+        int added = 0;
+        int removed = 0;
+
+        final lines = diff.split('\n');
+        for (final line in lines) {
+          if (line.startsWith('+') && !line.startsWith('+++')) {
+            added++;
+          } else if (line.startsWith('-') && !line.startsWith('---')) {
+            removed++;
+          }
+        }
+
+        return GitDiffStats(added: added, removed: removed, isNewFile: false);
+      }
+
+      return GitDiffStats(added: 0, removed: 0, isNewFile: false);
+    } catch (e) {
+      return GitDiffStats(added: 0, removed: 0, isNewFile: false);
+    }
+  }
 }
 
 class GitStatus {
@@ -331,4 +410,26 @@ class GitCommit {
   final String message;
 
   GitCommit({required this.hash, required this.message});
+}
+
+class GitDiffStats {
+  final int added;
+  final int removed;
+  final bool isNewFile;
+
+  GitDiffStats({
+    required this.added,
+    required this.removed,
+    required this.isNewFile,
+  });
+
+  String get displayString {
+    if (added == 0 && removed == 0) return '';
+    final parts = <String>[];
+    if (added > 0) parts.add('+$added');
+    if (removed > 0) parts.add('-$removed');
+    return parts.join(' ');
+  }
+
+  bool get hasChanges => added > 0 || removed > 0;
 }
