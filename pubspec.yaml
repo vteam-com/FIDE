@@ -33,7 +33,6 @@ dependencies:
     sdk: flutter
   flutter_highlight: ^0.7.0
   flutter_riverpod: ^2.4.9
-  flutter_markdown: ^0.6.18
   flutter_svg: ^2.0.9
   flutter_code_crafter: ^0.3.0
   flutter_pty: ^0.4.2
