@@ -55,6 +55,10 @@ class EditorScreen extends StatefulWidget {
     _currentEditor?._saveFile();
   }
 
+  static void formatCurrentFile() {
+    _currentEditor?._formatFile();
+  }
+
   static void toggleSearch() {
     _currentEditor?._toggleSearch();
   }
@@ -390,6 +394,23 @@ class _EditorScreenState extends State<EditorScreen> {
                               ],
                             ],
                             const Spacer(),
+                            // Format File button (only show for supported files)
+                            if (!_showDiffView &&
+                                _currentFile.endsWith('.dart'))
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.format_indent_increase,
+                                  size: 16,
+                                ),
+                                onPressed: _formatFile,
+                                tooltip: 'Format File (Shift+Alt+F)',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 24,
+                                  minHeight: 24,
+                                ),
+                              ),
+                            const SizedBox(width: 8),
                             Text(
                               _getFileLanguage(),
                               style: const TextStyle(fontSize: 12),
@@ -978,6 +999,65 @@ class _EditorScreenState extends State<EditorScreen> {
     } catch (e) {
       if (mounted) {
         MessageHelper.showError(context, 'Error saving file: $e');
+      }
+    }
+  }
+
+  Future<void> _formatFile() async {
+    if (_currentFile.isEmpty) return;
+
+    // Check if this is a Dart file for formatting
+    if (!_currentFile.endsWith('.dart')) {
+      MessageHelper.showInfo(
+        context,
+        'Formatting is currently only supported for Dart files',
+      );
+      return;
+    }
+
+    try {
+      setState(() => _isLoading = true);
+
+      // Run dart format on the file
+      final result = await Process.run('dart', ['format', _currentFile]);
+
+      if (result.exitCode == 0) {
+        // Format successful, reload the file content
+        final file = File(_currentFile);
+        final formattedContent = await file.readAsString();
+
+        // Update the controller with formatted content
+        _codeController.text = formattedContent;
+        _savedText = formattedContent;
+
+        setState(() {
+          _isDirty = false;
+        });
+
+        // Update document state
+        if (widget.documentState != null) {
+          widget.documentState!.content = formattedContent;
+          widget.documentState!.isDirty = false;
+        }
+
+        if (mounted) {
+          MessageHelper.showSuccess(context, 'File formatted successfully');
+        }
+      } else {
+        if (mounted) {
+          MessageHelper.showError(
+            context,
+            'Error formatting file: ${result.stderr.toString().trim()}',
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        MessageHelper.showError(context, 'Error formatting file: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
