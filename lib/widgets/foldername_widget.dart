@@ -80,6 +80,16 @@ class FolderNameWidget extends StatelessWidget {
               ),
             ),
 
+            if (node.children.isNotEmpty)
+              Chip(
+                label: Text(
+                  node.children.length.toString(),
+                  style: TextStyle(fontSize: 10),
+                ),
+                padding: EdgeInsets.zero,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+
             // Error indicator
             if (hasError) ...[
               Icon(
@@ -122,21 +132,7 @@ class FolderNameWidget extends StatelessWidget {
     }
 
     iconData = isExpanded ? Icons.folder : Icons.folder_outlined;
-    return Stack(
-      alignment: AlignmentGeometry.center,
-      children: [
-        Icon(iconData, color: iconColor, size: 20),
-        if (node.children.isNotEmpty)
-          Text(
-            node.children.length.toString(),
-            style: TextStyle(
-              fontSize: 8,
-              fontWeight: FontWeight.bold,
-              color: isExpanded ? Colors.black : Colors.white,
-            ),
-          ),
-      ],
-    );
+    return Icon(iconData, color: iconColor, size: 20);
   }
 
   Widget _buildGitStatusIcon(ColorScheme colorScheme) {
