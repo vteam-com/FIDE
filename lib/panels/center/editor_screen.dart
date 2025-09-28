@@ -142,6 +142,9 @@ class _EditorScreenState extends State<EditorScreen> {
 
   @override
   void dispose() {
+    // Remove listener first to prevent notifications during disposal
+    _codeController.removeListener(_onCodeChanged);
+
     // Auto-save file if there are unsaved changes
     if (_isDirty && _currentFile.isNotEmpty) {
       try {
@@ -159,8 +162,7 @@ class _EditorScreenState extends State<EditorScreen> {
       EditorScreen._currentEditor = null;
     }
 
-    // Remove listener before disposing controller
-    _codeController.removeListener(_onCodeChanged);
+    // Dispose controller
     _codeController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -173,18 +175,18 @@ class _EditorScreenState extends State<EditorScreen> {
     // Check if document state changed
     if (widget.documentState != oldWidget.documentState) {
       if (widget.documentState != null) {
+        // Temporarily remove listener to prevent notifications during programmatic update
+        _codeController.removeListener(_onCodeChanged);
+
         // Update to new document state
         _currentFile = widget.documentState!.filePath;
-
-        // Temporarily remove listener to avoid triggering during programmatic update
-        _codeController.removeListener(_onCodeChanged);
 
         _codeController.text = widget.documentState!.content;
         if (widget.documentState!.language != null) {
           _codeController.language = widget.documentState!.language;
         }
 
-        // Re-add listener
+        // Re-add listener after updates
         _codeController.addListener(_onCodeChanged);
 
         setState(() {
@@ -198,12 +200,17 @@ class _EditorScreenState extends State<EditorScreen> {
         // Load git diff stats for the new file
         _loadGitDiffStatsForFile(_currentFile);
 
-        // Set selection after the build cycle to avoid setState on disposed widget
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && widget.documentState != null) {
-            _codeController.selection = widget.documentState!.selection;
-          }
-        });
+        // Set selection safely after the build cycle, checking mounted status
+        if (mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && widget.documentState != null) {
+              // Remove and re-add listener around selection change to prevent notifications
+              _codeController.removeListener(_onCodeChanged);
+              _codeController.selection = widget.documentState!.selection;
+              _codeController.addListener(_onCodeChanged);
+            }
+          });
+        }
       }
     }
   }
@@ -1040,22 +1047,27 @@ class _EditorScreenState extends State<EditorScreen> {
         final file = File(_currentFile);
         final formattedContent = await file.readAsString();
 
-        // Update the controller with formatted content
-        _codeController.text = formattedContent;
-        _savedText = formattedContent;
-
-        setState(() {
-          _isDirty = false;
-        });
-
-        // Update document state
-        if (widget.documentState != null) {
-          widget.documentState!.content = formattedContent;
-          widget.documentState!.isDirty = false;
-        }
-
         if (mounted) {
-          MessageHelper.showSuccess(context, 'File formatted successfully');
+          // Use addPostFrameCallback to ensure we're not in the middle of a build/layout
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              // Update the controller with formatted content
+              _codeController.text = formattedContent;
+              _savedText = formattedContent;
+
+              setState(() {
+                _isDirty = false;
+              });
+
+              // Update document state
+              if (widget.documentState != null) {
+                widget.documentState!.content = formattedContent;
+                widget.documentState!.isDirty = false;
+              }
+
+              MessageHelper.showSuccess(context, 'File formatted successfully');
+            }
+          });
         }
       } else {
         if (mounted) {
