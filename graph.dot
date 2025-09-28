@@ -43,6 +43,7 @@ digraph "" {
   "/lib/widgets/search_toggle_icons.dart" [label="search_toggle_icons"];
   "/lib/widgets/resizable_splitter.dart" [label="resizable_splitter"];
   "/lib/widgets/diff_viewer.dart" [label="diff_viewer"];
+  "/lib/widgets/toggle_experience_mode.dart" [label="toggle_experience_mode"];
   "/lib/widgets/title_bar.dart" [label="title_bar"];
   "/lib/widgets/create_project_dialog.dart" [label="create_project_dialog"];
   "/lib/widgets/menu_builder.dart" [label="menu_builder"];
@@ -136,6 +137,7 @@ digraph "" {
         "/lib/widgets/search_toggle_icons.dart";
         "/lib/widgets/resizable_splitter.dart";
         "/lib/widgets/diff_viewer.dart";
+        "/lib/widgets/toggle_experience_mode.dart";
         "/lib/widgets/title_bar.dart";
         "/lib/widgets/create_project_dialog.dart";
         "/lib/widgets/menu_builder.dart";
@@ -188,6 +190,7 @@ digraph "" {
   "/lib/panels/center/editor_screen.dart" -> "/lib/widgets/search_toggle_icons.dart";
   "/lib/panels/center/editor_screen.dart" -> "/lib/widgets/diff_counter.dart";
   "/lib/panels/center/editor_screen.dart" -> "/lib/widgets/side_by_side_diff.dart";
+  "/lib/panels/center/editor_screen.dart" -> "/lib/widgets/toggle_experience_mode.dart";
   "/lib/panels/center/editor_screen.dart" -> "/lib/services/git_service.dart";
   "/lib/panels/center/terminal_panel.dart" -> "/lib/providers/app_providers.dart";
   "/lib/panels/center/center_panel.dart" -> "/lib/models/document_state.dart";

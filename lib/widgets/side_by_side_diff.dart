@@ -149,8 +149,7 @@ class SideBySideDiff extends StatelessWidget {
             ),
           ),
           // Diff content
-          SizedBox(
-            height: 400, // Fixed height for scrollable area
+          Expanded(
             child: ListView.builder(
               itemCount: diffLines.length,
               itemBuilder: (context, index) {

@@ -16,6 +16,7 @@ import 'package:fide/models/document_state.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
 import 'package:fide/widgets/diff_counter.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
+import 'package:fide/widgets/toggle_experience_mode.dart';
 import 'package:fide/services/git_service.dart';
 
 class EditorScreen extends StatefulWidget {
@@ -97,6 +98,11 @@ class _EditorScreenState extends State<EditorScreen> {
 
   // Git diff stats for all open documents
   final Map<String, GitDiffStats?> _allGitDiffStats = {};
+
+  // Diff view mode
+  bool _showDiffView = false;
+  String? _diffOldText;
+  String? _diffNewText;
 
   @override
   void initState() {
@@ -215,7 +221,7 @@ class _EditorScreenState extends State<EditorScreen> {
           appBar: AppBar(
             title: Row(
               children: [
-                // Document dropdown
+                // Document dropdown on the left
                 if (openDocuments.isNotEmpty)
                   DropdownButton<int>(
                     value: activeIndex,
@@ -257,16 +263,19 @@ class _EditorScreenState extends State<EditorScreen> {
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                // Git diff button next to dropdown
-                if (openDocuments.isNotEmpty)
-                  IconButton(
-                    icon: const Icon(Icons.difference, size: 18),
-                    onPressed: _showGitDiff,
-                    tooltip: 'Show Git Diff',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    visualDensity: VisualDensity.compact,
+                // Spacer to center the toggle button
+                Spacer(),
+                // Git diff button in the center (only show if there are git changes)
+                if (_allGitDiffStats[_currentFile]?.hasChanges ?? false)
+                  ToggleExperienceMode(
+                    isAlternativeMode: _showDiffView,
+                    primaryIcon: Icons.difference,
+                    alternativeIcon: Icons.edit,
+                    primaryTooltip: 'Show Diff View',
+                    alternativeTooltip: 'Back to Editor',
+                    onPressed: _toggleDiffView,
                   ),
+                Spacer(),
               ],
             ),
             actions: [
@@ -288,7 +297,7 @@ class _EditorScreenState extends State<EditorScreen> {
                 ),
               IconButton(
                 icon: const Icon(Icons.search),
-                onPressed: _toggleSearch,
+                onPressed: _showDiffView ? null : _toggleSearch,
                 tooltip: 'Find (Cmd+F)',
               ),
               IconButton(
@@ -311,6 +320,8 @@ class _EditorScreenState extends State<EditorScreen> {
               ? _buildUnsupportedFileView()
               : _isImageFile(_currentFile)
               ? _buildImageView()
+              : _showDiffView
+              ? _buildDiffView()
               : RawKeyboardListener(
                   focusNode: FocusNode(),
                   onKey: _handleKeyEvent,
@@ -349,21 +360,28 @@ class _EditorScreenState extends State<EditorScreen> {
                         ),
                         child: Row(
                           children: [
-                            Text(
-                              'Ln ${_getCurrentLineNumber()}',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            const SizedBox(width: 16),
-                            Text(
-                              'Col ${_getCurrentColumnNumber()}',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            if (_searchMatches.isNotEmpty) ...[
-                              const SizedBox(width: 16),
+                            if (_showDiffView)
+                              const Text(
+                                'Diff View',
+                                style: TextStyle(fontSize: 12),
+                              )
+                            else ...[
                               Text(
-                                '${_currentMatchIndex + 1} of ${_searchMatches.length}',
+                                'Ln ${_getCurrentLineNumber()}',
                                 style: const TextStyle(fontSize: 12),
                               ),
+                              const SizedBox(width: 16),
+                              Text(
+                                'Col ${_getCurrentColumnNumber()}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              if (_searchMatches.isNotEmpty) ...[
+                                const SizedBox(width: 16),
+                                Text(
+                                  '${_currentMatchIndex + 1} of ${_searchMatches.length}',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ],
                             ],
                             const Spacer(),
                             Text(
@@ -493,6 +511,14 @@ class _EditorScreenState extends State<EditorScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildDiffView() {
+    if (_diffOldText == null || _diffNewText == null) {
+      return const Center(child: Text('No diff data available'));
+    }
+
+    return SideBySideDiff(oldText: _diffOldText!, newText: _diffNewText!);
   }
 
   Widget _buildUnsupportedFileView() {
@@ -731,7 +757,17 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  Future<void> _showGitDiff() async {
+  Future<void> _toggleDiffView() async {
+    if (_showDiffView) {
+      // Back to editor view
+      setState(() {
+        _showDiffView = false;
+        _diffOldText = null;
+        _diffNewText = null;
+      });
+      return;
+    }
+
     if (_currentFile.isEmpty) {
       MessageHelper.showError(context, 'No file selected');
       return;
@@ -816,24 +852,12 @@ class _EditorScreenState extends State<EditorScreen> {
       // Current file content for newText
       final newText = _codeController.text;
 
-      // Show diff in a dialog with side-by-side comparison
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Git Diff: ${path.basename(_currentFile)}'),
-          content: SizedBox(
-            width: MediaQuery.of(context).size.width * 0.8,
-            height: MediaQuery.of(context).size.height * 0.6,
-            child: SideBySideDiff(oldText: oldText, newText: newText),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-      );
+      // Switch to diff view
+      setState(() {
+        _diffOldText = oldText;
+        _diffNewText = newText;
+        _showDiffView = true;
+      });
     } catch (e) {
       if (mounted) {
         MessageHelper.showError(context, 'Error getting diff: $e');
