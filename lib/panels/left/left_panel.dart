@@ -10,10 +10,13 @@ import 'folder_panel.dart';
 import 'organized_panel.dart';
 import 'git_panel.dart';
 
+// Panels
+import 'build_run_debug_panel.dart';
+
 // Models
 import '../../models/file_system_item.dart';
 
-enum PanelMode { filesystem, organized, git, search }
+enum PanelMode { filesystem, organized, git, search, buildrun }
 
 class LeftPanel extends ConsumerStatefulWidget {
   final FileSystemItem? selectedFile;
@@ -142,6 +145,13 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                           : Icons.search_outlined,
                     ),
                   ),
+                  Tab(
+                    icon: Icon(
+                      _tabController.index == 4
+                          ? Icons.play_arrow
+                          : Icons.play_arrow_outlined,
+                    ),
+                  ),
                 ],
                 labelColor: Theme.of(context).colorScheme.primary,
                 unselectedLabelColor: Theme.of(
@@ -193,6 +203,9 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                   onFileSelected: widget.onFileSelected,
                   onJumpToLine: widget.onJumpToLine,
                 ),
+
+                // Build/Run/Debug tab - using BuildRunDebugToolbar
+                const BuildRunDebugPanel(),
               ],
             ),
           ),
