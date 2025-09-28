@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:diff_match_patch/diff_match_patch.dart';
 
-// Side-by-side diff widget using diff_match_patch
+// Side-by-side diff widget
 class SideBySideDiff extends StatelessWidget {
   final String oldText;
   final String newText;
@@ -16,113 +16,83 @@ class SideBySideDiff extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dmp = DiffMatchPatch();
-    final diffs = dmp.diff(oldText, newText);
+    final List<DiffLine> diffLines = [];
 
-    // Clean up the diffs
-    dmp.diffCleanupSemantic(diffs);
-    dmp.diffCleanupEfficiency(diffs);
-
-    // Split into lines for side-by-side display
-    final oldLines = oldText.split('\n');
+    // Split texts into lines
+    final oldLines = oldText.isEmpty ? <String>[] : oldText.split('\n');
     final newLines = newText.split('\n');
 
-    // Create line-by-line diff
-    final List<DiffLine> diffLines = [];
-    int oldIndex = 0;
-    int newIndex = 0;
+    // If old text is empty (new file), show all new lines as additions
+    if (oldLines.isEmpty) {
+      for (int i = 0; i < newLines.length; i++) {
+        diffLines.add(
+          DiffLine(
+            oldLine: '',
+            oldContent: '',
+            newLine: '${i + 1}',
+            newContent: newLines[i],
+            type: DiffType.addition,
+          ),
+        );
+      }
+    } else {
+      // Use diff_match_patch for proper diffing
+      final dmp = DiffMatchPatch();
+      final diffs = dmp.diff(oldText, newText);
 
-    for (final diff in diffs) {
-      final lines = diff.text.split('\n');
-      for (int i = 0; i < lines.length; i++) {
-        final line = lines[i];
-        if (line.isEmpty && i < lines.length - 1) {
-          continue;
-        } // Skip empty lines except last
+      // Convert character-level diffs to line-level diffs
+      int oldLineNum = 1;
+      int newLineNum = 1;
 
-        switch (diff.operation) {
-          case DIFF_DELETE:
-            if (oldIndex < oldLines.length) {
+      for (final diff in diffs) {
+        final lines = diff.text.split('\n');
+
+        for (int i = 0; i < lines.length; i++) {
+          final line = lines[i];
+
+          if (diff.operation == DIFF_DELETE) {
+            if (line.isNotEmpty) {
               diffLines.add(
                 DiffLine(
-                  oldLine: '${oldIndex + 1}',
-                  oldContent: oldLines[oldIndex],
+                  oldLine: '$oldLineNum',
+                  oldContent: line,
                   newLine: '',
                   newContent: '',
                   type: DiffType.deletion,
                 ),
               );
-              oldIndex++;
+              oldLineNum++;
             }
-            break;
-          case DIFF_INSERT:
-            if (newIndex < newLines.length) {
+          } else if (diff.operation == DIFF_INSERT) {
+            if (line.isNotEmpty) {
               diffLines.add(
                 DiffLine(
                   oldLine: '',
                   oldContent: '',
-                  newLine: '${newIndex + 1}',
-                  newContent: newLines[newIndex],
+                  newLine: '$newLineNum',
+                  newContent: line,
                   type: DiffType.addition,
                 ),
               );
-              newIndex++;
+              newLineNum++;
             }
-            break;
-          case DIFF_EQUAL:
-            if (oldIndex < oldLines.length && newIndex < newLines.length) {
+          } else if (diff.operation == DIFF_EQUAL) {
+            if (line.isNotEmpty) {
               diffLines.add(
                 DiffLine(
-                  oldLine: '${oldIndex + 1}',
-                  oldContent: oldLines[oldIndex],
-                  newLine: '${newIndex + 1}',
-                  newContent: newLines[newIndex],
+                  oldLine: '$oldLineNum',
+                  oldContent: line,
+                  newLine: '$newLineNum',
+                  newContent: line,
                   type: DiffType.equal,
                 ),
               );
-              oldIndex++;
-              newIndex++;
+              oldLineNum++;
+              newLineNum++;
             }
-            break;
+          }
         }
       }
-    }
-
-    // Add remaining lines
-    while (oldIndex < oldLines.length || newIndex < newLines.length) {
-      if (oldIndex < oldLines.length && newIndex < newLines.length) {
-        diffLines.add(
-          DiffLine(
-            oldLine: '${oldIndex + 1}',
-            oldContent: oldLines[oldIndex],
-            newLine: '${newIndex + 1}',
-            newContent: newLines[newIndex],
-            type: DiffType.equal,
-          ),
-        );
-      } else if (oldIndex < oldLines.length) {
-        diffLines.add(
-          DiffLine(
-            oldLine: '${oldIndex + 1}',
-            oldContent: oldLines[oldIndex],
-            newLine: '',
-            newContent: '',
-            type: DiffType.deletion,
-          ),
-        );
-      } else if (newIndex < newLines.length) {
-        diffLines.add(
-          DiffLine(
-            oldLine: '',
-            oldContent: '',
-            newLine: '${newIndex + 1}',
-            newContent: newLines[newIndex],
-            type: DiffType.addition,
-          ),
-        );
-      }
-      oldIndex++;
-      newIndex++;
     }
 
     return Container(

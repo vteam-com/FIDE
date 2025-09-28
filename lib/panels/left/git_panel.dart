@@ -111,27 +111,76 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     final gitService = GitService();
     final fullFilePath = path.join(widget.projectPath, filePath);
 
-    // Get the original file content (HEAD version) for oldText
-    String oldText = '';
-    try {
-      oldText = await gitService.getFileContentAtRevision(
-        widget.projectPath,
-        fullFilePath,
-        'HEAD',
-      );
-    } catch (e) {
-      // If HEAD doesn't exist (new file), oldText remains empty
-    }
+    // Determine file status to get correct content
+    final status = await gitService.getStatus(widget.projectPath);
+    final isStaged = status.staged.contains(filePath);
+    final isUnstaged = status.unstaged.contains(filePath);
+    final isUntracked = status.untracked.contains(filePath);
 
-    // Get the current file content for newText
+    String oldText = '';
     String newText = '';
+
     try {
-      final file = File(fullFilePath);
-      if (await file.exists()) {
-        newText = await file.readAsString();
+      if (isUntracked) {
+        // For untracked files: empty vs working directory
+        oldText = '';
+        final file = File(fullFilePath);
+        if (await file.exists()) {
+          newText = await file.readAsString();
+        }
+      } else if (isStaged) {
+        // For staged files: HEAD vs staged content
+        try {
+          oldText = await gitService.getFileContentAtRevision(
+            widget.projectPath,
+            fullFilePath,
+            'HEAD',
+          );
+        } catch (e) {
+          // File might be new, oldText remains empty
+        }
+
+        // Get staged content using git show :file
+        final stagedResult = await Process.run('git', [
+          'show',
+          ':$filePath',
+        ], workingDirectory: widget.projectPath);
+        if (stagedResult.exitCode == 0) {
+          newText = stagedResult.stdout.toString();
+        } else {
+          // Fallback to working directory if staged content not available
+          final file = File(fullFilePath);
+          if (await file.exists()) {
+            newText = await file.readAsString();
+          }
+        }
+      } else if (isUnstaged) {
+        // For unstaged files: HEAD vs working directory
+        try {
+          oldText = await gitService.getFileContentAtRevision(
+            widget.projectPath,
+            fullFilePath,
+            'HEAD',
+          );
+        } catch (e) {
+          // File might be new, oldText remains empty
+        }
+
+        final file = File(fullFilePath);
+        if (await file.exists()) {
+          newText = await file.readAsString();
+        }
       }
     } catch (e) {
-      // If file doesn't exist or can't be read, newText remains empty
+      // If any error occurs, try to show working directory content
+      try {
+        final file = File(fullFilePath);
+        if (await file.exists()) {
+          newText = await file.readAsString();
+        }
+      } catch (fallbackError) {
+        // Ignore fallback error
+      }
     }
 
     if (mounted) {
