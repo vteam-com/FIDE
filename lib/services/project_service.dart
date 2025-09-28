@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:fide/models/project_node.dart';
@@ -87,29 +88,23 @@ class ProjectService {
         await Future.delayed(duration);
       }
 
-      // Create project root node
+      // Create project root node and perform enumeration in isolate
       _addLoadingAction(step++, 'Loading project structure');
-      final root = await ProjectNode.fromFileSystemEntity(
-        Directory(directoryPath),
+      _logger.info('Loading project structure in background isolate...');
+
+      // Use compute to run heavy file operations in a background isolate
+      _currentProjectRoot = await compute(
+        _enumerateProjectStructureInIsolate,
+        directoryPath,
       );
-      _updateLoadingActionStatus(step - 1, LoadingStatus.success);
-      await Future.delayed(duration);
 
-      // Perform initial recursive enumeration
-      _addLoadingAction(step++, 'Enumerating project files');
-      _logger.info('Performing initial file enumeration...');
-      final result = await root.enumerateContentsRecursive();
-
-      if (result != LoadChildrenResult.success) {
-        _logger.severe('Failed to enumerate project contents: $result');
+      if (_currentProjectRoot == null) {
+        _logger.severe('Failed to load project structure');
         _updateLoadingActionStatus(step - 1, LoadingStatus.failed);
         return false;
       }
       _updateLoadingActionStatus(step - 1, LoadingStatus.success);
       await Future.delayed(duration);
-
-      // Store the project root
-      _currentProjectRoot = root;
 
       // Load Git status for the project
       _addLoadingAction(step++, 'Loading Git status');
@@ -641,4 +636,11 @@ void main() {
     _watcherSubscription?.cancel();
     _currentProjectRoot = null;
   }
+}
+
+/// Isolate function for heavy file enumeration (runs off main thread)
+ProjectNode _enumerateProjectStructureInIsolate(String directoryPath) {
+  final root = ProjectNode.fromFileSystemEntitySync(Directory(directoryPath));
+  root.enumerateContentsRecursiveSync();
+  return root;
 }

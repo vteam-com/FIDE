@@ -158,6 +158,66 @@ class ProjectNode {
     }
   }
 
+  // Synchronous version for isolates (doesn't return a Future)
+  void enumerateContentsRecursiveSync() {
+    if (!isDirectory) return;
+
+    try {
+      final dir = Directory(path);
+      final List<FileSystemEntity> entities = dir.listSync();
+
+      // Sort directories first, then files, both alphabetically
+      entities.sort((a, b) {
+        final aStat = a.statSync();
+        final bStat = b.statSync();
+
+        if (aStat.type == bStat.type) {
+          final aName = p.basename(a.path).toLowerCase();
+          final bName = p.basename(b.path).toLowerCase();
+          return aName.compareTo(bName);
+        }
+
+        return aStat.type == FileSystemEntityType.directory ? -1 : 1;
+      });
+
+      children.clear();
+      for (final entity in entities) {
+        // Include all files and directories, including hidden ones
+        final childNode = fromFileSystemEntitySync(entity);
+        children.add(childNode);
+
+        // If it's a directory, recursively enumerate its contents
+        if (childNode.isDirectory) {
+          childNode.enumerateContentsRecursiveSync();
+        }
+      }
+      loadResult = LoadChildrenResult.success;
+    } catch (e) {
+      // Categorize the error for better user experience
+      if (e is PathAccessException ||
+          e.toString().contains('Operation not permitted')) {
+        loadResult = LoadChildrenResult.accessDenied;
+      } else if (e is FileSystemException) {
+        loadResult = LoadChildrenResult.fileSystemError;
+      } else {
+        loadResult = LoadChildrenResult.unknownError;
+      }
+    }
+  }
+
+  // Synchronous version of fromFileSystemEntity for isolates
+  static ProjectNode fromFileSystemEntitySync(FileSystemEntity entity) {
+    final stat = entity.statSync();
+    final isDirectory = stat.type == FileSystemEntityType.directory;
+
+    return ProjectNode(
+      name: p.basename(entity.path),
+      path: entity.path,
+      type: isDirectory ? ProjectNodeType.directory : ProjectNodeType.file,
+      isExpanded: false,
+    );
+  }
+
   // Find a node by path
   ProjectNode? findNode(String targetPath) {
     if (path == targetPath) return this;

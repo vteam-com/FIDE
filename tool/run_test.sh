@@ -15,4 +15,4 @@ lcov --add-tracefile coverage/unit.info \
 # Generate HTML report
 genhtml coverage/lcov.info -o coverage/html
 
-echo "Merged coverage generated at coverage/html/index.html"
+open coverage/html/index.html

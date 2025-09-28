@@ -17,6 +17,10 @@ class FileSystemWatcher {
 
   Function? _onTreeUpdated;
 
+  // Debouncing for UI updates
+  Timer? _updateDebounceTimer;
+  static const Duration _updateDebounceDuration = Duration(milliseconds: 150);
+
   /// Initialize the watcher with the root project node
   void initialize(ProjectNode rootNode, Function onTreeUpdated) {
     _onTreeUpdated = onTreeUpdated;
@@ -32,6 +36,8 @@ class FileSystemWatcher {
     }
     _watchers.clear();
     _watchedDirectories.clear();
+    _updateDebounceTimer?.cancel();
+    _updateDebounceTimer = null;
     _onTreeUpdated = null;
   }
 
@@ -68,7 +74,7 @@ class FileSystemWatcher {
     }
   }
 
-  /// Handle file system events
+  /// Handle file system events with debounced updates
   void _handleFileSystemEvent(FileSystemEvent event, ProjectNode parentNode) {
     final eventPath = event.path;
     final eventType = event.type;
@@ -93,11 +99,20 @@ class FileSystemWatcher {
           break;
       }
 
-      // Notify listeners that the tree has been updated
-      _onTreeUpdated?.call();
+      // Debounced UI update to prevent excessive rebuilds
+      _scheduleTreeUpdate();
     } catch (e) {
       _logger.severe('Error handling file system event: $e');
     }
+  }
+
+  /// Schedule a debounced tree update to prevent UI spamming
+  void _scheduleTreeUpdate() {
+    _updateDebounceTimer?.cancel();
+    _updateDebounceTimer = Timer(_updateDebounceDuration, () {
+      _onTreeUpdated?.call();
+      _updateDebounceTimer = null;
+    });
   }
 
   /// Handle file creation
