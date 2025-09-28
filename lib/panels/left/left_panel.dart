@@ -117,15 +117,15 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                   Tab(
                     icon: Icon(
                       _tabController.index == 0
-                          ? Icons.folder
-                          : Icons.folder_outlined,
+                          ? Icons.category
+                          : Icons.category_outlined,
                     ),
                   ),
                   Tab(
                     icon: Icon(
                       _tabController.index == 1
-                          ? Icons.category
-                          : Icons.category_outlined,
+                          ? Icons.folder
+                          : Icons.folder_outlined,
                     ),
                   ),
                   Tab(
@@ -160,8 +160,8 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
               physics:
                   const NeverScrollableScrollPhysics(), // Disable swipe gestures
               children: [
-                // Files tab
-                FolderPanel(
+                // Organized tab
+                OrganizedPanel(
                   onFileSelected: widget.onFileSelected,
                   selectedFile: widget.selectedFile,
                   onThemeChanged: widget.onThemeChanged,
@@ -170,8 +170,8 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                   initialProjectPath: widget.currentProjectPath,
                 ),
 
-                // Organized tab
-                OrganizedPanel(
+                // Files tab
+                FolderPanel(
                   onFileSelected: widget.onFileSelected,
                   selectedFile: widget.selectedFile,
                   onThemeChanged: widget.onThemeChanged,
