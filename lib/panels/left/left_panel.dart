@@ -204,7 +204,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                   onJumpToLine: widget.onJumpToLine,
                 ),
 
-                // Build/Run/Debug tab - using BuildRunDebugToolbar
+                // Build/Run/Debug tab - using BuildRunDebugPanel
                 const BuildRunDebugPanel(),
               ],
             ),

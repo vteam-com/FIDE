@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Providers
 import '../../providers/app_providers.dart';
+// Widgets
+import '../../widgets/platform_selector.dart';
 
 class BuildRunDebugPanel extends ConsumerStatefulWidget {
   const BuildRunDebugPanel({super.key});
@@ -20,10 +22,12 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
   BuildProcessStatus _debugStatus = BuildProcessStatus.idle;
 
   Process? _currentProcess;
-  StringBuffer _outputBuffer = StringBuffer();
-  StringBuffer _errorBuffer = StringBuffer();
+  final StringBuffer _outputBuffer = StringBuffer();
+  final StringBuffer _errorBuffer = StringBuffer();
   bool _hasErrors = false;
   bool _hasOutput = false;
+  String _selectedPlatform = 'android';
+  Set<String> _supportedPlatforms = {};
 
   String get _displayOutput => _outputBuffer.toString();
   String get _displayErrors => _errorBuffer.toString();
@@ -32,6 +36,85 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
   void dispose() {
     _currentProcess?.kill();
     super.dispose();
+  }
+
+  Set<String> _getSupportedPlatforms(String projectPath) {
+    final supported = <String>{};
+    final projectDir = Directory(projectPath);
+
+    if (Directory('${projectDir.path}/android').existsSync()) {
+      supported.add('android');
+    }
+    if (Directory('${projectDir.path}/ios').existsSync()) {
+      supported.add('ios');
+    }
+    if (Directory('${projectDir.path}/web').existsSync()) {
+      supported.add('web');
+    }
+    if (Directory('${projectDir.path}/windows').existsSync()) {
+      supported.add('windows');
+    }
+    if (Directory('${projectDir.path}/linux').existsSync()) {
+      supported.add('linux');
+    }
+    if (Directory('${projectDir.path}/macos').existsSync()) {
+      supported.add('macos');
+    }
+
+    return supported;
+  }
+
+  bool _canBuildOnCurrentPlatform(String targetPlatform) {
+    final currentPlatform = Platform.operatingSystem;
+
+    // Web can be built from any platform
+    if (targetPlatform == 'web') return true;
+
+    // Mobile platforms - android can be built from any, ios only from macOS
+    if (targetPlatform == 'android') return true;
+    if (targetPlatform == 'ios') return currentPlatform == 'macos';
+
+    // Desktop platforms - can only be built on the same platform
+    if (targetPlatform == 'windows') return currentPlatform == 'windows';
+    if (targetPlatform == 'linux') return currentPlatform == 'linux';
+    if (targetPlatform == 'macos') return currentPlatform == 'macos';
+
+    return false;
+  }
+
+  String _getPlatformInstructions(String platform) {
+    final currentPlatform = Platform.operatingSystem;
+    final isProjectSupported = _supportedPlatforms.contains(platform);
+    final canBuildOnCurrent = _canBuildOnCurrentPlatform(platform);
+
+    if (!isProjectSupported) {
+      // Project doesn't support this platform
+      switch (platform) {
+        case 'android':
+          return 'Android support is configured.\nYou can build and run Android apps.';
+        case 'ios':
+          return 'iOS support is configured.\nYou can build and run iOS apps.';
+        case 'web':
+          return 'To enable Flutter web:\nflutter config --enable-web\n\nThen restart the IDE.';
+        case 'windows':
+          return 'To enable Flutter Windows desktop:\nflutter config --enable-windows-desktop\n\nThen restart the IDE.';
+        case 'linux':
+          return 'To enable Flutter Linux desktop:\nflutter config --enable-linux-desktop\n\nThen restart the IDE.';
+        case 'macos':
+          return 'To enable Flutter macOS desktop:\nflutter config --enable-macos-desktop\n\nThen restart the IDE.';
+        default:
+          return 'Platform not recognized.';
+      }
+    } else if (!canBuildOnCurrent) {
+      // Project supports it but current platform can't build it
+      if (platform == 'ios' && currentPlatform != 'macos') {
+        return 'iOS builds require a macOS machine.\n\nYou cannot build iOS apps from $currentPlatform.';
+      } else {
+        return '$platform builds require a $platform machine.\n\nYou cannot build $platform apps from $currentPlatform.';
+      }
+    }
+
+    return 'Platform configuration verified.';
   }
 
   @override
@@ -49,35 +132,25 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
       );
     }
 
-    return Container(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Device selector
-          Container(
-            padding: const EdgeInsets.all(12),
-            child: DropdownButton<String>(
-              value: 'Android',
-              isExpanded: true,
-              items: const [
-                DropdownMenuItem(value: 'Android', child: Text('Android')),
-                DropdownMenuItem(value: 'iOS', child: Text('iOS')),
-                DropdownMenuItem(value: 'Web', child: Text('Web')),
-                DropdownMenuItem(value: 'Windows', child: Text('Windows')),
-                DropdownMenuItem(value: 'Linux', child: Text('Linux')),
-                DropdownMenuItem(value: 'macOS', child: Text('macOS')),
-              ],
-              onChanged: (value) {
-                // TODO: Implement device selection
-              },
-            ),
-          ),
+    _supportedPlatforms = _getSupportedPlatforms(currentProjectPath);
 
-          // Action buttons (vertical layout)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Column(
-              children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        PlatformSelector(
+          supportedPlatforms: _supportedPlatforms,
+          selectedPlatform: _selectedPlatform,
+          onPlatformSelected: (platform) =>
+              setState(() => _selectedPlatform = platform),
+        ),
+
+        // Action buttons (vertical layout)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Column(
+            children: [
+              if (_supportedPlatforms.contains(_selectedPlatform) &&
+                  _canBuildOnCurrentPlatform(_selectedPlatform)) ...[
                 _buildPanelButton(
                   label: 'Build',
                   description: 'Build app',
@@ -113,123 +186,99 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
                 ),
 
                 const SizedBox(height: 8),
-
-                _buildPanelButton(
-                  label: 'Stop',
-                  description: 'Stop running process',
-                  icon: Icons.stop,
-                  onPressed: _stopCurrentProcess,
-                  backgroundColor: colorScheme.errorContainer,
-                  foregroundColor: colorScheme.onErrorContainer,
+              ] else
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: SelectableText(
+                      _getPlatformInstructions(_selectedPlatform),
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 12,
+                        fontFamily: 'monospace',
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ),
-              ],
-            ),
+            ],
           ),
+        ),
 
-          // Output areas with scrollable content
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        // Collapsible Output section
+        if (_hasOutput || _hasErrors)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: ExpansionTile(
+              title: Row(
                 children: [
-                  // Error output (shown first if errors exist)
-                  if (_hasErrors && _displayErrors.isNotEmpty) ...[
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 14,
-                          color: colorScheme.error,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          'Errors:',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.error,
-                          ),
-                        ),
-                      ],
+                  Icon(
+                    _hasErrors ? Icons.error_outline : Icons.output,
+                    size: 16,
+                    color: _hasErrors
+                        ? colorScheme.error
+                        : colorScheme.onSurface,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Output',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: _hasErrors
+                          ? colorScheme.error
+                          : colorScheme.onSurface,
                     ),
-                    const SizedBox(height: 2),
-                    Container(
-                      constraints: const BoxConstraints(maxHeight: 70),
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: colorScheme.errorContainer,
-                        border: Border.all(color: colorScheme.error, width: 1),
-                        borderRadius: BorderRadius.circular(4),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: _clearOutput,
+                    icon: const Icon(Icons.backspace_outlined, size: 14),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 4,
                       ),
-                      child: SingleChildScrollView(
-                        child: SelectableText(
-                          _displayErrors,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: colorScheme.onErrorContainer,
-                            fontFamily: 'monospace',
-                            fontWeight: FontWeight.w500,
-                          ),
-                          showCursor: true,
-                          cursorColor: colorScheme.onErrorContainer,
-                          selectionControls: materialTextSelectionControls,
-                        ),
-                      ),
+                      minimumSize: Size.zero,
                     ),
-                    const SizedBox(height: 4),
-                  ],
-
-                  // Regular output
-                  if (_hasOutput && _displayOutput.isNotEmpty) ...[
-                    Row(
+                  ),
+                ],
+              ),
+              initiallyExpanded: true,
+              children: [
+                Container(
+                  constraints: BoxConstraints(
+                    maxHeight:
+                        MediaQuery.of(context).size.height *
+                        0.4, // Responsive max height
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.output,
-                          size: 14,
-                          color: colorScheme.onSurface,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          'Output:',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                        Spacer(),
-                        // Clear button
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: IconButton(
-                            onPressed: _clearOutput,
-                            icon: const Icon(
-                              Icons.backspace_outlined,
-                              size: 12,
-                            ),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
+                        // Error output
+                        if (_hasErrors && _displayErrors.isNotEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: SelectableText(
+                              '═══════ Errors ═══════\n$_displayErrors',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: colorScheme.error,
+                                fontFamily: 'monospace',
+                                fontWeight: FontWeight.w500,
                               ),
-                              minimumSize: Size.zero,
+                              showCursor: true,
+                              cursorColor: colorScheme.error,
+                              selectionControls: materialTextSelectionControls,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: SingleChildScrollView(
-                          child: SelectableText(
-                            _displayOutput,
+                        ],
+
+                        // Regular output
+                        if (_hasOutput && _displayOutput.isNotEmpty) ...[
+                          SelectableText(
+                            '═══════ Output ═══════\n$_displayOutput═══════ Log End ═══════\n',
                             style: TextStyle(
                               fontSize: 10,
                               color: colorScheme.onSurfaceVariant,
@@ -239,16 +288,27 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
                             cursorColor: colorScheme.onSurfaceVariant,
                             selectionControls: materialTextSelectionControls,
                           ),
-                        ),
-                      ),
+                        ],
+                      ],
                     ),
-                  ],
-                ],
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: const Center(
+                child: Text(
+                  'No output yet',
+                  style: TextStyle(color: Colors.grey, fontSize: 11),
+                ),
               ),
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -325,18 +385,50 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
 
+    List<PopupMenuEntry<String>> menuItems = [];
+
+    switch (_selectedPlatform) {
+      case 'android':
+        menuItems = const [
+          PopupMenuItem(value: 'apk', child: Text('Build APK')),
+          PopupMenuItem(value: 'aab', child: Text('Build AAB')),
+        ];
+        break;
+      case 'ios':
+        menuItems = const [
+          PopupMenuItem(value: 'ipa', child: Text('Build IPA')),
+        ];
+        break;
+      case 'web':
+        menuItems = const [
+          PopupMenuItem(value: 'web', child: Text('Build Web')),
+        ];
+        break;
+      case 'windows':
+        menuItems = const [
+          PopupMenuItem(value: 'windows', child: Text('Build Windows')),
+        ];
+        break;
+      case 'linux':
+        menuItems = const [
+          PopupMenuItem(value: 'linux', child: Text('Build Linux')),
+        ];
+        break;
+      case 'macos':
+        menuItems = const [
+          PopupMenuItem(value: 'macos', child: Text('Build macOS')),
+        ];
+        break;
+      default:
+        menuItems = const [
+          PopupMenuItem(value: 'apk', child: Text('Build APK')),
+        ];
+    }
+
     showMenu<String>(
       context: context,
       position: const RelativeRect.fromLTRB(50, 50, 100, 100),
-      items: [
-        const PopupMenuItem(value: 'apk', child: Text('Build APK')),
-        const PopupMenuItem(value: 'aab', child: Text('Build AAB')),
-        const PopupMenuItem(value: 'ipa', child: Text('Build IPA')),
-        const PopupMenuItem(value: 'web', child: Text('Build Web')),
-        const PopupMenuItem(value: 'windows', child: Text('Build Windows')),
-        const PopupMenuItem(value: 'linux', child: Text('Build Linux')),
-        const PopupMenuItem(value: 'macos', child: Text('Build macOS')),
-      ],
+      items: menuItems,
     ).then((value) {
       if (value != null) {
         _buildFlutterApp(value);
@@ -427,7 +519,6 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
 
-    final status = isDebug ? _debugStatus : _runStatus;
     final setStatus = isDebug
         ? (BuildProcessStatus s) => _debugStatus = s
         : (BuildProcessStatus s) => _runStatus = s;
@@ -442,9 +533,13 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
     });
 
     try {
+      List<String> args = isDebug ? ['run'] : ['run', '--release'];
+      if (_selectedPlatform.isNotEmpty) {
+        args.addAll(['-d', _selectedPlatform]);
+      }
       final process = await Process.start(
         'flutter',
-        isDebug ? ['run'] : ['run', '--release'],
+        args,
         workingDirectory: currentProjectPath,
         runInShell: true,
       );
