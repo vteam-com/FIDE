@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously, avoid_print
 
+import 'dart:convert';
 import 'dart:io';
 import 'package:fide/panels/center/large_file_message.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -396,7 +397,9 @@ class _EditorScreenState extends State<EditorScreen> {
                             const Spacer(),
                             // Format File button (only show for supported files)
                             if (!_showDiffView &&
-                                _currentFile.endsWith('.dart'))
+                                (_currentFile.endsWith('.dart') ||
+                                    _currentFile.endsWith('.json') ||
+                                    _currentFile.endsWith('.arb')))
                               IconButton(
                                 icon: const Icon(
                                   Icons.format_indent_increase,
@@ -1006,11 +1009,15 @@ class _EditorScreenState extends State<EditorScreen> {
   Future<void> _formatFile() async {
     if (_currentFile.isEmpty) return;
 
-    // Check if this is a Dart file for formatting
-    if (!_currentFile.endsWith('.dart')) {
+    final extension = _currentFile.split('.').last.toLowerCase();
+    final isDartFile = extension == 'dart';
+    final isJsonFile = extension == 'json' || extension == 'arb';
+
+    // Check if file type is supported for formatting
+    if (!isDartFile && !isJsonFile) {
       MessageHelper.showInfo(
         context,
-        'Formatting is currently only supported for Dart files',
+        'Formatting is currently only supported for Dart, JSON, and ARB files',
       );
       return;
     }
@@ -1018,8 +1025,15 @@ class _EditorScreenState extends State<EditorScreen> {
     try {
       setState(() => _isLoading = true);
 
-      // Run dart format on the file
-      final result = await Process.run('dart', ['format', _currentFile]);
+      ProcessResult result;
+
+      if (isDartFile) {
+        // Run dart format on Dart files
+        result = await Process.run('dart', ['format', _currentFile]);
+      } else {
+        // For JSON/ARB files, use manual JSON formatting
+        result = await _formatJsonManually(_currentFile);
+      }
 
       if (result.exitCode == 0) {
         // Format successful, reload the file content
@@ -1059,6 +1073,28 @@ class _EditorScreenState extends State<EditorScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<ProcessResult> _formatJsonManually(String filePath) async {
+    try {
+      final file = File(filePath);
+      final content = await file.readAsString();
+
+      // Simple JSON validation and formatting
+      // This is a basic implementation - for production, consider using a proper JSON formatter
+      final dynamic jsonData = jsonDecode(content);
+      final formattedJson = JsonEncoder.withIndent('  ').convert(jsonData);
+
+      await file.writeAsString(formattedJson);
+      return ProcessResult(0, 0, '', ''); // Mock successful result
+    } catch (e) {
+      return ProcessResult(
+        1,
+        1,
+        '',
+        'Manual JSON formatting failed: $e',
+      ); // Mock error result
     }
   }
 
