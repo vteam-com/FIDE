@@ -1,10 +1,9 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/analysis/features.dart';
+import 'package:yaml/yaml.dart';
 
 import '../../models/file_system_item.dart';
 import '../center/editor_screen.dart';
@@ -153,6 +152,10 @@ class _OutlinePanelState extends State<OutlinePanel> {
         iconData = Icons.looks_6;
         iconColor = Theme.of(context).colorScheme.tertiary;
         break;
+      case 'yaml key':
+        iconData = Icons.vpn_key;
+        iconColor = Theme.of(context).colorScheme.primary;
+        break;
       default:
         iconData = Icons.circle;
         iconColor = Theme.of(context).colorScheme.onSurfaceVariant;
@@ -274,6 +277,52 @@ class _OutlinePanelState extends State<OutlinePanel> {
               ),
             );
           }
+        }
+
+        setState(() {
+          _outlineNodes = nodes;
+        });
+      } else if (widget.file.path.endsWith('.yaml') ||
+          widget.file.path.endsWith('.yml')) {
+        // Parse YAML file for top-level keys
+        final content = await widget.file.readAsString();
+        final lines = content.split('\n');
+        final nodes = <OutlineNode>[];
+
+        try {
+          final yamlDoc = loadYaml(content);
+          if (yamlDoc is Map) {
+            int currentLine = 1;
+            for (final line in lines) {
+              final trimmed = line.trim();
+              if (trimmed.isNotEmpty && !trimmed.startsWith('#')) {
+                // Check if this line contains a top-level key
+                if (!line.startsWith(' ') &&
+                    !line.startsWith('\t') &&
+                    line.contains(':')) {
+                  final key = line.split(':')[0].trim();
+                  if (yamlDoc.containsKey(key)) {
+                    nodes.add(
+                      OutlineNode(
+                        name: key,
+                        type: 'YAML Key',
+                        line: currentLine,
+                        column: line.indexOf(key) + 1,
+                        level: 0,
+                      ),
+                    );
+                  }
+                }
+              }
+              currentLine++;
+            }
+          }
+        } catch (e) {
+          // If YAML parsing fails, set error but don't fail completely
+          setState(() {
+            _error = 'Error parsing YAML: $e';
+          });
+          return;
         }
 
         setState(() {
