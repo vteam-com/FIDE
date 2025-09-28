@@ -222,6 +222,9 @@ final activeDocumentProvider = Provider<DocumentState?>((ref) {
 // State management for active left panel tab
 final activeLeftPanelTabProvider = StateProvider<int>((ref) => 0);
 
+// State management for active right panel tab
+final activeRightPanelTabProvider = StateProvider<int>((ref) => 0);
+
 // State management for project creation errors
 final projectCreationErrorProvider = StateProvider<String?>((ref) => null);
 

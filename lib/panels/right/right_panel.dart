@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 // Screens
@@ -8,6 +9,9 @@ import 'localization_panel.dart';
 
 // Models
 import '../../models/file_system_item.dart';
+
+// Providers
+import '../../providers/app_providers.dart';
 
 class RightPanel extends StatefulWidget {
   const RightPanel({
@@ -45,81 +49,99 @@ class _RightPanelState extends State<RightPanel>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Theme.of(context).colorScheme.surfaceContainerLow,
-      child: Column(
-        children: [
-          // Tab bar
-          Container(
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                  width: 1.0,
-                ),
-              ),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              tabs: [
-                const Tab(icon: Icon(Icons.list)),
-                const Tab(icon: Icon(Icons.translate)),
-                Tab(
-                  icon: Builder(
-                    builder: (context) {
-                      final iconColor = IconTheme.of(context).color!;
-                      return SvgPicture.asset(
-                        'assets/ollama.svg',
-                        width: 24,
-                        height: 24,
-                        colorFilter: ColorFilter.mode(
-                          iconColor,
-                          BlendMode.srcIn,
-                        ),
-                      );
-                    },
+    return Consumer(
+      builder: (context, ref, child) {
+        final activeTab = ref.watch(activeRightPanelTabProvider);
+
+        // Update TabController to match the provider
+        if (_tabController.index != activeTab) {
+          _tabController.animateTo(activeTab);
+        }
+
+        return Container(
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          child: Column(
+            children: [
+              // Tab bar
+              Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                      width: 1.0,
+                    ),
                   ),
                 ),
-              ],
-              labelColor: Theme.of(context).colorScheme.primary,
-              unselectedLabelColor: Theme.of(
-                context,
-              ).colorScheme.onSurfaceVariant,
-              indicatorColor: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-
-          // Tab content
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              physics:
-                  const NeverScrollableScrollPhysics(), // Disable swipe gestures
-              children: [
-                // Outline tab
-                widget.selectedFile != null
-                    ? OutlinePanel(
-                        file: widget.selectedFile!,
-                        onOutlineUpdate: widget.onOutlineUpdate,
-                        onNodeSelected: widget.onOutlineNodeSelected,
-                      )
-                    : const Center(
-                        child: Text(
-                          'Select a file to view outline',
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
-                        ),
+                child: TabBar(
+                  controller: _tabController,
+                  onTap: (index) {
+                    ref.read(activeRightPanelTabProvider.notifier).state =
+                        index;
+                  },
+                  tabs: [
+                    const Tab(icon: Icon(Icons.list)),
+                    const Tab(icon: Icon(Icons.translate)),
+                    Tab(
+                      icon: Builder(
+                        builder: (context) {
+                          final iconColor = IconTheme.of(context).color!;
+                          return SvgPicture.asset(
+                            'assets/ollama.svg',
+                            width: 24,
+                            height: 24,
+                            colorFilter: ColorFilter.mode(
+                              iconColor,
+                              BlendMode.srcIn,
+                            ),
+                          );
+                        },
                       ),
+                    ),
+                  ],
+                  labelColor: Theme.of(context).colorScheme.primary,
+                  unselectedLabelColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant,
+                  indicatorColor: Theme.of(context).colorScheme.primary,
+                ),
+              ),
 
-                // ARB tab
-                LocalizationPanel(selectedFile: widget.selectedFile),
+              // Tab content
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  physics:
+                      const NeverScrollableScrollPhysics(), // Disable swipe gestures
+                  children: [
+                    // Outline tab
+                    widget.selectedFile != null
+                        ? OutlinePanel(
+                            file: widget.selectedFile!,
+                            onOutlineUpdate: widget.onOutlineUpdate,
+                            onNodeSelected: widget.onOutlineNodeSelected,
+                          )
+                        : const Center(
+                            child: Text(
+                              'Select a file to view outline',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
 
-                // AI tab
-                AIPanel(selectedFile: widget.selectedFile),
-              ],
-            ),
+                    // ARB tab
+                    LocalizationPanel(selectedFile: widget.selectedFile),
+
+                    // AI tab
+                    AIPanel(selectedFile: widget.selectedFile),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

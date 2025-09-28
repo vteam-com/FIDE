@@ -115,12 +115,14 @@ class ProjectService {
       // Initialize file system watcher for incremental updates
       _addLoadingAction(step++, 'Setting up file system watcher');
       _logger.info('Setting up file system watcher...');
+
       _fileSystemWatcher.initialize(_currentProjectRoot!, () {
         // This callback will be called when file system changes occur
         // The UI will be updated through the provider state changes
         _logger.info('File system change detected, updating UI...');
         _notifyProjectUpdated();
       });
+
       _updateLoadingActionStatus(step - 1, LoadingStatus.success);
       await Future.delayed(duration);
 
@@ -234,9 +236,17 @@ class ProjectService {
   /// Notify that the project has been updated (for UI refresh)
   void _notifyProjectUpdated() {
     // Force a refresh of the current project root provider
-    if (_currentProjectRoot != null) {
-      _ref.read(currentProjectRootProvider.notifier).state =
-          _currentProjectRoot;
+    // Check if container is still available (not disposed in tests)
+    try {
+      if (_currentProjectRoot != null) {
+        _ref.read(currentProjectRootProvider.notifier).state =
+            _currentProjectRoot;
+      }
+    } catch (e) {
+      // Container might be disposed in test environments, ignore
+      _logger.fine(
+        'Container disposed, skipping UI update in _notifyProjectUpdated',
+      );
     }
   }
 
