@@ -175,7 +175,6 @@ class _EditorScreenState extends State<EditorScreen> {
         _codeController.removeListener(_onCodeChanged);
 
         _codeController.text = widget.documentState!.content;
-        _codeController.selection = widget.documentState!.selection;
         if (widget.documentState!.language != null) {
           _codeController.language = widget.documentState!.language;
         }
@@ -193,6 +192,13 @@ class _EditorScreenState extends State<EditorScreen> {
 
         // Load git diff stats for the new file
         _loadGitDiffStatsForFile(_currentFile);
+
+        // Set selection after the build cycle to avoid setState on disposed widget
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && widget.documentState != null) {
+            _codeController.selection = widget.documentState!.selection;
+          }
+        });
       }
     }
   }
@@ -307,7 +313,7 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
               IconButton(
                 icon: const Icon(Icons.close),
-                onPressed: widget.onClose,
+                onPressed: () => EditorScreen.closeCurrentEditor(),
                 tooltip: 'Close Editor',
               ),
             ],

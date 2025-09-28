@@ -364,6 +364,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
               onContentChanged: _refreshOutlineCallback,
               onClose: () {
                 ref.read(selectedFileProvider.notifier).state = null;
+                ref.read(activeDocumentIndexProvider.notifier).state = -1;
               },
             ),
           ),
