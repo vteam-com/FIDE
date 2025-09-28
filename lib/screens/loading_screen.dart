@@ -42,18 +42,6 @@ class _LoadingScreenState extends State<LoadingScreen> {
                 final hasFailed = loadingActions.any(
                   (action) => action.status == LoadingStatus.failed,
                 );
-                final allSuccess =
-                    loadingActions.isNotEmpty &&
-                    loadingActions.every(
-                      (action) => action.status == LoadingStatus.success,
-                    );
-
-                // Auto-hide on success after delay
-                if (allSuccess && !hasFailed) {
-                  Future.delayed(const Duration(milliseconds: 500), () {
-                    // The screen will be hidden when projectLoaded becomes true
-                  });
-                }
 
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -104,34 +92,15 @@ class _LoadingScreenState extends State<LoadingScreen> {
                           shrinkWrap: true,
                           itemCount: loadingActions.length,
                           itemBuilder: (context, index) {
-                            final action = loadingActions[index];
+                            final LoadingAction action = loadingActions[index];
                             return Padding(
                               padding: const EdgeInsets.symmetric(vertical: 4),
                               child: Row(
+                                spacing: 8,
                                 children: [
-                                  // Step number
-                                  SizedBox(
-                                    width: 24,
-                                    child: Text(
-                                      '${action.step}.',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
                                   // Status icon
-                                  SizedBox(
-                                    width: 20,
-                                    child: _buildStatusIcon(
-                                      action.status,
-                                      context,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
+                                  _buildStatusIcon(action.status, context),
+
                                   // Action text
                                   Expanded(
                                     child: Text(
@@ -186,23 +155,19 @@ class _LoadingScreenState extends State<LoadingScreen> {
     switch (status) {
       case LoadingStatus.pending:
         return SizedBox(
-          width: 16,
-          height: 16,
+          width: 24,
+          height: 25,
           child: CircularProgressIndicator(
-            strokeWidth: 2,
+            strokeWidth: 1,
             valueColor: AlwaysStoppedAnimation<Color>(
               Theme.of(context).colorScheme.primary,
             ),
           ),
         );
       case LoadingStatus.success:
-        return Icon(Icons.check_circle, size: 16, color: Colors.green);
+        return Icon(Icons.check_circle, color: Colors.green);
       case LoadingStatus.failed:
-        return Icon(
-          Icons.error,
-          size: 16,
-          color: Theme.of(context).colorScheme.error,
-        );
+        return Icon(Icons.error, color: Theme.of(context).colorScheme.error);
     }
   }
 }

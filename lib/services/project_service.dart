@@ -88,7 +88,7 @@ class ProjectService {
       }
 
       // Create project root node
-      _addLoadingAction(step++, 'Creating project structure');
+      _addLoadingAction(step++, 'Loading project structure');
       final root = await ProjectNode.fromFileSystemEntity(
         Directory(directoryPath),
       );
