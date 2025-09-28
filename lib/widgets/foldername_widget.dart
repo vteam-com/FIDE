@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../models/project_node.dart';
 import '../models/file_system_item.dart';
+import 'container_counter.dart';
 
 /// A reusable widget for displaying folder/file items in various panels
 class FolderNameWidget extends StatelessWidget {
@@ -81,13 +82,9 @@ class FolderNameWidget extends StatelessWidget {
             ),
 
             if (node.children.isNotEmpty)
-              Chip(
-                label: Text(
-                  node.children.length.toString(),
-                  style: TextStyle(fontSize: 10),
-                ),
-                padding: EdgeInsets.zero,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ContainerCounter(
+                count: node.children.length,
+                tooltip: 'Files in the folder',
               ),
 
             // Error indicator

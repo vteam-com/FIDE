@@ -43,6 +43,7 @@ digraph "" {
   "/lib/widgets/search_toggle_icons.dart" [label="search_toggle_icons"];
   "/lib/widgets/resizable_splitter.dart" [label="resizable_splitter"];
   "/lib/widgets/diff_viewer.dart" [label="diff_viewer"];
+  "/lib/widgets/container_counter.dart" [label="container_counter"];
   "/lib/widgets/toggle_experience_mode.dart" [label="toggle_experience_mode"];
   "/lib/widgets/title_bar.dart" [label="title_bar"];
   "/lib/widgets/create_project_dialog.dart" [label="create_project_dialog"];
@@ -137,6 +138,7 @@ digraph "" {
         "/lib/widgets/search_toggle_icons.dart";
         "/lib/widgets/resizable_splitter.dart";
         "/lib/widgets/diff_viewer.dart";
+        "/lib/widgets/container_counter.dart";
         "/lib/widgets/toggle_experience_mode.dart";
         "/lib/widgets/title_bar.dart";
         "/lib/widgets/create_project_dialog.dart";
@@ -235,6 +237,7 @@ digraph "" {
   "/lib/panels/left/organized_panel.dart" -> "/lib/providers/app_providers.dart";
   "/lib/panels/left/organized_panel.dart" -> "/lib/widgets/filename_widget.dart";
   "/lib/panels/left/organized_panel.dart" -> "/lib/widgets/foldername_widget.dart";
+  "/lib/panels/left/organized_panel.dart" -> "/lib/widgets/container_counter.dart";
   "/lib/utils/message_helper.dart" -> "/lib/widgets/message_widget.dart";
   "/lib/utils/file_type_utils.dart" -> "/lib/models/file_system_item.dart";
   "/lib/models/project_node.dart" -> "/lib/models/file_system_item.dart";
@@ -286,4 +289,5 @@ digraph "" {
   "/lib/widgets/diff_counter.dart" -> "/lib/services/git_service.dart";
   "/lib/widgets/foldername_widget.dart" -> "/lib/models/project_node.dart";
   "/lib/widgets/foldername_widget.dart" -> "/lib/models/file_system_item.dart";
+  "/lib/widgets/foldername_widget.dart" -> "/lib/widgets/container_counter.dart";
 }

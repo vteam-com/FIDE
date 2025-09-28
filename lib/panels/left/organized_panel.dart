@@ -13,6 +13,7 @@ import 'shared_panel_utils.dart';
 import '../../providers/app_providers.dart';
 import '../../widgets/filename_widget.dart';
 import '../../widgets/foldername_widget.dart';
+import '../../widgets/container_counter.dart';
 
 /// OrganizedPanel provides a categorized view of the project
 class OrganizedPanel extends ConsumerStatefulWidget {
@@ -521,11 +522,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Chip(
-                  label: Text('$elementCount', style: TextStyle(fontSize: 10)),
-                  padding: EdgeInsets.zero,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
+                ContainerCounter(count: elementCount),
               ],
             ),
           ),
