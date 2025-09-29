@@ -17,6 +17,7 @@ class BuildRunDebugPanel extends ConsumerStatefulWidget {
 }
 
 class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
+  BuildProcessStatus _cleanStatus = BuildProcessStatus.idle;
   BuildProcessStatus _buildStatus = BuildProcessStatus.idle;
   BuildProcessStatus _runStatus = BuildProcessStatus.idle;
   BuildProcessStatus _debugStatus = BuildProcessStatus.idle;
@@ -149,24 +150,67 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Column(
             children: [
+              // Clean button (always available)
+              _buildPanelButton(
+                label: 'Clean',
+                description: 'Clean build artifacts',
+                onPressed: _cleanFlutterApp,
+                isActive: _cleanStatus == BuildProcessStatus.running,
+                isSuccess: _cleanStatus == BuildProcessStatus.success,
+                isError: _cleanStatus == BuildProcessStatus.error,
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.secondaryContainer,
+                foregroundColor: Theme.of(
+                  context,
+                ).colorScheme.onSecondaryContainer,
+              ),
+
+              const SizedBox(height: 8),
+
               if (_supportedPlatforms.contains(_selectedPlatform) &&
                   _canBuildOnCurrentPlatform(_selectedPlatform)) ...[
-                _buildPanelButton(
-                  label: 'Build',
-                  description: 'Build app',
-                  icon: Icons.build,
-                  onPressed: _showBuildMenu,
-                  isActive: _buildStatus == BuildProcessStatus.running,
-                  isSuccess: _buildStatus == BuildProcessStatus.success,
-                  isError: _buildStatus == BuildProcessStatus.error,
-                ),
+                if (_selectedPlatform == 'android') ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildPanelButton(
+                          label: 'APK',
+                          description: 'Build APK',
+                          onPressed: () => _buildFlutterApp('apk'),
+                          isActive: _buildStatus == BuildProcessStatus.running,
+                          isSuccess: _buildStatus == BuildProcessStatus.success,
+                          isError: _buildStatus == BuildProcessStatus.error,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildPanelButton(
+                          label: 'AAB',
+                          description: 'Build AAB',
+                          onPressed: () => _buildFlutterApp('aab'),
+                          isActive: _buildStatus == BuildProcessStatus.running,
+                          isSuccess: _buildStatus == BuildProcessStatus.success,
+                          isError: _buildStatus == BuildProcessStatus.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else
+                  _buildPanelButton(
+                    label: 'Build',
+                    description: 'Build app',
+                    onPressed: () => _buildFlutterApp(_selectedPlatform),
+                    isActive: _buildStatus == BuildProcessStatus.running,
+                    isSuccess: _buildStatus == BuildProcessStatus.success,
+                    isError: _buildStatus == BuildProcessStatus.error,
+                  ),
 
                 const SizedBox(height: 8),
 
                 _buildPanelButton(
                   label: 'Run',
                   description: 'Run in release mode',
-                  icon: Icons.play_arrow,
                   onPressed: () => _runFlutterApp(isDebug: false),
                   isActive: _runStatus == BuildProcessStatus.running,
                   isSuccess: _runStatus == BuildProcessStatus.success,
@@ -178,7 +222,6 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
                 _buildPanelButton(
                   label: 'Debug',
                   description: 'Run with hot reload',
-                  icon: Icons.bug_report,
                   onPressed: () => _runFlutterApp(isDebug: true),
                   isActive: _debugStatus == BuildProcessStatus.running,
                   isSuccess: _debugStatus == BuildProcessStatus.success,
@@ -207,93 +250,92 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
 
         // Collapsible Output section
         if (_hasOutput || _hasErrors)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: ExpansionTile(
-              title: Row(
-                children: [
-                  Icon(
-                    _hasErrors ? Icons.error_outline : Icons.output,
-                    size: 16,
-                    color: _hasErrors
-                        ? colorScheme.error
-                        : colorScheme.onSurface,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Output',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: ExpansionTile(
+                title: Row(
+                  children: [
+                    Icon(
+                      _hasErrors ? Icons.error_outline : Icons.output,
+                      size: 16,
                       color: _hasErrors
                           ? colorScheme.error
                           : colorScheme.onSurface,
                     ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: _clearOutput,
-                    icon: const Icon(Icons.backspace_outlined, size: 14),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 4,
+                    const SizedBox(width: 4),
+                    Text(
+                      'Output',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _hasErrors
+                            ? colorScheme.error
+                            : colorScheme.onSurface,
                       ),
-                      minimumSize: Size.zero,
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: _clearOutput,
+                      icon: const Icon(Icons.backspace_outlined, size: 14),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 4,
+                        ),
+                        minimumSize: Size.zero,
+                      ),
+                    ),
+                  ],
+                ),
+                initiallyExpanded: true,
+                children: [
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxHeight: 250),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Error output
+                          if (_hasErrors && _displayErrors.isNotEmpty) ...[
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: SelectableText(
+                                '═══════ Errors ═══════\n$_displayErrors',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: colorScheme.error,
+                                  fontFamily: 'monospace',
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                showCursor: true,
+                                cursorColor: colorScheme.error,
+                                selectionControls:
+                                    materialTextSelectionControls,
+                              ),
+                            ),
+                          ],
+
+                          // Regular output
+                          if (_hasOutput && _displayOutput.isNotEmpty) ...[
+                            SelectableText(
+                              '═══════ Output ═══════\n$_displayOutput═══════ Log End ═══════\n',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: colorScheme.onSurfaceVariant,
+                                fontFamily: 'monospace',
+                              ),
+                              showCursor: true,
+                              cursorColor: colorScheme.onSurfaceVariant,
+                              selectionControls: materialTextSelectionControls,
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
-              initiallyExpanded: true,
-              children: [
-                Container(
-                  constraints: BoxConstraints(
-                    maxHeight:
-                        MediaQuery.of(context).size.height *
-                        0.4, // Responsive max height
-                  ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Error output
-                        if (_hasErrors && _displayErrors.isNotEmpty) ...[
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: SelectableText(
-                              '═══════ Errors ═══════\n$_displayErrors',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: colorScheme.error,
-                                fontFamily: 'monospace',
-                                fontWeight: FontWeight.w500,
-                              ),
-                              showCursor: true,
-                              cursorColor: colorScheme.error,
-                              selectionControls: materialTextSelectionControls,
-                            ),
-                          ),
-                        ],
-
-                        // Regular output
-                        if (_hasOutput && _displayOutput.isNotEmpty) ...[
-                          SelectableText(
-                            '═══════ Output ═══════\n$_displayOutput═══════ Log End ═══════\n',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: colorScheme.onSurfaceVariant,
-                              fontFamily: 'monospace',
-                            ),
-                            showCursor: true,
-                            cursorColor: colorScheme.onSurfaceVariant,
-                            selectionControls: materialTextSelectionControls,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ],
             ),
           )
         else
@@ -315,7 +357,6 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
   Widget _buildPanelButton({
     required String label,
     required String description,
-    required IconData icon,
     required VoidCallback? onPressed,
     bool isActive = false,
     bool isSuccess = false,
@@ -349,101 +390,456 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: fgColor.withOpacity(0.2), width: 1),
         ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: fgColor),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: fgColor,
-                    ),
-                  ),
-                  Text(
-                    description,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: fgColor.withOpacity(0.8),
-                    ),
-                  ),
-                ],
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: fgColor,
+                ),
+                textAlign: TextAlign.center,
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: TextStyle(fontSize: 11, color: fgColor.withOpacity(0.8)),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  void _showBuildMenu() {
+  Future<void> _cleanFlutterApp() async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
 
-    List<PopupMenuEntry<String>> menuItems = [];
+    // Check if we should do deep macOS clean
+    final isMacOSHost = Platform.isMacOS;
+    final isMacOSTarget = _selectedPlatform == 'macos';
+    final hasMacOSDirectory = Directory(
+      '$currentProjectPath/macos',
+    ).existsSync();
+    final shouldDoDeepClean = isMacOSHost && isMacOSTarget && hasMacOSDirectory;
 
-    switch (_selectedPlatform) {
-      case 'android':
-        menuItems = const [
-          PopupMenuItem(value: 'apk', child: Text('Build APK')),
-          PopupMenuItem(value: 'aab', child: Text('Build AAB')),
-        ];
-        break;
-      case 'ios':
-        menuItems = const [
-          PopupMenuItem(value: 'ipa', child: Text('Build IPA')),
-        ];
-        break;
-      case 'web':
-        menuItems = const [
-          PopupMenuItem(value: 'web', child: Text('Build Web')),
-        ];
-        break;
-      case 'windows':
-        menuItems = const [
-          PopupMenuItem(value: 'windows', child: Text('Build Windows')),
-        ];
-        break;
-      case 'linux':
-        menuItems = const [
-          PopupMenuItem(value: 'linux', child: Text('Build Linux')),
-        ];
-        break;
-      case 'macos':
-        menuItems = const [
-          PopupMenuItem(value: 'macos', child: Text('Build macOS')),
-        ];
-        break;
-      default:
-        menuItems = const [
-          PopupMenuItem(value: 'apk', child: Text('Build APK')),
-        ];
+    _clearOutput();
+    setState(() {
+      _cleanStatus = BuildProcessStatus.running;
+      if (shouldDoDeepClean) {
+        _outputBuffer.writeln('🧹 Performing deep clean for macOS project...');
+        _outputBuffer.writeln(
+          '📦 This will update CocoaPods and rebuild dependencies',
+        );
+      } else {
+        _outputBuffer.writeln('🧹 Cleaning Flutter project...');
+      }
+      _hasOutput = true;
+    });
+
+    try {
+      if (shouldDoDeepClean) {
+        await _performDeepMacOSClean(currentProjectPath);
+      } else {
+        await _performStandardClean(currentProjectPath);
+      }
+
+      setState(() {
+        _cleanStatus = BuildProcessStatus.success;
+        _outputBuffer.writeln('✓ Project cleaned successfully');
+      });
+    } catch (e) {
+      setState(() {
+        _cleanStatus = BuildProcessStatus.error;
+        _errorBuffer.writeln('✗ Clean error: $e');
+        _hasErrors = true;
+      });
+    } finally {
+      _currentProcess = null;
+      // Reset status after a delay
+      Future.delayed(const Duration(seconds: 5), () {
+        if (mounted) {
+          setState(() {
+            _cleanStatus = BuildProcessStatus.idle;
+          });
+        }
+      });
+    }
+  }
+
+  Future<void> _performStandardClean(String projectPath) async {
+    await _performStandardCleanInternal(projectPath, false);
+  }
+
+  Future<void> _performStandardCleanInternal(
+    String projectPath,
+    bool isRetry,
+  ) async {
+    final process = await Process.start(
+      'flutter',
+      ['clean'],
+      workingDirectory: projectPath,
+      runInShell: true,
+    );
+
+    _currentProcess = process;
+
+    bool hasCocoapodsError = false;
+
+    // Handle stdout
+    process.stdout.transform(const SystemEncoding().decoder).listen((data) {
+      if (data.trim().isNotEmpty) {
+        setState(() {
+          _outputBuffer.writeln(data.trim());
+          _hasOutput = true;
+        });
+      }
+    });
+
+    // Handle stderr as errors
+    process.stderr.transform(const SystemEncoding().decoder).listen((data) {
+      if (data.trim().isNotEmpty) {
+        // Check for CocoaPods repository out-of-date errors
+        if (data.contains("CocoaPods's specs repository is too out-of-date") ||
+            data.contains("out-of-date source repos") ||
+            (data.contains("pod repo update") &&
+                data.contains("You have either"))) {
+          hasCocoapodsError = true;
+          setState(() {
+            _outputBuffer.writeln(
+              '🛠️ CocoaPods repository error detected in output line: "${data.trim()}"',
+            );
+            _hasOutput = true;
+          });
+        }
+        setState(() {
+          _errorBuffer.writeln(data.trim());
+          _hasErrors = true;
+        });
+      }
+    });
+
+    final exitCode = await process.exitCode;
+
+    if (exitCode == 0) {
+      // Success
+    } else if (hasCocoapodsError && !isRetry) {
+      // Automatically run pod repo update and retry for clean
+      setState(() {
+        _outputBuffer.writeln(
+          '🔧 Detected CocoaPods repository issue during clean. Running pod repo update...',
+        );
+        _hasOutput = true;
+      });
+
+      try {
+        final podProcess = await Process.start('pod', [
+          'repo',
+          'update',
+        ], runInShell: true);
+
+        // Handle pod repo update output
+        podProcess.stdout.transform(const SystemEncoding().decoder).listen((
+          data,
+        ) {
+          if (data.trim().isNotEmpty) {
+            setState(() {
+              _outputBuffer.writeln('POD: ${data.trim()}');
+              _hasOutput = true;
+            });
+          }
+        });
+
+        podProcess.stderr.transform(const SystemEncoding().decoder).listen((
+          data,
+        ) {
+          if (data.trim().isNotEmpty) {
+            setState(() {
+              _errorBuffer.writeln('POD: ${data.trim()}');
+              _hasErrors = true;
+            });
+          }
+        });
+
+        final podExitCode = await podProcess.exitCode;
+
+        if (podExitCode == 0) {
+          setState(() {
+            _outputBuffer.writeln(
+              '✅ CocoaPods repository updated successfully',
+            );
+            _outputBuffer.writeln('🔄 Retrying Flutter clean...');
+            _hasOutput = true;
+          });
+
+          // Clear error state for retry
+          _errorBuffer.clear();
+          _hasErrors = false;
+
+          // Retry the clean after successful pod update
+          await _performStandardCleanInternal(projectPath, true);
+          return;
+        } else {
+          setState(() {
+            _errorBuffer.writeln('❌ Failed to update CocoaPods repository');
+          });
+        }
+      } catch (podError) {
+        setState(() {
+          _errorBuffer.writeln('❌ Error running pod repo update: $podError');
+        });
+      }
+      throw 'Flutter clean failed with exit code $exitCode after attempting CocoaPods fix';
+    } else {
+      throw 'Flutter clean failed with exit code $exitCode';
+    }
+  }
+
+  Future<void> _performDeepMacOSClean(String projectPath) async {
+    // Step 1: Update pod repo in macOS directory
+    setState(() {
+      _outputBuffer.writeln('📦 Updating CocoaPods repository...');
+      _hasOutput = true;
+    });
+
+    final macOSPath = '$projectPath/macos';
+    var podProcess = await Process.start(
+      'pod',
+      ['repo', 'update'],
+      workingDirectory: macOSPath,
+      runInShell: true,
+    );
+
+    // Handle pod repo update output
+    podProcess.stdout.transform(const SystemEncoding().decoder).listen((data) {
+      if (data.trim().isNotEmpty) {
+        setState(() {
+          _outputBuffer.writeln('POD: ${data.trim()}');
+          _hasOutput = true;
+        });
+      }
+    });
+
+    podProcess.stderr.transform(const SystemEncoding().decoder).listen((data) {
+      if (data.trim().isNotEmpty) {
+        setState(() {
+          _errorBuffer.writeln('POD: ${data.trim()}');
+          _hasErrors = true;
+        });
+      }
+    });
+
+    var podExitCode = await podProcess.exitCode;
+
+    if (podExitCode != 0) {
+      setState(() {
+        _outputBuffer.writeln(
+          '⚠️ Pod repo update failed, continuing with pod install...',
+        );
+        _hasOutput = true;
+      });
     }
 
-    showMenu<String>(
-      context: context,
-      position: const RelativeRect.fromLTRB(50, 50, 100, 100),
-      items: menuItems,
-    ).then((value) {
-      if (value != null) {
-        _buildFlutterApp(value);
+    // Step 2: Run pod install --repo-update
+    setState(() {
+      _outputBuffer.writeln('🔧 Running pod install with repo update...');
+      _hasOutput = true;
+    });
+
+    podProcess = await Process.start(
+      'pod',
+      ['install', '--repo-update'],
+      workingDirectory: macOSPath,
+      runInShell: true,
+    );
+
+    // Handle pod install output
+    podProcess.stdout.transform(const SystemEncoding().decoder).listen((data) {
+      if (data.trim().isNotEmpty) {
+        setState(() {
+          _outputBuffer.writeln('POD: ${data.trim()}');
+          _hasOutput = true;
+        });
       }
+    });
+
+    podProcess.stderr.transform(const SystemEncoding().decoder).listen((data) {
+      if (data.trim().isNotEmpty) {
+        setState(() {
+          _errorBuffer.writeln('POD: ${data.trim()}');
+          _hasErrors = true;
+        });
+      }
+    });
+
+    podExitCode = await podProcess.exitCode;
+
+    if (podExitCode != 0) {
+      setState(() {
+        _outputBuffer.writeln(
+          '⚠️ Pod install failed with exit code $podExitCode, continuing with Flutter cleanup...',
+        );
+        _outputBuffer.writeln(
+          '🔄 CocoaPods issues will require manual resolution',
+        );
+        _hasOutput = true;
+      });
+      // Don't throw - continue with Flutter steps
+    } else {
+      setState(() {
+        _outputBuffer.writeln('✅ CocoaPods dependencies updated successfully');
+        _hasOutput = true;
+      });
+    }
+
+    // Step 3: Flutter clean
+    setState(() {
+      _outputBuffer.writeln('🧹 Running flutter clean...');
+      _hasOutput = true;
+    });
+
+    var flutterProcess = await Process.start(
+      'flutter',
+      ['clean'],
+      workingDirectory: projectPath,
+      runInShell: true,
+    );
+
+    flutterProcess.stdout.transform(const SystemEncoding().decoder).listen((
+      data,
+    ) {
+      if (data.trim().isNotEmpty) {
+        setState(() {
+          _outputBuffer.writeln(data.trim());
+          _hasOutput = true;
+        });
+      }
+    });
+
+    flutterProcess.stderr.transform(const SystemEncoding().decoder).listen((
+      data,
+    ) {
+      if (data.trim().isNotEmpty) {
+        setState(() {
+          _errorBuffer.writeln(data.trim());
+          _hasErrors = true;
+        });
+      }
+    });
+
+    var flutterExitCode = await flutterProcess.exitCode;
+
+    if (flutterExitCode != 0) {
+      throw 'Flutter clean failed with exit code $flutterExitCode';
+    }
+
+    // Step 4: Flutter pub get
+    setState(() {
+      _outputBuffer.writeln('📦 Running flutter pub get...');
+      _hasOutput = true;
+    });
+
+    flutterProcess = await Process.start(
+      'flutter',
+      ['pub', 'get'],
+      workingDirectory: projectPath,
+      runInShell: true,
+    );
+
+    flutterProcess.stdout.transform(const SystemEncoding().decoder).listen((
+      data,
+    ) {
+      if (data.trim().isNotEmpty) {
+        setState(() {
+          _outputBuffer.writeln(data.trim());
+          _hasOutput = true;
+        });
+      }
+    });
+
+    flutterProcess.stderr.transform(const SystemEncoding().decoder).listen((
+      data,
+    ) {
+      if (data.trim().isNotEmpty) {
+        setState(() {
+          _errorBuffer.writeln(data.trim());
+          _hasErrors = true;
+        });
+      }
+    });
+
+    flutterExitCode = await flutterProcess.exitCode;
+
+    if (flutterExitCode != 0) {
+      throw 'Flutter pub get failed with exit code $flutterExitCode';
+    }
+
+    // Step 5: Flutter build macos
+    setState(() {
+      _outputBuffer.writeln('🔨 Running flutter build macos...');
+      _hasOutput = true;
+    });
+
+    flutterProcess = await Process.start(
+      'flutter',
+      ['build', 'macos'],
+      workingDirectory: projectPath,
+      runInShell: true,
+    );
+
+    flutterProcess.stdout.transform(const SystemEncoding().decoder).listen((
+      data,
+    ) {
+      if (data.trim().isNotEmpty) {
+        setState(() {
+          _outputBuffer.writeln(data.trim());
+          _hasOutput = true;
+        });
+      }
+    });
+
+    flutterProcess.stderr.transform(const SystemEncoding().decoder).listen((
+      data,
+    ) {
+      if (data.trim().isNotEmpty) {
+        setState(() {
+          _errorBuffer.writeln(data.trim());
+          _hasErrors = true;
+        });
+      }
+    });
+
+    flutterExitCode = await flutterProcess.exitCode;
+
+    if (flutterExitCode != 0) {
+      throw 'Flutter build macos failed with exit code $flutterExitCode';
+    }
+
+    setState(() {
+      _outputBuffer.writeln('✨ Deep clean and rebuild completed successfully!');
+      _hasOutput = true;
     });
   }
 
   Future<void> _buildFlutterApp(String target) async {
+    await _buildFlutterAppInternal(target, false);
+  }
+
+  Future<void> _buildFlutterAppInternal(String target, bool isRetry) async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
 
     _clearOutput();
     setState(() {
       _buildStatus = BuildProcessStatus.running;
-      _outputBuffer.writeln('Building for $target...');
+      _outputBuffer.writeln(
+        isRetry ? 'Retrying build for $target...' : 'Building for $target...',
+      );
       _hasOutput = true;
     });
 
@@ -452,6 +848,8 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
     if (target == 'web') {
       buildArgs.add('--no-wasm-dry-run');
     }
+
+    bool hasCocoapodsError = false;
 
     try {
       final process = await Process.start(
@@ -476,6 +874,21 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
       // Handle stderr as errors
       process.stderr.transform(const SystemEncoding().decoder).listen((data) {
         if (data.trim().isNotEmpty) {
+          // Check for CocoaPods repository out-of-date errors
+          if (data.contains(
+                "CocoaPods's specs repository is too out-of-date",
+              ) ||
+              data.contains("out-of-date source repos") ||
+              (data.contains("pod repo update") &&
+                  data.contains("You have either"))) {
+            hasCocoapodsError = true;
+            setState(() {
+              _outputBuffer.writeln(
+                '🛠️ CocoaPods repository error detected in output line: "${data.trim()}"',
+              );
+              _hasOutput = true;
+            });
+          }
           setState(() {
             _errorBuffer.writeln(data.trim());
             _hasErrors = true;
@@ -490,6 +903,74 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
           _buildStatus = BuildProcessStatus.success;
           _outputBuffer.writeln('✓ Build completed successfully for $target');
         });
+      } else if (hasCocoapodsError && target == 'macos' && !isRetry) {
+        // Automatically run pod repo update and retry for macOS
+        setState(() {
+          _outputBuffer.writeln(
+            '🔧 Detected CocoaPods repository issue. Running pod repo update...',
+          );
+          _hasOutput = true;
+        });
+
+        try {
+          final podProcess = await Process.start('pod', [
+            'repo',
+            'update',
+          ], runInShell: true);
+
+          // Handle pod repo update output
+          podProcess.stdout.transform(const SystemEncoding().decoder).listen((
+            data,
+          ) {
+            if (data.trim().isNotEmpty) {
+              setState(() {
+                _outputBuffer.writeln('POD: ${data.trim()}');
+                _hasOutput = true;
+              });
+            }
+          });
+
+          podProcess.stderr.transform(const SystemEncoding().decoder).listen((
+            data,
+          ) {
+            if (data.trim().isNotEmpty) {
+              setState(() {
+                _errorBuffer.writeln('POD: ${data.trim()}');
+                _hasErrors = true;
+              });
+            }
+          });
+
+          final podExitCode = await podProcess.exitCode;
+
+          if (podExitCode == 0) {
+            setState(() {
+              _outputBuffer.writeln(
+                '✅ CocoaPods repository updated successfully',
+              );
+              _outputBuffer.writeln('🔄 Retrying Flutter build...');
+              _hasOutput = true;
+            });
+
+            // Clear error state for retry
+            _errorBuffer.clear();
+            _hasErrors = false;
+
+            // Retry the build after successful pod update
+            await _buildFlutterAppInternal(target, true);
+            return;
+          } else {
+            setState(() {
+              _errorBuffer.writeln('❌ Failed to update CocoaPods repository');
+              _buildStatus = BuildProcessStatus.error;
+            });
+          }
+        } catch (podError) {
+          setState(() {
+            _errorBuffer.writeln('❌ Error running pod repo update: $podError');
+            _buildStatus = BuildProcessStatus.error;
+          });
+        }
       } else {
         setState(() {
           _buildStatus = BuildProcessStatus.error;
@@ -504,14 +985,35 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
       });
     } finally {
       _currentProcess = null;
-      // Reset status after a delay
-      Future.delayed(const Duration(seconds: 5), () {
-        if (mounted) {
-          setState(() {
-            _buildStatus = BuildProcessStatus.idle;
-          });
-        }
-      });
+      if (!hasCocoapodsError || isRetry) {
+        // Reset status after a delay (don't reset for CocoaPods auto-fix)
+        Future.delayed(const Duration(seconds: 5), () {
+          if (mounted) {
+            setState(() {
+              _buildStatus = BuildProcessStatus.idle;
+            });
+          }
+        });
+      }
+    }
+  }
+
+  String _getDeviceTarget(String platform) {
+    switch (platform) {
+      case 'macos':
+        return 'macos';
+      case 'windows':
+        return 'windows';
+      case 'linux':
+        return 'linux';
+      case 'web':
+        return 'chrome';
+      case 'android':
+        return 'android'; // Flutter will auto-select available device
+      case 'ios':
+        return 'ios'; // Flutter will auto-select available simulator/device
+      default:
+        return platform;
     }
   }
 
@@ -534,9 +1036,10 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
 
     try {
       List<String> args = isDebug ? ['run'] : ['run', '--release'];
-      if (_selectedPlatform.isNotEmpty) {
-        args.addAll(['-d', _selectedPlatform]);
-      }
+
+      final deviceTarget = _getDeviceTarget(_selectedPlatform);
+      args.addAll(['-d', deviceTarget]);
+
       final process = await Process.start(
         'flutter',
         args,
@@ -589,21 +1092,6 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
         setStatus(BuildProcessStatus.error);
         _errorBuffer.writeln('✗ Run error: $e');
         _hasErrors = true;
-      });
-    }
-  }
-
-  void _stopCurrentProcess() {
-    if (_currentProcess != null) {
-      _currentProcess!.kill(ProcessSignal.sigterm);
-      _currentProcess = null;
-
-      setState(() {
-        _buildStatus = BuildProcessStatus.idle;
-        _runStatus = BuildProcessStatus.idle;
-        _debugStatus = BuildProcessStatus.idle;
-        _outputBuffer.writeln('Process stopped');
-        _hasOutput = true;
       });
     }
   }
