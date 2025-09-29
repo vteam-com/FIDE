@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/app_providers.dart';
 // Widgets
 import '../../widgets/platform_selector.dart';
+import '../../widgets/platform_info_section.dart';
 
 class BuildRunDebugPanel extends ConsumerStatefulWidget {
   const BuildRunDebugPanel({super.key});
@@ -143,6 +144,15 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
           selectedPlatform: _selectedPlatform,
           onPlatformSelected: (platform) =>
               setState(() => _selectedPlatform = platform),
+        ),
+
+        // Platform Information Section
+        PlatformInfoSection(
+          selectedPlatform: _selectedPlatform,
+          isSupported: _supportedPlatforms.contains(_selectedPlatform),
+          canBuild: _canBuildOnCurrentPlatform(_selectedPlatform),
+          projectPath: currentProjectPath,
+          currentHostPlatform: Platform.operatingSystem,
         ),
 
         // Action buttons (vertical layout)
