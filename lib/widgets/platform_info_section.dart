@@ -240,7 +240,7 @@ class PlatformInfoSection extends StatelessWidget {
     final iconPath = _getPlatformIconPath();
     if (iconPath.startsWith('assets/')) {
       // Use SVG asset
-      return SvgPicture.asset(iconPath, width: 16, height: 16);
+      return SvgPicture.asset(iconPath, width: 24, height: 24);
     } else {
       // Use actual app icon file
       return Image.file(
@@ -289,210 +289,242 @@ class PlatformInfoSection extends StatelessWidget {
         ),
         initiallyExpanded: false,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 8),
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.surfaceVariant.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Platform Icon Row
-                Row(
-                  children: [
-                    Text(
-                      'Icon: ',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    _buildIcon(),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _getPlatformIconPath(),
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurfaceVariant.withOpacity(0.8),
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ),
-                  ],
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 200),
+            child: SingleChildScrollView(
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceVariant.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(height: 8),
-
-                // Status indicators
-                Row(
-                  children: [
-                    Icon(
-                      isSupported ? Icons.check_circle : Icons.cancel,
-                      size: 14,
-                      color: isSupported
-                          ? Colors.green
-                          : Theme.of(context).colorScheme.error,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Supported: ${isSupported ? 'Yes' : 'No'}',
-                      style: const TextStyle(fontSize: 11),
-                    ),
-                    const SizedBox(width: 12),
-                    Icon(
-                      canBuild ? Icons.check_circle : Icons.cancel,
-                      size: 14,
-                      color: canBuild
-                          ? Colors.green
-                          : Theme.of(context).colorScheme.error,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Can Build: ${canBuild ? 'Yes' : 'No'}',
-                      style: const TextStyle(fontSize: 11),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                // Build info
-                Row(
-                  children: [
-                    Text(
-                      'Last Build: ',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    Text(
-                      _getLastBuildTime(),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-
-                Row(
-                  children: [
-                    Text(
-                      'Size: ',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    Text(
-                      _getAppSize(),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                // Location
-                Column(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Output Location:',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
+                    // Platform Icon Row
+                    Row(
+                      children: [
+                        Text(
+                          'Icon: ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        _buildIcon(),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _getPlatformIconPath(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant.withOpacity(0.8),
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _getBuildLocation(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontFamily: 'monospace',
-                      ),
+                    const SizedBox(height: 8),
+
+                    // Status indicators
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 4,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isSupported ? Icons.check_circle : Icons.cancel,
+                              size: 14,
+                              color: isSupported
+                                  ? Colors.green
+                                  : Theme.of(context).colorScheme.error,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Supported: ${isSupported ? 'Yes' : 'No'}',
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              canBuild ? Icons.check_circle : Icons.cancel,
+                              size: 14,
+                              color: canBuild
+                                  ? Colors.green
+                                  : Theme.of(context).colorScheme.error,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Can Build: ${canBuild ? 'Yes' : 'No'}',
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 8),
+
+                    // Build info
+                    Row(
+                      children: [
+                        Text(
+                          'Last Build: ',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        Text(
+                          _getLastBuildTime(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+
+                    Row(
+                      children: [
+                        Text(
+                          'Size: ',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        Text(
+                          _getAppSize(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Location
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Output Location:',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _getBuildLocation(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Enable instructions (if not supported)
+                    if (!isSupported) ...[
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.settings,
+                                size: 14,
+                                color: Colors.blue,
+                              ),
+                              const SizedBox(width: 4),
+                              const Text(
+                                'To Enable:',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _getEnableInstructions(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                      ),
+                    ],
+
+                    // Fix instructions
+                    if (!canBuild || !isSupported) ...[
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.build, size: 14, color: Colors.orange),
+                              const SizedBox(width: 4),
+                              const Text(
+                                'To Fix:',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _getFixInstructions(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 8),
-
-                // Enable instructions (if not supported)
-                if (!isSupported) ...[
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.settings, size: 14, color: Colors.blue),
-                          const SizedBox(width: 4),
-                          const Text(
-                            'To Enable:',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _getEnableInstructions(),
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
-                ],
-
-                // Fix instructions
-                if (!canBuild || !isSupported) ...[
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.build, size: 14, color: Colors.orange),
-                          const SizedBox(width: 4),
-                          const Text(
-                            'To Fix:',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _getFixInstructions(),
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
         ],

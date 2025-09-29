@@ -121,7 +121,6 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final currentProjectPath = ref.watch(currentProjectPathProvider);
 
     if (currentProjectPath == null) {
@@ -145,7 +144,23 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
           onPlatformSelected: (platform) =>
               setState(() => _selectedPlatform = platform),
         ),
+        Expanded(
+          child: SingleChildScrollView(
+            child: _buildPlatformContent(context, currentProjectPath),
+          ),
+        ),
+      ],
+    );
+  }
 
+  Widget _buildPlatformContent(
+    BuildContext context,
+    final String currentProjectPath,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         // Platform Information Section
         PlatformInfoSection(
           selectedPlatform: _selectedPlatform,
@@ -159,6 +174,7 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Column(
+            // spacing: 8, // Column does not have spacing property, so removed
             children: [
               // Clean button (always available)
               _buildPanelButton(
@@ -175,8 +191,6 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
                   context,
                 ).colorScheme.onSecondaryContainer,
               ),
-
-              const SizedBox(height: 8),
 
               if (_supportedPlatforms.contains(_selectedPlatform) &&
                   _canBuildOnCurrentPlatform(_selectedPlatform)) ...[
@@ -216,8 +230,6 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
                     isError: _buildStatus == BuildProcessStatus.error,
                   ),
 
-                const SizedBox(height: 8),
-
                 _buildPanelButton(
                   label: 'Run',
                   description: 'Run in release mode',
@@ -227,8 +239,6 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
                   isError: _runStatus == BuildProcessStatus.error,
                 ),
 
-                const SizedBox(height: 8),
-
                 _buildPanelButton(
                   label: 'Debug',
                   description: 'Run with hot reload',
@@ -237,8 +247,6 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
                   isSuccess: _debugStatus == BuildProcessStatus.success,
                   isError: _debugStatus == BuildProcessStatus.error,
                 ),
-
-                const SizedBox(height: 8),
               ] else
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -260,103 +268,93 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
 
         // Collapsible Output section
         if (_hasOutput || _hasErrors)
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: ExpansionTile(
-                title: Row(
-                  children: [
-                    Icon(
-                      _hasErrors ? Icons.error_outline : Icons.output,
-                      size: 16,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: ExpansionTile(
+              title: Row(
+                children: [
+                  Icon(
+                    _hasErrors ? Icons.error_outline : Icons.output,
+                    size: 16,
+                    color: _hasErrors
+                        ? colorScheme.error
+                        : colorScheme.onSurface,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Output',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                       color: _hasErrors
                           ? colorScheme.error
                           : colorScheme.onSurface,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Output',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: _hasErrors
-                            ? colorScheme.error
-                            : colorScheme.onSurface,
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: _clearOutput,
+                    icon: const Icon(Icons.backspace_outlined, size: 14),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 4,
                       ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: _clearOutput,
-                      icon: const Icon(Icons.backspace_outlined, size: 14),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 4,
-                        ),
-                        minimumSize: Size.zero,
-                      ),
-                    ),
-                  ],
-                ),
-                initiallyExpanded: true,
-                children: [
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: 250),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Error output
-                          if (_hasErrors && _displayErrors.isNotEmpty) ...[
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: SelectableText(
-                                '═══════ Errors ═══════\n$_displayErrors',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: colorScheme.error,
-                                  fontFamily: 'monospace',
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                showCursor: true,
-                                cursorColor: colorScheme.error,
-                                selectionControls:
-                                    materialTextSelectionControls,
-                              ),
-                            ),
-                          ],
-
-                          // Regular output
-                          if (_hasOutput && _displayOutput.isNotEmpty) ...[
-                            SelectableText(
-                              '═══════ Output ═══════\n$_displayOutput═══════ Log End ═══════\n',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: colorScheme.onSurfaceVariant,
-                                fontFamily: 'monospace',
-                              ),
-                              showCursor: true,
-                              cursorColor: colorScheme.onSurfaceVariant,
-                              selectionControls: materialTextSelectionControls,
-                            ),
-                          ],
-                        ],
-                      ),
+                      minimumSize: Size.zero,
                     ),
                   ),
                 ],
               ),
+              initiallyExpanded: true,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Error output
+                    if (_hasErrors && _displayErrors.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: SelectableText(
+                          '═══════ Errors ═══════\n$_displayErrors',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: colorScheme.error,
+                            fontFamily: 'monospace',
+                            fontWeight: FontWeight.w500,
+                          ),
+                          showCursor: true,
+                          cursorColor: colorScheme.error,
+                          selectionControls: materialTextSelectionControls,
+                        ),
+                      ),
+                    ],
+
+                    // Regular output
+                    if (_hasOutput && _displayOutput.isNotEmpty) ...[
+                      SelectableText(
+                        '═══════ Output ═══════\n$_displayOutput═══════ Log End ═══════\n',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: colorScheme.onSurfaceVariant,
+                          fontFamily: 'monospace',
+                        ),
+                        showCursor: true,
+                        cursorColor: colorScheme.onSurfaceVariant,
+                        selectionControls: materialTextSelectionControls,
+                      ),
+                    ],
+                  ],
+                ),
+              ],
             ),
           )
         else
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: const Center(
-                child: Text(
-                  'No output yet',
-                  style: TextStyle(color: Colors.grey, fontSize: 11),
-                ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: const Center(
+              child: Text(
+                'No output yet',
+                style: TextStyle(color: Colors.grey, fontSize: 11),
               ),
             ),
           ),
