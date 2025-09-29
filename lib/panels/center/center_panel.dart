@@ -65,61 +65,62 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
   Widget build(BuildContext context) {
     final DocumentState? activeDocument = ref.watch(activeDocumentProvider);
 
+    // Determine the main content to display
+    late Widget mainContent;
+    if (activeDocument != null) {
+      mainContent = EditorScreen(
+        documentState: activeDocument,
+        onContentChanged: widget.onContentChanged,
+        onClose: widget.onClose,
+      );
+    } else if (!widget.projectLoaded) {
+      mainContent = WelcomeScreen(
+        onOpenFolder: widget.onOpenFolder ?? () {},
+        onCreateProject: () {
+          MessageHelper.showInfo(
+            context,
+            'Create new project feature coming soon!',
+          );
+        },
+        mruFolders: widget.mruFolders,
+        onOpenMruProject: widget.onOpenMruProject ?? (String path) {},
+        onRemoveMruEntry: widget.onRemoveMruEntry ?? (String path) {},
+      );
+    } else {
+      mainContent = const Center(
+        child: Text(
+          'Select a file to start editing',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         border: Border(
           right: BorderSide(color: Theme.of(context).dividerColor, width: 1.0),
         ),
       ),
-      child: activeDocument != null
-          ? Column(
-              children: [
-                // Editor takes remaining space
-                Expanded(
-                  child: EditorScreen(
-                    documentState: activeDocument,
-                    onContentChanged: widget.onContentChanged,
-                    onClose: widget.onClose,
-                  ),
-                ),
-                // Terminal section (only if visible)
-                if (widget.terminalVisible) ...[
-                  // Resizable splitter
-                  ResizableSplitter(
-                    onResize: _onTerminalResize,
-                    isHorizontal: true,
-                  ),
+      child: Column(
+        children: [
+          // Main content takes remaining space
+          Expanded(child: mainContent),
+          // Terminal section (always shown if visible, independent of editor state)
+          if (widget.terminalVisible) ...[
+            // Resizable splitter
+            ResizableSplitter(onResize: _onTerminalResize, isHorizontal: true),
 
-                  // Terminal at bottom
-                  SizedBox(
-                    height: _terminalHeight,
-                    child: ColoredBox(
-                      color: Theme.of(context).colorScheme.surfaceContainerLow,
-                      child: const TerminalPanel(),
-                    ),
-                  ),
-                ],
-              ],
-            )
-          : !widget.projectLoaded
-          ? WelcomeScreen(
-              onOpenFolder: widget.onOpenFolder ?? () {},
-              onCreateProject: () {
-                MessageHelper.showInfo(
-                  context,
-                  'Create new project feature coming soon!',
-                );
-              },
-              mruFolders: widget.mruFolders,
-              onOpenMruProject: widget.onOpenMruProject ?? (String path) {},
-              onRemoveMruEntry: widget.onRemoveMruEntry ?? (String path) {},
-            )
-          : const Center(
-              child: Text(
-                'Select a file to start editing',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+            // Terminal at bottom
+            SizedBox(
+              height: _terminalHeight,
+              child: ColoredBox(
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                child: const TerminalPanel(),
               ),
             ),
+          ],
+        ],
+      ),
     );
   }
 }
