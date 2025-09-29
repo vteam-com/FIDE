@@ -136,7 +136,83 @@ class PlatformInfoSection extends StatelessWidget {
     return 'Check Flutter doctor and resolve any reported issues.';
   }
 
+  String? _findAppIconPath() {
+    switch (selectedPlatform) {
+      case 'android':
+        // Check for common Android icon paths
+        final androidPaths = [
+          '$projectPath/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png',
+          '$projectPath/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png',
+          '$projectPath/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png',
+          '$projectPath/android/app/src/main/res/mipmap-hdpi/ic_launcher.png',
+          '$projectPath/android/app/src/main/res/mipmap-mdpi/ic_launcher.png',
+          '$projectPath/android/app/src/main/res/drawable/ic_launcher.png',
+        ];
+        for (final path in androidPaths) {
+          if (File(path).existsSync()) return path;
+        }
+        break;
+
+      case 'ios':
+        // Check iOS icon paths (icon with the highest resolution)
+        final iosPaths = [
+          '$projectPath/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png',
+          '$projectPath/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png',
+          '$projectPath/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png',
+          '$projectPath/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png',
+        ];
+        for (final path in iosPaths) {
+          if (File(path).existsSync()) return path;
+        }
+        break;
+
+      case 'macos':
+        // Check macOS icon paths from the actual project structure
+        final macosPaths = [
+          '$projectPath/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png',
+          '$projectPath/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png',
+          '$projectPath/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png',
+          '$projectPath/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png',
+        ];
+        for (final path in macosPaths) {
+          if (File(path).existsSync()) return path;
+        }
+        break;
+
+      case 'windows':
+        // Windows ICO file
+        final windowsIcon =
+            '$projectPath/windows/runner/resources/app_icon.ico';
+        if (File(windowsIcon).existsSync()) return windowsIcon;
+        break;
+
+      case 'web':
+        // Try common web favicon paths
+        final webIcons = [
+          '$projectPath/web/favicon.png',
+          '$projectPath/web/icons/Icon-192.png',
+          '$projectPath/web/icons/Icon-512.png',
+        ];
+        for (final path in webIcons) {
+          if (File(path).existsSync()) return path;
+        }
+        break;
+
+      case 'linux':
+        // Linux typically doesn't have app icons in the project
+        break;
+    }
+
+    return null; // No icon found
+  }
+
   String _getPlatformIconPath() {
+    final appIconPath = _findAppIconPath();
+    if (appIconPath != null) {
+      return appIconPath;
+    }
+
+    // Fallback to generic platform icons
     for (var platform in [
       {
         'name': 'Android',
@@ -158,6 +234,30 @@ class PlatformInfoSection extends StatelessWidget {
       }
     }
     return 'assets/platform_linux.svg'; // fallback
+  }
+
+  Widget _buildIcon() {
+    final iconPath = _getPlatformIconPath();
+    if (iconPath.startsWith('assets/')) {
+      // Use SVG asset
+      return SvgPicture.asset(iconPath, width: 16, height: 16);
+    } else {
+      // Use actual app icon file
+      return Image.file(
+        File(iconPath),
+        width: 24,
+        height: 24,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          // Fallback to generic SVG if image loading fails
+          return SvgPicture.asset(
+            'assets/platform_$selectedPlatform.svg',
+            width: 24,
+            height: 24,
+          );
+        },
+      );
+    }
   }
 
   @override
@@ -212,11 +312,7 @@ class PlatformInfoSection extends StatelessWidget {
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    SvgPicture.asset(
-                      _getPlatformIconPath(),
-                      width: 16,
-                      height: 16,
-                    ),
+                    _buildIcon(),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
