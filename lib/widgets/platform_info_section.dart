@@ -1,15 +1,18 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-class PlatformInfoSection extends StatelessWidget {
+class PlatformInfoSection extends StatefulWidget {
   final String selectedPlatform;
   final bool isSupported;
   final bool canBuild;
   final String projectPath;
   final String currentHostPlatform;
+  final void Function(String output)? onAppendOutput;
+  final void Function(String error)? onAppendError;
 
   const PlatformInfoSection({
     super.key,
@@ -18,10 +21,66 @@ class PlatformInfoSection extends StatelessWidget {
     required this.canBuild,
     required this.projectPath,
     required this.currentHostPlatform,
+    this.onAppendOutput,
+    this.onAppendError,
   });
 
+  @override
+  State<PlatformInfoSection> createState() => _PlatformInfoSectionState();
+}
+
+class _PlatformInfoSectionState extends State<PlatformInfoSection> {
+  bool _isRunningPodUpdate = false;
+
+  Future<void> _runPodUpdate() async {
+    setState(() {
+      _isRunningPodUpdate = true;
+    });
+    widget.onAppendOutput!(
+      '[CocoaPods] Running pod install --repo-update... This may take several minutes.\n',
+    );
+    try {
+      final process = await Process.start(
+        'pod',
+        ['install', '--repo-update'],
+        workingDirectory: '${widget.projectPath}/macos',
+        runInShell: true,
+      );
+      final stdoutLines = process.stdout
+          .transform(SystemEncoding().decoder)
+          .transform(const LineSplitter());
+      final stderrLines = process.stderr
+          .transform(SystemEncoding().decoder)
+          .transform(const LineSplitter());
+      final stdoutSub = stdoutLines.listen((line) {
+        widget.onAppendOutput?.call('$line\n');
+      });
+      final stderrSub = stderrLines.listen((line) {
+        widget.onAppendError?.call('$line\n');
+      });
+      final exitCode = await process.exitCode;
+      await stdoutSub.cancel();
+      await stderrSub.cancel();
+      if (exitCode == 0) {
+        widget.onAppendOutput!(
+          '[CocoaPods] pod install --repo-update complete! Try building again.\n',
+        );
+      } else {
+        widget.onAppendError!(
+          '[CocoaPods] pod install --repo-update failed (exit code $exitCode).\n',
+        );
+      }
+    } catch (e) {
+      widget.onAppendError!('[CocoaPods] Error: $e\n');
+    } finally {
+      setState(() {
+        _isRunningPodUpdate = false;
+      });
+    }
+  }
+
   String _getLastBuildTime() {
-    final buildDir = Directory('$projectPath/build');
+    final buildDir = Directory('${widget.projectPath}/build');
     if (!buildDir.existsSync()) return 'Never';
 
     DateTime? latestTime;
@@ -42,18 +101,21 @@ class PlatformInfoSection extends StatelessWidget {
   }
 
   String _getBuildLocation() {
-    final buildDir = Directory('$projectPath/build');
+    final buildDir = Directory('${widget.projectPath}/build');
     if (!buildDir.existsSync()) return 'No build directory found';
 
-    final platformSubdir = '$projectPath/build/$selectedPlatform';
+    final platformSubdir =
+        '${widget.projectPath}/build/${widget.selectedPlatform}';
     if (Directory(platformSubdir).existsSync()) {
       return platformSubdir;
     }
 
     var files = buildDir.listSync(recursive: false, followLinks: false);
     for (var file in files) {
-      if (file.path.contains(selectedPlatform) ||
-          selectedPlatform.contains(file.path.split('/').last.toLowerCase())) {
+      if (file.path.contains(widget.selectedPlatform) ||
+          widget.selectedPlatform.contains(
+            file.path.split('/').last.toLowerCase(),
+          )) {
         return file.path;
       }
     }
@@ -91,9 +153,9 @@ class PlatformInfoSection extends StatelessWidget {
   }
 
   String _getEnableInstructions() {
-    if (isSupported) return 'Platform is already configured';
+    if (widget.isSupported) return 'Platform is already configured';
 
-    switch (selectedPlatform) {
+    switch (widget.selectedPlatform) {
       case 'android':
         return 'Android support is typically enabled by default.\nEnsure Android Studio or SDK is installed.';
       case 'ios':
@@ -112,22 +174,32 @@ class PlatformInfoSection extends StatelessWidget {
   }
 
   String _getFixInstructions() {
-    if (isSupported && canBuild) return 'No issues detected';
+    // Always check for macOS CocoaPods issues when macOS is selected
+    if (widget.selectedPlatform == 'macos' && Platform.isMacOS) {
+      final cocoaPodsIssue = _checkMacOSCocoaPodsIssue();
+      if (cocoaPodsIssue != null) {
+        return cocoaPodsIssue;
+      }
+      // Even if no issues detected, always provide helpful macOS commands
+      return 'macOS builds: Consider periodic CocoaPods updates\nRun: pod repo update (may take several minutes)\n\nFor build issues: rm -rf build/macos/Pods && flutter clean';
+    }
 
-    if (!isSupported) {
+    if (widget.isSupported && widget.canBuild) {
+      return 'No issues detected';
+    }
+
+    if (!widget.isSupported) {
       return 'Enable the platform first using the instructions above.';
     }
 
-    if (!canBuild) {
-      switch (selectedPlatform) {
+    if (!widget.canBuild) {
+      switch (widget.selectedPlatform) {
         case 'ios':
           return 'iOS builds require a macOS machine with Xcode installed.';
         case 'windows':
           return 'Windows builds require a Windows machine with Visual Studio.';
         case 'linux':
           return 'Linux builds require a Linux machine.';
-        case 'macos':
-          return 'macOS builds require a macOS machine with Xcode.';
         default:
           return 'Current host platform cannot build for this target.';
       }
@@ -136,17 +208,81 @@ class PlatformInfoSection extends StatelessWidget {
     return 'Check Flutter doctor and resolve any reported issues.';
   }
 
+  String? _checkMacOSCocoaPodsIssue() {
+    try {
+      // Check if CocoaPods is available
+      final podVersion = Process.runSync('pod', ['--version']);
+      if (podVersion.exitCode != 0) {
+        return 'CocoaPods is not installed. Install with: brew install cocoapods\nThen run: pod setup';
+      }
+
+      // Check if pod repo update is needed by looking at the last update time
+      final repoDir = Directory(
+        '${Platform.environment['HOME']}/Library/Caches/CocoaPods/Pods',
+      );
+      if (repoDir.existsSync()) {
+        final entries = repoDir.listSync(recursive: false);
+        if (entries.isNotEmpty) {
+          final latestEntry = entries
+              .map((e) => e.statSync().modified)
+              .reduce((a, b) => a.isAfter(b) ? a : b);
+
+          final daysSinceUpdate = DateTime.now().difference(latestEntry).inDays;
+          if (daysSinceUpdate > 30) {
+            return 'CocoaPods repository may be out of date.\nRun: pod repo update\n\nThis may take several minutes.';
+          }
+        }
+      }
+
+      // Check for common Flutter macOS build errors
+      final buildDir = Directory('${widget.projectPath}/build');
+      if (buildDir.existsSync()) {
+        final recentErrors = _checkRecentBuildErrors();
+        if (recentErrors.contains('CocoaPods')) {
+          return 'Recent build had CocoaPods issues.\nTry: pod repo update\n\nOr clean and rebuild.';
+        }
+      }
+    } catch (e) {
+      // If we can't check, don't show anything
+    }
+
+    return null;
+  }
+
+  String _checkRecentBuildErrors() {
+    try {
+      final logFiles = Directory('${widget.projectPath}/build/macos')
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where(
+            (file) => file.path.endsWith('.log') || file.path.contains('error'),
+          )
+          .toList();
+
+      for (final file in logFiles) {
+        final content = file.readAsStringSync();
+        if (content.contains('CocoaPods') ||
+            content.contains('pod repo update')) {
+          return 'CocoaPods';
+        }
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+    return '';
+  }
+
   String? _findAppIconPath() {
-    switch (selectedPlatform) {
+    switch (widget.selectedPlatform) {
       case 'android':
         // Check for common Android icon paths
         final androidPaths = [
-          '$projectPath/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png',
-          '$projectPath/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png',
-          '$projectPath/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png',
-          '$projectPath/android/app/src/main/res/mipmap-hdpi/ic_launcher.png',
-          '$projectPath/android/app/src/main/res/mipmap-mdpi/ic_launcher.png',
-          '$projectPath/android/app/src/main/res/drawable/ic_launcher.png',
+          '${widget.projectPath}/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png',
+          '${widget.projectPath}/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png',
+          '${widget.projectPath}/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png',
+          '${widget.projectPath}/android/app/src/main/res/mipmap-hdpi/ic_launcher.png',
+          '${widget.projectPath}/android/app/src/main/res/mipmap-mdpi/ic_launcher.png',
+          '${widget.projectPath}/android/app/src/main/res/drawable/ic_launcher.png',
         ];
         for (final path in androidPaths) {
           if (File(path).existsSync()) return path;
@@ -156,10 +292,10 @@ class PlatformInfoSection extends StatelessWidget {
       case 'ios':
         // Check iOS icon paths (icon with the highest resolution)
         final iosPaths = [
-          '$projectPath/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png',
-          '$projectPath/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png',
-          '$projectPath/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png',
-          '$projectPath/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png',
+          '${widget.projectPath}/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png',
+          '${widget.projectPath}/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png',
+          '${widget.projectPath}/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png',
+          '${widget.projectPath}/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png',
         ];
         for (final path in iosPaths) {
           if (File(path).existsSync()) return path;
@@ -169,10 +305,10 @@ class PlatformInfoSection extends StatelessWidget {
       case 'macos':
         // Check macOS icon paths from the actual project structure
         final macosPaths = [
-          '$projectPath/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png',
-          '$projectPath/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png',
-          '$projectPath/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png',
-          '$projectPath/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png',
+          '${widget.projectPath}/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png',
+          '${widget.projectPath}/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png',
+          '${widget.projectPath}/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png',
+          '${widget.projectPath}/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png',
         ];
         for (final path in macosPaths) {
           if (File(path).existsSync()) return path;
@@ -182,16 +318,16 @@ class PlatformInfoSection extends StatelessWidget {
       case 'windows':
         // Windows ICO file
         final windowsIcon =
-            '$projectPath/windows/runner/resources/app_icon.ico';
+            '${widget.projectPath}/windows/runner/resources/app_icon.ico';
         if (File(windowsIcon).existsSync()) return windowsIcon;
         break;
 
       case 'web':
         // Try common web favicon paths
         final webIcons = [
-          '$projectPath/web/favicon.png',
-          '$projectPath/web/icons/Icon-192.png',
-          '$projectPath/web/icons/Icon-512.png',
+          '${widget.projectPath}/web/favicon.png',
+          '${widget.projectPath}/web/icons/Icon-192.png',
+          '${widget.projectPath}/web/icons/Icon-512.png',
         ];
         for (final path in webIcons) {
           if (File(path).existsSync()) return path;
@@ -229,7 +365,7 @@ class PlatformInfoSection extends StatelessWidget {
         'asset': 'assets/platform_windows.svg',
       },
     ]) {
-      if (platform['id'] == selectedPlatform) {
+      if (platform['id'] == widget.selectedPlatform) {
         return platform['asset'] as String;
       }
     }
@@ -251,7 +387,7 @@ class PlatformInfoSection extends StatelessWidget {
         errorBuilder: (context, error, stackTrace) {
           // Fallback to generic SVG if image loading fails
           return SvgPicture.asset(
-            'assets/platform_$selectedPlatform.svg',
+            'assets/platform_${widget.selectedPlatform}.svg',
             width: 24,
             height: 24,
           );
@@ -268,21 +404,21 @@ class PlatformInfoSection extends StatelessWidget {
         title: Row(
           children: [
             Icon(
-              isSupported
-                  ? canBuild
+              widget.isSupported
+                  ? widget.canBuild
                         ? Icons.info_outline
                         : Icons.warning_amber_rounded
                   : Icons.error_outline,
               size: 16,
-              color: isSupported
-                  ? canBuild
+              color: widget.isSupported
+                  ? widget.canBuild
                         ? Theme.of(context).colorScheme.primary
                         : Colors.orange
                   : Theme.of(context).colorScheme.error,
             ),
             const SizedBox(width: 8),
             Text(
-              selectedPlatform,
+              widget.selectedPlatform,
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
           ],
@@ -344,15 +480,17 @@ class PlatformInfoSection extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              isSupported ? Icons.check_circle : Icons.cancel,
+                              widget.isSupported
+                                  ? Icons.check_circle
+                                  : Icons.cancel,
                               size: 14,
-                              color: isSupported
+                              color: widget.isSupported
                                   ? Colors.green
                                   : Theme.of(context).colorScheme.error,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'Supported: ${isSupported ? 'Yes' : 'No'}',
+                              'Supported: ${widget.isSupported ? 'Yes' : 'No'}',
                               style: const TextStyle(fontSize: 11),
                             ),
                           ],
@@ -361,15 +499,17 @@ class PlatformInfoSection extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              canBuild ? Icons.check_circle : Icons.cancel,
+                              widget.canBuild
+                                  ? Icons.check_circle
+                                  : Icons.cancel,
                               size: 14,
-                              color: canBuild
+                              color: widget.canBuild
                                   ? Colors.green
                                   : Theme.of(context).colorScheme.error,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'Can Build: ${canBuild ? 'Yes' : 'No'}',
+                              'Can Build: ${widget.canBuild ? 'Yes' : 'No'}',
                               style: const TextStyle(fontSize: 11),
                             ),
                           ],
@@ -453,7 +593,7 @@ class PlatformInfoSection extends StatelessWidget {
                     const SizedBox(height: 8),
 
                     // Enable instructions (if not supported)
-                    if (!isSupported) ...[
+                    if (!widget.isSupported) ...[
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -491,7 +631,10 @@ class PlatformInfoSection extends StatelessWidget {
                     ],
 
                     // Fix instructions
-                    if (!canBuild || !isSupported) ...[
+                    if (!widget.canBuild ||
+                        !widget.isSupported ||
+                        (widget.selectedPlatform == 'macos' &&
+                            Platform.isMacOS)) ...[
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -519,6 +662,26 @@ class PlatformInfoSection extends StatelessWidget {
                               fontFamily: 'monospace',
                             ),
                           ),
+                          if (widget.selectedPlatform == 'macos' &&
+                              Platform.isMacOS) ...[
+                            const SizedBox(height: 8),
+                            ElevatedButton.icon(
+                              onPressed: _isRunningPodUpdate
+                                  ? null
+                                  : _runPodUpdate,
+                              icon: Icon(Icons.system_update, size: 14),
+                              label: Text(
+                                _isRunningPodUpdate
+                                    ? 'Updating...'
+                                    : 'Update CocoaPods',
+                              ),
+                              style: ButtonStyle(
+                                minimumSize: MaterialStateProperty.all(
+                                  const Size(120, 32),
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ],

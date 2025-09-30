@@ -14,10 +14,10 @@ class BuildRunDebugPanel extends ConsumerStatefulWidget {
   const BuildRunDebugPanel({super.key});
 
   @override
-  ConsumerState<BuildRunDebugPanel> createState() => _BuildRunDebugPanelState();
+  ConsumerState<BuildRunDebugPanel> createState() => BuildRunDebugPanelState();
 }
 
-class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
+class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
   BuildProcessStatus _cleanStatus = BuildProcessStatus.idle;
   BuildProcessStatus _buildStatus = BuildProcessStatus.idle;
   BuildProcessStatus _runStatus = BuildProcessStatus.idle;
@@ -168,6 +168,8 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
           canBuild: _canBuildOnCurrentPlatform(_selectedPlatform),
           projectPath: currentProjectPath,
           currentHostPlatform: Platform.operatingSystem,
+          onAppendOutput: appendOutput,
+          onAppendError: appendError,
         ),
 
         // Action buttons (vertical layout)
@@ -1110,6 +1112,20 @@ class _BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
       _errorBuffer.clear();
       _hasErrors = false;
       _hasOutput = false;
+    });
+  }
+
+  void appendOutput(String text) {
+    setState(() {
+      _outputBuffer.write(text);
+      _hasOutput = true;
+    });
+  }
+
+  void appendError(String text) {
+    setState(() {
+      _errorBuffer.write(text);
+      _hasErrors = true;
     });
   }
 }

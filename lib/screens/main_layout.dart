@@ -370,7 +370,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
           ),
 
           // Right Panel
-          if (selectedFile != null && _outlinePanelVisible) ...[
+          if (_outlinePanelVisible) ...[
             // Resizable Splitter between Center and Right
             ResizableSplitter(onResize: _onOutlineResize),
             SizedBox(
