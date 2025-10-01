@@ -673,6 +673,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
         node: node,
         selectedFile: widget.selectedFile,
         expandedState: _panelState.expandedState,
+        rootPath: projectRoot!.path,
         onNodeTapped: _onNodeTapped,
         onShowContextMenu: _showNodeContextMenu,
         onShowFileContextMenu: _showFileContextMenu,
@@ -683,6 +684,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
         node: node,
         selectedFile: widget.selectedFile,
         expandedState: _panelState.expandedState,
+        rootPath: projectRoot!.path,
         onNodeTapped: _onNodeTapped,
         onShowContextMenu: _showNodeContextMenu,
         onShowFileContextMenu: _showFileContextMenu,
@@ -915,6 +917,7 @@ class NodeBuilder extends StatelessWidget {
   final ProjectNode node;
   final FileSystemItem? selectedFile;
   final Map<String, bool> expandedState;
+  final String? rootPath;
   final Function(ProjectNode, bool) onNodeTapped;
   final Function(ProjectNode, Offset) onShowContextMenu;
   final Function(ProjectNode, Offset)? onShowFileContextMenu;
@@ -926,6 +929,7 @@ class NodeBuilder extends StatelessWidget {
     required this.node,
     this.selectedFile,
     required this.expandedState,
+    this.rootPath,
     required this.onNodeTapped,
     required this.onShowContextMenu,
     this.onShowFileContextMenu,
@@ -956,6 +960,7 @@ class NodeBuilder extends StatelessWidget {
           node: node,
           onTap: () => onNodeTapped(node, isExpanded),
           isExpanded: isExpanded && !hasError,
+          rootPath: rootPath,
           onShowContextMenu: (offset) => onShowContextMenu(node, offset),
           hasError:
               node.loadResult != null &&
@@ -996,6 +1001,7 @@ class NodeBuilder extends StatelessWidget {
     return FileNameWidget(
       fileItem: item,
       isSelected: isSelected,
+      rootPath: rootPath,
       onTap: () => _handleFileTap(context),
       onContextMenu: (offset) => onShowContextMenu(node, offset),
     );
@@ -1016,6 +1022,7 @@ class NodeBuilder extends StatelessWidget {
               node: child,
               selectedFile: selectedFile,
               expandedState: expandedState,
+              rootPath: rootPath,
               onNodeTapped: onNodeTapped,
               onShowContextMenu: onShowContextMenu,
               onShowFileContextMenu: onShowFileContextMenu,

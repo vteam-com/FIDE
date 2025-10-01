@@ -49,6 +49,14 @@ class FileNameWidget extends StatelessWidget {
       ).colorScheme.primaryContainer.withOpacity(0.3);
     }
 
+    final String relativePath = p.join(
+      '~',
+      p.relative(fileItem.path, from: rootPath!),
+    );
+    final String message = fileItem.warning == null
+        ? relativePath
+        : '$relativePath\n\n${fileItem.warning}';
+
     return InkWell(
       onTap: onTap,
       onSecondaryTapDown: (details) =>
@@ -65,9 +73,8 @@ class FileNameWidget extends StatelessWidget {
               // File/directory name
               Expanded(
                 child: Tooltip(
-                  message: fileItem.warning != null
-                      ? '${p.relative(fileItem.path, from: rootPath)}\n\n${fileItem.warning}'
-                      : p.join('.', p.relative(fileItem.path, from: rootPath)),
+                  message: message,
+                  waitDuration: Duration(seconds: 1),
                   child: Text(
                     fileItem.name,
                     style: gitTextStyle.copyWith(

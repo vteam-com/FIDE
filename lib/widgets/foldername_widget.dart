@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import '../models/project_node.dart';
 import '../models/file_system_item.dart';
 import 'container_counter.dart';
@@ -10,6 +11,7 @@ class FolderNameWidget extends StatelessWidget {
   final bool isExpanded;
   final bool isFiltered;
   final bool hasError;
+  final String? rootPath;
   final VoidCallback? onTap;
   final Function(Offset)? onShowContextMenu;
   final Function(ProjectNode)? onFileSelected;
@@ -20,6 +22,7 @@ class FolderNameWidget extends StatelessWidget {
     this.isExpanded = false,
     this.isFiltered = false,
     this.hasError = false,
+    this.rootPath,
     this.onTap,
     this.onShowContextMenu,
     this.onFileSelected,
@@ -70,14 +73,20 @@ class FolderNameWidget extends StatelessWidget {
 
             // Name
             Expanded(
-              child: Text(
-                node.name,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: textColor,
-                  fontWeight: isFiltered ? FontWeight.w600 : FontWeight.w400,
+              child: Tooltip(
+                message: rootPath != null
+                    ? p.join('~', p.relative(node.path, from: rootPath))
+                    : node.path,
+                waitDuration: Duration(seconds: 1),
+                child: Text(
+                  node.name,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: textColor,
+                    fontWeight: isFiltered ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
             ),
 

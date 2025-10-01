@@ -605,6 +605,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
           FolderNameWidget(
             node: node,
             isExpanded: item.isExpanded,
+            rootPath: projectRoot!.path,
             onTap: () => _onNodeTapped(node, item.isExpanded),
             onShowContextMenu: (position) =>
                 _showNodeContextMenu(node, position),
