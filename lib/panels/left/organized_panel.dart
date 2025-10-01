@@ -245,12 +245,12 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
 
     // Define concept-based categories
     final Map<String, List<String>> categoryDirs = {
-      'Screens': ['lib/screens'],
-      'Widgets': ['lib/widgets'],
+      'Views': ['lib/views', 'lib/screens', 'lib/pages'],
       'Dialogs': ['lib/dialogs'],
-      'Models': ['lib/models'],
+      'Widgets': ['lib/widgets'],
       'Services': ['lib/services'],
-      'Controllers': ['lib/providers'],
+      'Controllers': ['lib/providers', 'lib/controls'],
+      'Models': ['lib/models', 'lib/data'],
       'Localization': ['lib/l10n', 'l10n'],
     };
 
@@ -283,7 +283,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
       try {
         final content = File(fileNode.path).readAsStringSync();
         if (content.contains('MaterialApp(')) {
-          categoryNodes['Screens']!.add(fileNode);
+          categoryNodes['Views']!.add(fileNode);
           categorizedFiles.add(fileNode.path);
         } else if (_isWidgetClass(content)) {
           categoryNodes['Widgets']!.add(fileNode);
@@ -294,9 +294,9 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
       }
     }
 
-    // Move files containing 'showDialog' to Dialogs category, except for Screens/Pages
+    // Move files containing 'showDialog' to Dialogs category, except for Views/Pages
     for (final category in categoryNodes.keys.toList()) {
-      if (category == 'Dialogs' || category == 'Screens') continue;
+      if (category == 'Dialogs' || category == 'Views') continue;
       final filesToMove = <ProjectNode>[];
       for (final node in categoryNodes[category]!) {
         if (!node.isDirectory && node.path.endsWith('.dart')) {
@@ -317,8 +317,8 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
       }
     }
 
-    // Mark files in Screens that have showDialog
-    for (final node in categoryNodes['Screens']!) {
+    // Mark files in Views that have showDialog
+    for (final node in categoryNodes['Views']!) {
       if (!node.isDirectory && node.path.endsWith('.dart')) {
         try {
           final content = File(node.path).readAsStringSync();
@@ -436,7 +436,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
           final file = File(node.path);
           final content = file.readAsStringSync();
           if (category == 'Widgets' ||
-              category == 'Screens' ||
+              category == 'Views' ||
               category == 'Dialogs') {
             // Count classes that extend something ending with Widget and class name not ending with State
             final classDeclarations = RegExp(
@@ -579,7 +579,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     // Set expansion state
     item.isExpanded = expandedState[node.path] ?? false;
     // Set warning if applicable
-    if (_currentCategory == 'Screens' &&
+    if (_currentCategory == 'Views' &&
         _filesWithShowDialog[node.path] == true) {
       item = FileSystemItem(
         name: item.name,
