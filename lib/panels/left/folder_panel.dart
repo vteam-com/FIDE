@@ -350,53 +350,76 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
       );
     }
 
-    return Column(
-      children: [
-        // File tree
-        Expanded(
-          child: SingleChildScrollView(
-            child: filterQuery.isEmpty
-                ? Column(
-                    children: projectRoot!.children
-                        .map((node) => _buildNode(node))
-                        .toList(),
-                  )
-                : _buildFilteredTree(),
-          ),
-        ),
-        // Filter bar
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-          child: TextField(
-            controller: filterController,
-            decoration: InputDecoration(
-              hintText: 'Filter...',
-              prefixIcon: const Icon(Icons.filter_list, size: 20),
-              suffixIcon: filterQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear, size: 20),
-                      onPressed: () {
-                        filterController.clear();
-                        // Clear filter query by triggering the filter change listener
-                        // This will be handled by the base class
-                      },
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide.none,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isConstrained = constraints.maxHeight.isFinite;
+
+        return Column(
+          children: [
+            // File tree
+            if (isConstrained)
+              Expanded(
+                child: SingleChildScrollView(
+                  child: filterQuery.isEmpty
+                      ? Column(
+                          children: projectRoot!.children
+                              .map((node) => _buildNode(node))
+                              .toList(),
+                        )
+                      : _buildFilteredTree(),
+                ),
+              )
+            else
+              SizedBox(
+                height:
+                    400, // Default reasonable height for unconstrained layouts
+                child: SingleChildScrollView(
+                  child: filterQuery.isEmpty
+                      ? Column(
+                          children: projectRoot!.children
+                              .map((node) => _buildNode(node))
+                              .toList(),
+                        )
+                      : _buildFilteredTree(),
+                ),
               ),
-              filled: true,
-              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
+            // Filter bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              child: TextField(
+                controller: filterController,
+                decoration: InputDecoration(
+                  hintText: 'Filter...',
+                  prefixIcon: const Icon(Icons.filter_list, size: 20),
+                  suffixIcon: filterQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 20),
+                          onPressed: () {
+                            filterController.clear();
+                            // Clear filter query by triggering the filter change listener
+                            // This will be handled by the base class
+                          },
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                ),
+                style: const TextStyle(fontSize: 13),
               ),
             ),
-            style: const TextStyle(fontSize: 13),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 

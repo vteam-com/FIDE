@@ -75,35 +75,54 @@ class _OutlinePanelState extends State<OutlinePanel> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (_isLoading)
-          const Center(child: CircularProgressIndicator())
-        else if (_error.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              _error,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          )
-        else if (_outlineNodes.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text('No outline available'),
-          )
-        else
-          Expanded(
-            child: ListView.builder(
-              itemCount: _outlineNodes.length,
-              itemBuilder: (context, index) {
-                final node = _outlineNodes[index];
-                return _buildOutlineNode(node);
-              },
-            ),
-          ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isConstrained = constraints.maxHeight.isFinite;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_isLoading)
+              const Center(child: CircularProgressIndicator())
+            else if (_error.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  _error,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              )
+            else if (_outlineNodes.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text('No outline available'),
+              )
+            else if (isConstrained)
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _outlineNodes.length,
+                  itemBuilder: (context, index) {
+                    final node = _outlineNodes[index];
+                    return _buildOutlineNode(node);
+                  },
+                ),
+              )
+            else
+              Flexible(
+                child: SizedBox(
+                  height: 200, // Default reasonable height when unconstrained
+                  child: ListView.builder(
+                    itemCount: _outlineNodes.length,
+                    itemBuilder: (context, index) {
+                      final node = _outlineNodes[index];
+                      return _buildOutlineNode(node);
+                    },
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 

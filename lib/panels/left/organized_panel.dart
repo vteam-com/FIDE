@@ -377,7 +377,21 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
       }
     }
 
-    return SingleChildScrollView(child: Column(children: sections));
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isConstrained = constraints.maxHeight.isFinite;
+
+        if (isConstrained) {
+          return SingleChildScrollView(child: Column(children: sections));
+        }
+
+        // For unconstrained layouts, use a Container with fixed height (no flex)
+        return SizedBox(
+          height: 600, // Reasonable default height for unconstrained layouts
+          child: SingleChildScrollView(child: Column(children: sections)),
+        );
+      },
+    );
   }
 
   void _collectFilePaths(List<ProjectNode> nodes, Set<String> filePaths) {

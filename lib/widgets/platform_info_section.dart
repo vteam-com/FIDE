@@ -418,7 +418,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                   : Theme.of(context).colorScheme.error,
             ),
             const SizedBox(width: 8),
-            Flexible(
+            Expanded(
               child: Text(
                 widget.selectedPlatform,
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
@@ -642,24 +642,18 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Flexible(
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.build,
-                                  size: 14,
-                                  color: Colors.orange,
+                          Row(
+                            children: [
+                              Icon(Icons.build, size: 14, color: Colors.orange),
+                              const SizedBox(width: 4),
+                              const Text(
+                                'To Fix:',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                                const SizedBox(width: 4),
-                                const Text(
-                                  'To Fix:',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 4),
                           Text(
