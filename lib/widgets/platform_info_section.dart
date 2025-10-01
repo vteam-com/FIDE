@@ -402,6 +402,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: ExpansionTile(
         title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               widget.isSupported
@@ -417,9 +418,12 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                   : Theme.of(context).colorScheme.error,
             ),
             const SizedBox(width: 8),
-            Text(
-              widget.selectedPlatform,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            Flexible(
+              child: Text(
+                widget.selectedPlatform,
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
@@ -638,18 +642,24 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Icon(Icons.build, size: 14, color: Colors.orange),
-                              const SizedBox(width: 4),
-                              const Text(
-                                'To Fix:',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
+                          Flexible(
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.build,
+                                  size: 14,
+                                  color: Colors.orange,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 4),
+                                const Text(
+                                  'To Fix:',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(

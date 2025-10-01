@@ -36,58 +36,61 @@ class PlatformSelector extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(12),
-      child: Row(
-        children: platforms
-            .map(
-              (p) => Tooltip(
-                message: supportedPlatforms.contains(p['id'])
-                    ? p['name'] as String
-                    : '${p['name']} (not configured)',
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: selectedPlatform == p['id']
-                            ? Theme.of(context).colorScheme.primary
-                            : Colors.transparent,
-                        width: 2,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: platforms
+              .map(
+                (p) => Tooltip(
+                  message: supportedPlatforms.contains(p['id'])
+                      ? p['name'] as String
+                      : '${p['name']} (not configured)',
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: selectedPlatform == p['id']
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.transparent,
+                          width: 2,
+                        ),
                       ),
                     ),
-                  ),
-                  child: InkWell(
-                    onTap: () => onPlatformSelected(p['id'] as String),
-                    borderRadius: BorderRadius.circular(4),
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      constraints: const BoxConstraints(
-                        minWidth: 28,
-                        minHeight: 28,
-                      ),
-                      child: ColorFiltered(
-                        colorFilter: ColorFilter.mode(
-                          selectedPlatform == p['id']
-                              ? Theme.of(context).colorScheme.primary
-                              : supportedPlatforms.contains(p['id'])
-                              ? Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(0.8)
-                              : Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(0.3),
-                          BlendMode.srcIn,
+                    child: InkWell(
+                      onTap: () => onPlatformSelected(p['id'] as String),
+                      borderRadius: BorderRadius.circular(4),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        constraints: const BoxConstraints(
+                          minWidth: 28,
+                          minHeight: 28,
                         ),
-                        child: SvgPicture.asset(
-                          p['asset'] as String,
-                          width: 21,
-                          height: 21,
+                        child: ColorFiltered(
+                          colorFilter: ColorFilter.mode(
+                            selectedPlatform == p['id']
+                                ? Theme.of(context).colorScheme.primary
+                                : supportedPlatforms.contains(p['id'])
+                                ? Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.8)
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.3),
+                            BlendMode.srcIn,
+                          ),
+                          child: SvgPicture.asset(
+                            p['asset'] as String,
+                            width: 21,
+                            height: 21,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            )
-            .toList(),
+              )
+              .toList(),
+        ),
       ),
     );
   }
