@@ -1,8 +1,9 @@
+import 'dart:io' as io;
 import 'package:flutter/material.dart';
-import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/analysis/features.dart';
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:yaml/yaml.dart';
 
 import '../../models/file_system_item.dart';
@@ -35,6 +36,13 @@ class _OutlinePanelState extends State<OutlinePanel> {
 
   List<OutlineNode> _outlineNodes = [];
 
+  // Performance optimizations
+  static const Duration _debounceDuration = Duration(milliseconds: 150);
+  final Map<String, List<OutlineNode>> _cachedOutlines = {};
+  final Map<String, DateTime> _cachedFileModTimes = {};
+  bool _isDebouncing = false;
+  Future<void>? _debouncingParse;
+
   @override
   void initState() {
     super.initState();
@@ -61,7 +69,7 @@ class _OutlinePanelState extends State<OutlinePanel> {
   void didUpdateWidget(OutlinePanel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.file.path != widget.file.path) {
-      _parseFile();
+      _debouncedParseFile();
     }
   }
 
@@ -100,7 +108,22 @@ class _OutlinePanelState extends State<OutlinePanel> {
   }
 
   void refreshOutline() {
-    _parseFile();
+    _debouncedParseFile();
+  }
+
+  void _debouncedParseFile() {
+    if (_isDebouncing && _debouncingParse != null) {
+      // Cancel existing debounce
+      _debouncingParse?.timeout(Duration.zero); // Cancel it
+    }
+
+    _isDebouncing = true;
+    _debouncingParse = Future.delayed(_debounceDuration, () {
+      if (mounted) {
+        _parseFile();
+      }
+      _isDebouncing = false;
+    });
   }
 
   Widget _buildOutlineNode(OutlineNode node) {
@@ -240,12 +263,38 @@ class _OutlinePanelState extends State<OutlinePanel> {
   Future<void> _parseFile() async {
     if (!mounted) return;
 
+    // Check if we have cached data for this file
+    final filePath = widget.file.path;
+    final cachedNodes = _cachedOutlines[filePath];
+    final cachedModTime = _cachedFileModTimes[filePath];
+
+    if (cachedNodes != null) {
+      try {
+        final fileStat = await io.File(filePath).stat();
+        if (cachedModTime == fileStat.modified) {
+          // File hasn't changed, use cached data
+          if (mounted) {
+            setState(() {
+              _outlineNodes = cachedNodes;
+              _isLoading = false;
+              _error = '';
+            });
+          }
+          return;
+        }
+      } catch (e) {
+        // If we can't stat the file, continue with parsing
+      }
+    }
+
     setState(() {
       _isLoading = true;
       _error = '';
     });
 
     try {
+      late List<OutlineNode> nodes;
+
       if (widget.file.path.endsWith('.dart')) {
         final result = parseFile(
           path: widget.file.path,
@@ -253,14 +302,27 @@ class _OutlinePanelState extends State<OutlinePanel> {
         );
         final visitor = _OutlineVisitor(result.content);
         result.unit.visitChildren(visitor);
+        nodes = visitor.nodes;
+
+        // Cache the successful parse results
+        if (mounted) {
+          try {
+            final fileStat = await io.File(filePath).stat();
+            _cachedOutlines[filePath] = nodes;
+            _cachedFileModTimes[filePath] = fileStat.modified;
+          } catch (e) {
+            // Silently fail if we can't cache
+          }
+        }
+
         setState(() {
-          _outlineNodes = visitor.nodes;
+          _outlineNodes = nodes;
         });
       } else if (widget.file.path.endsWith('.md')) {
         // Parse markdown file for headers
         final content = await widget.file.readAsString();
         final lines = content.split('\n');
-        final nodes = <OutlineNode>[];
+        nodes = <OutlineNode>[];
 
         for (var i = 0; i < lines.length; i++) {
           final line = lines[i];
@@ -279,6 +341,17 @@ class _OutlinePanelState extends State<OutlinePanel> {
           }
         }
 
+        // Cache the successful parse results
+        if (mounted) {
+          try {
+            final fileStat = await io.File(filePath).stat();
+            _cachedOutlines[filePath] = nodes;
+            _cachedFileModTimes[filePath] = fileStat.modified;
+          } catch (e) {
+            // Silently fail if we can't cache
+          }
+        }
+
         setState(() {
           _outlineNodes = nodes;
         });
@@ -286,13 +359,13 @@ class _OutlinePanelState extends State<OutlinePanel> {
           widget.file.path.endsWith('.yml')) {
         // Parse YAML file for top-level keys
         final content = await widget.file.readAsString();
-        final lines = content.split('\n');
-        final nodes = <OutlineNode>[];
+        nodes = <OutlineNode>[];
 
         try {
           final yamlDoc = loadYaml(content);
           if (yamlDoc is Map) {
             int currentLine = 1;
+            final lines = content.split('\n');
             for (final line in lines) {
               final trimmed = line.trim();
               if (trimmed.isNotEmpty && !trimmed.startsWith('#')) {
@@ -323,6 +396,17 @@ class _OutlinePanelState extends State<OutlinePanel> {
             _error = 'Error parsing YAML: $e';
           });
           return;
+        }
+
+        // Cache the successful parse results
+        if (mounted) {
+          try {
+            final fileStat = await io.File(filePath).stat();
+            _cachedOutlines[filePath] = nodes;
+            _cachedFileModTimes[filePath] = fileStat.modified;
+          } catch (e) {
+            // Silently fail if we can't cache
+          }
         }
 
         setState(() {

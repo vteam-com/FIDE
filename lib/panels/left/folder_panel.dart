@@ -47,6 +47,9 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
   final PanelStateManager _panelState = PanelStateManager();
   final GitService _gitService = GitService();
 
+  // Performance optimization caches
+  final Map<String, FileSystemItem> _cachedFileSystemItems = {};
+
   @override
   void initState() {
     super.initState();
@@ -81,8 +84,24 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     }
   }
 
+  // Cached FileSystemItem getter to avoid expensive object creation
+  FileSystemItem _getCachedFileSystemItem(
+    String path,
+    GitFileStatus gitStatus,
+  ) {
+    final cacheKey = '${path}_${gitStatus.index}';
+    if (_cachedFileSystemItems.containsKey(cacheKey)) {
+      return _cachedFileSystemItems[cacheKey]!;
+    }
+
+    final item = FileSystemItem.fromFileSystemEntity(File(path));
+    item.gitStatus = gitStatus;
+    _cachedFileSystemItems[cacheKey] = item;
+    return item;
+  }
+
   void _handleFileSelection(ProjectNode node) {
-    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
+    final item = _getCachedFileSystemItem(node.path, node.gitStatus);
     if (widget.onFileSelected != null) {
       widget.onFileSelected!(item);
     }
@@ -282,6 +301,8 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
           _panelState.projectRoot = currentProjectRoot;
           // Clear expanded state when project changes
           _panelState.expandedState.clear();
+          // Clear caches when project changes
+          _cachedFileSystemItems.clear();
         });
       }
     }
