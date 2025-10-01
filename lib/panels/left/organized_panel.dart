@@ -475,6 +475,14 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     _currentCategory = category;
     final isExpanded = expandedState['category_$category'] ?? false;
 
+    // Sort nodes: directories first, then files, both alphabetically ascending
+    nodes.sort((a, b) {
+      if (a.isDirectory != b.isDirectory) {
+        return a.isDirectory ? -1 : 1;
+      }
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
