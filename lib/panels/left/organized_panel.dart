@@ -3,8 +3,10 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart' as p;
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/utils/message_helper.dart';
@@ -133,6 +135,27 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     switch (action) {
       case 'open':
         _onNodeTapped(node, _panelState.expandedState[node.path] ?? false);
+        break;
+      case 'copy_full_path':
+        Clipboard.setData(ClipboardData(text: node.path));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Full path copied to clipboard')),
+          );
+        }
+        break;
+      case 'copy_relative_path':
+        if (projectRoot != null) {
+          final relative = p.relative(node.path, from: projectRoot!.path);
+          Clipboard.setData(ClipboardData(text: relative));
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Relative path copied to clipboard'),
+              ),
+            );
+          }
+        }
         break;
       case 'new_file':
         FileOperations.createNewFile(context, node, _refreshProjectTree);

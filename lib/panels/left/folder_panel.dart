@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:fide/widgets/filename_widget.dart';
 import 'package:fide/widgets/foldername_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
@@ -200,6 +201,27 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     switch (action) {
       case 'reveal':
         FileOperations.revealInFileExplorer(node);
+        break;
+      case 'copy_full_path':
+        Clipboard.setData(ClipboardData(text: node.path));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Full path copied to clipboard')),
+          );
+        }
+        break;
+      case 'copy_relative_path':
+        if (projectRoot != null) {
+          final relative = path.relative(node.path, from: projectRoot!.path);
+          Clipboard.setData(ClipboardData(text: relative));
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Relative path copied to clipboard'),
+              ),
+            );
+          }
+        }
         break;
       case 'rename':
         FileOperations.renameFile(context, node, _refreshProjectTree);

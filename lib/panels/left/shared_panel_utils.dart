@@ -419,6 +419,14 @@ class ContextMenuHandler {
       ),
       items: [
         const PopupMenuItem(value: 'open', child: Text('Open')),
+        const PopupMenuItem(
+          value: 'copy_full_path',
+          child: Text('Copy Full Path'),
+        ),
+        const PopupMenuItem(
+          value: 'copy_relative_path',
+          child: Text('Copy Relative Path'),
+        ),
         if (node.isDirectory) ...[
           const PopupMenuItem(value: 'new_file', child: Text('New File')),
           const PopupMenuItem(value: 'new_folder', child: Text('New Folder')),
@@ -461,6 +469,34 @@ class ContextMenuHandler {
               ),
               const SizedBox(width: 8),
               Text(Platform.isMacOS ? 'Reveal in Finder' : 'Show in Explorer'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'copy_full_path',
+          child: Row(
+            children: [
+              Icon(
+                Icons.content_copy,
+                size: 16,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              const Text('Copy Full Path'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'copy_relative_path',
+          child: Row(
+            children: [
+              Icon(
+                Icons.content_copy,
+                size: 16,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              const Text('Copy Relative Path'),
             ],
           ),
         ),
