@@ -590,9 +590,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const ContainerCounter(
-                  count: 0,
-                ), // Disable for now to avoid rebuild overhead
+                ContainerCounter(count: elementCount),
               ],
             ),
           ),
