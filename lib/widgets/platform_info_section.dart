@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class PlatformInfoSection extends StatefulWidget {
@@ -98,6 +99,56 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
       return '${size.toStringAsFixed(1)} ${units[i]}';
     } catch (e) {
       return 'Unknown';
+    }
+  }
+
+  List<Map<String, String>> _getAllIcons() {
+    final icons = <Map<String, String>>[];
+
+    // Add app-specific icons that were found
+    final appIconPath = _findAppIconPath();
+    if (appIconPath != null) {
+      icons.add({
+        'type': 'App Icon',
+        'path': appIconPath,
+        'filename': appIconPath.split('/').last,
+      });
+    }
+
+    // Add fallback generic platform icons (these are assets, not actual files)
+    final fallbackIcon = _getPlatformIconPath();
+    if (fallbackIcon.startsWith('assets/')) {
+      icons.add({
+        'type': 'Platform Icon',
+        'path': fallbackIcon,
+        'filename': fallbackIcon.split('/').last,
+      });
+    }
+
+    return icons;
+  }
+
+  void _openFolder(String path) {
+    try {
+      // For assets, we can't open in file explorer (they're packaged)
+      if (path.startsWith('assets/')) {
+        return;
+      }
+
+      // Get the directory containing the file
+      final file = File(path);
+      final directory = file.parent.path;
+
+      // Cross-platform folder opening
+      if (Platform.isMacOS) {
+        Process.run('open', [directory]);
+      } else if (Platform.isWindows) {
+        Process.run('explorer', [directory]);
+      } else if (Platform.isLinux) {
+        Process.run('xdg-open', [directory]);
+      }
+    } catch (e) {
+      // Ignore errors silently
     }
   }
 
@@ -377,7 +428,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
       initiallyExpanded: false,
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: Theme.of(
               context,
@@ -387,177 +438,324 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Platform Icon Row
+              // Status Row
               Row(
                 children: [
                   Text(
-                    'Icon: ',
+                    'Status:',
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  _buildIcon(),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _getPlatformIconPath(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurfaceVariant.withOpacity(0.8),
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Status indicators
-              Wrap(
-                spacing: 12,
-                runSpacing: 4,
-                children: [
                   Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        widget.isSupported ? Icons.check_circle : Icons.cancel,
-                        size: 14,
-                        color: widget.isSupported
-                            ? Colors.green
-                            : Theme.of(context).colorScheme.error,
-                      ),
-                      const SizedBox(width: 4),
                       Text(
-                        'Supported: ${widget.isSupported ? 'Yes' : 'No'}',
-                        style: const TextStyle(fontSize: 11),
+                        widget.isSupported ? '✓ Supported' : '✗ Not supported',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: widget.isSupported
+                              ? Colors.green.shade700
+                              : Theme.of(context).colorScheme.error,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        widget.canBuild ? Icons.check_circle : Icons.cancel,
-                        size: 14,
-                        color: widget.canBuild
-                            ? Colors.green
-                            : Theme.of(context).colorScheme.error,
-                      ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 12),
                       Text(
-                        'Can Build: ${widget.canBuild ? 'Yes' : 'No'}',
-                        style: const TextStyle(fontSize: 11),
+                        widget.canBuild ? '✓ Can build' : '✗ Cannot build',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: widget.canBuild
+                              ? Colors.green.shade700
+                              : Theme.of(context).colorScheme.error,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
 
-              // Build info
-              Row(
-                children: [
-                  Text(
-                    'Last Build: ',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  Text(
-                    _getLastBuildTime(),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
 
-              Row(
-                children: [
-                  Text(
-                    'Size: ',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  Text(
-                    _getAppSize(),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Location
+              // Build Info
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Output Location:',
+                    'Build Info:',
                     style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 70,
+                        child: Text(
+                          'Last Build:',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.8),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          _getLastBuildTime(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                            fontFamily: 'monospace',
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 2),
-                  Text(
-                    _getBuildLocation(),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontFamily: 'monospace',
-                    ),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 70,
+                        child: Text(
+                          'Size:',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.8),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          _getAppSize(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                            fontFamily: 'monospace',
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 70,
+                        child: Text(
+                          'Location:',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.8),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          _getBuildLocation().split('/').last,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                            fontFamily: 'monospace',
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
 
               // Enable instructions (if not supported)
               if (!widget.isSupported) ...[
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: Colors.blue.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.settings, size: 14, color: Colors.blue),
+                          const SizedBox(width: 6),
+                          Text(
+                            'To Enable ${widget.selectedPlatform}:',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _getEnableInstructions(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              // Icon with Context Menu at Bottom
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outline.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        Icon(Icons.settings, size: 14, color: Colors.blue),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'To Enable:',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
+                    _buildIcon(),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _getPlatformIconPath().split('/').last,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            _getPlatformIconPath(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                              fontFamily: 'monospace',
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      icon: Icon(
+                        Icons.more_vert,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      itemBuilder: (context) => [
+                        PopupMenuItem<String>(
+                          value: 'copy_path',
+                          child: Row(
+                            children: [
+                              Icon(Icons.copy, size: 16),
+                              const SizedBox(width: 8),
+                              const Text('Copy Path'),
+                            ],
+                          ),
+                        ),
+                        if (!_getPlatformIconPath().startsWith('assets/'))
+                          PopupMenuItem<String>(
+                            value: 'open_finder',
+                            child: Row(
+                              children: [
+                                Icon(Icons.folder_open, size: 16),
+                                const SizedBox(width: 8),
+                                Text(
+                                  Platform.isMacOS
+                                      ? 'Open in Finder'
+                                      : Platform.isWindows
+                                      ? 'Open in Explorer'
+                                      : 'Open Folder',
+                                ),
+                              ],
+                            ),
+                          ),
+                        PopupMenuItem<String>(
+                          value: 'select_in_fide',
+                          child: Row(
+                            children: [
+                              Icon(Icons.search, size: 16),
+                              const SizedBox(width: 8),
+                              const Text('Select in FIDE-Explorer'),
+                            ],
                           ),
                         ),
                       ],
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'copy_path':
+                            Clipboard.setData(
+                              ClipboardData(text: _getPlatformIconPath()),
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Path copied to clipboard'),
+                              ),
+                            );
+                            break;
+                          case 'open_finder':
+                            _openFolder(_getPlatformIconPath());
+                            break;
+                          case 'select_in_fide':
+                            // Show a message for now since we don't have access to the explorer
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Select in FIDE-Explorer: ${_getPlatformIconPath()}',
+                                ),
+                              ),
+                            );
+                            break;
+                        }
+                      },
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _getEnableInstructions(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
                   ],
                 ),
-              ],
+              ),
             ],
           ),
         ),
