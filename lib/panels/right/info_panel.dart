@@ -17,7 +17,6 @@ class InfoPanel extends ConsumerStatefulWidget {
 
 class _InfoPanelState extends ConsumerState<InfoPanel> {
   bool _isRefreshing = false;
-  Map<String, dynamic> _projectMetrics = {};
   Process? _currentProcess;
   final StringBuffer _outputBuffer = StringBuffer();
 
@@ -42,9 +41,11 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
     try {
       final metrics = await _gatherProjectMetrics(currentProjectPath);
+      await ref
+          .read(projectMetricsProvider.notifier)
+          .updateMetrics(currentProjectPath, metrics);
       if (mounted) {
         setState(() {
-          _projectMetrics = metrics;
           _isRefreshing = false;
         });
       }
@@ -352,6 +353,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   @override
   Widget build(BuildContext context) {
     final currentProjectPath = ref.watch(currentProjectPathProvider);
+    final projectMetrics = ref.watch(projectMetricsProvider);
 
     if (currentProjectPath == null) {
       return const Center(
@@ -380,7 +382,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _projectMetrics['name'] as String? ?? 'Unknown Project',
+                      projectMetrics['name'] as String? ?? 'Unknown Project',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -388,7 +390,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                       ),
                     ),
                     Text(
-                      'Version: ${_projectMetrics['version'] as String? ?? 'Unknown'}',
+                      'Version: ${projectMetrics['version'] as String? ?? 'Unknown'}',
                       style: TextStyle(
                         fontSize: 11,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -439,32 +441,32 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Quality Score
-                if (_projectMetrics['qualityScore'] != null) ...[
-                  _buildScoreCard(),
+                if (projectMetrics['qualityScore'] != null) ...[
+                  _buildScoreCard(projectMetrics),
                   const SizedBox(height: 16),
                 ],
 
                 // File Statistics
-                if (_projectMetrics['fileStats'] != null) ...[
-                  _buildFileStatsCard(),
+                if (projectMetrics['fileStats'] != null) ...[
+                  _buildFileStatsCard(projectMetrics),
                   const SizedBox(height: 16),
                 ],
 
                 // Directory Structure
-                if (_projectMetrics['directoryStructure'] != null) ...[
-                  _buildDirectoryStructureCard(),
+                if (projectMetrics['directoryStructure'] != null) ...[
+                  _buildDirectoryStructureCard(projectMetrics),
                   const SizedBox(height: 16),
                 ],
 
                 // Health Indicators
-                if (_projectMetrics['healthIndicators'] != null) ...[
-                  _buildHealthCard(),
+                if (projectMetrics['healthIndicators'] != null) ...[
+                  _buildHealthCard(projectMetrics),
                   const SizedBox(height: 16),
                 ],
 
                 // Project Description
-                if (_projectMetrics['description'] != null) ...[
-                  _buildDescriptionCard(),
+                if (projectMetrics['description'] != null) ...[
+                  _buildDescriptionCard(projectMetrics),
                 ],
               ],
             ),
@@ -474,9 +476,9 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     );
   }
 
-  Widget _buildScoreCard() {
-    final score = _projectMetrics['qualityScore'] as int;
-    final grade = _projectMetrics['qualityGrade'] as String;
+  Widget _buildScoreCard(Map<String, dynamic> projectMetrics) {
+    final score = projectMetrics['qualityScore'] as int;
+    final grade = projectMetrics['qualityGrade'] as String;
 
     Color color;
     IconData icon;
@@ -550,9 +552,9 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     );
   }
 
-  Widget _buildFileStatsCard() {
-    final fileStats = _projectMetrics['fileStats'] as Map<String, int>;
-    final totalFiles = _projectMetrics['totalFiles'] as int;
+  Widget _buildFileStatsCard(Map<String, dynamic> projectMetrics) {
+    final fileStats = projectMetrics['fileStats'] as Map<String, int>;
+    final totalFiles = projectMetrics['totalFiles'] as int;
 
     return Card(
       child: Padding(
@@ -600,8 +602,8 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     );
   }
 
-  Widget _buildDirectoryStructureCard() {
-    final structure = _projectMetrics['directoryStructure'] as Map<String, int>;
+  Widget _buildDirectoryStructureCard(Map<String, dynamic> projectMetrics) {
+    final structure = projectMetrics['directoryStructure'] as Map<String, int>;
 
     return Card(
       child: Padding(
@@ -664,9 +666,9 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
-  Widget _buildHealthCard() {
+  Widget _buildHealthCard(Map<String, dynamic> projectMetrics) {
     final indicators =
-        _projectMetrics['healthIndicators'] as Map<String, dynamic>;
+        projectMetrics['healthIndicators'] as Map<String, dynamic>;
 
     final issues = <Map<String, dynamic>>[];
 
@@ -774,7 +776,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
-  Widget _buildDescriptionCard() {
+  Widget _buildDescriptionCard(Map<String, dynamic> projectMetrics) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -791,7 +793,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             ),
             const SizedBox(height: 8),
             Text(
-              _projectMetrics['description'] as String,
+              projectMetrics['description'] as String,
               style: TextStyle(
                 fontSize: 12,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,

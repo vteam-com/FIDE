@@ -1,9 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 import '../models/file_system_item.dart';
 import '../models/project_node.dart';
 import '../models/document_state.dart';
@@ -175,7 +176,7 @@ class ProjectManager {
       }
 
       // Check if the file is in the current project
-      if (!path.isWithin(projectPath, lastFilePath)) {
+      if (!p.isWithin(projectPath, lastFilePath)) {
         return;
       }
 
@@ -242,3 +243,59 @@ class LoadingAction {
 
 // State management for loading actions log
 final loadingActionsProvider = StateProvider<List<LoadingAction>>((ref) => []);
+
+// State management for project metrics (cached in SharedPreferences)
+class ProjectMetricsNotifier extends StateNotifier<Map<String, dynamic>> {
+  final Ref ref;
+  final SharedPreferences? prefs;
+
+  ProjectMetricsNotifier(this.ref, this.prefs) : super({}) {
+    _loadCachedMetrics();
+  }
+
+  void _loadCachedMetrics() {
+    if (prefs == null) return;
+
+    final projectPath = ref.read(currentProjectPathProvider);
+    if (projectPath != null) {
+      final key = 'project_metrics_$projectPath';
+      final jsonString = prefs!.getString(key);
+      if (jsonString != null) {
+        try {
+          final cached = jsonDecode(jsonString) as Map<String, dynamic>;
+          state = cached;
+        } catch (e) {
+          // Ignore invalid cached data
+        }
+      }
+    }
+  }
+
+  Future<void> updateMetrics(
+    String projectPath,
+    Map<String, dynamic> metrics,
+  ) async {
+    if (prefs == null) return;
+
+    state = metrics;
+    final key = 'project_metrics_$projectPath';
+    final jsonString = jsonEncode(metrics);
+    await prefs!.setString(key, jsonString);
+  }
+
+  void clearMetrics(String projectPath) {
+    if (prefs == null) return;
+
+    state = {};
+    final key = 'project_metrics_$projectPath';
+    prefs!.remove(key);
+  }
+}
+
+final projectMetricsProvider =
+    StateNotifierProvider<ProjectMetricsNotifier, Map<String, dynamic>>((ref) {
+      final prefs = ref
+          .watch(sharedPreferencesProvider)
+          .maybeWhen(data: (data) => data, orElse: () => null);
+      return ProjectMetricsNotifier(ref, prefs);
+    });
