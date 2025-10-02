@@ -639,24 +639,6 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                         fontFamily: 'monospace',
                       ),
                     ),
-                    if (widget.selectedPlatform == 'macos' &&
-                        Platform.isMacOS) ...[
-                      const SizedBox(height: 8),
-                      ElevatedButton.icon(
-                        onPressed: _isRunningPodUpdate ? null : _runPodUpdate,
-                        icon: Icon(Icons.system_update, size: 14),
-                        label: Text(
-                          _isRunningPodUpdate
-                              ? 'Updating...'
-                              : 'Update CocoaPods',
-                        ),
-                        style: ButtonStyle(
-                          minimumSize: MaterialStateProperty.all(
-                            const Size(120, 32),
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ],

@@ -22,6 +22,7 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
   BuildProcessStatus _buildStatus = BuildProcessStatus.idle;
   BuildProcessStatus _runStatus = BuildProcessStatus.idle;
   BuildProcessStatus _debugStatus = BuildProcessStatus.idle;
+  BuildProcessStatus _podStatus = BuildProcessStatus.idle;
 
   Process? _currentProcess;
   final StringBuffer _outputBuffer = StringBuffer();
@@ -33,6 +34,88 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
 
   String get _displayOutput => _outputBuffer.toString();
   String get _displayErrors => _errorBuffer.toString();
+
+  Future<void> _updateCocoaPods() async {
+    final currentProjectPath = ref.read(currentProjectPathProvider);
+    if (currentProjectPath == null) return;
+
+    _clearOutput();
+    setState(() {
+      _podStatus = BuildProcessStatus.running;
+      _outputBuffer.writeln('📦 Updating CocoaPods dependencies...');
+      _outputBuffer.writeln('Running pod install --repo-update');
+      _hasOutput = true;
+    });
+
+    try {
+      final podProcess = await Process.start(
+        'pod',
+        ['install', '--repo-update'],
+        workingDirectory: _selectedPlatform == 'ios'
+            ? '$currentProjectPath/ios'
+            : '$currentProjectPath/macos',
+        runInShell: true,
+      );
+
+      _currentProcess = podProcess;
+
+      // Handle stdout
+      podProcess.stdout.transform(const SystemEncoding().decoder).listen((
+        data,
+      ) {
+        if (data.trim().isNotEmpty) {
+          setState(() {
+            _outputBuffer.writeln(data.trim());
+            _hasOutput = true;
+          });
+        }
+      });
+
+      // Handle stderr as errors
+      podProcess.stderr.transform(const SystemEncoding().decoder).listen((
+        data,
+      ) {
+        if (data.trim().isNotEmpty) {
+          setState(() {
+            _errorBuffer.writeln(data.trim());
+            _hasErrors = true;
+          });
+        }
+      });
+
+      final exitCode = await podProcess.exitCode;
+
+      if (exitCode == 0) {
+        setState(() {
+          _podStatus = BuildProcessStatus.success;
+          _outputBuffer.writeln('✅ CocoaPods update completed successfully');
+        });
+      } else {
+        setState(() {
+          _podStatus = BuildProcessStatus.error;
+          _errorBuffer.writeln(
+            '❌ CocoaPods update failed with exit code $exitCode',
+          );
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _podStatus = BuildProcessStatus.error;
+        _errorBuffer.writeln('❌ CocoaPods error: $e');
+        _hasErrors = true;
+      });
+    } finally {
+      _currentProcess = null;
+      // Reset status after a delay
+      Future.delayed(const Duration(seconds: 5), () {
+        if (mounted) {
+          setState(() {
+            _podStatus = BuildProcessStatus.idle;
+          });
+        }
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -271,6 +354,27 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
                   onPressed: () => _buildFlutterApp(_selectedPlatform),
                   status: _buildStatus,
                 ),
+
+              // CocoaPods for iOS/macOS
+              if (_selectedPlatform == 'ios' && Platform.isMacOS) ...[
+                _buildActionCard(
+                  icon: Icons.developer_mode, // Xcode-like icon
+                  label: 'iOS Pods',
+                  subtitle: 'Update deps',
+                  color: const Color(0xFF007ACC), // Xcode blue
+                  onPressed: _updateCocoaPods,
+                  status: _podStatus,
+                ),
+              ] else if (_selectedPlatform == 'macos' && Platform.isMacOS) ...[
+                _buildActionCard(
+                  icon: Icons.developer_mode, // Xcode-like icon
+                  label: 'macOS Pods',
+                  subtitle: 'Update deps',
+                  color: const Color(0xFF007ACC), // Xcode blue
+                  onPressed: _updateCocoaPods,
+                  status: _podStatus,
+                ),
+              ],
 
               // Run actions
               _buildActionCard(
