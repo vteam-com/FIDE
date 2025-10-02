@@ -11,14 +11,14 @@ import '../../providers/app_providers.dart';
 import '../../widgets/platform_selector.dart';
 import '../../widgets/platform_info_section.dart';
 
-class BuildRunDebugPanel extends ConsumerStatefulWidget {
-  const BuildRunDebugPanel({super.key});
+class ExecutePanel extends ConsumerStatefulWidget {
+  const ExecutePanel({super.key});
 
   @override
-  ConsumerState<BuildRunDebugPanel> createState() => BuildRunDebugPanelState();
+  ConsumerState<ExecutePanel> createState() => ExecutePanelState();
 }
 
-class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
+class ExecutePanelState extends ConsumerState<ExecutePanel> {
   BuildProcessStatus _cleanStatus = BuildProcessStatus.idle;
   BuildProcessStatus _buildStatus = BuildProcessStatus.idle;
   BuildProcessStatus _runStatus = BuildProcessStatus.idle;

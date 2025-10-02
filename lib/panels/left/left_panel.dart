@@ -11,7 +11,7 @@ import 'organized_panel.dart';
 import 'git_panel.dart';
 
 // Panels
-import 'build_run_debug_panel.dart';
+import 'execute_panel.dart';
 
 // Models
 import '../../models/file_system_item.dart';
@@ -205,7 +205,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                 ),
 
                 // Build/Run/Debug tab - using BuildRunDebugPanel
-                const BuildRunDebugPanel(),
+                const ExecutePanel(),
               ],
             ),
           ),
