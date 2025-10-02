@@ -124,32 +124,51 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
     final currentProjectPath = ref.watch(currentProjectPathProvider);
 
     if (currentProjectPath == null) {
-      return const Center(
-        child: Text(
-          'Load a project to use\nBuild/Run/Debug features',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.grey, fontSize: 12),
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.build_circle_outlined,
+              size: 48,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Load a project to use\nBuild/Run/Debug features',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       );
     }
 
     _supportedPlatforms = _getSupportedPlatforms(currentProjectPath);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        PlatformSelector(
-          supportedPlatforms: _supportedPlatforms,
-          selectedPlatform: _selectedPlatform,
-          onPlatformSelected: (platform) =>
-              setState(() => _selectedPlatform = platform),
-        ),
-        Expanded(
-          child: SingleChildScrollView(
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Clean Header - Platform Selector Only
+          PlatformSelector(
+            supportedPlatforms: _supportedPlatforms,
+            selectedPlatform: _selectedPlatform,
+            onPlatformSelected: (platform) =>
+                setState(() => _selectedPlatform = platform),
+          ),
+
+          // Main Content Area - No inner scrolling
+          Padding(
+            padding: const EdgeInsets.all(8.0),
             child: _buildPlatformContent(context, currentProjectPath),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -158,8 +177,13 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
     final String currentProjectPath,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
+    final canBuild =
+        _supportedPlatforms.contains(_selectedPlatform) &&
+        _canBuildOnCurrentPlatform(_selectedPlatform);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 16,
       children: [
         // Platform Information Section
         PlatformInfoSection(
@@ -172,155 +196,173 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
           onAppendError: appendError,
         ),
 
-        // Action buttons (vertical layout)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Column(
-            // spacing: 8, // Column does not have spacing property, so removed
-            children: [
-              // Clean button (always available)
-              _buildPanelButton(
-                label: 'Clean',
-                description: 'Clean build artifacts',
-                onPressed: _cleanFlutterApp,
-                isActive: _cleanStatus == BuildProcessStatus.running,
-                isSuccess: _cleanStatus == BuildProcessStatus.success,
-                isError: _cleanStatus == BuildProcessStatus.error,
-                backgroundColor: Theme.of(
-                  context,
-                ).colorScheme.secondaryContainer,
-                foregroundColor: Theme.of(
-                  context,
-                ).colorScheme.onSecondaryContainer,
-              ),
-
-              if (_supportedPlatforms.contains(_selectedPlatform) &&
-                  _canBuildOnCurrentPlatform(_selectedPlatform)) ...[
-                if (_selectedPlatform == 'android') ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildPanelButton(
-                          label: 'APK',
-                          description: 'Build APK',
-                          onPressed: () => _buildFlutterApp('apk'),
-                          isActive: _buildStatus == BuildProcessStatus.running,
-                          isSuccess: _buildStatus == BuildProcessStatus.success,
-                          isError: _buildStatus == BuildProcessStatus.error,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildPanelButton(
-                          label: 'AAB',
-                          description: 'Build AAB',
-                          onPressed: () => _buildFlutterApp('aab'),
-                          isActive: _buildStatus == BuildProcessStatus.running,
-                          isSuccess: _buildStatus == BuildProcessStatus.success,
-                          isError: _buildStatus == BuildProcessStatus.error,
-                        ),
-                      ),
-                    ],
-                  ),
-                ] else
-                  _buildPanelButton(
-                    label: 'Build',
-                    description: 'Build app',
-                    onPressed: () => _buildFlutterApp(_selectedPlatform),
-                    isActive: _buildStatus == BuildProcessStatus.running,
-                    isSuccess: _buildStatus == BuildProcessStatus.success,
-                    isError: _buildStatus == BuildProcessStatus.error,
-                  ),
-
-                _buildPanelButton(
-                  label: 'Run',
-                  description: 'Run in release mode',
-                  onPressed: () => _runFlutterApp(isDebug: false),
-                  isActive: _runStatus == BuildProcessStatus.running,
-                  isSuccess: _runStatus == BuildProcessStatus.success,
-                  isError: _runStatus == BuildProcessStatus.error,
-                ),
-
-                _buildPanelButton(
-                  label: 'Debug',
-                  description: 'Run with hot reload',
-                  onPressed: () => _runFlutterApp(isDebug: true),
-                  isActive: _debugStatus == BuildProcessStatus.running,
-                  isSuccess: _debugStatus == BuildProcessStatus.success,
-                  isError: _debugStatus == BuildProcessStatus.error,
-                ),
-              ] else
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Center(
-                    child: SelectableText(
-                      _getPlatformInstructions(_selectedPlatform),
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 12,
-                        fontFamily: 'monospace',
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-
-        // Collapsible Output section
-        if (_hasOutput || _hasErrors)
+        // Action Buttons - No section header needed
+        if (!canBuild) ...[
+          // Instructions for unsupported platforms
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: ExpansionTile(
-              title: Row(
-                children: [
-                  Icon(
-                    _hasErrors ? Icons.error_outline : Icons.output,
-                    size: 16,
-                    color: _hasErrors
-                        ? colorScheme.error
-                        : colorScheme.onSurface,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Output',
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 20,
+                  color: colorScheme.secondary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _getPlatformInstructions(_selectedPlatform),
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ] else ...[
+          // Build Action Grid for supported platforms
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            alignment: WrapAlignment.start,
+            children: [
+              // Clean action - always available
+              _buildActionCard(
+                icon: Icons.cleaning_services_rounded,
+                label: 'Clean',
+                subtitle: 'Clear cache',
+                color: colorScheme.secondary,
+                onPressed: _cleanFlutterApp,
+                status: _cleanStatus,
+              ),
+
+              // Build actions
+              if (_selectedPlatform == 'android') ...[
+                _buildActionCard(
+                  icon: Icons.phone_android_rounded,
+                  label: 'APK',
+                  subtitle: 'Android app',
+                  color: colorScheme.primary,
+                  onPressed: () => _buildFlutterApp('apk'),
+                  status: _buildStatus,
+                ),
+                _buildActionCard(
+                  icon: Icons.archive_rounded,
+                  label: 'AAB',
+                  subtitle: 'Play Store',
+                  color: colorScheme.tertiary,
+                  onPressed: () => _buildFlutterApp('aab'),
+                  status: _buildStatus,
+                ),
+              ] else
+                _buildActionCard(
+                  icon: Icons.build_rounded,
+                  label: 'Build',
+                  subtitle: getPlatformDisplayName(_selectedPlatform),
+                  color: colorScheme.primary,
+                  onPressed: () => _buildFlutterApp(_selectedPlatform),
+                  status: _buildStatus,
+                ),
+
+              // Run actions
+              _buildActionCard(
+                icon: Icons.rocket_launch_rounded,
+                label: 'Run',
+                subtitle: 'Release mode',
+                color: Colors.green,
+                onPressed: () => _runFlutterApp(isDebug: false),
+                status: _runStatus,
+              ),
+              _buildActionCard(
+                icon: Icons.bug_report_rounded,
+                label: 'Debug',
+                subtitle: 'Hot reload',
+                color: Colors.orange,
+                onPressed: () => _runFlutterApp(isDebug: true),
+                status: _debugStatus,
+              ),
+            ],
+          ),
+        ],
+
+        // Output section - Direct display no expansion
+        if (_hasOutput || _hasErrors)
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: colorScheme.outline.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Output header with clear button
+                Row(
+                  children: [
+                    Icon(
+                      _hasErrors ? Icons.error_outline : Icons.output,
+                      size: 18,
                       color: _hasErrors
                           ? colorScheme.error
-                          : colorScheme.onSurface,
+                          : colorScheme.primary,
                     ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: _clearOutput,
-                    icon: const Icon(Icons.backspace_outlined, size: 14),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 4,
+                    const SizedBox(width: 8),
+                    Text(
+                      'Output',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
                       ),
-                      minimumSize: Size.zero,
                     ),
-                  ),
-                ],
-              ),
-              initiallyExpanded: true,
-              children: [
+                    const Spacer(),
+                    IconButton(
+                      onPressed: _clearOutput,
+                      icon: const Icon(Icons.backspace_outlined, size: 16),
+                      tooltip: 'Clear output',
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.all(4),
+                        minimumSize: Size.zero,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Output content
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Error output
                     if (_hasErrors && _displayErrors.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        margin: const EdgeInsets.only(bottom: 8),
+                        decoration: BoxDecoration(
+                          color: colorScheme.errorContainer.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: colorScheme.error.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
                         child: SelectableText(
-                          '═══════ Errors ═══════\n$_displayErrors',
+                          '═══════ Errors ═══════\n$_displayErrors═══════ Error End ═══════',
                           style: TextStyle(
                             fontSize: 10,
-                            color: colorScheme.error,
+                            color: colorScheme.onErrorContainer,
                             fontFamily: 'monospace',
                             fontWeight: FontWeight.w500,
                           ),
@@ -333,16 +375,27 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
 
                     // Regular output
                     if (_hasOutput && _displayOutput.isNotEmpty) ...[
-                      SelectableText(
-                        '═══════ Output ═══════\n$_displayOutput═══════ Log End ═══════\n',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: colorScheme.onSurfaceVariant,
-                          fontFamily: 'monospace',
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: colorScheme.outline.withOpacity(0.2),
+                            width: 1,
+                          ),
                         ),
-                        showCursor: true,
-                        cursorColor: colorScheme.onSurfaceVariant,
-                        selectionControls: materialTextSelectionControls,
+                        child: SelectableText(
+                          '═══════ Output ═══════\n$_displayOutput═══════ Output End ═══════',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: colorScheme.onSurface,
+                            fontFamily: 'monospace',
+                          ),
+                          showCursor: true,
+                          cursorColor: colorScheme.onSurface,
+                          selectionControls: materialTextSelectionControls,
+                        ),
                       ),
                     ],
                   ],
@@ -361,68 +414,6 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
             ),
           ),
       ],
-    );
-  }
-
-  Widget _buildPanelButton({
-    required String label,
-    required String description,
-    required VoidCallback? onPressed,
-    bool isActive = false,
-    bool isSuccess = false,
-    bool isError = false,
-    Color? backgroundColor,
-    Color? foregroundColor,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    Color bgColor = backgroundColor ?? colorScheme.primaryContainer;
-    Color fgColor = foregroundColor ?? colorScheme.onPrimaryContainer;
-
-    if (isActive) {
-      bgColor = colorScheme.secondaryContainer;
-      fgColor = colorScheme.onSecondaryContainer;
-    } else if (isSuccess) {
-      bgColor = colorScheme.primary;
-      fgColor = colorScheme.onPrimary;
-    } else if (isError) {
-      bgColor = colorScheme.error;
-      fgColor = colorScheme.onError;
-    }
-
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: fgColor.withOpacity(0.2), width: 1),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: fgColor,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                description,
-                style: TextStyle(fontSize: 11, color: fgColor.withOpacity(0.8)),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -1127,6 +1118,143 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
       _errorBuffer.write(text);
       _hasErrors = true;
     });
+  }
+
+  String getPlatformDisplayName(String platform) {
+    switch (platform) {
+      case 'macos':
+        return 'macOS';
+      case 'windows':
+        return 'Windows';
+      case 'linux':
+        return 'Linux';
+      case 'web':
+        return 'Web';
+      case 'android':
+        return 'Android';
+      case 'ios':
+        return 'iOS';
+      default:
+        return platform;
+    }
+  }
+
+  Widget _buildActionCard({
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required Color color,
+    required VoidCallback? onPressed,
+    required BuildProcessStatus status,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDisabled = onPressed == null;
+
+    // Determine colors based on status
+    Color backgroundColor;
+    Color foregroundColor;
+    Color iconColor;
+
+    switch (status) {
+      case BuildProcessStatus.running:
+        backgroundColor = Colors.amber.shade100;
+        foregroundColor = Colors.amber.shade900;
+        iconColor = Colors.amber.shade700;
+        break;
+      case BuildProcessStatus.success:
+        backgroundColor = Colors.green.shade100;
+        foregroundColor = Colors.green.shade900;
+        iconColor = Colors.green.shade700;
+        break;
+      case BuildProcessStatus.error:
+        backgroundColor = Colors.red.shade100;
+        foregroundColor = Colors.red.shade900;
+        iconColor = Colors.red.shade700;
+        break;
+      case BuildProcessStatus.idle:
+        backgroundColor = color.withOpacity(isDisabled ? 0.1 : 0.15);
+        foregroundColor = isDisabled
+            ? colorScheme.onSurface.withOpacity(0.4)
+            : color.withOpacity(0.9);
+        iconColor = isDisabled
+            ? colorScheme.onSurface.withOpacity(0.3)
+            : color.withOpacity(0.8);
+        break;
+    }
+
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 120,
+        height: 80,
+        padding: const EdgeInsets.all(8), // Reduced padding to fit content
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDisabled
+                ? colorScheme.outline.withOpacity(0.3)
+                : color.withOpacity(0.2),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min, // Use min to prevent overflow
+          children: [
+            Icon(
+              status == BuildProcessStatus.running
+                  ? Icons.hourglass_empty
+                  : status == BuildProcessStatus.success
+                  ? Icons.check_circle_rounded
+                  : status == BuildProcessStatus.error
+                  ? Icons.error_outline_rounded
+                  : icon,
+              size: 20, // Slightly smaller icon
+              color: iconColor,
+            ),
+            const SizedBox(height: 2), // Reduced spacing
+            Flexible(
+              // Add flexible to prevent overflow
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11, // Slightly smaller font
+                  fontWeight: FontWeight.w600,
+                  color: foregroundColor,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(height: 1), // Reduced spacing
+            Flexible(
+              // Add flexible to prevent overflow
+              child: Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 8, // Smaller subtitle
+                  color: foregroundColor.withOpacity(0.7),
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -39,6 +39,7 @@ class PlatformSelector extends StatelessWidget {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: platforms
               .map(
                 (p) => Tooltip(
