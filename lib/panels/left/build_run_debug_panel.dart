@@ -3,6 +3,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Providers
 import '../../providers/app_providers.dart';
@@ -31,6 +32,25 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
   final Map<String, bool> _hasOutputMap = {};
   String _selectedPlatform = 'android';
   Set<String> _supportedPlatforms = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSelectedPlatform();
+  }
+
+  Future<void> _loadSelectedPlatform() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedPlatform = prefs.getString('selected_platform') ?? 'android';
+    setState(() {
+      _selectedPlatform = savedPlatform;
+    });
+  }
+
+  Future<void> _saveSelectedPlatform(String platform) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('selected_platform', platform);
+  }
 
   String get _displayOutput =>
       _outputBuffers[_selectedPlatform]?.toString() ?? '';
@@ -282,8 +302,10 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
           PlatformSelector(
             supportedPlatforms: _supportedPlatforms,
             selectedPlatform: _selectedPlatform,
-            onPlatformSelected: (platform) =>
-                setState(() => _selectedPlatform = platform),
+            onPlatformSelected: (platform) async {
+              await _saveSelectedPlatform(platform);
+              setState(() => _selectedPlatform = platform);
+            },
           ),
 
           // Main Content Area - No inner scrolling
