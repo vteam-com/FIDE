@@ -25,15 +25,56 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
   BuildProcessStatus _podStatus = BuildProcessStatus.idle;
 
   Process? _currentProcess;
-  final StringBuffer _outputBuffer = StringBuffer();
-  final StringBuffer _errorBuffer = StringBuffer();
-  bool _hasErrors = false;
-  bool _hasOutput = false;
+  final Map<String, StringBuffer> _outputBuffers = {};
+  final Map<String, StringBuffer> _errorBuffers = {};
+  final Map<String, bool> _hasErrorsMap = {};
+  final Map<String, bool> _hasOutputMap = {};
   String _selectedPlatform = 'android';
   Set<String> _supportedPlatforms = {};
 
-  String get _displayOutput => _outputBuffer.toString();
-  String get _displayErrors => _errorBuffer.toString();
+  String get _displayOutput =>
+      _outputBuffers[_selectedPlatform]?.toString() ?? '';
+  String get _displayErrors =>
+      _errorBuffers[_selectedPlatform]?.toString() ?? '';
+
+  // Ensure platform buffers are initialized
+  void _ensurePlatformBuffers(String platform) {
+    _outputBuffers.putIfAbsent(platform, () => StringBuffer());
+    _errorBuffers.putIfAbsent(platform, () => StringBuffer());
+    _hasErrorsMap.putIfAbsent(platform, () => false);
+    _hasOutputMap.putIfAbsent(platform, () => false);
+  }
+
+  // Platform-specific getters
+  StringBuffer get _outputBuffer {
+    _ensurePlatformBuffers(_selectedPlatform);
+    return _outputBuffers[_selectedPlatform]!;
+  }
+
+  StringBuffer get _errorBuffer {
+    _ensurePlatformBuffers(_selectedPlatform);
+    return _errorBuffers[_selectedPlatform]!;
+  }
+
+  bool get _hasErrors {
+    _ensurePlatformBuffers(_selectedPlatform);
+    return _hasErrorsMap[_selectedPlatform]!;
+  }
+
+  set _hasErrors(bool value) {
+    _ensurePlatformBuffers(_selectedPlatform);
+    setState(() => _hasErrorsMap[_selectedPlatform] = value);
+  }
+
+  bool get _hasOutput {
+    _ensurePlatformBuffers(_selectedPlatform);
+    return _hasOutputMap[_selectedPlatform]!;
+  }
+
+  set _hasOutput(bool value) {
+    _ensurePlatformBuffers(_selectedPlatform);
+    setState(() => _hasOutputMap[_selectedPlatform] = value);
+  }
 
   Future<void> _updateCocoaPods() async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
