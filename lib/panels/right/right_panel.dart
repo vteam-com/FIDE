@@ -13,6 +13,9 @@ import '../../models/file_system_item.dart';
 // Providers
 import '../../providers/app_providers.dart';
 
+// New panels
+import 'info_panel.dart';
+
 class RightPanel extends StatefulWidget {
   const RightPanel({
     super.key,
@@ -38,7 +41,7 @@ class _RightPanelState extends State<RightPanel>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -97,6 +100,7 @@ class _RightPanelState extends State<RightPanel>
                         },
                       ),
                     ),
+                    const Tab(icon: Icon(Icons.info_outline)),
                   ],
                   labelColor: Theme.of(context).colorScheme.primary,
                   unselectedLabelColor: Theme.of(
@@ -135,6 +139,9 @@ class _RightPanelState extends State<RightPanel>
 
                     // AI tab
                     AIPanel(selectedFile: widget.selectedFile),
+
+                    // Info tab
+                    const InfoPanel(),
                   ],
                 ),
               ),
