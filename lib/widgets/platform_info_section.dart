@@ -558,39 +558,6 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                   ],
                 ),
               ],
-
-              // Fix instructions
-              if (!widget.canBuild ||
-                  !widget.isSupported ||
-                  (widget.selectedPlatform == 'macos' && Platform.isMacOS)) ...[
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.build, size: 14, color: Colors.orange),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'To Fix:',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _getFixInstructions(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ],
           ),
         ),
