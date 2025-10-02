@@ -1,6 +1,4 @@
 // ignore_for_file: deprecated_member_use
-
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -30,55 +28,6 @@ class PlatformInfoSection extends StatefulWidget {
 }
 
 class _PlatformInfoSectionState extends State<PlatformInfoSection> {
-  bool _isRunningPodUpdate = false;
-
-  Future<void> _runPodUpdate() async {
-    setState(() {
-      _isRunningPodUpdate = true;
-    });
-    widget.onAppendOutput!(
-      '[CocoaPods] Running pod install --repo-update... This may take several minutes.\n',
-    );
-    try {
-      final process = await Process.start(
-        'pod',
-        ['install', '--repo-update'],
-        workingDirectory: '${widget.projectPath}/macos',
-        runInShell: true,
-      );
-      final stdoutLines = process.stdout
-          .transform(SystemEncoding().decoder)
-          .transform(const LineSplitter());
-      final stderrLines = process.stderr
-          .transform(SystemEncoding().decoder)
-          .transform(const LineSplitter());
-      final stdoutSub = stdoutLines.listen((line) {
-        widget.onAppendOutput?.call('$line\n');
-      });
-      final stderrSub = stderrLines.listen((line) {
-        widget.onAppendError?.call('$line\n');
-      });
-      final exitCode = await process.exitCode;
-      await stdoutSub.cancel();
-      await stderrSub.cancel();
-      if (exitCode == 0) {
-        widget.onAppendOutput!(
-          '[CocoaPods] pod install --repo-update complete! Try building again.\n',
-        );
-      } else {
-        widget.onAppendError!(
-          '[CocoaPods] pod install --repo-update failed (exit code $exitCode).\n',
-        );
-      }
-    } catch (e) {
-      widget.onAppendError!('[CocoaPods] Error: $e\n');
-    } finally {
-      setState(() {
-        _isRunningPodUpdate = false;
-      });
-    }
-  }
-
   String _getLastBuildTime() {
     final buildDir = Directory('${widget.projectPath}/build');
     if (!buildDir.existsSync()) return 'Never';

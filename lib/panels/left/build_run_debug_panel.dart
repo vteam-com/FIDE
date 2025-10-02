@@ -325,6 +325,7 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
                 color: colorScheme.secondary,
                 onPressed: _cleanFlutterApp,
                 status: _cleanStatus,
+                onCancel: _cancelCurrentProcess,
               ),
 
               // Build actions
@@ -336,6 +337,7 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
                   color: colorScheme.primary,
                   onPressed: () => _buildFlutterApp('apk'),
                   status: _buildStatus,
+                  onCancel: _cancelCurrentProcess,
                 ),
                 _buildActionCard(
                   icon: Icons.archive_rounded,
@@ -344,6 +346,7 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
                   color: colorScheme.tertiary,
                   onPressed: () => _buildFlutterApp('aab'),
                   status: _buildStatus,
+                  onCancel: _cancelCurrentProcess,
                 ),
               ] else
                 _buildActionCard(
@@ -353,6 +356,7 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
                   color: colorScheme.primary,
                   onPressed: () => _buildFlutterApp(_selectedPlatform),
                   status: _buildStatus,
+                  onCancel: _cancelCurrentProcess,
                 ),
 
               // CocoaPods for iOS/macOS
@@ -364,6 +368,7 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
                   color: const Color(0xFF007ACC), // Xcode blue
                   onPressed: _updateCocoaPods,
                   status: _podStatus,
+                  onCancel: _cancelCurrentProcess,
                 ),
               ] else if (_selectedPlatform == 'macos' && Platform.isMacOS) ...[
                 _buildActionCard(
@@ -373,6 +378,7 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
                   color: const Color(0xFF007ACC), // Xcode blue
                   onPressed: _updateCocoaPods,
                   status: _podStatus,
+                  onCancel: _cancelCurrentProcess,
                 ),
               ],
 
@@ -384,6 +390,7 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
                 color: Colors.green,
                 onPressed: () => _runFlutterApp(isDebug: false),
                 status: _runStatus,
+                onCancel: _cancelCurrentProcess,
               ),
               _buildActionCard(
                 icon: Icons.bug_report_rounded,
@@ -392,6 +399,7 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
                 color: Colors.orange,
                 onPressed: () => _runFlutterApp(isDebug: true),
                 status: _debugStatus,
+                onCancel: _cancelCurrentProcess,
               ),
             ],
           ),
@@ -519,6 +527,19 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
           ),
       ],
     );
+  }
+
+  void _cancelCurrentProcess() {
+    _currentProcess?.kill();
+    setState(() {
+      _cleanStatus = BuildProcessStatus.idle;
+      _buildStatus = BuildProcessStatus.idle;
+      _runStatus = BuildProcessStatus.idle;
+      _debugStatus = BuildProcessStatus.idle;
+      _podStatus = BuildProcessStatus.idle;
+      _outputBuffer.writeln('⚠️ Operation cancelled by user');
+      _hasOutput = true;
+    });
   }
 
   Future<void> _cleanFlutterApp() async {
@@ -1250,9 +1271,11 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
     required Color color,
     required VoidCallback? onPressed,
     required BuildProcessStatus status,
+    VoidCallback? onCancel,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDisabled = onPressed == null;
+    final isRunning = status == BuildProcessStatus.running;
 
     // Determine colors based on status
     Color backgroundColor;
@@ -1287,7 +1310,7 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
     }
 
     return InkWell(
-      onTap: onPressed,
+      onTap: isRunning ? onCancel : onPressed,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         width: 120,
@@ -1314,24 +1337,47 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min, // Use min to prevent overflow
           children: [
-            Icon(
-              status == BuildProcessStatus.running
-                  ? Icons.hourglass_empty
-                  : status == BuildProcessStatus.success
-                  ? Icons.check_circle_rounded
-                  : status == BuildProcessStatus.error
-                  ? Icons.error_outline_rounded
-                  : icon,
-              size: 20, // Slightly smaller icon
-              color: iconColor,
-            ),
+            // Show spinner + cancel button when running
+            if (isRunning) ...[
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(iconColor),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    onPressed: onCancel,
+                    icon: Icon(Icons.stop, size: 20, color: iconColor),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    tooltip: 'Cancel operation',
+                  ),
+                ],
+              ),
+            ] else ...[
+              Icon(
+                status == BuildProcessStatus.success
+                    ? Icons.check_circle_rounded
+                    : status == BuildProcessStatus.error
+                    ? Icons.error_outline_rounded
+                    : icon,
+                size: 20, // Slightly smaller icon
+                color: iconColor,
+              ),
+            ],
             const SizedBox(height: 2), // Reduced spacing
             Flexible(
               // Add flexible to prevent overflow
               child: Text(
-                label,
+                isRunning ? 'Running...' : label,
                 style: TextStyle(
-                  fontSize: 11, // Slightly smaller font
+                  fontSize: isRunning ? 10 : 11, // Smaller font when running
                   fontWeight: FontWeight.w600,
                   color: foregroundColor,
                 ),
@@ -1344,9 +1390,9 @@ class BuildRunDebugPanelState extends ConsumerState<BuildRunDebugPanel> {
             Flexible(
               // Add flexible to prevent overflow
               child: Text(
-                subtitle,
+                isRunning ? 'Tap to cancel' : subtitle,
                 style: TextStyle(
-                  fontSize: 8, // Smaller subtitle
+                  fontSize: isRunning ? 7 : 8, // Smaller subtitle when running
                   color: foregroundColor.withOpacity(0.7),
                   fontWeight: FontWeight.w500,
                 ),
