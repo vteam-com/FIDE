@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-class PlatformSelector extends StatelessWidget {
+class PlatformSelector extends StatefulWidget {
   final Set<String> supportedPlatforms;
   final String selectedPlatform;
   final Function(String) onPlatformSelected;
@@ -16,7 +16,79 @@ class PlatformSelector extends StatelessWidget {
   });
 
   @override
+  State<PlatformSelector> createState() => _PlatformSelectorState();
+}
+
+class _PlatformSelectorState extends State<PlatformSelector>
+    with TickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupTabController();
+  }
+
+  @override
+  void didUpdateWidget(PlatformSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedPlatform != widget.selectedPlatform ||
+        oldWidget.supportedPlatforms != widget.supportedPlatforms) {
+      _updateTabController();
+    }
+  }
+
+  void _setupTabController() {
+    final platformOrder = [
+      'android',
+      'ios',
+      'web',
+      'macos',
+      'linux',
+      'windows',
+    ];
+    final allPlatforms = platformOrder;
+
+    _tabController = TabController(
+      length: allPlatforms.length,
+      vsync: this,
+      initialIndex: allPlatforms.indexOf(widget.selectedPlatform),
+    );
+
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      final platformId = allPlatforms[_tabController.index];
+      if (widget.supportedPlatforms.contains(platformId)) {
+        widget.onPlatformSelected(platformId);
+      }
+    });
+  }
+
+  void _updateTabController() {
+    final platformOrder = [
+      'android',
+      'ios',
+      'web',
+      'macos',
+      'linux',
+      'windows',
+    ];
+    final targetIndex = platformOrder.indexOf(widget.selectedPlatform);
+    if (targetIndex >= 0 && _tabController.index != targetIndex) {
+      _tabController.animateTo(targetIndex);
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     final platforms = [
       {
         'name': 'Android',
@@ -34,65 +106,86 @@ class PlatformSelector extends StatelessWidget {
       },
     ];
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: platforms
-              .map(
-                (p) => Tooltip(
-                  message: supportedPlatforms.contains(p['id'])
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final showLabels =
+            constraints.maxWidth > 300; // Show labels if wider than 240px
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            labelColor: colorScheme.primary,
+            unselectedLabelColor: colorScheme.onSurface.withOpacity(0.6),
+            indicatorColor: colorScheme.primary,
+            indicatorSize: TabBarIndicatorSize.tab,
+            dividerColor: Colors.transparent,
+            labelStyle: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: const TextStyle(fontSize: 12),
+            tabs: platforms.map((p) {
+              final isSupported = widget.supportedPlatforms.contains(p['id']);
+              final isSelected = widget.selectedPlatform == p['id'];
+              final needsTooltip = !showLabels;
+
+              final tab = Tab(
+                height: showLabels ? 48 : 40,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ColorFiltered(
+                      colorFilter: ColorFilter.mode(
+                        isSelected
+                            ? colorScheme.primary
+                            : isSupported
+                            ? colorScheme.onSurface.withOpacity(0.8)
+                            : colorScheme.onSurface.withOpacity(0.4),
+                        BlendMode.srcIn,
+                      ),
+                      child: SvgPicture.asset(
+                        p['asset'] as String,
+                        width: showLabels ? 20 : 18,
+                        height: showLabels ? 20 : 18,
+                      ),
+                    ),
+                    if (showLabels) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        (p['name'] as String)
+                            .replaceAll('macOS', 'macOS')
+                            .replaceAll('iOS', 'iOS'),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ],
+                ),
+              );
+
+              // Only wrap with Tooltip when needed (when labels are not shown)
+              if (needsTooltip) {
+                return Tooltip(
+                  message: isSupported
                       ? p['name'] as String
                       : '${p['name']} (not configured)',
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: selectedPlatform == p['id']
-                              ? Theme.of(context).colorScheme.primary
-                              : Colors.transparent,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                    child: InkWell(
-                      onTap: () => onPlatformSelected(p['id'] as String),
-                      borderRadius: BorderRadius.circular(4),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        constraints: const BoxConstraints(
-                          minWidth: 28,
-                          minHeight: 28,
-                        ),
-                        child: ColorFiltered(
-                          colorFilter: ColorFilter.mode(
-                            selectedPlatform == p['id']
-                                ? Theme.of(context).colorScheme.primary
-                                : supportedPlatforms.contains(p['id'])
-                                ? Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface.withOpacity(0.8)
-                                : Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface.withOpacity(0.3),
-                            BlendMode.srcIn,
-                          ),
-                          child: SvgPicture.asset(
-                            p['asset'] as String,
-                            width: 21,
-                            height: 21,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-      ),
+                  child: tab,
+                );
+              } else {
+                return tab;
+              }
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 }
