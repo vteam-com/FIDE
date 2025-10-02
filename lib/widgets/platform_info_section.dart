@@ -102,32 +102,6 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
     }
   }
 
-  List<Map<String, String>> _getAllIcons() {
-    final icons = <Map<String, String>>[];
-
-    // Add app-specific icons that were found
-    final appIconPath = _findAppIconPath();
-    if (appIconPath != null) {
-      icons.add({
-        'type': 'App Icon',
-        'path': appIconPath,
-        'filename': appIconPath.split('/').last,
-      });
-    }
-
-    // Add fallback generic platform icons (these are assets, not actual files)
-    final fallbackIcon = _getPlatformIconPath();
-    if (fallbackIcon.startsWith('assets/')) {
-      icons.add({
-        'type': 'Platform Icon',
-        'path': fallbackIcon,
-        'filename': fallbackIcon.split('/').last,
-      });
-    }
-
-    return icons;
-  }
-
   void _openFolder(String path) {
     try {
       // For assets, we can't open in file explorer (they're packaged)
@@ -171,105 +145,6 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
       default:
         return 'Platform not recognized';
     }
-  }
-
-  String _getFixInstructions() {
-    // Always check for macOS CocoaPods issues when macOS is selected
-    if (widget.selectedPlatform == 'macos' && Platform.isMacOS) {
-      final cocoaPodsIssue = _checkMacOSCocoaPodsIssue();
-      if (cocoaPodsIssue != null) {
-        return cocoaPodsIssue;
-      }
-      // Even if no issues detected, always provide helpful macOS commands
-      return 'macOS builds: Consider periodic CocoaPods updates\nRun: pod repo update (may take several minutes)\n\nFor build issues: rm -rf build/macos/Pods && flutter clean';
-    }
-
-    if (widget.isSupported && widget.canBuild) {
-      return 'No issues detected';
-    }
-
-    if (!widget.isSupported) {
-      return 'Enable the platform first using the instructions above.';
-    }
-
-    if (!widget.canBuild) {
-      switch (widget.selectedPlatform) {
-        case 'ios':
-          return 'iOS builds require a macOS machine with Xcode installed.';
-        case 'windows':
-          return 'Windows builds require a Windows machine with Visual Studio.';
-        case 'linux':
-          return 'Linux builds require a Linux machine.';
-        default:
-          return 'Current host platform cannot build for this target.';
-      }
-    }
-
-    return 'Check Flutter doctor and resolve any reported issues.';
-  }
-
-  String? _checkMacOSCocoaPodsIssue() {
-    try {
-      // Check if CocoaPods is available
-      final podVersion = Process.runSync('pod', ['--version']);
-      if (podVersion.exitCode != 0) {
-        return 'CocoaPods is not installed. Install with: brew install cocoapods\nThen run: pod setup';
-      }
-
-      // Check if pod repo update is needed by looking at the last update time
-      final repoDir = Directory(
-        '${Platform.environment['HOME']}/Library/Caches/CocoaPods/Pods',
-      );
-      if (repoDir.existsSync()) {
-        final entries = repoDir.listSync(recursive: false);
-        if (entries.isNotEmpty) {
-          final latestEntry = entries
-              .map((e) => e.statSync().modified)
-              .reduce((a, b) => a.isAfter(b) ? a : b);
-
-          final daysSinceUpdate = DateTime.now().difference(latestEntry).inDays;
-          if (daysSinceUpdate > 30) {
-            return 'CocoaPods repository may be out of date.\nRun: pod repo update\n\nThis may take several minutes.';
-          }
-        }
-      }
-
-      // Check for common Flutter macOS build errors
-      final buildDir = Directory('${widget.projectPath}/build');
-      if (buildDir.existsSync()) {
-        final recentErrors = _checkRecentBuildErrors();
-        if (recentErrors.contains('CocoaPods')) {
-          return 'Recent build had CocoaPods issues.\nTry: pod repo update\n\nOr clean and rebuild.';
-        }
-      }
-    } catch (e) {
-      // If we can't check, don't show anything
-    }
-
-    return null;
-  }
-
-  String _checkRecentBuildErrors() {
-    try {
-      final logFiles = Directory('${widget.projectPath}/build/macos')
-          .listSync(recursive: true)
-          .whereType<File>()
-          .where(
-            (file) => file.path.endsWith('.log') || file.path.contains('error'),
-          )
-          .toList();
-
-      for (final file in logFiles) {
-        final content = file.readAsStringSync();
-        if (content.contains('CocoaPods') ||
-            content.contains('pod repo update')) {
-          return 'CocoaPods';
-        }
-      }
-    } catch (e) {
-      // Ignore errors
-    }
-    return '';
   }
 
   String? _findAppIconPath() {
