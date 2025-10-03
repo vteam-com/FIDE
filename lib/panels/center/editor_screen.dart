@@ -109,6 +109,9 @@ class _EditorScreenState extends State<EditorScreen> {
   String? _diffOldText;
   String? _diffNewText;
 
+  // Code folding state
+  bool _regionsExpanded = true;
+
   @override
   void initState() {
     super.initState();
@@ -384,6 +387,24 @@ class _EditorScreenState extends State<EditorScreen> {
                                 style: TextStyle(fontSize: 12),
                               )
                             else ...[
+                              IconButton(
+                                icon: Icon(
+                                  _regionsExpanded
+                                      ? Icons.unfold_less
+                                      : Icons.unfold_more,
+                                  size: 16,
+                                ),
+                                onPressed: _toggleAllRegions,
+                                tooltip: _regionsExpanded
+                                    ? 'Collapse All Regions (Ctrl+Shift+[)'
+                                    : 'Expand All Regions (Ctrl+Shift+])',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 24,
+                                  minHeight: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
                               Text(
                                 'Ln ${_getCurrentLineNumber()}',
                                 style: const TextStyle(fontSize: 12),
@@ -900,6 +921,21 @@ class _EditorScreenState extends State<EditorScreen> {
         MessageHelper.showError(context, 'Error getting diff: $e');
       }
     }
+  }
+
+  void _toggleAllRegions() {
+    setState(() {
+      _regionsExpanded = !_regionsExpanded;
+    });
+
+    // Note: Actual folding functionality will be implemented when CodeCrafter
+    // supports folding operations. For now, this manages the UI state and icon.
+    // Future implementation may use LSP requests or direct folding methods
+    // depending on CodeCrafter's API.
+
+    _logger.info(
+      'Toggle all regions requested: ${_regionsExpanded ? "expanded" : "collapsed"}',
+    );
   }
 
   void _navigateToLine(int lineNumber, {int column = 1}) {
