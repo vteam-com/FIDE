@@ -1,32 +1,34 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
 import 'dart:io';
-import 'package:fide/services/project_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:logging/logging.dart';
+
+// Controllers
+import 'controllers/app_controller.dart';
 
 // Providers
 import 'providers/app_providers.dart';
+import 'providers/ui_state_providers.dart';
 
-// Utils
+// Services
+import 'services/project_service.dart';
+import 'services/project_operations.dart';
 import 'utils/message_helper.dart';
 
 // Widgets
-import 'screens/main_layout.dart';
+import 'widgets/create_project_dialog.dart';
 import 'widgets/title_bar.dart';
 import 'widgets/menu_builder.dart';
-import 'widgets/create_project_dialog.dart';
 
 // Screens
-import 'panels/center/editor_screen.dart';
 import 'screens/loading_screen.dart';
+import 'screens/main_layout.dart';
 import 'screens/welcome_screen.dart';
-
-// Services
+import 'panels/center/editor_screen.dart';
 
 // Theme
 import 'theme/app_theme.dart';
@@ -40,22 +42,11 @@ void main() async {
     debugPrint('${record.level.name}: ${record.time}: ${record.message}');
   });
 
-  await windowManager.ensureInitialized();
+  // Initialize app controller to handle setup
+  final container = ProviderContainer();
+  await container.read(appControllerProvider).initialize();
 
-  WindowOptions windowOptions = const WindowOptions(
-    size: Size(1200, 800),
-    minimumSize: Size(800, 600),
-    center: true,
-    backgroundColor: Colors.transparent,
-    skipTaskbar: false,
-    titleBarStyle: TitleBarStyle.hidden,
-  );
-  windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await windowManager.show();
-    await windowManager.focus();
-  });
-
-  runApp(const ProviderScope(child: FIDE()));
+  runApp(UncontrolledProviderScope(container: container, child: const FIDE()));
 }
 
 class FIDE extends ConsumerStatefulWidget {
@@ -65,124 +56,38 @@ class FIDE extends ConsumerStatefulWidget {
   ConsumerState<FIDE> createState() => _FIDEState();
 }
 
-// Callbacks for updating visibility in FIDE state
-VoidCallback? _onLeftPanelVisibilityChanged;
-VoidCallback? _onBottomPanelVisibilityChanged;
-VoidCallback? _onRightPanelVisibilityChanged;
+// Global functions for menu actions - now delegate to ProjectOperations service
+void triggerSave() => ProjectOperations.triggerSave();
 
-// Global functions for menu actions
-void triggerSave() {
-  // Call the static method to save the current editor
-  EditorScreen.saveCurrentEditor();
-}
+Future<void> pickDirectoryAndLoadProject(BuildContext context, WidgetRef ref) =>
+    ProjectOperations.pickDirectoryAndLoadProject(context, ref);
 
-// Global function for opening folder picker and loading project
-Future<void> pickDirectoryAndLoadProject(
-  BuildContext context,
-  WidgetRef ref,
-) async {
-  try {
-    final selectedDirectory = await FilePicker.platform.getDirectoryPath();
-    if (selectedDirectory != null && context.mounted) {
-      // Use ProjectManager to load the project
-      final projectManager = ref.read(projectManagerProvider);
-      final success = await projectManager.loadProject(selectedDirectory);
+void triggerOpenFolder() => ProjectOperations.triggerOpenFolder();
 
-      if (success) {
-        await projectManager.tryReopenLastFile(selectedDirectory);
+void triggerReopenLastFile() => ProjectOperations.triggerReopenLastFile();
 
-        // Add to MRU folders
-        final currentMru = List<String>.from(ref.read(mruFoldersProvider));
-        if (!currentMru.contains(selectedDirectory)) {
-          currentMru.insert(0, selectedDirectory); // Add to beginning
-          // Keep only the most recent 10
-          if (currentMru.length > 10) {
-            currentMru.removeRange(10, currentMru.length);
-          }
-          ref.read(mruFoldersProvider.notifier).state = currentMru;
+void triggerCloseDocument() => ProjectOperations.triggerCloseDocument();
 
-          // Save to SharedPreferences
-          try {
-            final prefs = await ref.read(sharedPreferencesProvider.future);
-            await prefs.setStringList('mru_folders', currentMru);
-          } catch (e) {
-            // Silently handle SharedPreferences errors
-          }
-        }
-      } else {
-        if (context.mounted) {
-          MessageHelper.showError(
-            context,
-            'Failed to load project. Please ensure it is a valid Flutter project.',
-          );
-        }
-      }
-    }
-  } catch (e) {
-    if (context.mounted) {
-      MessageHelper.showError(context, 'Error loading project: $e');
-    }
-  }
-}
+void triggerSearch() => ProjectOperations.triggerSearch();
 
-void triggerOpenFolder() {
-  // This will be set by MainLayout
-  _mainLayoutKey.currentState?.pickDirectory();
-}
+void triggerSearchNext() => ProjectOperations.triggerSearchNext();
 
-void triggerReopenLastFile() {
-  // This will be set by MainLayout
-  final currentProjectPath = _mainLayoutKey.currentState?.ref.read(
-    currentProjectPathProvider,
-  );
-  if (currentProjectPath != null) {
-    _mainLayoutKey.currentState?.tryReopenLastFile(currentProjectPath);
-  }
-}
+void triggerSearchPrevious() => ProjectOperations.triggerSearchPrevious();
 
-void triggerCloseDocument() {
-  // Call the static method to close the current editor
-  EditorScreen.closeCurrentEditor();
-}
+void Function(WidgetRef ref) triggerTogglePanelLeft = (ref) {
+  final current = ref.read(leftPanelVisibleProvider);
+  ref.read(leftPanelVisibleProvider.notifier).state = !current;
+};
 
-void triggerSearch() {
-  // Call the static method to toggle search in the current editor
-  EditorScreen.toggleSearch();
-}
+void Function(WidgetRef ref) triggerTogglePanelBottom = (ref) {
+  final current = ref.read(bottomPanelVisibleProvider);
+  ref.read(bottomPanelVisibleProvider.notifier).state = !current;
+};
 
-void triggerSearchNext() {
-  // Call the static method to toggle search in the current editor
-  EditorScreen.findNext();
-}
-
-void triggerSearchPrevious() {
-  // Call the static method to toggle search in the current editor
-  EditorScreen.findPrevious();
-}
-
-void triggerTogglePanelLeft() {
-  // Call the toggle left panel method on MainLayout
-  _mainLayoutKey.currentState?.toggleLeftPanel();
-  // Update visibility state
-  _onLeftPanelVisibilityChanged?.call();
-}
-
-void triggerTogglePanelBottom() {
-  // Call the toggle terminal method on MainLayout
-  _mainLayoutKey.currentState?.toggleTerminalPanel();
-  // Update visibility state
-  _onBottomPanelVisibilityChanged?.call();
-}
-
-// Call the toggle outline method on MainLayout
-void triggerTogglePanelRight() {
-  _mainLayoutKey.currentState?.toggleOutlinePanel();
-  // Update visibility state
-  _onRightPanelVisibilityChanged?.call();
-}
-
-// Global key to access MainLayout
-final GlobalKey<MainLayoutState> _mainLayoutKey = GlobalKey<MainLayoutState>();
+void Function(WidgetRef ref) triggerTogglePanelRight = (ref) {
+  final current = ref.read(rightPanelVisibleProvider);
+  ref.read(rightPanelVisibleProvider.notifier).state = !current;
+};
 
 class WindowControls extends StatelessWidget {
   const WindowControls({super.key});
@@ -252,11 +157,6 @@ class _FIDEState extends ConsumerState<FIDE> {
   late SharedPreferences _prefs;
   static const String _themeModeKey = 'theme_mode';
 
-  // Panel visibility states
-  bool _leftPanelVisible = true;
-  bool _bottomPanelVisible = true;
-  bool _rightPanelVisible = true;
-
   // Loading state for project loading
   bool _isLoadingProject = false;
   String? _loadingProjectName;
@@ -302,25 +202,6 @@ class _FIDEState extends ConsumerState<FIDE> {
   void initState() {
     super.initState();
     _initializeApp();
-    _setupVisibilityCallbacks();
-  }
-
-  void _setupVisibilityCallbacks() {
-    _onLeftPanelVisibilityChanged = () {
-      setState(() {
-        _leftPanelVisible = !_leftPanelVisible;
-      });
-    };
-    _onBottomPanelVisibilityChanged = () {
-      setState(() {
-        _bottomPanelVisible = !_bottomPanelVisible;
-      });
-    };
-    _onRightPanelVisibilityChanged = () {
-      setState(() {
-        _rightPanelVisible = !_rightPanelVisible;
-      });
-    };
   }
 
   Future<void> _initializeApp() async {
@@ -454,12 +335,12 @@ class _FIDEState extends ConsumerState<FIDE> {
                       setState(() => _themeMode = themeMode);
                       _saveThemeMode(themeMode);
                     },
-                    onToggleLeftPanel: triggerTogglePanelLeft,
-                    onToggleBottomPanel: triggerTogglePanelBottom,
-                    onToggleRightPanel: triggerTogglePanelRight,
-                    leftPanelVisible: _leftPanelVisible,
-                    bottomPanelVisible: _bottomPanelVisible,
-                    rightPanelVisible: _rightPanelVisible,
+                    onToggleLeftPanel: () => triggerTogglePanelLeft(ref),
+                    onToggleBottomPanel: () => triggerTogglePanelBottom(ref),
+                    onToggleRightPanel: () => triggerTogglePanelRight(ref),
+                    leftPanelVisible: ref.watch(leftPanelVisibleProvider),
+                    bottomPanelVisible: ref.watch(bottomPanelVisibleProvider),
+                    rightPanelVisible: ref.watch(rightPanelVisibleProvider),
                     onProjectSwitch: (projectPath) async {
                       await tryLoadProject(projectPath);
                     },
@@ -482,9 +363,9 @@ class _FIDEState extends ConsumerState<FIDE> {
                   onGoToLine: () => _showGotoLineDialog(
                     navigatorKey.currentContext ?? context,
                   ),
-                  onToggleLeftPanel: triggerTogglePanelLeft,
-                  onToggleBottomPanel: triggerTogglePanelBottom,
-                  onToggleRightPanel: triggerTogglePanelRight,
+                  onToggleLeftPanel: () => triggerTogglePanelLeft(ref),
+                  onToggleBottomPanel: () => triggerTogglePanelBottom(ref),
+                  onToggleRightPanel: () => triggerTogglePanelRight(ref),
                   onSwitchPanel: (index) => _switchToPanel(ref, index),
                   onProjectSwitch: (path) async => await tryLoadProject(path),
                   lastOpenedFileName: _lastOpenedFileName,
@@ -568,7 +449,6 @@ class _FIDEState extends ConsumerState<FIDE> {
                     } else {
                       // Show main layout when project is loaded
                       return MainLayout(
-                        key: _mainLayoutKey,
                         onThemeChanged: (themeMode) {
                           setState(() => _themeMode = themeMode);
                         },

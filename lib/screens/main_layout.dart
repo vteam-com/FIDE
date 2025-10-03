@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:io';
+import 'package:fide/providers/ui_state_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
@@ -63,9 +64,6 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   static const String _lastOpenedFileKey = 'last_opened_file';
   static const String _mruFoldersKey = 'mru_folders';
   String? _lastSelectedFilePath;
-  bool _outlinePanelVisible = true;
-  bool _terminalPanelVisible = true;
-  bool _leftPanelVisible = true;
 
   @override
   void initState() {
@@ -177,27 +175,6 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     _refreshOutlineCallback = callback;
   }
 
-  // Method to toggle outline panel visibility
-  void toggleOutlinePanel() {
-    setState(() {
-      _outlinePanelVisible = !_outlinePanelVisible;
-    });
-  }
-
-  // Method to toggle terminal panel visibility
-  void toggleTerminalPanel() {
-    setState(() {
-      _terminalPanelVisible = !_terminalPanelVisible;
-    });
-  }
-
-  // Method to toggle left panel visibility
-  void toggleLeftPanel() {
-    setState(() {
-      _leftPanelVisible = !_leftPanelVisible;
-    });
-  }
-
   void _onResize(double delta) {
     setState(() {
       _explorerWidth = (_explorerWidth + delta).clamp(
@@ -268,7 +245,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
       body: Row(
         children: [
           // Left Panel
-          if (projectLoaded && _leftPanelVisible) ...[
+          if (projectLoaded && ref.watch(leftPanelVisibleProvider)) ...[
             SizedBox(
               width: _explorerWidth,
               child: LeftPanel(
@@ -329,7 +306,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
               selectedFile: selectedFile,
               projectLoaded: projectLoaded,
               mruFolders: mruFolders,
-              terminalVisible: _terminalPanelVisible,
+              terminalVisible: ref.watch(bottomPanelVisibleProvider),
               onOpenFolder: pickDirectory,
               onOpenMruProject: (path) async {
                 // Use the same tryLoadProject function from main.dart for consistency
@@ -370,7 +347,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
           ),
 
           // Right Panel
-          if (_outlinePanelVisible) ...[
+          if (ref.watch(rightPanelVisibleProvider)) ...[
             // Resizable Splitter between Center and Right
             ResizableSplitter(onResize: _onOutlineResize),
             SizedBox(
@@ -467,9 +444,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     widget.onFileOpened?.call(fileName);
 
     // Show outline panel by default when a file is selected
-    if (!_outlinePanelVisible) {
-      setState(() => _outlinePanelVisible = true);
-    }
+    ref.read(rightPanelVisibleProvider.notifier).state = true;
 
     _lastSelectedFilePath = file.path;
   }

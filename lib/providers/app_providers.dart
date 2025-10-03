@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -42,13 +41,6 @@ final mruFoldersLoaderProvider = FutureProvider<List<String>>((ref) async {
 
   // Filter out folders that don't exist
   return mruList.where((path) => Directory(path).existsSync()).toList();
-});
-
-// Theme mode provider
-final themeModeProvider = StateProvider<ThemeMode>((ref) {
-  // Try to get saved theme mode from shared preferences
-  // For now, default to system
-  return ThemeMode.system;
 });
 
 // Project management service - unified approach for all project operations
@@ -219,12 +211,6 @@ final activeDocumentProvider = Provider<DocumentState?>((ref) {
   }
   return null;
 });
-
-// State management for active left panel tab
-final activeLeftPanelTabProvider = StateProvider<int>((ref) => 0);
-
-// State management for active right panel tab
-final activeRightPanelTabProvider = StateProvider<int>((ref) => 0);
 
 // State management for project creation errors
 final projectCreationErrorProvider = StateProvider<String?>((ref) => null);

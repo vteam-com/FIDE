@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'dart:io';
+import 'package:fide/providers/ui_state_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -491,5 +492,88 @@ class MyApp extends StatelessWidget {
     if (await testProjectDir.exists()) {
       await testProjectDir.delete(recursive: true);
     }
+  });
+
+  testWidgets('FIDE integration: test panel toggle functionality', (
+    WidgetTester tester,
+  ) async {
+    // Start the app
+    await tester.pumpWidget(const ProviderScope(child: FIDE()));
+    await tester.pumpAndSettle(const Duration(seconds: 1));
+
+    // Create a test project programmatically
+    final tempDir = Directory.systemTemp;
+    final testProjectDir = await Directory(
+      path.join(tempDir.path, 'fide_integration_test_toggle'),
+    ).create(recursive: true);
+    final libDir = Directory(path.join(testProjectDir.path, 'lib'));
+    await libDir.create();
+    final pubspec = File(path.join(testProjectDir.path, 'pubspec.yaml'));
+    await pubspec.writeAsString('name: test\nflutter:\n  sdk: flutter\n');
+    final mainDart = File(path.join(libDir.path, 'main.dart'));
+    await mainDart.writeAsString('void main() {}');
+
+    // Load the project
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp)),
+    );
+    final projectService = container.read(projectServiceProvider);
+    final loadSuccess = await projectService.loadProject(testProjectDir.path);
+    expect(loadSuccess, isTrue);
+
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+
+    // Test left panel toggle - should start visible
+    expect(container.read(leftPanelVisibleProvider), isTrue);
+
+    // Toggle left panel off
+    container.read(leftPanelVisibleProvider.notifier).state = false;
+    await tester.pumpAndSettle();
+    expect(container.read(leftPanelVisibleProvider), isFalse);
+
+    // Toggle left panel back on
+    container.read(leftPanelVisibleProvider.notifier).state = true;
+    await tester.pumpAndSettle();
+    expect(container.read(leftPanelVisibleProvider), isTrue);
+
+    // Test bottom panel toggle - should start visible
+    expect(container.read(bottomPanelVisibleProvider), isTrue);
+
+    // Toggle bottom panel off
+    container.read(bottomPanelVisibleProvider.notifier).state = false;
+    await tester.pumpAndSettle();
+    expect(container.read(bottomPanelVisibleProvider), isFalse);
+
+    // Toggle bottom panel back on
+    container.read(bottomPanelVisibleProvider.notifier).state = true;
+    await tester.pumpAndSettle();
+    expect(container.read(bottomPanelVisibleProvider), isTrue);
+
+    // Test right panel toggle - should start visible
+    expect(container.read(rightPanelVisibleProvider), isTrue);
+
+    // Toggle right panel off
+    container.read(rightPanelVisibleProvider.notifier).state = false;
+    await tester.pumpAndSettle();
+    expect(container.read(rightPanelVisibleProvider), isFalse);
+
+    // Toggle right panel back on
+    container.read(rightPanelVisibleProvider.notifier).state = true;
+    await tester.pumpAndSettle();
+    expect(container.read(rightPanelVisibleProvider), isTrue);
+
+    // Clean up
+    if (await testProjectDir.exists()) {
+      await testProjectDir.delete(recursive: true);
+    }
+
+    // Reset states
+    container.read(leftPanelVisibleProvider.notifier).state = true;
+    container.read(bottomPanelVisibleProvider.notifier).state = true;
+    container.read(rightPanelVisibleProvider.notifier).state = true;
+    container.read(selectedFileProvider.notifier).state = null;
+    container.read(projectLoadedProvider.notifier).state = false;
+    container.read(currentProjectPathProvider.notifier).state = null;
+    await tester.pumpAndSettle();
   });
 }

@@ -1,3 +1,4 @@
+import 'package:fide/providers/ui_state_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -9,9 +10,6 @@ import 'localization_panel.dart';
 
 // Models
 import '../../models/file_system_item.dart';
-
-// Providers
-import '../../providers/app_providers.dart';
 
 // New panels
 import 'info_panel.dart';
