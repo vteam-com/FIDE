@@ -730,6 +730,11 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                   ),
                 ),
                 Spacer(),
+                IconButton(
+                  onPressed: _openPubspecYaml,
+                  icon: const Icon(Icons.edit_note, size: 16),
+                ),
+                Spacer(),
                 if (projectMetrics['qualityScore'] != null)
                   GestureDetector(
                     onTap: () => _showScoreDetails(context, projectMetrics),
@@ -1238,15 +1243,6 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                         )
                       : const Icon(Icons.refresh, size: 16),
                   label: const Text('Refresh Analysis'),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 36),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton.icon(
-                  onPressed: _openPubspecYaml,
-                  icon: const Icon(Icons.edit, size: 16),
-                  label: const Text('Edit pubspec.yaml'),
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 36),
                   ),
