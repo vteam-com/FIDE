@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Models
 import '../../models/document_state.dart';
-import '../../models/file_system_item.dart';
 
 // Providers
 import '../../providers/app_providers.dart';

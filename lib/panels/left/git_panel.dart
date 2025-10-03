@@ -416,6 +416,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                     fileItem: item,
                     isSelected: isSelected,
                     showGitBadge: false,
+                    rootPath: widget.projectPath,
                     onTap: () => widget.onFileSelected?.call(item),
                   ),
                 ),

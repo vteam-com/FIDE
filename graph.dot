@@ -178,6 +178,7 @@ digraph "" {
   "/lib/providers/app_providers.dart" -> "/lib/models/document_state.dart";
   "/lib/providers/app_providers.dart" -> "/lib/services/project_service.dart";
   "/lib/providers/app_providers.dart" -> "/lib/utils/file_type_utils.dart";
+  "/lib/panels/right/info_panel.dart" -> "/lib/models/document_state.dart";
   "/lib/panels/right/info_panel.dart" -> "/lib/providers/app_providers.dart";
   "/lib/panels/right/outline_panel.dart" -> "/lib/models/file_system_item.dart";
   "/lib/panels/right/outline_panel.dart" -> "/lib/panels/center/editor_screen.dart";
