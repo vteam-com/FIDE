@@ -280,6 +280,149 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     return 'F';
   }
 
+  Color _getScoreColor(int score) {
+    if (score < 50) return Colors.red.shade700;
+    if (score < 80) return Colors.orange.shade700;
+    return Colors.green.shade700;
+  }
+
+  void _showScoreDetails(
+    BuildContext context,
+    Map<String, dynamic> projectMetrics,
+  ) {
+    final healthIndicators =
+        projectMetrics['healthIndicators'] as Map<String, dynamic>?;
+    final isMissingPubspecLock =
+        !(healthIndicators?['hasPubspecLock'] ?? false);
+    final buildErrors = (healthIndicators?['buildErrors'] ?? 0) as int;
+    final buildWarnings = (healthIndicators?['buildWarnings'] ?? 0) as int;
+    final largeFiles = healthIndicators?['largeFiles'] as List?;
+    final hasLargeFiles = largeFiles != null && largeFiles.length > 3;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Quality Score Breakdown'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Starting Score: 100 points',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Deductions:',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              _buildDeductionItem(
+                'Missing pubspec.lock',
+                -20,
+                isMissingPubspecLock,
+                context,
+              ),
+              _buildDeductionItem(
+                'Build errors (max 50 points)',
+                -(buildErrors * 10).clamp(0, 50),
+                buildErrors > 0,
+                context,
+              ),
+              _buildDeductionItem(
+                'Build warnings (max 20 points)',
+                -(buildWarnings * 2).clamp(0, 20),
+                buildWarnings > 0,
+                context,
+              ),
+              _buildDeductionItem(
+                'Large files (>3 files over 10MB)',
+                -10,
+                hasLargeFiles,
+                context,
+              ),
+              const Divider(height: 24),
+              Text(
+                'Final Score: ${projectMetrics['qualityScore']}/100',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Score ranges:',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '• Green (80-100): Good project health\n'
+                '• Orange (50-79): Needs attention\n'
+                '• Red (0-49): Critical issues',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeductionItem(
+    String label,
+    int points,
+    bool active,
+    BuildContext context,
+  ) {
+    return Row(
+      children: [
+        Icon(
+          active ? Icons.remove : Icons.check,
+          size: 14,
+          color: active ? Colors.red.shade600 : Colors.green.shade600,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: active
+                  ? Theme.of(context).colorScheme.onSurface
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+              decoration: active
+                  ? TextDecoration.none
+                  : TextDecoration.lineThrough,
+            ),
+          ),
+        ),
+        Text(
+          active ? '$points pts' : 'No deduction',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: active ? Colors.red.shade600 : Colors.green.shade600,
+          ),
+        ),
+      ],
+    );
+  }
+
   Future<void> _performFullCleanup() async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
@@ -561,38 +704,85 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 8,
           children: [
             // Header with refresh button
-            Text(
-              projectMetrics['name'] as String? ?? 'Unknown Project',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  projectMetrics['name'] as String? ?? 'Unknown Project',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: Text(
+                    'v${projectMetrics['version'] as String? ?? '< no version >'}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                Spacer(),
+                if (projectMetrics['qualityScore'] != null)
+                  GestureDetector(
+                    onTap: () => _showScoreDetails(context, projectMetrics),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getScoreColor(
+                          projectMetrics['qualityScore'] as int,
+                        ).withOpacity(0.2),
+                        border: Border.all(
+                          color: _getScoreColor(
+                            projectMetrics['qualityScore'] as int,
+                          ),
+                          width: 1.5,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${projectMetrics['qualityScore']}%',
+                        style: TextStyle(
+                          color: _getScoreColor(
+                            projectMetrics['qualityScore'] as int,
+                          ),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
+
             Text(
-              'Version: ${projectMetrics['version'] as String? ?? 'Unknown'}',
+              projectMetrics['description'] as String? ?? '< no description >',
               style: TextStyle(
                 fontSize: 11,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
+              overflow: TextOverflow.visible,
             ),
 
-            Text(
-              'Description: ${projectMetrics['description'] as String}',
-              style: TextStyle(
-                fontSize: 11,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            // Quality Score
-            if (projectMetrics['qualityScore'] != null) ...[
-              _buildScoreCard(projectMetrics),
+            // Dependencies
+            if (projectMetrics['dependencies'] != null ||
+                projectMetrics['devDependencies'] != null) ...[
+              _buildDependenciesCard(projectMetrics),
               const SizedBox(height: 16),
             ],
+
+            // Actions
+            _buildActionsCard(projectMetrics),
 
             // File Statistics
             if (projectMetrics['fileStats'] != null) ...[
@@ -611,92 +801,6 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               _buildHealthCard(projectMetrics),
               const SizedBox(height: 16),
             ],
-
-            // Dependencies
-            if (projectMetrics['dependencies'] != null ||
-                projectMetrics['devDependencies'] != null) ...[
-              _buildDependenciesCard(projectMetrics),
-              const SizedBox(height: 16),
-            ],
-
-            // Actions
-            _buildActionsCard(projectMetrics),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildScoreCard(Map<String, dynamic> projectMetrics) {
-    final score = projectMetrics['qualityScore'] as int;
-    final grade = projectMetrics['qualityGrade'] as String;
-
-    Color color;
-    IconData icon;
-    String label;
-
-    switch (grade) {
-      case 'A':
-        color = Colors.green.shade700;
-        icon = Icons.star;
-        label = 'Excellent';
-        break;
-      case 'B':
-        color = Colors.green.shade500;
-        icon = Icons.star_half;
-        label = 'Good';
-        break;
-      case 'C':
-        color = Colors.orange.shade600;
-        icon = Icons.star_border;
-        label = 'Average';
-        break;
-      case 'D':
-        color = Colors.orange.shade800;
-        icon = Icons.warning;
-        label = 'Poor';
-        break;
-      case 'F':
-        color = Colors.red.shade600;
-        icon = Icons.error;
-        label = 'Critical';
-        break;
-      default:
-        color = Colors.grey;
-        icon = Icons.help;
-        label = 'Unknown';
-    }
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Icon(icon, size: 28, color: color),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Quality Score: $score/100',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  Text(
-                    'Grade: $grade ($label)',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: color,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -935,8 +1039,11 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         (projectMetrics['devDependencies'] as Map<String, dynamic>?) ?? {};
     final totalDeps = deps.length + devDeps.length;
 
-    return Card(
-      child: ExpansionTile(
+    bool isExpanded = false;
+
+    return StatefulBuilder(
+      builder: (context, setState) => ExpansionTile(
+        key: const PageStorageKey('dependencies_expansion'),
         initiallyExpanded: false,
         title: Text(
           'Dependencies ($totalDeps)',
@@ -946,6 +1053,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
+        tilePadding: EdgeInsets.all(0),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -973,12 +1081,23 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               tooltip: 'Upgrade packages',
               visualDensity: VisualDensity.compact,
             ),
+            const SizedBox(width: 8),
+            AnimatedRotation(
+              turns: isExpanded ? 0.25 : 0.0,
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
         onExpansionChanged: (expanded) {
+          setState(() => isExpanded = expanded);
           if (expanded && !_dependenciesExpanded) {
             _dependenciesExpanded = true;
-            // Check outdated when expanding for the first time
+            // Check outdated when expanding for expanding for the first time
             _checkOutdated();
           }
         },
@@ -990,7 +1109,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               children: [
                 if (deps.isNotEmpty) ...[
                   Text(
-                    'Dependencies',
+                    'Direct',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -1026,7 +1145,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                 ],
                 if (devDeps.isNotEmpty) ...[
                   Text(
-                    'Dev Dependencies',
+                    'Developer',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -1072,36 +1191,6 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDescriptionCard(Map<String, dynamic> projectMetrics) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Description',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              projectMetrics['description'] as String,
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
