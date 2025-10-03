@@ -107,6 +107,47 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     _loadGitData();
   }
 
+  Future<void> _discardChanges(List<String> files) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes'),
+        content: Text(
+          files.length == 1
+              ? 'Discard changes to "${files.first}"?\n\nThis action cannot be undone.'
+              : 'Discard changes to ${files.length} files?\n\nThis action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final gitService = GitService();
+    final result = await gitService.discardChanges(widget.projectPath, files);
+    if (mounted) {
+      final isSuccess = result.contains('successfully');
+      if (isSuccess) {
+        MessageHelper.showSuccess(context, result);
+      } else {
+        MessageHelper.showError(context, result);
+      }
+    }
+    _loadGitData();
+  }
+
   Future<void> _viewDiff(String filePath) async {
     final gitService = GitService();
     final fullFilePath = path.join(widget.projectPath, filePath);
@@ -285,6 +326,8 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                       status.staged,
                       onStage: null,
                       onUnstage: _unstageFiles,
+                      canDiscard: false,
+                      onDiscard: _discardChanges,
                     ),
                   ],
 
@@ -296,6 +339,8 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                       status.unstaged,
                       onStage: _stageFiles,
                       onUnstage: null,
+                      canDiscard: true,
+                      onDiscard: _discardChanges,
                     ),
                   ],
 
@@ -307,6 +352,8 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                       status.untracked,
                       onStage: _stageFiles,
                       onUnstage: null,
+                      canDiscard: true,
+                      onDiscard: _discardChanges,
                     ),
                   ],
 
@@ -367,6 +414,8 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     List<String> files, {
     Function(List<String>)? onStage,
     Function(List<String>)? onUnstage,
+    bool canDiscard = false,
+    Function(List<String>)? onDiscard,
   }) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -439,6 +488,13 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                     icon: const Icon(Icons.remove),
                     onPressed: () => onUnstage([file]),
                     tooltip: 'Unstage',
+                  ),
+                if (canDiscard && onDiscard != null)
+                  IconButton(
+                    iconSize: 16,
+                    icon: const Icon(Icons.undo, color: Colors.red),
+                    onPressed: () => onDiscard([file]),
+                    tooltip: 'Discard Changes',
                   ),
               ],
             );

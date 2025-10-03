@@ -332,6 +332,48 @@ class GitService {
     }
   }
 
+  // Discard changes for files (git checkout -- files or git rm for untracked)
+  Future<String> discardChanges(String path, List<String> files) async {
+    try {
+      // Get status to determine which files are untracked vs tracked with changes
+      final status = await getStatus(path);
+      final untrackedFiles = files
+          .where((file) => status.untracked.contains(file))
+          .toList();
+      final modifiedFiles = files
+          .where((file) => !untrackedFiles.contains(file))
+          .toList();
+
+      // Discard tracked files with changes
+      if (modifiedFiles.isNotEmpty) {
+        final checkoutResult = await Process.run('git', [
+          'checkout',
+          '--',
+          ...modifiedFiles,
+        ], workingDirectory: path);
+
+        if (checkoutResult.exitCode != 0) {
+          return 'Failed to discard changes: ${checkoutResult.stderr}';
+        }
+      }
+
+      // Remove untracked files
+      if (untrackedFiles.isNotEmpty) {
+        for (final file in untrackedFiles) {
+          final filePath = '$path/$file';
+          final fileEntity = File(filePath);
+          if (await fileEntity.exists()) {
+            await fileEntity.delete();
+          }
+        }
+      }
+
+      return 'Changes discarded successfully';
+    } catch (e) {
+      return 'Error discarding changes: $e';
+    }
+  }
+
   // Get diff stats for a file (added/removed lines)
   Future<GitDiffStats> getFileDiffStats(String path, String filePath) async {
     try {
