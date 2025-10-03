@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:yaml/yaml.dart';
 
 // Models
 import '../../models/document_state.dart';
@@ -20,6 +21,8 @@ class InfoPanel extends ConsumerStatefulWidget {
 
 class _InfoPanelState extends ConsumerState<InfoPanel> {
   bool _isRefreshing = false;
+  bool _checkingOutdated = false;
+  bool _upgrading = false;
   Process? _currentProcess;
   final StringBuffer _outputBuffer = StringBuffer();
 
@@ -82,6 +85,40 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         if (line.trim().startsWith('description:')) {
           metrics['description'] = line.split(':').last.trim();
         }
+      }
+
+      // Parse dependencies
+      final yamlDoc = loadYamlDocument(content);
+      final yamlMap = yamlDoc.contents as YamlMap;
+
+      final deps = yamlMap['dependencies'] as YamlMap?;
+      if (deps != null) {
+        final dependencies = <String, String>{};
+        deps.forEach((key, value) {
+          if (value is String) {
+            dependencies[key as String] = value;
+          } else if (value is YamlMap && value['sdk'] == 'flutter') {
+            dependencies[key as String] = 'Flutter SDK';
+          } else {
+            dependencies[key as String] = 'Complex dependency';
+          }
+        });
+        metrics['dependencies'] = dependencies;
+      }
+
+      final devDeps = yamlMap['dev_dependencies'] as YamlMap?;
+      if (devDeps != null) {
+        final devDependencies = <String, String>{};
+        devDeps.forEach((key, value) {
+          if (value is String) {
+            devDependencies[key as String] = value;
+          } else if (value is YamlMap && value['sdk'] == 'flutter') {
+            devDependencies[key as String] = 'Flutter SDK';
+          } else {
+            devDependencies[key as String] = 'Complex dependency';
+          }
+        });
+        metrics['devDependencies'] = devDependencies;
       }
     }
 
@@ -389,6 +426,124 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
+  Future<void> _checkOutdated() async {
+    final currentProjectPath = ref.read(currentProjectPathProvider);
+    if (currentProjectPath == null) return;
+
+    setState(() => _checkingOutdated = true);
+
+    try {
+      final result = await Process.run('flutter', [
+        'pub',
+        'outdated',
+      ], workingDirectory: currentProjectPath);
+
+      if (result.exitCode == 0) {
+        final output = result.stdout as String;
+        final parsed = _parseOutdated(output);
+
+        final currentMetrics = ref.read(projectMetricsProvider);
+        final updatedMetrics = Map<String, dynamic>.from(currentMetrics)
+          ..['outdated'] = parsed;
+
+        ref
+            .read(projectMetricsProvider.notifier)
+            .updateMetrics(currentProjectPath, updatedMetrics);
+
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Outdated check completed')));
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to check outdated: ${result.stderr}'),
+            ),
+          );
+        }
+      }
+
+      if (mounted) setState(() => _checkingOutdated = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _checkingOutdated = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error checking outdated: $e')));
+      }
+    }
+  }
+
+  Map<String, dynamic> _parseOutdated(String output) {
+    final lines = output.split('\n');
+    final outdated = <String, dynamic>{};
+
+    for (String line in lines) {
+      line = line.trim();
+      if (line.isEmpty) continue;
+
+      final parts = line.split(RegExp(r'\s+'));
+      if (parts.length >= 5 && parts[0] != 'Package' && parts[0] != '---') {
+        final package = parts[0];
+        final current = parts[1];
+        final upgradable = parts[2];
+        final resolvable = parts[3];
+        outdated[package] = {
+          'current': current,
+          'upgradable': upgradable,
+          'resolvable': resolvable,
+          'latest': parts.length > 4 ? parts[4] : '',
+        };
+      }
+    }
+
+    return outdated;
+  }
+
+  Future<void> _upgradePackages() async {
+    final currentProjectPath = ref.read(currentProjectPathProvider);
+    if (currentProjectPath == null) return;
+
+    setState(() => _upgrading = true);
+
+    try {
+      final result = await Process.run('flutter', [
+        'pub',
+        'upgrade',
+      ], workingDirectory: currentProjectPath);
+
+      if (result.exitCode == 0) {
+        // Refresh analysis
+        await _analyzeProject();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Packages upgraded successfully')),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to upgrade packages: ${result.stderr}'),
+            ),
+          );
+        }
+      }
+
+      if (mounted) setState(() => _upgrading = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _upgrading = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error upgrading packages: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentProjectPath = ref.watch(currentProjectPathProvider);
@@ -508,6 +663,13 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                 // Health Indicators
                 if (projectMetrics['healthIndicators'] != null) ...[
                   _buildHealthCard(projectMetrics),
+                  const SizedBox(height: 16),
+                ],
+
+                // Dependencies
+                if (projectMetrics['dependencies'] != null ||
+                    projectMetrics['devDependencies'] != null) ...[
+                  _buildDependenciesCard(projectMetrics),
                   const SizedBox(height: 16),
                 ],
 
@@ -822,6 +984,148 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       default:
         return Theme.of(context).colorScheme.onSurfaceVariant;
     }
+  }
+
+  Widget _buildDependenciesCard(Map<String, dynamic> projectMetrics) {
+    final deps = (projectMetrics['dependencies'] as Map<String, String>?) ?? {};
+    final devDeps =
+        (projectMetrics['devDependencies'] as Map<String, String>?) ?? {};
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Dependencies (${deps.length + devDeps.length})',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: _checkingOutdated ? null : _checkOutdated,
+                      icon: _checkingOutdated
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.update, size: 16),
+                      tooltip: 'Check outdated packages',
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    IconButton(
+                      onPressed: _upgrading ? null : _upgradePackages,
+                      icon: _upgrading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.arrow_upward, size: 16),
+                      tooltip: 'Upgrade packages',
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            if (deps.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Dependencies',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: deps.entries.map((entry) {
+                  final outdated =
+                      projectMetrics['outdated'] as Map<String, dynamic>?;
+                  final isOutdated = outdated?.containsKey(entry.key) ?? false;
+                  final label = isOutdated
+                      ? '${entry.key} ${entry.value} → ${outdated![entry.key]['latest']}'
+                      : '${entry.key} ${entry.value}';
+                  return Chip(
+                    label: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: isOutdated ? Colors.orange.shade700 : null,
+                      ),
+                    ),
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                    visualDensity: VisualDensity.compact,
+                  );
+                }).toList(),
+              ),
+            ],
+            if (devDeps.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Dev Dependencies',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: devDeps.entries.map((entry) {
+                  final outdated =
+                      projectMetrics['outdated'] as Map<String, dynamic>?;
+                  final isOutdated = outdated?.containsKey(entry.key) ?? false;
+                  final label = isOutdated
+                      ? '${entry.key} ${entry.value} → ${outdated![entry.key]['latest']}'
+                      : '${entry.key} ${entry.value}';
+                  return Chip(
+                    label: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: isOutdated ? Colors.orange.shade700 : null,
+                      ),
+                    ),
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                    visualDensity: VisualDensity.compact,
+                  );
+                }).toList(),
+              ),
+            ],
+            if (deps.isEmpty &&
+                devDeps.isEmpty &&
+                (projectMetrics['outdated'] == null ||
+                    (projectMetrics['outdated'] as Map).isEmpty)) ...[
+              const SizedBox(height: 8),
+              Text(
+                'No dependencies',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildDescriptionCard(Map<String, dynamic> projectMetrics) {
