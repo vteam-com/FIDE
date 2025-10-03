@@ -7,6 +7,7 @@ digraph "" {
   "/test/widget_test.dart" [label="widget_test"];
   "/test/message_helper_test.dart" [label="message_helper_test"];
   "/lib/providers/app_providers.dart" [label="app_providers"];
+  "/lib/providers/ui_state_providers.dart" [label="ui_state_providers"];
   "/lib/panels/right/info_panel.dart" [label="info_panel"];
   "/lib/panels/right/outline_panel.dart" [label="outline_panel"];
   "/lib/panels/right/ai_panel.dart" [label="ai_panel"];
@@ -37,7 +38,9 @@ digraph "" {
   "/lib/screens/welcome_screen.dart" [label="welcome_screen"];
   "/lib/main.dart" [label="main"];
   "/lib/theme/app_theme.dart" [label="app_theme"];
+  "/lib/controllers/app_controller.dart" [label="app_controller"];
   "/lib/services/localization_service.dart" [label="localization_service"];
+  "/lib/services/project_operations.dart" [label="project_operations"];
   "/lib/services/project_service.dart" [label="project_service"];
   "/lib/services/git_service.dart" [label="git_service"];
   "/lib/services/file_system_watcher.dart" [label="file_system_watcher"];
@@ -77,6 +80,7 @@ digraph "" {
       subgraph "cluster~/lib/providers" {
         label="providers";
         "/lib/providers/app_providers.dart";
+        "/lib/providers/ui_state_providers.dart";
       }
       subgraph "cluster~/lib/panels" {
         label="panels";
@@ -131,9 +135,14 @@ digraph "" {
         label="theme";
         "/lib/theme/app_theme.dart";
       }
+      subgraph "cluster~/lib/controllers" {
+        label="controllers";
+        "/lib/controllers/app_controller.dart";
+      }
       subgraph "cluster~/lib/services" {
         label="services";
         "/lib/services/localization_service.dart";
+        "/lib/services/project_operations.dart";
         "/lib/services/project_service.dart";
         "/lib/services/git_service.dart";
         "/lib/services/file_system_watcher.dart";
@@ -164,6 +173,7 @@ digraph "" {
       "/tool/sort_source.dart";
     }
   }
+  "/integration_test/integration_test.dart" -> "/lib/providers/ui_state_providers.dart";
   "/integration_test/integration_test.dart" -> "/lib/main.dart";
   "/integration_test/integration_test.dart" -> "/lib/providers/app_providers.dart";
   "/integration_test/integration_test.dart" -> "/lib/models/file_system_item.dart";
@@ -180,6 +190,7 @@ digraph "" {
   "/lib/providers/app_providers.dart" -> "/lib/utils/file_type_utils.dart";
   "/lib/panels/right/info_panel.dart" -> "/lib/models/document_state.dart";
   "/lib/panels/right/info_panel.dart" -> "/lib/providers/app_providers.dart";
+  "/lib/panels/right/info_panel.dart" -> "/lib/utils/message_helper.dart";
   "/lib/panels/right/outline_panel.dart" -> "/lib/models/file_system_item.dart";
   "/lib/panels/right/outline_panel.dart" -> "/lib/panels/center/editor_screen.dart";
   "/lib/panels/right/ai_panel.dart" -> "/lib/services/ai_service.dart";
@@ -191,11 +202,11 @@ digraph "" {
   "/lib/panels/right/localization_panel.dart" -> "/lib/services/ai_service.dart";
   "/lib/panels/right/localization_panel.dart" -> "/lib/providers/app_providers.dart";
   "/lib/panels/right/localization_panel.dart" -> "/lib/utils/message_helper.dart";
+  "/lib/panels/right/right_panel.dart" -> "/lib/providers/ui_state_providers.dart";
   "/lib/panels/right/right_panel.dart" -> "/lib/panels/right/outline_panel.dart";
   "/lib/panels/right/right_panel.dart" -> "/lib/panels/right/ai_panel.dart";
   "/lib/panels/right/right_panel.dart" -> "/lib/panels/right/localization_panel.dart";
   "/lib/panels/right/right_panel.dart" -> "/lib/models/file_system_item.dart";
-  "/lib/panels/right/right_panel.dart" -> "/lib/providers/app_providers.dart";
   "/lib/panels/right/right_panel.dart" -> "/lib/panels/right/info_panel.dart";
   "/lib/panels/center/editor_screen.dart" -> "/lib/panels/center/large_file_message.dart";
   "/lib/panels/center/editor_screen.dart" -> "/lib/providers/app_providers.dart";
@@ -241,7 +252,7 @@ digraph "" {
   "/lib/panels/left/folder_panel.dart" -> "/lib/panels/left/shared_panel_utils.dart";
   "/lib/panels/left/folder_panel.dart" -> "/lib/providers/app_providers.dart";
   "/lib/panels/left/left_panel.dart" -> "/lib/panels/left/search_panel.dart";
-  "/lib/panels/left/left_panel.dart" -> "/lib/providers/app_providers.dart";
+  "/lib/panels/left/left_panel.dart" -> "/lib/providers/ui_state_providers.dart";
   "/lib/panels/left/left_panel.dart" -> "/lib/panels/left/folder_panel.dart";
   "/lib/panels/left/left_panel.dart" -> "/lib/panels/left/organized_panel.dart";
   "/lib/panels/left/left_panel.dart" -> "/lib/panels/left/git_panel.dart";
@@ -259,6 +270,7 @@ digraph "" {
   "/lib/utils/file_type_utils.dart" -> "/lib/models/file_system_item.dart";
   "/lib/models/project_node.dart" -> "/lib/models/file_system_item.dart";
   "/lib/models/file_system_item.dart" -> "/lib/utils/file_utils.dart";
+  "/lib/screens/main_layout.dart" -> "/lib/providers/ui_state_providers.dart";
   "/lib/screens/main_layout.dart" -> "/lib/panels/center/editor_screen.dart";
   "/lib/screens/main_layout.dart" -> "/lib/providers/app_providers.dart";
   "/lib/screens/main_layout.dart" -> "/lib/models/file_system_item.dart";
@@ -273,18 +285,27 @@ digraph "" {
   "/lib/screens/loading_screen.dart" -> "/lib/widgets/full_path_widget.dart";
   "/lib/screens/loading_screen.dart" -> "/lib/providers/app_providers.dart";
   "/lib/screens/welcome_screen.dart" -> "/lib/providers/app_providers.dart";
-  "/lib/main.dart" -> "/lib/services/project_service.dart";
+  "/lib/main.dart" -> "/lib/controllers/app_controller.dart";
   "/lib/main.dart" -> "/lib/providers/app_providers.dart";
+  "/lib/main.dart" -> "/lib/providers/ui_state_providers.dart";
+  "/lib/main.dart" -> "/lib/services/project_service.dart";
+  "/lib/main.dart" -> "/lib/services/project_operations.dart";
   "/lib/main.dart" -> "/lib/utils/message_helper.dart";
-  "/lib/main.dart" -> "/lib/screens/main_layout.dart";
+  "/lib/main.dart" -> "/lib/widgets/create_project_dialog.dart";
   "/lib/main.dart" -> "/lib/widgets/title_bar.dart";
   "/lib/main.dart" -> "/lib/widgets/menu_builder.dart";
-  "/lib/main.dart" -> "/lib/widgets/create_project_dialog.dart";
-  "/lib/main.dart" -> "/lib/panels/center/editor_screen.dart";
   "/lib/main.dart" -> "/lib/screens/loading_screen.dart";
+  "/lib/main.dart" -> "/lib/screens/main_layout.dart";
   "/lib/main.dart" -> "/lib/screens/welcome_screen.dart";
+  "/lib/main.dart" -> "/lib/panels/center/editor_screen.dart";
   "/lib/main.dart" -> "/lib/theme/app_theme.dart";
+  "/lib/controllers/app_controller.dart" -> "/lib/providers/app_providers.dart";
+  "/lib/controllers/app_controller.dart" -> "/lib/providers/ui_state_providers.dart";
   "/lib/services/localization_service.dart" -> "/lib/models/localization_data.dart";
+  "/lib/services/project_operations.dart" -> "/lib/providers/app_providers.dart";
+  "/lib/services/project_operations.dart" -> "/lib/utils/message_helper.dart";
+  "/lib/services/project_operations.dart" -> "/lib/screens/main_layout.dart";
+  "/lib/services/project_operations.dart" -> "/lib/panels/center/editor_screen.dart";
   "/lib/services/project_service.dart" -> "/lib/models/project_node.dart";
   "/lib/services/project_service.dart" -> "/lib/models/file_system_item.dart";
   "/lib/services/project_service.dart" -> "/lib/services/git_service.dart";

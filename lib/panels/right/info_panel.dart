@@ -5,12 +5,16 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yaml/yaml.dart';
+import 'package:yaml_edit/yaml_edit.dart';
 
 // Models
 import '../../models/document_state.dart';
 
 // Providers
 import '../../providers/app_providers.dart';
+
+// Utils
+import '../../utils/message_helper.dart';
 
 class InfoPanel extends ConsumerStatefulWidget {
   const InfoPanel({super.key});
@@ -59,9 +63,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     } catch (e) {
       if (mounted) {
         setState(() => _isRefreshing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to analyze project: $e')),
-        );
+        MessageHelper.showError(context, 'Failed to analyze project: $e');
       }
     }
   }
@@ -220,12 +222,19 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
     // Check for large files (>10MB)
     final largeFiles = <String>[];
-    await for (final entity in Directory(projectPath).list(recursive: true)) {
+    await for (final entity in Directory(
+      projectPath,
+    ).list(recursive: true, followLinks: false)) {
       if (entity is File) {
-        final size = await entity.length();
-        if (size > 10 * 1024 * 1024) {
-          // 10MB
-          largeFiles.add(entity.path.replaceFirst(projectPath, ''));
+        try {
+          final size = await entity.length();
+          if (size > 10 * 1024 * 1024) {
+            // 10MB
+            largeFiles.add(entity.path.replaceFirst(projectPath, ''));
+          }
+        } catch (e) {
+          // Skip files we can't read (like broken symlinks)
+          continue;
         }
       }
     }
@@ -269,15 +278,6 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
 
     metrics['qualityScore'] = score.clamp(0, 100);
-    metrics['qualityGrade'] = _getGradeFromScore(score);
-  }
-
-  String _getGradeFromScore(int score) {
-    if (score >= 90) return 'A';
-    if (score >= 80) return 'B';
-    if (score >= 70) return 'C';
-    if (score >= 60) return 'D';
-    return 'F';
   }
 
   Color _getScoreColor(int score) {
@@ -499,16 +499,12 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       await _analyzeProject();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Full project cleanup completed!')),
-        );
+        MessageHelper.showSuccess(context, 'Full project cleanup completed!');
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isRefreshing = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Cleanup failed: $e')));
+        MessageHelper.showError(context, 'Cleanup failed: $e');
       }
     }
   }
@@ -520,9 +516,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
       final pubspecPath = '$currentProjectPath/pubspec.yaml';
       if (!File(pubspecPath).existsSync()) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('pubspec.yaml not found')));
+        MessageHelper.showError(context, 'pubspec.yaml not found');
         return;
       }
 
@@ -543,9 +537,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         ref.read(activeDocumentIndexProvider.notifier).state = existingIndex;
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to open pubspec.yaml: $e')),
-      );
+      MessageHelper.showError(context, 'Failed to open pubspec.yaml: $e');
     }
   }
 
@@ -595,16 +587,13 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             .updateMetrics(currentProjectPath, updatedMetrics);
 
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Outdated check completed')));
+          MessageHelper.showSuccess(context, 'Outdated check completed');
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to check outdated: ${result.stderr}'),
-            ),
+          MessageHelper.showError(
+            context,
+            'Failed to check outdated: ${result.stderr}',
           );
         }
       }
@@ -613,9 +602,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     } catch (e) {
       if (mounted) {
         setState(() => _checkingOutdated = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error checking outdated: $e')));
+        MessageHelper.showError(context, 'Error checking outdated: $e');
       }
     }
   }
@@ -651,40 +638,158 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     if (currentProjectPath == null) return;
 
     setState(() => _upgrading = true);
-
     try {
+      // 1. Run flutter pub outdated --json
       final result = await Process.run('flutter', [
         'pub',
-        'upgrade',
+        'outdated',
+        '--json',
+      ], workingDirectory: currentProjectPath);
+      if (result.exitCode != 0) {
+        if (mounted) {
+          MessageHelper.showError(
+            context,
+            'Failed to check outdated: ${result.stderr}',
+          );
+        }
+        return;
+      }
+      // 2. Parse the JSON result
+      final outdatedJson = result.stdout is String
+          ? result.stdout as String
+          : utf8.decode(result.stdout as List<int>);
+
+      final dynamic outdatedData = json.decode(outdatedJson);
+
+      if (outdatedData is! Map<String, dynamic>) {
+        if (mounted) {
+          MessageHelper.showError(
+            context,
+            'Invalid JSON response from flutter pub outdated: expected Map, got ${outdatedData.runtimeType}',
+          );
+        }
+        return;
+      }
+
+      final Map<String, dynamic> outdatedDataMap = outdatedData;
+
+      // Handle the array format: [{"package": "name", "kind": "direct", "current": {...}, "resolvable": {...}}, ...]
+      final packagesRaw = outdatedDataMap['packages'];
+      if (packagesRaw is! List) {
+        if (mounted) {
+          MessageHelper.showError(
+            context,
+            'Expected packages to be an array, got ${packagesRaw?.runtimeType}',
+          );
+        }
+        return;
+      }
+
+      final packages = packagesRaw;
+
+      if (mounted) {
+        MessageHelper.showInfo(
+          context,
+          'Found ${packages.length} packages to check',
+        );
+      }
+
+      // 3. Load pubspec.yaml and create a YamlEditor
+      final pubspecFile = File('$currentProjectPath/pubspec.yaml');
+      if (!pubspecFile.existsSync()) {
+        if (mounted) {
+          MessageHelper.showError(context, 'pubspec.yaml not found');
+        }
+        return;
+      }
+      final pubspecContent = await pubspecFile.readAsString();
+      final yamlEditor = YamlEditor(pubspecContent);
+
+      // 4. For each package in the array, check if it's upgradeable
+      bool changed = false;
+      final List<String> updatedPackages = [];
+      for (final pkg in packages) {
+        // Each pkg is a Map like: {"package": "name", "kind": "direct", "current": {...}, "resolvable": {...}}
+        final pkgMap = pkg is Map<String, dynamic> ? pkg : null;
+        if (pkgMap == null) continue;
+
+        final packageName = pkgMap['package'] as String?;
+        if (packageName == null) continue;
+
+        // Only update direct and dev dependencies
+        final kind = pkgMap['kind'] as String?;
+        if (kind != 'direct' && kind != 'dev') continue;
+
+        final resolvable = pkgMap['resolvable'];
+        final resolvableMap = resolvable is Map<String, dynamic>
+            ? resolvable
+            : null;
+        if (resolvableMap == null) continue;
+
+        final newVersion = resolvableMap['version']?.toString();
+        if (newVersion == null || newVersion.isEmpty) continue;
+
+        final current = pkgMap['current'];
+        final currentMap = current is Map<String, dynamic> ? current : null;
+        final currentVersion = currentMap?['version']?.toString();
+
+        // If no current version or same as new version, skip
+        if (currentVersion == null || currentVersion == newVersion) {
+          continue;
+        }
+
+        // Update dependencies or dev_dependencies
+        final depPath = ['dependencies', packageName];
+        final devDepPath = ['dev_dependencies', packageName];
+        final pathToUpdate = kind == 'direct' ? depPath : devDepPath;
+
+        try {
+          // Parse at the path to make sure it exists
+          yamlEditor.parseAt(pathToUpdate).value;
+          // Update with new version
+          yamlEditor.update(pathToUpdate, newVersion);
+          changed = true;
+          updatedPackages.add('$packageName: $currentVersion → $newVersion');
+        } catch (e) {
+          // Continue to next package if this one fails
+          continue;
+        }
+      }
+
+      // 5. Write modified YAML back to pubspec.yaml
+      if (changed) {
+        await pubspecFile.writeAsString(yamlEditor.toString());
+      }
+
+      // 6. Run flutter pub get
+      await _runCommand('flutter', [
+        'pub',
+        'get',
       ], workingDirectory: currentProjectPath);
 
-      if (result.exitCode == 0) {
-        // Refresh analysis
-        await _analyzeProject();
+      // 7. Re-analyze the project
+      await _analyzeProject();
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Packages upgraded successfully')),
+      // 8. Show snackbar
+      if (mounted) {
+        if (changed) {
+          MessageHelper.showSuccess(
+            context,
+            'Packages upgraded to compatible versions!',
           );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to upgrade packages: ${result.stderr}'),
-            ),
+        } else {
+          MessageHelper.showInfo(
+            context,
+            'All packages already up to date with compatible versions.',
           );
         }
       }
-
-      if (mounted) setState(() => _upgrading = false);
     } catch (e) {
       if (mounted) {
-        setState(() => _upgrading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error upgrading packages: $e')));
+        MessageHelper.showError(context, 'Error upgrading packages: $e');
       }
+    } finally {
+      if (mounted) setState(() => _upgrading = false);
     }
   }
 
@@ -1073,7 +1178,9 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           if (expanded && !_dependenciesExpanded) {
             _dependenciesExpanded = true;
             // Check outdated when expanding for expanding for the first time
-            _checkOutdated();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _checkOutdated();
+            });
           }
         },
         children: [
@@ -1083,8 +1190,8 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: 8,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                Wrap(
+                  spacing: 4,
                   children: [
                     ElevatedButton.icon(
                       onPressed: _checkingOutdated ? null : _checkOutdated,
@@ -1106,7 +1213,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.arrow_upward, size: 16),
-                      label: const Text('Upgrade'),
+                      label: const Text('Upgrade Compatible'),
                     ),
                   ],
                 ),

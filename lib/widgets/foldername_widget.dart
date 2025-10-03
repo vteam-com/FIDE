@@ -129,7 +129,7 @@ class FolderNameWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildIcon(context, final Color iconColor) {
+  Widget _buildIcon(final BuildContext context, final Color iconColor) {
     IconData iconData;
 
     if (hasError) {
