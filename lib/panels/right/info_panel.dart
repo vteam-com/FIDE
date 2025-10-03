@@ -23,6 +23,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   bool _isRefreshing = false;
   bool _checkingOutdated = false;
   bool _upgrading = false;
+  bool _dependenciesExpanded = false;
   Process? _currentProcess;
   final StringBuffer _outputBuffer = StringBuffer();
 
@@ -555,133 +556,74 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       );
     }
 
-    return Column(
-      children: [
-        // Header with refresh button
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            border: Border(
-              bottom: BorderSide(
-                color: Theme.of(context).dividerColor,
-                width: 1,
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with refresh button
+            Text(
+              projectMetrics['name'] as String? ?? 'Unknown Project',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      projectMetrics['name'] as String? ?? 'Unknown Project',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    Text(
-                      'Version: ${projectMetrics['version'] as String? ?? 'Unknown'}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
+            Text(
+              'Version: ${projectMetrics['version'] as String? ?? 'Unknown'}',
+              style: TextStyle(
+                fontSize: 11,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: _isRefreshing ? null : _performFullCleanup,
-                    icon: Icon(
-                      Icons.cleaning_services,
-                      color: _isRefreshing
-                          ? Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant.withOpacity(0.5)
-                          : Theme.of(context).colorScheme.primary,
-                    ),
-                    tooltip: 'Full project cleanup',
-                  ),
-                  IconButton(
-                    onPressed: _openPubspecYaml,
-                    icon: Icon(
-                      Icons.edit,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    tooltip: 'Edit pubspec.yaml',
-                  ),
-                  IconButton(
-                    onPressed: _isRefreshing ? null : _analyzeProject,
-                    icon: _isRefreshing
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Icon(
-                            Icons.refresh,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                    tooltip: 'Refresh analysis',
-                  ),
-                ],
+            ),
+
+            Text(
+              'Description: ${projectMetrics['description'] as String}',
+              style: TextStyle(
+                fontSize: 11,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
+              overflow: TextOverflow.ellipsis,
+            ),
+
+            // Quality Score
+            if (projectMetrics['qualityScore'] != null) ...[
+              _buildScoreCard(projectMetrics),
+              const SizedBox(height: 16),
             ],
-          ),
+
+            // File Statistics
+            if (projectMetrics['fileStats'] != null) ...[
+              _buildFileStatsCard(projectMetrics),
+              const SizedBox(height: 16),
+            ],
+
+            // Directory Structure
+            if (projectMetrics['directoryStructure'] != null) ...[
+              _buildDirectoryStructureCard(projectMetrics),
+              const SizedBox(height: 16),
+            ],
+
+            // Health Indicators
+            if (projectMetrics['healthIndicators'] != null) ...[
+              _buildHealthCard(projectMetrics),
+              const SizedBox(height: 16),
+            ],
+
+            // Dependencies
+            if (projectMetrics['dependencies'] != null ||
+                projectMetrics['devDependencies'] != null) ...[
+              _buildDependenciesCard(projectMetrics),
+              const SizedBox(height: 16),
+            ],
+
+            // Actions
+            _buildActionsCard(projectMetrics),
+          ],
         ),
-
-        // Content
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Quality Score
-                if (projectMetrics['qualityScore'] != null) ...[
-                  _buildScoreCard(projectMetrics),
-                  const SizedBox(height: 16),
-                ],
-
-                // File Statistics
-                if (projectMetrics['fileStats'] != null) ...[
-                  _buildFileStatsCard(projectMetrics),
-                  const SizedBox(height: 16),
-                ],
-
-                // Directory Structure
-                if (projectMetrics['directoryStructure'] != null) ...[
-                  _buildDirectoryStructureCard(projectMetrics),
-                  const SizedBox(height: 16),
-                ],
-
-                // Health Indicators
-                if (projectMetrics['healthIndicators'] != null) ...[
-                  _buildHealthCard(projectMetrics),
-                  const SizedBox(height: 16),
-                ],
-
-                // Dependencies
-                if (projectMetrics['dependencies'] != null ||
-                    projectMetrics['devDependencies'] != null) ...[
-                  _buildDependenciesCard(projectMetrics),
-                  const SizedBox(height: 16),
-                ],
-
-                // Project Description
-                if (projectMetrics['description'] != null) ...[
-                  _buildDescriptionCard(projectMetrics),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -987,143 +929,149 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   }
 
   Widget _buildDependenciesCard(Map<String, dynamic> projectMetrics) {
-    final deps = (projectMetrics['dependencies'] as Map<String, String>?) ?? {};
+    final deps =
+        (projectMetrics['dependencies'] as Map<String, dynamic>?) ?? {};
     final devDeps =
-        (projectMetrics['devDependencies'] as Map<String, String>?) ?? {};
+        (projectMetrics['devDependencies'] as Map<String, dynamic>?) ?? {};
+    final totalDeps = deps.length + devDeps.length;
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: ExpansionTile(
+        initiallyExpanded: false,
+        title: Text(
+          'Dependencies ($totalDeps)',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
+            IconButton(
+              onPressed: _checkingOutdated ? null : _checkOutdated,
+              icon: _checkingOutdated
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.update, size: 16),
+              tooltip: 'Check outdated packages',
+              visualDensity: VisualDensity.compact,
+            ),
+            IconButton(
+              onPressed: _upgrading ? null : _upgradePackages,
+              icon: _upgrading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.arrow_upward, size: 16),
+              tooltip: 'Upgrade packages',
+              visualDensity: VisualDensity.compact,
+            ),
+          ],
+        ),
+        onExpansionChanged: (expanded) {
+          if (expanded && !_dependenciesExpanded) {
+            _dependenciesExpanded = true;
+            // Check outdated when expanding for the first time
+            _checkOutdated();
+          }
+        },
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    'Dependencies (${deps.length + devDeps.length})',
+                if (deps.isNotEmpty) ...[
+                  Text(
+                    'Dependencies',
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: _checkingOutdated ? null : _checkOutdated,
-                      icon: _checkingOutdated
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.update, size: 16),
-                      tooltip: 'Check outdated packages',
-                      visualDensity: VisualDensity.compact,
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: deps.entries.map((entry) {
+                      final outdated =
+                          projectMetrics['outdated'] as Map<String, dynamic>?;
+                      final isOutdated =
+                          outdated?.containsKey(entry.key) ?? false;
+                      final label = isOutdated
+                          ? '${entry.key} ${entry.value} → ${outdated![entry.key]['latest']}'
+                          : '${entry.key} ${entry.value}';
+                      return Chip(
+                        label: Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: isOutdated ? Colors.orange.shade700 : null,
+                          ),
+                        ),
+                        labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                        visualDensity: VisualDensity.compact,
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (devDeps.isNotEmpty) ...[
+                  Text(
+                    'Dev Dependencies',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
-                    IconButton(
-                      onPressed: _upgrading ? null : _upgradePackages,
-                      icon: _upgrading
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.arrow_upward, size: 16),
-                      tooltip: 'Upgrade packages',
-                      visualDensity: VisualDensity.compact,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: devDeps.entries.map((entry) {
+                      final outdated =
+                          projectMetrics['outdated'] as Map<String, dynamic>?;
+                      final isOutdated =
+                          outdated?.containsKey(entry.key) ?? false;
+                      final label = isOutdated
+                          ? '${entry.key} ${entry.value} → ${outdated![entry.key]['latest']}'
+                          : '${entry.key} ${entry.value}';
+                      return Chip(
+                        label: Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: isOutdated ? Colors.orange.shade700 : null,
+                          ),
+                        ),
+                        labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                        visualDensity: VisualDensity.compact,
+                      );
+                    }).toList(),
+                  ),
+                ],
+                if (deps.isEmpty && devDeps.isEmpty) ...[
+                  Text(
+                    'No dependencies',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ],
             ),
-            if (deps.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Text(
-                'Dependencies',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: deps.entries.map((entry) {
-                  final outdated =
-                      projectMetrics['outdated'] as Map<String, dynamic>?;
-                  final isOutdated = outdated?.containsKey(entry.key) ?? false;
-                  final label = isOutdated
-                      ? '${entry.key} ${entry.value} → ${outdated![entry.key]['latest']}'
-                      : '${entry.key} ${entry.value}';
-                  return Chip(
-                    label: Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: isOutdated ? Colors.orange.shade700 : null,
-                      ),
-                    ),
-                    labelPadding: const EdgeInsets.symmetric(horizontal: 6),
-                    visualDensity: VisualDensity.compact,
-                  );
-                }).toList(),
-              ),
-            ],
-            if (devDeps.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Text(
-                'Dev Dependencies',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: devDeps.entries.map((entry) {
-                  final outdated =
-                      projectMetrics['outdated'] as Map<String, dynamic>?;
-                  final isOutdated = outdated?.containsKey(entry.key) ?? false;
-                  final label = isOutdated
-                      ? '${entry.key} ${entry.value} → ${outdated![entry.key]['latest']}'
-                      : '${entry.key} ${entry.value}';
-                  return Chip(
-                    label: Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: isOutdated ? Colors.orange.shade700 : null,
-                      ),
-                    ),
-                    labelPadding: const EdgeInsets.symmetric(horizontal: 6),
-                    visualDensity: VisualDensity.compact,
-                  );
-                }).toList(),
-              ),
-            ],
-            if (deps.isEmpty &&
-                devDeps.isEmpty &&
-                (projectMetrics['outdated'] == null ||
-                    (projectMetrics['outdated'] as Map).isEmpty)) ...[
-              const SizedBox(height: 8),
-              Text(
-                'No dependencies',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1151,6 +1099,70 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 height: 1.4,
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionsCard(Map<String, dynamic> projectMetrics) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Actions',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Column(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _isRefreshing ? null : _performFullCleanup,
+                  icon: _isRefreshing
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.cleaning_services, size: 16),
+                  label: const Text('Full Project Cleanup'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 36),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  onPressed: _isRefreshing ? null : _analyzeProject,
+                  icon: _isRefreshing
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.refresh, size: 16),
+                  label: const Text('Refresh Analysis'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 36),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  onPressed: _openPubspecYaml,
+                  icon: const Icon(Icons.edit, size: 16),
+                  label: const Text('Edit pubspec.yaml'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 36),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
