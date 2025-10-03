@@ -126,7 +126,7 @@ class ExecutePanelState extends ConsumerState<ExecutePanel> {
       podProcess.stdout.transform(const SystemEncoding().decoder).listen((
         data,
       ) {
-        if (data.trim().isNotEmpty) {
+        if (data.trim().isNotEmpty && mounted) {
           setState(() {
             _outputBuffer.writeln(data.trim());
             _hasOutput = true;
@@ -138,7 +138,7 @@ class ExecutePanelState extends ConsumerState<ExecutePanel> {
       podProcess.stderr.transform(const SystemEncoding().decoder).listen((
         data,
       ) {
-        if (data.trim().isNotEmpty) {
+        if (data.trim().isNotEmpty && mounted) {
           setState(() {
             _errorBuffer.writeln(data.trim());
             _hasErrors = true;
@@ -746,7 +746,7 @@ Updates macOS CocoaPods dependencies.
 
     // Handle stdout
     process.stdout.transform(const SystemEncoding().decoder).listen((data) {
-      if (data.trim().isNotEmpty) {
+      if (data.trim().isNotEmpty && mounted) {
         setState(() {
           _outputBuffer.writeln(data.trim());
           _hasOutput = true;
@@ -756,7 +756,7 @@ Updates macOS CocoaPods dependencies.
 
     // Handle stderr as errors
     process.stderr.transform(const SystemEncoding().decoder).listen((data) {
-      if (data.trim().isNotEmpty) {
+      if (data.trim().isNotEmpty && mounted) {
         // Check for CocoaPods repository out-of-date errors
         if (data.contains("CocoaPods's specs repository is too out-of-date") ||
             data.contains("out-of-date source repos") ||
@@ -800,7 +800,7 @@ Updates macOS CocoaPods dependencies.
         podProcess.stdout.transform(const SystemEncoding().decoder).listen((
           data,
         ) {
-          if (data.trim().isNotEmpty) {
+          if (data.trim().isNotEmpty && mounted) {
             setState(() {
               _outputBuffer.writeln('POD: ${data.trim()}');
               _hasOutput = true;
@@ -811,7 +811,7 @@ Updates macOS CocoaPods dependencies.
         podProcess.stderr.transform(const SystemEncoding().decoder).listen((
           data,
         ) {
-          if (data.trim().isNotEmpty) {
+          if (data.trim().isNotEmpty && mounted) {
             setState(() {
               _errorBuffer.writeln('POD: ${data.trim()}');
               _hasErrors = true;
@@ -870,7 +870,7 @@ Updates macOS CocoaPods dependencies.
 
     // Handle pod repo update output
     podProcess.stdout.transform(const SystemEncoding().decoder).listen((data) {
-      if (data.trim().isNotEmpty) {
+      if (data.trim().isNotEmpty && mounted) {
         setState(() {
           _outputBuffer.writeln('POD: ${data.trim()}');
           _hasOutput = true;
@@ -879,7 +879,7 @@ Updates macOS CocoaPods dependencies.
     });
 
     podProcess.stderr.transform(const SystemEncoding().decoder).listen((data) {
-      if (data.trim().isNotEmpty) {
+      if (data.trim().isNotEmpty && mounted) {
         setState(() {
           _errorBuffer.writeln('POD: ${data.trim()}');
           _hasErrors = true;
@@ -913,7 +913,7 @@ Updates macOS CocoaPods dependencies.
 
     // Handle pod install output
     podProcess.stdout.transform(const SystemEncoding().decoder).listen((data) {
-      if (data.trim().isNotEmpty) {
+      if (data.trim().isNotEmpty && mounted) {
         setState(() {
           _outputBuffer.writeln('POD: ${data.trim()}');
           _hasOutput = true;
@@ -922,7 +922,7 @@ Updates macOS CocoaPods dependencies.
     });
 
     podProcess.stderr.transform(const SystemEncoding().decoder).listen((data) {
-      if (data.trim().isNotEmpty) {
+      if (data.trim().isNotEmpty && mounted) {
         setState(() {
           _errorBuffer.writeln('POD: ${data.trim()}');
           _hasErrors = true;
@@ -966,7 +966,7 @@ Updates macOS CocoaPods dependencies.
     flutterProcess.stdout.transform(const SystemEncoding().decoder).listen((
       data,
     ) {
-      if (data.trim().isNotEmpty) {
+      if (data.trim().isNotEmpty && mounted) {
         setState(() {
           _outputBuffer.writeln(data.trim());
           _hasOutput = true;
@@ -977,7 +977,7 @@ Updates macOS CocoaPods dependencies.
     flutterProcess.stderr.transform(const SystemEncoding().decoder).listen((
       data,
     ) {
-      if (data.trim().isNotEmpty) {
+      if (data.trim().isNotEmpty && mounted) {
         setState(() {
           _errorBuffer.writeln(data.trim());
           _hasErrors = true;
@@ -1007,7 +1007,7 @@ Updates macOS CocoaPods dependencies.
     flutterProcess.stdout.transform(const SystemEncoding().decoder).listen((
       data,
     ) {
-      if (data.trim().isNotEmpty) {
+      if (data.trim().isNotEmpty && mounted) {
         setState(() {
           _outputBuffer.writeln(data.trim());
           _hasOutput = true;
@@ -1018,7 +1018,7 @@ Updates macOS CocoaPods dependencies.
     flutterProcess.stderr.transform(const SystemEncoding().decoder).listen((
       data,
     ) {
-      if (data.trim().isNotEmpty) {
+      if (data.trim().isNotEmpty && mounted) {
         setState(() {
           _errorBuffer.writeln(data.trim());
           _hasErrors = true;
@@ -1048,7 +1048,7 @@ Updates macOS CocoaPods dependencies.
     flutterProcess.stdout.transform(const SystemEncoding().decoder).listen((
       data,
     ) {
-      if (data.trim().isNotEmpty) {
+      if (data.trim().isNotEmpty && mounted) {
         setState(() {
           _outputBuffer.writeln(data.trim());
           _hasOutput = true;
@@ -1059,7 +1059,7 @@ Updates macOS CocoaPods dependencies.
     flutterProcess.stderr.transform(const SystemEncoding().decoder).listen((
       data,
     ) {
-      if (data.trim().isNotEmpty) {
+      if (data.trim().isNotEmpty && mounted) {
         setState(() {
           _errorBuffer.writeln(data.trim());
           _hasErrors = true;
@@ -1116,7 +1116,7 @@ Updates macOS CocoaPods dependencies.
 
       // Handle stdout
       process.stdout.transform(const SystemEncoding().decoder).listen((data) {
-        if (data.trim().isNotEmpty) {
+        if (data.trim().isNotEmpty && mounted) {
           setState(() {
             _outputBuffer.writeln(data.trim());
             _hasOutput = true;
@@ -1126,7 +1126,7 @@ Updates macOS CocoaPods dependencies.
 
       // Handle stderr as errors
       process.stderr.transform(const SystemEncoding().decoder).listen((data) {
-        if (data.trim().isNotEmpty) {
+        if (data.trim().isNotEmpty && mounted) {
           // Check for CocoaPods repository out-of-date errors
           if (data.contains(
                 "CocoaPods's specs repository is too out-of-date",
@@ -1175,7 +1175,7 @@ Updates macOS CocoaPods dependencies.
           podProcess.stdout.transform(const SystemEncoding().decoder).listen((
             data,
           ) {
-            if (data.trim().isNotEmpty) {
+            if (data.trim().isNotEmpty && mounted) {
               setState(() {
                 _outputBuffer.writeln('POD: ${data.trim()}');
                 _hasOutput = true;
@@ -1186,7 +1186,7 @@ Updates macOS CocoaPods dependencies.
           podProcess.stderr.transform(const SystemEncoding().decoder).listen((
             data,
           ) {
-            if (data.trim().isNotEmpty) {
+            if (data.trim().isNotEmpty && mounted) {
               setState(() {
                 _errorBuffer.writeln('POD: ${data.trim()}');
                 _hasErrors = true;
@@ -1304,7 +1304,7 @@ Updates macOS CocoaPods dependencies.
 
       // Handle stdout
       process.stdout.transform(const SystemEncoding().decoder).listen((data) {
-        if (data.trim().isNotEmpty) {
+        if (data.trim().isNotEmpty && mounted) {
           setState(() {
             _outputBuffer.writeln(data.trim());
             _hasOutput = true;
@@ -1314,7 +1314,7 @@ Updates macOS CocoaPods dependencies.
 
       // Handle stderr as errors
       process.stderr.transform(const SystemEncoding().decoder).listen((data) {
-        if (data.trim().isNotEmpty) {
+        if (data.trim().isNotEmpty && mounted) {
           setState(() {
             _errorBuffer.writeln(data.trim());
             _hasErrors = true;
@@ -1359,17 +1359,21 @@ Updates macOS CocoaPods dependencies.
   }
 
   void appendOutput(String text) {
-    setState(() {
-      _outputBuffer.write(text);
-      _hasOutput = true;
-    });
+    if (mounted) {
+      setState(() {
+        _outputBuffer.write(text);
+        _hasOutput = true;
+      });
+    }
   }
 
   void appendError(String text) {
-    setState(() {
-      _errorBuffer.write(text);
-      _hasErrors = true;
-    });
+    if (mounted) {
+      setState(() {
+        _errorBuffer.write(text);
+        _hasErrors = true;
+      });
+    }
   }
 
   String getPlatformDisplayName(String platform) {

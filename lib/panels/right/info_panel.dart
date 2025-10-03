@@ -1192,6 +1192,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               children: [
                 Wrap(
                   spacing: 4,
+                  runSpacing: 4,
                   children: [
                     ElevatedButton.icon(
                       onPressed: _checkingOutdated ? null : _checkOutdated,
@@ -1203,6 +1204,9 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                             )
                           : const Icon(Icons.update, size: 16),
                       label: const Text('Check Outdated'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
                     ),
                     ElevatedButton.icon(
                       onPressed: _upgrading ? null : _upgradePackages,
@@ -1213,7 +1217,10 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.arrow_upward, size: 16),
-                      label: const Text('Upgrade Compatible'),
+                      label: const Text('Upgrade'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
                     ),
                   ],
                 ),

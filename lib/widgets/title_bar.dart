@@ -157,7 +157,7 @@ class _TitleBarState extends ConsumerState<TitleBar> {
 
   Widget _buildAppTitle() {
     return Text(
-      'FIDE - Flutter IDE',
+      'The Flutter IDE',
       style: TextStyle(
         color: widget.themeMode == ThemeMode.dark
             ? Colors.white.withOpacity(0.9)

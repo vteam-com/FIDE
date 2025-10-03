@@ -321,31 +321,23 @@ class _FIDEState extends ConsumerState<FIDE> {
             // Custom title bar widget - conditional based on screen
             Consumer(
               builder: (context, ref, child) {
-                final projectLoaded = ref.watch(projectLoadedProvider);
-                final isLoading = ref.watch(projectLoadingProvider);
-
-                if (isLoading || !projectLoaded) {
-                  // Show simplified title bar for welcome/loading screens
-                  return _buildSimplifiedTitleBar();
-                } else {
-                  // Show full title bar for main layout
-                  return TitleBar(
-                    themeMode: _themeMode,
-                    onThemeChanged: (themeMode) {
-                      setState(() => _themeMode = themeMode);
-                      _saveThemeMode(themeMode);
-                    },
-                    onToggleLeftPanel: () => triggerTogglePanelLeft(ref),
-                    onToggleBottomPanel: () => triggerTogglePanelBottom(ref),
-                    onToggleRightPanel: () => triggerTogglePanelRight(ref),
-                    leftPanelVisible: ref.watch(leftPanelVisibleProvider),
-                    bottomPanelVisible: ref.watch(bottomPanelVisibleProvider),
-                    rightPanelVisible: ref.watch(rightPanelVisibleProvider),
-                    onProjectSwitch: (projectPath) async {
-                      await tryLoadProject(projectPath);
-                    },
-                  );
-                }
+                // Show TitleBar for all cases - it handles the logic internally
+                return TitleBar(
+                  themeMode: _themeMode,
+                  onThemeChanged: (themeMode) {
+                    setState(() => _themeMode = themeMode);
+                    _saveThemeMode(themeMode);
+                  },
+                  onToggleLeftPanel: () => triggerTogglePanelLeft(ref),
+                  onToggleBottomPanel: () => triggerTogglePanelBottom(ref),
+                  onToggleRightPanel: () => triggerTogglePanelRight(ref),
+                  leftPanelVisible: ref.watch(leftPanelVisibleProvider),
+                  bottomPanelVisible: ref.watch(bottomPanelVisibleProvider),
+                  rightPanelVisible: ref.watch(rightPanelVisibleProvider),
+                  onProjectSwitch: (projectPath) async {
+                    await tryLoadProject(projectPath);
+                  },
+                );
               },
             ),
             // Main content with menu bar
@@ -534,51 +526,6 @@ class _FIDEState extends ConsumerState<FIDE> {
     // Use the provider to switch the active left panel tab
     // This will be picked up by the LeftPanel widget
     ref.read(activeLeftPanelTabProvider.notifier).state = panelIndex;
-  }
-
-  Widget _buildSimplifiedTitleBar() {
-    return GestureDetector(
-      onDoubleTap: () async {
-        final isMaximized = await windowManager.isMaximized();
-        if (isMaximized) {
-          await windowManager.unmaximize();
-        } else {
-          await windowManager.maximize();
-        }
-      },
-      child: Container(
-        height: 40,
-        color: _themeMode == ThemeMode.dark
-            ? const Color(0xFF323233) // VS Code dark title bar color
-            : const Color(0xFFECECEC), // VS Code light title bar color
-        child: Row(
-          children: [
-            // Platform-specific spacing for window controls
-            if (Platform.isMacOS)
-              const SizedBox(
-                width: 80,
-              ), // Space for macOS traffic lights (left side)
-            // Left section: Always show FIDE title
-            Text(
-              'FIDE - Flutter IDE',
-              style: TextStyle(
-                color: _themeMode == ThemeMode.dark
-                    ? Colors.white.withOpacity(0.9)
-                    : Colors.black.withOpacity(0.9),
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-              ),
-            ),
-
-            // Spacer to push content away from right-side window controls (Windows/Linux)
-            if (!Platform.isMacOS) const Spacer(),
-
-            // Space for Windows/Linux window controls (right side)
-            if (!Platform.isMacOS) const SizedBox(width: 120),
-          ],
-        ),
-      ),
-    );
   }
 }
 
