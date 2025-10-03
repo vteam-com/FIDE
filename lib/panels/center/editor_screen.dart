@@ -101,6 +101,9 @@ class _EditorScreenState extends State<EditorScreen> {
   // Track the saved text to determine if file is dirty
   late String _savedText;
 
+  // Flag to prevent actions after dispose
+  bool _isDisposed = false;
+
   // Git diff stats for all open documents
   final Map<String, GitDiffStats?> _allGitDiffStats = {};
 
@@ -145,6 +148,9 @@ class _EditorScreenState extends State<EditorScreen> {
 
   @override
   void dispose() {
+    // Mark as disposed to prevent further operations
+    _isDisposed = true;
+
     // Remove listener first to prevent notifications during disposal
     _codeController.removeListener(_onCodeChanged);
 
@@ -203,10 +209,10 @@ class _EditorScreenState extends State<EditorScreen> {
         // Load git diff stats for the new file
         _loadGitDiffStatsForFile(_currentFile);
 
-        // Set selection safely after the build cycle, checking mounted status
-        if (mounted) {
+        // Set selection safely after the build cycle, checking mounted status and not disposed
+        if (mounted && !_isDisposed) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && widget.documentState != null) {
+            if (mounted && !_isDisposed && widget.documentState != null) {
               // Remove and re-add listener around selection change to prevent notifications
               _codeController.removeListener(_onCodeChanged);
               _codeController.selection = widget.documentState!.selection;
@@ -996,8 +1002,8 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _onCodeChanged() {
-    // Check if widget is still mounted before calling setState
-    if (!mounted) return;
+    // Check if widget is still mounted and not disposed before calling setState
+    if (!mounted || _isDisposed) return;
 
     final currentText = _codeController.text;
 
