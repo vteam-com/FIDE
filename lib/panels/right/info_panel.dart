@@ -1059,44 +1059,14 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           ),
         ),
         tilePadding: EdgeInsets.all(0),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              onPressed: _checkingOutdated ? null : _checkOutdated,
-              icon: _checkingOutdated
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.update, size: 16),
-              tooltip: 'Check outdated packages',
-              visualDensity: VisualDensity.compact,
-            ),
-            IconButton(
-              onPressed: _upgrading ? null : _upgradePackages,
-              icon: _upgrading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.arrow_upward, size: 16),
-              tooltip: 'Upgrade packages',
-              visualDensity: VisualDensity.compact,
-            ),
-            const SizedBox(width: 8),
-            AnimatedRotation(
-              turns: isExpanded ? 0.25 : 0.0,
-              duration: const Duration(milliseconds: 200),
-              child: Icon(
-                Icons.chevron_right,
-                size: 20,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+        trailing: AnimatedRotation(
+          turns: isExpanded ? 0.25 : 0.0,
+          duration: const Duration(milliseconds: 200),
+          child: Icon(
+            Icons.chevron_right,
+            size: 20,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         onExpansionChanged: (expanded) {
           setState(() => isExpanded = expanded);
@@ -1111,10 +1081,39 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 8,
               children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _checkingOutdated ? null : _checkOutdated,
+                      icon: _checkingOutdated
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.update, size: 16),
+                      label: const Text('Check Outdated'),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: _upgrading ? null : _upgradePackages,
+                      icon: _upgrading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.arrow_upward, size: 16),
+                      label: const Text('Upgrade'),
+                    ),
+                  ],
+                ),
+
                 if (deps.isNotEmpty) ...[
                   Text(
-                    'Direct',
+                    'Direct (${deps.length})',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -1150,7 +1149,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                 ],
                 if (devDeps.isNotEmpty) ...[
                   Text(
-                    'Developer',
+                    'Developer (${devDeps.length})',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -1216,38 +1215,34 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               ),
             ),
             const SizedBox(height: 12),
-            Column(
-              children: [
-                ElevatedButton.icon(
-                  onPressed: _isRefreshing ? null : _performFullCleanup,
-                  icon: _isRefreshing
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.cleaning_services, size: 16),
-                  label: const Text('Full Project Cleanup'),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 36),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton.icon(
-                  onPressed: _isRefreshing ? null : _analyzeProject,
-                  icon: _isRefreshing
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.refresh, size: 16),
-                  label: const Text('Refresh Analysis'),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 36),
-                  ),
-                ),
-              ],
+            ElevatedButton.icon(
+              onPressed: _isRefreshing ? null : _performFullCleanup,
+              icon: _isRefreshing
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.cleaning_services, size: 16),
+              label: const Text('Full Project Cleanup'),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 36),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+              onPressed: _isRefreshing ? null : _analyzeProject,
+              icon: _isRefreshing
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh, size: 16),
+              label: const Text('Refresh Analysis'),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 36),
+              ),
             ),
           ],
         ),
