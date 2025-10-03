@@ -16,6 +16,9 @@ import '../../providers/app_providers.dart';
 // Utils
 import '../../utils/message_helper.dart';
 
+// Widgets
+import '../../widgets/status_indicator.dart';
+
 class InfoPanel extends ConsumerStatefulWidget {
   const InfoPanel({super.key});
 
@@ -1100,24 +1103,13 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                     .map(
                       (issue) => Padding(
                         padding: const EdgeInsets.only(bottom: 4),
-                        child: Row(
-                          children: [
-                            Icon(
-                              issue['icon'] as IconData,
-                              size: 14,
-                              color: _getIssueColor(issue['type'] as String),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              issue['message'] as String,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
+                        child: StatusIndicator(
+                          icon: issue['icon'] as IconData,
+                          label: issue['message'] as String,
+                          color: _getIssueColor(issue['type'] as String),
+                          iconSize: 14,
+                          textSize: 12,
+                          spacing: 8,
                         ),
                       ),
                     )
