@@ -5,6 +5,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// Models
+import '../../models/document_state.dart';
+import '../../models/file_system_item.dart';
+
 // Providers
 import '../../providers/app_providers.dart';
 
@@ -329,6 +333,42 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
+  void _openPubspecYaml() {
+    try {
+      final currentProjectPath = ref.read(currentProjectPathProvider);
+      if (currentProjectPath == null) return;
+
+      final pubspecPath = '$currentProjectPath/pubspec.yaml';
+      if (!File(pubspecPath).existsSync()) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('pubspec.yaml not found')));
+        return;
+      }
+
+      final documents = ref.read(openDocumentsProvider);
+      final existingIndex = documents.indexWhere(
+        (doc) => doc.filePath == pubspecPath,
+      );
+
+      if (existingIndex == -1) {
+        // Not open, add it
+        final newDocument = DocumentState(filePath: pubspecPath);
+        final updatedDocuments = [...documents, newDocument];
+        ref.read(openDocumentsProvider.notifier).state = updatedDocuments;
+        ref.read(activeDocumentIndexProvider.notifier).state =
+            updatedDocuments.length - 1;
+      } else {
+        // Already open, switch to it
+        ref.read(activeDocumentIndexProvider.notifier).state = existingIndex;
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to open pubspec.yaml: $e')),
+      );
+    }
+  }
+
   Future<void> _runCommand(
     String cmd,
     List<String> args, {
@@ -412,6 +452,14 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                           : Theme.of(context).colorScheme.primary,
                     ),
                     tooltip: 'Full project cleanup',
+                  ),
+                  IconButton(
+                    onPressed: _openPubspecYaml,
+                    icon: Icon(
+                      Icons.edit,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    tooltip: 'Edit pubspec.yaml',
                   ),
                   IconButton(
                     onPressed: _isRefreshing ? null : _analyzeProject,
@@ -553,7 +601,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   }
 
   Widget _buildFileStatsCard(Map<String, dynamic> projectMetrics) {
-    final fileStats = projectMetrics['fileStats'] as Map<String, int>;
+    final fileStats = (projectMetrics['fileStats'] as Map).cast<String, int>();
     final totalFiles = projectMetrics['totalFiles'] as int;
 
     return Card(
@@ -603,7 +651,8 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   }
 
   Widget _buildDirectoryStructureCard(Map<String, dynamic> projectMetrics) {
-    final structure = projectMetrics['directoryStructure'] as Map<String, int>;
+    final structure = (projectMetrics['directoryStructure'] as Map)
+        .cast<String, int>();
 
     return Card(
       child: Padding(
@@ -667,8 +716,8 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   }
 
   Widget _buildHealthCard(Map<String, dynamic> projectMetrics) {
-    final indicators =
-        projectMetrics['healthIndicators'] as Map<String, dynamic>;
+    final indicators = (projectMetrics['healthIndicators'] as Map)
+        .cast<String, dynamic>();
 
     final issues = <Map<String, dynamic>>[];
 
