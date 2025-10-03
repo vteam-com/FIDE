@@ -1,8 +1,10 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../services/ai_service.dart';
 import '../../models/file_system_item.dart';
+import '../../utils/message_helper.dart';
 
 class AIPanel extends StatefulWidget {
   const AIPanel({super.key, this.selectedFile});
@@ -17,6 +19,16 @@ class _AIPanelState extends State<AIPanel> {
   final AIService _aiService = AIService();
 
   bool _isLoading = false;
+
+  bool _isInstalling = false;
+
+  bool _isCheckingStatus = true;
+
+  bool _hasOllamaInstalled = false;
+
+  bool _isOllamaRunning = false;
+
+  bool _hasModelInstalled = false;
 
   final List<ChatMessage> _messages = [];
 
@@ -34,6 +46,12 @@ class _AIPanelState extends State<AIPanel> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _checkStatus();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       color: Theme.of(context).colorScheme.surfaceContainerLow,
@@ -41,8 +59,9 @@ class _AIPanelState extends State<AIPanel> {
         children: [
           // Header with action selector
 
-          // Setup instructions if no messages
-          if (_messages.isEmpty)
+          // Setup instructions if no messages and not all ready
+          if (_messages.isEmpty &&
+              !(_hasOllamaInstalled && _isOllamaRunning && _hasModelInstalled))
             Container(
               padding: const EdgeInsets.all(16.0),
               margin: const EdgeInsets.all(8.0),
@@ -64,7 +83,7 @@ class _AIPanelState extends State<AIPanel> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Setup Required',
+                        'Setup',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.primary,
@@ -73,52 +92,67 @@ class _AIPanelState extends State<AIPanel> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'To use AI features, you need to install and run Ollama locally:',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(4.0),
-                    ),
-                    child: const Column(
+                  if (_isCheckingStatus)
+                    const Center(child: CircularProgressIndicator())
+                  else if (!_hasOllamaInstalled)
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '1. Install Ollama: https://ollama.ai/download',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontFamily: 'monospace',
-                          ),
+                        const Text(
+                          'Ollama is not installed.',
+                          style: TextStyle(fontSize: 12),
                         ),
-                        Text(
-                          '2. Pull a coding model: ollama pull codellama',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontFamily: 'monospace',
+                        const SizedBox(height: 8),
+                        if (_isInstalling)
+                          const CircularProgressIndicator()
+                        else
+                          ElevatedButton(
+                            onPressed: _installOllama,
+                            child: const Text('Install Ollama'),
                           ),
-                        ),
-                        Text(
-                          '3. Start Ollama (it runs automatically)',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontFamily: 'monospace',
-                          ),
-                        ),
                       ],
+                    )
+                  else if (!_isOllamaRunning)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Ollama is installed but not running.',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        const SizedBox(height: 8),
+                        if (_isInstalling)
+                          const CircularProgressIndicator()
+                        else
+                          ElevatedButton(
+                            onPressed: _runOllama,
+                            child: const Text('Run Ollama'),
+                          ),
+                      ],
+                    )
+                  else if (!_hasModelInstalled)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Ollama is running but the codellama model is not downloaded.',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        const SizedBox(height: 8),
+                        if (_isInstalling)
+                          const CircularProgressIndicator()
+                        else
+                          ElevatedButton(
+                            onPressed: _downloadModel,
+                            child: const Text('Download Model'),
+                          ),
+                      ],
+                    )
+                  else
+                    const Text(
+                      'Ollama is ready to use!',
+                      style: TextStyle(fontSize: 12),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Alternative models: llama2, mistral, deepseek-coder',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -274,6 +308,145 @@ class _AIPanelState extends State<AIPanel> {
         return 'Paste code and describe how to refactor it...';
       default:
         return 'Type your message...';
+    }
+  }
+
+  Future<void> _checkStatus() async {
+    setState(() => _isCheckingStatus = true);
+    try {
+      // Check if Ollama is installed using which
+      final whichResult = await Process.run('which', ['ollama']);
+      _hasOllamaInstalled = whichResult.exitCode == 0;
+
+      if (_hasOllamaInstalled) {
+        // Check if running by trying to list models
+        final listResult = await Process.run('ollama', ['list']);
+        _isOllamaRunning = listResult.exitCode == 0;
+
+        if (_isOllamaRunning) {
+          final models = listResult.stdout.toString();
+          _hasModelInstalled = models.contains('codellama');
+        }
+      }
+    } catch (e) {
+      // Ollama not available
+      _hasOllamaInstalled = false;
+      _isOllamaRunning = false;
+      _hasModelInstalled = false;
+    }
+    setState(() => _isCheckingStatus = false);
+  }
+
+  Future<void> _installOllama() async {
+    setState(() => _isInstalling = true);
+    try {
+      if (Platform.isMacOS || Platform.isLinux) {
+        // Install Ollama using the official install script
+        final installResult = await Process.run('sh', [
+          '-c',
+          'curl -fsSL https://ollama.ai/install.sh | sh',
+        ]);
+        if (installResult.exitCode != 0) {
+          if (mounted) {
+            MessageHelper.showError(
+              context,
+              'Failed to install Ollama: ${installResult.stderr}',
+            );
+          }
+          return;
+        }
+
+        // Pull the codellama model
+        final pullResult = await Process.run('ollama', ['pull', 'codellama']);
+        if (pullResult.exitCode != 0) {
+          if (mounted) {
+            MessageHelper.showError(
+              context,
+              'Failed to pull codellama model: ${pullResult.stderr}',
+            );
+          }
+          return;
+        }
+
+        // Start Ollama in the background
+        Process.start('ollama', ['serve']);
+
+        _hasOllamaInstalled = true;
+        _isOllamaRunning = true;
+        _hasModelInstalled = true;
+
+        if (mounted) {
+          MessageHelper.showInfo(
+            context,
+            'Ollama installed, codellama model downloaded, and service started.',
+          );
+        }
+      } else if (Platform.isWindows) {
+        if (mounted) {
+          MessageHelper.showError(
+            context,
+            'Please install Ollama manually from https://ollama.ai/download for Windows.',
+          );
+        }
+      } else {
+        if (mounted) {
+          MessageHelper.showError(
+            context,
+            'Unsupported platform. Please install Ollama manually.',
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        MessageHelper.showError(context, 'Error installing Ollama: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isInstalling = false);
+      }
+    }
+  }
+
+  Future<void> _runOllama() async {
+    setState(() => _isInstalling = true);
+    try {
+      Process.start('ollama', ['serve']);
+      await Future.delayed(const Duration(seconds: 2));
+      await _checkStatus();
+      if (!mounted) return;
+      MessageHelper.showInfo(context, 'Ollama started.');
+    } catch (e) {
+      if (!mounted) return;
+      MessageHelper.showError(context, 'Error starting Ollama: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isInstalling = false);
+      }
+    }
+  }
+
+  Future<void> _downloadModel() async {
+    setState(() => _isInstalling = true);
+    try {
+      final pullResult = await Process.run('ollama', ['pull', 'codellama']);
+      if (pullResult.exitCode != 0) {
+        if (!mounted) return;
+        MessageHelper.showError(
+          context,
+          'Failed to download model: ${pullResult.stderr}',
+        );
+        return;
+      }
+      _hasModelInstalled = true;
+      if (!mounted) return;
+      MessageHelper.showInfo(context, 'codellama model downloaded.');
+    } catch (e) {
+      if (!mounted) return;
+      MessageHelper.showError(context, 'Error downloading model: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isInstalling = false);
+      }
     }
   }
 

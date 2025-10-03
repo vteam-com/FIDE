@@ -184,6 +184,7 @@ digraph "" {
   "/lib/panels/right/outline_panel.dart" -> "/lib/panels/center/editor_screen.dart";
   "/lib/panels/right/ai_panel.dart" -> "/lib/services/ai_service.dart";
   "/lib/panels/right/ai_panel.dart" -> "/lib/models/file_system_item.dart";
+  "/lib/panels/right/ai_panel.dart" -> "/lib/utils/message_helper.dart";
   "/lib/panels/right/localization_panel.dart" -> "/lib/models/localization_data.dart";
   "/lib/panels/right/localization_panel.dart" -> "/lib/models/file_system_item.dart";
   "/lib/panels/right/localization_panel.dart" -> "/lib/services/localization_service.dart";
