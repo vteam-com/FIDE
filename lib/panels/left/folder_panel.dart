@@ -102,7 +102,8 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
 
   void _handleFileSelection(ProjectNode node) {
     final item = _getCachedFileSystemItem(node.path, node.gitStatus);
-    if (widget.onFileSelected != null) {
+    // Only select files for editing, not folders
+    if (widget.onFileSelected != null && node.isFile) {
       widget.onFileSelected!(item);
     }
   }
@@ -124,16 +125,9 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
 
   void _onNodeTapped(ProjectNode node, bool isExpanded) async {
     if (node.isDirectory) {
-      // Handle directory selection first
-      final FileSystemItem item = FileSystemItem.fromFileSystemEntity(
-        File(node.path),
-      );
-      final bool isCurrentlySelected = widget.selectedFile?.path == item.path;
-
-      // If not currently selected, select it
-      if (!isCurrentlySelected && widget.onFileSelected != null && mounted) {
-        widget.onFileSelected!(item);
-      }
+      // Directory can be selected for navigation/display purposes, not for opening in editor
+      // We'll keep directory selection for UI state but not open them in editor
+      // (This maintains the UI feedback when directory is tapped)
 
       // Handle expansion/collapse
       if (mounted) {
