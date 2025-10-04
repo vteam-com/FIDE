@@ -181,11 +181,10 @@ digraph "" {
       "/tool/sort_source.dart";
     }
   }
-  "/integration_test/integration_test.dart" -> "/lib/providers/ui_state_providers.dart";
   "/integration_test/integration_test.dart" -> "/lib/main.dart";
   "/integration_test/integration_test.dart" -> "/lib/providers/app_providers.dart";
-  "/integration_test/integration_test.dart" -> "/lib/models/file_system_item.dart";
   "/integration_test/integration_test.dart" -> "/lib/widgets/create_project_dialog.dart";
+  "/integration_test/integration_test.dart" -> "/lib/controllers/app_controller.dart";
   "/test/file_type_utils_test.dart" -> "/lib/models/file_system_item.dart";
   "/test/file_type_utils_test.dart" -> "/lib/utils/file_type_utils.dart";
   "/test/widget_test.dart" -> "/lib/main.dart";

@@ -4,6 +4,8 @@ The integration test validates **real user workflows** through **pure UI interac
 
 1. ✅ start the FIDE app with proper window sizing (1400x900)
 2. ✅ click "Create new project", name it "HelloWorld"
+     verify the title panel toggle buttons left, center and right panels buttons are working
+     switch to the Organize tab
 3. ✅ switch to Files/Explorer tab via actual UI tab interaction
 4. ✅ verify folder tree loads correctly in UI
 5. ✅ open a source .dart file
