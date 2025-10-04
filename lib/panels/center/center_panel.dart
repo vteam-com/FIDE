@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/app_providers.dart';
 
 // Utils
-import '../../utils/message_helper.dart';
+import '../../utils/message_box.dart';
 
 // Screens
 import '../../screens/welcome_screen.dart';
@@ -77,7 +77,7 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
       mainContent = WelcomeScreen(
         onOpenFolder: widget.onOpenFolder ?? () {},
         onCreateProject: () {
-          MessageHelper.showInfo(
+          MessageBox.showInfo(
             context,
             'Create new project feature coming soon!',
           );

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
 // Utils
-import '../utils/message_helper.dart';
+import '../utils/message_box.dart';
 
 class DiffLine {
   final String content;
@@ -278,7 +278,7 @@ class _DiffViewerState extends State<DiffViewer> {
             icon: const Icon(Icons.copy),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: widget.diffText));
-              MessageHelper.showSuccess(context, 'Diff copied to clipboard');
+              MessageBox.showSuccess(context, 'Diff copied to clipboard');
             },
             tooltip: 'Copy diff',
           ),

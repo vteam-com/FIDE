@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:fide/panels/center/large_file_message.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:flutter_code_crafter/code_crafter.dart';
-import 'package:fide/utils/message_helper.dart';
+import 'package:fide/utils/message_box.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -658,7 +658,7 @@ class _EditorScreenState extends State<EditorScreen> {
                         await launchUrl(url, mode: LaunchMode.platformDefault);
                       } catch (fallbackError) {
                         if (mounted) {
-                          MessageHelper.showError(
+                          MessageBox.showError(
                             context,
                             'Could not open link: $urlString ${fallbackError.toString()}',
                             showCopyButton: true,
@@ -833,7 +833,7 @@ class _EditorScreenState extends State<EditorScreen> {
     }
 
     if (_currentFile.isEmpty) {
-      MessageHelper.showError(context, 'No file selected');
+      MessageBox.showError(context, 'No file selected');
       return;
     }
 
@@ -844,7 +844,7 @@ class _EditorScreenState extends State<EditorScreen> {
       );
 
       if (!isGitRepo) {
-        MessageHelper.showError(context, 'Not a Git repository');
+        MessageBox.showError(context, 'Not a Git repository');
         return;
       }
 
@@ -856,7 +856,7 @@ class _EditorScreenState extends State<EditorScreen> {
       if (!mounted) return;
 
       if (diff.isEmpty || diff.startsWith('Error')) {
-        MessageHelper.showInfo(context, 'No changes to show');
+        MessageBox.showInfo(context, 'No changes to show');
         return;
       }
 
@@ -924,7 +924,7 @@ class _EditorScreenState extends State<EditorScreen> {
       });
     } catch (e) {
       if (mounted) {
-        MessageHelper.showError(context, 'Error getting diff: $e');
+        MessageBox.showError(context, 'Error getting diff: $e');
       }
     }
   }
@@ -1046,11 +1046,11 @@ class _EditorScreenState extends State<EditorScreen> {
           widget.documentState!.isDirty = false;
         }
 
-        MessageHelper.showSuccess(context, 'File saved successfully');
+        MessageBox.showSuccess(context, 'File saved successfully');
       }
     } catch (e) {
       if (mounted) {
-        MessageHelper.showError(context, 'Error saving file: $e');
+        MessageBox.showError(context, 'Error saving file: $e');
       }
     }
   }
@@ -1064,7 +1064,7 @@ class _EditorScreenState extends State<EditorScreen> {
 
     // Check if file type is supported for formatting
     if (!isDartFile && !isJsonFile) {
-      MessageHelper.showInfo(
+      MessageBox.showInfo(
         context,
         'Formatting is currently only supported for Dart, JSON, and ARB files',
       );
@@ -1107,13 +1107,13 @@ class _EditorScreenState extends State<EditorScreen> {
                 widget.documentState!.isDirty = false;
               }
 
-              MessageHelper.showSuccess(context, 'File formatted successfully');
+              MessageBox.showSuccess(context, 'File formatted successfully');
             }
           });
         }
       } else {
         if (mounted) {
-          MessageHelper.showError(
+          MessageBox.showError(
             context,
             'Error formatting file: ${result.stderr.toString().trim()}',
           );
@@ -1121,7 +1121,7 @@ class _EditorScreenState extends State<EditorScreen> {
       }
     } catch (e) {
       if (mounted) {
-        MessageHelper.showError(context, 'Error formatting file: $e');
+        MessageBox.showError(context, 'Error formatting file: $e');
       }
     } finally {
       if (mounted) {

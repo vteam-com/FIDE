@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Utils
-import '../../utils/message_helper.dart';
+import '../../utils/message_box.dart';
 
 // Widgets
 import '../../widgets/status_indicator.dart';
@@ -153,7 +153,7 @@ Validates test organization and naming conventions.
 
   Future<void> _runTests(List<String> commandArgs) async {
     if (_isRunningTests) {
-      MessageHelper.showInfo(context, 'Tests are already running');
+      MessageBox.showInfo(context, 'Tests are already running');
       return;
     }
 
@@ -196,18 +196,18 @@ Validates test organization and naming conventions.
         if (exitCode == 0) {
           setState(() => _hasOutput = true);
           _outputBuffer.writeln('✅ Tests completed successfully');
-          MessageHelper.showSuccess(context, 'Tests completed successfully');
+          MessageBox.showSuccess(context, 'Tests completed successfully');
         } else {
           setState(() => _hasErrors = true);
           _errorBuffer.writeln('❌ Tests failed with exit code: $exitCode');
-          MessageHelper.showError(context, 'Some tests failed');
+          MessageBox.showError(context, 'Some tests failed');
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _hasErrors = true);
         _errorBuffer.writeln('❌ Error running tests: $e');
-        MessageHelper.showError(context, 'Error running tests: $e');
+        MessageBox.showError(context, 'Error running tests: $e');
       }
     } finally {
       if (mounted) {
@@ -228,7 +228,7 @@ Validates test organization and naming conventions.
           _outputBuffer.writeln('Create test/ directory to add tests');
           _hasOutput = true;
         });
-        MessageHelper.showInfo(context, 'No test directory found');
+        MessageBox.showInfo(context, 'No test directory found');
         return;
       }
 
@@ -278,13 +278,13 @@ Validates test organization and naming conventions.
         _hasOutput = true;
       });
 
-      MessageHelper.showSuccess(context, 'Test structure validated');
+      MessageBox.showSuccess(context, 'Test structure validated');
     } catch (e) {
       setState(() {
         _errorBuffer.writeln('❌ Error analyzing test structure: $e');
         _hasErrors = true;
       });
-      MessageHelper.showError(context, 'Error analyzing test structure');
+      MessageBox.showError(context, 'Error analyzing test structure');
     }
   }
 

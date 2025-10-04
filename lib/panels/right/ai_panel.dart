@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../services/ai_service.dart';
 import '../../models/file_system_item.dart';
-import '../../utils/message_helper.dart';
+import '../../utils/message_box.dart';
 
 class AIPanel extends StatefulWidget {
   const AIPanel({super.key, this.selectedFile});
@@ -348,7 +348,7 @@ class _AIPanelState extends State<AIPanel> {
         ]);
         if (installResult.exitCode != 0) {
           if (mounted) {
-            MessageHelper.showError(
+            MessageBox.showError(
               context,
               'Failed to install Ollama: ${installResult.stderr}',
             );
@@ -360,7 +360,7 @@ class _AIPanelState extends State<AIPanel> {
         final pullResult = await Process.run('ollama', ['pull', 'codellama']);
         if (pullResult.exitCode != 0) {
           if (mounted) {
-            MessageHelper.showError(
+            MessageBox.showError(
               context,
               'Failed to pull codellama model: ${pullResult.stderr}',
             );
@@ -376,21 +376,21 @@ class _AIPanelState extends State<AIPanel> {
         _hasModelInstalled = true;
 
         if (mounted) {
-          MessageHelper.showInfo(
+          MessageBox.showInfo(
             context,
             'Ollama installed, codellama model downloaded, and service started.',
           );
         }
       } else if (Platform.isWindows) {
         if (mounted) {
-          MessageHelper.showError(
+          MessageBox.showError(
             context,
             'Please install Ollama manually from https://ollama.ai/download for Windows.',
           );
         }
       } else {
         if (mounted) {
-          MessageHelper.showError(
+          MessageBox.showError(
             context,
             'Unsupported platform. Please install Ollama manually.',
           );
@@ -398,7 +398,7 @@ class _AIPanelState extends State<AIPanel> {
       }
     } catch (e) {
       if (mounted) {
-        MessageHelper.showError(context, 'Error installing Ollama: $e');
+        MessageBox.showError(context, 'Error installing Ollama: $e');
       }
     } finally {
       if (mounted) {
@@ -414,10 +414,10 @@ class _AIPanelState extends State<AIPanel> {
       await Future.delayed(const Duration(seconds: 2));
       await _checkStatus();
       if (!mounted) return;
-      MessageHelper.showInfo(context, 'Ollama started.');
+      MessageBox.showInfo(context, 'Ollama started.');
     } catch (e) {
       if (!mounted) return;
-      MessageHelper.showError(context, 'Error starting Ollama: $e');
+      MessageBox.showError(context, 'Error starting Ollama: $e');
     } finally {
       if (mounted) {
         setState(() => _isInstalling = false);
@@ -431,7 +431,7 @@ class _AIPanelState extends State<AIPanel> {
       final pullResult = await Process.run('ollama', ['pull', 'codellama']);
       if (pullResult.exitCode != 0) {
         if (!mounted) return;
-        MessageHelper.showError(
+        MessageBox.showError(
           context,
           'Failed to download model: ${pullResult.stderr}',
         );
@@ -439,10 +439,10 @@ class _AIPanelState extends State<AIPanel> {
       }
       _hasModelInstalled = true;
       if (!mounted) return;
-      MessageHelper.showInfo(context, 'codellama model downloaded.');
+      MessageBox.showInfo(context, 'codellama model downloaded.');
     } catch (e) {
       if (!mounted) return;
-      MessageHelper.showError(context, 'Error downloading model: $e');
+      MessageBox.showError(context, 'Error downloading model: $e');
     } finally {
       if (mounted) {
         setState(() => _isInstalling = false);

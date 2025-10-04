@@ -8,7 +8,7 @@ import 'package:fide/models/file_system_item.dart';
 import 'package:fide/services/localization_service.dart';
 import 'package:fide/services/ai_service.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/utils/message_helper.dart';
+import 'package:fide/utils/message_box.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
@@ -196,7 +196,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     try {
       // Step 1: Add required packages
       if (mounted) {
-        MessageHelper.showInfo(
+        MessageBox.showInfo(
           context,
           'Adding flutter_localizations and intl packages...',
         );
@@ -205,31 +205,31 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
 
       // Step 2: Configure pubspec.yaml
       if (mounted) {
-        MessageHelper.showInfo(context, 'Configuring pubspec.yaml...');
+        MessageBox.showInfo(context, 'Configuring pubspec.yaml...');
       }
       await _configurePubspec(projectRoot.path);
 
       // Step 3: Create l10n directory
       if (mounted) {
-        MessageHelper.showInfo(context, 'Creating lib/l10n directory...');
+        MessageBox.showInfo(context, 'Creating lib/l10n directory...');
       }
       await _createL10nDirectory(projectRoot.path);
 
       // Step 4: Create ARB files
       if (mounted) {
-        MessageHelper.showInfo(context, 'Creating template ARB files...');
+        MessageBox.showInfo(context, 'Creating template ARB files...');
       }
       await _createArbFiles(projectRoot.path);
 
       // Step 5: Generate localization classes
       if (mounted) {
-        MessageHelper.showInfo(context, 'Generating localization classes...');
+        MessageBox.showInfo(context, 'Generating localization classes...');
       }
       await _generateClasses(projectRoot.path);
 
       // Step 6: Update main.dart
       if (mounted) {
-        MessageHelper.showInfo(context, 'Updating main.dart...');
+        MessageBox.showInfo(context, 'Updating main.dart...');
       }
       await _localizationService.updateMainDartForLocalization(
         projectRoot.path,
@@ -239,7 +239,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       await _checkLocalizationStatus();
 
       if (mounted) {
-        MessageHelper.showSuccess(
+        MessageBox.showSuccess(
           context,
           'Localization system initialized and main.dart updated successfully!',
         );
@@ -247,7 +247,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        MessageHelper.showError(context, 'Error initializing localization: $e');
+        MessageBox.showError(context, 'Error initializing localization: $e');
       }
     }
   }
@@ -362,12 +362,12 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       await _checkLocalizationStatus();
 
       if (mounted) {
-        MessageHelper.showSuccess(context, 'main.dart updated successfully!');
+        MessageBox.showSuccess(context, 'main.dart updated successfully!');
       }
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        MessageHelper.showError(context, 'Error updating main.dart: $e');
+        MessageBox.showError(context, 'Error updating main.dart: $e');
       }
     }
   }
@@ -390,7 +390,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       if (!hasGenerateFlag) {
         setState(() => _isLoading = false);
         if (mounted) {
-          MessageHelper.showError(
+          MessageBox.showError(
             context,
             'Cannot generate localization classes. Please ensure your pubspec.yaml has "generate: true" properly indented under the flutter section, run "flutter pub get", and restart your IDE. Example:\n\nflutter:\n  generate: true\n  uses-material-design: true',
           );
@@ -405,7 +405,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       if (result.exitCode == 0) {
         await _checkLocalizationStatus();
         if (mounted) {
-          MessageHelper.showSuccess(
+          MessageBox.showSuccess(
             context,
             'Localization classes generated successfully!',
           );
@@ -413,7 +413,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       } else {
         setState(() => _isLoading = false);
         if (mounted) {
-          MessageHelper.showError(
+          MessageBox.showError(
             context,
             'Error generating classes: ${result.stderr}',
           );
@@ -422,7 +422,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        MessageHelper.showError(context, 'Error generating classes: $e');
+        MessageBox.showError(context, 'Error generating classes: $e');
       }
     }
   }
@@ -763,7 +763,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
               'ARB files exist but contain invalid JSON. Check and repair the files in lib/l10n/',
               Icons.warning,
               () {
-                MessageHelper.showError(
+                MessageBox.showError(
                   context,
                   'ARB files are malformed. Please check the files in lib/l10n/ and ensure they contain valid JSON. You may need to recreate them using the Initialize Localization action.',
                 );
@@ -1147,19 +1147,19 @@ Provide only the translated text, no additional explanation or quotes.''';
         await _loadArbFiles();
 
         if (mounted) {
-          MessageHelper.showSuccess(
+          MessageBox.showSuccess(
             context,
             'Translated "$key" to $targetLanguage',
           );
         }
       } else {
         if (mounted) {
-          MessageHelper.showError(context, 'Translation failed');
+          MessageBox.showError(context, 'Translation failed');
         }
       }
     } catch (e) {
       if (mounted) {
-        MessageHelper.showError(context, 'Error translating: $e');
+        MessageBox.showError(context, 'Error translating: $e');
       }
     }
   }

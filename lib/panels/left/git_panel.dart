@@ -7,7 +7,7 @@ import '../../services/git_service.dart';
 import '../../widgets/side_by_side_diff.dart';
 import '../../models/file_system_item.dart';
 import '../../widgets/filename_widget.dart';
-import '../../utils/message_helper.dart';
+import '../../utils/message_box.dart';
 
 class GitPanel extends ConsumerStatefulWidget {
   final String projectPath;
@@ -54,7 +54,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     final gitService = GitService();
     final result = await gitService.stageFiles(widget.projectPath, files);
     if (mounted) {
-      MessageHelper.showInfo(context, result);
+      MessageBox.showInfo(context, result);
     }
     _loadGitData();
   }
@@ -63,7 +63,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     final gitService = GitService();
     final result = await gitService.unstageFiles(widget.projectPath, files);
     if (mounted) {
-      MessageHelper.showInfo(context, result);
+      MessageBox.showInfo(context, result);
     }
     _loadGitData();
   }
@@ -79,7 +79,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
         _commitController.text,
       );
       if (mounted) {
-        MessageHelper.showInfo(context, result);
+        MessageBox.showInfo(context, result);
       }
       _commitController.clear();
       _loadGitData();
@@ -94,7 +94,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     final gitService = GitService();
     final result = await gitService.push(widget.projectPath);
     if (mounted) {
-      MessageHelper.showInfo(context, result);
+      MessageBox.showInfo(context, result);
     }
     _loadGitData();
   }
@@ -103,7 +103,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     final gitService = GitService();
     final result = await gitService.pull(widget.projectPath);
     if (mounted) {
-      MessageHelper.showInfo(context, result);
+      MessageBox.showInfo(context, result);
     }
     _loadGitData();
   }
@@ -141,9 +141,9 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     if (mounted) {
       final isSuccess = result.contains('successfully');
       if (isSuccess) {
-        MessageHelper.showSuccess(context, result);
+        MessageBox.showSuccess(context, result);
       } else {
-        MessageHelper.showError(context, result);
+        MessageBox.showError(context, result);
       }
     }
     _loadGitData();

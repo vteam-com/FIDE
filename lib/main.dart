@@ -17,7 +17,7 @@ import 'providers/ui_state_providers.dart';
 // Services
 import 'services/project_service.dart';
 import 'services/project_operations.dart';
-import 'utils/message_helper.dart';
+import 'utils/message_box.dart';
 
 // Widgets
 import 'widgets/create_project_dialog.dart';
@@ -409,7 +409,7 @@ class _FIDEState extends ConsumerState<FIDE> {
 
                             debugPrint('Project creation success: $success');
                             if (!success) {
-                              MessageHelper.showError(
+                              MessageBox.showError(
                                 context,
                                 'Failed to create project',
                               );
@@ -469,7 +469,7 @@ class _FIDEState extends ConsumerState<FIDE> {
       Navigator.of(context).pop();
     } else {
       // Show error for invalid input
-      MessageHelper.showError(context, 'Please enter a valid line number');
+      MessageBox.showError(context, 'Please enter a valid line number');
     }
   }
 

@@ -9,7 +9,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
-import 'package:fide/utils/message_helper.dart';
+import 'package:fide/utils/message_box.dart';
 
 import 'shared_panel_utils.dart';
 import '../../providers/app_providers.dart';
@@ -72,7 +72,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
 
   // Helper methods
   void showError(String message) {
-    MessageHelper.showError(context, message, showCopyButton: true);
+    MessageBox.showError(context, message, showCopyButton: true);
   }
 
   Future<void> pickDirectory() async {

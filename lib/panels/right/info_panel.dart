@@ -14,7 +14,7 @@ import '../../models/document_state.dart';
 import '../../providers/app_providers.dart';
 
 // Utils
-import '../../utils/message_helper.dart';
+import '../../utils/message_box.dart';
 
 // Widgets
 import '../../widgets/status_indicator.dart';
@@ -66,7 +66,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     } catch (e) {
       if (mounted) {
         setState(() => _isRefreshing = false);
-        MessageHelper.showError(context, 'Failed to analyze project: $e');
+        MessageBox.showError(context, 'Failed to analyze project: $e');
       }
     }
   }
@@ -502,12 +502,12 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       await _analyzeProject();
 
       if (mounted) {
-        MessageHelper.showSuccess(context, 'Full project cleanup completed!');
+        MessageBox.showSuccess(context, 'Full project cleanup completed!');
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isRefreshing = false);
-        MessageHelper.showError(context, 'Cleanup failed: $e');
+        MessageBox.showError(context, 'Cleanup failed: $e');
       }
     }
   }
@@ -519,7 +519,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
       final pubspecPath = '$currentProjectPath/pubspec.yaml';
       if (!File(pubspecPath).existsSync()) {
-        MessageHelper.showError(context, 'pubspec.yaml not found');
+        MessageBox.showError(context, 'pubspec.yaml not found');
         return;
       }
 
@@ -540,7 +540,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         ref.read(activeDocumentIndexProvider.notifier).state = existingIndex;
       }
     } catch (e) {
-      MessageHelper.showError(context, 'Failed to open pubspec.yaml: $e');
+      MessageBox.showError(context, 'Failed to open pubspec.yaml: $e');
     }
   }
 
@@ -590,11 +590,11 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             .updateMetrics(currentProjectPath, updatedMetrics);
 
         if (mounted) {
-          MessageHelper.showSuccess(context, 'Outdated check completed');
+          MessageBox.showSuccess(context, 'Outdated check completed');
         }
       } else {
         if (mounted) {
-          MessageHelper.showError(
+          MessageBox.showError(
             context,
             'Failed to check outdated: ${result.stderr}',
           );
@@ -605,7 +605,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     } catch (e) {
       if (mounted) {
         setState(() => _checkingOutdated = false);
-        MessageHelper.showError(context, 'Error checking outdated: $e');
+        MessageBox.showError(context, 'Error checking outdated: $e');
       }
     }
   }
@@ -650,7 +650,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       ], workingDirectory: currentProjectPath);
       if (result.exitCode != 0) {
         if (mounted) {
-          MessageHelper.showError(
+          MessageBox.showError(
             context,
             'Failed to check outdated: ${result.stderr}',
           );
@@ -666,7 +666,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
       if (outdatedData is! Map<String, dynamic>) {
         if (mounted) {
-          MessageHelper.showError(
+          MessageBox.showError(
             context,
             'Invalid JSON response from flutter pub outdated: expected Map, got ${outdatedData.runtimeType}',
           );
@@ -680,7 +680,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       final packagesRaw = outdatedDataMap['packages'];
       if (packagesRaw is! List) {
         if (mounted) {
-          MessageHelper.showError(
+          MessageBox.showError(
             context,
             'Expected packages to be an array, got ${packagesRaw?.runtimeType}',
           );
@@ -691,7 +691,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       final packages = packagesRaw;
 
       if (mounted) {
-        MessageHelper.showInfo(
+        MessageBox.showInfo(
           context,
           'Found ${packages.length} packages to check',
         );
@@ -701,7 +701,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       final pubspecFile = File('$currentProjectPath/pubspec.yaml');
       if (!pubspecFile.existsSync()) {
         if (mounted) {
-          MessageHelper.showError(context, 'pubspec.yaml not found');
+          MessageBox.showError(context, 'pubspec.yaml not found');
         }
         return;
       }
@@ -776,12 +776,12 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       // 8. Show snackbar
       if (mounted) {
         if (changed) {
-          MessageHelper.showSuccess(
+          MessageBox.showSuccess(
             context,
             'Packages upgraded to compatible versions!',
           );
         } else {
-          MessageHelper.showInfo(
+          MessageBox.showInfo(
             context,
             'All packages already up to date with compatible versions.',
           );
@@ -789,7 +789,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       }
     } catch (e) {
       if (mounted) {
-        MessageHelper.showError(context, 'Error upgrading packages: $e');
+        MessageBox.showError(context, 'Error upgrading packages: $e');
       }
     } finally {
       if (mounted) setState(() => _upgrading = false);

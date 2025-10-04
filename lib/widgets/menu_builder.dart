@@ -9,7 +9,7 @@ import '../providers/app_providers.dart';
 import '../services/git_service.dart';
 
 // Utils
-import '../utils/message_helper.dart';
+import '../utils/message_box.dart';
 
 class MenuBuilder {
   final BuildContext context;
@@ -116,7 +116,7 @@ class MenuBuilder {
                   final gitService = GitService();
                   final result = await gitService.initRepository(currentPath);
                   if (context.mounted) {
-                    MessageHelper.showInfo(context, result);
+                    MessageBox.showInfo(context, result);
                   }
                 }
               },

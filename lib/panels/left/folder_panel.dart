@@ -12,7 +12,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/services/git_service.dart';
-import 'package:fide/utils/message_helper.dart';
+import 'package:fide/utils/message_box.dart';
 
 import 'shared_panel_utils.dart';
 import '../../providers/app_providers.dart';
@@ -70,7 +70,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
 
   // Helper methods
   void showError(String message) {
-    MessageHelper.showError(context, message, showCopyButton: true);
+    MessageBox.showError(context, message, showCopyButton: true);
   }
 
   Future<void> pickDirectory() async {
@@ -787,7 +787,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
       await _refreshProjectTree();
 
       if (mounted) {
-        MessageHelper.showSuccess(context, 'Created file "$result"');
+        MessageBox.showSuccess(context, 'Created file "$result"');
       }
     } catch (e) {
       showError('Failed to create file: $e');
@@ -843,7 +843,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
       await _refreshProjectTree();
 
       if (mounted) {
-        MessageHelper.showSuccess(context, 'Created folder "$result"');
+        MessageBox.showSuccess(context, 'Created folder "$result"');
       }
     } catch (e) {
       showError('Failed to create folder: $e');
@@ -902,7 +902,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
       await _refreshProjectTree();
 
       if (mounted) {
-        MessageHelper.showSuccess(context, 'Renamed to "$result"');
+        MessageBox.showSuccess(context, 'Renamed to "$result"');
       }
     } catch (e) {
       showError('Failed to rename: $e');
@@ -948,7 +948,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
       await _refreshProjectTree();
 
       if (mounted) {
-        MessageHelper.showSuccess(context, 'Deleted "${node.name}"');
+        MessageBox.showSuccess(context, 'Deleted "${node.name}"');
       }
     } catch (e) {
       showError('Failed to delete: $e');

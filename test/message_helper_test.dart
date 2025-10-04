@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fide/utils/message_helper.dart';
+import 'package:fide/utils/message_box.dart';
 import 'package:fide/widgets/message_widget.dart';
 
 void main() {
@@ -10,10 +10,10 @@ void main() {
     test('MessageHelper methods exist and are callable', () {
       // This test verifies that the MessageHelper class has the expected methods
       // and that they can be called without throwing errors during compilation
-      expect(MessageHelper.showSuccess, isNotNull);
-      expect(MessageHelper.showWarning, isNotNull);
-      expect(MessageHelper.showError, isNotNull);
-      expect(MessageHelper.showInfo, isNotNull);
+      expect(MessageBox.showSuccess, isNotNull);
+      expect(MessageBox.showWarning, isNotNull);
+      expect(MessageBox.showError, isNotNull);
+      expect(MessageBox.showInfo, isNotNull);
     });
 
     testWidgets('MessageWidget is properly integrated', (
@@ -198,7 +198,7 @@ void main() {
       final context = tester.element(find.byType(Placeholder));
 
       // Call MessageHelper.showSuccess
-      MessageHelper.showSuccess(context, 'Test success message');
+      MessageBox.showSuccess(context, 'Test success message');
 
       // Pump to allow overlay to be inserted
       await tester.pump();
@@ -221,7 +221,7 @@ void main() {
       final context = tester.element(find.byType(Placeholder));
 
       // Call MessageHelper.showError
-      MessageHelper.showError(context, 'Test error message');
+      MessageBox.showError(context, 'Test error message');
 
       // Pump to allow overlay to be inserted
       await tester.pump();
@@ -244,7 +244,7 @@ void main() {
       final context = tester.element(find.byType(Placeholder));
 
       // Call MessageHelper.showWarning
-      MessageHelper.showWarning(context, 'Test warning message');
+      MessageBox.showWarning(context, 'Test warning message');
 
       // Pump to allow overlay to be inserted
       await tester.pump();
@@ -267,7 +267,7 @@ void main() {
       final context = tester.element(find.byType(Placeholder));
 
       // Call MessageHelper.showInfo
-      MessageHelper.showInfo(context, 'Test info message');
+      MessageBox.showInfo(context, 'Test info message');
 
       // Pump to allow overlay to be inserted
       await tester.pump();

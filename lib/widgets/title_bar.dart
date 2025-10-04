@@ -13,7 +13,7 @@ import 'package:window_manager/window_manager.dart';
 import '../providers/app_providers.dart';
 
 // Utils
-import '../utils/message_helper.dart';
+import '../utils/message_box.dart';
 
 // Widgets
 import 'create_project_dialog.dart';
@@ -262,7 +262,7 @@ class _TitleBarState extends ConsumerState<TitleBar> {
         }
       } catch (e) {
         if (mounted && context.mounted) {
-          MessageHelper.showError(context, 'Error opening folder: $e');
+          MessageBox.showError(context, 'Error opening folder: $e');
         }
       }
       return;
@@ -282,7 +282,7 @@ class _TitleBarState extends ConsumerState<TitleBar> {
 
         if (!success) {
           if (context.mounted) {
-            MessageHelper.showError(context, 'Failed to create project');
+            MessageBox.showError(context, 'Failed to create project');
           }
         }
       }

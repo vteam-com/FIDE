@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/message_widget.dart';
 
 // Convenience methods for showing messages
-class MessageHelper {
+class MessageBox {
   static void showSuccess(
     BuildContext context,
     String message, {

@@ -7,7 +7,7 @@ import 'package:path/path.dart' as path;
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/services/git_service.dart';
-import 'package:fide/utils/message_helper.dart';
+import 'package:fide/utils/message_box.dart';
 
 /// Shared state management for panel widgets
 class PanelStateManager {
@@ -178,10 +178,7 @@ class FileOperations {
 
       // Check if file already exists
       if (File(newFilePath).existsSync()) {
-        MessageHelper.showError(
-          context,
-          'A file with this name already exists',
-        );
+        MessageBox.showError(context, 'A file with this name already exists');
         return;
       }
 
@@ -193,10 +190,10 @@ class FileOperations {
       onRefresh();
 
       if (context.mounted) {
-        MessageHelper.showSuccess(context, 'Created file "$result"');
+        MessageBox.showSuccess(context, 'Created file "$result"');
       }
     } catch (e) {
-      MessageHelper.showError(context, 'Failed to create file: $e');
+      MessageBox.showError(context, 'Failed to create file: $e');
     }
   }
 
@@ -241,10 +238,7 @@ class FileOperations {
 
       // Check if directory already exists
       if (Directory(newFolderPath).existsSync()) {
-        MessageHelper.showError(
-          context,
-          'A folder with this name already exists',
-        );
+        MessageBox.showError(context, 'A folder with this name already exists');
         return;
       }
 
@@ -256,10 +250,10 @@ class FileOperations {
       onRefresh();
 
       if (context.mounted) {
-        MessageHelper.showSuccess(context, 'Created folder "$result"');
+        MessageBox.showSuccess(context, 'Created folder "$result"');
       }
     } catch (e) {
-      MessageHelper.showError(context, 'Failed to create folder: $e');
+      MessageBox.showError(context, 'Failed to create folder: $e');
     }
   }
 
@@ -304,7 +298,7 @@ class FileOperations {
 
       // Check if target already exists
       if (File(newPath).existsSync() || Directory(newPath).existsSync()) {
-        MessageHelper.showError(
+        MessageBox.showError(
           context,
           'A file or folder with this name already exists',
         );
@@ -322,10 +316,10 @@ class FileOperations {
       onRefresh();
 
       if (context.mounted) {
-        MessageHelper.showSuccess(context, 'Renamed to "$result"');
+        MessageBox.showSuccess(context, 'Renamed to "$result"');
       }
     } catch (e) {
-      MessageHelper.showError(context, 'Failed to rename: $e');
+      MessageBox.showError(context, 'Failed to rename: $e');
     }
   }
 
@@ -372,10 +366,10 @@ class FileOperations {
       onRefresh();
 
       if (context.mounted) {
-        MessageHelper.showSuccess(context, 'Deleted "${node.name}"');
+        MessageBox.showSuccess(context, 'Deleted "${node.name}"');
       }
     } catch (e) {
-      MessageHelper.showError(context, 'Failed to delete: $e');
+      MessageBox.showError(context, 'Failed to delete: $e');
     }
   }
 

@@ -2,7 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_providers.dart';
-import '../utils/message_helper.dart';
+import '../utils/message_box.dart';
 import '../screens/main_layout.dart';
 import '../panels/center/editor_screen.dart';
 
@@ -53,7 +53,7 @@ class ProjectOperations {
           }
         } else {
           if (context.mounted) {
-            MessageHelper.showError(
+            MessageBox.showError(
               context,
               'Failed to load project. Please ensure it is a valid Flutter project.',
             );
@@ -62,7 +62,7 @@ class ProjectOperations {
       }
     } catch (e) {
       if (context.mounted) {
-        MessageHelper.showError(context, 'Error loading project: $e');
+        MessageBox.showError(context, 'Error loading project: $e');
       }
     }
   }
@@ -147,7 +147,7 @@ class ProjectOperations {
       Navigator.of(context).pop();
     } else {
       // Show error for invalid input
-      MessageHelper.showError(context, 'Please enter a valid line number');
+      MessageBox.showError(context, 'Please enter a valid line number');
     }
   }
 
