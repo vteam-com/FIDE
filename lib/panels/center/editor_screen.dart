@@ -244,13 +244,15 @@ class _EditorScreenState extends State<EditorScreen> {
           _loadGitDiffStatsForAllDocuments(openDocuments);
         });
 
-        return Scaffold(
-          appBar: AppBar(
-            title: Row(
+        return Column(
+          children: [
+            Row(
               children: [
+                SizedBox(width: 8),
                 // Document dropdown on the left
                 if (openDocuments.isNotEmpty)
                   PopupMenuButton<int>(
+                    key: const Key('keyMruForFiles'),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -316,161 +318,162 @@ class _EditorScreenState extends State<EditorScreen> {
                     onPressed: _toggleDiffView,
                   ),
                 Spacer(),
-              ],
-            ),
-            actions: [
-              if (_isDirty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
-                  ),
-                  child: Center(
-                    child: Text(
-                      'Unsaved Changes',
-                      style: TextStyle(
-                        color: Colors.orange,
-                        fontStyle: FontStyle.italic,
+                if (_isDirty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Unsaved Changes',
+                        style: TextStyle(
+                          color: Colors.orange,
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
                     ),
                   ),
+                IconButton(
+                  icon: const Icon(Icons.search),
+                  onPressed: _showDiffView ? null : _toggleSearch,
+                  tooltip: 'Find (Cmd+F)',
                 ),
-              IconButton(
-                icon: const Icon(Icons.search),
-                onPressed: _showDiffView ? null : _toggleSearch,
-                tooltip: 'Find (Cmd+F)',
-              ),
-              IconButton(
-                icon: const Icon(Icons.download),
-                onPressed: _isDirty ? _saveFile : null,
-                tooltip: 'Save',
-              ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => EditorScreen.closeCurrentEditor(),
-                tooltip: 'Close Editor',
-              ),
-            ],
-          ),
-          body: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _currentFile.isEmpty
-              ? const Center(child: Text('No file selected'))
-              : !FileTypeUtils.isFileSupportedInEditor(_currentFile)
-              ? _buildUnsupportedFileView()
-              : _isImageFile(_currentFile)
-              ? _buildImageView()
-              : _showDiffView
-              ? _buildDiffView()
-              : RawKeyboardListener(
-                  focusNode: FocusNode(),
-                  onKey: _handleKeyEvent,
-                  child: Column(
-                    children: [
-                      // Search bar (only visible when searching)
-                      if (_showSearch) _buildSearchBar(),
-                      // Editor content
-                      Expanded(
-                        child: CodeCrafter(
-                          key: _codeCrafterKey,
-                          controller: _codeController,
-                          enableGutterDivider: false, // they have a bug
-                          gutterStyle: GutterStyle(
-                            dividerColor: Colors.grey.withAlpha(100),
-                            dividerThickness: 1,
-                            lineNumberStyle: TextStyle(
-                              // fontFamily: 'monospace',
-                              letterSpacing: -1,
+                IconButton(
+                  icon: const Icon(Icons.download),
+                  onPressed: _isDirty ? _saveFile : null,
+                  tooltip: 'Save',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => EditorScreen.closeCurrentEditor(),
+                  tooltip: 'Close Editor',
+                ),
+              ],
+            ),
 
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.5),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _currentFile.isEmpty
+                  ? const Center(child: Text('No file selected'))
+                  : !FileTypeUtils.isFileSupportedInEditor(_currentFile)
+                  ? _buildUnsupportedFileView()
+                  : _isImageFile(_currentFile)
+                  ? _buildImageView()
+                  : _showDiffView
+                  ? _buildDiffView()
+                  : RawKeyboardListener(
+                      focusNode: FocusNode(),
+                      onKey: _handleKeyEvent,
+                      child: Column(
+                        children: [
+                          // Search bar (only visible when searching)
+                          if (_showSearch) _buildSearchBar(),
+                          // Editor content
+                          Expanded(
+                            child: CodeCrafter(
+                              key: _codeCrafterKey,
+                              controller: _codeController,
+                              enableGutterDivider: false, // they have a bug
+                              gutterStyle: GutterStyle(
+                                dividerColor: Colors.grey.withAlpha(100),
+                                dividerThickness: 1,
+                                lineNumberStyle: TextStyle(
+                                  // fontFamily: 'monospace',
+                                  letterSpacing: -1,
+
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.5),
+                                ),
+                              ),
+
+                              // textStyle: const TextStyle(fontFamily: 'monospace'),
+                              editorTheme: _getCodeTheme(),
                             ),
                           ),
-
-                          // textStyle: const TextStyle(fontFamily: 'monospace'),
-                          editorTheme: _getCodeTheme(),
-                        ),
-                      ),
-                      // Status bar
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        child: Row(
-                          children: [
-                            if (_showDiffView)
-                              const Text(
-                                'Diff View',
-                                style: TextStyle(fontSize: 12),
-                              )
-                            else ...[
-                              IconButton(
-                                icon: Icon(
-                                  _regionsExpanded
-                                      ? Icons.unfold_less
-                                      : Icons.unfold_more,
-                                  size: 16,
-                                ),
-                                onPressed: _toggleAllRegions,
-                                tooltip: _regionsExpanded
-                                    ? 'Collapse All Regions (Ctrl+Shift+[)'
-                                    : 'Expand All Regions (Ctrl+Shift+])',
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 24,
-                                  minHeight: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Ln ${_getCurrentLineNumber()}',
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                              const SizedBox(width: 16),
-                              Text(
-                                'Col ${_getCurrentColumnNumber()}',
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                              if (_searchMatches.isNotEmpty) ...[
-                                const SizedBox(width: 16),
+                          // Status bar
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            child: Row(
+                              children: [
+                                if (_showDiffView)
+                                  const Text(
+                                    'Diff View',
+                                    style: TextStyle(fontSize: 12),
+                                  )
+                                else ...[
+                                  IconButton(
+                                    icon: Icon(
+                                      _regionsExpanded
+                                          ? Icons.unfold_less
+                                          : Icons.unfold_more,
+                                      size: 16,
+                                    ),
+                                    onPressed: _toggleAllRegions,
+                                    tooltip: _regionsExpanded
+                                        ? 'Collapse All Regions (Ctrl+Shift+[)'
+                                        : 'Expand All Regions (Ctrl+Shift+])',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 24,
+                                      minHeight: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Ln ${_getCurrentLineNumber()}',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Text(
+                                    'Col ${_getCurrentColumnNumber()}',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                  if (_searchMatches.isNotEmpty) ...[
+                                    const SizedBox(width: 16),
+                                    Text(
+                                      '${_currentMatchIndex + 1} of ${_searchMatches.length}',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                  ],
+                                ],
+                                const Spacer(),
+                                // Format File button (only show for supported files)
+                                if (!_showDiffView &&
+                                    (_currentFile.endsWith('.dart') ||
+                                        _currentFile.endsWith('.json') ||
+                                        _currentFile.endsWith('.arb')))
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.format_indent_increase,
+                                      size: 16,
+                                    ),
+                                    onPressed: _formatFile,
+                                    tooltip: 'Format File (Shift+Alt+F)',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 24,
+                                      minHeight: 24,
+                                    ),
+                                  ),
+                                const SizedBox(width: 8),
                                 Text(
-                                  '${_currentMatchIndex + 1} of ${_searchMatches.length}',
+                                  _getFileLanguage(),
                                   style: const TextStyle(fontSize: 12),
                                 ),
                               ],
-                            ],
-                            const Spacer(),
-                            // Format File button (only show for supported files)
-                            if (!_showDiffView &&
-                                (_currentFile.endsWith('.dart') ||
-                                    _currentFile.endsWith('.json') ||
-                                    _currentFile.endsWith('.arb')))
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.format_indent_increase,
-                                  size: 16,
-                                ),
-                                onPressed: _formatFile,
-                                tooltip: 'Format File (Shift+Alt+F)',
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 24,
-                                  minHeight: 24,
-                                ),
-                              ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _getFileLanguage(),
-                              style: const TextStyle(fontSize: 12),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+            ),
+          ],
         );
       },
     );
@@ -1353,6 +1356,7 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _toggleSearch() {
+    if (!mounted) return;
     setState(() {
       if (_showSearch) {
         _closeSearch();
@@ -1369,6 +1373,7 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _closeSearch() {
+    if (!mounted) return;
     setState(() {
       _showSearch = false;
       _searchController.clear();
