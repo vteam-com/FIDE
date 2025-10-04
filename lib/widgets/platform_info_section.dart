@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'badge_status.dart';
 
 class PlatformInfoSection extends StatefulWidget {
   final String selectedPlatform;
@@ -326,28 +327,15 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                   ),
                   const SizedBox(width: 8),
                   Row(
+                    spacing: 8,
                     children: [
-                      Text(
-                        widget.isSupported ? '✓ Supported' : '✗ Not supported',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: widget.isSupported
-                              ? Colors.green.shade700
-                              : Theme.of(context).colorScheme.error,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        widget.canBuild ? '✓ Can build' : '✗ Cannot build',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: widget.canBuild
-                              ? Colors.green.shade700
-                              : Theme.of(context).colorScheme.error,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      widget.isSupported
+                          ? BadgeStatus.success(text: 'SUPPORTED')
+                          : BadgeStatus.error(text: 'UNSUPPORTED'),
+
+                      widget.canBuild
+                          ? BadgeStatus.success(text: 'BUILDABLE')
+                          : BadgeStatus.warning(text: 'UNBUILDABLE'),
                     ],
                   ),
                 ],
@@ -482,19 +470,27 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.settings, size: 14, color: Colors.blue),
-                          const SizedBox(width: 6),
-                          Text(
-                            'To Enable ${widget.selectedPlatform}:',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue,
+                          BadgeStatus(
+                            text: 'ENABLE',
+                            backgroundColor: Colors.blue.withOpacity(0.1),
+                            textColor: Colors.blue.shade700,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Instructions for ${widget.selectedPlatform}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.blue.shade700,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
                         _getEnableInstructions(),
                         style: TextStyle(

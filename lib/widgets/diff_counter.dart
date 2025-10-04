@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/git_service.dart';
+import 'badge_status.dart';
 
 class DiffCounter extends StatelessWidget {
   final GitDiffStats? gitStats;
@@ -15,32 +16,11 @@ class DiffCounter extends StatelessWidget {
     final parts = <Widget>[];
 
     if (gitStats!.added > 0) {
-      parts.add(
-        Text(
-          '+${gitStats!.added}',
-          style: TextStyle(
-            color: Colors.green,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      );
+      parts.add(BadgeStatus.addition(count: gitStats!.added));
     }
 
     if (gitStats!.removed > 0) {
-      if (gitStats!.added > 0) {
-        parts.add(const SizedBox(width: 4));
-      }
-      parts.add(
-        Text(
-          '-${gitStats!.removed}',
-          style: TextStyle(
-            color: Colors.red,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      );
+      parts.add(BadgeStatus.deletion(count: gitStats!.removed));
     }
 
     return Row(mainAxisSize: MainAxisSize.min, children: parts);

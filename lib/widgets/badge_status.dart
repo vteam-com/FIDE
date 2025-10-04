@@ -108,4 +108,39 @@ class BadgeStatus extends StatelessWidget {
       fontSize: fontSize,
     );
   }
+
+  factory BadgeStatus.neutral({required String text, double fontSize = 10}) {
+    return BadgeStatus(
+      text: text,
+      backgroundColor: Colors.grey.shade700,
+      textColor: Colors.white.withAlpha(160),
+      fontSize: fontSize,
+    );
+  }
+
+  /// Creates a pre-configured addition badge (for Git diff stats).
+  factory BadgeStatus.addition({required int count, double fontSize = 12}) {
+    final text = '+$count';
+    return BadgeStatus(
+      text: text,
+      backgroundColor: Colors.green.shade700,
+      textColor: Colors.white.withAlpha(160),
+      fontSize: fontSize,
+      fontWeight: FontWeight.w600,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+    );
+  }
+
+  /// Creates a pre-configured deletion badge (for Git diff stats).
+  factory BadgeStatus.deletion({required int count, double fontSize = 12}) {
+    final text = '-$count';
+    return BadgeStatus(
+      text: text,
+      backgroundColor: Colors.red.shade700,
+      textColor: Colors.white.withAlpha(160),
+      fontSize: fontSize,
+      fontWeight: FontWeight.w600,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+    );
+  }
 }

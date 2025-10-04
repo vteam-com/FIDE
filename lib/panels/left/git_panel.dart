@@ -8,6 +8,7 @@ import '../../widgets/side_by_side_diff.dart';
 import '../../models/file_system_item.dart';
 import '../../widgets/filename_widget.dart';
 import '../../utils/message_box.dart';
+import '../../widgets/badge_status.dart';
 
 class GitPanel extends ConsumerStatefulWidget {
   final String projectPath;
@@ -323,7 +324,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   if (status.staged.isNotEmpty) ...[
                     _buildFileSection(
                       colorScheme,
-                      'Staged Changes',
+                      BadgeStatus.success(text: 'STAGED CHANGES'),
                       status.staged,
                       onStage: null,
                       onUnstage: _unstageFiles,
@@ -336,7 +337,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   if (status.unstaged.isNotEmpty) ...[
                     _buildFileSection(
                       colorScheme,
-                      'Changes',
+                      BadgeStatus.warning(text: 'CHANGES'),
                       status.unstaged,
                       onStage: _stageFiles,
                       onUnstage: null,
@@ -349,7 +350,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   if (status.untracked.isNotEmpty) ...[
                     _buildFileSection(
                       colorScheme,
-                      'Untracked Files',
+                      BadgeStatus.neutral(text: 'UNTRACKED'),
                       status.untracked,
                       onStage: _stageFiles,
                       onUnstage: null,
@@ -411,7 +412,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
   Widget _buildFileSection(
     ColorScheme colorScheme,
-    String title,
+    Widget titleWidget,
     List<String> files, {
     Function(List<String>)? onStage,
     Function(List<String>)? onUnstage,
@@ -425,13 +426,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
         children: [
           Row(
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-              ),
+              titleWidget,
               const Spacer(),
               if (onStage != null)
                 TextButton(

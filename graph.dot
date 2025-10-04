@@ -242,6 +242,7 @@ digraph "" {
   "/lib/panels/left/git_panel.dart" -> "/lib/models/file_system_item.dart";
   "/lib/panels/left/git_panel.dart" -> "/lib/widgets/filename_widget.dart";
   "/lib/panels/left/git_panel.dart" -> "/lib/utils/message_box.dart";
+  "/lib/panels/left/git_panel.dart" -> "/lib/widgets/badge_status.dart";
   "/lib/panels/left/search_panel.dart" -> "/lib/models/project_node.dart";
   "/lib/panels/left/search_panel.dart" -> "/lib/models/file_system_item.dart";
   "/lib/panels/left/search_panel.dart" -> "/lib/widgets/search_toggle_icons.dart";
@@ -332,6 +333,7 @@ digraph "" {
   "/lib/widgets/title_bar.dart" -> "/lib/providers/app_providers.dart";
   "/lib/widgets/title_bar.dart" -> "/lib/utils/message_box.dart";
   "/lib/widgets/title_bar.dart" -> "/lib/widgets/create_project_dialog.dart";
+  "/lib/widgets/platform_info_section.dart" -> "/lib/widgets/badge_status.dart";
   "/lib/widgets/menu_builder.dart" -> "/lib/providers/app_providers.dart";
   "/lib/widgets/menu_builder.dart" -> "/lib/services/git_service.dart";
   "/lib/widgets/menu_builder.dart" -> "/lib/utils/message_box.dart";
@@ -339,6 +341,7 @@ digraph "" {
   "/lib/widgets/filename_widget.dart" -> "/lib/models/file_system_item.dart";
   "/lib/widgets/filename_widget.dart" -> "/lib/utils/file_type_utils.dart";
   "/lib/widgets/diff_counter.dart" -> "/lib/services/git_service.dart";
+  "/lib/widgets/diff_counter.dart" -> "/lib/widgets/badge_status.dart";
   "/lib/widgets/action_tabs.dart" -> "/lib/widgets/status_indicator.dart";
   "/lib/widgets/foldername_widget.dart" -> "/lib/models/project_node.dart";
   "/lib/widgets/foldername_widget.dart" -> "/lib/models/file_system_item.dart";
