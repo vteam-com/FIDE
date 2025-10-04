@@ -18,6 +18,7 @@ import '../../utils/message_box.dart';
 
 // Widgets
 import '../../widgets/status_indicator.dart';
+import '../../widgets/badge_status.dart';
 
 class InfoPanel extends ConsumerStatefulWidget {
   const InfoPanel({super.key});
@@ -283,10 +284,12 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     metrics['qualityScore'] = score.clamp(0, 100);
   }
 
-  Color _getScoreColor(int score) {
-    if (score < 50) return Colors.red.shade700;
-    if (score < 80) return Colors.orange.shade700;
-    return Colors.green.shade700;
+  /// Builds a BadgeStatus widget based on the quality score
+  BadgeStatus _buildScoreBadge(int score) {
+    final text = '$score%';
+    if (score < 50) return BadgeStatus.error(text: text);
+    if (score < 80) return BadgeStatus.warning(text: text);
+    return BadgeStatus.success(text: text);
   }
 
   void _showScoreDetails(
@@ -846,33 +849,8 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                 if (projectMetrics['qualityScore'] != null)
                   GestureDetector(
                     onTap: () => _showScoreDetails(context, projectMetrics),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getScoreColor(
-                          projectMetrics['qualityScore'] as int,
-                        ).withOpacity(0.2),
-                        border: Border.all(
-                          color: _getScoreColor(
-                            projectMetrics['qualityScore'] as int,
-                          ),
-                          width: 1.5,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${projectMetrics['qualityScore']}%',
-                        style: TextStyle(
-                          color: _getScoreColor(
-                            projectMetrics['qualityScore'] as int,
-                          ),
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                    child: _buildScoreBadge(
+                      projectMetrics['qualityScore'] as int,
                     ),
                   ),
               ],

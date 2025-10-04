@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'badge_status.dart';
 
 enum MessageType { success, warning, error, info }
 
@@ -153,24 +154,7 @@ class _MessageWidgetState extends State<MessageWidget>
                             child: AnimatedOpacity(
                               opacity: _showCopiedText ? 1.0 : 0.0,
                               duration: const Duration(milliseconds: 200),
-                              child: Container(
-                                padding: EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: Colors.green,
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(8),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Copied',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 10,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
+                              child: BadgeStatus.success(text: 'Copied'),
                             ),
                           )
                         : IconButton(
