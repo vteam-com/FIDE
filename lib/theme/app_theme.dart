@@ -24,6 +24,13 @@ class AppTheme {
         centerTitle: false,
         titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
       ),
+      popupMenuTheme: PopupMenuThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(6)),
+          side: BorderSide(color: const Color(0xFFCCCCCC), width: 1.0),
+        ),
+        elevation: 6,
+      ),
     );
   }
 
@@ -46,6 +53,13 @@ class AppTheme {
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(6)),
+          side: BorderSide(color: const Color(0xFF4A4A4A), width: 1.0),
+        ),
+        elevation: 6,
       ),
     );
   }

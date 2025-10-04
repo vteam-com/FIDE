@@ -177,19 +177,73 @@ class _AIPanelState extends State<AIPanel> {
                   ),
           ),
           Divider(),
-          DropdownButton<String>(
-            value: _selectedAction,
-            isExpanded: true,
-            items: const [
-              DropdownMenuItem(value: 'ask', child: Text('Ask AI')),
-              DropdownMenuItem(value: 'explain', child: Text('Explain Code')),
-              DropdownMenuItem(value: 'generate', child: Text('Generate Code')),
-              DropdownMenuItem(value: 'refactor', child: Text('Refactor Code')),
+          PopupMenuButton<String>(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Text(_getActionText()),
+                  const Spacer(),
+                  const Icon(Icons.arrow_drop_down),
+                ],
+              ),
+            ),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'ask',
+                child: Row(
+                  children: [
+                    if ('ask' == _selectedAction)
+                      const Icon(Icons.check, size: 18)
+                    else
+                      const SizedBox(width: 18),
+                    const SizedBox(width: 8),
+                    const Text('Ask AI'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'explain',
+                child: Row(
+                  children: [
+                    if ('explain' == _selectedAction)
+                      const Icon(Icons.check, size: 18)
+                    else
+                      const SizedBox(width: 18),
+                    const SizedBox(width: 8),
+                    const Text('Explain Code'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'generate',
+                child: Row(
+                  children: [
+                    if ('generate' == _selectedAction)
+                      const Icon(Icons.check, size: 18)
+                    else
+                      const SizedBox(width: 18),
+                    const SizedBox(width: 8),
+                    const Text('Generate Code'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'refactor',
+                child: Row(
+                  children: [
+                    if ('refactor' == _selectedAction)
+                      const Icon(Icons.check, size: 18)
+                    else
+                      const SizedBox(width: 18),
+                    const SizedBox(width: 8),
+                    const Text('Refactor Code'),
+                  ],
+                ),
+              ),
             ],
-            onChanged: (value) {
-              if (value != null) {
-                setState(() => _selectedAction = value);
-              }
+            onSelected: (value) {
+              setState(() => _selectedAction = value);
             },
           ),
           // Input area
@@ -308,6 +362,21 @@ class _AIPanelState extends State<AIPanel> {
         return 'Paste code and describe how to refactor it...';
       default:
         return 'Type your message...';
+    }
+  }
+
+  String _getActionText() {
+    switch (_selectedAction) {
+      case 'ask':
+        return 'Ask AI';
+      case 'explain':
+        return 'Explain Code';
+      case 'generate':
+        return 'Generate Code';
+      case 'refactor':
+        return 'Refactor Code';
+      default:
+        return 'Select Action';
     }
   }
 

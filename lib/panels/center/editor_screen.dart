@@ -250,45 +250,58 @@ class _EditorScreenState extends State<EditorScreen> {
               children: [
                 // Document dropdown on the left
                 if (openDocuments.isNotEmpty)
-                  DropdownButton<int>(
-                    value: activeIndex,
-                    items: openDocuments.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final doc = entry.value;
-                      final gitStats = _allGitDiffStats[doc.filePath];
-
-                      return DropdownMenuItem<int>(
-                        value: index,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              doc.fileName,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontSize: 14,
-                              ),
+                  PopupMenuButton<int>(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (activeIndex < openDocuments.length) ...[
+                          Text(
+                            openDocuments[activeIndex].fileName,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 14,
                             ),
-                            const SizedBox(width: 8),
-                            DiffCounter(gitStats: gitStats),
-                          ],
+                          ),
+                          const SizedBox(width: 8),
+                          DiffCounter(
+                            gitStats:
+                                _allGitDiffStats[openDocuments[activeIndex]
+                                    .filePath],
+                          ),
+                        ],
+                        Icon(
+                          Icons.arrow_drop_down,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (newIndex) {
-                      if (newIndex != null) {
-                        ref.read(activeDocumentIndexProvider.notifier).state =
-                            newIndex;
-                      }
+                      ],
+                    ),
+                    itemBuilder: (context) =>
+                        openDocuments.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final doc = entry.value;
+                          final gitStats = _allGitDiffStats[doc.filePath];
+
+                          return PopupMenuItem<int>(
+                            value: index,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (index == activeIndex)
+                                  const Icon(Icons.check, size: 18)
+                                else
+                                  const SizedBox(width: 18),
+                                const SizedBox(width: 8),
+                                Text(doc.fileName),
+                                const SizedBox(width: 8),
+                                DiffCounter(gitStats: gitStats),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                    onSelected: (newIndex) {
+                      ref.read(activeDocumentIndexProvider.notifier).state =
+                          newIndex;
                     },
-                    underline: const SizedBox.shrink(),
-                    icon: Icon(
-                      Icons.arrow_drop_down,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
                   ),
                 // Spacer to center the toggle button
                 Spacer(),
