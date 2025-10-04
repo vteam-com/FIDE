@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/legacy.dart';
 
 /// Panel visibility state providers
 final leftPanelVisibleProvider = StateProvider<bool>((ref) => true);
-final bottomPanelVisibleProvider = StateProvider<bool>((ref) => true);
+final bottomPanelVisibleProvider = StateProvider<bool>((ref) => false);
 final rightPanelVisibleProvider = StateProvider<bool>((ref) => true);
 
 /// Theme mode provider (moved from app_providers.dart for better organization)
