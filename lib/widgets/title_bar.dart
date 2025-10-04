@@ -176,6 +176,7 @@ class _TitleBarState extends ConsumerState<TitleBar> {
       children: [
         // Left panel toggle
         IconButton(
+          key: const Key('togglePanelLeft'),
           icon: SvgPicture.asset(
             'assets/toggle_panel_left.svg',
             width: 18,
@@ -192,6 +193,7 @@ class _TitleBarState extends ConsumerState<TitleBar> {
         ),
         // Bottom panel toggle
         IconButton(
+          key: const Key('togglePanelBottom'),
           icon: SvgPicture.asset(
             'assets/toggle_panel_bottom.svg',
             width: 18,
@@ -208,6 +210,7 @@ class _TitleBarState extends ConsumerState<TitleBar> {
         ),
         // Right panel toggle
         IconButton(
+          key: const Key('togglePanelRight'),
           icon: SvgPicture.asset(
             'assets/toggle_panel_right.svg',
             width: 18,

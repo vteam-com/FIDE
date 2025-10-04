@@ -117,6 +117,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                 controller: _tabController,
                 tabs: [
                   Tab(
+                    key: const Key('keyTabOrganize'),
                     icon: Icon(
                       _tabController.index == 0
                           ? Icons.category
@@ -124,6 +125,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                     ),
                   ),
                   Tab(
+                    key: const Key('keyTabFolder'),
                     icon: Icon(
                       _tabController.index == 1
                           ? Icons.folder
@@ -131,6 +133,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                     ),
                   ),
                   Tab(
+                    key: const Key('keyTabGit'),
                     icon: Icon(
                       _tabController.index == 2
                           ? Icons.commit
@@ -138,6 +141,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                     ),
                   ),
                   Tab(
+                    key: const Key('keyTabSearch'),
                     icon: Icon(
                       _tabController.index == 3
                           ? Icons.search
@@ -145,6 +149,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                     ),
                   ),
                   Tab(
+                    key: const Key('keyTabRun'),
                     icon: Icon(
                       _tabController.index == 4
                           ? Icons.play_arrow
@@ -152,6 +157,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                     ),
                   ),
                   Tab(
+                    key: const Key('keyTabTest'),
                     icon: Icon(
                       _tabController.index == 5
                           ? Icons.check_circle
