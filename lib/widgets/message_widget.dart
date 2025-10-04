@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../utils/message_box.dart';
 
 enum MessageType { success, warning, error, info }
 
@@ -41,6 +40,8 @@ class _MessageWidgetState extends State<MessageWidget>
   late AnimationController _animationController;
 
   late Animation<double> _fadeAnimation;
+
+  bool _showCopiedText = false;
 
   @override
   void initState() {
@@ -145,30 +146,61 @@ class _MessageWidgetState extends State<MessageWidget>
                 ),
                 if (widget.showCopyButton) ...[
                   const SizedBox(width: 8),
-                  IconButton(
-                    icon: Icon(
-                      Icons.copy,
-                      color: foregroundColor.withOpacity(0.7),
-                      size: 18,
-                    ),
-                    onPressed: () async {
-                      await Clipboard.setData(
-                        ClipboardData(text: widget.message),
-                      );
-                      // Show a brief confirmation that text was copied
-                      if (mounted) {
-                        MessageBox.showInfo(
-                          context,
-                          'Message copied to clipboard',
-                        );
-                      }
-                    },
-                    tooltip: 'Copy message',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
-                    ),
+                  SizedBox(
+                    height: 32,
+                    child: _showCopiedText
+                        ? Center(
+                            child: AnimatedOpacity(
+                              opacity: _showCopiedText ? 1.0 : 0.0,
+                              duration: const Duration(milliseconds: 200),
+                              child: Container(
+                                padding: EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(8),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Copied',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 10,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                          )
+                        : IconButton(
+                            icon: Icon(
+                              Icons.copy,
+                              color: foregroundColor.withOpacity(0.7),
+                              size: 18,
+                            ),
+                            onPressed: () async {
+                              await Clipboard.setData(
+                                ClipboardData(text: widget.message),
+                              );
+                              // Show "Copied" in place of the button
+                              if (mounted) {
+                                setState(() => _showCopiedText = true);
+                                // Hide "Copied" after 1.5 seconds
+                                Future.delayed(
+                                  const Duration(milliseconds: 1500),
+                                  () {
+                                    if (mounted) {
+                                      setState(() => _showCopiedText = false);
+                                    }
+                                  },
+                                );
+                              }
+                            },
+                            tooltip: 'Copy message',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
                   ),
                 ],
                 if (widget.showCloseButton) ...[
