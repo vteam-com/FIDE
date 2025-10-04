@@ -1,4 +1,5 @@
 import 'package:fide/panels/left/search_panel.dart';
+import 'package:fide/panels/left/test_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,7 +15,7 @@ import 'execute_panel.dart';
 // Models
 import '../../models/file_system_item.dart';
 
-enum PanelMode { filesystem, organized, git, search, buildrun }
+enum PanelMode { filesystem, organized, git, search, buildrun, test }
 
 class LeftPanel extends ConsumerStatefulWidget {
   final FileSystemItem? selectedFile;
@@ -150,6 +151,13 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                           : Icons.play_arrow_outlined,
                     ),
                   ),
+                  Tab(
+                    icon: Icon(
+                      _tabController.index == 5
+                          ? Icons.check_circle
+                          : Icons.check_circle_outlined,
+                    ),
+                  ),
                 ],
                 labelColor: Theme.of(context).colorScheme.primary,
                 unselectedLabelColor: Theme.of(
@@ -204,6 +212,9 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
 
                 // Build/Run/Debug tab - using BuildRunDebugPanel
                 const ExecutePanel(),
+
+                // Test tab - using TestPanel
+                TestPanel(projectPath: widget.currentProjectPath!),
               ],
             ),
           ),
