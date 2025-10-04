@@ -82,7 +82,7 @@ class MessageBox {
     final overlay = Overlay.of(context);
     final overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
-        top: MediaQuery.of(context).padding.top + 8,
+        bottom: MediaQuery.of(context).padding.bottom + 8,
         left: 0,
         right: 0,
         child: MessageWidget(
