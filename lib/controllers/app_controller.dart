@@ -12,9 +12,13 @@ class AppController {
 
   AppController(this.ref);
 
-  /// Initialize the app on startup
-  Future<void> initialize() async {
+  /// Initialize just the window manager (for use in main() before widgets)
+  Future<void> initializeWindowManager() async {
     await _initializeWindowManager();
+  }
+
+  /// Initialize the app theme and MRU folders (callable from widget context)
+  Future<void> initializeAppServices() async {
     await _initializeTheme();
     await _loadMruFolders();
   }

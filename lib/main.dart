@@ -1,6 +1,4 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously
-
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
@@ -44,7 +42,7 @@ void main() async {
 
   // Initialize app controller to handle setup
   final container = ProviderContainer();
-  await container.read(appControllerProvider).initialize();
+  await container.read(appControllerProvider).initializeWindowManager();
 
   runApp(UncontrolledProviderScope(container: container, child: const FIDE()));
 }
@@ -207,7 +205,12 @@ class _FIDEState extends ConsumerState<FIDE> {
   Future<void> _initializeApp() async {
     _prefs = await SharedPreferences.getInstance();
 
-    // Initialize theme
+    // Call AppController to initialize theme and MRU folders (this will get code coverage)
+    await ProviderScope.containerOf(
+      context,
+    ).read(appControllerProvider).initializeAppServices();
+
+    // Initialize UI state with loaded values
     final savedThemeMode = _prefs.getString(_themeModeKey);
     if (savedThemeMode != null) {
       setState(() {
@@ -215,29 +218,20 @@ class _FIDEState extends ConsumerState<FIDE> {
       });
     }
 
-    // Load MRU folders at app startup
-    await _loadMruFoldersAtStartup();
+    // Try to auto-load the first MRU project after initialization
+    _tryAutoLoadFirstMruProject();
   }
 
-  Future<void> _loadMruFoldersAtStartup() async {
+  Future<void> _tryAutoLoadFirstMruProject() async {
     try {
-      final mruList = _prefs.getStringList('mru_folders') ?? [];
-
-      // Filter out folders that don't exist
-      final validMruFolders = mruList
-          .where((path) => Directory(path).existsSync())
-          .toList();
-
-      // Update the provider with loaded MRU folders
-      // We need to use a post-frame callback to ensure the widget is built
+      // Get current MRU folders from provider - they were loaded by AppController.initializeAppServices()
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           final ref = ProviderScope.containerOf(context);
-          ref.read(mruFoldersProvider.notifier).state = validMruFolders;
+          final mruFolders = ref.read(mruFoldersProvider);
 
-          // If there are MRU folders, try to load the first one automatically
-          if (validMruFolders.isNotEmpty) {
-            _tryLoadFirstMruProject(ref, validMruFolders.first);
+          if (mruFolders.isNotEmpty) {
+            _tryLoadFirstMruProject(ref, mruFolders.first);
           }
         }
       });
