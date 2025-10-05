@@ -335,16 +335,19 @@ class _EditorScreenState extends State<EditorScreen> {
                     ),
                   ),
                 IconButton(
+                  key: const Key('keyEditorFind'),
                   icon: const Icon(Icons.search),
                   onPressed: _showDiffView ? null : _toggleSearch,
                   tooltip: 'Find (Cmd+F)',
                 ),
                 IconButton(
+                  key: const Key('keyEditorSave'),
                   icon: const Icon(Icons.download),
                   onPressed: _isDirty ? _saveFile : null,
                   tooltip: 'Save',
                 ),
                 IconButton(
+                  key: const Key('keyEditorClose'),
                   icon: const Icon(Icons.close),
                   onPressed: () => EditorScreen.closeCurrentEditor(),
                   tooltip: 'Close Editor',

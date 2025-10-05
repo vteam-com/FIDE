@@ -256,74 +256,70 @@ void main() {
     // triggers initial rebuild for the app reacting to the file being loaded
     await tester.pump(const Duration(milliseconds: 50));
     print('✓ main.dart file open start');
+    // await tester.pumpAndSettle();
 
-    //   // Ensure the editor UI is fully loaded and responsive after file opening
-    //   await tester.pumpAndSettle();
-    //   print('✓ main.dart file opened');
+    // Check if file opening succeeded by looking for the filename in the editor PopupMenuButton (document dropdown)
+    final mruFile = find.byKey(const Key('keyMruForFiles'));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(mruFile, findsOneWidget);
+    print('✓ keyMruForFiles found');
 
-    //   // // Check if file opening succeeded by looking for the filename in the editor PopupMenuButton (document dropdown)
-    //   // expect(
-    //   //   find.descendant(
-    //   //     of: find.byKey(const Key('keyMruForFiles')),
-    //   //     matching: find.text('main.dart'),
-    //   //   ),
-    //   //   findsOneWidget,
-    //   //   reason:
-    //   //       'main.dart file should be displayed in editor document dropdown',
-    //   // );
-    //   // await tester.pumpAndSettle(const Duration(seconds: 2));
-    //   print('✓ main.dart file opened');
+    expect(
+      find.descendant(of: mruFile, matching: find.text('main.dart')),
+      findsOneWidget,
+      reason: 'main.dart file should be displayed in editor document dropdown',
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+    // await tester.pump(const Duration(milliseconds: 500));
+    // await tester.pumpAndSettle();
+    // await tester.pumpAndSettle(const Duration(seconds: 2));
+    print('✓ main.dart file opened');
 
-    //   print('Step 5 complete: Dart file opened');
+    // 6. Make a small edit in the editor
+    print('Step 6: Making a small edit in the editor');
 
-    //   // 6. Make a small edit in the editor
-    //   print('Step 6: Making a small edit in the editor');
+    // Find the file path based on the project and file name
+    final mainDartFile = File('$expectedProjectPath/lib/main.dart');
+    final originalContent = await mainDartFile.readAsString();
+    final modifiedContent = originalContent.replaceAll(
+      'Hello Worldld',
+      'Hello Flutter World',
+    );
+    await tester.pump(const Duration(milliseconds: 50));
 
-    //   // Find the file path based on the project and file name
-    //   final mainDartFile = File('$expectedProjectPath/lib/main.dart');
-    //   final originalContent = await mainDartFile.readAsString();
-    //   final modifiedContent = originalContent.replaceAll(
-    //     'Hello Worldld',
-    //     'Hello Flutter World',
-    //   );
+    // Write the modified content back
+    await mainDartFile.writeAsString(modifiedContent);
+    await tester.pump(const Duration(milliseconds: 50));
+    print('✓ File content edited: "Hello Worldld" -> "Hello Flutter World"');
 
-    //   // Write the modified content back
-    //   await mainDartFile.writeAsString(modifiedContent);
-    //   print('✓ File content edited: "Hello Worldld" -> "Hello Flutter World"');
+    print('Step 6 complete: File edit completed');
 
-    //   print('Step 6 complete: File edit completed');
+    // 7. Close the editor
+    print('Step 7: Closing the editor');
 
-    //   // 7. Close the editor
-    //   print('Step 7: Closing the editor');
+    // Clear the selection to simulate closing the editor
+    await tester.tap(find.byKey(const Key('keyEditorClose')));
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pumpAndSettle();
+    print('✓ Editor closed (file selection cleared)');
 
-    //   // Clear the selection to simulate closing the editor
-    //   container.read(selectedFileProvider.notifier).state = null;
-    //   await tester.pumpAndSettle();
-    //   print('✓ Editor closed (file selection cleared)');
+    // 8. Confirm that the file shows as modified in the git panel
+    print(
+      'Step 8: Confirming that the file shows as modified in the git panel',
+    );
 
-    //   print('Step 7 complete: Editor closed');
+    // Switch to Git panel
+    await tester.tap(find.byKey(const Key('keyTabGit')));
+    await tester.pump(const Duration(milliseconds: 50));
+    print('✓ Switched to Git panel');
 
-    //   // 8. Confirm that the file shows as modified in the git panel
-    //   print(
-    //     'Step 8: Confirming that the file shows as modified in the git panel',
-    //   );
-
-    //   // Switch to Git panel
-    //   await tester.tap(find.byKey(const Key('keyTabGit')));
-    //   await tester.pumpAndSettle();
-    //   print('✓ Switched to Git panel');
-
-    //   // Note: The actual Git status verification would require Git initialization
-    //   // and status checking, but for the test we can verify the panel switched
-    //   print('✓ Git panel accessible for status verification');
-
-    //   print('Step 8 complete: Git panel verification completed');
-
-    //   // 9. Complete test validation successfully
-    //   print('Step 9: Test validation completed successfully');
+    // Note: The actual Git status verification would require Git initialization
+    // and status checking, but for the test we can verify the panel switched
+    print('✓ Git panel accessible for status verification');
 
     // Final verification of overall app state
     final finalProjectLoaded = container.read(projectLoadedProvider);
+    await tester.pump(const Duration(milliseconds: 50));
     expect(finalProjectLoaded, isTrue);
     print('✓ Final app state verified');
 
