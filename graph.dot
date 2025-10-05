@@ -27,7 +27,6 @@ digraph "" {
   "/lib/panels/left/test_panel.dart" [label="test_panel"];
   "/lib/panels/left/organized_panel.dart" [label="organized_panel"];
   "/lib/utils/color_utils.dart" [label="color_utils"];
-  "/lib/utils/file_utils.dart" [label="file_utils"];
   "/lib/utils/file_type_utils.dart" [label="file_type_utils"];
   "/lib/utils/message_box.dart" [label="message_box"];
   "/lib/models/project_node.dart" [label="project_node"];
@@ -119,7 +118,6 @@ digraph "" {
       subgraph "cluster~/lib/utils" {
         label="utils";
         "/lib/utils/color_utils.dart";
-        "/lib/utils/file_utils.dart";
         "/lib/utils/file_type_utils.dart";
         "/lib/utils/message_box.dart";
       }
@@ -283,14 +281,12 @@ digraph "" {
   "/lib/utils/file_type_utils.dart" -> "/lib/models/file_system_item.dart";
   "/lib/utils/message_box.dart" -> "/lib/widgets/message_widget.dart";
   "/lib/models/project_node.dart" -> "/lib/models/file_system_item.dart";
-  "/lib/models/file_system_item.dart" -> "/lib/utils/file_utils.dart";
   "/lib/screens/main_layout.dart" -> "/lib/providers/ui_state_providers.dart";
   "/lib/screens/main_layout.dart" -> "/lib/panels/center/editor_screen.dart";
   "/lib/screens/main_layout.dart" -> "/lib/providers/app_providers.dart";
   "/lib/screens/main_layout.dart" -> "/lib/models/file_system_item.dart";
   "/lib/screens/main_layout.dart" -> "/lib/models/document_state.dart";
   "/lib/screens/main_layout.dart" -> "/lib/utils/file_type_utils.dart";
-  "/lib/screens/main_layout.dart" -> "/lib/utils/file_utils.dart";
   "/lib/screens/main_layout.dart" -> "/lib/utils/message_box.dart";
   "/lib/screens/main_layout.dart" -> "/lib/widgets/resizable_splitter.dart";
   "/lib/screens/main_layout.dart" -> "/lib/panels/left/left_panel.dart";
@@ -326,7 +322,7 @@ digraph "" {
   "/lib/services/project_service.dart" -> "/lib/services/file_system_watcher.dart";
   "/lib/services/project_service.dart" -> "/lib/providers/app_providers.dart";
   "/lib/services/project_service.dart" -> "/lib/main.dart";
-  "/lib/services/git_service.dart" -> "/lib/utils/file_utils.dart";
+  "/lib/services/git_service.dart" -> "/lib/models/file_system_item.dart";
   "/lib/services/file_system_watcher.dart" -> "/lib/models/project_node.dart";
   "/lib/widgets/diff_viewer.dart" -> "/lib/utils/message_box.dart";
   "/lib/widgets/title_bar.dart" -> "/lib/providers/app_providers.dart";

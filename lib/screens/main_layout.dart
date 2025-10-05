@@ -26,7 +26,6 @@ import '../models/document_state.dart';
 
 // Utils
 import '../utils/file_type_utils.dart';
-import '../utils/file_utils.dart';
 import '../utils/message_box.dart';
 
 // Widgets
@@ -156,8 +155,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
       }
 
       // Check file size before loading
-      final fileSize = await file.length();
-      if (fileSize > FileUtils.maxFileSize) {
+      if (!await FileSystemItem.isWithinMaxFileSize(file)) {
         // Skip loading large files
         return;
       }
@@ -383,7 +381,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
         try {
           final file = File(filePath);
           if (await file.exists()) {
-            content = await FileUtils.readFileContentSafely(file);
+            content = await FileSystemItem.fileToStringMaxSizeCheck(file);
           }
         } catch (e) {
           // Silently handle file loading errors

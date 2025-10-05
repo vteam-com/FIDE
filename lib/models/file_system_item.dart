@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
-import '../utils/file_utils.dart';
 
 enum FileSystemItemType { file, directory, drive, parent }
 
@@ -120,13 +119,33 @@ class FileSystemItem {
     }
   }
 
+  static const int maxFileSize = 1 * 1024 * 1024; // 1MB
+  static const String fileTooBigMessage = '// file too big to load';
+
+  /// Check if file is within maximum file size limit
+  static Future<bool> isWithinMaxFileSize(File file) async {
+    final fileSize = await file.length();
+    return fileSize <= maxFileSize;
+  }
+
+  /// Load file content with custom error message if too big
+  static Future<String> fileToStringMaxSizeCheck(
+    File file, {
+    String tooBigMessage = fileTooBigMessage,
+  }) async {
+    if (!await isWithinMaxFileSize(file)) {
+      return tooBigMessage;
+    }
+    return await file.readAsString();
+  }
+
   // Read file content as string
   Future<String> readAsString() async {
     if (type != FileSystemItemType.file) {
       throw Exception('Cannot read content of a directory');
     }
     final file = File(path);
-    return await FileUtils.readFileContentSafely(file);
+    return await fileToStringMaxSizeCheck(file);
   }
 
   // Get file extension for filtering

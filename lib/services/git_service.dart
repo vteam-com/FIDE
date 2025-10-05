@@ -1,5 +1,5 @@
 import 'dart:io';
-import '../utils/file_utils.dart';
+import 'package:fide/models/file_system_item.dart';
 
 class GitService {
   static final GitService _instance = GitService._internal();
@@ -257,8 +257,10 @@ class GitService {
       // If no diff found, check if file is new
       final file = File(filePath);
       if (await file.exists()) {
-        final content = await FileUtils.readFileContentSafely(file);
-        if (content == FileUtils.fileTooBigMessage) {
+        final String content = await FileSystemItem.fileToStringMaxSizeCheck(
+          file,
+        );
+        if (content == FileSystemItem.fileTooBigMessage) {
           return content;
         }
         final lines = content.split('\n');
@@ -390,8 +392,8 @@ class GitService {
         // For untracked files, count all lines as additions
         final file = File(filePath);
         if (await file.exists()) {
-          final content = await FileUtils.readFileContentSafely(file);
-          if (content == FileUtils.fileTooBigMessage) {
+          final content = await FileSystemItem.fileToStringMaxSizeCheck(file);
+          if (content == FileSystemItem.fileTooBigMessage) {
             return GitDiffStats(added: 0, removed: 0, isNewFile: true);
           }
           final lines = content.split('\n');
