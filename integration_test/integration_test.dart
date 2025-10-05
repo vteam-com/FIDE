@@ -248,14 +248,14 @@ void main() {
     await tester.pumpAndSettle();
 
     // Check if main.dart is visible and clickable in the test viewport
-    final mainDartVisible = find.text('main.dart').evaluate().isNotEmpty;
-    print('main.dart visible in test viewport: $mainDartVisible');
+    final bool mainDartVisible = find.text('main.dart').evaluate().isNotEmpty;
+    assert(mainDartVisible, true);
 
-    // if (mainDartVisible) {
-    //   // Try a safe tap with warnIfMissed to avoid test failure
-    //   await tester.tap(find.text('main.dart'), warnIfMissed: false);
-    //   print('✓ main.dart file open start');
-    //   await tester.pumpAndSettle(const Duration(seconds: 3));
+    // Try a safe tap with warnIfMissed to avoid test failure
+    await tester.tap(find.text('main.dart'), warnIfMissed: true);
+    // triggers initial rebuild for the app reacting to the file being loaded
+    await tester.pump(const Duration(milliseconds: 50));
+    print('✓ main.dart file open start');
 
     //   // Ensure the editor UI is fully loaded and responsive after file opening
     //   await tester.pumpAndSettle();
@@ -321,7 +321,6 @@ void main() {
 
     //   // 9. Complete test validation successfully
     //   print('Step 9: Test validation completed successfully');
-    // }
 
     // Final verification of overall app state
     final finalProjectLoaded = container.read(projectLoadedProvider);
