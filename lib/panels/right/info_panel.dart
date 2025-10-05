@@ -822,30 +822,46 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  projectMetrics['name'] as String? ?? 'Unknown Project',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: Text(
-                    'v${projectMetrics['version'] as String? ?? '< no version >'}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                Expanded(
+                  child: Flexible(
+                    fit: FlexFit.loose,
+                    child: Row(
+                      children: [
+                        Text(
+                          projectMetrics['name'] as String? ??
+                              'Unknown Project',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Flexible(
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: Text(
+                              'v${projectMetrics['version'] as String? ?? '< no version >'}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                Spacer(),
                 IconButton(
                   onPressed: _openPubspecYaml,
                   icon: const Icon(Icons.edit_note, size: 16),
                 ),
-                Spacer(),
                 if (projectMetrics['qualityScore'] != null)
                   GestureDetector(
                     onTap: () => _showScoreDetails(context, projectMetrics),

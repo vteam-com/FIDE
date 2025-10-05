@@ -80,9 +80,16 @@ class _RightPanelState extends State<RightPanel>
                         index;
                   },
                   tabs: [
-                    const Tab(icon: Icon(Icons.list)),
-                    const Tab(icon: Icon(Icons.translate)),
+                    const Tab(
+                      key: Key('keyTabOutline'),
+                      icon: Icon(Icons.list),
+                    ),
+                    const Tab(
+                      key: Key('keyTabLocalize'),
+                      icon: Icon(Icons.translate),
+                    ),
                     Tab(
+                      key: const Key('keyTabAI'),
                       icon: Builder(
                         builder: (context) {
                           final iconColor = IconTheme.of(context).color!;
@@ -98,7 +105,10 @@ class _RightPanelState extends State<RightPanel>
                         },
                       ),
                     ),
-                    const Tab(icon: Icon(Icons.info_outline)),
+                    const Tab(
+                      key: Key('keyTabInfo'),
+                      icon: Icon(Icons.info_outline),
+                    ),
                   ],
                   labelColor: Theme.of(context).colorScheme.primary,
                   unselectedLabelColor: Theme.of(

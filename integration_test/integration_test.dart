@@ -280,6 +280,21 @@ void main() {
     }
     stepFinished();
 
+    stepStart('Right Panel');
+    {
+      await tester.tap(find.byKey(const Key('keyTabOutline')));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(find.byKey(const Key('keyTabLocalize')));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(find.byKey(const Key('keyTabAI')));
+      await tester.pump(const Duration(milliseconds: 50));
+      // await tester.tap(find.byKey(const Key('keyTabInfo')));
+      // await tester.pump(const Duration(milliseconds: 50));
+    }
+    stepFinished();
+
+    await tester.pump(const Duration(milliseconds: 50));
+
     // Final verification of overall app state
     stepStart('Clean up');
     {
