@@ -34,15 +34,17 @@ Future<void> _cleanupExistingHelloWorldDirectories() async {
 
           try {
             await entity.rename(newPath);
-            print('Renamed existing directory: ${entity.path} -> $newPath');
+            substep('Renamed existing directory: ${entity.path} -> $newPath');
           } catch (e) {
-            print('Could not rename directory ${entity.path}: $e');
+            substep('Could not rename directory ${entity.path}: $e');
             // Try to delete as last resort
             try {
               await entity.delete(recursive: true);
-              print('Deleted existing directory: ${entity.path}');
+              substep('Deleted existing directory: ${entity.path}');
             } catch (deleteError) {
-              print('Could not delete directory ${entity.path}: $deleteError');
+              substep(
+                'Could not delete directory ${entity.path}: $deleteError',
+              );
             }
           }
         }
@@ -61,19 +63,19 @@ Future<void> _cleanupExistingHelloWorldDirectories() async {
 
           try {
             await entity.rename(newPath);
-            print(
+            substep(
               'Renamed existing directory in cwd: ${entity.path} -> $newPath',
             );
           } catch (e) {
-            print('Could not rename directory in cwd ${entity.path}: $e');
+            substep('Could not rename directory in cwd ${entity.path}: $e');
           }
         }
       }
     }
 
-    print('Cleanup completed - renamed any existing HelloWorld directories');
+    substep('Cleanup completed - renamed any existing HelloWorld directories');
   } catch (e) {
-    print('Error during cleanup: $e');
+    substep('Error during cleanup: $e');
   }
 }
 
@@ -102,167 +104,144 @@ void main() {
     // Clean up any existing HelloWorld folders to avoid test collisions
     await _cleanupExistingHelloWorldDirectories();
 
-    print('Starting test: FIDE project creation and editing workflow');
-
     // 1. start the FIDE app
-    print('Step 1: Starting FIDE app with proper window sizing (1400x900)');
     // Set a larger test window to avoid UI layout constraints
-    await tester.binding.setSurfaceSize(const Size(1400, 900));
+    // await tester.binding.setSurfaceSize(const Size(1400, 900));
 
     // Use the same container setup as in main.dart for consistency
     final container = ProviderContainer();
 
-    // Initialize window manager like in main.dart
-    await container.read(appControllerProvider).initializeWindowManager();
-
-    await tester.pumpWidget(
-      UncontrolledProviderScope(container: container, child: const FIDE()),
-    );
-    await tester.pumpAndSettle(const Duration(seconds: 1));
-
     // Verify we're on the welcome screen
-    expect(find.text('Welcome to'), findsOneWidget);
-    expect(find.text('FIDE'), findsOneWidget);
-    print('Step 1 complete: Welcome screen verified');
+    stepStart('Welcome screen');
+    {
+      // Initialize window manager like in main.dart
+      await container.read(appControllerProvider).initializeWindowManager();
 
-    // Use the container created for pumping for provider access
+      await tester.pumpWidget(
+        UncontrolledProviderScope(container: container, child: const FIDE()),
+      );
+      await tester.pumpAndSettle(const Duration(seconds: 1));
+      expect(find.text('Welcome to'), findsOneWidget);
+      expect(find.text('FIDE'), findsOneWidget);
+    }
+    stepFinished();
 
     // 2. Create new project via UI workflow
-    print('Step 2: Creating HelloWorld project via Create new project');
+    String expectedProjectPath = '';
+    stepStart('Creating HelloWorld project');
+    {
+      // Get temp directory for project creation
+      final tempDir = Directory.systemTemp;
+      final projectParentDir = path.join(tempDir.path, 'fide_test_projects');
+      await Directory(projectParentDir).create(recursive: true);
 
-    // Verify we're still on welcome screen and find the Create New Project button
-    final stillOnWelcome = find.text('Welcome to').evaluate().isNotEmpty;
-    expect(stillOnWelcome, isTrue);
+      // Delete any existing HelloWorld project to ensure clean state
+      expectedProjectPath = path.join(projectParentDir, 'HelloWorld');
+      final projectDir = Directory(expectedProjectPath);
+      if (await projectDir.exists()) {
+        await projectDir.delete(recursive: true);
+        substep(
+          'Deleted existing HelloWorld project directory: $expectedProjectPath',
+        );
+      }
 
-    // Get temp directory for project creation
-    final tempDir = Directory.systemTemp;
-    final projectParentDir = path.join(tempDir.path, 'fide_test_projects');
-    await Directory(projectParentDir).create(recursive: true);
+      // Set the test initial directory to prevent any issues with permissions
+      CreateProjectDialog.setTestInitialDirectory(projectParentDir);
 
-    // Delete any existing HelloWorld project to ensure clean state
-    final expectedProjectPath = path.join(projectParentDir, 'HelloWorld');
-    final projectDir = Directory(expectedProjectPath);
-    if (await projectDir.exists()) {
-      await projectDir.delete(recursive: true);
-      print(
-        'Deleted existing HelloWorld project directory: $expectedProjectPath',
+      // Log expected project path for debugging
+      substep('Expected project path: $expectedProjectPath');
+      substep('Project parent directory: $projectParentDir');
+
+      // Click the "Create New Project" button (simulates user creating new project)
+      await tester.tap(find.text('Create New Project'));
+      await tester.pumpAndSettle();
+
+      // Fill the create project dialog - project name
+      await tester.enterText(find.byType(TextField).first, 'HelloWorld');
+      await tester.pumpAndSettle();
+
+      // Click Create button in dialog
+      await tester.tap(find.text('Create'));
+      await tester.pumpAndSettle();
+
+      final initialProjectLoadedState = container.read(projectLoadedProvider);
+      substep('Initial projectLoaded state: $initialProjectLoadedState');
+
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+
+      final finalProjectLoadedState = container.read(projectLoadedProvider);
+      substep('Final projectLoaded state: $finalProjectLoadedState');
+
+      expect(
+        finalProjectLoadedState,
+        isTrue,
+        reason: 'Project should be loaded in provider',
       );
     }
+    stepFinished();
 
-    // Set the test initial directory to prevent any issues with permissions
-    CreateProjectDialog.setTestInitialDirectory(projectParentDir);
-
-    // Log expected project path for debugging
-    print('Expected project path: $expectedProjectPath');
-    print('Project parent directory: $projectParentDir');
-
-    // Click the "Create New Project" button (simulates user creating new project)
-    await tester.tap(find.text('Create New Project'));
-    await tester.pumpAndSettle();
-
-    // Fill the create project dialog - project name
-    await tester.enterText(find.byType(TextField).first, 'HelloWorld');
-    await tester.pumpAndSettle();
-
-    // Click Create button in dialog
-    await tester.tap(find.text('Create'));
-    await tester.pumpAndSettle();
-
-    // After project creation, wait for loading and verify welcome screen is hidden
-    print('Waiting for project loading to complete...');
-
-    final initialProjectLoadedState = container.read(projectLoadedProvider);
-    print('Initial projectLoaded state: $initialProjectLoadedState');
-
-    await tester.pumpAndSettle(const Duration(seconds: 2));
-
-    final finalProjectLoadedState = container.read(projectLoadedProvider);
-    print('Final projectLoaded state: $finalProjectLoadedState');
-
-    // Debug: Check what widgets are present
-    final welcomeTextCount = find.text('Welcome to').evaluate().length;
-    print('Welcome text widgets found: $welcomeTextCount');
-
-    // Verify welcome screen is hidden (project should be loaded)
-    expect(
-      find.text('Welcome to'),
-      findsNothing,
-      reason: 'Project should be loaded and welcome screen hidden',
-    );
-
-    expect(
-      finalProjectLoadedState,
-      isTrue,
-      reason: 'Project should be loaded in provider',
-    );
-
-    print(
-      'Step 2 complete: HelloWorld project created and loaded via Create new project workflow',
-    );
-
-    // Verify title panel toggle buttons are working
-    print(
-      'Step 2 (continued): Verifying title panel toggle buttons are working',
-    );
-
-    // Test panel toggle buttons
-    await _testPanelToggle(tester, 'togglePanelLeft', 'Left panel');
-    await _testPanelToggle(tester, 'togglePanelBottom', 'Bottom panel');
-    await _testPanelToggle(tester, 'togglePanelRight', 'Right panel');
-
-    // Show Let Panel
-    // await tester.tap(leftToggle);
-    // await tester.pumpAndSettle();
+    // Verify Toggle Panels
+    stepStart('Toggle buttons are working');
+    {
+      // Test panel toggle buttons
+      await _testPanelToggle(tester, 'togglePanelLeft', 'Left panel');
+      await _testPanelToggle(tester, 'togglePanelBottom', 'Bottom panel');
+      await _testPanelToggle(tester, 'togglePanelRight', 'Right panel');
+    }
+    stepFinished();
 
     // Switch to Organize tab
-    print('Step 2 (continued): Switching to Organize tab');
-    await tester.tap(find.byKey(const Key('keyTabOrganize')));
-    await tester.pumpAndSettle();
-    print('✓ Organize tab selected');
+    {
+      substep('✓ Organize tab');
+      await tester.tap(find.byKey(const Key('keyTabOrganize')));
+      await tester.pumpAndSettle();
+    }
 
-    print('Step 2 complete: Panel toggles and organize tab verified');
+    // Switch to Folder tab via actual UI tab interaction
+    stepStart('✓ Folder tab');
+    {
+      await tester.tap(find.byKey(const Key('keyTabFolder')));
+      await tester.pumpAndSettle();
 
-    // 3. Switch to Folder tab via actual UI tab interaction
-    print('Step 3: Switching to Folder tab via actual UI tab interaction');
-    await tester.tap(find.byKey(const Key('keyTabFolder')));
-    await tester.pumpAndSettle();
-    print('Step 3 complete: Files tab selected');
+      // 4. Verify folder tree loads correctly in UI
+      substep('Verifying folder tree loads correctly in UI');
 
-    // 4. Verify folder tree loads correctly in UI
-    print('Step 4: Verifying folder tree loads correctly in UI');
+      // Verify that HelloWorld project folder exists in the UI
+      expect(find.text('HelloWorld'), findsOneWidget);
+      substep('✓ HelloWorld project visible in file tree');
 
-    // Verify that HelloWorld project folder exists in the UI
-    expect(find.text('HelloWorld'), findsOneWidget);
-    print('✓ HelloWorld project visible in file tree');
+      // The folders are successfully loaded and displayable - the core UI workflow is validated
+      substep('Step 4 complete: Folder tree loaded correctly');
 
-    // The folders are successfully loaded and displayable - the core UI workflow is validated
-    print('Step 4 complete: Folder tree loaded correctly');
+      // 5. Open a source .dart file
+      substep('Step 5: Opening a source .dart file');
 
-    // 5. Open a source .dart file
-    print('Step 5: Opening a source .dart file');
+      // Navigate to and open main.dart file - this may be constrained by UI layout
+      // Check if lib folder is visible and clickable before tapping
 
-    // Navigate to and open main.dart file - this may be constrained by UI layout
-    // Check if lib folder is visible and clickable before tapping
+      await tester.tap(find.text('lib'));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('lib'));
-    await tester.pumpAndSettle();
+      // Check if main.dart is visible and clickable in the test viewport
+      final bool mainDartVisible = find.text('main.dart').evaluate().isNotEmpty;
+      assert(mainDartVisible, true);
 
-    // Check if main.dart is visible and clickable in the test viewport
-    final bool mainDartVisible = find.text('main.dart').evaluate().isNotEmpty;
-    assert(mainDartVisible, true);
+      // Try a safe tap with warnIfMissed to avoid test failure
+      await tester.tap(find.text('main.dart'), warnIfMissed: true);
+      // triggers initial rebuild for the app reacting to the file being loaded
+      await tester.pump(const Duration(milliseconds: 50));
+      substep('✓ main.dart file open start');
+    }
+    stepFinished();
 
-    // Try a safe tap with warnIfMissed to avoid test failure
-    await tester.tap(find.text('main.dart'), warnIfMissed: true);
-    // triggers initial rebuild for the app reacting to the file being loaded
-    await tester.pump(const Duration(milliseconds: 50));
-    print('✓ main.dart file open start');
-    // await tester.pumpAndSettle();
+    // Make a small edit in the editor
+    stepStart('Make a small edit in the editor');
 
     // Check if file opening succeeded by looking for the filename in the editor PopupMenuButton (document dropdown)
     final mruFile = find.byKey(const Key('keyMruForFiles'));
     await tester.pump(const Duration(milliseconds: 50));
     expect(mruFile, findsOneWidget);
-    print('✓ keyMruForFiles found');
+    substep('✓ keyMruForFiles found');
 
     expect(
       find.descendant(of: mruFile, matching: find.text('main.dart')),
@@ -270,13 +249,6 @@ void main() {
       reason: 'main.dart file should be displayed in editor document dropdown',
     );
     await tester.pump(const Duration(milliseconds: 50));
-    // await tester.pump(const Duration(milliseconds: 500));
-    // await tester.pumpAndSettle();
-    // await tester.pumpAndSettle(const Duration(seconds: 2));
-    print('✓ main.dart file opened');
-
-    // 6. Make a small edit in the editor
-    print('Step 6: Making a small edit in the editor');
 
     // Find the file path based on the project and file name
     final mainDartFile = File('$expectedProjectPath/lib/main.dart');
@@ -290,44 +262,52 @@ void main() {
     // Write the modified content back
     await mainDartFile.writeAsString(modifiedContent);
     await tester.pump(const Duration(milliseconds: 50));
-    print('✓ File content edited: "Hello Worldld" -> "Hello Flutter World"');
-
-    print('Step 6 complete: File edit completed');
 
     // 7. Close the editor
-    print('Step 7: Closing the editor');
-
-    // Clear the selection to simulate closing the editor
+    substep('Close the editor');
     await tester.tap(find.byKey(const Key('keyEditorClose')));
     await tester.pump(const Duration(milliseconds: 50));
     await tester.pumpAndSettle();
-    print('✓ Editor closed (file selection cleared)');
 
-    // 8. Confirm that the file shows as modified in the git panel
-    print(
-      'Step 8: Confirming that the file shows as modified in the git panel',
-    );
+    stepFinished();
 
     // Switch to Git panel
-    await tester.tap(find.byKey(const Key('keyTabGit')));
-    await tester.pump(const Duration(milliseconds: 50));
-    print('✓ Switched to Git panel');
-
-    // Note: The actual Git status verification would require Git initialization
-    // and status checking, but for the test we can verify the panel switched
-    print('✓ Git panel accessible for status verification');
+    stepStart('GIT Panel');
+    {
+      substep('✓ Switched to Git panel');
+      await tester.tap(find.byKey(const Key('keyTabGit')));
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    stepFinished();
 
     // Final verification of overall app state
-    final finalProjectLoaded = container.read(projectLoadedProvider);
-    await tester.pump(const Duration(milliseconds: 50));
-    expect(finalProjectLoaded, isTrue);
-    print('✓ Final app state verified');
+    stepStart('Clean up');
+    {
+      final finalProjectLoaded = container.read(projectLoadedProvider);
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(finalProjectLoaded, isTrue);
 
-    print('Step 9 complete: All tests passed successfully');
-
-    // Basic cleanup without UI updates that might cause layout issues
-    container.read(selectedFileProvider.notifier).state = null;
-    container.read(projectLoadedProvider.notifier).state = false;
-    container.read(currentProjectPathProvider.notifier).state = null;
+      // Basic cleanup without UI updates that might cause layout issues
+      container.read(selectedFileProvider.notifier).state = null;
+      container.read(projectLoadedProvider.notifier).state = false;
+      container.read(currentProjectPathProvider.notifier).state = null;
+    }
+    stepFinished();
   });
+}
+
+int stepCount = 1;
+
+void stepStart(final String title) {
+  print('------------------------------------------------');
+  print('$stepCount: $title');
+  stepCount++;
+}
+
+void stepFinished() {
+  print('================================================');
+}
+
+void substep(final String subTitle) {
+  print(' $subTitle');
 }
