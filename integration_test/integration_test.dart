@@ -77,6 +77,23 @@ Future<void> _cleanupExistingHelloWorldDirectories() async {
   }
 }
 
+Future<void> _testPanelToggle(
+  WidgetTester tester,
+  String key,
+  String reason,
+) async {
+  final Finder toggle = find.byKey(Key(key));
+  expect(toggle, findsOneWidget, reason: '$reason toggle button should exist');
+
+  // Hide
+  await tester.tap(toggle);
+  await tester.pumpAndSettle();
+  await Future.delayed(const Duration(milliseconds: 500));
+  // Show
+  await tester.tap(toggle);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   SharedPreferences.setMockInitialValues({});
@@ -188,44 +205,10 @@ void main() {
       'Step 2 (continued): Verifying title panel toggle buttons are working',
     );
 
-    // Find and verify toggle buttons exist
-    final Finder leftToggle = find.byKey(const Key('togglePanelLeft'));
-    {
-      expect(
-        leftToggle,
-        findsOneWidget,
-        reason: 'Left panel toggle button should exist',
-      );
-      // Hide
-      // await tester.tap(leftToggle);
-      // await tester.pumpAndSettle();
-    }
-
-    final Finder bottomToggle = find.byKey(const Key('togglePanelBottom'));
-    {
-      expect(
-        bottomToggle,
-        findsOneWidget,
-        reason: 'Bottom panel toggle button should exist',
-      );
-
-      // // Hide
-      // await tester.tap(bottomToggle);
-      // await tester.pumpAndSettle();
-    }
-
-    final Finder rightToggle = find.byKey(const Key('togglePanelRight'));
-    {
-      expect(
-        rightToggle,
-        findsOneWidget,
-        reason: 'Right panel toggle button should exist',
-      );
-
-      // Hide
-      // await tester.tap(rightToggle);
-      // await tester.pumpAndSettle();
-    }
+    // Test panel toggle buttons
+    await _testPanelToggle(tester, 'togglePanelLeft', 'Left panel');
+    await _testPanelToggle(tester, 'togglePanelBottom', 'Bottom panel');
+    await _testPanelToggle(tester, 'togglePanelRight', 'Right panel');
 
     // Show Let Panel
     // await tester.tap(leftToggle);
