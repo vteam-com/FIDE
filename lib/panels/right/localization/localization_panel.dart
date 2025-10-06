@@ -517,6 +517,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       case LocalizationStatus.notStarted:
         return LocalizationSetupWidget(
           onInitializeLocalization: _initializeLocalization,
+          showUpdateMainDart: false, // Not needed for initial setup
           onUpdateMainDart: _updateMainDart,
           isInitializing: _isLoading,
         );

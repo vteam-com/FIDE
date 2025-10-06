@@ -4,215 +4,136 @@ class LocalizationSetupWidget extends StatelessWidget {
   final VoidCallback onInitializeLocalization;
   final VoidCallback onUpdateMainDart;
   final bool isInitializing;
+  final bool showUpdateMainDart;
 
   const LocalizationSetupWidget({
     super.key,
     required this.onInitializeLocalization,
     required this.onUpdateMainDart,
     this.isInitializing = false,
+    this.showUpdateMainDart = true, // Show by default, but can be hidden
   });
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Localization Not Set Up',
+            'Setup Localization',
             style: Theme.of(context).textTheme.headlineSmall,
           ),
+          const SizedBox(height: 8),
+          Text(
+            'Your Flutter project needs localization setup.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 24),
+
+          // One-click setup card
+          _buildActionCard(
+            context,
+            '🚀 Initialize Localization',
+            'Automatically configure everything needed for localization',
+            [
+              '• Add flutter_localizations & intl packages',
+              '• Create l10n directory and ARB files',
+              '• Generate AppLocalizations class',
+            ],
+            ElevatedButton.icon(
+              icon: const Icon(Icons.auto_fix_high),
+              label: const Text('Initialize'),
+              onPressed: onInitializeLocalization,
+            ),
+          ),
+
+          // Show Update main.dart card conditionally
+          if (showUpdateMainDart) ...[
+            const SizedBox(height: 16),
+
+            // Main.dart update card
+            _buildActionCard(
+              context,
+              '🔧 Update main.dart',
+              'Configure your app to use AppLocalizations',
+              [
+                '• Wrap app with MaterialApp.router',
+                '• Add localizations delegates',
+                '• Set supported locales',
+              ],
+              ElevatedButton.icon(
+                icon: const Icon(Icons.code),
+                label: const Text('Update main.dart'),
+                onPressed: onUpdateMainDart,
+              ),
+            ),
+          ],
+
+          // Simple next steps
+          const SizedBox(height: 24),
+          Text(
+            'Next Steps',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'After setup, use AppLocalizations.of(context) to display localized strings in your widgets.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionCard(
+    BuildContext context,
+    String title,
+    String description,
+    List<String> steps,
+    Widget button,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(description, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 16),
-          Text(
-            'Your Flutter project doesn\'t have localization configured yet. Here\'s what you need to know:',
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-          const SizedBox(height: 24),
-
-          // Quick Setup Section
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '🚀 Quick Setup',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Click the button below to automatically set up localization for your project:',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Center(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.auto_fix_high),
-                    label: const Text('Initialize Localization'),
-                    onPressed: onInitializeLocalization,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
+          ...steps.map(
+            (step) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  Text(
+                    step,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-
-          const SizedBox(height: 24),
-
-          // What it does section
-          Text(
-            'What "Initialize Localization" will do:',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          _buildStepItem(
-            context,
-            'Add flutter_localizations and intl packages to pubspec.yaml',
-          ),
-          _buildStepItem(context, 'Configure l10n settings in pubspec.yaml'),
-          _buildStepItem(context, 'Create lib/l10n/ directory'),
-          _buildStepItem(
-            context,
-            'Generate template ARB files (English + French)',
-          ),
-          _buildStepItem(
-            context,
-            'Run flutter gen-l10n to create AppLocalizations class',
-          ),
-
-          const SizedBox(height: 24),
-
-          // Manual steps
-          Text(
-            'After initialization, you\'ll need to manually:',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          _buildManualStep(context, 'Update main.dart to use AppLocalizations'),
-          _buildManualStep(
-            context,
-            'Use AppLocalizations.of(context) in your widgets',
-          ),
-
-          const SizedBox(height: 24),
-
-          // Quick main.dart update
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.secondaryContainer,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '🔧 Quick Main.dart Update',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSecondaryContainer,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Automatically update your main.dart to use AppLocalizations:',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSecondaryContainer,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Center(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.code),
-                    label: const Text('Update main.dart'),
-                    onPressed: onUpdateMainDart,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Resources
-          Text(
-            '📚 Resources',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            '• Flutter Internationalization: https://flutter.dev/docs/development/accessibility-and-localization/internationalization',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          Text(
-            '• ARB File Format: https://github.com/google/app-resource-bundle',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStepItem(BuildContext context, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          Icon(
-            Icons.check_circle,
-            size: 16,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildManualStep(BuildContext context, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          Icon(
-            Icons.edit,
-            size: 16,
-            color: Theme.of(context).colorScheme.secondary,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
-          ),
+          const SizedBox(height: 20),
+          button,
         ],
       ),
     );
