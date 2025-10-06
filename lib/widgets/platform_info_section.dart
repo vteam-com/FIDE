@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 import 'dart:io';
+import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -274,8 +275,9 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
 
   @override
   Widget build(BuildContext context) {
-    return ExpansionTile(
-      title: Row(
+    return SectionPanel(
+      title: widget.selectedPlatform,
+      rightWidget: Row(
         mainAxisSize: MainAxisSize.min,
         spacing: 8,
         children: [
@@ -292,219 +294,153 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                       : Colors.orange
                 : Theme.of(context).colorScheme.error,
           ),
-          Expanded(
-            child: Text(
-              widget.selectedPlatform,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
         ],
       ),
-      initiallyExpanded: false,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Theme.of(
-              context,
-            ).colorScheme.surfaceVariant.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Status Row
-              Row(
-                children: [
-                  Text(
-                    'Status:',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Theme.of(
+            context,
+          ).colorScheme.surfaceVariant.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Status Row
+            Row(
+              children: [
+                Text(
+                  'Status:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Row(
+                  spacing: 8,
+                  children: [
+                    widget.isSupported
+                        ? BadgeStatus.success(text: 'SUPPORTED')
+                        : BadgeStatus.error(text: 'UNSUPPORTED'),
+
+                    widget.canBuild
+                        ? BadgeStatus.success(text: 'BUILDABLE')
+                        : BadgeStatus.warning(text: 'UNBUILDABLE'),
+                  ],
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 6),
+
+            // Build Info
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Build Info:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 70,
+                      child: Text(
+                        'Last Build:',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.8),
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Row(
-                    spacing: 8,
-                    children: [
-                      widget.isSupported
-                          ? BadgeStatus.success(text: 'SUPPORTED')
-                          : BadgeStatus.error(text: 'UNSUPPORTED'),
-
-                      widget.canBuild
-                          ? BadgeStatus.success(text: 'BUILDABLE')
-                          : BadgeStatus.warning(text: 'UNBUILDABLE'),
-                    ],
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 6),
-
-              // Build Info
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Build Info:',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 70,
-                        child: Text(
-                          'Last Build:',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          _getLastBuildTime(),
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                            fontFamily: 'monospace',
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 70,
-                        child: Text(
-                          'Size:',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          _getAppSize(),
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                            fontFamily: 'monospace',
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 70,
-                        child: Text(
-                          'Location:',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          _getBuildLocation().split('/').last,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                            fontFamily: 'monospace',
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-
-              // Enable instructions (if not supported)
-              if (!widget.isSupported) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: Colors.blue.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          BadgeStatus(
-                            text: 'ENABLE',
-                            backgroundColor: Colors.blue.withValues(alpha: 0.1),
-                            textColor: Colors.blue.shade700,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Instructions for ${widget.selectedPlatform}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.blue.shade700,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        _getEnableInstructions(),
+                    Expanded(
+                      child: Text(
+                        _getLastBuildTime(),
                         style: TextStyle(
                           fontSize: 11,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          height: 1.4,
+                          fontFamily: 'monospace',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 70,
+                      child: Text(
+                        'Size:',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.8),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        _getAppSize(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontFamily: 'monospace',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 70,
+                      child: Text(
+                        'Location:',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        _getBuildLocation().split('/').last,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontFamily: 'monospace',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ],
+            ),
 
-              // Icon with Context Menu at Bottom
+            // Enable instructions (if not supported)
+            if (!widget.isSupported) ...[
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(8),
@@ -512,126 +448,176 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.outline.withValues(alpha: 0.3),
+                    color: Colors.blue.withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildIcon(),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _getPlatformIconPath().split('/').last,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            _getPlatformIconPath(),
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant
-                                  .withValues(alpha: 0.7),
-                              fontFamily: 'monospace',
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    PopupMenuButton<String>(
-                      icon: Icon(
-                        Icons.more_vert,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      itemBuilder: (context) => [
-                        PopupMenuItem<String>(
-                          value: 'copy_path',
-                          child: Row(
-                            children: [
-                              Icon(Icons.copy, size: 16),
-                              const SizedBox(width: 8),
-                              const Text('Copy Path'),
-                            ],
-                          ),
+                    Row(
+                      children: [
+                        BadgeStatus(
+                          text: 'ENABLE',
+                          backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                          textColor: Colors.blue.shade700,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
                         ),
-                        if (!_getPlatformIconPath().startsWith('assets/'))
-                          PopupMenuItem<String>(
-                            value: 'open_finder',
-                            child: Row(
-                              children: [
-                                Icon(Icons.folder_open, size: 16),
-                                const SizedBox(width: 8),
-                                Text(
-                                  Platform.isMacOS
-                                      ? 'Open in Finder'
-                                      : Platform.isWindows
-                                      ? 'Open in Explorer'
-                                      : 'Open Folder',
-                                ),
-                              ],
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Instructions for ${widget.selectedPlatform}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue.shade700,
                             ),
-                          ),
-                        PopupMenuItem<String>(
-                          value: 'select_in_fide',
-                          child: Row(
-                            children: [
-                              Icon(Icons.search, size: 16),
-                              const SizedBox(width: 8),
-                              const Text('Select in FIDE-Explorer'),
-                            ],
                           ),
                         ),
                       ],
-                      onSelected: (value) {
-                        switch (value) {
-                          case 'copy_path':
-                            Clipboard.setData(
-                              ClipboardData(text: _getPlatformIconPath()),
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Path copied to clipboard'),
-                              ),
-                            );
-                            break;
-                          case 'open_finder':
-                            _openFolder(_getPlatformIconPath());
-                            break;
-                          case 'select_in_fide':
-                            // Show a message for now since we don't have access to the explorer
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Select in FIDE-Explorer: ${_getPlatformIconPath()}',
-                                ),
-                              ),
-                            );
-                            break;
-                        }
-                      },
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _getEnableInstructions(),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        height: 1.4,
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
-          ),
+
+            // Icon with Context Menu at Bottom
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outline.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  _buildIcon(),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _getPlatformIconPath().split('/').last,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          _getPlatformIconPath(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant
+                                .withValues(alpha: 0.7),
+                            fontFamily: 'monospace',
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    icon: Icon(
+                      Icons.more_vert,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    itemBuilder: (context) => [
+                      PopupMenuItem<String>(
+                        value: 'copy_path',
+                        child: Row(
+                          children: [
+                            Icon(Icons.copy, size: 16),
+                            const SizedBox(width: 8),
+                            const Text('Copy Path'),
+                          ],
+                        ),
+                      ),
+                      if (!_getPlatformIconPath().startsWith('assets/'))
+                        PopupMenuItem<String>(
+                          value: 'open_finder',
+                          child: Row(
+                            children: [
+                              Icon(Icons.folder_open, size: 16),
+                              const SizedBox(width: 8),
+                              Text(
+                                Platform.isMacOS
+                                    ? 'Open in Finder'
+                                    : Platform.isWindows
+                                    ? 'Open in Explorer'
+                                    : 'Open Folder',
+                              ),
+                            ],
+                          ),
+                        ),
+                      PopupMenuItem<String>(
+                        value: 'select_in_fide',
+                        child: Row(
+                          children: [
+                            Icon(Icons.search, size: 16),
+                            const SizedBox(width: 8),
+                            const Text('Select in FIDE-Explorer'),
+                          ],
+                        ),
+                      ),
+                    ],
+                    onSelected: (value) {
+                      switch (value) {
+                        case 'copy_path':
+                          Clipboard.setData(
+                            ClipboardData(text: _getPlatformIconPath()),
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Path copied to clipboard'),
+                            ),
+                          );
+                          break;
+                        case 'open_finder':
+                          _openFolder(_getPlatformIconPath());
+                          break;
+                        case 'select_in_fide':
+                          // Show a message for now since we don't have access to the explorer
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Select in FIDE-Explorer: ${_getPlatformIconPath()}',
+                              ),
+                            ),
+                          );
+                          break;
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

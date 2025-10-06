@@ -9,6 +9,7 @@ import '../../models/file_system_item.dart';
 import '../../widgets/filename_widget.dart';
 import '../../utils/message_box.dart';
 import '../../widgets/badge_status.dart';
+import '../../widgets/section_panel.dart';
 
 class GitPanel extends ConsumerStatefulWidget {
   final String projectPath;
@@ -361,44 +362,39 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
                   // Recent commits
                   const Divider(),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Recent Commits',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        gitCommits.when(
-                          loading: () => const CircularProgressIndicator(),
-                          error: (error, stack) => Text('Error: $error'),
-                          data: (commits) => commits.isEmpty
-                              ? const Text('No commits yet')
-                              : Column(
-                                  children: commits
-                                      .map(
-                                        (commit) => ListTile(
-                                          dense: true,
-                                          leading: const Icon(
-                                            Icons.commit,
-                                            size: 16,
-                                          ),
-                                          title: Text(
-                                            commit.message,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          subtitle: Text(
-                                            commit.hash.substring(0, 7),
-                                          ),
-                                        ),
-                                      )
-                                      .toList(),
-                                ),
-                        ),
-                      ],
+                  SectionPanel(
+                    title: 'Recent Commits',
+                    isExpanded:
+                        true, // Recent commits should be expanded by default
+                    headerPadding: const EdgeInsets.all(8.0),
+                    contentPadding: const EdgeInsets.only(bottom: 8.0),
+
+                    child: gitCommits.when(
+                      loading: () => const CircularProgressIndicator(),
+                      error: (error, stack) => Text('Error: $error'),
+                      data: (commits) => commits.isEmpty
+                          ? const Text('No commits yet')
+                          : Column(
+                              children: commits
+                                  .map(
+                                    (commit) => ListTile(
+                                      dense: true,
+                                      leading: const Icon(
+                                        Icons.commit,
+                                        size: 16,
+                                      ),
+                                      title: Text(
+                                        commit.message,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      subtitle: Text(
+                                        commit.hash.substring(0, 7),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
                     ),
                   ),
                 ],
@@ -419,92 +415,103 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     bool canDiscard = false,
     Function(List<String>)? onDiscard,
   }) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              titleWidget,
-              const Spacer(),
-              if (onStage != null)
-                TextButton(
-                  onPressed: () => onStage(files),
-                  child: const Text('Stage All'),
-                ),
-              if (onUnstage != null)
-                TextButton(
-                  onPressed: () => onUnstage(files),
-                  child: const Text('Unstage All'),
-                ),
-              if (canDiscard && onDiscard != null)
-                TextButton(
-                  onPressed: () => onDiscard(files),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.error,
-                  ),
-                  child: const Text('Discard All'),
-                ),
-            ],
+    // Extract title text from BadgeStatus widget
+    final String titleText = titleWidget is BadgeStatus
+        ? titleWidget.text
+        : 'FILES';
+
+    // Build right widget with action buttons
+    final rightWidget = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (onStage != null)
+          TextButton(
+            onPressed: () => onStage(files),
+            child: const Text('Stage All'),
           ),
-          ...files.map((file) {
-            final filePath = path.join(widget.projectPath, file);
-            final item = FileSystemItem.fromFileSystemEntity(File(filePath));
+        if (onUnstage != null)
+          TextButton(
+            onPressed: () => onUnstage(files),
+            child: const Text('Unstage All'),
+          ),
+        if (canDiscard && onDiscard != null)
+          TextButton(
+            onPressed: () => onDiscard(files),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Discard All'),
+          ),
+      ],
+    );
 
-            // Create display name with parent folder context if not a root file
-            final displayItem = FileSystemItem(
-              path: item.path,
-              name: _getContextualFileName(file),
-              type: item.type,
-              gitStatus: _determineGitStatus(titleWidget, files),
-            );
+    // Build content widget with file list
+    final contentWidget = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: files.map((file) {
+        final filePath = path.join(widget.projectPath, file);
+        final item = FileSystemItem.fromFileSystemEntity(File(filePath));
 
-            final isSelected = widget.selectedFile?.path == item.path;
+        // Create display name with parent folder context if not a root file
+        final displayItem = FileSystemItem(
+          path: item.path,
+          name: _getContextualFileName(file),
+          type: item.type,
+          gitStatus: _determineGitStatus(titleWidget, files),
+        );
 
-            return Row(
-              children: [
-                Expanded(
-                  child: FileNameWidget(
-                    fileItem: displayItem,
-                    isSelected: isSelected,
-                    showGitBadge: false,
-                    rootPath: widget.projectPath,
-                    onTap: () => widget.onFileSelected?.call(item),
-                  ),
-                ),
-                IconButton(
-                  iconSize: 16,
-                  icon: const Icon(Icons.difference),
-                  onPressed: () => _viewDiff(file),
-                  tooltip: 'View Diff',
-                ),
-                if (onStage != null)
-                  IconButton(
-                    iconSize: 16,
-                    icon: const Icon(Icons.add),
-                    onPressed: () => onStage([file]),
-                    tooltip: 'Stage',
-                  ),
-                if (onUnstage != null)
-                  IconButton(
-                    iconSize: 16,
-                    icon: const Icon(Icons.remove),
-                    onPressed: () => onUnstage([file]),
-                    tooltip: 'Unstage',
-                  ),
-                if (canDiscard && onDiscard != null)
-                  IconButton(
-                    iconSize: 16,
-                    icon: const Icon(Icons.undo, color: Colors.red),
-                    onPressed: () => onDiscard([file]),
-                    tooltip: 'Discard Changes',
-                  ),
-              ],
-            );
-          }),
-        ],
-      ),
+        final isSelected = widget.selectedFile?.path == item.path;
+
+        return Row(
+          children: [
+            Expanded(
+              child: FileNameWidget(
+                fileItem: displayItem,
+                isSelected: isSelected,
+                showGitBadge: false,
+                rootPath: widget.projectPath,
+                onTap: () => widget.onFileSelected?.call(item),
+              ),
+            ),
+            IconButton(
+              iconSize: 16,
+              icon: const Icon(Icons.difference),
+              onPressed: () => _viewDiff(file),
+              tooltip: 'View Diff',
+            ),
+            if (onStage != null)
+              IconButton(
+                iconSize: 16,
+                icon: const Icon(Icons.add),
+                onPressed: () => onStage([file]),
+                tooltip: 'Stage',
+              ),
+            if (onUnstage != null)
+              IconButton(
+                iconSize: 16,
+                icon: const Icon(Icons.remove),
+                onPressed: () => onUnstage([file]),
+                tooltip: 'Unstage',
+              ),
+            if (canDiscard && onDiscard != null)
+              IconButton(
+                iconSize: 16,
+                icon: const Icon(Icons.undo, color: Colors.red),
+                onPressed: () => onDiscard([file]),
+                tooltip: 'Discard Changes',
+              ),
+          ],
+        );
+      }).toList(),
+    );
+
+    return SectionPanel(
+      title: titleText,
+      isExpanded: true, // Git file sections should be expanded by default
+      rightWidget: rightWidget,
+      headerPadding: const EdgeInsets.all(8.0),
+      contentPadding: const EdgeInsets.only(bottom: 8.0),
+      child: contentWidget,
     );
   }
 

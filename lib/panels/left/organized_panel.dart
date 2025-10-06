@@ -15,7 +15,7 @@ import 'shared_panel_utils.dart';
 import '../../providers/app_providers.dart';
 import '../../widgets/filename_widget.dart';
 import '../../widgets/foldername_widget.dart';
-import '../../widgets/container_counter.dart';
+import '../../widgets/section_panel.dart';
 
 /// OrganizedPanel provides a categorized view of the project
 class OrganizedPanel extends ConsumerStatefulWidget {
@@ -524,6 +524,26 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     _currentCategory = category;
     final isExpanded = expandedState['category_$category'] ?? false;
 
+    // Build the right widget with file count and element counter
+    final rightWidget = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.description,
+          size: 14,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: 2),
+        Text(
+          '$fileCount',
+          style: TextStyle(
+            fontSize: 11,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+
     // Cache sorted nodes to avoid re-sorting on every build
     final cacheKey =
         '${category}_${nodes.map((n) => n.path).join('|').hashCode}';
@@ -543,68 +563,25 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
       _cachedSortedNodes[cacheKey] = sortedNodes;
     }
 
-    return Column(
+    // Build the content widget
+    final contentWidget = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Category header
-        InkWell(
-          onTap: () {
-            if (mounted) {
-              setState(() {
-                expandedState['category_$category'] = !isExpanded;
-              });
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: Row(
-              children: [
-                Icon(
-                  isExpanded ? Icons.expand_more : Icons.chevron_right,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  category.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                    letterSpacing: -1.0,
-                  ),
-                ),
-                const Spacer(),
-                Icon(
-                  Icons.description,
-                  size: 14,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 2),
-                Text(
-                  '$fileCount',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ContainerCounter(count: elementCount),
-              ],
-            ),
-          ),
-        ),
-        // Category content
-        if (isExpanded)
-          Padding(
-            padding: const EdgeInsets.only(left: 16.0, bottom: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: sortedNodes.map((node) => _buildNode(node)).toList(),
-            ),
-          ),
-      ],
+      children: sortedNodes.map((node) => _buildNode(node)).toList(),
+    );
+
+    return SectionPanel(
+      title: category,
+      isExpanded: isExpanded,
+      rightWidget: rightWidget,
+      count: elementCount,
+      child: contentWidget,
+      onExpansionToggle: () {
+        if (mounted) {
+          setState(() {
+            expandedState['category_$category'] = !isExpanded;
+          });
+        }
+      },
     );
   }
 

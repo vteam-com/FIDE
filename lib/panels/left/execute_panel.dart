@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'dart:io';
+import 'package:fide/widgets/output_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -501,126 +502,17 @@ Updates macOS CocoaPods dependencies.
   }
 
   Widget _buildOutputSection() {
-    final colorScheme = Theme.of(context).colorScheme;
-
     if (_hasOutput || _hasErrors) {
-      return Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: colorScheme.outline.withValues(alpha: 0.2),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Output header with clear button
-            Row(
-              children: [
-                Icon(
-                  _hasErrors ? Icons.error_outline : Icons.output,
-                  size: 18,
-                  color: _hasErrors ? colorScheme.error : colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Output',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: _clearOutput,
-                  icon: const Icon(Icons.backspace_outlined, size: 16),
-                  tooltip: 'Clear output',
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.all(4),
-                    minimumSize: Size.zero,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Output content
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Error output
-                if (_hasErrors && _displayErrors.isNotEmpty) ...[
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    margin: const EdgeInsets.only(bottom: 8),
-                    decoration: BoxDecoration(
-                      color: colorScheme.errorContainer.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: colorScheme.error.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: SelectableText(
-                      '═══════ Errors ═══════\n$_displayErrors═══════ Error End ═══════',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: colorScheme.onErrorContainer,
-                        fontFamily: 'monospace',
-                        fontWeight: FontWeight.w500,
-                      ),
-                      showCursor: true,
-                      cursorColor: colorScheme.error,
-                      selectionControls: materialTextSelectionControls,
-                    ),
-                  ),
-                ],
-
-                // Regular output
-                if (_hasOutput && _displayOutput.isNotEmpty) ...[
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: colorScheme.outline.withValues(alpha: 0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: SelectableText(
-                      '═══════ Output ═══════\n$_displayOutput═══════ Output End ═══════',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: colorScheme.onSurface,
-                        fontFamily: 'monospace',
-                      ),
-                      showCursor: true,
-                      cursorColor: colorScheme.onSurface,
-                      selectionControls: materialTextSelectionControls,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
+      return OutputPanel(
+        title: 'Output',
+        isExpanded: true,
+        text:
+            '═══════ Errors ═══════\n$_displayErrors═══════ Error End ═══════\n'
+            '═══════ Output ═══════\n$_displayOutput═══════ Output End ═══════',
+        onClear: _clearOutput,
       );
     }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: const Center(
-        child: Text(
-          'No output yet',
-          style: TextStyle(color: Colors.grey, fontSize: 11),
-        ),
-      ),
-    );
+    return SizedBox.shrink();
   }
 
   @override

@@ -20,6 +20,8 @@ import '../../utils/message_box.dart';
 // Widgets
 import '../../widgets/status_indicator.dart';
 import '../../widgets/badge_status.dart';
+import '../../widgets/output_panel.dart';
+import '../../widgets/section_panel.dart';
 
 class InfoPanel extends ConsumerStatefulWidget {
   const InfoPanel({super.key});
@@ -32,9 +34,11 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   bool _isRefreshing = false;
   bool _checkingOutdated = false;
   bool _upgrading = false;
-  bool _dependenciesExpanded = false;
   Process? _currentProcess;
   final StringBuffer _outputBuffer = StringBuffer();
+  String? _dependencyConflictError;
+  String? _outdatedCommandOutput;
+  Map<String, String> _problematicPackages = {};
 
   @override
   void initState() {
@@ -585,6 +589,12 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         final output = result.stdout as String;
         final parsed = _parseOutdated(output);
 
+        // Store the full command output
+        setState(() {
+          _outdatedCommandOutput = output;
+          _dependencyConflictError = null;
+        });
+
         final currentMetrics = ref.read(projectMetricsProvider);
         final updatedMetrics = Map<String, dynamic>.from(currentMetrics)
           ..['outdated'] = parsed;
@@ -651,11 +661,114 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
+  void _parseDependencyConflictError(String error) {
+    final lines = error.split('\n');
+    String? cleanErrorMessage;
+
+    // Look for the first line after "version solving failed."
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i].trim();
+      if (line.contains('version solving failed.')) {
+        // Get the next non-empty line
+        for (int j = i + 1; j < lines.length; j++) {
+          final nextLine = lines[j].trim();
+          if (nextLine.isNotEmpty && !nextLine.startsWith('* Consider')) {
+            cleanErrorMessage = nextLine;
+            break;
+          }
+        }
+        break;
+      }
+    }
+
+    setState(() {
+      _dependencyConflictError =
+          cleanErrorMessage ?? 'Dependency conflict detected';
+    });
+
+    // Look for the specific package causing the conflict
+    final regExp = RegExp(r'fide depends on both (\w+) ([^ ]+)');
+    final match = regExp.firstMatch(error);
+    if (match != null) {
+      final packageName = match.group(1);
+      if (packageName != null) {
+        setState(() {
+          _problematicPackages[packageName] = 'Incompatible version constraint';
+        });
+      }
+    }
+  }
+
+  Widget _buildDependencyChip(
+    String packageName,
+    String version,
+    Map<String, dynamic> projectMetrics,
+  ) {
+    final outdated = projectMetrics['outdated'] as Map<String, dynamic>?;
+    final isOutdated = outdated?.containsKey(packageName) ?? false;
+    final isProblematic = _problematicPackages.containsKey(packageName);
+    final outdatedInfo = isOutdated ? outdated![packageName] : null;
+    final resolvableVersion = outdatedInfo?['resolvable'] as String?;
+    final hasIncompatibleVersion =
+        isOutdated && resolvableVersion != null && resolvableVersion == 'none';
+
+    final label = isOutdated
+        ? '$packageName $version → ${outdatedInfo!['latest']}'
+        : '$packageName $version';
+
+    final isClickable =
+        version != 'Flutter SDK' && version != 'Complex dependency';
+
+    void onChipPressed() {
+      if (isClickable) {
+        if (hasIncompatibleVersion) {
+          // Focus on the dependency conflict panel when clicked on incompatible version
+          // This will scroll to and expand the panel automatically
+        } else {
+          _openPubDev(packageName);
+        }
+      }
+    }
+
+    return InputChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: isProblematic || hasIncompatibleVersion
+                  ? Colors.red
+                  : (isOutdated ? Colors.orange.shade700 : null),
+            ),
+          ),
+          if (isProblematic || hasIncompatibleVersion) ...[
+            const SizedBox(width: 4),
+            Icon(Icons.warning, size: 12, color: Colors.red),
+          ],
+        ],
+      ),
+      onPressed: onChipPressed,
+      backgroundColor: isProblematic || hasIncompatibleVersion
+          ? Colors.red.shade50
+          : null,
+      labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+      visualDensity: VisualDensity.compact,
+    );
+  }
+
   Future<void> _upgradePackages() async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
 
-    setState(() => _upgrading = true);
+    // Clear previous error state
+    setState(() {
+      _upgrading = true;
+      _dependencyConflictError = null;
+      _problematicPackages = {};
+    });
+
     try {
       // 1. Run flutter pub outdated --json
       final result = await Process.run('flutter', [
@@ -804,7 +917,16 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       }
     } catch (e) {
       if (mounted) {
-        MessageBox.showError(context, 'Error upgrading packages: $e');
+        final errorStr = e.toString();
+        if (errorStr.contains('version solving failed')) {
+          _parseDependencyConflictError(errorStr);
+          MessageBox.showError(
+            context,
+            'Package upgrade failed due to dependency conflicts',
+          );
+        } else {
+          MessageBox.showError(context, 'Error upgrading packages: $e');
+        }
       }
     } finally {
       if (mounted) setState(() => _upgrading = false);
@@ -829,56 +951,36 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 8,
           children: [
-            // Header with refresh button
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
+            // Header with project info
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Flexible(
-                    fit: FlexFit.loose,
-                    child: Row(
-                      children: [
-                        Text(
-                          projectMetrics['name'] as String? ??
-                              'Unknown Project',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        projectMetrics['name'] as String? ?? 'Unknown Project',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
-                        Flexible(
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: Text(
-                              'v${projectMetrics['version'] as String? ?? '< no version >'}',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                      ],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
+                    IconButton(
+                      onPressed: _openPubspecYaml,
+                      icon: const Icon(Icons.edit_note, size: 16),
+                    ),
+                  ],
                 ),
-                IconButton(
-                  onPressed: _openPubspecYaml,
-                  icon: const Icon(Icons.edit_note, size: 16),
-                ),
-                if (projectMetrics['qualityScore'] != null)
-                  GestureDetector(
-                    onTap: () => _showScoreDetails(context, projectMetrics),
-                    child: _buildScoreBadge(
-                      projectMetrics['qualityScore'] as int,
+                if (projectMetrics['version'] != null)
+                  Text(
+                    'v${projectMetrics['version']}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
               ],
@@ -893,152 +995,18 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               overflow: TextOverflow.visible,
             ),
 
+            // Health Indicators
+            _buildHealthCard(projectMetrics),
+
             // Dependencies
-            if (projectMetrics['dependencies'] != null ||
-                projectMetrics['devDependencies'] != null) ...[
-              _buildDependenciesCard(projectMetrics),
-              const SizedBox(height: 16),
-            ],
+            _buildDependenciesCard(projectMetrics),
 
             // Actions
             _buildActionsCard(projectMetrics),
-
-            // File Statistics
-            if (projectMetrics['fileStats'] != null) ...[
-              _buildFileStatsCard(projectMetrics),
-              const SizedBox(height: 16),
-            ],
-
-            // Directory Structure
-            if (projectMetrics['directoryStructure'] != null) ...[
-              _buildDirectoryStructureCard(projectMetrics),
-              const SizedBox(height: 16),
-            ],
-
-            // Health Indicators
-            if (projectMetrics['healthIndicators'] != null) ...[
-              _buildHealthCard(projectMetrics),
-              const SizedBox(height: 16),
-            ],
           ],
         ),
       ),
     );
-  }
-
-  Widget _buildFileStatsCard(Map<String, dynamic> projectMetrics) {
-    final fileStats = (projectMetrics['fileStats'] as Map).cast<String, int>();
-    final totalFiles = projectMetrics['totalFiles'] as int;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Files & Directories',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Total files: $totalFiles',
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: fileStats.entries
-                  .take(8) // Show top 8
-                  .map(
-                    (entry) => Chip(
-                      label: Text(
-                        '.${entry.key} (${entry.value})',
-                        style: const TextStyle(fontSize: 10),
-                      ),
-                      labelPadding: const EdgeInsets.symmetric(horizontal: 6),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDirectoryStructureCard(Map<String, dynamic> projectMetrics) {
-    final structure = (projectMetrics['directoryStructure'] as Map)
-        .cast<String, int>();
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Platform Support',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: structure.entries
-                  .map(
-                    (entry) => Chip(
-                      label: Text(
-                        '${entry.key} (${entry.value})',
-                        style: const TextStyle(fontSize: 10),
-                      ),
-                      avatar: Icon(_getPlatformIcon(entry.key), size: 12),
-                      labelPadding: const EdgeInsets.symmetric(horizontal: 6),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  IconData _getPlatformIcon(String platform) {
-    switch (platform) {
-      case 'android':
-        return Icons.phone_android;
-      case 'ios':
-        return Icons.phone_iphone;
-      case 'web':
-        return Icons.web;
-      case 'windows':
-        return Icons.desktop_windows;
-      case 'linux':
-        return Icons.desktop_mac;
-      case 'macos':
-        return Icons.desktop_mac;
-      case 'lib':
-        return Icons.code;
-      case 'test':
-        return Icons.bug_report;
-      default:
-        return Icons.folder;
-    }
   }
 
   Widget _buildHealthCard(Map<String, dynamic> projectMetrics) {
@@ -1082,21 +1050,18 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       });
     }
 
-    return Card(
+    return SectionPanel(
+      title: 'Score',
+      rightWidget: GestureDetector(
+        onTap: () => _showScoreDetails(context, projectMetrics),
+        child: _buildScoreBadge(projectMetrics['qualityScore'] as int),
+      ),
+
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Project Health',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
             if (issues.isEmpty)
               Text(
                 '✅ No issues detected',
@@ -1141,195 +1106,127 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   }
 
   Widget _buildDependenciesCard(Map<String, dynamic> projectMetrics) {
-    final deps =
+    final depsDirect =
         (projectMetrics['dependencies'] as Map<String, dynamic>?) ?? {};
-    final devDeps =
+    final depsDev =
         (projectMetrics['devDependencies'] as Map<String, dynamic>?) ?? {};
-    final totalDeps = deps.length + devDeps.length;
+    final totalDeps = depsDirect.length + depsDev.length;
 
-    bool isExpanded = false;
+    // Build dependency content widget
+    final dependenciesContent = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          children: [
+            ElevatedButton.icon(
+              onPressed: _checkingOutdated ? null : _checkOutdated,
+              icon: _checkingOutdated
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.update, size: 16),
+              label: const Text('Outdated'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: _upgrading ? null : _upgradePackages,
+              icon: _upgrading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.arrow_upward, size: 16),
+              label: const Text('Upgrade'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+            ),
+          ],
+        ),
 
-    return StatefulBuilder(
-      builder: (context, setState) => ExpansionTile(
-        key: const PageStorageKey('dependencies_expansion'),
-        initiallyExpanded: false,
-        title: Text(
-          'Dependencies ($totalDeps)',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        tilePadding: EdgeInsets.all(0),
-        trailing: AnimatedRotation(
-          turns: isExpanded ? 0.25 : 0.0,
-          duration: const Duration(milliseconds: 200),
-          child: Icon(
-            Icons.chevron_right,
-            size: 20,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        onExpansionChanged: (expanded) {
-          setState(() => isExpanded = expanded);
-          if (expanded && !_dependenciesExpanded) {
-            _dependenciesExpanded = true;
-            // Check outdated when expanding for expanding for the first time
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _checkOutdated();
-            });
-          }
-        },
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        if (depsDirect.isNotEmpty)
+          SectionPanel(
+            title: 'Direct',
+            count: depsDirect.length,
+            child: Wrap(
               spacing: 8,
-              children: [
-                Wrap(
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: _checkingOutdated ? null : _checkOutdated,
-                      icon: _checkingOutdated
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.update, size: 16),
-                      label: const Text('Check Outdated'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: _upgrading ? null : _upgradePackages,
-                      icon: _upgrading
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.arrow_upward, size: 16),
-                      label: const Text('Upgrade'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                      ),
-                    ),
-                  ],
-                ),
+              runSpacing: 4,
+              children: depsDirect.entries.map((entry) {
+                return _buildDependencyChip(
+                  entry.key,
+                  entry.value,
+                  projectMetrics,
+                );
+              }).toList(),
+            ),
+          ),
 
-                if (deps.isNotEmpty) ...[
-                  Text(
-                    'Direct (${deps.length})',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: deps.entries.map((entry) {
-                      final outdated =
-                          projectMetrics['outdated'] as Map<String, dynamic>?;
-                      final isOutdated =
-                          outdated?.containsKey(entry.key) ?? false;
-                      final label = isOutdated
-                          ? '${entry.key} ${entry.value} → ${outdated![entry.key]['latest']}'
-                          : '${entry.key} ${entry.value}';
-                      final isClickable =
-                          entry.value != 'Flutter SDK' &&
-                          entry.value != 'Complex dependency';
-                      return InkWell(
-                        onTap: isClickable
-                            ? () => _openPubDev(entry.key)
-                            : null,
-                        borderRadius: BorderRadius.circular(16),
-                        child: Chip(
-                          label: Text(
-                            label,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: isOutdated ? Colors.orange.shade700 : null,
-                            ),
-                          ),
-                          labelPadding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                          ),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                if (devDeps.isNotEmpty) ...[
-                  Text(
-                    'Developer (${devDeps.length})',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: devDeps.entries.map((entry) {
-                      final outdated =
-                          projectMetrics['outdated'] as Map<String, dynamic>?;
-                      final isOutdated =
-                          outdated?.containsKey(entry.key) ?? false;
-                      final label = isOutdated
-                          ? '${entry.key} ${entry.value} → ${outdated![entry.key]['latest']}'
-                          : '${entry.key} ${entry.value}';
-                      final isClickable =
-                          entry.value != 'Flutter SDK' &&
-                          entry.value != 'Complex dependency';
-                      return InkWell(
-                        onTap: isClickable
-                            ? () => _openPubDev(entry.key)
-                            : null,
-                        borderRadius: BorderRadius.circular(16),
-                        child: Chip(
-                          label: Text(
-                            label,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: isOutdated ? Colors.orange.shade700 : null,
-                            ),
-                          ),
-                          labelPadding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                          ),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-                if (deps.isEmpty && devDeps.isEmpty) ...[
-                  Text(
-                    'No dependencies',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ],
+        if (depsDev.isNotEmpty)
+          SectionPanel(
+            title: 'Developer',
+            count: depsDev.length,
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: depsDev.entries.map((entry) {
+                return _buildDependencyChip(
+                  entry.key,
+                  entry.value,
+                  projectMetrics,
+                );
+              }).toList(),
+            ),
+          ),
+
+        if (depsDirect.isEmpty && depsDev.isEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            'No dependencies',
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ],
-      ),
+      ],
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Use SectionPanel for main dependencies section
+        SectionPanel(
+          title: 'Dependencies ($totalDeps)',
+          isExpanded:
+              true, // Dependencies section should be expanded by default
+          child: dependenciesContent,
+        ),
+
+        // Outdated command output (always visible when present)
+        if (_outdatedCommandOutput != null) ...[
+          const SizedBox(height: 12),
+          OutputPanel(
+            title: '📄 Package Analysis Output',
+            text: _outdatedCommandOutput!,
+            isExpanded: true,
+          ),
+        ],
+
+        // Dependency conflict output (always visible when present)
+        if (_dependencyConflictError != null) ...[
+          const SizedBox(height: 12),
+          OutputPanel(
+            title: '⚠️ Dependency Conflicts',
+            text: _dependencyConflictError!,
+            isExpanded: true,
+          ),
+        ],
+      ],
     );
   }
 

@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'dart:io';
+import 'package:fide/widgets/output_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -365,98 +366,18 @@ Validates test organization and naming conventions.
         ),
 
         // Output section
-        if (_hasOutput || _hasErrors)
-          Container(
-            height: 200,
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      _hasErrors ? Icons.error_outline : Icons.output,
-                      size: 16,
-                      color: _hasErrors
-                          ? colorScheme.error
-                          : colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Output',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.clear, size: 16),
-                      onPressed: _clearOutput,
-                      tooltip: 'Clear output',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_hasErrors && _errorBuffer.isNotEmpty) ...[
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            margin: const EdgeInsets.only(bottom: 8),
-                            decoration: BoxDecoration(
-                              color: colorScheme.errorContainer.withValues(
-                                alpha: 0.2,
-                              ),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: colorScheme.error.withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: SelectableText(
-                              '═══════ Errors ═══════\n${_errorBuffer.toString()}═══════ Error End ═══════',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: colorScheme.onErrorContainer,
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                          ),
-                        ],
-                        if (_hasOutput && _outputBuffer.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: colorScheme.surface,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: colorScheme.outline.withValues(
-                                  alpha: 0.3,
-                                ),
-                              ),
-                            ),
-                            child: SelectableText(
-                              '═══════ Output ═══════\n${_outputBuffer.toString()}═══════ Output End ═══════',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: colorScheme.onSurface,
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+        if (_hasErrors)
+          OutputPanel(
+            title: 'Errors',
+            text: _errorBuffer.toString(),
+            onClear: _clearOutput,
+          ),
+
+        if (_hasOutput)
+          OutputPanel(
+            title: 'Output',
+            text: _outputBuffer.toString(),
+            onClear: _clearOutput,
           ),
       ],
     );
