@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
@@ -639,6 +640,17 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     return outdated;
   }
 
+  Future<void> _openPubDev(String packageName) async {
+    final uri = Uri.parse('https://pub.dev/packages/$packageName');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      if (mounted) {
+        MessageBox.showError(context, 'Could not open pub.dev page');
+      }
+    }
+  }
+
   Future<void> _upgradePackages() async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
@@ -1232,16 +1244,27 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                       final label = isOutdated
                           ? '${entry.key} ${entry.value} → ${outdated![entry.key]['latest']}'
                           : '${entry.key} ${entry.value}';
-                      return Chip(
-                        label: Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: isOutdated ? Colors.orange.shade700 : null,
+                      final isClickable =
+                          entry.value != 'Flutter SDK' &&
+                          entry.value != 'Complex dependency';
+                      return InkWell(
+                        onTap: isClickable
+                            ? () => _openPubDev(entry.key)
+                            : null,
+                        borderRadius: BorderRadius.circular(16),
+                        child: Chip(
+                          label: Text(
+                            label,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: isOutdated ? Colors.orange.shade700 : null,
+                            ),
                           ),
+                          labelPadding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                          ),
+                          visualDensity: VisualDensity.compact,
                         ),
-                        labelPadding: const EdgeInsets.symmetric(horizontal: 6),
-                        visualDensity: VisualDensity.compact,
                       );
                     }).toList(),
                   ),
@@ -1268,16 +1291,27 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                       final label = isOutdated
                           ? '${entry.key} ${entry.value} → ${outdated![entry.key]['latest']}'
                           : '${entry.key} ${entry.value}';
-                      return Chip(
-                        label: Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: isOutdated ? Colors.orange.shade700 : null,
+                      final isClickable =
+                          entry.value != 'Flutter SDK' &&
+                          entry.value != 'Complex dependency';
+                      return InkWell(
+                        onTap: isClickable
+                            ? () => _openPubDev(entry.key)
+                            : null,
+                        borderRadius: BorderRadius.circular(16),
+                        child: Chip(
+                          label: Text(
+                            label,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: isOutdated ? Colors.orange.shade700 : null,
+                            ),
                           ),
+                          labelPadding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                          ),
+                          visualDensity: VisualDensity.compact,
                         ),
-                        labelPadding: const EdgeInsets.symmetric(horizontal: 6),
-                        visualDensity: VisualDensity.compact,
                       );
                     }).toList(),
                   ),
