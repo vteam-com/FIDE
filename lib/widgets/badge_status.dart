@@ -27,6 +27,9 @@ class BadgeStatus extends StatelessWidget {
   /// The border radius of the badge.
   final double borderRadius;
 
+  /// Whether to show an appropriate icon for the badge type.
+  final bool showIcon;
+
   const BadgeStatus({
     super.key,
     required this.text,
@@ -36,6 +39,7 @@ class BadgeStatus extends StatelessWidget {
     this.fontWeight = FontWeight.w500,
     this.padding = const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
     this.borderRadius = 4,
+    this.showIcon = false,
   });
 
   /// Creates a solid border color from the background color by removing opacity
@@ -48,6 +52,19 @@ class BadgeStatus extends StatelessWidget {
     );
   }
 
+  /// Gets the appropriate icon for the badge type based on background color.
+  IconData? get _icon {
+    if (!showIcon) return null;
+
+    if (backgroundColor == AppTheme.successColor) return Icons.check_circle;
+    if (backgroundColor == AppTheme.warningColor) return Icons.warning;
+    if (backgroundColor == AppTheme.errorColor) return Icons.error;
+    if (backgroundColor == AppTheme.infoColor) return Icons.info;
+    if (backgroundColor == AppTheme.neutralColor) return Icons.help;
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -57,65 +74,99 @@ class BadgeStatus extends StatelessWidget {
         borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
         border: Border.all(color: _borderColor, width: 1.5),
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-          decoration: TextDecoration.none,
-          color: textColor,
-          fontSize: fontSize,
-          fontWeight: fontWeight,
-        ),
-        textAlign: TextAlign.center,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_icon != null) ...[
+            Icon(_icon, size: fontSize * 0.9, color: textColor),
+            const SizedBox(width: 3),
+          ],
+          Text(
+            text,
+            style: TextStyle(
+              decoration: TextDecoration.none,
+              color: textColor,
+              fontSize: fontSize,
+              fontWeight: fontWeight,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
 
   /// Creates a pre-configured success badge.
-  factory BadgeStatus.success({required String text, double fontSize = 10}) {
+  factory BadgeStatus.success({
+    required String text,
+    double fontSize = 10,
+    bool showIcon = false,
+  }) {
     return BadgeStatus(
       text: text,
       backgroundColor: AppTheme.successColor,
       textColor: AppTheme.successText.withAlpha(160),
       fontSize: fontSize,
+      showIcon: showIcon,
     );
   }
 
   /// Creates a pre-configured warning badge.
-  factory BadgeStatus.warning({required String text, double fontSize = 10}) {
+  factory BadgeStatus.warning({
+    required String text,
+    double fontSize = 10,
+    bool showIcon = false,
+  }) {
     return BadgeStatus(
       text: text,
       backgroundColor: AppTheme.warningColor,
       textColor: AppTheme.warningText.withAlpha(160),
       fontSize: fontSize,
+      showIcon: showIcon,
     );
   }
 
   /// Creates a pre-configured error badge.
-  factory BadgeStatus.error({required String text, double fontSize = 10}) {
+  factory BadgeStatus.error({
+    required String text,
+    double fontSize = 10,
+    bool showIcon = false,
+  }) {
     return BadgeStatus(
       text: text,
       backgroundColor: AppTheme.errorColor,
       textColor: AppTheme.errorText.withAlpha(160),
       fontSize: fontSize,
+      showIcon: showIcon,
     );
   }
 
   /// Creates a pre-configured info badge.
-  factory BadgeStatus.info({required String text, double fontSize = 10}) {
+  factory BadgeStatus.info({
+    required String text,
+    double fontSize = 10,
+    bool showIcon = false,
+  }) {
     return BadgeStatus(
       text: text,
       backgroundColor: AppTheme.infoColor,
       textColor: AppTheme.infoText.withAlpha(160),
       fontSize: fontSize,
+      showIcon: showIcon,
     );
   }
 
-  factory BadgeStatus.neutral({required String text, double fontSize = 10}) {
+  factory BadgeStatus.neutral({
+    required String text,
+    double fontSize = 10,
+    bool showIcon = false,
+  }) {
     return BadgeStatus(
       text: text,
       backgroundColor: AppTheme.neutralColor,
       textColor: AppTheme.neutralText.withAlpha(160),
       fontSize: fontSize,
+      showIcon: showIcon,
     );
   }
 

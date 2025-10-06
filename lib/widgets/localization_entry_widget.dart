@@ -53,7 +53,7 @@ class LocalizationEntryWidget extends StatelessWidget {
                 ),
                 if (showWarning) ...[
                   const SizedBox(width: 8),
-                  BadgeStatus.warning(text: '!', fontSize: 9),
+                  BadgeStatus.warning(text: 'D', fontSize: 9),
                 ],
               ],
             ),

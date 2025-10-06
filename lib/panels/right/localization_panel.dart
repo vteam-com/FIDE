@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 import 'dart:convert';
 import 'dart:io';
+import 'package:fide/widgets/localization_entry_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fide/models/localization_data.dart';
@@ -9,7 +10,6 @@ import 'package:fide/services/localization_service.dart';
 import 'package:fide/services/ai_service.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/utils/message_box.dart';
-import 'package:fide/widgets/localization_entry_widget.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
@@ -882,8 +882,9 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: BadgeStatus.warning(
               text:
-                  'Warning: ${duplicatedValues.length} English ${duplicatedValues.length == 1 ? 'string is' : 'strings are'} duplicated',
+                  '${duplicatedValues.length} English ${duplicatedValues.length == 1 ? 'string is' : 'strings are'} duplicated',
               fontSize: 11,
+              showIcon: true,
             ),
           ),
         Expanded(
