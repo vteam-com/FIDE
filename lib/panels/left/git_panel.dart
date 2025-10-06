@@ -438,27 +438,35 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   onPressed: () => onUnstage(files),
                   child: const Text('Unstage All'),
                 ),
+              if (canDiscard && onDiscard != null)
+                TextButton(
+                  onPressed: () => onDiscard(files),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                  child: const Text('Discard All'),
+                ),
             ],
           ),
           ...files.map((file) {
             final filePath = path.join(widget.projectPath, file);
             final item = FileSystemItem.fromFileSystemEntity(File(filePath));
-            // Set Git status based on the section
-            if (onStage != null) {
-              item.gitStatus =
-                  GitFileStatus.untracked; // For untracked/staged sections
-            } else if (onUnstage != null) {
-              item.gitStatus = GitFileStatus.added; // For staged section
-            } else {
-              item.gitStatus = GitFileStatus.modified; // For unstaged section
-            }
+
+            // Create display name with parent folder context if not a root file
+            final displayItem = FileSystemItem(
+              path: item.path,
+              name: _getContextualFileName(file),
+              type: item.type,
+              gitStatus: _determineGitStatus(titleWidget, files),
+            );
+
             final isSelected = widget.selectedFile?.path == item.path;
 
             return Row(
               children: [
                 Expanded(
                   child: FileNameWidget(
-                    fileItem: item,
+                    fileItem: displayItem,
                     isSelected: isSelected,
                     showGitBadge: false,
                     rootPath: widget.projectPath,
@@ -498,6 +506,41 @@ class _GitPanelState extends ConsumerState<GitPanel> {
         ],
       ),
     );
+  }
+
+  GitFileStatus _determineGitStatus(Widget titleWidget, List<String> files) {
+    // Extract status from BadgeStatus widget text
+    if (titleWidget is BadgeStatus) {
+      final text = titleWidget.text.toUpperCase();
+      if (text.contains('STAGED')) {
+        return GitFileStatus.added;
+      } else if (text.contains('CHANGES')) {
+        return GitFileStatus.modified;
+      } else if (text.contains('UNTRACKED')) {
+        return GitFileStatus.untracked;
+      }
+    }
+    // Fallback: determine from file lists but this shouldn't happen
+    return GitFileStatus.untracked;
+  }
+
+  String _getContextualFileName(String filePath) {
+    // Split the path into parts
+    final parts = path.split(filePath);
+
+    // If it's a root-level file (only one part), just return the filename
+    if (parts.length <= 1) {
+      return path.basename(filePath);
+    }
+
+    // For files deeper in the hierarchy, show the immediate parent directory + filename
+    // e.g., "lib/utils/file_type_utils.dart" becomes "utils/file_type_utils.dart"
+    if (parts.length >= 2) {
+      return path.join(parts[parts.length - 2], parts[parts.length - 1]);
+    }
+
+    // Fallback
+    return path.basename(filePath);
   }
 
   @override

@@ -6,7 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 // Screens
 import 'outline_panel.dart';
 import 'ai_panel.dart';
-import 'localization_panel.dart';
+import 'localization/localization_panel.dart';
 
 // Models
 import '../../models/file_system_item.dart';

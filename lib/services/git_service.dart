@@ -1,10 +1,35 @@
 import 'dart:io';
 import 'package:fide/models/file_system_item.dart';
+import 'package:path/path.dart' as path;
 
 class GitService {
   static final GitService _instance = GitService._internal();
   factory GitService() => _instance;
   GitService._internal();
+
+  // Expand directory to all contained files
+  Future<List<String>> _expandDirectoryToFiles(
+    String projectPath,
+    String dirPath,
+  ) async {
+    final files = <String>[];
+    final dir = Directory('$projectPath/$dirPath');
+
+    if (await dir.exists()) {
+      await for (final entity in dir.list(
+        recursive: true,
+        followLinks: false,
+      )) {
+        if (entity is File) {
+          // Get relative path from project root
+          final relativePath = path.relative(entity.path, from: projectPath);
+          files.add(relativePath);
+        }
+      }
+    }
+
+    return files;
+  }
 
   // Check if Git is available
   Future<bool> isGitAvailable() async {
@@ -64,14 +89,37 @@ class GitService {
           final status = line.substring(0, 2);
           final file = line.substring(3);
 
-          if (status[0] != ' ') {
-            staged.add(file);
-          }
-          if (status[1] != ' ') {
-            if (status[0] == ' ' && status[1] == '?') {
-              untracked.add(file);
-            } else {
-              unstaged.add(file);
+          // Check if file path ends with / (directory) and expand it
+          final isDirectory = file.endsWith('/');
+          if (isDirectory) {
+            // Expand directory to all contained files
+            final dirFiles = await _expandDirectoryToFiles(
+              path,
+              file.substring(0, file.length - 1),
+            );
+            for (final dirFile in dirFiles) {
+              if (status[0] != ' ') {
+                staged.add(dirFile);
+              }
+              if (status[1] != ' ') {
+                if (status[0] == ' ' && status[1] == '?') {
+                  untracked.add(dirFile);
+                } else {
+                  unstaged.add(dirFile);
+                }
+              }
+            }
+          } else {
+            // Regular file
+            if (status[0] != ' ') {
+              staged.add(file);
+            }
+            if (status[1] != ' ') {
+              if (status[0] == ' ' && status[1] == '?') {
+                untracked.add(file);
+              } else {
+                unstaged.add(file);
+              }
             }
           }
         }
@@ -337,16 +385,27 @@ class GitService {
   // Discard changes for files (git checkout -- files or git rm for untracked)
   Future<String> discardChanges(String path, List<String> files) async {
     try {
-      // Get status to determine which files are untracked vs tracked with changes
-      final status = await getStatus(path);
-      final untrackedFiles = files
-          .where((file) => status.untracked.contains(file))
-          .toList();
-      final modifiedFiles = files
-          .where((file) => !untrackedFiles.contains(file))
-          .toList();
+      final untrackedFiles = <String>[];
+      final modifiedFiles = <String>[];
 
-      // Discard tracked files with changes
+      // Check each file individually to determine if it's tracked
+      for (final file in files) {
+        final isTrackedResult = await Process.run('git', [
+          'ls-files',
+          '--error-unmatch',
+          file,
+        ], workingDirectory: path);
+
+        if (isTrackedResult.exitCode == 0) {
+          // File is tracked
+          modifiedFiles.add(file);
+        } else {
+          // File is untracked
+          untrackedFiles.add(file);
+        }
+      }
+
+      // Discard tracked files with changes using git checkout
       if (modifiedFiles.isNotEmpty) {
         final checkoutResult = await Process.run('git', [
           'checkout',
@@ -359,7 +418,7 @@ class GitService {
         }
       }
 
-      // Remove untracked files
+      // Remove untracked files by deleting them from filesystem
       if (untrackedFiles.isNotEmpty) {
         for (final file in untrackedFiles) {
           final filePath = '$path/$file';
