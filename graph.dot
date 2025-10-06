@@ -54,6 +54,7 @@ digraph "" {
   "/lib/widgets/title_bar.dart" [label="title_bar"];
   "/lib/widgets/badge_status.dart" [label="badge_status"];
   "/lib/widgets/create_project_dialog.dart" [label="create_project_dialog"];
+  "/lib/widgets/localization_entry_widget.dart" [label="localization_entry_widget"];
   "/lib/widgets/platform_info_section.dart" [label="platform_info_section"];
   "/lib/widgets/menu_builder.dart" [label="menu_builder"];
   "/lib/widgets/message_widget.dart" [label="message_widget"];
@@ -162,6 +163,7 @@ digraph "" {
         "/lib/widgets/title_bar.dart";
         "/lib/widgets/badge_status.dart";
         "/lib/widgets/create_project_dialog.dart";
+        "/lib/widgets/localization_entry_widget.dart";
         "/lib/widgets/platform_info_section.dart";
         "/lib/widgets/menu_builder.dart";
         "/lib/widgets/message_widget.dart";
@@ -209,6 +211,7 @@ digraph "" {
   "/lib/panels/right/localization_panel.dart" -> "/lib/services/ai_service.dart";
   "/lib/panels/right/localization_panel.dart" -> "/lib/providers/app_providers.dart";
   "/lib/panels/right/localization_panel.dart" -> "/lib/utils/message_box.dart";
+  "/lib/panels/right/localization_panel.dart" -> "/lib/widgets/localization_entry_widget.dart";
   "/lib/panels/right/right_panel.dart" -> "/lib/providers/ui_state_providers.dart";
   "/lib/panels/right/right_panel.dart" -> "/lib/panels/right/outline_panel.dart";
   "/lib/panels/right/right_panel.dart" -> "/lib/panels/right/ai_panel.dart";
@@ -328,6 +331,7 @@ digraph "" {
   "/lib/widgets/title_bar.dart" -> "/lib/providers/app_providers.dart";
   "/lib/widgets/title_bar.dart" -> "/lib/utils/message_box.dart";
   "/lib/widgets/title_bar.dart" -> "/lib/widgets/create_project_dialog.dart";
+  "/lib/widgets/localization_entry_widget.dart" -> "/lib/models/localization_data.dart";
   "/lib/widgets/platform_info_section.dart" -> "/lib/widgets/badge_status.dart";
   "/lib/widgets/menu_builder.dart" -> "/lib/providers/app_providers.dart";
   "/lib/widgets/menu_builder.dart" -> "/lib/services/git_service.dart";

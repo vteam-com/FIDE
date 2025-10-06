@@ -9,6 +9,7 @@ import 'package:fide/services/localization_service.dart';
 import 'package:fide/services/ai_service.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/utils/message_box.dart';
+import 'package:fide/widgets/localization_entry_widget.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
@@ -817,12 +818,14 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
         Expanded(
           child: _arbFiles.isEmpty
               ? const Center(child: Text('No ARB files found'))
-              : ListView.builder(
+              : ListView.separated(
                   itemCount: _comparisons.length,
                   itemBuilder: (context, index) {
                     final comparison = _comparisons[index];
-                    return _buildComparisonTile(comparison);
+                    return LocalizationEntryWidget(comparison: comparison);
                   },
+                  separatorBuilder: (context, index) =>
+                      const Divider(height: 8, thickness: 1),
                 ),
         ),
       ],
