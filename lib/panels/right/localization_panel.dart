@@ -10,6 +10,7 @@ import 'package:fide/services/ai_service.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/utils/message_box.dart';
 import 'package:fide/widgets/localization_entry_widget.dart';
+import 'package:fide/widgets/badge_status.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
@@ -69,6 +70,30 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     setState(() {
       _filterQuery = _filterController.text.toLowerCase();
     });
+  }
+
+  bool _matchesFilter(ArbComparison comparison, String query) {
+    final lowerQuery = query.toLowerCase();
+
+    // Check the key
+    if (comparison.key.toLowerCase().contains(lowerQuery)) {
+      return true;
+    }
+
+    // Check English value
+    if (comparison.englishValue != null &&
+        comparison.englishValue!.toLowerCase().contains(lowerQuery)) {
+      return true;
+    }
+
+    // Check other translation values
+    for (final value in comparison.otherValues.values) {
+      if (value != null && value.toLowerCase().contains(lowerQuery)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   Future<void> _checkLocalizationStatus() async {
@@ -833,11 +858,34 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     final filteredComparisons = _filterQuery.isEmpty
         ? _comparisons
         : _comparisons.where((comparison) {
-            return comparison.key.toLowerCase().contains(_filterQuery);
+            return _matchesFilter(comparison, _filterQuery);
           }).toList();
+
+    // Find duplicate English values (2 or more occurrences)
+    final englishValueCounts = <String, int>{};
+    for (final comparison in filteredComparisons) {
+      if (comparison.englishValue != null) {
+        englishValueCounts[comparison.englishValue!] =
+            (englishValueCounts[comparison.englishValue!] ?? 0) + 1;
+      }
+    }
+    final duplicatedValues = englishValueCounts.entries
+        .where((entry) => entry.value >= 2)
+        .map((entry) => entry.key)
+        .toSet();
 
     return Column(
       children: [
+        // Duplicate warning banner
+        if (duplicatedValues.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: BadgeStatus.warning(
+              text:
+                  'Warning: ${duplicatedValues.length} English ${duplicatedValues.length == 1 ? 'string is' : 'strings are'} duplicated',
+              fontSize: 11,
+            ),
+          ),
         Expanded(
           child: _arbFiles.isEmpty
               ? const Center(child: Text('No ARB files found'))
@@ -845,7 +893,13 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                   itemCount: filteredComparisons.length,
                   itemBuilder: (context, index) {
                     final comparison = filteredComparisons[index];
-                    return LocalizationEntryWidget(comparison: comparison);
+                    final isDuplicated =
+                        comparison.englishValue != null &&
+                        duplicatedValues.contains(comparison.englishValue);
+                    return LocalizationEntryWidget(
+                      comparison: comparison,
+                      showWarning: isDuplicated,
+                    );
                   },
                   separatorBuilder: (context, index) =>
                       const Divider(height: 8, thickness: 1),

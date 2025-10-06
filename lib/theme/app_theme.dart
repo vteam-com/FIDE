@@ -4,6 +4,36 @@ class AppTheme {
   // Single seed color for consistent theming
   static const Color _seedColor = Colors.blue;
 
+  /// Semantic status colors for consistent use across BadgeStatus, MessageBox, and LocalizationPanel
+  /// These colors work with both light and dark themes
+  static const Color successColor = Color(
+    0xFF1B5E20,
+  ); // Dark green for success states
+  static const Color warningColor = Color(
+    0xFFE65100,
+  ); // Dark orange for warning states
+  static const Color errorColor = Color(
+    0xFFD32F2F,
+  ); // Dark red for error states
+  static const Color infoColor = Color(0xFF1976D2); // Dark blue for info states
+  static const Color neutralColor = Color(
+    0xFF616161,
+  ); // Dark grey for neutral states
+
+  /// Light backgrounds for semantic color themes (with alpha for theme adaptation)
+  static Color get successBackground => successColor.withAlpha(150);
+  static Color get warningBackground => warningColor.withAlpha(150);
+  static Color get errorBackground => errorColor.withAlpha(150);
+  static Color get infoBackground => infoColor.withAlpha(150);
+  static Color get neutralBackground => neutralColor.withAlpha(150);
+
+  /// Text colors for semantic themes
+  static const Color successText = Colors.white;
+  static const Color warningText = Colors.white;
+  static const Color errorText = Colors.white;
+  static const Color infoText = Colors.white;
+  static const Color neutralText = Colors.white;
+
   static ThemeData get lightTheme {
     return ThemeData.from(
       colorScheme: ColorScheme.fromSeed(

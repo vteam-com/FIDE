@@ -2,11 +2,17 @@
 
 import 'package:flutter/material.dart';
 import 'package:fide/models/localization_data.dart';
+import 'package:fide/widgets/badge_status.dart';
 
 class LocalizationEntryWidget extends StatelessWidget {
   final ArbComparison comparison;
+  final bool showWarning;
 
-  const LocalizationEntryWidget({super.key, required this.comparison});
+  const LocalizationEntryWidget({
+    super.key,
+    required this.comparison,
+    this.showWarning = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -33,13 +39,23 @@ class LocalizationEntryWidget extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 4,
           children: [
-            // Key at the top
-            Text(
-              comparison.key,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+            // Key at the top with optional warning badge
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    comparison.key,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+                if (showWarning) ...[
+                  const SizedBox(width: 8),
+                  BadgeStatus.warning(text: '!', fontSize: 9),
+                ],
+              ],
             ),
 
             // Translations

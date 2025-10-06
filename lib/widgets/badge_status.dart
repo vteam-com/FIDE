@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 /// A reusable badge widget that displays status or feedback information.
 ///
@@ -73,8 +74,8 @@ class BadgeStatus extends StatelessWidget {
   factory BadgeStatus.success({required String text, double fontSize = 10}) {
     return BadgeStatus(
       text: text,
-      backgroundColor: Colors.green.shade700,
-      textColor: Colors.white.withAlpha(160),
+      backgroundColor: AppTheme.successColor,
+      textColor: AppTheme.successText.withAlpha(160),
       fontSize: fontSize,
     );
   }
@@ -83,8 +84,8 @@ class BadgeStatus extends StatelessWidget {
   factory BadgeStatus.warning({required String text, double fontSize = 10}) {
     return BadgeStatus(
       text: text,
-      backgroundColor: Colors.orange.shade700,
-      textColor: Colors.white.withAlpha(160),
+      backgroundColor: AppTheme.warningColor,
+      textColor: AppTheme.warningText.withAlpha(160),
       fontSize: fontSize,
     );
   }
@@ -93,8 +94,8 @@ class BadgeStatus extends StatelessWidget {
   factory BadgeStatus.error({required String text, double fontSize = 10}) {
     return BadgeStatus(
       text: text,
-      backgroundColor: Colors.red.shade700,
-      textColor: Colors.white.withAlpha(160),
+      backgroundColor: AppTheme.errorColor,
+      textColor: AppTheme.errorText.withAlpha(160),
       fontSize: fontSize,
     );
   }
@@ -103,8 +104,8 @@ class BadgeStatus extends StatelessWidget {
   factory BadgeStatus.info({required String text, double fontSize = 10}) {
     return BadgeStatus(
       text: text,
-      backgroundColor: Colors.blue.shade700,
-      textColor: Colors.white.withAlpha(160),
+      backgroundColor: AppTheme.infoColor,
+      textColor: AppTheme.infoText.withAlpha(160),
       fontSize: fontSize,
     );
   }
@@ -112,8 +113,8 @@ class BadgeStatus extends StatelessWidget {
   factory BadgeStatus.neutral({required String text, double fontSize = 10}) {
     return BadgeStatus(
       text: text,
-      backgroundColor: Colors.grey.shade700,
-      textColor: Colors.white.withAlpha(160),
+      backgroundColor: AppTheme.neutralColor,
+      textColor: AppTheme.neutralText.withAlpha(160),
       fontSize: fontSize,
     );
   }
@@ -123,8 +124,8 @@ class BadgeStatus extends StatelessWidget {
     final text = '+$count';
     return BadgeStatus(
       text: text,
-      backgroundColor: Colors.green.shade700,
-      textColor: Colors.white.withAlpha(160),
+      backgroundColor: AppTheme.successColor,
+      textColor: AppTheme.successText.withAlpha(160),
       fontSize: fontSize,
       fontWeight: FontWeight.w600,
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
@@ -136,8 +137,8 @@ class BadgeStatus extends StatelessWidget {
     final text = '-$count';
     return BadgeStatus(
       text: text,
-      backgroundColor: Colors.red.shade700,
-      textColor: Colors.white.withAlpha(160),
+      backgroundColor: AppTheme.errorColor,
+      textColor: AppTheme.errorText.withAlpha(160),
       fontSize: fontSize,
       fontWeight: FontWeight.w600,
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
