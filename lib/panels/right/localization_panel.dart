@@ -38,6 +38,8 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
   final ArbService _arbService = ArbService();
   final LocalizationService _localizationService = LocalizationService();
   final AIService _aiService = AIService();
+  final TextEditingController _filterController = TextEditingController();
+  String _filterQuery = '';
 
   List<ArbFile> _arbFiles = [];
   List<ArbComparison> _comparisons = [];
@@ -51,8 +53,22 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
   @override
   void initState() {
     super.initState();
+    _filterController.addListener(_onFilterChanged);
     _checkLocalizationStatus();
     _loadArbFiles();
+  }
+
+  @override
+  void dispose() {
+    _filterController.removeListener(_onFilterChanged);
+    _filterController.dispose();
+    super.dispose();
+  }
+
+  void _onFilterChanged() {
+    setState(() {
+      _filterQuery = _filterController.text.toLowerCase();
+    });
   }
 
   Future<void> _checkLocalizationStatus() async {
@@ -813,20 +829,58 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
   }
 
   Widget _buildCompleteView() {
+    // Filter comparisons based on filter query
+    final filteredComparisons = _filterQuery.isEmpty
+        ? _comparisons
+        : _comparisons.where((comparison) {
+            return comparison.key.toLowerCase().contains(_filterQuery);
+          }).toList();
+
     return Column(
       children: [
         Expanded(
           child: _arbFiles.isEmpty
               ? const Center(child: Text('No ARB files found'))
               : ListView.separated(
-                  itemCount: _comparisons.length,
+                  itemCount: filteredComparisons.length,
                   itemBuilder: (context, index) {
-                    final comparison = _comparisons[index];
+                    final comparison = filteredComparisons[index];
                     return LocalizationEntryWidget(comparison: comparison);
                   },
                   separatorBuilder: (context, index) =>
                       const Divider(height: 8, thickness: 1),
                 ),
+        ),
+        // Filter bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+          child: TextField(
+            controller: _filterController,
+            decoration: InputDecoration(
+              hintText: 'Filter localization keys...',
+              prefixIcon: const Icon(Icons.filter_list, size: 20),
+              suffixIcon: _filterQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, size: 20),
+                      onPressed: () {
+                        _filterController.clear();
+                        setState(() {});
+                      },
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
+            ),
+            style: const TextStyle(fontSize: 13),
+          ),
         ),
       ],
     );
