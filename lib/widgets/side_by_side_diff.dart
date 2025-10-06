@@ -98,7 +98,7 @@ class SideBySideDiff extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
         ),
         borderRadius: BorderRadius.circular(4),
       ),
@@ -110,7 +110,7 @@ class SideBySideDiff extends StatelessWidget {
             decoration: BoxDecoration(
               color: Theme.of(
                 context,
-              ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(4),
                 topRight: Radius.circular(4),
@@ -125,14 +125,16 @@ class SideBySideDiff extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.7),
+                      ).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ),
                 Container(
                   width: 1,
                   height: 16,
-                  color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outline.withValues(alpha: 0.3),
                 ),
                 Expanded(
                   child: Text(
@@ -141,7 +143,7 @@ class SideBySideDiff extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.7),
+                      ).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ),
@@ -157,9 +159,9 @@ class SideBySideDiff extends StatelessWidget {
                 return Container(
                   decoration: BoxDecoration(
                     color: line.type == DiffType.deletion
-                        ? Colors.red.withOpacity(0.1)
+                        ? Colors.red.withValues(alpha: 0.1)
                         : line.type == DiffType.addition
-                        ? Colors.green.withOpacity(0.1)
+                        ? Colors.green.withValues(alpha: 0.1)
                         : null,
                   ),
                   child: Row(
@@ -180,9 +182,10 @@ class SideBySideDiff extends StatelessWidget {
                                   style: TextStyle(
                                     fontFamily: 'monospace',
                                     fontSize: 12,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(0.5),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.5),
                                   ),
                                   textAlign: TextAlign.right,
                                 ),
@@ -212,7 +215,7 @@ class SideBySideDiff extends StatelessWidget {
                         height: 20,
                         color: Theme.of(
                           context,
-                        ).colorScheme.outline.withOpacity(0.3),
+                        ).colorScheme.outline.withValues(alpha: 0.3),
                       ),
                       // New side
                       Expanded(
@@ -230,9 +233,10 @@ class SideBySideDiff extends StatelessWidget {
                                   style: TextStyle(
                                     fontFamily: 'monospace',
                                     fontSize: 12,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(0.5),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.5),
                                   ),
                                   textAlign: TextAlign.right,
                                 ),

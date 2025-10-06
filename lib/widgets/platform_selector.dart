@@ -118,7 +118,7 @@ class _PlatformSelectorState extends State<PlatformSelector>
             isScrollable: true,
             tabAlignment: TabAlignment.start,
             labelColor: colorScheme.primary,
-            unselectedLabelColor: colorScheme.onSurface.withOpacity(0.6),
+            unselectedLabelColor: colorScheme.onSurface.withValues(alpha: 0.6),
             indicatorColor: colorScheme.primary,
             indicatorSize: TabBarIndicatorSize.tab,
             dividerColor: Colors.transparent,
@@ -142,8 +142,8 @@ class _PlatformSelectorState extends State<PlatformSelector>
                         isSelected
                             ? colorScheme.primary
                             : isSupported
-                            ? colorScheme.onSurface.withOpacity(0.8)
-                            : colorScheme.onSurface.withOpacity(0.4),
+                            ? colorScheme.onSurface.withValues(alpha: 0.8)
+                            : colorScheme.onSurface.withValues(alpha: 0.4),
                         BlendMode.srcIn,
                       ),
                       child: SvgPicture.asset(

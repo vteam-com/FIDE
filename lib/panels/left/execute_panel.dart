@@ -315,7 +315,7 @@ class ExecutePanelState extends ConsumerState<ExecutePanel> {
         decoration: BoxDecoration(
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
@@ -507,10 +507,10 @@ Updates macOS CocoaPods dependencies.
       return Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.2),
+            color: colorScheme.outline.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -558,10 +558,10 @@ Updates macOS CocoaPods dependencies.
                     padding: const EdgeInsets.all(4),
                     margin: const EdgeInsets.only(bottom: 8),
                     decoration: BoxDecoration(
-                      color: colorScheme.errorContainer.withOpacity(0.2),
+                      color: colorScheme.errorContainer.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: colorScheme.error.withOpacity(0.3),
+                        color: colorScheme.error.withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -588,7 +588,7 @@ Updates macOS CocoaPods dependencies.
                       color: colorScheme.surface,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: colorScheme.outline.withOpacity(0.2),
+                        color: colorScheme.outline.withValues(alpha: 0.2),
                         width: 1,
                       ),
                     ),
@@ -635,14 +635,18 @@ Updates macOS CocoaPods dependencies.
             Icon(
               Icons.build_circle_outlined,
               size: 48,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             Text(
               'Load a project to use\nBuild/Run/Debug features',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),

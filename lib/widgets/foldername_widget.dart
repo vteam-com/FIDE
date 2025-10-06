@@ -41,8 +41,8 @@ class FolderNameWidget extends StatelessWidget {
       textColor = colorScheme.error;
       iconColor = colorScheme.error;
     } else if (node.isHidden) {
-      textColor = colorScheme.onSurface.withOpacity(0.5);
-      iconColor = colorScheme.primary.withOpacity(0.5);
+      textColor = colorScheme.onSurface.withValues(alpha: 0.5);
+      iconColor = colorScheme.primary.withValues(alpha: 0.5);
     } else if (isExpanded) {
       textColor = colorScheme.primary;
       iconColor = colorScheme.primary;
@@ -53,7 +53,7 @@ class FolderNameWidget extends StatelessWidget {
 
     // Highlight if filtered
     final backgroundColor = isFiltered
-        ? colorScheme.primaryContainer.withOpacity(0.1)
+        ? colorScheme.primaryContainer.withValues(alpha: 0.1)
         : null;
 
     return InkWell(

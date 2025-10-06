@@ -65,9 +65,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   end: Alignment.bottomCenter,
                   colors: [
                     Theme.of(context).colorScheme.surface,
-                    Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                    Theme.of(context).colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.3),
                   ],
                 ),
               ),
@@ -124,7 +123,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                         color: Theme.of(context)
                                             .colorScheme
                                             .onSurface
-                                            .withOpacity(0.5),
+                                            .withValues(alpha: 0.5),
                                       ),
                                   textAlign: TextAlign.center,
                                 ),
@@ -136,7 +135,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                         color: Theme.of(context)
                                             .colorScheme
                                             .onSurface
-                                            .withOpacity(0.7),
+                                            .withValues(alpha: 0.7),
                                         fontWeight: FontWeight.w500,
                                       ),
                                   textAlign: TextAlign.center,
@@ -158,9 +157,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.shadow.withOpacity(0.1),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .shadow
+                                            .withValues(alpha: 0.1),
                                         blurRadius: 10,
                                         offset: const Offset(0, 4),
                                       ),
@@ -298,10 +298,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         decoration: BoxDecoration(
           color: Theme.of(
             context,
-          ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+          ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           ),
         ),
         child: ListTile(

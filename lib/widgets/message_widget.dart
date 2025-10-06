@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously
+// ignore_for_file:  use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -118,12 +118,12 @@ class _MessageWidgetState extends State<MessageWidget>
             color: backgroundColor,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: foregroundColor.withOpacity(0.2),
+              color: foregroundColor.withValues(alpha: 0.2),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -160,7 +160,7 @@ class _MessageWidgetState extends State<MessageWidget>
                         : IconButton(
                             icon: Icon(
                               Icons.copy,
-                              color: foregroundColor.withOpacity(0.7),
+                              color: foregroundColor.withValues(alpha: 0.7),
                               size: 18,
                             ),
                             onPressed: () async {
@@ -192,7 +192,7 @@ class _MessageWidgetState extends State<MessageWidget>
                   IconButton(
                     icon: Icon(
                       Icons.close,
-                      color: foregroundColor.withOpacity(0.7),
+                      color: foregroundColor.withValues(alpha: 0.7),
                       size: 18,
                     ),
                     onPressed: _dismiss,

@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously, avoid_print
+// ignore_for_file:  use_build_context_synchronously, avoid_print
 
 import 'dart:convert';
 import 'dart:io';
@@ -366,6 +366,7 @@ class _EditorScreenState extends State<EditorScreen> {
                   ? _buildImageView()
                   : _showDiffView
                   ? _buildDiffView()
+                  // ignore: deprecated_member_use
                   : RawKeyboardListener(
                       focusNode: FocusNode(),
                       onKey: _handleKeyEvent,
@@ -386,9 +387,8 @@ class _EditorScreenState extends State<EditorScreen> {
                                   // fontFamily: 'monospace',
                                   letterSpacing: -1,
 
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface.withOpacity(0.5),
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.5),
                                 ),
                               ),
 
@@ -534,7 +534,7 @@ class _EditorScreenState extends State<EditorScreen> {
                         size: 64,
                         color: Theme.of(
                           context,
-                        ).colorScheme.error.withOpacity(0.5),
+                        ).colorScheme.error.withValues(alpha: 0.5),
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -550,7 +550,7 @@ class _EditorScreenState extends State<EditorScreen> {
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.6),
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -566,7 +566,7 @@ class _EditorScreenState extends State<EditorScreen> {
               decoration: BoxDecoration(
                 color: Theme.of(
                   context,
-                ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -584,7 +584,7 @@ class _EditorScreenState extends State<EditorScreen> {
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.7),
+                      ).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -613,14 +613,18 @@ class _EditorScreenState extends State<EditorScreen> {
           Icon(
             Icons.insert_drive_file_outlined,
             size: 64,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           RichText(
             textAlign: TextAlign.center,
             text: TextSpan(
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
               children: [
                 const TextSpan(text: 'The file type '),
@@ -641,7 +645,7 @@ class _EditorScreenState extends State<EditorScreen> {
             decoration: BoxDecoration(
               color: Theme.of(
                 context,
-              ).colorScheme.primaryContainer.withOpacity(0.3),
+              ).colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -651,7 +655,7 @@ class _EditorScreenState extends State<EditorScreen> {
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.6),
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -704,7 +708,9 @@ class _EditorScreenState extends State<EditorScreen> {
             'Currently supported: Most text files including\n'
             'programming languages, web files, configs, scripts, and images',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
             textAlign: TextAlign.center,
           ),
@@ -1387,7 +1393,9 @@ class _EditorScreenState extends State<EditorScreen> {
     _searchFocusNode.unfocus();
   }
 
+  // ignore: deprecated_member_use
   void _handleKeyEvent(RawKeyEvent event) {
+    // ignore: deprecated_member_use
     if (event is RawKeyDownEvent) {
       if (_showSearch) {
         if (event.logicalKey == LogicalKeyboardKey.escape) {
@@ -1405,10 +1413,10 @@ class _EditorScreenState extends State<EditorScreen> {
       decoration: BoxDecoration(
         color: Theme.of(
           context,
-        ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
             width: 1,
           ),
         ),

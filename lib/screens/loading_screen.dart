@@ -26,7 +26,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
             Theme.of(context).colorScheme.surface,
             Theme.of(
               context,
-            ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           ],
         ),
       ),

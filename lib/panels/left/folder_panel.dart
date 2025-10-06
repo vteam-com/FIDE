@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, avoid_print
+// ignore_for_file:  avoid_print
 
 import 'dart:io';
 import 'package:fide/widgets/filename_widget.dart';
@@ -449,7 +449,9 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     if (hasError) {
       textColor = Theme.of(context).colorScheme.error;
     } else if (node.isHidden) {
-      textColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.5);
+      textColor = Theme.of(
+        context,
+      ).colorScheme.onSurface.withValues(alpha: 0.5);
     } else {
       textColor = Theme.of(context).colorScheme.onSurface;
     }
@@ -459,7 +461,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     if (hasError) {
       iconColor = Theme.of(context).colorScheme.error;
     } else if (node.isHidden) {
-      iconColor = Theme.of(context).colorScheme.primary.withOpacity(0.5);
+      iconColor = Theme.of(context).colorScheme.primary.withValues(alpha: 0.5);
     } else {
       iconColor = Theme.of(context).colorScheme.primary;
     }
@@ -483,7 +485,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
             color: isMatching
                 ? Theme.of(
                     context,
-                  ).colorScheme.primaryContainer.withOpacity(0.1)
+                  ).colorScheme.primaryContainer.withValues(alpha: 0.1)
                 : null,
             child: Padding(
               padding: const EdgeInsets.symmetric(

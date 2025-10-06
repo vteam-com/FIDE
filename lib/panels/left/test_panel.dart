@@ -370,7 +370,7 @@ Validates test organization and naming conventions.
             height: 200,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -412,12 +412,12 @@ Validates test organization and naming conventions.
                             padding: const EdgeInsets.all(4),
                             margin: const EdgeInsets.only(bottom: 8),
                             decoration: BoxDecoration(
-                              color: colorScheme.errorContainer.withOpacity(
-                                0.2,
+                              color: colorScheme.errorContainer.withValues(
+                                alpha: 0.2,
                               ),
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
-                                color: colorScheme.error.withOpacity(0.3),
+                                color: colorScheme.error.withValues(alpha: 0.3),
                               ),
                             ),
                             child: SelectableText(
@@ -437,7 +437,9 @@ Validates test organization and naming conventions.
                               color: colorScheme.surface,
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
-                                color: colorScheme.outline.withOpacity(0.3),
+                                color: colorScheme.outline.withValues(
+                                  alpha: 0.3,
+                                ),
                               ),
                             ),
                             child: SelectableText(

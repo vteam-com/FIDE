@@ -76,7 +76,9 @@ class LeftPanelControls extends ConsumerWidget {
         onPressed: onPressed,
         style: IconButton.styleFrom(
           backgroundColor: isSelected
-              ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.2)
+              ? Theme.of(
+                  context,
+                ).colorScheme.primaryContainer.withValues(alpha: 0.2)
               : Colors.transparent,
           padding: const EdgeInsets.all(8),
         ),

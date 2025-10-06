@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously
+// ignore_for_file:  use_build_context_synchronously
 
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
@@ -136,8 +136,8 @@ class _TitleBarState extends ConsumerState<TitleBar> {
               maxLines: 1,
               style: TextStyle(
                 color: widget.themeMode == ThemeMode.dark
-                    ? Colors.white.withOpacity(0.9)
-                    : Colors.black.withOpacity(0.9),
+                    ? Colors.white.withValues(alpha: 0.9)
+                    : Colors.black.withValues(alpha: 0.9),
                 fontWeight: FontWeight.w500,
                 fontSize: 14,
               ),
@@ -146,8 +146,8 @@ class _TitleBarState extends ConsumerState<TitleBar> {
           Icon(
             Icons.arrow_drop_down,
             color: widget.themeMode == ThemeMode.dark
-                ? Colors.white.withOpacity(0.7)
-                : Colors.black.withOpacity(0.7),
+                ? Colors.white.withValues(alpha: 0.7)
+                : Colors.black.withValues(alpha: 0.7),
             size: 16,
           ),
         ],
@@ -160,8 +160,8 @@ class _TitleBarState extends ConsumerState<TitleBar> {
       'The Flutter IDE',
       style: TextStyle(
         color: widget.themeMode == ThemeMode.dark
-            ? Colors.white.withOpacity(0.9)
-            : Colors.black.withOpacity(0.9),
+            ? Colors.white.withValues(alpha: 0.9)
+            : Colors.black.withValues(alpha: 0.9),
         fontWeight: FontWeight.w500,
         fontSize: 14,
       ),
@@ -238,8 +238,8 @@ class _TitleBarState extends ConsumerState<TitleBar> {
       tooltip: 'Settings',
       style: IconButton.styleFrom(
         foregroundColor: widget.themeMode == ThemeMode.dark
-            ? Colors.white.withOpacity(0.9)
-            : Colors.black.withOpacity(0.9),
+            ? Colors.white.withValues(alpha: 0.9)
+            : Colors.black.withValues(alpha: 0.9),
       ),
     );
   }

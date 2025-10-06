@@ -69,7 +69,9 @@ class _AIPanelState extends State<AIPanel> {
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8.0),
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outline.withValues(alpha: 0.3),
                 ),
               ),
               child: Column(
@@ -322,10 +324,10 @@ class _AIPanelState extends State<AIPanel> {
                     color: isUser
                         ? Theme.of(
                             context,
-                          ).colorScheme.onPrimary.withOpacity(0.7)
+                          ).colorScheme.onPrimary.withValues(alpha: 0.7)
                         : Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.5),
+                          ).colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                 ),
               ),

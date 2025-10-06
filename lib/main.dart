@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
@@ -105,8 +105,8 @@ class WindowControls extends StatelessWidget {
           constraints: const BoxConstraints(),
           style: IconButton.styleFrom(
             foregroundColor: isDark
-                ? Colors.white.withOpacity(0.9)
-                : Colors.black.withOpacity(0.9),
+                ? Colors.white.withValues(alpha: 0.9)
+                : Colors.black.withValues(alpha: 0.9),
           ),
         ),
         IconButton(
@@ -123,8 +123,8 @@ class WindowControls extends StatelessWidget {
           constraints: const BoxConstraints(),
           style: IconButton.styleFrom(
             foregroundColor: isDark
-                ? Colors.white.withOpacity(0.9)
-                : Colors.black.withOpacity(0.9),
+                ? Colors.white.withValues(alpha: 0.9)
+                : Colors.black.withValues(alpha: 0.9),
           ),
         ),
         IconButton(
@@ -138,8 +138,8 @@ class WindowControls extends StatelessWidget {
           hoverColor: isDark ? Colors.red[900] : Colors.red[100],
           style: IconButton.styleFrom(
             foregroundColor: isDark
-                ? Colors.white.withOpacity(0.9)
-                : Colors.black.withOpacity(0.9),
+                ? Colors.white.withValues(alpha: 0.9)
+                : Colors.black.withValues(alpha: 0.9),
           ),
         ),
       ],

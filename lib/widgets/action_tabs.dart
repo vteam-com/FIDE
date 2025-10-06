@@ -58,7 +58,9 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
+            border: Border.all(
+              color: colorScheme.outline.withValues(alpha: 0.3),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,7 +113,9 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                   );
                 }).toList(),
                 labelColor: colorScheme.primary,
-                unselectedLabelColor: colorScheme.onSurface.withOpacity(0.6),
+                unselectedLabelColor: colorScheme.onSurface.withValues(
+                  alpha: 0.6,
+                ),
                 indicatorColor: colorScheme.primary,
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
@@ -165,8 +169,9 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                                       action['description'] as String,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: colorScheme.onSurface
-                                            .withOpacity(0.7),
+                                        color: colorScheme.onSurface.withValues(
+                                          alpha: 0.7,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -183,7 +188,7 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
                                 color: colorScheme.surfaceContainerHighest
-                                    .withOpacity(0.3),
+                                    .withValues(alpha: 0.3),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: SingleChildScrollView(
@@ -192,8 +197,8 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                                   action['details'] as String,
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: colorScheme.onSurface.withOpacity(
-                                      0.8,
+                                    color: colorScheme.onSurface.withValues(
+                                      alpha: 0.8,
                                     ),
                                     height: 1.3,
                                     fontFamily: 'monospace',
@@ -257,7 +262,9 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                                 StatusIndicator(
                                   icon: Icons.hourglass_top,
                                   label: 'In progress...',
-                                  color: colorScheme.onSurface.withOpacity(0.6),
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.6,
+                                  ),
                                 )
                               else if (status == BuildProcessStatus.success)
                                 StatusIndicator(

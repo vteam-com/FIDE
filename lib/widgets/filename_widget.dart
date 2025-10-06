@@ -46,7 +46,7 @@ class FileNameWidget extends StatelessWidget {
     if (isSelected) {
       backgroundColor = Theme.of(
         context,
-      ).colorScheme.primaryContainer.withOpacity(0.3);
+      ).colorScheme.primaryContainer.withValues(alpha: 0.3);
     }
 
     final String relativePath = p.join(
@@ -96,7 +96,9 @@ class FileNameWidget extends StatelessWidget {
                     vertical: 1,
                   ),
                   decoration: BoxDecoration(
-                    color: fileItem.getGitStatusColor(context).withOpacity(0.1),
+                    color: fileItem
+                        .getGitStatusColor(context)
+                        .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(

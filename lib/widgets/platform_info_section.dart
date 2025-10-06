@@ -308,7 +308,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
           decoration: BoxDecoration(
             color: Theme.of(
               context,
-            ).colorScheme.surfaceVariant.withOpacity(0.3),
+            ).colorScheme.surfaceVariant.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
@@ -366,7 +366,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                             fontSize: 11,
                             color: Theme.of(
                               context,
-                            ).colorScheme.onSurface.withOpacity(0.8),
+                            ).colorScheme.onSurface.withValues(alpha: 0.8),
                           ),
                         ),
                       ),
@@ -397,7 +397,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                             fontSize: 11,
                             color: Theme.of(
                               context,
-                            ).colorScheme.onSurface.withOpacity(0.8),
+                            ).colorScheme.onSurface.withValues(alpha: 0.8),
                           ),
                         ),
                       ),
@@ -429,7 +429,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                             fontSize: 11,
                             color: Theme.of(
                               context,
-                            ).colorScheme.onSurface.withOpacity(0.8),
+                            ).colorScheme.onSurface.withValues(alpha: 0.8),
                           ),
                         ),
                       ),
@@ -461,7 +461,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                     color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: Colors.blue.withOpacity(0.3),
+                      color: Colors.blue.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -472,7 +472,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                         children: [
                           BadgeStatus(
                             text: 'ENABLE',
-                            backgroundColor: Colors.blue.withOpacity(0.1),
+                            backgroundColor: Colors.blue.withValues(alpha: 0.1),
                             textColor: Colors.blue.shade700,
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
@@ -514,7 +514,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                   border: Border.all(
                     color: Theme.of(
                       context,
-                    ).colorScheme.outline.withOpacity(0.3),
+                    ).colorScheme.outline.withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),
@@ -540,9 +540,10 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                             _getPlatformIconPath(),
                             style: TextStyle(
                               fontSize: 10,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant
+                                  .withValues(alpha: 0.7),
                               fontFamily: 'monospace',
                             ),
                             maxLines: 2,

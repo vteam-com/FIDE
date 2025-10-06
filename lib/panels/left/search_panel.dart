@@ -469,8 +469,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
         decoration: BoxDecoration(
           color: Theme.of(
             context,
-            // ignore: deprecated_member_use
-          ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+          ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Column(
