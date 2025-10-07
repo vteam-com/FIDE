@@ -152,6 +152,24 @@ Validates test organization and naming conventions.
     ];
   }
 
+  void _handleOutput(String data) {
+    if (data.trim().isNotEmpty && mounted) {
+      setState(() {
+        _outputBuffer.writeln(data.trim());
+        _hasOutput = true;
+      });
+    }
+  }
+
+  void _handleError(String data) {
+    if (data.trim().isNotEmpty && mounted) {
+      setState(() {
+        _errorBuffer.writeln(data.trim());
+        _hasErrors = true;
+      });
+    }
+  }
+
   Future<void> _runTests(List<String> commandArgs) async {
     if (_isRunningTests) {
       MessageBox.showInfo(context, 'Tests are already running');
@@ -172,24 +190,14 @@ Validates test organization and naming conventions.
       _currentProcess = process;
 
       // Handle stdout
-      process.stdout.transform(const SystemEncoding().decoder).listen((data) {
-        if (data.trim().isNotEmpty && mounted) {
-          setState(() {
-            _outputBuffer.writeln(data.trim());
-            _hasOutput = true;
-          });
-        }
-      });
+      process.stdout
+          .transform(const SystemEncoding().decoder)
+          .listen((data) => _handleOutput(data));
 
       // Handle stderr as errors
-      process.stderr.transform(const SystemEncoding().decoder).listen((data) {
-        if (data.trim().isNotEmpty && mounted) {
-          setState(() {
-            _errorBuffer.writeln(data.trim());
-            _hasErrors = true;
-          });
-        }
-      });
+      process.stderr
+          .transform(const SystemEncoding().decoder)
+          .listen((data) => _handleError(data));
 
       final exitCode = await process.exitCode;
 

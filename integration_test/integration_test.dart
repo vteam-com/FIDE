@@ -280,6 +280,44 @@ void main() {
     }
     stepFinished();
 
+    // Switch to Test panel
+    stepStart('Test Panel');
+    {
+      substep('✓ Switched to Test panel');
+      await tester.tap(find.byKey(const Key('keyTabTest')));
+      await tester.pumpAndSettle();
+
+      // Verify the test panel loads correctly
+      expect(
+        find.text('Test Suite'),
+        findsOneWidget,
+        reason: 'Test panel title should be visible',
+      );
+      expect(
+        find.text('Run and manage Flutter tests'),
+        findsOneWidget,
+        reason: 'Test panel subtitle should be visible',
+      );
+      expect(
+        find.text('Run All Tests'),
+        findsOneWidget,
+        reason: 'All Tests action should be visible',
+      );
+      expect(
+        find.text('Unit Tests'),
+        findsOneWidget,
+        reason: 'Unit Tests action should be visible',
+      );
+      expect(
+        find.text('Widget Tests'),
+        findsOneWidget,
+        reason: 'Widget Tests action should be visible',
+      );
+
+      substep('✓ Test panel loaded successfully with all test actions');
+    }
+    stepFinished();
+
     stepStart('Right Panel');
     {
       await tester.tap(find.byKey(const Key('keyTabOutline')));
