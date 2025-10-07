@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:process_run/shell.dart';
+
+import 'create_project_step1.dart';
+import 'create_project_step2.dart';
 
 class CreateProjectScreen extends StatefulWidget {
   final String? initialDirectory;
@@ -35,6 +37,14 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
   String? selectedDirectory;
   String? _finalProjectName;
 
+  // Wizard step management
+  int _currentStep = 1;
+  String _selectedLanguage = 'en'; // Default to English
+
+  // Localization settings
+  bool _wantsLocalization = true;
+  final Set<String> _selectedLanguages = {'en', 'fr'};
+
   // Flutter status tracking
   bool _flutterStatusChecked = false;
   bool _flutterAvailable = false;
@@ -52,15 +62,13 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
   @override
   void initState() {
     super.initState();
-    nameController.addListener(_onProjectNameChanged);
+    _userProjectName = '';
+    _userFinalProjectName = '';
+    _userDirectory = '';
     _initializeDirectoryController();
     _checkFlutterStatus();
     _checkGitStatus();
     _checkOllamaStatus();
-  }
-
-  void _onProjectNameChanged() {
-    _validateProjectName(nameController.text);
   }
 
   Future<void> _checkFlutterStatus() async {
@@ -191,111 +199,75 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
     }
   }
 
-  /// Validates and converts project name to valid Flutter package name
-  String? _validateProjectName(String inputName) {
-    if (inputName.isEmpty) {
-      return null;
+  void _nextStep() {
+    if (_currentStep == 1 && _canGoToNextStep()) {
+      setState(() {
+        _currentStep = 2;
+      });
     }
+  }
 
-    // Only normalize if needed (spaces, special chars, etc.)
-    String normalized = inputName;
+  bool _canGoToNextStep() {
+    return _userProjectName.isNotEmpty && _userDirectory.isNotEmpty;
+  }
 
-    // Replace spaces and special characters with underscores
-    normalized = normalized.replaceAll(RegExp(r'[^a-z0-9_]'), '_');
+  late String _userProjectName;
+  late String _userFinalProjectName;
+  late String _userDirectory;
 
-    // Remove consecutive underscores
-    normalized = normalized.replaceAll(RegExp(r'_+'), '_');
+  void _handleCreate() {
+    final projectName = _userFinalProjectName.isNotEmpty
+        ? _userFinalProjectName
+        : _userProjectName;
+    final directory = _userDirectory;
 
-    // Remove leading/trailing underscores
-    normalized = normalized.replaceAll(RegExp(r'^_+|_+$'), '');
-
-    // Ensure it doesn't start with a digit
-    if (normalized.isNotEmpty && normalized.startsWith(RegExp(r'[0-9]'))) {
-      normalized = 'app_$normalized';
-    }
-
-    // Ensure it's not empty after normalization
-    if (normalized.isEmpty) {
-      normalized = 'flutter_app';
-    }
-
-    // Check if it's a reserved Dart word and prefix if needed
-    const reservedWords = {
-      'abstract',
-      'as',
-      'assert',
-      'async',
-      'await',
-      'break',
-      'case',
-      'catch',
-      'class',
-      'const',
-      'continue',
-      'default',
-      'deferred',
-      'do',
-      'dynamic',
-      'else',
-      'enum',
-      'export',
-      'extends',
-      'extension',
-      'external',
-      'factory',
-      'false',
-      'final',
-      'finally',
-      'for',
-      'function',
-      'get',
-      'hide',
-      'if',
-      'implements',
-      'import',
-      'in',
-      'interface',
-      'is',
-      'late',
-      'library',
-      'mixin',
-      'new',
-      'null',
-      'on',
-      'operator',
-      'part',
-      'required',
-      'rethrow',
-      'return',
-      'set',
-      'show',
-      'static',
-      'super',
-      'switch',
-      'sync',
-      'this',
-      'throw',
-      'true',
-      'try',
-      'typedef',
-      'var',
-      'void',
-      'while',
-      'with',
-      'yield',
+    final result = <String, String>{
+      'name': projectName,
+      'directory': directory,
+      'language': _selectedLanguage,
     };
 
-    if (reservedWords.contains(normalized)) {
-      normalized = '${normalized}_app';
+    if (_ollamaAvailable && descriptionController.text.isNotEmpty) {
+      result['description'] = descriptionController.text;
     }
 
-    // Update the final name state
-    setState(() {
-      _finalProjectName = normalized;
-    });
-
-    return normalized;
+    widget.onCreate(result);
   }
+
+  void _onProjectNameChanged(String projectName, String? finalProjectName) {
+    _userProjectName = projectName;
+    _userFinalProjectName = finalProjectName ?? projectName;
+  }
+
+  void _onDirectoryChanged(String directory) {
+    _userDirectory = directory;
+  }
+
+  void _onWantsLocalizationChanged(bool value) =>
+      setState(() => _wantsLocalization = value);
+
+  void _onLanguageSelectionChanged(String lang, bool selected) {
+    setState(() {
+      if (selected) {
+        _selectedLanguages.add(lang);
+      } else {
+        _selectedLanguages.remove(lang);
+        // Ensure default language is still selected
+        if (_selectedLanguages.contains(_selectedLanguage) == false) {
+          if (_selectedLanguages.isNotEmpty) {
+            _selectedLanguage = _selectedLanguages.first;
+          } else {
+            // Reset to English if no languages selected
+            _selectedLanguages.add('en');
+            _selectedLanguage = 'en';
+          }
+        }
+      }
+    });
+  }
+
+  void _onDefaultLanguageChanged(String value) =>
+      setState(() => _selectedLanguage = value);
 
   @override
   void dispose() {
@@ -337,263 +309,44 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Form section
+            // Form section - wizard steps
             Expanded(
               child: SingleChildScrollView(
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 600),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 24,
-                    children: [
-                      TextField(
-                        controller: nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Project Name',
-                          hintText: 'Enter project name',
-                          border: OutlineInputBorder(),
+                  child: _currentStep == 1
+                      ? CreateProjectStep1(
+                          initialDirectory: widget.initialDirectory,
+                          testInitialDirectory:
+                              CreateProjectScreen._testInitialDirectory,
+                          flutterStatusChecked: _flutterStatusChecked,
+                          flutterAvailable: _flutterAvailable,
+                          flutterVersion: _flutterVersion,
+                          gitStatusChecked: _gitStatusChecked,
+                          gitAvailable: _gitAvailable,
+                          gitVersion: _gitVersion,
+                          ollamaStatusChecked: _ollamaStatusChecked,
+                          ollamaAvailable: _ollamaAvailable,
+                          onProjectNameChanged: _onProjectNameChanged,
+                          onDirectoryChanged: _onDirectoryChanged,
+                        )
+                      : CreateProjectStep2(
+                          projectName: _userFinalProjectName.isNotEmpty
+                              ? _userFinalProjectName
+                              : (_finalProjectName ?? 'Project'),
+                          projectLocation: _userDirectory.isNotEmpty
+                              ? _userDirectory
+                              : (selectedDirectory ??
+                                    directoryController!.text),
+                          wantsLocalization: _wantsLocalization,
+                          selectedLanguages: _selectedLanguages,
+                          defaultLanguage: _selectedLanguage,
+                          onWantsLocalizationChanged:
+                              _onWantsLocalizationChanged,
+                          onLanguageSelectionChanged:
+                              _onLanguageSelectionChanged,
+                          onDefaultLanguageChanged: _onDefaultLanguageChanged,
                         ),
-                      ),
-
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: directoryController,
-                              decoration: const InputDecoration(
-                                labelText: 'Parent Directory',
-                                hintText: 'Select parent directory',
-                                border: OutlineInputBorder(),
-                              ),
-                              readOnly: true,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          ElevatedButton(
-                            onPressed: () async {
-                              final selectedDir = await FilePicker.platform
-                                  .getDirectoryPath();
-                              if (selectedDir != null && mounted) {
-                                setState(() {
-                                  selectedDirectory = selectedDir;
-                                  directoryController!.text = selectedDir;
-                                });
-                              }
-                            },
-                            child: const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                              child: Text('Browse'),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // Description field only if Ollama is available
-                      if (_ollamaStatusChecked && _ollamaAvailable)
-                        TextField(
-                          controller: descriptionController,
-                          decoration: const InputDecoration(
-                            labelText:
-                                'App Description (AI-powered generation)',
-                            hintText:
-                                'Describe what kind of app you want to create...',
-                            border: OutlineInputBorder(),
-                          ),
-                          maxLines: 3,
-                          minLines: 2,
-                        ),
-
-                      // Show final project name if it's different from input
-                      if (_finalProjectName != null &&
-                          _finalProjectName != nameController.text)
-                        Container(
-                          padding: const EdgeInsets.only(top: 4, bottom: 16),
-                          child: Row(
-                            spacing: 8,
-                            children: [
-                              Icon(
-                                _flutterAvailable
-                                    ? Icons.check_circle
-                                    : Icons.error,
-                                color: Colors.orange,
-                                size: 16,
-                              ),
-
-                              Text(
-                                'Project name will be: "$_finalProjectName"',
-                                style: TextStyle(
-                                  color: Colors.orange,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                      // Flutter status
-                      if (_flutterStatusChecked)
-                        Container(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            spacing: 8,
-                            children: [
-                              Icon(
-                                _flutterAvailable
-                                    ? Icons.check_circle
-                                    : Icons.error,
-                                color: _flutterAvailable
-                                    ? Colors.green
-                                    : Colors.red,
-                                size: 16,
-                              ),
-
-                              Text(
-                                _flutterAvailable
-                                    ? 'Flutter SDK: $_flutterVersion'
-                                    : 'Flutter SDK: Not Found',
-                                style: TextStyle(
-                                  color: _flutterAvailable
-                                      ? Colors.green
-                                      : Colors.red,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              if (!_flutterAvailable) ...[
-                                TextButton(
-                                  onPressed: () {
-                                    // Show installation instructions
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return AlertDialog(
-                                          title: const Text(
-                                            'Install Flutter SDK',
-                                          ),
-                                          content: const SingleChildScrollView(
-                                            child: Text(
-                                              'Flutter SDK is not installed or not available in PATH.\n\n'
-                                              'To install Flutter:\n\n'
-                                              '1. Visit: https://flutter.dev/docs/get-started/install\n'
-                                              '2. Download the Flutter SDK for your platform\n'
-                                              '3. Extract the SDK to a location (e.g., ~/flutter)\n'
-                                              '4. Add the flutter/bin directory to your PATH:\n'
-                                              '   - macOS/Linux: Add to ~/.bashrc or ~/.zshrc:\n'
-                                              '     export PATH="\$PATH:~/flutter/bin"\n'
-                                              '   - Windows: Add to System Environment Variables\n'
-                                              '5. Run: flutter doctor\n\n'
-                                              'For detailed instructions, visit: https://flutter.dev/docs/get-started/install',
-                                            ),
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.of(context).pop(),
-                                              child: const Text('OK'),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  },
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: const Size(50, 30),
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  child: const Text(
-                                    'Install',
-                                    style: TextStyle(fontSize: 12),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-
-                      // Git status
-                      if (_gitStatusChecked)
-                        Container(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            spacing: 8,
-                            children: [
-                              Icon(
-                                _gitAvailable
-                                    ? Icons.check_circle
-                                    : Icons.error,
-                                color: _gitAvailable
-                                    ? Colors.green
-                                    : Colors.red,
-                                size: 16,
-                              ),
-
-                              Text(
-                                _gitAvailable
-                                    ? 'Git: $_gitVersion'
-                                    : 'Git: Not Found',
-                                style: TextStyle(
-                                  color: _gitAvailable
-                                      ? Colors.green
-                                      : Colors.red,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              if (!_gitAvailable) ...[
-                                TextButton(
-                                  onPressed: () {
-                                    // Show installation instructions
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return AlertDialog(
-                                          title: const Text('Install Git'),
-                                          content: const SingleChildScrollView(
-                                            child: Text(
-                                              'Git is not installed or not available in PATH.\n\n'
-                                              'To install Git:\n\n'
-                                              '• macOS: Install Xcode Command Line Tools:\n'
-                                              '  xcode-select --install\n'
-                                              '  Or install Git from: https://git-scm.com/download/mac\n\n'
-                                              '• Linux (Ubuntu/Debian):\n'
-                                              '  sudo apt-get update && sudo apt-get install git\n\n'
-                                              '• Windows: Download from https://git-scm.com/download/win\n\n'
-                                              'For detailed instructions, visit: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git',
-                                            ),
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.of(context).pop(),
-                                              child: const Text('OK'),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  },
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: const Size(50, 30),
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  child: const Text(
-                                    'Install',
-                                    style: TextStyle(fontSize: 12),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
                 ),
               ),
             ),
@@ -604,6 +357,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  // Cancel button - always present
                   OutlinedButton(
                     onPressed: widget.onCancel,
                     style: OutlinedButton.styleFrom(
@@ -615,39 +369,32 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                     child: const Text('Cancel'),
                   ),
                   const SizedBox(width: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      final directory =
-                          selectedDirectory ?? directoryController!.text;
-                      if (nameController.text.isNotEmpty &&
-                          directory.isNotEmpty) {
-                        // Use the validated project name or validate it now
-                        final projectName =
-                            _finalProjectName ??
-                            _validateProjectName(nameController.text) ??
-                            nameController.text;
 
-                        final result = <String, String>{
-                          'name': projectName,
-                          'directory': directory,
-                        };
-
-                        if (_ollamaAvailable &&
-                            descriptionController.text.isNotEmpty) {
-                          result['description'] = descriptionController.text;
-                        }
-
-                        widget.onCreate(result);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
+                  // Step 1: Next button
+                  if (_currentStep == 1)
+                    ElevatedButton(
+                      onPressed: _canGoToNextStep() ? _nextStep : null,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 16,
+                        ),
                       ),
+                      child: const Text('Next'),
                     ),
-                    child: const Text('Create'),
-                  ),
+
+                  // Step 2: Create button
+                  if (_currentStep == 2)
+                    ElevatedButton(
+                      onPressed: _handleCreate,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 16,
+                        ),
+                      ),
+                      child: const Text('Create'),
+                    ),
                 ],
               ),
             ),

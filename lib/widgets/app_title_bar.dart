@@ -26,10 +26,12 @@ class AppTitleBar extends ConsumerStatefulWidget {
   final bool leftPanelVisible;
   final bool bottomPanelVisible;
   final bool rightPanelVisible;
+  final bool showPanelToggles;
   final Function(String)? onProjectSwitch;
   final Function(String)? onProjectCreateStart;
   final VoidCallback? onProjectCreateComplete;
   final VoidCallback? onShowCreateProjectScreen;
+  final VoidCallback? onCloseProject;
 
   const AppTitleBar({
     super.key,
@@ -41,10 +43,12 @@ class AppTitleBar extends ConsumerStatefulWidget {
     this.leftPanelVisible = true,
     this.bottomPanelVisible = true,
     this.rightPanelVisible = true,
+    this.showPanelToggles = true,
     this.onProjectSwitch,
     this.onProjectCreateStart,
     this.onProjectCreateComplete,
     this.onShowCreateProjectScreen,
+    this.onCloseProject,
   });
 
   @override
@@ -106,8 +110,11 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
               },
             ),
 
-            // Center section: Panel toggle buttons
-            Expanded(child: Center(child: _buildPanelToggleButtons())),
+            // Center section: Panel toggle buttons (only shown when in main layout)
+            if (widget.showPanelToggles)
+              Expanded(child: Center(child: _buildPanelToggleButtons()))
+            else
+              const Spacer(),
 
             // Right section: Settings button
             _buildSettingsButton(),
@@ -284,9 +291,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
       widget.onShowCreateProjectScreen?.call();
       return;
     } else if (value == 'close_project') {
-      ref.read(projectLoadedProvider.notifier).state = false;
-      ref.read(currentProjectPathProvider.notifier).state = null;
-      ref.read(selectedFileProvider.notifier).state = null;
+      widget.onCloseProject?.call();
     } else if (value.startsWith('remove_')) {
       final pathToRemove = value.substring(7);
       final updatedMru = List<String>.from(ref.read(mruFoldersProvider))

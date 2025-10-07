@@ -5,11 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Providers
 import '../../providers/app_providers.dart';
 
-// Utils
-import '../../utils/message_box.dart';
-
 // Screens
-import '../../screens/welcome_screen.dart';
 import 'editor_screen.dart';
 
 // Widgets
@@ -66,25 +62,12 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
     final DocumentState? activeDocument = ref.watch(activeDocumentProvider);
 
     // Determine the main content to display
-    late Widget mainContent;
+    Widget mainContent;
     if (activeDocument != null) {
       mainContent = EditorScreen(
         documentState: activeDocument,
         onContentChanged: widget.onContentChanged,
         onClose: widget.onClose,
-      );
-    } else if (!widget.projectLoaded) {
-      mainContent = WelcomeScreen(
-        onOpenFolder: widget.onOpenFolder ?? () {},
-        onCreateProject: () {
-          MessageBox.showInfo(
-            context,
-            'Create new project feature coming soon!',
-          );
-        },
-        mruFolders: widget.mruFolders,
-        onOpenMruProject: widget.onOpenMruProject ?? (String path) {},
-        onRemoveMruEntry: widget.onRemoveMruEntry ?? (String path) {},
       );
     } else {
       mainContent = const Center(

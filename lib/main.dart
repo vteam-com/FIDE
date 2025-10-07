@@ -139,8 +139,19 @@ class _FIDEState extends ConsumerState<FIDE> {
       ).read(projectManagerProvider);
       final success = await projectManager.loadProject(directoryPath);
 
-      // Clear loading state
-      _clearLoadingState();
+      // Clear loading state and set appropriate final state
+      if (success) {
+        // Project loaded successfully, switch to main layout
+        if (mounted) {
+          setState(() {
+            _currentViewState = AppViewState.mainLayout;
+            _loadingProjectName = null;
+          });
+        }
+      } else {
+        // Loading failed, back to welcome
+        _clearLoadingState();
+      }
 
       return success;
     } catch (e) {
@@ -269,6 +280,26 @@ class _FIDEState extends ConsumerState<FIDE> {
     });
   }
 
+  void _closeCurrentProject() {
+    if (_currentViewState == AppViewState.mainLayout) {
+      // Clear project state
+      ProviderScope.containerOf(
+        context,
+      ).read(projectLoadedProvider.notifier).state = false;
+      ProviderScope.containerOf(
+        context,
+      ).read(currentProjectPathProvider.notifier).state = null;
+      ProviderScope.containerOf(
+        context,
+      ).read(selectedFileProvider.notifier).state = null;
+
+      // Switch back to welcome state
+      setState(() {
+        _currentViewState = AppViewState.welcome;
+      });
+    }
+  }
+
   void _handleCreateProject(Map<String, String> result) async {
     setState(() {
       _currentViewState = AppViewState.creatingProject;
@@ -292,12 +323,15 @@ class _FIDEState extends ConsumerState<FIDE> {
 
       _logger.info('Project creation success: $success');
       if (!success) {
-        MessageBox.showError(context, 'Failed to create project');
+        MessageBox.showError(
+          navigatorKey.currentContext!,
+          'Failed to create project',
+        );
       }
     } catch (e) {
       _logger.severe('Error creating project: $e');
       MessageBox.showError(
-        context,
+        navigatorKey.currentContext!,
         'An error occurred while creating the project',
       );
     } finally {
@@ -330,6 +364,8 @@ class _FIDEState extends ConsumerState<FIDE> {
                   leftPanelVisible: ref.watch(leftPanelVisibleProvider),
                   bottomPanelVisible: ref.watch(bottomPanelVisibleProvider),
                   rightPanelVisible: ref.watch(rightPanelVisibleProvider),
+                  showPanelToggles:
+                      _currentViewState == AppViewState.mainLayout,
                   onProjectSwitch: (projectPath) async {
                     await tryLoadProject(projectPath);
                   },
@@ -347,6 +383,7 @@ class _FIDEState extends ConsumerState<FIDE> {
                       _currentViewState = AppViewState.createProject;
                     });
                   },
+                  onCloseProject: _closeCurrentProject,
                 );
               },
             ),
@@ -370,6 +407,7 @@ class _FIDEState extends ConsumerState<FIDE> {
                   onToggleRightPanel: () => triggerTogglePanelRight(ref),
                   onSwitchPanel: (index) => _switchToPanel(ref, index),
                   onProjectSwitch: (path) async => await tryLoadProject(path),
+                  onCloseProject: _closeCurrentProject,
                   lastOpenedFileName: _lastOpenedFileName,
                   onThemeChanged: (themeMode) => _updateTheme(themeMode),
                   currentThemeMode: _themeMode,

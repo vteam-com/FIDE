@@ -156,11 +156,18 @@ void main() {
       await tester.tap(find.text('Create New Project'));
       await tester.pumpAndSettle();
 
-      // Fill the create project dialog - project name
+      // Fill Step 1: Project Details - project name
       await tester.enterText(find.byType(TextField).first, 'helloworld');
       await tester.pumpAndSettle();
 
-      // Click Create button in dialog
+      // Click Next button to proceed to Step 2
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+
+      // Step 2: Localization Settings should be shown
+      // Default is "Do you want to localize?" = Yes, and EN/FR selected
+
+      // Click Create button to create the project
       await tester.tap(find.text('Create'));
       await tester.pumpAndSettle();
 

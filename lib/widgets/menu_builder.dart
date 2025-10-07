@@ -26,6 +26,7 @@ class MenuBuilder {
   final Function() onToggleRightPanel;
   final Function(int) onSwitchPanel;
   final Function(String) onProjectSwitch;
+  final Function()? onCloseProject;
   final String? lastOpenedFileName;
   final Function(ThemeMode) onThemeChanged;
   final ThemeMode currentThemeMode;
@@ -45,6 +46,7 @@ class MenuBuilder {
     required this.onToggleRightPanel,
     required this.onSwitchPanel,
     required this.onProjectSwitch,
+    this.onCloseProject,
     this.lastOpenedFileName,
     required this.onThemeChanged,
     required this.currentThemeMode,
@@ -100,6 +102,13 @@ class MenuBuilder {
             onOpenFolder();
           },
         ),
+        if (onCloseProject != null)
+          PlatformMenuItem(
+            label: 'Close Project',
+            onSelected: () {
+              onCloseProject!();
+            },
+          ),
         PlatformMenuItem(
           label: _getLastOpenedFileLabel(),
           onSelected: () {
