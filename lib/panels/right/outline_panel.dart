@@ -85,11 +85,15 @@ class _OutlinePanelState extends State<OutlinePanel> {
             if (_isLoading)
               const Center(child: CircularProgressIndicator())
             else if (_error.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  _error,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    _error,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
                 ),
               )
             else if (_outlineNodes.isEmpty)
