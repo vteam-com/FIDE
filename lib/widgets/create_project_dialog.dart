@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -24,7 +25,9 @@ class CreateProjectDialog extends StatefulWidget {
 class _CreateProjectDialogState extends State<CreateProjectDialog> {
   final TextEditingController nameController = TextEditingController();
   TextEditingController? directoryController;
+  TextEditingController descriptionController = TextEditingController();
   String? selectedDirectory;
+  String? _finalProjectName;
 
   // Flutter status tracking
   bool _flutterStatusChecked = false;
@@ -36,12 +39,22 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
   bool _gitAvailable = false;
   String? _gitVersion;
 
+  // Ollama status tracking
+  bool _ollamaStatusChecked = false;
+  bool _ollamaAvailable = false;
+
   @override
   void initState() {
     super.initState();
+    nameController.addListener(_onProjectNameChanged);
     _initializeDirectoryController();
     _checkFlutterStatus();
     _checkGitStatus();
+    _checkOllamaStatus();
+  }
+
+  void _onProjectNameChanged() {
+    _validateProjectName(nameController.text);
   }
 
   Future<void> _checkFlutterStatus() async {
@@ -143,10 +156,146 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
     });
   }
 
+  Future<void> _checkOllamaStatus() async {
+    try {
+      // Check if Ollama is installed using which
+      final whichResult = await Process.run('which', ['ollama']);
+      final isInstalled = whichResult.exitCode == 0;
+
+      if (isInstalled) {
+        // Check if running by trying to list models
+        final listResult = await Process.run('ollama', ['list']);
+        _ollamaAvailable = listResult.exitCode == 0;
+      } else {
+        _ollamaAvailable = false;
+      }
+
+      if (mounted) {
+        setState(() {
+          _ollamaStatusChecked = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _ollamaStatusChecked = true;
+          _ollamaAvailable = false;
+        });
+      }
+    }
+  }
+
+  /// Validates and converts project name to valid Flutter package name
+  String? _validateProjectName(String inputName) {
+    if (inputName.isEmpty) {
+      return null;
+    }
+
+    // Convert to lowercase
+    String normalized = inputName.toLowerCase();
+
+    // Replace spaces and special characters with underscores
+    normalized = normalized.replaceAll(RegExp(r'[^a-z0-9_]'), '_');
+
+    // Remove consecutive underscores
+    normalized = normalized.replaceAll(RegExp(r'_+'), '_');
+
+    // Remove leading/trailing underscores
+    normalized = normalized.replaceAll(RegExp(r'^_+|_+$'), '');
+
+    // Ensure it doesn't start with a digit
+    if (normalized.isNotEmpty && normalized.startsWith(RegExp(r'[0-9]'))) {
+      normalized = 'app_$normalized';
+    }
+
+    // Ensure it's not empty after normalization
+    if (normalized.isEmpty) {
+      normalized = 'flutter_app';
+    }
+
+    // Check if it's a reserved Dart word and prefix if needed
+    const reservedWords = {
+      'abstract',
+      'as',
+      'assert',
+      'async',
+      'await',
+      'break',
+      'case',
+      'catch',
+      'class',
+      'const',
+      'continue',
+      'default',
+      'deferred',
+      'do',
+      'dynamic',
+      'else',
+      'enum',
+      'export',
+      'extends',
+      'extension',
+      'external',
+      'factory',
+      'false',
+      'final',
+      'finally',
+      'for',
+      'function',
+      'get',
+      'hide',
+      'if',
+      'implements',
+      'import',
+      'in',
+      'interface',
+      'is',
+      'late',
+      'library',
+      'mixin',
+      'new',
+      'null',
+      'on',
+      'operator',
+      'part',
+      'required',
+      'rethrow',
+      'return',
+      'set',
+      'show',
+      'static',
+      'super',
+      'switch',
+      'sync',
+      'this',
+      'throw',
+      'true',
+      'try',
+      'typedef',
+      'var',
+      'void',
+      'while',
+      'with',
+      'yield',
+    };
+
+    if (reservedWords.contains(normalized)) {
+      normalized = '${normalized}_app';
+    }
+
+    // Update the final name state
+    setState(() {
+      _finalProjectName = normalized;
+    });
+
+    return normalized;
+  }
+
   @override
   void dispose() {
     nameController.dispose();
     directoryController?.dispose();
+    descriptionController.dispose();
     super.dispose();
   }
 
@@ -210,6 +359,46 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
                 ),
               ],
             ),
+
+            // Description field only if Ollama is available
+            if (_ollamaStatusChecked && _ollamaAvailable)
+              TextField(
+                controller: descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'App Description (AI-powered generation)',
+                  hintText: 'Describe what kind of app you want to create...',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+                minLines: 2,
+              ),
+
+            // Show final project name if it's different from input
+            if (_finalProjectName != null &&
+                _finalProjectName != nameController.text)
+              Container(
+                padding: const EdgeInsets.only(top: 4, bottom: 16),
+                child: Row(
+                  spacing: 8,
+                  children: [
+                    Icon(
+                      _flutterAvailable ? Icons.check_circle : Icons.error,
+                      color: Colors.orange,
+                      size: 16,
+                    ),
+
+                    Text(
+                      'Project name will be: "$_finalProjectName"',
+                      style: TextStyle(
+                        color: Colors.orange,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             // Flutter status above action buttons
             if (_flutterStatusChecked)
               Container(
@@ -367,13 +556,27 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
             ),
             const SizedBox(width: 8),
             OutlinedButton(
-              onPressed: () {
+              onPressed: () async {
                 final directory =
                     selectedDirectory ?? directoryController!.text;
                 if (nameController.text.isNotEmpty && directory.isNotEmpty) {
-                  Navigator.of(
-                    context,
-                  ).pop({'name': nameController.text, 'directory': directory});
+                  // Use the validated project name or validate it now
+                  final projectName =
+                      _finalProjectName ??
+                      _validateProjectName(nameController.text) ??
+                      nameController.text;
+
+                  final result = <String, String>{
+                    'name': projectName,
+                    'directory': directory,
+                  };
+
+                  if (_ollamaAvailable &&
+                      descriptionController.text.isNotEmpty) {
+                    result['description'] = descriptionController.text;
+                  }
+
+                  Navigator.of(context).pop(result);
                 }
               },
               child: const Text('Create'),

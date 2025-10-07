@@ -95,6 +95,19 @@ class _FIDEState extends ConsumerState<FIDE> {
   bool _isLoadingProject = false;
   String? _loadingProjectName;
 
+  // Loading state for project creation
+  bool _isCreatingProject = false;
+  String? _creatingProjectName;
+
+  void _clearCreatingState() {
+    if (mounted) {
+      setState(() {
+        _isCreatingProject = false;
+        _creatingProjectName = null;
+      });
+    }
+  }
+
   void _clearLoadingState() {
     if (mounted) {
       setState(() {
@@ -258,6 +271,15 @@ class _FIDEState extends ConsumerState<FIDE> {
                   onProjectSwitch: (projectPath) async {
                     await tryLoadProject(projectPath);
                   },
+                  onProjectCreateStart: (projectName) {
+                    setState(() {
+                      _isCreatingProject = true;
+                      _creatingProjectName = projectName;
+                    });
+                  },
+                  onProjectCreateComplete: () {
+                    _clearCreatingState();
+                  },
                 );
               },
             ),
@@ -295,7 +317,12 @@ class _FIDEState extends ConsumerState<FIDE> {
                       await pickDirectoryAndLoadProject(context, ref);
                     }
 
-                    if (_isLoadingProject) {
+                    if (_isCreatingProject) {
+                      // Show LoadingScreen when project is being created
+                      return LoadingScreen(
+                        loadingProjectName: _creatingProjectName,
+                      );
+                    } else if (_isLoadingProject) {
                       // Show LoadingScreen when project is being loaded
                       return LoadingScreen(
                         loadingProjectName: _loadingProjectName,
