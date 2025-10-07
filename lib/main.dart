@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:window_manager/window_manager.dart';
 
 // Controllers
 import 'controllers/app_controller.dart';
@@ -86,66 +85,6 @@ void Function(WidgetRef ref) triggerTogglePanelRight = (ref) {
   final current = ref.read(rightPanelVisibleProvider);
   ref.read(rightPanelVisibleProvider.notifier).state = !current;
 };
-
-class WindowControls extends StatelessWidget {
-  const WindowControls({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Row(
-      children: [
-        IconButton(
-          icon: const Icon(Icons.minimize, size: 16),
-          onPressed: () async {
-            await windowManager.minimize();
-          },
-          tooltip: 'Minimize',
-          padding: const EdgeInsets.all(8),
-          constraints: const BoxConstraints(),
-          style: IconButton.styleFrom(
-            foregroundColor: isDark
-                ? Colors.white.withValues(alpha: 0.9)
-                : Colors.black.withValues(alpha: 0.9),
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.crop_square, size: 16),
-          onPressed: () async {
-            if (await windowManager.isMaximized()) {
-              await windowManager.unmaximize();
-            } else {
-              await windowManager.maximize();
-            }
-          },
-          tooltip: 'Maximize/Restore',
-          padding: const EdgeInsets.all(8),
-          constraints: const BoxConstraints(),
-          style: IconButton.styleFrom(
-            foregroundColor: isDark
-                ? Colors.white.withValues(alpha: 0.9)
-                : Colors.black.withValues(alpha: 0.9),
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.close, size: 16),
-          onPressed: () async {
-            await windowManager.close();
-          },
-          tooltip: 'Close',
-          padding: const EdgeInsets.all(8),
-          constraints: const BoxConstraints(),
-          hoverColor: isDark ? Colors.red[900] : Colors.red[100],
-          style: IconButton.styleFrom(
-            foregroundColor: isDark
-                ? Colors.white.withValues(alpha: 0.9)
-                : Colors.black.withValues(alpha: 0.9),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class _FIDEState extends ConsumerState<FIDE> {
   final Logger _logger = Logger('_FIDEState');
