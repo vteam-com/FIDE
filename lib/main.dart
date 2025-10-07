@@ -29,6 +29,15 @@ import 'panels/center/editor_screen.dart';
 // Theme
 import 'theme/app_theme.dart';
 
+// Enum for main view state
+enum AppViewState {
+  welcome, // Show WelcomeScreen
+  createProject, // Show CreateProjectScreen
+  loadingProject, // Show LoadingScreen for project loading
+  creatingProject, // Show LoadingScreen for project creation
+  mainLayout, // Show MainLayout (project loaded)
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -90,21 +99,17 @@ class _FIDEState extends ConsumerState<FIDE> {
   late SharedPreferences _prefs;
   static const String _themeModeKey = 'theme_mode';
 
-  // Loading state for project loading
-  bool _isLoadingProject = false;
+  // Unified view state management
+  AppViewState _currentViewState = AppViewState.welcome;
+
+  // Loading state metadata (associated with view states)
   String? _loadingProjectName;
-
-  // Loading state for project creation
-  bool _isCreatingProject = false;
   String? _creatingProjectName;
-
-  // State for showing create project screen
-  bool _isShowingCreateProject = false;
 
   void _clearCreatingState() {
     if (mounted) {
       setState(() {
-        _isCreatingProject = false;
+        _currentViewState = AppViewState.mainLayout;
         _creatingProjectName = null;
       });
     }
@@ -113,7 +118,7 @@ class _FIDEState extends ConsumerState<FIDE> {
   void _clearLoadingState() {
     if (mounted) {
       setState(() {
-        _isLoadingProject = false;
+        _currentViewState = AppViewState.welcome;
         _loadingProjectName = null;
       });
     }
@@ -124,7 +129,7 @@ class _FIDEState extends ConsumerState<FIDE> {
     try {
       // Set loading state
       setState(() {
-        _isLoadingProject = true;
+        _currentViewState = AppViewState.loadingProject;
         _loadingProjectName = directoryPath;
       });
 
@@ -198,7 +203,7 @@ class _FIDEState extends ConsumerState<FIDE> {
       // Set loading state before starting project load
       if (mounted) {
         setState(() {
-          _isLoadingProject = true;
+          _currentViewState = AppViewState.loadingProject;
           _loadingProjectName = projectPath;
         });
       }
@@ -212,8 +217,20 @@ class _FIDEState extends ConsumerState<FIDE> {
 
       if (success) {
         _logger.info('Successfully auto-loaded MRU project: $projectPath');
+        // Set state to main layout since project loaded
+        if (mounted) {
+          setState(() {
+            _currentViewState = AppViewState.mainLayout;
+          });
+        }
       } else {
         _logger.warning('Failed to auto-load MRU project: $projectPath');
+        // Reset to welcome state on failure
+        if (mounted) {
+          setState(() {
+            _currentViewState = AppViewState.welcome;
+          });
+        }
       }
     } catch (e) {
       // Clear loading state on error
@@ -248,14 +265,13 @@ class _FIDEState extends ConsumerState<FIDE> {
   // Helper functions for create project callbacks
   void _handleCreateProjectCancel() {
     setState(() {
-      _isShowingCreateProject = false;
+      _currentViewState = AppViewState.welcome;
     });
   }
 
   void _handleCreateProject(Map<String, String> result) async {
     setState(() {
-      _isShowingCreateProject = false;
-      _isCreatingProject = true;
+      _currentViewState = AppViewState.creatingProject;
       _creatingProjectName = result['name'];
     });
 
@@ -319,12 +335,17 @@ class _FIDEState extends ConsumerState<FIDE> {
                   },
                   onProjectCreateStart: (projectName) {
                     setState(() {
-                      _isCreatingProject = true;
+                      _currentViewState = AppViewState.creatingProject;
                       _creatingProjectName = projectName;
                     });
                   },
                   onProjectCreateComplete: () {
                     _clearCreatingState();
+                  },
+                  onShowCreateProjectScreen: () {
+                    setState(() {
+                      _currentViewState = AppViewState.createProject;
+                    });
                   },
                 );
               },
@@ -355,7 +376,6 @@ class _FIDEState extends ConsumerState<FIDE> {
                 ).buildMenus(),
                 child: Consumer(
                   builder: (context, ref, child) {
-                    final projectLoaded = ref.watch(projectLoadedProvider);
                     final mruFolders = ref.watch(mruFoldersProvider);
 
                     // Project loading functions with access to ref
@@ -363,63 +383,69 @@ class _FIDEState extends ConsumerState<FIDE> {
                       await pickDirectoryAndLoadProject(context, ref);
                     }
 
-                    if (_isShowingCreateProject) {
-                      // Show CreateProjectScreen as full screen
-                      return CreateProjectScreen(
-                        onCancel: _handleCreateProjectCancel,
-                        onCreate: _handleCreateProject,
-                      );
-                    } else if (_isCreatingProject) {
-                      // Show LoadingScreen when project is being created
-                      return LoadingScreen(
-                        loadingProjectName: _creatingProjectName,
-                      );
-                    } else if (_isLoadingProject) {
-                      // Show LoadingScreen when project is being loaded
-                      return LoadingScreen(
-                        loadingProjectName: _loadingProjectName,
-                      );
-                    } else if (!projectLoaded) {
-                      // Show WelcomeScreen when no project is loaded
-                      return WelcomeScreen(
-                        onOpenFolder: pickDirectory,
-                        onCreateProject: () {
-                          _logger.fine('onCreateProject called');
-                          setState(() {
-                            _isShowingCreateProject = true;
-                          });
-                        },
-                        mruFolders: mruFolders,
-                        onOpenMruProject: tryLoadProject,
-                        onRemoveMruEntry: (path) async {
-                          final updatedMru = List<String>.from(mruFolders)
-                            ..remove(path);
-                          ref.read(mruFoldersProvider.notifier).state =
-                              updatedMru;
+                    // Determine the widget to show based on current state
+                    final Widget content;
+                    switch (_currentViewState) {
+                      case AppViewState.createProject:
+                        content = CreateProjectScreen(
+                          onCancel: _handleCreateProjectCancel,
+                          onCreate: _handleCreateProject,
+                        );
+                        break;
+                      case AppViewState.creatingProject:
+                        content = LoadingScreen(
+                          loadingProjectName: _creatingProjectName,
+                        );
+                        break;
+                      case AppViewState.loadingProject:
+                        content = LoadingScreen(
+                          loadingProjectName: _loadingProjectName,
+                        );
+                        break;
+                      case AppViewState.welcome:
+                        content = WelcomeScreen(
+                          onOpenFolder: pickDirectory,
+                          onCreateProject: () {
+                            _logger.fine('onCreateProject called');
+                            setState(() {
+                              _currentViewState = AppViewState.createProject;
+                            });
+                          },
+                          mruFolders: mruFolders,
+                          onOpenMruProject: tryLoadProject,
+                          onRemoveMruEntry: (path) async {
+                            final updatedMru = List<String>.from(mruFolders)
+                              ..remove(path);
+                            ref.read(mruFoldersProvider.notifier).state =
+                                updatedMru;
 
-                          // Save to SharedPreferences
-                          try {
-                            final prefs = await ref.read(
-                              sharedPreferencesProvider.future,
-                            );
-                            await prefs.setStringList(
-                              'mru_folders',
-                              updatedMru,
-                            );
-                          } catch (e) {
-                            // Silently handle SharedPreferences errors
-                          }
-                        },
-                      );
-                    } else {
-                      // Show main layout when project is loaded
-                      return MainLayout(
-                        onThemeChanged: (themeMode) => _updateTheme(themeMode),
-                        onFileOpened: (fileName) {
-                          setState(() => _lastOpenedFileName = fileName);
-                        },
-                      );
+                            // Save to SharedPreferences
+                            try {
+                              final prefs = await ref.read(
+                                sharedPreferencesProvider.future,
+                              );
+                              await prefs.setStringList(
+                                'mru_folders',
+                                updatedMru,
+                              );
+                            } catch (e) {
+                              // Silently handle SharedPreferences errors
+                            }
+                          },
+                        );
+                        break;
+                      case AppViewState.mainLayout:
+                        content = MainLayout(
+                          onThemeChanged: (themeMode) =>
+                              _updateTheme(themeMode),
+                          onFileOpened: (fileName) {
+                            setState(() => _lastOpenedFileName = fileName);
+                          },
+                        );
+                        break;
                     }
+
+                    return content;
                   },
                 ),
               ),

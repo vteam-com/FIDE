@@ -346,10 +346,7 @@ digraph "" {
   "/lib/services/file_system_watcher.dart" -> "/lib/models/project_node.dart";
   "/lib/widgets/diff_viewer.dart" -> "/lib/utils/message_box.dart";
   "/lib/widgets/title_bar.dart" -> "/lib/providers/app_providers.dart";
-  "/lib/widgets/title_bar.dart" -> "/lib/services/ai_service.dart";
-  "/lib/widgets/title_bar.dart" -> "/lib/services/git_service.dart";
   "/lib/widgets/title_bar.dart" -> "/lib/utils/message_box.dart";
-  "/lib/widgets/title_bar.dart" -> "/lib/screens/create_project_screen.dart";
   "/lib/widgets/badge_status.dart" -> "/lib/theme/app_theme.dart";
   "/lib/widgets/output_panel.dart" -> "/lib/widgets/section_panel.dart";
   "/lib/widgets/output_panel.dart" -> "/lib/utils/message_box.dart";

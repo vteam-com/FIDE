@@ -7,21 +7,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
-import 'package:process_run/shell.dart';
 import 'package:window_manager/window_manager.dart';
 
 // Providers
 import '../providers/app_providers.dart';
 
-// Services
-import '../services/ai_service.dart';
-import '../services/git_service.dart';
-
 // Utils
 import '../utils/message_box.dart';
 
 // Widgets
-import '../screens/create_project_screen.dart';
 
 class TitleBar extends ConsumerStatefulWidget {
   final ThemeMode themeMode;
@@ -35,6 +29,7 @@ class TitleBar extends ConsumerStatefulWidget {
   final Function(String)? onProjectSwitch;
   final Function(String)? onProjectCreateStart;
   final VoidCallback? onProjectCreateComplete;
+  final VoidCallback? onShowCreateProjectScreen;
 
   const TitleBar({
     super.key,
@@ -49,6 +44,7 @@ class TitleBar extends ConsumerStatefulWidget {
     this.onProjectSwitch,
     this.onProjectCreateStart,
     this.onProjectCreateComplete,
+    this.onShowCreateProjectScreen,
   });
 
   @override
@@ -279,48 +275,13 @@ class _TitleBarState extends ConsumerState<TitleBar> {
       }
       return;
     } else if (value == 'create_project') {
-      // Show create project dialog using the shared dialog
-      final result = await showCreateProjectDialog(context);
-      if (result != null) {
-        final String projectName = result['name'] as String;
-        final String parentDirectory = result['directory'] as String;
+      // Close current project
+      ref.read(projectLoadedProvider.notifier).state = false;
+      ref.read(currentProjectPathProvider.notifier).state = null;
+      ref.read(selectedFileProvider.notifier).state = null;
 
-        // Notify main app to show loading screen
-        widget.onProjectCreateStart?.call(projectName);
-
-        // Clear existing loading actions and add project creation steps
-        ref.read(loadingActionsProvider.notifier).state = [];
-
-        try {
-          // Use ProjectService to create the project with loading actions
-          final projectService = ref.read(projectServiceProvider);
-          final success = await _createProjectWithLoadingActions(
-            ref,
-            projectService,
-            projectName,
-            parentDirectory,
-          );
-
-          if (!success) {
-            if (context.mounted) {
-              MessageBox.showError(context, 'Failed to create project');
-            }
-          } else if (result.containsKey('description')) {
-            // AI-powered generation: use description to generate app code
-            final description = result['description'] as String;
-            await _generateProjectFromDescriptionWithActions(
-              ref,
-              projectService,
-              projectName,
-              parentDirectory,
-              description,
-            );
-          }
-        } finally {
-          // Always notify main app to hide loading screen
-          widget.onProjectCreateComplete?.call();
-        }
-      }
+      // Set main app state to create project
+      widget.onShowCreateProjectScreen?.call();
       return;
     } else if (value == 'close_project') {
       ref.read(projectLoadedProvider.notifier).state = false;
@@ -542,217 +503,5 @@ class _TitleBarState extends ConsumerState<TitleBar> {
         );
       },
     );
-  }
-
-  /// Create project with loading actions for progress display
-  Future<bool> _createProjectWithLoadingActions(
-    WidgetRef ref,
-    dynamic projectService,
-    String projectName,
-    String parentDirectory,
-  ) async {
-    try {
-      final Duration duration = const Duration(milliseconds: 500);
-      int step = 1;
-
-      // Check Flutter SDK availability
-      _addLoadingAction(ref, step++, 'Validating Flutter SDK');
-      if (!await projectService.isFlutterSDKAvailable()) {
-        _updateLoadingActionStatus(ref, step - 1, LoadingStatus.failed);
-        if (context.mounted) {
-          MessageBox.showError(
-            context,
-            projectService.getFlutterInstallationInstructions(),
-          );
-        }
-        return false;
-      }
-      _updateLoadingActionStatus(ref, step - 1, LoadingStatus.success);
-      await Future.delayed(duration);
-
-      // Create Flutter project
-      _addLoadingAction(ref, step++, 'Creating Flutter project structure');
-      try {
-        final shell = Shell(workingDirectory: parentDirectory);
-        final results = await shell.run('flutter create $projectName');
-
-        if (results.isEmpty || results.first.exitCode != 0) {
-          _updateLoadingActionStatus(ref, step - 1, LoadingStatus.failed);
-          return false;
-        }
-
-        _updateLoadingActionStatus(ref, step - 1, LoadingStatus.success);
-        await Future.delayed(duration);
-
-        // Initialize Git repository
-        _addLoadingAction(ref, step++, 'Initializing Git repository');
-        final gitService = GitService();
-        await gitService.initRepository(
-          path.join(parentDirectory, projectName),
-        );
-
-        // Stage initial files and create commit
-        await gitService.stageFiles(path.join(parentDirectory, projectName), [
-          '.',
-        ]);
-        await gitService.commit(
-          path.join(parentDirectory, projectName),
-          'Initial commit: $projectName Flutter project',
-        );
-
-        _updateLoadingActionStatus(ref, step - 1, LoadingStatus.success);
-        await Future.delayed(duration);
-
-        return true;
-      } catch (e) {
-        _updateLoadingActionStatus(ref, step - 1, LoadingStatus.failed);
-        return false;
-      }
-    } catch (e) {
-      _logger.severe('Error in _createProjectWithLoadingActions: $e');
-      return false;
-    }
-  }
-
-  Future<void> _generateProjectFromDescriptionWithActions(
-    WidgetRef ref,
-    dynamic projectService,
-    String projectName,
-    String parentDirectory,
-    String description,
-  ) async {
-    final aiService = AIService();
-    final projectPath = path.join(parentDirectory, projectName);
-    final mainDartPath = path.join(projectPath, 'lib', 'main.dart');
-
-    try {
-      // Show loading dialog
-      if (context.mounted) {
-        MessageBox.showInfo(context, 'Generating AI-powered Flutter app...');
-      }
-
-      // Generate instructions from AI
-      final prompt =
-          '''
-Create a complete Flutter app based on the following description: "$description"
-
-Provide the complete, working Flutter/Dart code for the main.dart file that implements this app.
-Make sure the code:
-1. Imports the necessary Flutter packages
-2. Has a proper MaterialApp or CupertinoApp setup
-3. Implements the described functionality
-4. Includes proper state management if needed
-5. Is properly formatted and follows Dart conventions
-6. Can run without additional setup
-
-Only provide the Dart code for main.dart, nothing else.
-''';
-
-      final aiResponse = await aiService.getCodeSuggestion(prompt, '');
-      if (aiResponse.startsWith('Error:')) {
-        if (context.mounted) {
-          MessageBox.showError(
-            context,
-            'Failed to generate app from description: $aiResponse',
-          );
-        }
-        return;
-      }
-
-      // Extract code from AI response (remove any markdown formatting if present)
-      String generatedCode = aiResponse.trim();
-      if (generatedCode.startsWith('```dart')) {
-        generatedCode = generatedCode.substring(7);
-      }
-      if (generatedCode.endsWith('```')) {
-        generatedCode = generatedCode.substring(0, generatedCode.length - 3);
-      }
-      generatedCode = generatedCode.trim();
-
-      // Validate that we have valid Dart code
-      if (!generatedCode.contains(
-            'import \'package:flutter/material.dart\';',
-          ) &&
-          !generatedCode.contains('import "package:flutter/material.dart";')) {
-        if (context.mounted) {
-          MessageBox.showError(
-            context,
-            'AI generated invalid code. Please try with a more descriptive prompt.',
-          );
-        }
-        return;
-      }
-
-      // Update main.dart
-      final mainFile = File(mainDartPath);
-      await mainFile.writeAsString(generatedCode);
-
-      // Run flutter pub get to ensure dependencies are resolved
-      try {
-        final shell = Shell(workingDirectory: projectPath);
-        await shell.run('flutter pub get');
-        _logger.info(
-          'Successfully ran flutter pub get for AI-generated project',
-        );
-      } catch (e) {
-        _logger.warning('Failed to run flutter pub get: $e');
-      }
-
-      // Try to build the project to validate it works
-      try {
-        final shell = Shell(workingDirectory: projectPath);
-        final result = await shell.run('flutter build --debug');
-        if (result.first.exitCode == 0) {
-          if (context.mounted) {
-            MessageBox.showSuccess(
-              context,
-              'AI-powered Flutter app created successfully!',
-            );
-          }
-        } else {
-          if (context.mounted) {
-            MessageBox.showWarning(
-              context,
-              'App created but may have issues. Please check the code and fix any problems.',
-            );
-          }
-        }
-      } catch (e) {
-        _logger.warning('Could not validate build: $e');
-        if (context.mounted) {
-          MessageBox.showWarning(
-            context,
-            'App created successfully, but build validation failed.',
-          );
-        }
-      }
-    } catch (e) {
-      _logger.severe('Error generating project from description: $e');
-      if (context.mounted) {
-        MessageBox.showError(context, 'Failed to generate app: $e');
-      }
-    }
-  }
-
-  void _addLoadingAction(WidgetRef ref, int step, String text) {
-    final currentActions = ref.read(loadingActionsProvider);
-    final updatedActions = List<LoadingAction>.from(currentActions)
-      ..add(LoadingAction(step, text, LoadingStatus.pending));
-    ref.read(loadingActionsProvider.notifier).state = updatedActions;
-  }
-
-  void _updateLoadingActionStatus(
-    WidgetRef ref,
-    int step,
-    LoadingStatus status,
-  ) {
-    final currentActions = ref.read(loadingActionsProvider);
-    final updatedActions = currentActions.map((action) {
-      if (action.step == step) {
-        return LoadingAction(action.step, action.text, status);
-      }
-      return action;
-    }).toList();
-    ref.read(loadingActionsProvider.notifier).state = updatedActions;
   }
 }

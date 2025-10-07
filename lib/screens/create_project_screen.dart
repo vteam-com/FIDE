@@ -657,20 +657,3 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
     );
   }
 }
-
-/// Shows the create project dialog and returns the result
-Future<Map<String, String>?> showCreateProjectDialog(
-  BuildContext context, {
-  String? initialDirectory,
-}) async {
-  return showDialog<Map<String, String>>(
-    context: context,
-    builder: (BuildContext context) {
-      return CreateProjectScreen(
-        initialDirectory: initialDirectory,
-        onCancel: () => Navigator.of(context).pop(),
-        onCreate: (result) => Navigator.of(context).pop(result),
-      );
-    },
-  );
-}
