@@ -54,11 +54,11 @@ digraph "" {
   "/lib/widgets/diff_viewer.dart" [label="diff_viewer"];
   "/lib/widgets/container_counter.dart" [label="container_counter"];
   "/lib/widgets/toggle_experience_mode.dart" [label="toggle_experience_mode"];
-  "/lib/widgets/title_bar.dart" [label="title_bar"];
   "/lib/widgets/badge_status.dart" [label="badge_status"];
   "/lib/widgets/output_panel.dart" [label="output_panel"];
   "/lib/widgets/platform_info_section.dart" [label="platform_info_section"];
   "/lib/widgets/menu_builder.dart" [label="menu_builder"];
+  "/lib/widgets/app_title_bar.dart" [label="app_title_bar"];
   "/lib/widgets/message_widget.dart" [label="message_widget"];
   "/lib/widgets/section_panel.dart" [label="section_panel"];
   "/lib/widgets/side_by_side_diff.dart" [label="side_by_side_diff"];
@@ -169,11 +169,11 @@ digraph "" {
         "/lib/widgets/diff_viewer.dart";
         "/lib/widgets/container_counter.dart";
         "/lib/widgets/toggle_experience_mode.dart";
-        "/lib/widgets/title_bar.dart";
         "/lib/widgets/badge_status.dart";
         "/lib/widgets/output_panel.dart";
         "/lib/widgets/platform_info_section.dart";
         "/lib/widgets/menu_builder.dart";
+        "/lib/widgets/app_title_bar.dart";
         "/lib/widgets/message_widget.dart";
         "/lib/widgets/section_panel.dart";
         "/lib/widgets/side_by_side_diff.dart";
@@ -322,7 +322,7 @@ digraph "" {
   "/lib/main.dart" -> "/lib/services/project_operations.dart";
   "/lib/main.dart" -> "/lib/utils/message_box.dart";
   "/lib/main.dart" -> "/lib/screens/create_project_screen.dart";
-  "/lib/main.dart" -> "/lib/widgets/title_bar.dart";
+  "/lib/main.dart" -> "/lib/widgets/app_title_bar.dart";
   "/lib/main.dart" -> "/lib/widgets/menu_builder.dart";
   "/lib/main.dart" -> "/lib/screens/loading_screen.dart";
   "/lib/main.dart" -> "/lib/screens/main_layout.dart";
@@ -345,8 +345,6 @@ digraph "" {
   "/lib/services/git_service.dart" -> "/lib/models/file_system_item.dart";
   "/lib/services/file_system_watcher.dart" -> "/lib/models/project_node.dart";
   "/lib/widgets/diff_viewer.dart" -> "/lib/utils/message_box.dart";
-  "/lib/widgets/title_bar.dart" -> "/lib/providers/app_providers.dart";
-  "/lib/widgets/title_bar.dart" -> "/lib/utils/message_box.dart";
   "/lib/widgets/badge_status.dart" -> "/lib/theme/app_theme.dart";
   "/lib/widgets/output_panel.dart" -> "/lib/widgets/section_panel.dart";
   "/lib/widgets/output_panel.dart" -> "/lib/utils/message_box.dart";
@@ -355,6 +353,8 @@ digraph "" {
   "/lib/widgets/menu_builder.dart" -> "/lib/providers/app_providers.dart";
   "/lib/widgets/menu_builder.dart" -> "/lib/services/git_service.dart";
   "/lib/widgets/menu_builder.dart" -> "/lib/utils/message_box.dart";
+  "/lib/widgets/app_title_bar.dart" -> "/lib/providers/app_providers.dart";
+  "/lib/widgets/app_title_bar.dart" -> "/lib/utils/message_box.dart";
   "/lib/widgets/message_widget.dart" -> "/lib/widgets/badge_status.dart";
   "/lib/widgets/section_panel.dart" -> "/lib/widgets/container_counter.dart";
   "/lib/widgets/filename_widget.dart" -> "/lib/models/file_system_item.dart";

@@ -17,7 +17,7 @@ import 'utils/message_box.dart';
 
 // Widgets
 import 'screens/create_project_screen.dart';
-import 'widgets/title_bar.dart';
+import 'widgets/app_title_bar.dart';
 import 'widgets/menu_builder.dart';
 
 // Screens
@@ -321,7 +321,7 @@ class _FIDEState extends ConsumerState<FIDE> {
             Consumer(
               builder: (context, ref, child) {
                 // Show TitleBar for all cases - it handles the logic internally
-                return TitleBar(
+                return AppTitleBar(
                   themeMode: _themeMode,
                   onThemeChanged: (themeMode) => _updateTheme(themeMode),
                   onToggleLeftPanel: () => triggerTogglePanelLeft(ref),

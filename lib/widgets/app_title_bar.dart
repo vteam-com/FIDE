@@ -17,7 +17,7 @@ import '../utils/message_box.dart';
 
 // Widgets
 
-class TitleBar extends ConsumerStatefulWidget {
+class AppTitleBar extends ConsumerStatefulWidget {
   final ThemeMode themeMode;
   final Function(ThemeMode)? onThemeChanged;
   final VoidCallback? onToggleLeftPanel;
@@ -31,7 +31,7 @@ class TitleBar extends ConsumerStatefulWidget {
   final VoidCallback? onProjectCreateComplete;
   final VoidCallback? onShowCreateProjectScreen;
 
-  const TitleBar({
+  const AppTitleBar({
     super.key,
     required this.themeMode,
     this.onThemeChanged,
@@ -48,10 +48,10 @@ class TitleBar extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<TitleBar> createState() => _TitleBarState();
+  ConsumerState<AppTitleBar> createState() => _TitleBarState();
 }
 
-class _TitleBarState extends ConsumerState<TitleBar> {
+class _TitleBarState extends ConsumerState<AppTitleBar> {
   final Logger _logger = Logger('_TitleBarState');
 
   Future<void> _toggleMaximize() async {
