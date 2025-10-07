@@ -121,8 +121,7 @@ void main() {
         UncontrolledProviderScope(container: container, child: const FIDE()),
       );
       await tester.pumpAndSettle(const Duration(seconds: 1));
-      expect(find.text('Welcome to'), findsOneWidget);
-      expect(find.text('FIDE'), findsOneWidget);
+      expect(find.text('Welcome to FIDE'), findsOneWidget);
     }
     stepFinished();
 

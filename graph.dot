@@ -50,6 +50,7 @@ digraph "" {
   "/lib/services/git_service.dart" [label="git_service"];
   "/lib/services/file_system_watcher.dart" [label="file_system_watcher"];
   "/lib/services/ai_service.dart" [label="ai_service"];
+  "/lib/widgets/hero_title_widget.dart" [label="hero_title_widget"];
   "/lib/widgets/search_toggle_icons.dart" [label="search_toggle_icons"];
   "/lib/widgets/platform_selector.dart" [label="platform_selector"];
   "/lib/widgets/resizable_splitter.dart" [label="resizable_splitter"];
@@ -167,6 +168,7 @@ digraph "" {
       }
       subgraph "cluster~/lib/widgets" {
         label="widgets";
+        "/lib/widgets/hero_title_widget.dart";
         "/lib/widgets/search_toggle_icons.dart";
         "/lib/widgets/platform_selector.dart";
         "/lib/widgets/resizable_splitter.dart";
@@ -316,9 +318,12 @@ digraph "" {
   "/lib/screens/main_layout.dart" -> "/lib/panels/center/center_panel.dart";
   "/lib/screens/main_layout.dart" -> "/lib/panels/right/right_panel.dart";
   "/lib/screens/loading_screen.dart" -> "/lib/widgets/full_path_widget.dart";
+  "/lib/screens/loading_screen.dart" -> "/lib/widgets/hero_title_widget.dart";
   "/lib/screens/loading_screen.dart" -> "/lib/providers/app_providers.dart";
+  "/lib/screens/create_project_screen.dart" -> "/lib/widgets/hero_title_widget.dart";
   "/lib/screens/create_project_screen.dart" -> "/lib/screens/create_project_step1.dart";
   "/lib/screens/create_project_screen.dart" -> "/lib/screens/create_project_step2.dart";
+  "/lib/screens/welcome_screen.dart" -> "/lib/widgets/hero_title_widget.dart";
   "/lib/screens/welcome_screen.dart" -> "/lib/providers/app_providers.dart";
   "/lib/main.dart" -> "/lib/controllers/app_controller.dart";
   "/lib/main.dart" -> "/lib/providers/app_providers.dart";

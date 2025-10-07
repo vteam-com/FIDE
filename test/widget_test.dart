@@ -25,12 +25,7 @@ void main() {
 
       // Verify that the welcome screen is shown in full width when no project is loaded
       // (explorer panel is hidden, welcome screen takes full width)
-      expect(find.text('Welcome to'), findsOneWidget);
-      expect(find.text('FIDE'), findsOneWidget);
-      expect(
-        find.text('Flutter Integrated Developer Environment'),
-        findsOneWidget,
-      );
+      expect(find.text('Welcome to FIDE'), findsOneWidget);
       expect(find.text('Create New Project'), findsOneWidget);
     },
   );

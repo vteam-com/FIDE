@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:process_run/shell.dart';
 
@@ -300,53 +301,52 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
           ),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header section
-            Text(
-              'New Flutter Project',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            HeroTitleWidget(title: 'New Flutter Project'),
             const SizedBox(height: 32),
 
             // Form section - wizard steps
             Expanded(
               child: SingleChildScrollView(
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 600),
-                  child: _currentStep == 1
-                      ? CreateProjectStep1(
-                          initialDirectory: widget.initialDirectory,
-                          testInitialDirectory:
-                              CreateProjectScreen._testInitialDirectory,
-                          flutterStatusChecked: _flutterStatusChecked,
-                          flutterAvailable: _flutterAvailable,
-                          flutterVersion: _flutterVersion,
-                          gitStatusChecked: _gitStatusChecked,
-                          gitAvailable: _gitAvailable,
-                          gitVersion: _gitVersion,
-                          ollamaStatusChecked: _ollamaStatusChecked,
-                          ollamaAvailable: _ollamaAvailable,
-                          onProjectNameChanged: _onProjectNameChanged,
-                          onDirectoryChanged: _onDirectoryChanged,
-                        )
-                      : CreateProjectStep2(
-                          projectName: _userFinalProjectName.isNotEmpty
-                              ? _userFinalProjectName
-                              : (_finalProjectName ?? 'Project'),
-                          projectLocation: _userDirectory.isNotEmpty
-                              ? _userDirectory
-                              : (selectedDirectory ??
-                                    directoryController!.text),
-                          wantsLocalization: _wantsLocalization,
-                          selectedLanguages: _selectedLanguages,
-                          defaultLanguage: _selectedLanguage,
-                          onWantsLocalizationChanged:
-                              _onWantsLocalizationChanged,
-                          onLanguageSelectionChanged:
-                              _onLanguageSelectionChanged,
-                          onDefaultLanguageChanged: _onDefaultLanguageChanged,
-                        ),
+                child: Center(
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: _currentStep == 1
+                        ? CreateProjectStep1(
+                            initialDirectory: widget.initialDirectory,
+                            testInitialDirectory:
+                                CreateProjectScreen._testInitialDirectory,
+                            flutterStatusChecked: _flutterStatusChecked,
+                            flutterAvailable: _flutterAvailable,
+                            flutterVersion: _flutterVersion,
+                            gitStatusChecked: _gitStatusChecked,
+                            gitAvailable: _gitAvailable,
+                            gitVersion: _gitVersion,
+                            ollamaStatusChecked: _ollamaStatusChecked,
+                            ollamaAvailable: _ollamaAvailable,
+                            onProjectNameChanged: _onProjectNameChanged,
+                            onDirectoryChanged: _onDirectoryChanged,
+                          )
+                        : CreateProjectStep2(
+                            projectName: _userFinalProjectName.isNotEmpty
+                                ? _userFinalProjectName
+                                : (_finalProjectName ?? 'Project'),
+                            projectLocation: _userDirectory.isNotEmpty
+                                ? _userDirectory
+                                : (selectedDirectory ??
+                                      directoryController!.text),
+                            wantsLocalization: _wantsLocalization,
+                            selectedLanguages: _selectedLanguages,
+                            defaultLanguage: _selectedLanguage,
+                            onWantsLocalizationChanged:
+                                _onWantsLocalizationChanged,
+                            onLanguageSelectionChanged:
+                                _onLanguageSelectionChanged,
+                            onDefaultLanguageChanged: _onDefaultLanguageChanged,
+                          ),
+                  ),
                 ),
               ),
             ),

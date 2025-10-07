@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:fide/widgets/full_path_widget.dart';
+import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -18,6 +19,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      padding: EdgeInsets.all(32),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -30,123 +32,132 @@ class _LoadingScreenState extends State<LoadingScreen> {
           ],
         ),
       ),
-      child: Center(
-        child: SizedBox(
-          width: 600,
-          height: 600,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Consumer(
-              builder: (context, ref, child) {
-                final loadingActions = ref.watch(loadingActionsProvider);
-                final hasFailed = loadingActions.any(
-                  (action) => action.status == LoadingStatus.failed,
-                );
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          HeroTitleWidget(title: 'Loading project'),
 
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  spacing: 16,
-                  children: [
-                    // App Logo
-                    SizedBox(height: 100, child: Image.asset('assets/app.png')),
+          Center(
+            child: SizedBox(
+              width: 600,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final loadingActions = ref.watch(loadingActionsProvider);
+                    final hasFailed = loadingActions.any(
+                      (action) => action.status == LoadingStatus.failed,
+                    );
 
-                    // Loading Container
-                    // Loading Progress (deterministic based on step counters - 6 total steps)
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final loadingActions = ref.watch(
-                          loadingActionsProvider,
-                        );
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 16,
+                      children: [
+                        // Project Path
+                        FullPathWidget(path: widget.loadingProjectName!),
 
-                        // Calculate progress based on current step position (max 6 steps)
-                        double progress = 0.0;
-                        if (loadingActions.isNotEmpty) {
-                          final currentStep = loadingActions
-                              .map((action) => action.step)
-                              .reduce((a, b) => a > b ? a : b);
-                          const int totalSteps = 6;
+                        // Loading Progress (deterministic based on step counters - 6 total steps)
+                        Consumer(
+                          builder: (context, ref, child) {
+                            final loadingActions = ref.watch(
+                              loadingActionsProvider,
+                            );
 
-                          progress = currentStep / totalSteps;
-                          // Ensure progress doesn't exceed 1.0
-                          progress = progress.clamp(0.0, 1.0);
-                        }
+                            // Calculate progress based on current step position (max 6 steps)
+                            double progress = 0.0;
+                            if (loadingActions.isNotEmpty) {
+                              final currentStep = loadingActions
+                                  .map((action) => action.step)
+                                  .reduce((a, b) => a > b ? a : b);
+                              const int totalSteps = 6;
 
-                        return LinearProgressIndicator(
-                          value: progress,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Theme.of(context).colorScheme.primary,
-                          ),
-                        );
-                      },
-                    ),
+                              progress = currentStep / totalSteps;
+                              // Ensure progress doesn't exceed 1.0
+                              progress = progress.clamp(0.0, 1.0);
+                            }
 
-                    // Project Path
-                    FullPathWidget(path: widget.loadingProjectName!),
-
-                    // Loading Actions Log
-                    if (loadingActions.isNotEmpty)
-                      Container(
-                        constraints: const BoxConstraints(maxHeight: 300),
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: loadingActions.length,
-                          itemBuilder: (context, index) {
-                            final LoadingAction action = loadingActions[index];
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Row(
-                                spacing: 8,
-                                children: [
-                                  // Status icon
-                                  _buildStatusIcon(action.status, context),
-
-                                  // Action text
-                                  Expanded(
-                                    child: Text(
-                                      action.text,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium,
-                                    ),
-                                  ),
-                                ],
+                            return LinearProgressIndicator(
+                              value: progress,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Theme.of(context).colorScheme.primary,
                               ),
                             );
                           },
                         ),
-                      ),
 
-                    // Error message and retry button if failed
-                    if (hasFailed)
-                      Column(
-                        spacing: 16,
-                        children: [
-                          Text(
-                            'Project loading failed. Please check the errors above.',
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                            textAlign: TextAlign.center,
+                        // Loading Actions Log
+                        if (loadingActions.isNotEmpty)
+                          Container(
+                            constraints: const BoxConstraints(maxHeight: 300),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: loadingActions.length,
+                              itemBuilder: (context, index) {
+                                final LoadingAction action =
+                                    loadingActions[index];
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 4,
+                                  ),
+                                  child: Row(
+                                    spacing: 8,
+                                    children: [
+                                      // Status icon
+                                      _buildStatusIcon(action.status, context),
+
+                                      // Action text
+                                      Expanded(
+                                        child: Text(
+                                          action.text,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodyMedium,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                          ElevatedButton(
-                            onPressed: () {
-                              // Clear loading state and let user try again
-                              ref.read(loadingActionsProvider.notifier).state =
-                                  [];
-                              // The main app should handle retry logic
-                            },
-                            child: const Text('Retry'),
+
+                        // Error message and retry button if failed
+                        if (hasFailed)
+                          Column(
+                            spacing: 16,
+                            children: [
+                              Text(
+                                'Project loading failed. Please check the errors above.',
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.error,
+                                    ),
+                                textAlign: TextAlign.center,
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  // Clear loading state and let user try again
+                                  ref
+                                          .read(loadingActionsProvider.notifier)
+                                          .state =
+                                      [];
+                                  // The main app should handle retry logic
+                                },
+                                child: const Text('Retry'),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                  ],
-                );
-              },
+                      ],
+                    );
+                  },
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
