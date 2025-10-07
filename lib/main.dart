@@ -159,6 +159,15 @@ class _FIDEState extends ConsumerState<FIDE> {
   bool _isLoadingProject = false;
   String? _loadingProjectName;
 
+  void _clearLoadingState() {
+    if (mounted) {
+      setState(() {
+        _isLoadingProject = false;
+        _loadingProjectName = null;
+      });
+    }
+  }
+
   // Project loading function accessible by TitleBar
   Future<bool> tryLoadProject(String directoryPath) async {
     try {
@@ -175,22 +184,12 @@ class _FIDEState extends ConsumerState<FIDE> {
       final success = await projectManager.loadProject(directoryPath);
 
       // Clear loading state
-      if (mounted) {
-        setState(() {
-          _isLoadingProject = false;
-          _loadingProjectName = null;
-        });
-      }
+      _clearLoadingState();
 
       return success;
     } catch (e) {
       // Clear loading state on error
-      if (mounted) {
-        setState(() {
-          _isLoadingProject = false;
-          _loadingProjectName = null;
-        });
-      }
+      _clearLoadingState();
       _logger.severe('tryLoadProject error: $e');
       return false;
     }
@@ -258,12 +257,7 @@ class _FIDEState extends ConsumerState<FIDE> {
       final success = await projectService.loadProject(projectPath);
 
       // Clear loading state after auto-loading completes
-      if (mounted) {
-        setState(() {
-          _isLoadingProject = false;
-          _loadingProjectName = null;
-        });
-      }
+      _clearLoadingState();
 
       if (success) {
         _logger.info('Successfully auto-loaded MRU project: $projectPath');
@@ -272,12 +266,7 @@ class _FIDEState extends ConsumerState<FIDE> {
       }
     } catch (e) {
       // Clear loading state on error
-      if (mounted) {
-        setState(() {
-          _isLoadingProject = false;
-          _loadingProjectName = null;
-        });
-      }
+      _clearLoadingState();
       // Silently handle errors during auto-loading
       _logger.severe('Error auto-loading MRU project: $e');
     }
