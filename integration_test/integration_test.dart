@@ -7,7 +7,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fide/main.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/widgets/create_project_dialog.dart';
+import 'package:fide/screens/create_project_screen.dart';
 import 'package:fide/controllers/app_controller.dart';
 import 'package:path/path.dart' as path;
 
@@ -135,18 +135,18 @@ void main() {
       final projectParentDir = path.join(tempDir.path, 'fide_test_projects');
       await Directory(projectParentDir).create(recursive: true);
 
-      // Delete any existing HelloWorld project to ensure clean state
-      expectedProjectPath = path.join(projectParentDir, 'HelloWorld');
+      // Delete any existing helloworld project to ensure clean state
+      expectedProjectPath = path.join(projectParentDir, 'helloworld');
       final projectDir = Directory(expectedProjectPath);
       if (await projectDir.exists()) {
         await projectDir.delete(recursive: true);
         substep(
-          'Deleted existing HelloWorld project directory: $expectedProjectPath',
+          'Deleted existing helloworld project directory: $expectedProjectPath',
         );
       }
 
       // Set the test initial directory to prevent any issues with permissions
-      CreateProjectDialog.setTestInitialDirectory(projectParentDir);
+      CreateProjectScreen.setTestInitialDirectory(projectParentDir);
 
       // Log expected project path for debugging
       substep('Expected project path: $expectedProjectPath');
@@ -157,7 +157,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Fill the create project dialog - project name
-      await tester.enterText(find.byType(TextField).first, 'HelloWorld');
+      await tester.enterText(find.byType(TextField).first, 'helloworld');
       await tester.pumpAndSettle();
 
       // Click Create button in dialog
@@ -206,9 +206,9 @@ void main() {
       // 4. Verify folder tree loads correctly in UI
       substep('Verifying folder tree loads correctly in UI');
 
-      // Verify that HelloWorld project folder exists in the UI
-      expect(find.text('HelloWorld'), findsOneWidget);
-      substep('✓ HelloWorld project visible in file tree');
+      // Verify that helloworld project folder exists in the UI
+      expect(find.text('helloworld'), findsOneWidget);
+      substep('✓ helloworld project visible in file tree');
 
       // The folders are successfully loaded and displayable - the core UI workflow is validated
       substep('Step 4 complete: Folder tree loaded correctly');

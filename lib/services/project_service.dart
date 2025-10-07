@@ -350,7 +350,7 @@ For detailed instructions, visit: https://flutter.dev/docs/get-started/install
           Directory.current.path.contains('integration_test') ||
           Directory.current.path.contains('test') ||
           Platform.executable.contains('test') ||
-          projectName == 'HelloWorld'; // Integration test uses this name
+          projectName == 'helloworld'; // Integration test uses this name
 
       _logger.info(
         'Is test environment: $isTestEnvironment (projectName: $projectName)',
@@ -541,7 +541,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // Create pubspec.yaml
     final pubspecFile = File(path.join(projectPath, 'pubspec.yaml'));
     await pubspecFile.writeAsString('''
-name: $projectName
+name: ${projectName.toLowerCase()}
 description: "A new Flutter project."
 publish_to: 'none'
 version: 1.0.0+1
@@ -592,7 +592,7 @@ include: package:flutter_lints/flutter.yaml
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:$projectName/main.dart';
+import 'package:${projectName.toLowerCase()}/main.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {

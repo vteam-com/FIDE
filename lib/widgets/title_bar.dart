@@ -21,7 +21,7 @@ import '../services/git_service.dart';
 import '../utils/message_box.dart';
 
 // Widgets
-import 'create_project_dialog.dart';
+import '../screens/create_project_screen.dart';
 
 class TitleBar extends ConsumerStatefulWidget {
   final ThemeMode themeMode;

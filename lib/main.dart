@@ -12,12 +12,11 @@ import 'providers/app_providers.dart';
 import 'providers/ui_state_providers.dart';
 
 // Services
-import 'services/project_service.dart';
 import 'services/project_operations.dart';
 import 'utils/message_box.dart';
 
 // Widgets
-import 'widgets/create_project_dialog.dart';
+import 'screens/create_project_screen.dart';
 import 'widgets/title_bar.dart';
 import 'widgets/menu_builder.dart';
 
@@ -98,6 +97,9 @@ class _FIDEState extends ConsumerState<FIDE> {
   // Loading state for project creation
   bool _isCreatingProject = false;
   String? _creatingProjectName;
+
+  // State for showing create project screen
+  bool _isShowingCreateProject = false;
 
   void _clearCreatingState() {
     if (mounted) {
@@ -243,6 +245,50 @@ class _FIDEState extends ConsumerState<FIDE> {
     _saveThemeMode(themeMode);
   }
 
+  // Helper functions for create project callbacks
+  void _handleCreateProjectCancel() {
+    setState(() {
+      _isShowingCreateProject = false;
+    });
+  }
+
+  void _handleCreateProject(Map<String, String> result) async {
+    setState(() {
+      _isShowingCreateProject = false;
+      _isCreatingProject = true;
+      _creatingProjectName = result['name'];
+    });
+
+    try {
+      final String projectName = result['name'] as String;
+      final String parentDirectory = result['directory'] as String;
+
+      _logger.info('Creating project: $projectName in $parentDirectory');
+
+      // Use ProjectService to create the project
+      final projectService = ProviderScope.containerOf(
+        context,
+      ).read(projectServiceProvider);
+      final bool success = await projectService.createProject(
+        projectName,
+        parentDirectory,
+      );
+
+      _logger.info('Project creation success: $success');
+      if (!success) {
+        MessageBox.showError(context, 'Failed to create project');
+      }
+    } catch (e) {
+      _logger.severe('Error creating project: $e');
+      MessageBox.showError(
+        context,
+        'An error occurred while creating the project',
+      );
+    } finally {
+      _clearCreatingState();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -317,7 +363,13 @@ class _FIDEState extends ConsumerState<FIDE> {
                       await pickDirectoryAndLoadProject(context, ref);
                     }
 
-                    if (_isCreatingProject) {
+                    if (_isShowingCreateProject) {
+                      // Show CreateProjectScreen as full screen
+                      return CreateProjectScreen(
+                        onCancel: _handleCreateProjectCancel,
+                        onCreate: _handleCreateProject,
+                      );
+                    } else if (_isCreatingProject) {
                       // Show LoadingScreen when project is being created
                       return LoadingScreen(
                         loadingProjectName: _creatingProjectName,
@@ -331,35 +383,11 @@ class _FIDEState extends ConsumerState<FIDE> {
                       // Show WelcomeScreen when no project is loaded
                       return WelcomeScreen(
                         onOpenFolder: pickDirectory,
-                        onCreateProject: () async {
+                        onCreateProject: () {
                           _logger.fine('onCreateProject called');
-                          // Show dialog to get project name and location
-                          final Map<String, String>? result =
-                              await showCreateProjectDialog(context);
-                          _logger.info('Dialog result: $result');
-                          if (result != null) {
-                            final String projectName = result['name'] as String;
-                            final String parentDirectory =
-                                result['directory'] as String;
-
-                            _logger.info(
-                              'Creating project: $projectName in $parentDirectory',
-                            );
-                            // Use ProjectService to create the project
-                            final ProjectService projectService = ref.read(
-                              projectServiceProvider,
-                            );
-                            final bool success = await projectService
-                                .createProject(projectName, parentDirectory);
-
-                            _logger.info('Project creation success: $success');
-                            if (!success) {
-                              MessageBox.showError(
-                                context,
-                                'Failed to create project',
-                              );
-                            }
-                          }
+                          setState(() {
+                            _isShowingCreateProject = true;
+                          });
                         },
                         mruFolders: mruFolders,
                         onOpenMruProject: tryLoadProject,
