@@ -1,3 +1,4 @@
 {
-  "dart.coverageRunTestScript": "${workspaceFolder}/tool/run_test.sh"
+  "dart.coverageRunTestScript": "${workspaceFolder}/tool/run_test.sh",
+  "workbench.editor.closeOnFileDelete": true
 }

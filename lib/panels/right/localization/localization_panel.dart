@@ -12,6 +12,7 @@ import 'package:fide/services/ai_service.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/utils/message_box.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:logging/logging.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
@@ -37,6 +38,7 @@ class LocalizationPanel extends ConsumerStatefulWidget {
 }
 
 class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
+  final Logger _logger = Logger('_LocalizationPanelState');
   final ArbService _arbService = ArbService();
   final LocalizationService _localizationService = LocalizationService();
   final AIService _aiService = AIService();
@@ -111,7 +113,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       setState(() => _localizationStatus = status);
     } catch (e) {
       setState(() => _localizationStatus = LocalizationStatus.error);
-      debugPrint('Error checking localization status: $e');
+      _logger.severe('Error checking localization status: $e');
     }
   }
 
@@ -207,7 +209,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           }
         } catch (e) {
           malformedFiles.add(filePath);
-          debugPrint('Error parsing ARB file $filePath: $e');
+          _logger.severe('Error parsing ARB file $filePath: $e');
         }
       }
 
@@ -1094,7 +1096,7 @@ Provide only the translated text, no additional explanation or quotes.''';
       unit.accept(visitor);
       return visitor.title;
     } catch (e) {
-      debugPrint('Error parsing main.dart: $e');
+      _logger.severe('Error parsing main.dart: $e');
       return null;
     }
   }

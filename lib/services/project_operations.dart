@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import '../providers/app_providers.dart';
 import '../utils/message_box.dart';
 import '../screens/main_layout.dart';
@@ -9,6 +10,8 @@ import '../panels/center/editor_screen.dart';
 /// Service class for project-related operations
 class ProjectOperations {
   final Ref ref;
+
+  static final Logger _logger = Logger('ProjectOperations');
 
   ProjectOperations(this.ref);
 
@@ -210,7 +213,7 @@ class ProjectOperations {
         'This method should be called with a ref parameter',
       );
     } catch (e) {
-      debugPrint('Error in tryLoadProject: $e');
+      _logger.severe('Error in tryLoadProject: $e');
       return false;
     }
   }

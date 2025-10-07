@@ -35,9 +35,6 @@ void main() async {
 
   // Setup logging
   Logger.root.level = Level.ALL;
-  Logger.root.onRecord.listen((record) {
-    debugPrint('${record.level.name}: ${record.time}: ${record.message}');
-  });
 
   // Initialize app controller to handle setup
   final container = ProviderContainer();
@@ -308,17 +305,17 @@ class _FIDEState extends ConsumerState<FIDE> {
                       return WelcomeScreen(
                         onOpenFolder: pickDirectory,
                         onCreateProject: () async {
-                          debugPrint('onCreateProject called');
+                          _logger.fine('onCreateProject called');
                           // Show dialog to get project name and location
                           final Map<String, String>? result =
                               await showCreateProjectDialog(context);
-                          debugPrint('Dialog result: $result');
+                          _logger.info('Dialog result: $result');
                           if (result != null) {
                             final String projectName = result['name'] as String;
                             final String parentDirectory =
                                 result['directory'] as String;
 
-                            debugPrint(
+                            _logger.info(
                               'Creating project: $projectName in $parentDirectory',
                             );
                             // Use ProjectService to create the project
@@ -328,7 +325,7 @@ class _FIDEState extends ConsumerState<FIDE> {
                             final bool success = await projectService
                                 .createProject(projectName, parentDirectory);
 
-                            debugPrint('Project creation success: $success');
+                            _logger.info('Project creation success: $success');
                             if (!success) {
                               MessageBox.showError(
                                 context,

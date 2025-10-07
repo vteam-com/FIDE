@@ -3,9 +3,11 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:fide/models/localization_data.dart';
+import 'package:logging/logging.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
 class LocalizationService {
+  static final Logger _logger = Logger('LocalizationService');
   Future<void> initializeLocalization(String projectPath) async {
     try {
       // Add required packages using flutter pub add
@@ -17,12 +19,12 @@ class LocalizationService {
           '--sdk=flutter',
         ], workingDirectory: projectPath);
         if (addFlutterLocalizationsResult.exitCode != 0) {
-          print(
-            'Warning: Failed to add flutter_localizations: ${addFlutterLocalizationsResult.stderr}',
+          _logger.warning(
+            'Failed to add flutter_localizations: ${addFlutterLocalizationsResult.stderr}',
           );
         }
       } catch (e) {
-        print('Warning: Could not add flutter_localizations: $e');
+        _logger.severe('Could not add flutter_localizations: $e');
       }
 
       try {
@@ -32,10 +34,10 @@ class LocalizationService {
           'intl',
         ], workingDirectory: projectPath);
         if (addIntlResult.exitCode != 0) {
-          print('Warning: Failed to add intl: ${addIntlResult.stderr}');
+          _logger.warning('Failed to add intl: ${addIntlResult.stderr}');
         }
       } catch (e) {
-        print('Warning: Could not add intl: $e');
+        _logger.severe('Could not add intl: $e');
       }
 
       // Add required configurations to pubspec.yaml
@@ -100,12 +102,12 @@ class LocalizationService {
         ], workingDirectory: projectPath);
 
         if (result.exitCode != 0) {
-          print(
-            'Warning: Failed to generate localization classes: ${result.stderr}',
+          _logger.warning(
+            'Failed to generate localization classes: ${result.stderr}',
           );
         }
       } catch (e) {
-        print('Warning: Could not run flutter gen-l10n: $e');
+        _logger.severe('Could not run flutter gen-l10n: $e');
       }
     } catch (e) {
       throw Exception('Error initializing localization: $e');
@@ -199,6 +201,7 @@ class LocalizationService {
 }
 
 class ArbService {
+  static final Logger _logger = Logger('ArbService');
   Future<List<ArbFile>> loadArbFiles(String directoryPath) async {
     final directory = Directory(directoryPath);
     final arbFiles = <ArbFile>[];
@@ -207,25 +210,22 @@ class ArbService {
 
     await for (final entity in directory.list(recursive: true)) {
       if (entity is File && entity.path.endsWith('.arb')) {
-        print('Found ARB file: ${entity.path}');
+        _logger.info('Found ARB file: ${entity.path}');
         try {
           final arbFile = await parseArbFile(entity.path);
           if (arbFile != null) {
             arbFiles.add(arbFile);
-            print(
-              'Successfully parsed ARB file: ${arbFile.path}, language: ${arbFile.languageCode}',
-            );
           } else {
-            print('Failed to parse ARB file: ${entity.path}');
+            _logger.warning('Failed to parse ARB file: ${entity.path}');
           }
         } catch (e) {
           // Skip invalid ARB files
-          print('Error parsing ARB file ${entity.path}: $e');
+          _logger.severe('Error parsing ARB file ${entity.path}: $e');
         }
       }
     }
 
-    print('Total ARB files found: ${arbFiles.length}');
+    _logger.info('Total ARB files found: ${arbFiles.length}');
     return arbFiles;
   }
 
@@ -238,10 +238,10 @@ class ArbService {
         : content;
     final decoded = jsonDecode(cleanContent);
     if (decoded is! Map<String, dynamic>) {
-      print(
-        'Error: ARB file $path does not contain a valid JSON object. Content length: ${content.length}, Clean content length: ${cleanContent.length}',
+      _logger.severe(
+        'ARB file $path does not contain a valid JSON object. Content length: ${content.length}, Clean content length: ${cleanContent.length}',
       );
-      print(
+      _logger.severe(
         'Raw content (first 200 chars): ${content.substring(0, content.length > 200 ? 200 : content.length)}',
       );
       return null;
@@ -259,8 +259,8 @@ class ArbService {
         if (meta is Map<String, dynamic>) {
           metadata[originalKey] = meta;
         } else {
-          print(
-            'Warning: metadata for $originalKey is not a valid map, skipping',
+          _logger.warning(
+            'Metadata for $originalKey is not a valid map, skipping',
           );
         }
       }
