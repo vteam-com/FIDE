@@ -228,6 +228,11 @@ class _FIDEState extends ConsumerState<FIDE> {
     await _prefs.setString(_themeModeKey, themeString);
   }
 
+  void _updateTheme(ThemeMode themeMode) {
+    setState(() => _themeMode = themeMode);
+    _saveThemeMode(themeMode);
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -246,10 +251,7 @@ class _FIDEState extends ConsumerState<FIDE> {
                 // Show TitleBar for all cases - it handles the logic internally
                 return TitleBar(
                   themeMode: _themeMode,
-                  onThemeChanged: (themeMode) {
-                    setState(() => _themeMode = themeMode);
-                    _saveThemeMode(themeMode);
-                  },
+                  onThemeChanged: (themeMode) => _updateTheme(themeMode),
                   onToggleLeftPanel: () => triggerTogglePanelLeft(ref),
                   onToggleBottomPanel: () => triggerTogglePanelBottom(ref),
                   onToggleRightPanel: () => triggerTogglePanelRight(ref),
@@ -283,10 +285,7 @@ class _FIDEState extends ConsumerState<FIDE> {
                   onSwitchPanel: (index) => _switchToPanel(ref, index),
                   onProjectSwitch: (path) async => await tryLoadProject(path),
                   lastOpenedFileName: _lastOpenedFileName,
-                  onThemeChanged: (themeMode) {
-                    setState(() => _themeMode = themeMode);
-                    _saveThemeMode(themeMode);
-                  },
+                  onThemeChanged: (themeMode) => _updateTheme(themeMode),
                   currentThemeMode: _themeMode,
                 ).buildMenus(),
                 child: Consumer(
@@ -363,9 +362,7 @@ class _FIDEState extends ConsumerState<FIDE> {
                     } else {
                       // Show main layout when project is loaded
                       return MainLayout(
-                        onThemeChanged: (themeMode) {
-                          setState(() => _themeMode = themeMode);
-                        },
+                        onThemeChanged: (themeMode) => _updateTheme(themeMode),
                         onFileOpened: (fileName) {
                           setState(() => _lastOpenedFileName = fileName);
                         },
