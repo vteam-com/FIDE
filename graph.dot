@@ -35,9 +35,11 @@ digraph "" {
   "/lib/models/localization_data.dart" [label="localization_data"];
   "/lib/models/document_state.dart" [label="document_state"];
   "/lib/models/file_system_item.dart" [label="file_system_item"];
+  "/lib/screens/create_project_step1.dart" [label="create_project_step1"];
   "/lib/screens/main_layout.dart" [label="main_layout"];
   "/lib/screens/loading_screen.dart" [label="loading_screen"];
   "/lib/screens/create_project_screen.dart" [label="create_project_screen"];
+  "/lib/screens/create_project_step2.dart" [label="create_project_step2"];
   "/lib/screens/welcome_screen.dart" [label="welcome_screen"];
   "/lib/main.dart" [label="main"];
   "/lib/theme/app_theme.dart" [label="app_theme"];
@@ -139,9 +141,11 @@ digraph "" {
       }
       subgraph "cluster~/lib/screens" {
         label="screens";
+        "/lib/screens/create_project_step1.dart";
         "/lib/screens/main_layout.dart";
         "/lib/screens/loading_screen.dart";
         "/lib/screens/create_project_screen.dart";
+        "/lib/screens/create_project_step2.dart";
         "/lib/screens/welcome_screen.dart";
       }
       subgraph "cluster~/lib/theme" {
@@ -246,8 +250,6 @@ digraph "" {
   "/lib/panels/center/terminal_panel.dart" -> "/lib/providers/app_providers.dart";
   "/lib/panels/center/center_panel.dart" -> "/lib/models/document_state.dart";
   "/lib/panels/center/center_panel.dart" -> "/lib/providers/app_providers.dart";
-  "/lib/panels/center/center_panel.dart" -> "/lib/utils/message_box.dart";
-  "/lib/panels/center/center_panel.dart" -> "/lib/screens/welcome_screen.dart";
   "/lib/panels/center/center_panel.dart" -> "/lib/panels/center/editor_screen.dart";
   "/lib/panels/center/center_panel.dart" -> "/lib/panels/center/terminal_panel.dart";
   "/lib/panels/center/center_panel.dart" -> "/lib/widgets/resizable_splitter.dart";
@@ -315,6 +317,8 @@ digraph "" {
   "/lib/screens/main_layout.dart" -> "/lib/panels/right/right_panel.dart";
   "/lib/screens/loading_screen.dart" -> "/lib/widgets/full_path_widget.dart";
   "/lib/screens/loading_screen.dart" -> "/lib/providers/app_providers.dart";
+  "/lib/screens/create_project_screen.dart" -> "/lib/screens/create_project_step1.dart";
+  "/lib/screens/create_project_screen.dart" -> "/lib/screens/create_project_step2.dart";
   "/lib/screens/welcome_screen.dart" -> "/lib/providers/app_providers.dart";
   "/lib/main.dart" -> "/lib/controllers/app_controller.dart";
   "/lib/main.dart" -> "/lib/providers/app_providers.dart";

@@ -78,9 +78,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
       onDoubleTap: _toggleMaximize,
       child: Container(
         height: 40,
-        color: widget.themeMode == ThemeMode.dark
-            ? const Color(0xFF323233) // VS Code dark title bar color
-            : const Color(0xFFECECEC), // VS Code light title bar color
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         child: Row(
           children: [
             // Platform-specific spacing for window controls
@@ -135,6 +133,8 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     List<String> mruFolders,
     WidgetRef ref,
   ) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+
     return GestureDetector(
       onTap: () =>
           _showProjectMenu(context, currentProjectPath, mruFolders, ref),
@@ -147,9 +147,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
               style: TextStyle(
-                color: widget.themeMode == ThemeMode.dark
-                    ? Colors.white.withValues(alpha: 0.9)
-                    : Colors.black.withValues(alpha: 0.9),
+                color: onSurface.withValues(alpha: 0.9),
                 fontWeight: FontWeight.w500,
                 fontSize: 14,
               ),
@@ -157,9 +155,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
           ),
           Icon(
             Icons.arrow_drop_down,
-            color: widget.themeMode == ThemeMode.dark
-                ? Colors.white.withValues(alpha: 0.7)
-                : Colors.black.withValues(alpha: 0.7),
+            color: onSurface.withValues(alpha: 0.7),
             size: 16,
           ),
         ],
@@ -168,12 +164,11 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
   }
 
   Widget _buildAppTitle() {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
     return Text(
       'The Flutter IDE',
       style: TextStyle(
-        color: widget.themeMode == ThemeMode.dark
-            ? Colors.white.withValues(alpha: 0.9)
-            : Colors.black.withValues(alpha: 0.9),
+        color: onSurface.withValues(alpha: 0.9),
         fontWeight: FontWeight.w500,
         fontSize: 14,
       ),
@@ -242,6 +237,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
   }
 
   Widget _buildSettingsButton() {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
     return IconButton(
       icon: const Icon(Icons.settings, size: 18),
       onPressed: () {
@@ -249,9 +245,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
       },
       tooltip: 'Settings',
       style: IconButton.styleFrom(
-        foregroundColor: widget.themeMode == ThemeMode.dark
-            ? Colors.white.withValues(alpha: 0.9)
-            : Colors.black.withValues(alpha: 0.9),
+        foregroundColor: onSurface.withValues(alpha: 0.9),
       ),
     );
   }
