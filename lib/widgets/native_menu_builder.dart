@@ -11,7 +11,7 @@ import '../services/git_service.dart';
 // Utils
 import '../utils/message_box.dart';
 
-class MenuBuilder {
+class NativeMenuBuilder {
   final BuildContext context;
   final WidgetRef ref;
   final Function() onOpenFolder;
@@ -31,7 +31,7 @@ class MenuBuilder {
   final Function(ThemeMode) onThemeChanged;
   final ThemeMode currentThemeMode;
 
-  MenuBuilder({
+  NativeMenuBuilder({
     required this.context,
     required this.ref,
     required this.onOpenFolder,

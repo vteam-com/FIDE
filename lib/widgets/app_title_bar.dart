@@ -370,13 +370,33 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
         child: Row(
           children: [
             Icon(
-              Icons.add,
+              Icons.create_new_folder_outlined,
               size: 16,
               color: Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(width: 8),
             Text(
-              'Open a folder ...',
+              'Open Existing Project...',
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    items.add(
+      PopupMenuItem<String>(
+        value: 'create_project',
+        child: Row(
+          children: [
+            Icon(
+              Icons.add_box_outlined,
+              size: 16,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Create new Project...',
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             ),
           ],
@@ -390,35 +410,13 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
         child: Row(
           children: [
             Icon(
-              Icons.close,
+              Icons.folder_off_outlined,
               size: 16,
               color: Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(width: 8),
             Text(
               'Close Project',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    items.add(const PopupMenuDivider());
-
-    items.add(
-      PopupMenuItem<String>(
-        value: 'create_project',
-        child: Row(
-          children: [
-            Icon(
-              Icons.create_new_folder,
-              size: 16,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Create new Project...',
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             ),
           ],

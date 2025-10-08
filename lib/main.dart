@@ -18,7 +18,7 @@ import 'utils/message_box.dart';
 // Widgets
 import 'screens/create_project_screen.dart';
 import 'widgets/app_title_bar.dart';
-import 'widgets/menu_builder.dart';
+import 'widgets/native_menu_builder.dart';
 
 // Screens
 import 'screens/loading_screen.dart';
@@ -342,7 +342,7 @@ class _FIDEState extends ConsumerState<FIDE> {
             // Main content with menu bar
             Expanded(
               child: PlatformMenuBar(
-                menus: MenuBuilder(
+                menus: NativeMenuBuilder(
                   context: context,
                   ref: ref,
                   onOpenFolder: triggerOpenFolder,
