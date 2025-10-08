@@ -90,10 +90,33 @@ Future<void> _testPanelToggle(
   // Hide
   await tester.tap(toggle);
   await tester.pumpAndSettle();
-  await Future.delayed(const Duration(milliseconds: 500));
+  await Future.delayed(const Duration(milliseconds: 100));
   // Show
   await tester.tap(toggle);
   await tester.pumpAndSettle();
+}
+
+/// Helper function to wait for a widget to appear
+Future<void> waitForWidget(
+  WidgetTester tester,
+  Finder finder,
+  Duration timeout, [
+  String description = '',
+]) async {
+  const pollInterval = Duration(milliseconds: 200);
+  final endTime = DateTime.now().add(timeout);
+
+  while (DateTime.now().isBefore(endTime)) {
+    await tester.pump(pollInterval);
+    if (tester.any(finder)) {
+      return;
+    }
+  }
+
+  fail(
+    'Widget${description.isNotEmpty ? ' ($description)' : ''} did not '
+    'appear within ${timeout.inSeconds} seconds',
+  );
 }
 
 void main() {
@@ -169,8 +192,6 @@ void main() {
       // Click Create button to create the project - this goes to Step 3
       await tester.tap(find.text('Create'));
       await tester.pumpAndSettle();
-      await Future.delayed(const Duration(milliseconds: 100));
-      await tester.pump();
 
       // Step 3: Should show the LoadingStepWidget instead of going straight to creating state
       // Verify we're still in the create project screen with step 3 visible
@@ -196,25 +217,47 @@ void main() {
         reason: 'Should have one FilledButton in step 3',
       );
 
-      // Wait for project creation to complete
-      await tester.pumpAndSettle(const Duration(seconds: 6));
+      // Wait for project creation to complete - wait for the Open button to appear and be enabled
+      final openButtonFinder = find.widgetWithText(FilledButton, 'Open');
 
-      // Find the Open button to ensure it's enabled
-      final openButton = find.widgetWithText(FilledButton, 'Open');
-      expect(
-        openButton,
-        findsOneWidget,
-        reason: 'Open button should be present and enabled',
+      await waitForWidget(
+        tester,
+        openButtonFinder,
+        const Duration(seconds: 10),
+        'Open button after project creation',
       );
 
-      // Click the "Open" button to complete the create flow
+      // Verify the button is actually enabled
+      final openButton = tester.widget<FilledButton>(openButtonFinder);
+      expect(
+        openButton.onPressed,
+        isNotNull,
+        reason: 'Open button should be enabled',
+      );
+
+      // Click the "Open" button to load the newly created project
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
+
+      // Wait for loading screen to appear
+      final loadingTextFinder = find.textContaining('Loading project');
+      await waitForWidget(
+        tester,
+        loadingTextFinder,
+        const Duration(seconds: 5),
+        'Loading project screen after tapping Open',
+      );
+
+      // Wait for loading to complete and main UI to appear (indicated by toggle panel buttons)
+      final toggleButton = find.byKey(Key('togglePanelLeft'));
+      await waitForWidget(
+        tester,
+        toggleButton,
+        const Duration(seconds: 10),
+        'toggle panel button indicating main UI is loaded',
+      );
     }
     stepFinished();
-
-    // wait for the project to load
-    await tester.pumpAndSettle(const Duration(seconds: 6));
 
     // Verify Toggle Panels - commented out for test environment
     stepStart('Toggle buttons are working');
