@@ -7,6 +7,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:yaml/yaml.dart';
 
 import '../../models/file_system_item.dart';
+import '../../widgets/output_panel.dart';
 import '../center/editor_screen.dart';
 
 class OutlinePanel extends StatefulWidget {
@@ -85,16 +86,16 @@ class _OutlinePanelState extends State<OutlinePanel> {
             if (_isLoading)
               const Center(child: CircularProgressIndicator())
             else if (_error.isNotEmpty)
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    _error,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ),
+              OutputPanel(
+                title: 'Parse Error',
+                text: _error,
+                isExpanded: true,
+                onClear: () {
+                  setState(() {
+                    _error = '';
+                    _parseFile(); // Retry parsing
+                  });
+                },
               )
             else if (_outlineNodes.isEmpty)
               const Padding(
@@ -414,11 +415,8 @@ class _OutlinePanelState extends State<OutlinePanel> {
             }
           }
         } catch (e) {
-          // If YAML parsing fails, set error but don't fail completely
-          setState(() {
-            _error = 'Error parsing YAML: $e';
-          });
-          return;
+          // If YAML parsing fails, throw to be handled by main error handler
+          throw Exception('Error parsing YAML: $e');
         }
 
         // Cache the successful parse results
