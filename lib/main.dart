@@ -34,7 +34,6 @@ enum AppViewState {
   welcome, // Show WelcomeScreen
   createProject, // Show CreateProjectScreen
   loadingProject, // Show LoadingScreen for project loading
-  creatingProject, // Show LoadingScreen for project creation
   mainLayout, // Show MainLayout (project loaded)
 }
 
@@ -104,13 +103,11 @@ class _FIDEState extends ConsumerState<FIDE> {
 
   // Loading state metadata (associated with view states)
   String? _loadingProjectName;
-  String? _creatingProjectName;
 
   void _clearCreatingState() {
     if (mounted) {
       setState(() {
         _currentViewState = AppViewState.mainLayout;
-        _creatingProjectName = null;
       });
     }
   }
@@ -125,19 +122,19 @@ class _FIDEState extends ConsumerState<FIDE> {
   }
 
   // Project loading function accessible by TitleBar
-  Future<bool> tryLoadProject(String directoryPath) async {
+  Future<bool> tryLoadProject(String directoryPathToProject) async {
     try {
       // Set loading state
       setState(() {
         _currentViewState = AppViewState.loadingProject;
-        _loadingProjectName = directoryPath;
+        _loadingProjectName = directoryPathToProject;
       });
 
       // Use the unified ProjectManager to handle everything
       final projectManager = ProviderScope.containerOf(
         context,
       ).read(projectManagerProvider);
-      final success = await projectManager.loadProject(directoryPath);
+      final success = await projectManager.loadProject(directoryPathToProject);
 
       // Clear loading state and set appropriate final state
       if (success) {
@@ -300,45 +297,6 @@ class _FIDEState extends ConsumerState<FIDE> {
     }
   }
 
-  void _handleCreateProject(Map<String, String> result) async {
-    setState(() {
-      _currentViewState = AppViewState.creatingProject;
-      _creatingProjectName = result['name'];
-    });
-
-    try {
-      final String projectName = result['name'] as String;
-      final String parentDirectory = result['directory'] as String;
-
-      _logger.info('Creating project: $projectName in $parentDirectory');
-
-      // Use ProjectService to create the project
-      final projectService = ProviderScope.containerOf(
-        context,
-      ).read(projectServiceProvider);
-      final bool success = await projectService.createProject(
-        projectName,
-        parentDirectory,
-      );
-
-      _logger.info('Project creation success: $success');
-      if (!success) {
-        MessageBox.showError(
-          navigatorKey.currentContext!,
-          'Failed to create project',
-        );
-      }
-    } catch (e) {
-      _logger.severe('Error creating project: $e');
-      MessageBox.showError(
-        navigatorKey.currentContext!,
-        'An error occurred while creating the project',
-      );
-    } finally {
-      _clearCreatingState();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -368,12 +326,6 @@ class _FIDEState extends ConsumerState<FIDE> {
                       _currentViewState == AppViewState.mainLayout,
                   onProjectSwitch: (projectPath) async {
                     await tryLoadProject(projectPath);
-                  },
-                  onProjectCreateStart: (projectName) {
-                    setState(() {
-                      _currentViewState = AppViewState.creatingProject;
-                      _creatingProjectName = projectName;
-                    });
                   },
                   onProjectCreateComplete: () {
                     _clearCreatingState();
@@ -427,12 +379,7 @@ class _FIDEState extends ConsumerState<FIDE> {
                       case AppViewState.createProject:
                         content = CreateProjectScreen(
                           onCancel: _handleCreateProjectCancel,
-                          onCreate: _handleCreateProject,
-                        );
-                        break;
-                      case AppViewState.creatingProject:
-                        content = LoadingScreen(
-                          loadingProjectName: _creatingProjectName,
+                          onOpenProject: tryLoadProject,
                         );
                         break;
                       case AppViewState.loadingProject:

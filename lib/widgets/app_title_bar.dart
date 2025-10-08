@@ -28,7 +28,6 @@ class AppTitleBar extends ConsumerStatefulWidget {
   final bool rightPanelVisible;
   final bool showPanelToggles;
   final Function(String)? onProjectSwitch;
-  final Function(String)? onProjectCreateStart;
   final VoidCallback? onProjectCreateComplete;
   final VoidCallback? onShowCreateProjectScreen;
   final VoidCallback? onCloseProject;
@@ -45,7 +44,6 @@ class AppTitleBar extends ConsumerStatefulWidget {
     this.rightPanelVisible = true,
     this.showPanelToggles = true,
     this.onProjectSwitch,
-    this.onProjectCreateStart,
     this.onProjectCreateComplete,
     this.onShowCreateProjectScreen,
     this.onCloseProject,

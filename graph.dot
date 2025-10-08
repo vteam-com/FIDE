@@ -41,6 +41,7 @@ digraph "" {
   "/lib/screens/create_project_screen.dart" [label="create_project_screen"];
   "/lib/screens/create_project_step2.dart" [label="create_project_step2"];
   "/lib/screens/welcome_screen.dart" [label="welcome_screen"];
+  "/lib/screens/create_project_step3.dart" [label="create_project_step3"];
   "/lib/main.dart" [label="main"];
   "/lib/theme/app_theme.dart" [label="app_theme"];
   "/lib/controllers/app_controller.dart" [label="app_controller"];
@@ -148,6 +149,7 @@ digraph "" {
         "/lib/screens/create_project_screen.dart";
         "/lib/screens/create_project_step2.dart";
         "/lib/screens/welcome_screen.dart";
+        "/lib/screens/create_project_step3.dart";
       }
       subgraph "cluster~/lib/theme" {
         label="theme";
@@ -218,6 +220,7 @@ digraph "" {
   "/lib/panels/right/info_panel.dart" -> "/lib/widgets/output_panel.dart";
   "/lib/panels/right/info_panel.dart" -> "/lib/widgets/section_panel.dart";
   "/lib/panels/right/outline_panel.dart" -> "/lib/models/file_system_item.dart";
+  "/lib/panels/right/outline_panel.dart" -> "/lib/widgets/output_panel.dart";
   "/lib/panels/right/outline_panel.dart" -> "/lib/panels/center/editor_screen.dart";
   "/lib/panels/right/ai_panel.dart" -> "/lib/services/ai_service.dart";
   "/lib/panels/right/ai_panel.dart" -> "/lib/models/file_system_item.dart";
@@ -320,11 +323,18 @@ digraph "" {
   "/lib/screens/loading_screen.dart" -> "/lib/widgets/full_path_widget.dart";
   "/lib/screens/loading_screen.dart" -> "/lib/widgets/hero_title_widget.dart";
   "/lib/screens/loading_screen.dart" -> "/lib/providers/app_providers.dart";
+  "/lib/screens/create_project_screen.dart" -> "/lib/widgets/full_path_widget.dart";
+  "/lib/screens/create_project_screen.dart" -> "/lib/screens/create_project_step3.dart";
   "/lib/screens/create_project_screen.dart" -> "/lib/widgets/hero_title_widget.dart";
+  "/lib/screens/create_project_screen.dart" -> "/lib/services/ai_service.dart";
+  "/lib/screens/create_project_screen.dart" -> "/lib/services/localization_service.dart";
+  "/lib/screens/create_project_screen.dart" -> "/lib/providers/app_providers.dart";
   "/lib/screens/create_project_screen.dart" -> "/lib/screens/create_project_step1.dart";
   "/lib/screens/create_project_screen.dart" -> "/lib/screens/create_project_step2.dart";
   "/lib/screens/welcome_screen.dart" -> "/lib/widgets/hero_title_widget.dart";
   "/lib/screens/welcome_screen.dart" -> "/lib/providers/app_providers.dart";
+  "/lib/screens/create_project_step3.dart" -> "/lib/widgets/full_path_widget.dart";
+  "/lib/screens/create_project_step3.dart" -> "/lib/providers/app_providers.dart";
   "/lib/main.dart" -> "/lib/controllers/app_controller.dart";
   "/lib/main.dart" -> "/lib/providers/app_providers.dart";
   "/lib/main.dart" -> "/lib/providers/ui_state_providers.dart";

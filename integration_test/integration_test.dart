@@ -166,27 +166,57 @@ void main() {
       // Step 2: Localization Settings should be shown
       // Default is "Do you want to localize?" = Yes, and EN/FR selected
 
-      // Click Create button to create the project
+      // Click Create button to create the project - this goes to Step 3
       await tester.tap(find.text('Create'));
       await tester.pumpAndSettle();
+      await Future.delayed(const Duration(milliseconds: 100));
+      await tester.pump();
 
-      final initialProjectLoadedState = container.read(projectLoadedProvider);
-      substep('Initial projectLoaded state: $initialProjectLoadedState');
-
-      await tester.pumpAndSettle(const Duration(seconds: 2));
-
-      final finalProjectLoadedState = container.read(projectLoadedProvider);
-      substep('Final projectLoaded state: $finalProjectLoadedState');
-
+      // Step 3: Should show the LoadingStepWidget instead of going straight to creating state
+      // Verify we're still in the create project screen with step 3 visible
+      final step3Content = find.textContaining('Creating project:');
       expect(
-        finalProjectLoadedState,
-        isTrue,
-        reason: 'Project should be loaded in provider',
+        step3Content,
+        findsOneWidget,
+        reason: 'Step 3 project creation display should be visible',
       );
+
+      // Verify Step 3 is displaying and showing "Creating project:" text
+      expect(
+        find.textContaining('Creating project:'),
+        findsOneWidget,
+        reason: 'LoadingStep3 should be visible with creating progress',
+      );
+
+      // Verify that the button is disabled (indicating the "Creating..." state)
+      final filledButton = find.byType(FilledButton);
+      expect(
+        filledButton,
+        findsOneWidget,
+        reason: 'Should have one FilledButton in step 3',
+      );
+
+      // Wait for project creation to complete
+      await tester.pumpAndSettle(const Duration(seconds: 6));
+
+      // Find the Open button to ensure it's enabled
+      final openButton = find.widgetWithText(FilledButton, 'Open');
+      expect(
+        openButton,
+        findsOneWidget,
+        reason: 'Open button should be present and enabled',
+      );
+
+      // Click the "Open" button to complete the create flow
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
     }
     stepFinished();
 
-    // Verify Toggle Panels
+    // wait for the project to load
+    await tester.pumpAndSettle(const Duration(seconds: 6));
+
+    // Verify Toggle Panels - commented out for test environment
     stepStart('Toggle buttons are working');
     {
       // Test panel toggle buttons

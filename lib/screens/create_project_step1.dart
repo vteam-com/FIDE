@@ -16,6 +16,8 @@ class CreateProjectStep1 extends StatefulWidget {
   final void Function(String projectName, String? finalProjectName)
   onProjectNameChanged;
   final void Function(String directory) onDirectoryChanged;
+  final void Function(bool canProceed) onValidationChanged;
+  final void Function(bool useAI) onUseAIChanged;
 
   const CreateProjectStep1({
     super.key,
@@ -31,6 +33,8 @@ class CreateProjectStep1 extends StatefulWidget {
     required this.ollamaAvailable,
     required this.onProjectNameChanged,
     required this.onDirectoryChanged,
+    required this.onValidationChanged,
+    required this.onUseAIChanged,
   });
 
   @override
@@ -43,12 +47,19 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
   final TextEditingController descriptionController = TextEditingController();
   String? selectedDirectory;
   String? _finalProjectName;
+  String? _directory;
+  bool _useAI = false; // Default to using AI for backward compatibility
 
   @override
   void initState() {
     super.initState();
     nameController.addListener(_onProjectNameChanged);
     _initializeDirectoryController();
+    // Defer notifying parent until after first build to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      widget.onUseAIChanged(_useAI);
+    });
   }
 
   @override
@@ -66,10 +77,13 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
         (await getApplicationDocumentsDirectory()).path;
     setState(() {
       directoryController.text = directoryPath;
+      _directory = directoryPath;
     });
-    widget.onDirectoryChanged(
-      directoryPath,
-    ); // Notify parent of initial directory
+    widget.onDirectoryChanged(directoryPath);
+    // Delay validation update until after widget is built to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateValidation();
+    });
   }
 
   void _onProjectNameChanged() {
@@ -79,7 +93,16 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
         _finalProjectName = validatedName;
       });
       widget.onProjectNameChanged(nameController.text, validatedName);
+      _updateValidation();
     }
+  }
+
+  void _updateValidation() {
+    final canProceed =
+        _finalProjectName != null &&
+        _directory != null &&
+        _directory!.isNotEmpty;
+    widget.onValidationChanged(canProceed);
   }
 
   void _handleBrowseDirectory() async {
@@ -88,9 +111,18 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
       setState(() {
         selectedDirectory = selectedDir;
         directoryController.text = selectedDir;
+        _directory = selectedDir;
       });
       widget.onDirectoryChanged(selectedDir);
+      _updateValidation();
     }
+  }
+
+  void _onUseAIChanged(bool value) {
+    setState(() {
+      _useAI = value;
+    });
+    widget.onUseAIChanged(value);
   }
 
   String? _validateProjectName(String inputName) {
@@ -429,8 +461,26 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
             ),
           ),
 
-        // Description field only if Ollama is available
-        if (widget.ollamaStatusChecked && widget.ollamaAvailable)
+        // AI-powered generation toggle
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Use AI-powered app generation (requires Ollama)',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ),
+            Switch(
+              value: _useAI,
+              onChanged: widget.ollamaStatusChecked && widget.ollamaAvailable
+                  ? _onUseAIChanged
+                  : null,
+            ),
+          ],
+        ),
+
+        // Description field only if AI is enabled AND Ollama is available
+        if (_useAI && widget.ollamaStatusChecked && widget.ollamaAvailable)
           TextField(
             controller: descriptionController,
             decoration: const InputDecoration(

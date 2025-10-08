@@ -9,6 +9,7 @@ class CreateProjectStep2 extends StatelessWidget {
   final void Function(bool) onWantsLocalizationChanged;
   final void Function(String, bool) onLanguageSelectionChanged;
   final void Function(String) onDefaultLanguageChanged;
+  final void Function(bool canProceed) onValidationChanged;
 
   const CreateProjectStep2({
     super.key,
@@ -20,6 +21,7 @@ class CreateProjectStep2 extends StatelessWidget {
     required this.onWantsLocalizationChanged,
     required this.onLanguageSelectionChanged,
     required this.onDefaultLanguageChanged,
+    required this.onValidationChanged,
   });
 
   @override
