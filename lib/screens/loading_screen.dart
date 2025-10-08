@@ -35,7 +35,10 @@ class _LoadingScreenState extends State<LoadingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          HeroTitleWidget(title: 'Loading project'),
+          HeroTitleWidget(
+            title: 'Loading project',
+            subWidget: FullPathWidget(path: widget.loadingProjectName!),
+          ),
 
           Center(
             child: SizedBox(
@@ -55,7 +58,6 @@ class _LoadingScreenState extends State<LoadingScreen> {
                       spacing: 16,
                       children: [
                         // Project Path
-                        FullPathWidget(path: widget.loadingProjectName!),
 
                         // Loading Progress (deterministic based on step counters - 6 total steps)
                         Consumer(
