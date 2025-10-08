@@ -7,7 +7,7 @@ clear
 flutter test --coverage --coverage-path=coverage/unit.info
 
 # Run integration tests
-flutter test integration_test --coverage --coverage-path=coverage/integration.info -d macos
+flutter test integration_test/main_test.dart --coverage --coverage-path=coverage/integration.info -d macos
 
 # Merge coverage
 lcov --add-tracefile coverage/unit.info \

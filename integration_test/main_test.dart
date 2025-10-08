@@ -13,6 +13,8 @@ import 'package:path/path.dart' as path;
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'steps.dart';
+
 /// Clean up any existing HelloWorld directories that might cause test collisions
 Future<void> _cleanupExistingHelloWorldDirectories() async {
   try {
@@ -90,7 +92,7 @@ Future<void> _testPanelToggle(
   // Hide
   await tester.tap(toggle);
   await tester.pumpAndSettle();
-  await Future.delayed(const Duration(milliseconds: 100));
+  await Future.delayed(const Duration(milliseconds: 300));
   // Show
   await tester.tap(toggle);
   await tester.pumpAndSettle();
@@ -146,7 +148,7 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 1));
       expect(find.text('Welcome to FIDE'), findsOneWidget);
     }
-    stepFinished();
+    stepStop();
 
     // 2. Create new project via UI workflow
     String expectedProjectPath = '';
@@ -257,7 +259,7 @@ void main() {
         'toggle panel button indicating main UI is loaded',
       );
     }
-    stepFinished();
+    stepStop();
 
     // Verify Toggle Panels - commented out for test environment
     stepStart('Toggle buttons are working');
@@ -267,7 +269,7 @@ void main() {
       await _testPanelToggle(tester, 'togglePanelBottom', 'Bottom panel');
       await _testPanelToggle(tester, 'togglePanelRight', 'Right panel');
     }
-    stepFinished();
+    stepStop();
 
     // Switch to Organize tab
     {
@@ -311,7 +313,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
       substep('✓ main.dart file open start');
     }
-    stepFinished();
+    stepStop();
 
     // Make a small edit in the editor
     stepStart('Make a small edit in the editor');
@@ -348,7 +350,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     await tester.pumpAndSettle();
 
-    stepFinished();
+    stepStop();
 
     // Switch to Git panel
     stepStart('GIT Panel');
@@ -357,7 +359,7 @@ void main() {
       await tester.tap(find.byKey(const Key('keyTabGit')));
       await tester.pump(const Duration(milliseconds: 50));
     }
-    stepFinished();
+    stepStop();
 
     // Switch to Test panel
     stepStart('Test Panel');
@@ -395,7 +397,7 @@ void main() {
 
       substep('✓ Test panel loaded successfully with all test actions');
     }
-    stepFinished();
+    stepStop();
 
     stepStart('Right Panel');
     {
@@ -408,7 +410,7 @@ void main() {
       // await tester.tap(find.byKey(const Key('keyTabInfo')));
       // await tester.pump(const Duration(milliseconds: 50));
     }
-    stepFinished();
+    stepStop();
 
     await tester.pump(const Duration(milliseconds: 50));
 
@@ -424,22 +426,6 @@ void main() {
       container.read(projectLoadedProvider.notifier).state = false;
       container.read(currentProjectPathProvider.notifier).state = null;
     }
-    stepFinished();
+    stepStop();
   });
-}
-
-int stepCount = 1;
-
-void stepStart(final String title) {
-  print('------------------------------------------------');
-  print('$stepCount: $title');
-  stepCount++;
-}
-
-void stepFinished() {
-  print('================================================');
-}
-
-void substep(final String subTitle) {
-  print(' $subTitle');
 }
