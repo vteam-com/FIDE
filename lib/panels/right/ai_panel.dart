@@ -1,6 +1,5 @@
 // ignore_for_file: deprecated_member_use
 
-import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../services/ai_service.dart';
 import '../../models/file_system_item.dart';
@@ -385,19 +384,17 @@ class _AIPanelState extends State<AIPanel> {
   Future<void> _checkStatus() async {
     setState(() => _isCheckingStatus = true);
     try {
-      // Check if Ollama is installed using which
-      final whichResult = await Process.run('which', ['ollama']);
-      _hasOllamaInstalled = whichResult.exitCode == 0;
+      _hasOllamaInstalled = await _aiService.isOllamaInstalled();
 
       if (_hasOllamaInstalled) {
-        // Check if running by trying to list models
-        final listResult = await Process.run('ollama', ['list']);
-        _isOllamaRunning = listResult.exitCode == 0;
+        _isOllamaRunning = await _aiService.isOllamaRunning();
 
         if (_isOllamaRunning) {
-          final models = listResult.stdout.toString();
-          _hasModelInstalled = models.contains('codellama');
+          _hasModelInstalled = await _aiService.isModelInstalled();
         }
+      } else {
+        _isOllamaRunning = false;
+        _hasModelInstalled = false;
       }
     } catch (e) {
       // Ollama not available
@@ -411,61 +408,17 @@ class _AIPanelState extends State<AIPanel> {
   Future<void> _installOllama() async {
     setState(() => _isInstalling = true);
     try {
-      if (Platform.isMacOS || Platform.isLinux) {
-        // Install Ollama using the official install script
-        final installResult = await Process.run('sh', [
-          '-c',
-          'curl -fsSL https://ollama.ai/install.sh | sh',
-        ]);
-        if (installResult.exitCode != 0) {
-          if (mounted) {
-            MessageBox.showError(
-              context,
-              'Failed to install Ollama: ${installResult.stderr}',
-            );
-          }
-          return;
-        }
+      await _aiService.installOllama();
 
-        // Pull the codellama model
-        final pullResult = await Process.run('ollama', ['pull', 'codellama']);
-        if (pullResult.exitCode != 0) {
-          if (mounted) {
-            MessageBox.showError(
-              context,
-              'Failed to pull codellama model: ${pullResult.stderr}',
-            );
-          }
-          return;
-        }
+      _hasOllamaInstalled = true;
+      _isOllamaRunning = true;
+      _hasModelInstalled = true;
 
-        // Start Ollama in the background
-        Process.start('ollama', ['serve']);
-
-        _hasOllamaInstalled = true;
-        _isOllamaRunning = true;
-        _hasModelInstalled = true;
-
-        if (mounted) {
-          MessageBox.showInfo(
-            context,
-            'Ollama installed, codellama model downloaded, and service started.',
-          );
-        }
-      } else if (Platform.isWindows) {
-        if (mounted) {
-          MessageBox.showError(
-            context,
-            'Please install Ollama manually from https://ollama.ai/download for Windows.',
-          );
-        }
-      } else {
-        if (mounted) {
-          MessageBox.showError(
-            context,
-            'Unsupported platform. Please install Ollama manually.',
-          );
-        }
+      if (mounted) {
+        MessageBox.showInfo(
+          context,
+          'Ollama installed, codellama model downloaded, and service started.',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -481,8 +434,7 @@ class _AIPanelState extends State<AIPanel> {
   Future<void> _runOllama() async {
     setState(() => _isInstalling = true);
     try {
-      Process.start('ollama', ['serve']);
-      await Future.delayed(const Duration(seconds: 2));
+      await _aiService.startOllama();
       await _checkStatus();
       if (!mounted) return;
       MessageBox.showInfo(context, 'Ollama started.');
@@ -499,15 +451,7 @@ class _AIPanelState extends State<AIPanel> {
   Future<void> _downloadModel() async {
     setState(() => _isInstalling = true);
     try {
-      final pullResult = await Process.run('ollama', ['pull', 'codellama']);
-      if (pullResult.exitCode != 0) {
-        if (!mounted) return;
-        MessageBox.showError(
-          context,
-          'Failed to download model: ${pullResult.stderr}',
-        );
-        return;
-      }
+      await _aiService.downloadModel();
       _hasModelInstalled = true;
       if (!mounted) return;
       MessageBox.showInfo(context, 'codellama model downloaded.');

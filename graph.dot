@@ -2,7 +2,9 @@ digraph "" {
   graph [style=rounded fontname="Arial Black" fontsize=13 penwidth=2.6];
   node [shape=rect style="filled,rounded" fontname=Arial fontsize=15 fillcolor=Lavender penwidth=1.3];
   edge [penwidth=1.3];
-  "/integration_test/integration_test.dart" [label="integration_test"];
+  "/integration_test/steps.dart" [label="steps"];
+  "/integration_test/ai_service_test.dart" [label="ai_service_test"];
+  "/integration_test/main_test.dart" [label="main_test"];
   "/test/file_type_utils_test.dart" [label="file_type_utils_test"];
   "/test/widget_test.dart" [label="widget_test"];
   "/test/message_helper_test.dart" [label="message_helper_test"];
@@ -77,7 +79,9 @@ digraph "" {
     label="fide";
     subgraph "cluster~/integration_test" {
       label="integration_test";
-      "/integration_test/integration_test.dart";
+      "/integration_test/steps.dart";
+      "/integration_test/ai_service_test.dart";
+      "/integration_test/main_test.dart";
     }
     subgraph "cluster~/test" {
       label="test";
@@ -198,10 +202,13 @@ digraph "" {
       "/tool/sort_source.dart";
     }
   }
-  "/integration_test/integration_test.dart" -> "/lib/main.dart";
-  "/integration_test/integration_test.dart" -> "/lib/providers/app_providers.dart";
-  "/integration_test/integration_test.dart" -> "/lib/screens/create_project_screen.dart";
-  "/integration_test/integration_test.dart" -> "/lib/controllers/app_controller.dart";
+  "/integration_test/ai_service_test.dart" -> "/lib/services/ai_service.dart";
+  "/integration_test/ai_service_test.dart" -> "/integration_test/steps.dart";
+  "/integration_test/main_test.dart" -> "/lib/main.dart";
+  "/integration_test/main_test.dart" -> "/lib/providers/app_providers.dart";
+  "/integration_test/main_test.dart" -> "/lib/screens/create_project_screen.dart";
+  "/integration_test/main_test.dart" -> "/lib/controllers/app_controller.dart";
+  "/integration_test/main_test.dart" -> "/integration_test/steps.dart";
   "/test/file_type_utils_test.dart" -> "/lib/models/file_system_item.dart";
   "/test/file_type_utils_test.dart" -> "/lib/utils/file_type_utils.dart";
   "/test/widget_test.dart" -> "/lib/main.dart";

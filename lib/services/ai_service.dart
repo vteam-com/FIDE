@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
 import 'package:http/http.dart' as http;
 
 class AIService {
@@ -18,15 +20,19 @@ Request: $prompt
 
 Please provide a helpful response focused on the coding request.''';
 
-      final response = await http.post(
-        Uri.parse(_ollamaUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'model': _defaultModel,
-          'prompt': fullPrompt,
-          'stream': false,
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse(_ollamaUrl),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'model': _defaultModel,
+              'prompt': fullPrompt,
+              'stream': false,
+            }),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+          ); // Timeout after 30 seconds to prevent hanging
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -46,168 +52,246 @@ Please provide a helpful response focused on the coding request.''';
     );
   }
 
+  /// Gets the current Flutter SDK version by running flutter --version
+  Future<String> _getFlutterSdkVersion() async {
+    try {
+      final result = await Process.run('flutter', ['--version']);
+      if (result.exitCode == 0) {
+        final output = result.stdout.toString();
+
+        // Look for Dart SDK version in the output
+        // Example output contains: "Dart 3.9.2 • DevTools 2.32.0"
+        final dartVersionRegex = RegExp(r'Dart (\d+\.\d+\.\d+)');
+        final match = dartVersionRegex.firstMatch(output);
+        if (match != null) {
+          final version = match.group(1)!;
+          return '^$version'; // Return in pubspec format (^3.9.2)
+        }
+      }
+
+      // Fallback to a reasonable default if detection fails
+      return '^3.0.0';
+    } catch (e) {
+      // Fallback to default on error
+      return '^3.0.0';
+    }
+  }
+
+  Future<String> getAiPrompt(
+    final String projectName,
+    final String description,
+  ) async {
+    final prompt =
+        '''
+You are a professional Flutter developer.
+Your task is to generate the **`lib/main.dart`** file for a Flutter app.
+Follow these rules:
+
+1. Output **only valid Dart and Flutter code** for lib/main.dart.
+2. Provide the full `lib/main.dart` content including `import` statements.
+3. Use Material 3 design and follow Flutter best practices.
+4. Add inline comments explaining important parts of the code.
+5. Structure the app properly (screens, widgets, state management if necessary).
+6. Do not include pubspec.yaml or README.md content.
+7. Do not write explanations outside of code files.
+8. Do not include instructions or """ wrapper text.
+
+Customer description:
+"$description"
+''';
+    return prompt;
+  }
+
   Future<Map<String, String>> generateProject(
     String projectName,
     String description,
   ) async {
     try {
-      final prompt =
-          '''## Task
+      final prompt = await getAiPrompt(projectName, description);
 
-Generate a complete Flutter project that implements: $description
-
-## Output format
-
-1. The response must contain **exactly three** code blocks, one for each file.
-2. Each code block must be fenced with ``` followed by the language identifier (`yaml`, `dart`, `md`).
-3. Do **not** include any explanatory text or comments outside the fences.
-4. The first block must be the `pubspec.yaml` (with a minimal dependency list for a basic Flutter app).
-5. The second block must be `lib/main.dart` that contains a `main()` function and the UI code implementing the described feature.
-6. The third block must be a `README.md` that explains how to run the project.
-
-## Example
-
-**Prompt**: "Build a simple counter app in Flutter."
-
-**Response**:
-```yaml
-name: counter_app
-description: A simple counter app
-publish_to: 'none'
-version: 1.0.0+1
-
-environment:
-  sdk: '>=3.0.0 <4.0.0'
-
-dependencies:
-  flutter:
-    sdk: flutter
-  cupertino_icons: ^1.0.6
-
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^3.0.0
-
-flutter:
-  uses-material-design: true
-```
-```dart
-import 'package:flutter/material.dart';
-
-void main() {
-  runApp(const CounterApp());
-}
-
-class CounterApp extends StatelessWidget {
-  const CounterApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Counter App',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const CounterPage(),
-    );
-  }
-}
-
-class CounterPage extends StatefulWidget {
-  const CounterPage({super.key});
-
-  @override
-  State<CounterPage> createState() => _CounterPageState();
-}
-
-class _CounterPageState extends State<CounterPage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Counter App')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text('\$_counter', style: Theme.of(context).textTheme.headlineMedium),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-}
-```
-```md
-# Counter App
-
-A simple Flutter counter application.
-
-## Getting Started
-
-1. Make sure you have Flutter installed and configured
-2. Run `flutter pub get` to install dependencies
-3. Run `flutter run` to start the app
-
-The app displays a counter that increments when the floating action button is pressed.
-
-**Now generate the code for the requested task:** Generate a Flutter app called "$projectName" that $description
-          ''';
-
-      final response = await http.post(
-        Uri.parse(_ollamaUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'model': _defaultModel,
-          'prompt': prompt,
-          'stream': false,
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse(_ollamaUrl),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'model': _defaultModel,
+              'prompt': prompt,
+              'stream': false,
+            }),
+          )
+          .timeout(
+            const Duration(seconds: 60),
+          ); // Timeout after 60 seconds to prevent hanging
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final rawResponse = data['response'] ?? '';
 
-        // Parse the response to extract the three code blocks
+        // Parse the response - extract main.dart from code blocks
         final Map<String, String> files = {};
-        final regex = RegExp(r'```\w*\s*(.*?)\s*```', dotAll: true);
-        final matches = regex.allMatches(rawResponse);
 
-        if (matches.length >= 3) {
-          final codeBlocks = matches.take(3).toList();
-          // Extract pubspec.yaml
-          final pubspecContent =
-              codeBlocks[0].group(1)?.replaceFirst(RegExp(r'^yaml\s*'), '') ??
-              '';
-          files['pubspec.yaml'] = pubspecContent.trim();
+        // Create pubspec.yaml directly
+        final sdkVersion = await _getFlutterSdkVersion();
+        files['pubspec.yaml'] =
+            '''
+name: $projectName
+description: Generated Flutter app with AI.
+publish_to: 'none'
+version: 1.0.0+1
 
-          // Extract main.dart
-          final mainDartContent =
-              codeBlocks[1].group(1)?.replaceFirst(RegExp(r'^dart\s*'), '') ??
-              '';
-          files['lib/main.dart'] = mainDartContent.trim();
+environment:
+  sdk: $sdkVersion
+  flutter: '>=3.0.0'
 
-          // Extract README.md
-          final readmeContent =
-              codeBlocks[2].group(1)?.replaceFirst(RegExp(r'^md\s*'), '') ?? '';
-          files['README.md'] = readmeContent.trim();
+dependencies:
+  flutter:
+    sdk: flutter
 
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+''';
+
+        // Create README.md directly
+        files['README.md'] =
+            '''
+# $projectName
+
+$description
+
+## Getting Started
+
+This Flutter app was generated with AI assistance.
+
+### Running the app
+1. Make sure you have Flutter installed
+2. Run `flutter pub get` to install dependencies
+3. Run `flutter run` to start the app
+4. For web support: `flutter run -d web-server` or `flutter run -d chrome`
+
+## Project Structure
+- `lib/main.dart`: Main application file
+- `pubspec.yaml`: Dependencies and project configuration
+''';
+
+        // Extract Dart code (lib/main.dart) from AI response
+        final dartBlockRegex = RegExp(
+          r'```\s*(?:dart)?\s*\n?(.*?)\n?```',
+          caseSensitive: false,
+          dotAll: true,
+        );
+        final dartMatches = dartBlockRegex.allMatches(rawResponse);
+
+        bool foundMainDart = false;
+        if (dartMatches.isNotEmpty) {
+          for (final match in dartMatches) {
+            final dartContent = match.group(1)?.trim();
+            if (dartContent != null &&
+                dartContent.isNotEmpty &&
+                (dartContent.contains('void main()') ||
+                    dartContent.contains(
+                      'import \'package:flutter/material.dart\'',
+                    ))) {
+              files['lib/main.dart'] = dartContent;
+              foundMainDart = true;
+              break; // Use the first valid Dart block
+            }
+          }
+        }
+
+        // Fallback: if no code blocks found, try extracting the entire response
+        if (!foundMainDart) {
+          String dartContent = rawResponse.trim();
+          if (dartContent.contains(
+                'import \'package:flutter/material.dart\'',
+              ) ||
+              dartContent.contains('void main()')) {
+            files['lib/main.dart'] = dartContent;
+            foundMainDart = true;
+          }
+        }
+
+        // Last fallback: if nothing worked, return a basic main.dart
+        if (!foundMainDart) {
+          files['lib/main.dart'] =
+              '''
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: '$projectName',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+      ),
+      home: const MyHomePage(),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key});
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: Text('$projectName'),
+      ),
+      body: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              '$description',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+''';
+          foundMainDart = true;
+        }
+
+        // Validate we have the required files with content
+        if (files.containsKey('pubspec.yaml') &&
+            files.containsKey('lib/main.dart') &&
+            files['pubspec.yaml']!.isNotEmpty &&
+            files['lib/main.dart']!.isNotEmpty) {
           return files;
         } else {
+          // Debug: show what we found
+          print('🔍 Debug: Raw response length: ${rawResponse.length}');
+          print(
+            '🔍 Debug: Found pubspec.yaml: ${files['pubspec.yaml']?.length ?? 0} chars',
+          );
+          print(
+            '🔍 Debug: Found main.dart: ${files['lib/main.dart']?.length ?? 0} chars',
+          );
+          print(
+            '🔍 Debug: Response preview: ${rawResponse.substring(0, min(200, rawResponse.length))}',
+          );
+
           return {
-            'error': 'Invalid AI response format - expected 3 code blocks',
+            'error':
+                'Failed to extract project files from AI response. Expected valid pubspec.yaml and lib/main.dart code.',
           };
         }
       } else {
@@ -236,5 +320,119 @@ The app displays a counter that increments when the floating action button is pr
       'Refactor this code with the following instruction: $instruction',
       code,
     );
+  }
+
+  /// Checks if Ollama is installed on the system
+  Future<bool> isOllamaInstalled() async {
+    try {
+      final whichResult = await Process.run('which', ['ollama']);
+      return whichResult.exitCode == 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Checks if Ollama service is currently running
+  Future<bool> isOllamaRunning() async {
+    try {
+      final listResult = await Process.run('ollama', ['list']);
+      return listResult.exitCode == 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Checks if the required model (codellama) is downloaded
+  Future<bool> isModelInstalled() async {
+    try {
+      final listResult = await Process.run('ollama', ['list']);
+      if (listResult.exitCode == 0) {
+        final models = listResult.stdout.toString();
+        return models.contains(_defaultModel);
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Installs Ollama using the official installation script
+  Future<void> installOllama() async {
+    if (Platform.isMacOS || Platform.isLinux) {
+      // Install Ollama using the official install script
+      final installResult = await Process.run('sh', [
+        '-c',
+        'curl -fsSL https://ollama.ai/install.sh | sh',
+      ]);
+
+      if (installResult.exitCode != 0) {
+        throw Exception('Failed to install Ollama: ${installResult.stderr}');
+      }
+
+      // Pull the default model
+      final pullResult = await Process.run('ollama', ['pull', _defaultModel]);
+      if (pullResult.exitCode != 0) {
+        throw Exception(
+          'Failed to pull $_defaultModel model: ${pullResult.stderr}',
+        );
+      }
+    } else if (Platform.isWindows) {
+      throw Exception(
+        'Please install Ollama manually from https://ollama.ai/download for Windows.',
+      );
+    } else {
+      throw Exception('Unsupported platform. Please install Ollama manually.');
+    }
+  }
+
+  /// Starts the Ollama service in the background
+  Future<void> startOllama() async {
+    Process.start('ollama', ['serve']);
+    // Give it a moment to start up
+    await Future.delayed(const Duration(seconds: 2));
+  }
+
+  /// Downloads the default model
+  Future<void> downloadModel() async {
+    final pullResult = await Process.run('ollama', ['pull', _defaultModel]);
+    if (pullResult.exitCode != 0) {
+      throw Exception(
+        'Failed to download $_defaultModel model: ${pullResult.stderr}',
+      );
+    }
+  }
+
+  /// Ensures Ollama is running and ready for use
+  Future<bool> ensureOllamaReady() async {
+    try {
+      // Check if Ollama is installed
+      if (!await isOllamaInstalled()) {
+        print('⚠️  Ollama not installed, attempting installation...');
+        await installOllama();
+        print('✅ Ollama installed successfully');
+      }
+
+      // Check if Ollama is running
+      if (!await isOllamaRunning()) {
+        print('🔄 Starting Ollama service...');
+        await startOllama();
+        if (!await isOllamaRunning()) {
+          throw Exception('Failed to start Ollama service');
+        }
+        print('✅ Ollama service started');
+      }
+
+      // Check if model is installed
+      if (!await isModelInstalled()) {
+        print('📥 Downloading $_defaultModel model...');
+        await downloadModel();
+        print('✅ $_defaultModel model downloaded');
+      }
+
+      return true;
+    } catch (e) {
+      print('❌ Failed to ensure Ollama readiness: $e');
+      return false;
+    }
   }
 }
