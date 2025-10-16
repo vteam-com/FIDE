@@ -7,15 +7,6 @@ import 'container_counter.dart';
 
 /// A reusable widget for displaying folder/file items in various panels
 class FolderNameWidget extends StatelessWidget {
-  final ProjectNode node;
-  final bool isExpanded;
-  final bool isFiltered;
-  final bool hasError;
-  final String? rootPath;
-  final VoidCallback? onTap;
-  final Function(Offset)? onShowContextMenu;
-  final Function(ProjectNode)? onFileSelected;
-
   const FolderNameWidget({
     super.key,
     required this.node,
@@ -27,6 +18,22 @@ class FolderNameWidget extends StatelessWidget {
     this.onShowContextMenu,
     this.onFileSelected,
   });
+
+  final bool hasError;
+
+  final bool isExpanded;
+
+  final bool isFiltered;
+
+  final ProjectNode node;
+
+  final Function(ProjectNode)? onFileSelected;
+
+  final Function(Offset)? onShowContextMenu;
+
+  final VoidCallback? onTap;
+
+  final String? rootPath;
 
   @override
   Widget build(BuildContext context) {
@@ -129,18 +136,6 @@ class FolderNameWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildIcon(final BuildContext context, final Color iconColor) {
-    IconData iconData;
-
-    if (hasError) {
-      iconData = node.isDirectory ? Icons.folder_off : Icons.insert_drive_file;
-      return Icon(iconData, color: iconColor, size: 16);
-    }
-
-    iconData = isExpanded ? Icons.folder : Icons.folder_outlined;
-    return Icon(iconData, color: iconColor, size: 20);
-  }
-
   Widget _buildGitStatusIcon(ColorScheme colorScheme) {
     IconData iconData;
     Color iconColor;
@@ -164,5 +159,17 @@ class FolderNameWidget extends StatelessWidget {
     }
 
     return Icon(iconData, color: iconColor, size: 12);
+  }
+
+  Widget _buildIcon(final BuildContext context, final Color iconColor) {
+    IconData iconData;
+
+    if (hasError) {
+      iconData = node.isDirectory ? Icons.folder_off : Icons.insert_drive_file;
+      return Icon(iconData, color: iconColor, size: 16);
+    }
+
+    iconData = isExpanded ? Icons.folder : Icons.folder_outlined;
+    return Icon(iconData, color: iconColor, size: 20);
   }
 }

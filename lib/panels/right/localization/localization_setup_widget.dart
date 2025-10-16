@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 
 class LocalizationSetupWidget extends StatelessWidget {
-  final VoidCallback onInitializeLocalization;
-  final VoidCallback onUpdateMainDart;
-  final bool isInitializing;
-  final bool showUpdateMainDart;
-
   const LocalizationSetupWidget({
     super.key,
     required this.onInitializeLocalization,
@@ -13,6 +8,14 @@ class LocalizationSetupWidget extends StatelessWidget {
     this.isInitializing = false,
     this.showUpdateMainDart = true, // Show by default, but can be hidden
   });
+
+  final bool isInitializing;
+
+  final VoidCallback onInitializeLocalization;
+
+  final VoidCallback onUpdateMainDart;
+
+  final bool showUpdateMainDart;
 
   @override
   Widget build(BuildContext context) {

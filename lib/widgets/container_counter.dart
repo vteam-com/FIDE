@@ -4,6 +4,13 @@ import 'package:flutter/material.dart';
 
 /// A specialized widget for displaying container/item counters using Chip
 class ContainerCounter extends StatelessWidget {
+  const ContainerCounter({
+    super.key,
+    required this.count,
+    this.fontSize = 10.0,
+    this.tooltip,
+  });
+
   /// The count value to display
   final int count;
 
@@ -12,13 +19,6 @@ class ContainerCounter extends StatelessWidget {
 
   /// Optional tooltip for accessibility
   final String? tooltip;
-
-  const ContainerCounter({
-    super.key,
-    required this.count,
-    this.fontSize = 10.0,
-    this.tooltip,
-  });
 
   @override
   Widget build(BuildContext context) {

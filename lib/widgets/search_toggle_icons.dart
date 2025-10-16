@@ -3,12 +3,6 @@
 import 'package:flutter/material.dart';
 
 class SearchToggleIcons extends StatelessWidget {
-  final bool caseSensitive;
-  final bool wholeWord;
-  final ValueChanged<bool> onCaseSensitiveChanged;
-  final ValueChanged<bool> onWholeWordChanged;
-  final bool showWholeWord;
-
   const SearchToggleIcons({
     super.key,
     required this.caseSensitive,
@@ -17,6 +11,16 @@ class SearchToggleIcons extends StatelessWidget {
     required this.onWholeWordChanged,
     this.showWholeWord = true,
   });
+
+  final bool caseSensitive;
+
+  final ValueChanged<bool> onCaseSensitiveChanged;
+
+  final ValueChanged<bool> onWholeWordChanged;
+
+  final bool showWholeWord;
+
+  final bool wholeWord;
 
   @override
   Widget build(BuildContext context) {

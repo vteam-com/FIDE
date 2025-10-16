@@ -5,14 +5,15 @@ import 'package:diff_match_patch/diff_match_patch.dart';
 
 // Side-by-side diff widget
 class SideBySideDiff extends StatelessWidget {
-  final String oldText;
-  final String newText;
-
   const SideBySideDiff({
     super.key,
     required this.oldText,
     required this.newText,
   });
+
+  final String newText;
+
+  final String oldText;
 
   @override
   Widget build(BuildContext context) {

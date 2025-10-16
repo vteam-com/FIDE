@@ -10,8 +10,9 @@ class CreateProjectStep3 extends StatefulWidget {
     required this.projectLocation,
   });
 
-  final String projectName;
   final String projectLocation;
+
+  final String projectName;
 
   @override
   State<CreateProjectStep3> createState() => _CreateProjectStep3State();

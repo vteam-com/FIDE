@@ -3,9 +3,9 @@ import '../services/git_service.dart';
 import 'badge_status.dart';
 
 class DiffCounter extends StatelessWidget {
-  final GitDiffStats? gitStats;
-
   const DiffCounter({super.key, required this.gitStats});
+
+  final GitDiffStats? gitStats;
 
   @override
   Widget build(BuildContext context) {

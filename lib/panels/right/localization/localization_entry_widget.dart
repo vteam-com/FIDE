@@ -5,14 +5,15 @@ import 'package:fide/models/localization_data.dart';
 import 'package:fide/widgets/badge_status.dart';
 
 class LocalizationEntryWidget extends StatelessWidget {
-  final ArbComparison comparison;
-  final bool showWarning;
-
   const LocalizationEntryWidget({
     super.key,
     required this.comparison,
     this.showWarning = false,
   });
+
+  final ArbComparison comparison;
+
+  final bool showWarning;
 
   @override
   Widget build(BuildContext context) {

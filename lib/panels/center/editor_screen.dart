@@ -48,6 +48,18 @@ class EditorScreen extends StatefulWidget {
   @override
   State<EditorScreen> createState() => _EditorScreenState();
 
+  static void findNext() {
+    _currentEditor?._nextMatch();
+  }
+
+  static void findPrevious() {
+    _currentEditor?._previousMatch();
+  }
+
+  static void formatCurrentFile() {
+    _currentEditor?._formatFile();
+  }
+
   static void navigateToLine(int lineNumber, {int column = 1}) {
     _currentEditor?._navigateToLine(lineNumber, column: column);
   }
@@ -56,25 +68,15 @@ class EditorScreen extends StatefulWidget {
     _currentEditor?._saveFile();
   }
 
-  static void formatCurrentFile() {
-    _currentEditor?._formatFile();
-  }
-
   static void toggleSearch() {
     _currentEditor?._toggleSearch();
-  }
-
-  static void findNext() {
-    _currentEditor?._nextMatch();
-  }
-
-  static void findPrevious() {
-    _currentEditor?._previousMatch();
   }
 }
 
 class _EditorScreenState extends State<EditorScreen> {
-  final Logger _logger = Logger('EditorScreenState');
+  final Map<String, GitDiffStats?> _allGitDiffStats = {};
+
+  bool _caseSensitive = false;
 
   late CodeCrafterController _codeController;
 
@@ -82,38 +84,41 @@ class _EditorScreenState extends State<EditorScreen> {
 
   late String _currentFile;
 
-  bool _isDirty = false;
-
-  bool _isLoading = false;
-  bool _isLargeFile = false;
-  double _fileSizeMB = 0.0;
-
-  // Search functionality
-  bool _showSearch = false;
-  final TextEditingController _searchController = TextEditingController();
-  late FocusNode _searchFocusNode;
-  String _searchQuery = '';
-  List<int> _searchMatches = [];
   int _currentMatchIndex = -1;
-  bool _caseSensitive = false;
-  bool _wholeWord = false;
 
-  // Track the saved text to determine if file is dirty
-  late String _savedText;
-
-  // Flag to prevent actions after dispose
-  bool _isDisposed = false;
-
-  // Git diff stats for all open documents
-  final Map<String, GitDiffStats?> _allGitDiffStats = {};
-
-  // Diff view mode
-  bool _showDiffView = false;
-  String? _diffOldText;
   String? _diffNewText;
 
-  // Code folding state
+  String? _diffOldText;
+
+  double _fileSizeMB = 0.0;
+
+  bool _isDirty = false;
+
+  bool _isDisposed = false;
+
+  bool _isLargeFile = false;
+
+  bool _isLoading = false;
+
+  final Logger _logger = Logger('EditorScreenState');
+
   bool _regionsExpanded = true;
+
+  late String _savedText;
+
+  final TextEditingController _searchController = TextEditingController();
+
+  late FocusNode _searchFocusNode;
+
+  List<int> _searchMatches = [];
+
+  String _searchQuery = '';
+
+  bool _showDiffView = false;
+
+  bool _showSearch = false;
+
+  bool _wholeWord = false;
 
   @override
   void initState() {
@@ -367,9 +372,9 @@ class _EditorScreenState extends State<EditorScreen> {
                   : _showDiffView
                   ? _buildDiffView()
                   // ignore: deprecated_member_use
-                  : RawKeyboardListener(
+                  : KeyboardListener(
                       focusNode: FocusNode(),
-                      onKey: _handleKeyEvent,
+                      onKeyEvent: _handleKeyEvent,
                       child: Column(
                         children: [
                           // Search bar (only visible when searching)
@@ -510,6 +515,14 @@ class _EditorScreenState extends State<EditorScreen> {
     return result;
   }
 
+  Widget _buildDiffView() {
+    if (_diffOldText == null || _diffNewText == null) {
+      return const Center(child: Text('No diff data available'));
+    }
+
+    return SideBySideDiff(oldText: _diffOldText!, newText: _diffNewText!);
+  }
+
   Widget _buildImageView() {
     return Center(
       child: SingleChildScrollView(
@@ -596,12 +609,103 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
-  Widget _buildDiffView() {
-    if (_diffOldText == null || _diffNewText == null) {
-      return const Center(child: Text('No diff data available'));
-    }
-
-    return SideBySideDiff(oldText: _diffOldText!, newText: _diffNewText!);
+  Widget _buildSearchBar() {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  focusNode: _searchFocusNode,
+                  decoration: InputDecoration(
+                    hintText: 'Find in file...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    isDense: true,
+                    filled: true,
+                    fillColor: Theme.of(context).colorScheme.surface,
+                  ),
+                  onChanged: _performSearch,
+                  onSubmitted: (_) => _nextMatch(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: _closeSearch,
+                tooltip: 'Close (Esc)',
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              SearchToggleIcons(
+                caseSensitive: _caseSensitive,
+                wholeWord: _wholeWord,
+                onCaseSensitiveChanged: (value) {
+                  setState(() {
+                    _caseSensitive = value;
+                    if (_searchQuery.isNotEmpty) {
+                      _performSearch(_searchQuery);
+                    }
+                  });
+                },
+                onWholeWordChanged: (value) {
+                  setState(() {
+                    _wholeWord = value;
+                    if (_searchQuery.isNotEmpty) {
+                      _performSearch(_searchQuery);
+                    }
+                  });
+                },
+              ),
+              const Spacer(),
+              if (_searchMatches.isNotEmpty) ...[
+                IconButton(
+                  icon: const Icon(Icons.keyboard_arrow_up, size: 18),
+                  onPressed: _previousMatch,
+                  tooltip: 'Previous (Shift+F3)',
+                  visualDensity: VisualDensity.compact,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+                  onPressed: _nextMatch,
+                  tooltip: 'Next (F3)',
+                  visualDensity: VisualDensity.compact,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${_currentMatchIndex + 1} of ${_searchMatches.length}',
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildUnsupportedFileView() {
@@ -719,6 +823,190 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
+  void _closeSearch() {
+    if (!mounted) return;
+    setState(() {
+      _showSearch = false;
+      _searchController.clear();
+      _searchQuery = '';
+      _searchMatches.clear();
+      _currentMatchIndex = -1;
+    });
+    _searchFocusNode.unfocus();
+  }
+
+  void _ensureSelectionVisible() {
+    if (!mounted || _codeController.selection.isCollapsed) return;
+
+    try {
+      // Find the CodeCrafter widget in the tree
+      final codeCrafterElement = _codeCrafterKey.currentContext;
+      if (codeCrafterElement == null) return;
+
+      // Calculate line number
+      final text = _codeController.text;
+      final selectionStart = _codeController.selection.baseOffset;
+      final textBeforeSelection = text.substring(0, selectionStart);
+      final lineNumber = textBeforeSelection.split('\n').length;
+
+      // Find all scrollables and choose the best one
+      final List<ScrollableState> allScrollables = [];
+
+      void findAllScrollables(Element element) {
+        if (element.widget is Scrollable) {
+          final scrollableState = element
+              .findAncestorStateOfType<ScrollableState>();
+          if (scrollableState != null) {
+            allScrollables.add(scrollableState);
+          }
+        }
+        element.visitChildElements(findAllScrollables);
+      }
+
+      codeCrafterElement.visitChildElements(findAllScrollables);
+
+      // Choose the best scrollable (one with reasonable max extent, not infinite)
+      ScrollableState? mainEditorScrollable;
+      for (final scrollable in allScrollables) {
+        final maxExtent = scrollable.position.maxScrollExtent;
+        if (maxExtent < 1000000 && maxExtent > 100) {
+          // Reasonable bounds
+          mainEditorScrollable = scrollable;
+          break;
+        }
+      }
+
+      // If no scrollable with reasonable bounds found, use the first one
+      if (mainEditorScrollable == null && allScrollables.isNotEmpty) {
+        mainEditorScrollable = allScrollables.first;
+      }
+
+      // Scroll the main editor scrollable
+      if (mainEditorScrollable != null) {
+        const double lineHeight = 20.0; // More conservative line height
+        final double targetScrollOffset =
+            (lineNumber - 3) * lineHeight; // Start 3 lines above target
+        final double clampedOffset = targetScrollOffset.clamp(
+          0.0,
+          mainEditorScrollable.position.maxScrollExtent,
+        );
+
+        // Only scroll vertically, don't affect horizontal position
+        if (mainEditorScrollable.position.pixels != clampedOffset) {
+          mainEditorScrollable.position.jumpTo(clampedOffset);
+        }
+      } else {
+        _logger.warning('Main editor scrollable not found, using fallback');
+        // Fallback: Try Scrollable.ensureVisible
+        Scrollable.ensureVisible(
+          codeCrafterElement,
+          duration: const Duration(milliseconds: 100),
+          curve: Curves.easeOut,
+          alignment: 0.3, // Center the selection in the viewport
+        );
+      }
+    } catch (e) {
+      _logger.severe('Scrolling error: $e');
+    }
+  }
+
+  Future<void> _formatFile() async {
+    if (_currentFile.isEmpty) return;
+
+    final extension = _currentFile.split('.').last.toLowerCase();
+    final isDartFile = extension == 'dart';
+    final isJsonFile = extension == 'json' || extension == 'arb';
+
+    // Check if file type is supported for formatting
+    if (!isDartFile && !isJsonFile) {
+      MessageBox.showInfo(
+        context,
+        'Formatting is currently only supported for Dart, JSON, and ARB files',
+      );
+      return;
+    }
+
+    try {
+      setState(() => _isLoading = true);
+
+      ProcessResult result;
+
+      if (isDartFile) {
+        // Run dart format on Dart files
+        result = await Process.run('dart', ['format', _currentFile]);
+      } else {
+        // For JSON/ARB files, use manual JSON formatting
+        result = await _formatJsonManually(_currentFile);
+      }
+
+      if (result.exitCode == 0) {
+        // Format successful, reload the file content
+        final file = File(_currentFile);
+        final formattedContent = await file.readAsString();
+
+        if (mounted) {
+          // Use addPostFrameCallback to ensure we're not in the middle of a build/layout
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              // Update the controller with formatted content
+              _codeController.text = formattedContent;
+              _savedText = formattedContent;
+
+              setState(() {
+                _isDirty = false;
+              });
+
+              // Update document state
+              if (widget.documentState != null) {
+                widget.documentState!.content = formattedContent;
+                widget.documentState!.isDirty = false;
+              }
+
+              MessageBox.showSuccess(context, 'File formatted successfully');
+            }
+          });
+        }
+      } else {
+        if (mounted) {
+          MessageBox.showError(
+            context,
+            'Error formatting file: ${result.stderr.toString().trim()}',
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        MessageBox.showError(context, 'Error formatting file: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<ProcessResult> _formatJsonManually(String filePath) async {
+    try {
+      final file = File(filePath);
+      final content = await file.readAsString();
+
+      // Simple JSON validation and formatting
+      // This is a basic implementation - for production, consider using a proper JSON formatter
+      final dynamic jsonData = jsonDecode(content);
+      final formattedJson = JsonEncoder.withIndent('  ').convert(jsonData);
+
+      await file.writeAsString(formattedJson);
+      return ProcessResult(0, 0, '', ''); // Mock successful result
+    } catch (e) {
+      return ProcessResult(
+        1,
+        1,
+        '',
+        'Manual JSON formatting failed: $e',
+      ); // Mock error result
+    }
+  }
+
   Map<String, TextStyle> _getCodeTheme() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final baseTextColor = Theme.of(context).colorScheme.onPrimary;
@@ -802,8 +1090,33 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  void _handleKeyEvent(KeyEvent event) {
+    if (event is KeyDownEvent) {
+      if (_showSearch) {
+        if (event.logicalKey == LogicalKeyboardKey.escape) {
+          _closeSearch();
+        } else if (event.logicalKey == LogicalKeyboardKey.enter) {
+          _nextMatch();
+        }
+      }
+    }
+  }
+
   bool _isImageFile(String filePath) {
     return FileTypeUtils.isImageFile(filePath);
+  }
+
+  Future<void> _loadGitDiffStatsForAllDocuments(
+    List<DocumentState> documents,
+  ) async {
+    final futures = <Future>[];
+    for (final doc in documents) {
+      futures.add(_loadGitDiffStatsForFile(doc.filePath));
+    }
+    await Future.wait(futures);
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _loadGitDiffStatsForFile(String filePath) async {
@@ -833,17 +1146,241 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  Future<void> _loadGitDiffStatsForAllDocuments(
-    List<DocumentState> documents,
-  ) async {
-    final futures = <Future>[];
-    for (final doc in documents) {
-      futures.add(_loadGitDiffStatsForFile(doc.filePath));
+  void _navigateToLine(int lineNumber, {int column = 1}) {
+    // Don't navigate if file is still loading or not loaded
+    if (_isLoading ||
+        _currentFile.isEmpty ||
+        _codeController.text.startsWith('// Loading')) {
+      return;
     }
-    await Future.wait(futures);
+
+    // Basic validation
+    if (_codeController.text.isEmpty || lineNumber < 1) {
+      return;
+    }
+
+    final lines = _codeController.text.split('\n');
+    if (lineNumber > lines.length) {
+      return;
+    }
+
+    // Calculate the character offset for the target line
+    int offset = 0;
+    for (int i = 0; i < lineNumber - 1 && i < lines.length; i++) {
+      offset += lines[i].length + 1; // +1 for the newline character
+    }
+
+    // Add column offset within the line (column is 1-indexed, so subtract 1)
+    final targetLine = lines[lineNumber - 1];
+    final columnOffset = (column - 1).clamp(0, targetLine.length);
+    offset += columnOffset;
+
+    // Clamp offset
+    if (offset < 0) offset = 0;
+    if (offset > _codeController.text.length) {
+      offset = _codeController.text.length;
+    }
+
+    _codeController.selection = TextSelection.fromPosition(
+      TextPosition(offset: offset),
+    );
+
+    // Force a rebuild to ensure the selection is visible
     if (mounted) {
       setState(() {});
     }
+
+    // Ensure the editor gets focus
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final focusNode = findFocusableElement(context);
+      if (focusNode != null) {
+        focusNode.requestFocus();
+      } else {
+        // Fallback: try to request focus on the current focus scope
+        FocusScope.of(context).requestFocus();
+      }
+    });
+  }
+
+  void _navigateToMatch(int index) {
+    if (index < 0 || index >= _searchMatches.length) return;
+
+    final offset = _searchMatches[index];
+
+    // Set selection to highlight the found text
+    _codeController.selection = TextSelection(
+      baseOffset: offset,
+      extentOffset: offset + _searchQuery.length,
+    );
+
+    setState(() {
+      _currentMatchIndex = index;
+    });
+
+    // Ensure the selection is visible and properly displayed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      // Force a rebuild to ensure selection is displayed
+      setState(() {});
+
+      // Find the scrollable widget and ensure the selection is visible
+      _ensureSelectionVisible();
+
+      // Don't request focus on editor during search - keep focus on search field
+      // Focus will only be requested when explicitly navigating with keyboard shortcuts
+    });
+  }
+
+  void _nextMatch() {
+    if (_searchMatches.isEmpty) return;
+    final nextIndex = (_currentMatchIndex + 1) % _searchMatches.length;
+    _navigateToMatch(nextIndex);
+
+    // Request focus on editor when navigating with keyboard shortcuts
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final focusNode = findFocusableElement(context);
+        if (focusNode != null) {
+          focusNode.requestFocus();
+        }
+      }
+    });
+  }
+
+  void _onCodeChanged() {
+    // Check if widget is still mounted and not disposed before calling setState
+    if (!mounted || _isDisposed) return;
+
+    final currentText = _codeController.text;
+
+    // Always trigger a rebuild when selection or text changes
+    setState(() {
+      // Mark as dirty if current text differs from saved text
+      _isDirty = currentText != _savedText;
+    });
+
+    // Update document state if we have document state
+    if (widget.documentState != null) {
+      widget.documentState!.content = _codeController.text;
+      widget.documentState!.selection = _codeController.selection;
+      widget.documentState!.isDirty = _isDirty;
+    }
+
+    // Notify outline panel to refresh when content changes
+    widget.onContentChanged?.call();
+
+    // Notify cursor position changes
+    final currentLine = _getCurrentLineNumber();
+    EditorScreen.onCursorPositionChanged?.call(currentLine);
+  }
+
+  void _performSearch(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        _searchMatches.clear();
+        _currentMatchIndex = -1;
+      });
+      return;
+    }
+
+    final text = _codeController.text;
+    final matches = <int>[];
+    final searchText = _caseSensitive ? query : query.toLowerCase();
+    final content = _caseSensitive ? text : text.toLowerCase();
+
+    int start = 0;
+    while (true) {
+      final index = content.indexOf(searchText, start);
+      if (index == -1) break;
+
+      if (_wholeWord) {
+        // Check if it's a whole word
+        final before =
+            index == 0 || !RegExp(r'\w').hasMatch(content[index - 1]);
+        final after =
+            index + searchText.length == content.length ||
+            !RegExp(r'\w').hasMatch(content[index + searchText.length]);
+        if (before && after) {
+          matches.add(index);
+        }
+      } else {
+        matches.add(index);
+      }
+
+      start = index + 1;
+    }
+
+    setState(() {
+      _searchMatches = matches;
+      _currentMatchIndex = matches.isNotEmpty ? 0 : -1;
+      _searchQuery = query;
+    });
+
+    if (matches.isNotEmpty) {
+      _navigateToMatch(0);
+    }
+  }
+
+  void _previousMatch() {
+    if (_searchMatches.isEmpty) return;
+    final prevIndex = _currentMatchIndex <= 0
+        ? _searchMatches.length - 1
+        : _currentMatchIndex - 1;
+    _navigateToMatch(prevIndex);
+
+    // Request focus on editor when navigating with keyboard shortcuts
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final focusNode = findFocusableElement(context);
+        if (focusNode != null) {
+          focusNode.requestFocus();
+        }
+      }
+    });
+  }
+
+  Future<void> _saveFile() async {
+    if (_currentFile.isEmpty) return;
+
+    try {
+      final file = File(_currentFile);
+      await file.writeAsString(_codeController.text);
+
+      if (mounted) {
+        setState(() {
+          _savedText = _codeController.text;
+          _isDirty = false;
+        });
+
+        // Update document state if we have document state
+        if (widget.documentState != null) {
+          widget.documentState!.isDirty = false;
+        }
+
+        MessageBox.showSuccess(context, 'File saved successfully');
+      }
+    } catch (e) {
+      if (mounted) {
+        MessageBox.showError(context, 'Error saving file: $e');
+      }
+    }
+  }
+
+  void _toggleAllRegions() {
+    setState(() {
+      _regionsExpanded = !_regionsExpanded;
+    });
+
+    // Note: Actual folding functionality will be implemented when CodeCrafter
+    // supports folding operations. For now, this manages the UI state and icon.
+    // Future implementation may use LSP requests or direct folding methods
+    // depending on CodeCrafter's API.
+
+    _logger.info(
+      'Toggle all regions requested: ${_regionsExpanded ? "expanded" : "collapsed"}',
+    );
   }
 
   Future<void> _toggleDiffView() async {
@@ -954,416 +1491,6 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  void _toggleAllRegions() {
-    setState(() {
-      _regionsExpanded = !_regionsExpanded;
-    });
-
-    // Note: Actual folding functionality will be implemented when CodeCrafter
-    // supports folding operations. For now, this manages the UI state and icon.
-    // Future implementation may use LSP requests or direct folding methods
-    // depending on CodeCrafter's API.
-
-    _logger.info(
-      'Toggle all regions requested: ${_regionsExpanded ? "expanded" : "collapsed"}',
-    );
-  }
-
-  void _navigateToLine(int lineNumber, {int column = 1}) {
-    // Don't navigate if file is still loading or not loaded
-    if (_isLoading ||
-        _currentFile.isEmpty ||
-        _codeController.text.startsWith('// Loading')) {
-      return;
-    }
-
-    // Basic validation
-    if (_codeController.text.isEmpty || lineNumber < 1) {
-      return;
-    }
-
-    final lines = _codeController.text.split('\n');
-    if (lineNumber > lines.length) {
-      return;
-    }
-
-    // Calculate the character offset for the target line
-    int offset = 0;
-    for (int i = 0; i < lineNumber - 1 && i < lines.length; i++) {
-      offset += lines[i].length + 1; // +1 for the newline character
-    }
-
-    // Add column offset within the line (column is 1-indexed, so subtract 1)
-    final targetLine = lines[lineNumber - 1];
-    final columnOffset = (column - 1).clamp(0, targetLine.length);
-    offset += columnOffset;
-
-    // Clamp offset
-    if (offset < 0) offset = 0;
-    if (offset > _codeController.text.length) {
-      offset = _codeController.text.length;
-    }
-
-    _codeController.selection = TextSelection.fromPosition(
-      TextPosition(offset: offset),
-    );
-
-    // Force a rebuild to ensure the selection is visible
-    if (mounted) {
-      setState(() {});
-    }
-
-    // Ensure the editor gets focus
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final focusNode = findFocusableElement(context);
-      if (focusNode != null) {
-        focusNode.requestFocus();
-      } else {
-        // Fallback: try to request focus on the current focus scope
-        FocusScope.of(context).requestFocus();
-      }
-    });
-  }
-
-  void _onCodeChanged() {
-    // Check if widget is still mounted and not disposed before calling setState
-    if (!mounted || _isDisposed) return;
-
-    final currentText = _codeController.text;
-
-    // Always trigger a rebuild when selection or text changes
-    setState(() {
-      // Mark as dirty if current text differs from saved text
-      _isDirty = currentText != _savedText;
-    });
-
-    // Update document state if we have document state
-    if (widget.documentState != null) {
-      widget.documentState!.content = _codeController.text;
-      widget.documentState!.selection = _codeController.selection;
-      widget.documentState!.isDirty = _isDirty;
-    }
-
-    // Notify outline panel to refresh when content changes
-    widget.onContentChanged?.call();
-
-    // Notify cursor position changes
-    final currentLine = _getCurrentLineNumber();
-    EditorScreen.onCursorPositionChanged?.call(currentLine);
-  }
-
-  Future<void> _saveFile() async {
-    if (_currentFile.isEmpty) return;
-
-    try {
-      final file = File(_currentFile);
-      await file.writeAsString(_codeController.text);
-
-      if (mounted) {
-        setState(() {
-          _savedText = _codeController.text;
-          _isDirty = false;
-        });
-
-        // Update document state if we have document state
-        if (widget.documentState != null) {
-          widget.documentState!.isDirty = false;
-        }
-
-        MessageBox.showSuccess(context, 'File saved successfully');
-      }
-    } catch (e) {
-      if (mounted) {
-        MessageBox.showError(context, 'Error saving file: $e');
-      }
-    }
-  }
-
-  Future<void> _formatFile() async {
-    if (_currentFile.isEmpty) return;
-
-    final extension = _currentFile.split('.').last.toLowerCase();
-    final isDartFile = extension == 'dart';
-    final isJsonFile = extension == 'json' || extension == 'arb';
-
-    // Check if file type is supported for formatting
-    if (!isDartFile && !isJsonFile) {
-      MessageBox.showInfo(
-        context,
-        'Formatting is currently only supported for Dart, JSON, and ARB files',
-      );
-      return;
-    }
-
-    try {
-      setState(() => _isLoading = true);
-
-      ProcessResult result;
-
-      if (isDartFile) {
-        // Run dart format on Dart files
-        result = await Process.run('dart', ['format', _currentFile]);
-      } else {
-        // For JSON/ARB files, use manual JSON formatting
-        result = await _formatJsonManually(_currentFile);
-      }
-
-      if (result.exitCode == 0) {
-        // Format successful, reload the file content
-        final file = File(_currentFile);
-        final formattedContent = await file.readAsString();
-
-        if (mounted) {
-          // Use addPostFrameCallback to ensure we're not in the middle of a build/layout
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              // Update the controller with formatted content
-              _codeController.text = formattedContent;
-              _savedText = formattedContent;
-
-              setState(() {
-                _isDirty = false;
-              });
-
-              // Update document state
-              if (widget.documentState != null) {
-                widget.documentState!.content = formattedContent;
-                widget.documentState!.isDirty = false;
-              }
-
-              MessageBox.showSuccess(context, 'File formatted successfully');
-            }
-          });
-        }
-      } else {
-        if (mounted) {
-          MessageBox.showError(
-            context,
-            'Error formatting file: ${result.stderr.toString().trim()}',
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        MessageBox.showError(context, 'Error formatting file: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<ProcessResult> _formatJsonManually(String filePath) async {
-    try {
-      final file = File(filePath);
-      final content = await file.readAsString();
-
-      // Simple JSON validation and formatting
-      // This is a basic implementation - for production, consider using a proper JSON formatter
-      final dynamic jsonData = jsonDecode(content);
-      final formattedJson = JsonEncoder.withIndent('  ').convert(jsonData);
-
-      await file.writeAsString(formattedJson);
-      return ProcessResult(0, 0, '', ''); // Mock successful result
-    } catch (e) {
-      return ProcessResult(
-        1,
-        1,
-        '',
-        'Manual JSON formatting failed: $e',
-      ); // Mock error result
-    }
-  }
-
-  // Search functionality methods
-  void _performSearch(String query) {
-    if (query.isEmpty) {
-      setState(() {
-        _searchMatches.clear();
-        _currentMatchIndex = -1;
-      });
-      return;
-    }
-
-    final text = _codeController.text;
-    final matches = <int>[];
-    final searchText = _caseSensitive ? query : query.toLowerCase();
-    final content = _caseSensitive ? text : text.toLowerCase();
-
-    int start = 0;
-    while (true) {
-      final index = content.indexOf(searchText, start);
-      if (index == -1) break;
-
-      if (_wholeWord) {
-        // Check if it's a whole word
-        final before =
-            index == 0 || !RegExp(r'\w').hasMatch(content[index - 1]);
-        final after =
-            index + searchText.length == content.length ||
-            !RegExp(r'\w').hasMatch(content[index + searchText.length]);
-        if (before && after) {
-          matches.add(index);
-        }
-      } else {
-        matches.add(index);
-      }
-
-      start = index + 1;
-    }
-
-    setState(() {
-      _searchMatches = matches;
-      _currentMatchIndex = matches.isNotEmpty ? 0 : -1;
-      _searchQuery = query;
-    });
-
-    if (matches.isNotEmpty) {
-      _navigateToMatch(0);
-    }
-  }
-
-  void _navigateToMatch(int index) {
-    if (index < 0 || index >= _searchMatches.length) return;
-
-    final offset = _searchMatches[index];
-
-    // Set selection to highlight the found text
-    _codeController.selection = TextSelection(
-      baseOffset: offset,
-      extentOffset: offset + _searchQuery.length,
-    );
-
-    setState(() {
-      _currentMatchIndex = index;
-    });
-
-    // Ensure the selection is visible and properly displayed
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-
-      // Force a rebuild to ensure selection is displayed
-      setState(() {});
-
-      // Find the scrollable widget and ensure the selection is visible
-      _ensureSelectionVisible();
-
-      // Don't request focus on editor during search - keep focus on search field
-      // Focus will only be requested when explicitly navigating with keyboard shortcuts
-    });
-  }
-
-  void _ensureSelectionVisible() {
-    if (!mounted || _codeController.selection.isCollapsed) return;
-
-    try {
-      // Find the CodeCrafter widget in the tree
-      final codeCrafterElement = _codeCrafterKey.currentContext;
-      if (codeCrafterElement == null) return;
-
-      // Calculate line number
-      final text = _codeController.text;
-      final selectionStart = _codeController.selection.baseOffset;
-      final textBeforeSelection = text.substring(0, selectionStart);
-      final lineNumber = textBeforeSelection.split('\n').length;
-
-      // Find all scrollables and choose the best one
-      final List<ScrollableState> allScrollables = [];
-
-      void findAllScrollables(Element element) {
-        if (element.widget is Scrollable) {
-          final scrollableState = element
-              .findAncestorStateOfType<ScrollableState>();
-          if (scrollableState != null) {
-            allScrollables.add(scrollableState);
-          }
-        }
-        element.visitChildElements(findAllScrollables);
-      }
-
-      codeCrafterElement.visitChildElements(findAllScrollables);
-
-      // Choose the best scrollable (one with reasonable max extent, not infinite)
-      ScrollableState? mainEditorScrollable;
-      for (final scrollable in allScrollables) {
-        final maxExtent = scrollable.position.maxScrollExtent;
-        if (maxExtent < 1000000 && maxExtent > 100) {
-          // Reasonable bounds
-          mainEditorScrollable = scrollable;
-          break;
-        }
-      }
-
-      // If no scrollable with reasonable bounds found, use the first one
-      if (mainEditorScrollable == null && allScrollables.isNotEmpty) {
-        mainEditorScrollable = allScrollables.first;
-      }
-
-      // Scroll the main editor scrollable
-      if (mainEditorScrollable != null) {
-        const double lineHeight = 20.0; // More conservative line height
-        final double targetScrollOffset =
-            (lineNumber - 3) * lineHeight; // Start 3 lines above target
-        final double clampedOffset = targetScrollOffset.clamp(
-          0.0,
-          mainEditorScrollable.position.maxScrollExtent,
-        );
-
-        // Only scroll vertically, don't affect horizontal position
-        if (mainEditorScrollable.position.pixels != clampedOffset) {
-          mainEditorScrollable.position.jumpTo(clampedOffset);
-        }
-      } else {
-        _logger.warning('Main editor scrollable not found, using fallback');
-        // Fallback: Try Scrollable.ensureVisible
-        Scrollable.ensureVisible(
-          codeCrafterElement,
-          duration: const Duration(milliseconds: 100),
-          curve: Curves.easeOut,
-          alignment: 0.3, // Center the selection in the viewport
-        );
-      }
-    } catch (e) {
-      _logger.severe('Scrolling error: $e');
-    }
-  }
-
-  void _nextMatch() {
-    if (_searchMatches.isEmpty) return;
-    final nextIndex = (_currentMatchIndex + 1) % _searchMatches.length;
-    _navigateToMatch(nextIndex);
-
-    // Request focus on editor when navigating with keyboard shortcuts
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final focusNode = findFocusableElement(context);
-        if (focusNode != null) {
-          focusNode.requestFocus();
-        }
-      }
-    });
-  }
-
-  void _previousMatch() {
-    if (_searchMatches.isEmpty) return;
-    final prevIndex = _currentMatchIndex <= 0
-        ? _searchMatches.length - 1
-        : _currentMatchIndex - 1;
-    _navigateToMatch(prevIndex);
-
-    // Request focus on editor when navigating with keyboard shortcuts
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final focusNode = findFocusableElement(context);
-        if (focusNode != null) {
-          focusNode.requestFocus();
-        }
-      }
-    });
-  }
-
   void _toggleSearch() {
     if (!mounted) return;
     setState(() {
@@ -1379,130 +1506,5 @@ class _EditorScreenState extends State<EditorScreen> {
         });
       }
     });
-  }
-
-  void _closeSearch() {
-    if (!mounted) return;
-    setState(() {
-      _showSearch = false;
-      _searchController.clear();
-      _searchQuery = '';
-      _searchMatches.clear();
-      _currentMatchIndex = -1;
-    });
-    _searchFocusNode.unfocus();
-  }
-
-  // ignore: deprecated_member_use
-  void _handleKeyEvent(RawKeyEvent event) {
-    // ignore: deprecated_member_use
-    if (event is RawKeyDownEvent) {
-      if (_showSearch) {
-        if (event.logicalKey == LogicalKeyboardKey.escape) {
-          _closeSearch();
-        } else if (event.logicalKey == LogicalKeyboardKey.enter) {
-          _nextMatch();
-        }
-      }
-    }
-  }
-
-  Widget _buildSearchBar() {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-            width: 1,
-          ),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  focusNode: _searchFocusNode,
-                  decoration: InputDecoration(
-                    hintText: 'Find in file...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    isDense: true,
-                    filled: true,
-                    fillColor: Theme.of(context).colorScheme.surface,
-                  ),
-                  onChanged: _performSearch,
-                  onSubmitted: (_) => _nextMatch(),
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: _closeSearch,
-                tooltip: 'Close (Esc)',
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              SearchToggleIcons(
-                caseSensitive: _caseSensitive,
-                wholeWord: _wholeWord,
-                onCaseSensitiveChanged: (value) {
-                  setState(() {
-                    _caseSensitive = value;
-                    if (_searchQuery.isNotEmpty) {
-                      _performSearch(_searchQuery);
-                    }
-                  });
-                },
-                onWholeWordChanged: (value) {
-                  setState(() {
-                    _wholeWord = value;
-                    if (_searchQuery.isNotEmpty) {
-                      _performSearch(_searchQuery);
-                    }
-                  });
-                },
-              ),
-              const Spacer(),
-              if (_searchMatches.isNotEmpty) ...[
-                IconButton(
-                  icon: const Icon(Icons.keyboard_arrow_up, size: 18),
-                  onPressed: _previousMatch,
-                  tooltip: 'Previous (Shift+F3)',
-                  visualDensity: VisualDensity.compact,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.keyboard_arrow_down, size: 18),
-                  onPressed: _nextMatch,
-                  tooltip: 'Next (F3)',
-                  visualDensity: VisualDensity.compact,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${_currentMatchIndex + 1} of ${_searchMatches.length}',
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
   }
 }

@@ -1,16 +1,6 @@
 import 'package:flutter/material.dart';
 
 class CreateProjectStep2 extends StatelessWidget {
-  final String? projectName;
-  final String projectLocation;
-  final bool wantsLocalization;
-  final Set<String> selectedLanguages;
-  final String defaultLanguage;
-  final void Function(bool) onWantsLocalizationChanged;
-  final void Function(String, bool) onLanguageSelectionChanged;
-  final void Function(String) onDefaultLanguageChanged;
-  final void Function(bool canProceed) onValidationChanged;
-
   const CreateProjectStep2({
     super.key,
     required this.projectName,
@@ -23,6 +13,24 @@ class CreateProjectStep2 extends StatelessWidget {
     required this.onDefaultLanguageChanged,
     required this.onValidationChanged,
   });
+
+  final String defaultLanguage;
+
+  final void Function(String) onDefaultLanguageChanged;
+
+  final void Function(String, bool) onLanguageSelectionChanged;
+
+  final void Function(bool canProceed) onValidationChanged;
+
+  final void Function(bool) onWantsLocalizationChanged;
+
+  final String projectLocation;
+
+  final String? projectName;
+
+  final Set<String> selectedLanguages;
+
+  final bool wantsLocalization;
 
   @override
   Widget build(BuildContext context) {

@@ -8,9 +8,9 @@ import 'status_indicator.dart';
 enum BuildProcessStatus { idle, running, success, error }
 
 class ActionTabsWithExecute extends StatefulWidget {
-  final List<Map<String, dynamic>> actions;
-
   const ActionTabsWithExecute({super.key, required this.actions});
+
+  final List<Map<String, dynamic>> actions;
 
   @override
   State<ActionTabsWithExecute> createState() => _ActionTabsWithExecuteState();
@@ -27,6 +27,12 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
   }
 
   @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   void didUpdateWidget(ActionTabsWithExecute oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.actions.length != widget.actions.length) {
@@ -36,12 +42,6 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
         vsync: this,
       );
     }
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   @override

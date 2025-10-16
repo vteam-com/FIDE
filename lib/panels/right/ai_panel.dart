@@ -17,17 +17,17 @@ class AIPanel extends StatefulWidget {
 class _AIPanelState extends State<AIPanel> {
   final AIService _aiService = AIService();
 
-  bool _isLoading = false;
-
-  bool _isInstalling = false;
-
-  bool _isCheckingStatus = true;
+  bool _hasModelInstalled = false;
 
   bool _hasOllamaInstalled = false;
 
-  bool _isOllamaRunning = false;
+  bool _isCheckingStatus = true;
 
-  bool _hasModelInstalled = false;
+  bool _isInstalling = false;
+
+  bool _isLoading = false;
+
+  bool _isOllamaRunning = false;
 
   final List<ChatMessage> _messages = [];
 
@@ -38,16 +38,16 @@ class _AIPanelState extends State<AIPanel> {
   String _selectedAction = 'ask';
 
   @override
+  void initState() {
+    super.initState();
+    _checkStatus();
+  }
+
+  @override
   void dispose() {
     _promptController.dispose();
     _scrollController.dispose();
     super.dispose();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _checkStatus();
   }
 
   @override
@@ -336,51 +336,6 @@ class _AIPanelState extends State<AIPanel> {
     );
   }
 
-  String _formatTimestamp(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
-  }
-
-  String _getHintText() {
-    switch (_selectedAction) {
-      case 'ask':
-        return 'Ask me anything about your code...';
-      case 'explain':
-        return 'Paste code here to get explanation...';
-      case 'generate':
-        return 'Describe what code you want to generate...';
-      case 'refactor':
-        return 'Paste code and describe how to refactor it...';
-      default:
-        return 'Type your message...';
-    }
-  }
-
-  String _getActionText() {
-    switch (_selectedAction) {
-      case 'ask':
-        return 'Ask AI';
-      case 'explain':
-        return 'Explain Code';
-      case 'generate':
-        return 'Generate Code';
-      case 'refactor':
-        return 'Refactor Code';
-      default:
-        return 'Select Action';
-    }
-  }
-
   Future<void> _checkStatus() async {
     setState(() => _isCheckingStatus = true);
     try {
@@ -403,6 +358,68 @@ class _AIPanelState extends State<AIPanel> {
       _hasModelInstalled = false;
     }
     setState(() => _isCheckingStatus = false);
+  }
+
+  Future<void> _downloadModel() async {
+    setState(() => _isInstalling = true);
+    try {
+      await _aiService.downloadModel();
+      _hasModelInstalled = true;
+      if (!mounted) return;
+      MessageBox.showInfo(context, 'codellama model downloaded.');
+    } catch (e) {
+      if (!mounted) return;
+      MessageBox.showError(context, 'Error downloading model: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isInstalling = false);
+      }
+    }
+  }
+
+  String _formatTimestamp(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
+  String _getActionText() {
+    switch (_selectedAction) {
+      case 'ask':
+        return 'Ask AI';
+      case 'explain':
+        return 'Explain Code';
+      case 'generate':
+        return 'Generate Code';
+      case 'refactor':
+        return 'Refactor Code';
+      default:
+        return 'Select Action';
+    }
+  }
+
+  String _getHintText() {
+    switch (_selectedAction) {
+      case 'ask':
+        return 'Ask me anything about your code...';
+      case 'explain':
+        return 'Paste code here to get explanation...';
+      case 'generate':
+        return 'Describe what code you want to generate...';
+      case 'refactor':
+        return 'Paste code and describe how to refactor it...';
+      default:
+        return 'Type your message...';
+    }
   }
 
   Future<void> _installOllama() async {
@@ -441,23 +458,6 @@ class _AIPanelState extends State<AIPanel> {
     } catch (e) {
       if (!mounted) return;
       MessageBox.showError(context, 'Error starting Ollama: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _isInstalling = false);
-      }
-    }
-  }
-
-  Future<void> _downloadModel() async {
-    setState(() => _isInstalling = true);
-    try {
-      await _aiService.downloadModel();
-      _hasModelInstalled = true;
-      if (!mounted) return;
-      MessageBox.showInfo(context, 'codellama model downloaded.');
-    } catch (e) {
-      if (!mounted) return;
-      MessageBox.showError(context, 'Error downloading model: $e');
     } finally {
       if (mounted) {
         setState(() => _isInstalling = false);

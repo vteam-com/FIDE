@@ -29,20 +29,23 @@ class OutlinePanel extends StatefulWidget {
 }
 
 class _OutlinePanelState extends State<OutlinePanel> {
+  final Map<String, DateTime> _cachedFileModTimes = {};
+
+  final Map<String, List<OutlineNode>> _cachedOutlines = {};
+
   int _currentHighlightedLine = -1;
 
+  static const Duration _debounceDuration = Duration(milliseconds: 150);
+
+  Future<void>? _debouncingParse;
+
   String _error = '';
+
+  bool _isDebouncing = false;
 
   bool _isLoading = true;
 
   List<OutlineNode> _outlineNodes = [];
-
-  // Performance optimizations
-  static const Duration _debounceDuration = Duration(milliseconds: 150);
-  final Map<String, List<OutlineNode>> _cachedOutlines = {};
-  final Map<String, DateTime> _cachedFileModTimes = {};
-  bool _isDebouncing = false;
-  Future<void>? _debouncingParse;
 
   @override
   void initState() {
@@ -133,21 +136,6 @@ class _OutlinePanelState extends State<OutlinePanel> {
 
   void refreshOutline() {
     _debouncedParseFile();
-  }
-
-  void _debouncedParseFile() {
-    if (_isDebouncing && _debouncingParse != null) {
-      // Cancel existing debounce
-      _debouncingParse?.timeout(Duration.zero); // Cancel it
-    }
-
-    _isDebouncing = true;
-    _debouncingParse = Future.delayed(_debounceDuration, () {
-      if (mounted) {
-        _parseFile();
-      }
-      _isDebouncing = false;
-    });
   }
 
   Widget _buildOutlineNode(OutlineNode node) {
@@ -247,6 +235,21 @@ class _OutlinePanelState extends State<OutlinePanel> {
         ),
       ),
     );
+  }
+
+  void _debouncedParseFile() {
+    if (_isDebouncing && _debouncingParse != null) {
+      // Cancel existing debounce
+      _debouncingParse?.timeout(Duration.zero); // Cancel it
+    }
+
+    _isDebouncing = true;
+    _debouncingParse = Future.delayed(_debounceDuration, () {
+      if (mounted) {
+        _parseFile();
+      }
+      _isDebouncing = false;
+    });
   }
 
   bool _isNodeHighlighted(OutlineNode node) {

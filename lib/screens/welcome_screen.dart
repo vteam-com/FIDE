@@ -288,6 +288,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     }).toList();
   }
 
+  Future<void> _loadAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          _appVersion = packageInfo.version;
+        });
+      }
+    } catch (e) {
+      // Keep default version if loading fails
+    }
+  }
+
   void _showErrorDialog(BuildContext context, String errorMessage) {
     showDialog(
       context: context,
@@ -306,18 +319,5 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         );
       },
     );
-  }
-
-  Future<void> _loadAppVersion() async {
-    try {
-      final packageInfo = await PackageInfo.fromPlatform();
-      if (mounted) {
-        setState(() {
-          _appVersion = packageInfo.version;
-        });
-      }
-    } catch (e) {
-      // Keep default version if loading fails
-    }
   }
 }

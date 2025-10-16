@@ -954,16 +954,6 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
 
 /// Shared node builder widget
 class NodeBuilder extends StatelessWidget {
-  final ProjectNode node;
-  final FileSystemItem? selectedFile;
-  final Map<String, bool> expandedState;
-  final String? rootPath;
-  final Function(ProjectNode, bool) onNodeTapped;
-  final Function(ProjectNode, Offset) onShowContextMenu;
-  final Function(ProjectNode, Offset)? onShowFileContextMenu;
-  final Function(ProjectNode)? onFileSelected;
-  final bool isFilteredView;
-
   const NodeBuilder({
     super.key,
     required this.node,
@@ -976,6 +966,24 @@ class NodeBuilder extends StatelessWidget {
     this.onFileSelected,
     this.isFilteredView = false,
   });
+
+  final Map<String, bool> expandedState;
+
+  final bool isFilteredView;
+
+  final ProjectNode node;
+
+  final Function(ProjectNode)? onFileSelected;
+
+  final Function(ProjectNode, bool) onNodeTapped;
+
+  final Function(ProjectNode, Offset) onShowContextMenu;
+
+  final Function(ProjectNode, Offset)? onShowFileContextMenu;
+
+  final String? rootPath;
+
+  final FileSystemItem? selectedFile;
 
   @override
   Widget build(BuildContext context) {

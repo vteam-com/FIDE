@@ -4,9 +4,9 @@ import 'package:path/path.dart' as p;
 /// Widget for displaying a full path with the filename in bold and full opacity,
 /// and the prefix path in normal weight with 0.75 opacity.
 class FullPathWidget extends StatelessWidget {
-  final String path;
-
   const FullPathWidget({super.key, required this.path});
+
+  final String path;
 
   @override
   Widget build(BuildContext context) {

@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 
 class HeroTitleWidget extends StatelessWidget {
-  final String title;
-  final String? subTitle;
-  final Widget? subWidget;
-
   const HeroTitleWidget({
     super.key,
     required this.title,
     this.subTitle,
     this.subWidget,
   });
+
+  final String? subTitle;
+
+  final Widget? subWidget;
+
+  final String title;
 
   @override
   Widget build(BuildContext context) {

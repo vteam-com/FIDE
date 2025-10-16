@@ -6,13 +6,6 @@ import 'package:path/path.dart' as p;
 
 /// Widget for rendering FileSystemItem with icon, text, Git status, and interactions
 class FileNameWidget extends StatelessWidget {
-  final FileSystemItem fileItem;
-  final bool isSelected;
-  final bool showGitBadge;
-  final String? rootPath;
-  final VoidCallback? onTap;
-  final Function(Offset)? onContextMenu;
-
   const FileNameWidget({
     super.key,
     required this.fileItem,
@@ -22,6 +15,18 @@ class FileNameWidget extends StatelessWidget {
     this.onTap,
     this.onContextMenu,
   });
+
+  final FileSystemItem fileItem;
+
+  final bool isSelected;
+
+  final Function(Offset)? onContextMenu;
+
+  final VoidCallback? onTap;
+
+  final String? rootPath;
+
+  final bool showGitBadge;
 
   @override
   Widget build(BuildContext context) {

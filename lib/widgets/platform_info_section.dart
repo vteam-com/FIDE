@@ -7,14 +7,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'badge_status.dart';
 
 class PlatformInfoSection extends StatefulWidget {
-  final String selectedPlatform;
-  final bool isSupported;
-  final bool canBuild;
-  final String projectPath;
-  final String currentHostPlatform;
-  final void Function(String output)? onAppendOutput;
-  final void Function(String error)? onAppendError;
-
   const PlatformInfoSection({
     super.key,
     required this.selectedPlatform,
@@ -26,253 +18,25 @@ class PlatformInfoSection extends StatefulWidget {
     this.onAppendError,
   });
 
+  final bool canBuild;
+
+  final String currentHostPlatform;
+
+  final bool isSupported;
+
+  final void Function(String error)? onAppendError;
+
+  final void Function(String output)? onAppendOutput;
+
+  final String projectPath;
+
+  final String selectedPlatform;
+
   @override
   State<PlatformInfoSection> createState() => _PlatformInfoSectionState();
 }
 
 class _PlatformInfoSectionState extends State<PlatformInfoSection> {
-  String _getLastBuildTime() {
-    final buildDir = Directory('${widget.projectPath}/build');
-    if (!buildDir.existsSync()) return 'Never';
-
-    DateTime? latestTime;
-    try {
-      var files = buildDir.listSync(recursive: true);
-      for (var file in files) {
-        if (file.statSync().modified.isAfter(
-          latestTime ?? DateTime.fromMillisecondsSinceEpoch(0),
-        )) {
-          latestTime = file.statSync().modified;
-        }
-      }
-    } catch (e) {
-      return 'Unknown';
-    }
-
-    return latestTime?.toString().split('.').first ?? 'Unknown';
-  }
-
-  String _getBuildLocation() {
-    final buildDir = Directory('${widget.projectPath}/build');
-    if (!buildDir.existsSync()) return 'No build directory found';
-
-    final platformSubdir =
-        '${widget.projectPath}/build/${widget.selectedPlatform}';
-    if (Directory(platformSubdir).existsSync()) {
-      return platformSubdir;
-    }
-
-    var files = buildDir.listSync(recursive: false, followLinks: false);
-    for (var file in files) {
-      if (file.path.contains(widget.selectedPlatform) ||
-          widget.selectedPlatform.contains(
-            file.path.split('/').last.toLowerCase(),
-          )) {
-        return file.path;
-      }
-    }
-
-    return buildDir.path;
-  }
-
-  String _getAppSize() {
-    final buildDir = Directory(_getBuildLocation());
-    if (!buildDir.existsSync()) return 'Not built';
-
-    try {
-      var totalSize = 0;
-      var files = buildDir.listSync(recursive: true);
-      for (var file in files) {
-        if (file is File) {
-          totalSize += file.statSync().size;
-        }
-      }
-
-      if (totalSize == 0) return '0 B';
-
-      final units = ['B', 'KB', 'MB', 'GB'];
-      var i = 0;
-      var size = totalSize.toDouble();
-      while (size > 1024 && i < units.length - 1) {
-        size /= 1024;
-        i++;
-      }
-
-      return '${size.toStringAsFixed(1)} ${units[i]}';
-    } catch (e) {
-      return 'Unknown';
-    }
-  }
-
-  void _openFolder(String path) {
-    try {
-      // For assets, we can't open in file explorer (they're packaged)
-      if (path.startsWith('assets/')) {
-        return;
-      }
-
-      // Get the directory containing the file
-      final file = File(path);
-      final directory = file.parent.path;
-
-      // Cross-platform folder opening
-      if (Platform.isMacOS) {
-        Process.run('open', [directory]);
-      } else if (Platform.isWindows) {
-        Process.run('explorer', [directory]);
-      } else if (Platform.isLinux) {
-        Process.run('xdg-open', [directory]);
-      }
-    } catch (e) {
-      // Ignore errors silently
-    }
-  }
-
-  String _getEnableInstructions() {
-    if (widget.isSupported) return 'Platform is already configured';
-
-    switch (widget.selectedPlatform) {
-      case 'android':
-        return 'Android support is typically enabled by default.\nEnsure Android Studio or SDK is installed.';
-      case 'ios':
-        return 'iOS support requires macOS and Xcode.\nInstall Xcode from App Store.';
-      case 'web':
-        return 'Run: flutter config --enable-web';
-      case 'windows':
-        return 'Run: flutter config --enable-windows-desktop';
-      case 'linux':
-        return 'Run: flutter config --enable-linux-desktop';
-      case 'macos':
-        return 'Run: flutter config --enable-macos-desktop';
-      default:
-        return 'Platform not recognized';
-    }
-  }
-
-  String? _findAppIconPath() {
-    switch (widget.selectedPlatform) {
-      case 'android':
-        // Check for common Android icon paths
-        final androidPaths = [
-          '${widget.projectPath}/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png',
-          '${widget.projectPath}/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png',
-          '${widget.projectPath}/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png',
-          '${widget.projectPath}/android/app/src/main/res/mipmap-hdpi/ic_launcher.png',
-          '${widget.projectPath}/android/app/src/main/res/mipmap-mdpi/ic_launcher.png',
-          '${widget.projectPath}/android/app/src/main/res/drawable/ic_launcher.png',
-        ];
-        for (final path in androidPaths) {
-          if (File(path).existsSync()) return path;
-        }
-        break;
-
-      case 'ios':
-        // Check iOS icon paths (icon with the highest resolution)
-        final iosPaths = [
-          '${widget.projectPath}/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png',
-          '${widget.projectPath}/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png',
-          '${widget.projectPath}/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png',
-          '${widget.projectPath}/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png',
-        ];
-        for (final path in iosPaths) {
-          if (File(path).existsSync()) return path;
-        }
-        break;
-
-      case 'macos':
-        // Check macOS icon paths from the actual project structure
-        final macosPaths = [
-          '${widget.projectPath}/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png',
-          '${widget.projectPath}/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png',
-          '${widget.projectPath}/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png',
-          '${widget.projectPath}/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png',
-        ];
-        for (final path in macosPaths) {
-          if (File(path).existsSync()) return path;
-        }
-        break;
-
-      case 'windows':
-        // Windows ICO file
-        final windowsIcon =
-            '${widget.projectPath}/windows/runner/resources/app_icon.ico';
-        if (File(windowsIcon).existsSync()) return windowsIcon;
-        break;
-
-      case 'web':
-        // Try common web favicon paths
-        final webIcons = [
-          '${widget.projectPath}/web/favicon.png',
-          '${widget.projectPath}/web/icons/Icon-192.png',
-          '${widget.projectPath}/web/icons/Icon-512.png',
-        ];
-        for (final path in webIcons) {
-          if (File(path).existsSync()) return path;
-        }
-        break;
-
-      case 'linux':
-        // Linux typically doesn't have app icons in the project
-        break;
-    }
-
-    return null; // No icon found
-  }
-
-  String _getPlatformIconPath() {
-    final appIconPath = _findAppIconPath();
-    if (appIconPath != null) {
-      return appIconPath;
-    }
-
-    // Fallback to generic platform icons
-    for (var platform in [
-      {
-        'name': 'Android',
-        'id': 'android',
-        'asset': 'assets/platform_android.svg',
-      },
-      {'name': 'iOS', 'id': 'ios', 'asset': 'assets/platform_ios.svg'},
-      {'name': 'Web', 'id': 'web', 'asset': 'assets/platform_web.svg'},
-      {'name': 'macOS', 'id': 'macos', 'asset': 'assets/platform_macos.svg'},
-      {'name': 'Linux', 'id': 'linux', 'asset': 'assets/platform_linux.svg'},
-      {
-        'name': 'Windows',
-        'id': 'windows',
-        'asset': 'assets/platform_windows.svg',
-      },
-    ]) {
-      if (platform['id'] == widget.selectedPlatform) {
-        return platform['asset'] as String;
-      }
-    }
-    return 'assets/platform_linux.svg'; // fallback
-  }
-
-  Widget _buildIcon() {
-    final iconPath = _getPlatformIconPath();
-    if (iconPath.startsWith('assets/')) {
-      // Use SVG asset
-      return SvgPicture.asset(iconPath, width: 24, height: 24);
-    } else {
-      // Use actual app icon file
-      return Image.file(
-        File(iconPath),
-        width: 24,
-        height: 24,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          // Fallback to generic SVG if image loading fails
-          return SvgPicture.asset(
-            'assets/platform_${widget.selectedPlatform}.svg',
-            width: 24,
-            height: 24,
-          );
-        },
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return SectionPanel(
@@ -619,5 +383,247 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
         ),
       ),
     );
+  }
+
+  Widget _buildIcon() {
+    final iconPath = _getPlatformIconPath();
+    if (iconPath.startsWith('assets/')) {
+      // Use SVG asset
+      return SvgPicture.asset(iconPath, width: 24, height: 24);
+    } else {
+      // Use actual app icon file
+      return Image.file(
+        File(iconPath),
+        width: 24,
+        height: 24,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          // Fallback to generic SVG if image loading fails
+          return SvgPicture.asset(
+            'assets/platform_${widget.selectedPlatform}.svg',
+            width: 24,
+            height: 24,
+          );
+        },
+      );
+    }
+  }
+
+  String? _findAppIconPath() {
+    switch (widget.selectedPlatform) {
+      case 'android':
+        // Check for common Android icon paths
+        final androidPaths = [
+          '${widget.projectPath}/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png',
+          '${widget.projectPath}/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png',
+          '${widget.projectPath}/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png',
+          '${widget.projectPath}/android/app/src/main/res/mipmap-hdpi/ic_launcher.png',
+          '${widget.projectPath}/android/app/src/main/res/mipmap-mdpi/ic_launcher.png',
+          '${widget.projectPath}/android/app/src/main/res/drawable/ic_launcher.png',
+        ];
+        for (final path in androidPaths) {
+          if (File(path).existsSync()) return path;
+        }
+        break;
+
+      case 'ios':
+        // Check iOS icon paths (icon with the highest resolution)
+        final iosPaths = [
+          '${widget.projectPath}/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png',
+          '${widget.projectPath}/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png',
+          '${widget.projectPath}/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png',
+          '${widget.projectPath}/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png',
+        ];
+        for (final path in iosPaths) {
+          if (File(path).existsSync()) return path;
+        }
+        break;
+
+      case 'macos':
+        // Check macOS icon paths from the actual project structure
+        final macosPaths = [
+          '${widget.projectPath}/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png',
+          '${widget.projectPath}/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png',
+          '${widget.projectPath}/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png',
+          '${widget.projectPath}/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png',
+        ];
+        for (final path in macosPaths) {
+          if (File(path).existsSync()) return path;
+        }
+        break;
+
+      case 'windows':
+        // Windows ICO file
+        final windowsIcon =
+            '${widget.projectPath}/windows/runner/resources/app_icon.ico';
+        if (File(windowsIcon).existsSync()) return windowsIcon;
+        break;
+
+      case 'web':
+        // Try common web favicon paths
+        final webIcons = [
+          '${widget.projectPath}/web/favicon.png',
+          '${widget.projectPath}/web/icons/Icon-192.png',
+          '${widget.projectPath}/web/icons/Icon-512.png',
+        ];
+        for (final path in webIcons) {
+          if (File(path).existsSync()) return path;
+        }
+        break;
+
+      case 'linux':
+        // Linux typically doesn't have app icons in the project
+        break;
+    }
+
+    return null; // No icon found
+  }
+
+  String _getAppSize() {
+    final buildDir = Directory(_getBuildLocation());
+    if (!buildDir.existsSync()) return 'Not built';
+
+    try {
+      var totalSize = 0;
+      var files = buildDir.listSync(recursive: true);
+      for (var file in files) {
+        if (file is File) {
+          totalSize += file.statSync().size;
+        }
+      }
+
+      if (totalSize == 0) return '0 B';
+
+      final units = ['B', 'KB', 'MB', 'GB'];
+      var i = 0;
+      var size = totalSize.toDouble();
+      while (size > 1024 && i < units.length - 1) {
+        size /= 1024;
+        i++;
+      }
+
+      return '${size.toStringAsFixed(1)} ${units[i]}';
+    } catch (e) {
+      return 'Unknown';
+    }
+  }
+
+  String _getBuildLocation() {
+    final buildDir = Directory('${widget.projectPath}/build');
+    if (!buildDir.existsSync()) return 'No build directory found';
+
+    final platformSubdir =
+        '${widget.projectPath}/build/${widget.selectedPlatform}';
+    if (Directory(platformSubdir).existsSync()) {
+      return platformSubdir;
+    }
+
+    var files = buildDir.listSync(recursive: false, followLinks: false);
+    for (var file in files) {
+      if (file.path.contains(widget.selectedPlatform) ||
+          widget.selectedPlatform.contains(
+            file.path.split('/').last.toLowerCase(),
+          )) {
+        return file.path;
+      }
+    }
+
+    return buildDir.path;
+  }
+
+  String _getEnableInstructions() {
+    if (widget.isSupported) return 'Platform is already configured';
+
+    switch (widget.selectedPlatform) {
+      case 'android':
+        return 'Android support is typically enabled by default.\nEnsure Android Studio or SDK is installed.';
+      case 'ios':
+        return 'iOS support requires macOS and Xcode.\nInstall Xcode from App Store.';
+      case 'web':
+        return 'Run: flutter config --enable-web';
+      case 'windows':
+        return 'Run: flutter config --enable-windows-desktop';
+      case 'linux':
+        return 'Run: flutter config --enable-linux-desktop';
+      case 'macos':
+        return 'Run: flutter config --enable-macos-desktop';
+      default:
+        return 'Platform not recognized';
+    }
+  }
+
+  String _getLastBuildTime() {
+    final buildDir = Directory('${widget.projectPath}/build');
+    if (!buildDir.existsSync()) return 'Never';
+
+    DateTime? latestTime;
+    try {
+      var files = buildDir.listSync(recursive: true);
+      for (var file in files) {
+        if (file.statSync().modified.isAfter(
+          latestTime ?? DateTime.fromMillisecondsSinceEpoch(0),
+        )) {
+          latestTime = file.statSync().modified;
+        }
+      }
+    } catch (e) {
+      return 'Unknown';
+    }
+
+    return latestTime?.toString().split('.').first ?? 'Unknown';
+  }
+
+  String _getPlatformIconPath() {
+    final appIconPath = _findAppIconPath();
+    if (appIconPath != null) {
+      return appIconPath;
+    }
+
+    // Fallback to generic platform icons
+    for (var platform in [
+      {
+        'name': 'Android',
+        'id': 'android',
+        'asset': 'assets/platform_android.svg',
+      },
+      {'name': 'iOS', 'id': 'ios', 'asset': 'assets/platform_ios.svg'},
+      {'name': 'Web', 'id': 'web', 'asset': 'assets/platform_web.svg'},
+      {'name': 'macOS', 'id': 'macos', 'asset': 'assets/platform_macos.svg'},
+      {'name': 'Linux', 'id': 'linux', 'asset': 'assets/platform_linux.svg'},
+      {
+        'name': 'Windows',
+        'id': 'windows',
+        'asset': 'assets/platform_windows.svg',
+      },
+    ]) {
+      if (platform['id'] == widget.selectedPlatform) {
+        return platform['asset'] as String;
+      }
+    }
+    return 'assets/platform_linux.svg'; // fallback
+  }
+
+  void _openFolder(String path) {
+    try {
+      // For assets, we can't open in file explorer (they're packaged)
+      if (path.startsWith('assets/')) {
+        return;
+      }
+
+      // Get the directory containing the file
+      final file = File(path);
+      final directory = file.parent.path;
+
+      // Cross-platform folder opening
+      if (Platform.isMacOS) {
+        Process.run('open', [directory]);
+      } else if (Platform.isWindows) {
+        Process.run('explorer', [directory]);
+      } else if (Platform.isLinux) {
+        Process.run('xdg-open', [directory]);
+      }
+    } catch (e) {
+      // Ignore errors silently
+    }
   }
 }

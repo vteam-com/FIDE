@@ -24,20 +24,33 @@ class SectionPanel extends StatefulWidget {
     this.count,
   });
 
-  final String title;
-  final bool isExpanded;
-  final VoidCallback? onExpansionToggle;
-  final Widget? rightWidget;
   final Widget? child;
+
   final EdgeInsetsGeometry contentPadding;
-  final EdgeInsetsGeometry headerPadding;
-  final Color? headerBackgroundColor;
-  final TextStyle? titleStyle;
-  final Color? iconColor;
-  final IconData iconExpanded;
-  final IconData iconCollapsed;
-  final double iconSize;
+
   final int? count;
+
+  final Color? headerBackgroundColor;
+
+  final EdgeInsetsGeometry headerPadding;
+
+  final IconData iconCollapsed;
+
+  final Color? iconColor;
+
+  final IconData iconExpanded;
+
+  final double iconSize;
+
+  final bool isExpanded;
+
+  final VoidCallback? onExpansionToggle;
+
+  final Widget? rightWidget;
+
+  final String title;
+
+  final TextStyle? titleStyle;
 
   @override
   State<SectionPanel> createState() => _SectionPanelState();
@@ -58,13 +71,6 @@ class _SectionPanelState extends State<SectionPanel> {
     if (oldWidget.isExpanded != widget.isExpanded) {
       _isExpanded = widget.isExpanded;
     }
-  }
-
-  void _handleToggle() {
-    setState(() {
-      _isExpanded = !_isExpanded;
-    });
-    widget.onExpansionToggle?.call();
   }
 
   @override
@@ -120,5 +126,12 @@ class _SectionPanelState extends State<SectionPanel> {
           Padding(padding: widget.contentPadding, child: widget.child),
       ],
     );
+  }
+
+  void _handleToggle() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+    });
+    widget.onExpansionToggle?.call();
   }
 }

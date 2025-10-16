@@ -4,16 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class PlatformSelector extends StatefulWidget {
-  final Set<String> supportedPlatforms;
-  final String selectedPlatform;
-  final Function(String) onPlatformSelected;
-
   const PlatformSelector({
     super.key,
     required this.supportedPlatforms,
     required this.selectedPlatform,
     required this.onPlatformSelected,
   });
+
+  final Function(String) onPlatformSelected;
+
+  final String selectedPlatform;
+
+  final Set<String> supportedPlatforms;
 
   @override
   State<PlatformSelector> createState() => _PlatformSelectorState();
@@ -30,59 +32,18 @@ class _PlatformSelectorState extends State<PlatformSelector>
   }
 
   @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   void didUpdateWidget(PlatformSelector oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedPlatform != widget.selectedPlatform ||
         oldWidget.supportedPlatforms != widget.supportedPlatforms) {
       _updateTabController();
     }
-  }
-
-  void _setupTabController() {
-    final platformOrder = [
-      'android',
-      'ios',
-      'web',
-      'macos',
-      'linux',
-      'windows',
-    ];
-    final allPlatforms = platformOrder;
-
-    _tabController = TabController(
-      length: allPlatforms.length,
-      vsync: this,
-      initialIndex: allPlatforms.indexOf(widget.selectedPlatform),
-    );
-
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) return;
-      final platformId = allPlatforms[_tabController.index];
-      if (widget.supportedPlatforms.contains(platformId)) {
-        widget.onPlatformSelected(platformId);
-      }
-    });
-  }
-
-  void _updateTabController() {
-    final platformOrder = [
-      'android',
-      'ios',
-      'web',
-      'macos',
-      'linux',
-      'windows',
-    ];
-    final targetIndex = platformOrder.indexOf(widget.selectedPlatform);
-    if (targetIndex >= 0 && _tabController.index != targetIndex) {
-      _tabController.animateTo(targetIndex);
-    }
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   @override
@@ -187,5 +148,46 @@ class _PlatformSelectorState extends State<PlatformSelector>
         );
       },
     );
+  }
+
+  void _setupTabController() {
+    final platformOrder = [
+      'android',
+      'ios',
+      'web',
+      'macos',
+      'linux',
+      'windows',
+    ];
+    final allPlatforms = platformOrder;
+
+    _tabController = TabController(
+      length: allPlatforms.length,
+      vsync: this,
+      initialIndex: allPlatforms.indexOf(widget.selectedPlatform),
+    );
+
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      final platformId = allPlatforms[_tabController.index];
+      if (widget.supportedPlatforms.contains(platformId)) {
+        widget.onPlatformSelected(platformId);
+      }
+    });
+  }
+
+  void _updateTabController() {
+    final platformOrder = [
+      'android',
+      'ios',
+      'web',
+      'macos',
+      'linux',
+      'windows',
+    ];
+    final targetIndex = platformOrder.indexOf(widget.selectedPlatform);
+    if (targetIndex >= 0 && _tabController.index != targetIndex) {
+      _tabController.animateTo(targetIndex);
+    }
   }
 }

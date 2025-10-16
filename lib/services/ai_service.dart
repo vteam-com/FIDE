@@ -387,9 +387,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
   /// Starts the Ollama service in the background
   Future<void> startOllama() async {
-    Process.start('ollama', ['serve']);
+    // Start the Ollama background server
+    await Process.start(
+      'ollama',
+      ['serve'],
+      mode: ProcessStartMode
+          .detached, // run independently from the current process
+    );
+
     // Give it a moment to start up
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 3));
   }
 
   /// Downloads the default model

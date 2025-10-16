@@ -3,22 +3,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
 class CreateProjectStep1 extends StatefulWidget {
-  final String? initialDirectory;
-  final String? testInitialDirectory;
-  final bool flutterStatusChecked;
-  final bool flutterAvailable;
-  final String? flutterVersion;
-  final bool gitStatusChecked;
-  final bool gitAvailable;
-  final String? gitVersion;
-  final bool ollamaStatusChecked;
-  final bool ollamaAvailable;
-  final void Function(String projectName, String? finalProjectName)
-  onProjectNameChanged;
-  final void Function(String directory) onDirectoryChanged;
-  final void Function(bool canProceed) onValidationChanged;
-  final void Function(bool useAI) onUseAIChanged;
-
   const CreateProjectStep1({
     super.key,
     required this.initialDirectory,
@@ -37,18 +21,53 @@ class CreateProjectStep1 extends StatefulWidget {
     required this.onUseAIChanged,
   });
 
+  final bool flutterAvailable;
+
+  final bool flutterStatusChecked;
+
+  final String? flutterVersion;
+
+  final bool gitAvailable;
+
+  final bool gitStatusChecked;
+
+  final String? gitVersion;
+
+  final String? initialDirectory;
+
+  final bool ollamaAvailable;
+
+  final bool ollamaStatusChecked;
+
+  final void Function(String directory) onDirectoryChanged;
+
+  final void Function(String projectName, String? finalProjectName)
+  onProjectNameChanged;
+
+  final void Function(bool useAI) onUseAIChanged;
+
+  final void Function(bool canProceed) onValidationChanged;
+
+  final String? testInitialDirectory;
+
   @override
   State<CreateProjectStep1> createState() => _CreateProjectStep1State();
 }
 
 class _CreateProjectStep1State extends State<CreateProjectStep1> {
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController directoryController = TextEditingController();
-  final TextEditingController descriptionController = TextEditingController();
-  String? selectedDirectory;
-  String? _finalProjectName;
   String? _directory;
-  bool _useAI = false; // Default to using AI for backward compatibility
+
+  String? _finalProjectName;
+
+  bool _useAI = false;
+
+  final TextEditingController descriptionController = TextEditingController();
+
+  final TextEditingController directoryController = TextEditingController();
+
+  final TextEditingController nameController = TextEditingController();
+
+  String? selectedDirectory;
 
   @override
   void initState() {
@@ -68,161 +87,6 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
     directoryController.dispose();
     descriptionController.dispose();
     super.dispose();
-  }
-
-  Future<void> _initializeDirectoryController() async {
-    final directoryPath =
-        widget.testInitialDirectory ??
-        widget.initialDirectory ??
-        (await getApplicationDocumentsDirectory()).path;
-    setState(() {
-      directoryController.text = directoryPath;
-      _directory = directoryPath;
-    });
-    widget.onDirectoryChanged(directoryPath);
-    // Delay validation update until after widget is built to avoid setState during build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updateValidation();
-    });
-  }
-
-  void _onProjectNameChanged() {
-    final validatedName = _validateProjectName(nameController.text);
-    if (_finalProjectName != validatedName) {
-      setState(() {
-        _finalProjectName = validatedName;
-      });
-      widget.onProjectNameChanged(nameController.text, validatedName);
-      _updateValidation();
-    }
-  }
-
-  void _updateValidation() {
-    final canProceed =
-        _finalProjectName != null &&
-        _directory != null &&
-        _directory!.isNotEmpty;
-    widget.onValidationChanged(canProceed);
-  }
-
-  void _handleBrowseDirectory() async {
-    final selectedDir = await FilePicker.platform.getDirectoryPath();
-    if (selectedDir != null && mounted) {
-      setState(() {
-        selectedDirectory = selectedDir;
-        directoryController.text = selectedDir;
-        _directory = selectedDir;
-      });
-      widget.onDirectoryChanged(selectedDir);
-      _updateValidation();
-    }
-  }
-
-  void _onUseAIChanged(bool value) {
-    setState(() {
-      _useAI = value;
-    });
-    widget.onUseAIChanged(value);
-  }
-
-  String? _validateProjectName(String inputName) {
-    if (inputName.isEmpty) {
-      return null;
-    }
-
-    // Only normalize if needed (spaces, special chars, etc.)
-    String normalized = inputName;
-
-    // Replace spaces and special characters with underscores
-    normalized = normalized.replaceAll(RegExp(r'[^a-z0-9_]'), '_');
-
-    // Remove consecutive underscores
-    normalized = normalized.replaceAll(RegExp(r'_+'), '_');
-
-    // Remove leading/trailing underscores
-    normalized = normalized.replaceAll(RegExp(r'^_+|_+$'), '');
-
-    // Ensure it doesn't start with a digit
-    if (normalized.isNotEmpty && normalized.startsWith(RegExp(r'[0-9]'))) {
-      normalized = 'app_$normalized';
-    }
-
-    // Ensure it's not empty after normalization
-    if (normalized.isEmpty) {
-      normalized = 'flutter_app';
-    }
-
-    // Check if it's a reserved Dart word and prefix if needed
-    const reservedWords = {
-      'abstract',
-      'as',
-      'assert',
-      'async',
-      'await',
-      'break',
-      'case',
-      'catch',
-      'class',
-      'const',
-      'continue',
-      'default',
-      'deferred',
-      'do',
-      'dynamic',
-      'else',
-      'enum',
-      'export',
-      'extends',
-      'extension',
-      'external',
-      'factory',
-      'false',
-      'final',
-      'finally',
-      'for',
-      'function',
-      'get',
-      'hide',
-      'if',
-      'implements',
-      'import',
-      'in',
-      'interface',
-      'is',
-      'late',
-      'library',
-      'mixin',
-      'new',
-      'null',
-      'on',
-      'operator',
-      'part',
-      'required',
-      'rethrow',
-      'return',
-      'set',
-      'show',
-      'static',
-      'super',
-      'switch',
-      'sync',
-      'this',
-      'throw',
-      'true',
-      'try',
-      'typedef',
-      'var',
-      'void',
-      'while',
-      'with',
-      'yield',
-    };
-
-    if (reservedWords.contains(normalized)) {
-      normalized = '${normalized}_app';
-    }
-
-    return normalized;
   }
 
   @override
@@ -493,5 +357,160 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
           ),
       ],
     );
+  }
+
+  void _handleBrowseDirectory() async {
+    final selectedDir = await FilePicker.platform.getDirectoryPath();
+    if (selectedDir != null && mounted) {
+      setState(() {
+        selectedDirectory = selectedDir;
+        directoryController.text = selectedDir;
+        _directory = selectedDir;
+      });
+      widget.onDirectoryChanged(selectedDir);
+      _updateValidation();
+    }
+  }
+
+  Future<void> _initializeDirectoryController() async {
+    final directoryPath =
+        widget.testInitialDirectory ??
+        widget.initialDirectory ??
+        (await getApplicationDocumentsDirectory()).path;
+    setState(() {
+      directoryController.text = directoryPath;
+      _directory = directoryPath;
+    });
+    widget.onDirectoryChanged(directoryPath);
+    // Delay validation update until after widget is built to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateValidation();
+    });
+  }
+
+  void _onProjectNameChanged() {
+    final validatedName = _validateProjectName(nameController.text);
+    if (_finalProjectName != validatedName) {
+      setState(() {
+        _finalProjectName = validatedName;
+      });
+      widget.onProjectNameChanged(nameController.text, validatedName);
+      _updateValidation();
+    }
+  }
+
+  void _onUseAIChanged(bool value) {
+    setState(() {
+      _useAI = value;
+    });
+    widget.onUseAIChanged(value);
+  }
+
+  void _updateValidation() {
+    final canProceed =
+        _finalProjectName != null &&
+        _directory != null &&
+        _directory!.isNotEmpty;
+    widget.onValidationChanged(canProceed);
+  }
+
+  String? _validateProjectName(String inputName) {
+    if (inputName.isEmpty) {
+      return null;
+    }
+
+    // Only normalize if needed (spaces, special chars, etc.)
+    String normalized = inputName;
+
+    // Replace spaces and special characters with underscores
+    normalized = normalized.replaceAll(RegExp(r'[^a-z0-9_]'), '_');
+
+    // Remove consecutive underscores
+    normalized = normalized.replaceAll(RegExp(r'_+'), '_');
+
+    // Remove leading/trailing underscores
+    normalized = normalized.replaceAll(RegExp(r'^_+|_+$'), '');
+
+    // Ensure it doesn't start with a digit
+    if (normalized.isNotEmpty && normalized.startsWith(RegExp(r'[0-9]'))) {
+      normalized = 'app_$normalized';
+    }
+
+    // Ensure it's not empty after normalization
+    if (normalized.isEmpty) {
+      normalized = 'flutter_app';
+    }
+
+    // Check if it's a reserved Dart word and prefix if needed
+    const reservedWords = {
+      'abstract',
+      'as',
+      'assert',
+      'async',
+      'await',
+      'break',
+      'case',
+      'catch',
+      'class',
+      'const',
+      'continue',
+      'default',
+      'deferred',
+      'do',
+      'dynamic',
+      'else',
+      'enum',
+      'export',
+      'extends',
+      'extension',
+      'external',
+      'factory',
+      'false',
+      'final',
+      'finally',
+      'for',
+      'function',
+      'get',
+      'hide',
+      'if',
+      'implements',
+      'import',
+      'in',
+      'interface',
+      'is',
+      'late',
+      'library',
+      'mixin',
+      'new',
+      'null',
+      'on',
+      'operator',
+      'part',
+      'required',
+      'rethrow',
+      'return',
+      'set',
+      'show',
+      'static',
+      'super',
+      'switch',
+      'sync',
+      'this',
+      'throw',
+      'true',
+      'try',
+      'typedef',
+      'var',
+      'void',
+      'while',
+      'with',
+      'yield',
+    };
+
+    if (reservedWords.contains(normalized)) {
+      normalized = '${normalized}_app';
+    }
+
+    return normalized;
   }
 }

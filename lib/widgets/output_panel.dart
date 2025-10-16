@@ -14,10 +14,13 @@ class OutputPanel extends StatefulWidget {
     this.onClear,
   });
 
-  final String title;
-  final String text;
   final bool isExpanded;
+
   final Function? onClear;
+
+  final String text;
+
+  final String title;
 
   @override
   State<OutputPanel> createState() => _OutputPanelState();
@@ -25,17 +28,13 @@ class OutputPanel extends StatefulWidget {
 
 class _OutputPanelState extends State<OutputPanel> {
   bool _isExpanded = false;
+
   bool _wrapText = false;
 
   @override
   void initState() {
     super.initState();
     _isExpanded = widget.isExpanded;
-  }
-
-  void _copyToClipboard() {
-    Clipboard.setData(ClipboardData(text: widget.text));
-    MessageBox.showSuccess(context, 'Copied to clipboard');
   }
 
   @override
@@ -100,5 +99,10 @@ class _OutputPanelState extends State<OutputPanel> {
         ),
       ),
     );
+  }
+
+  void _copyToClipboard() {
+    Clipboard.setData(ClipboardData(text: widget.text));
+    MessageBox.showSuccess(context, 'Copied to clipboard');
   }
 }
