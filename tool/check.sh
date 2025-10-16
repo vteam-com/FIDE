@@ -1,6 +1,8 @@
 #!/bin/sh
 echo --- Pub Get
 flutter pub get > /dev/null || { echo "Pub get failed"; exit 1; }
+flutter pub get upgrade > /dev/null
+flutter pub outdated
 
 echo --- Format sources
 dart format . | sed 's/^/    /'
