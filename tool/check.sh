@@ -1,8 +1,16 @@
 #!/bin/sh
 echo --- Pub Get
 flutter pub get > /dev/null || { echo "Pub get failed"; exit 1; }
-flutter pub get upgrade > /dev/null
+echo --- Pub Upgrade
+flutter pub upgrade > /dev/null
+echo --- Pub Outdated
 flutter pub outdated
+
+# echo --- Generate Loc
+# python3 tool/loc.py
+
+echo --- Sort code
+dart run tool/sort_source.dart
 
 echo --- Format sources
 dart format . | sed 's/^/    /'

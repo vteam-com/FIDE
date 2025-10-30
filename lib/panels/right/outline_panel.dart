@@ -41,6 +41,8 @@ class _OutlinePanelState extends State<OutlinePanel> {
 
   String _error = '';
 
+  bool _isCancelled = false;
+
   bool _isDebouncing = false;
 
   bool _isLoading = true;
@@ -238,18 +240,27 @@ class _OutlinePanelState extends State<OutlinePanel> {
   }
 
   void _debouncedParseFile() {
-    if (_isDebouncing && _debouncingParse != null) {
-      // Cancel existing debounce
-      _debouncingParse?.timeout(Duration.zero); // Cancel it
+    if (_isDebouncing) {
+      // Mark cancellation flag and allow previous future to complete naturally
+      _isCancelled = true;
+      // Wait for the previous operation to finish, then start new one
+      _debouncingParse = _debouncingParse
+          ?.then((_) {
+            if (_isCancelled) {
+              _isCancelled = false;
+              return;
+            }
+            // If not cancelled, start new parsing operation
+            _startDebouncedParse();
+          })
+          .catchError((error) {
+            // If previous operation failed, start new one anyway
+            _startDebouncedParse();
+          });
+    } else {
+      // Start new parsing operation immediately
+      _startDebouncedParse();
     }
-
-    _isDebouncing = true;
-    _debouncingParse = Future.delayed(_debounceDuration, () {
-      if (mounted) {
-        _parseFile();
-      }
-      _isDebouncing = false;
-    });
   }
 
   bool _isNodeHighlighted(OutlineNode node) {
@@ -448,6 +459,17 @@ class _OutlinePanelState extends State<OutlinePanel> {
         });
       }
     }
+  }
+
+  void _startDebouncedParse() {
+    _isDebouncing = true;
+    _debouncingParse = Future.delayed(_debounceDuration, () {
+      if (mounted && !_isCancelled) {
+        _parseFile();
+      }
+      _isDebouncing = false;
+      _isCancelled = false; // Reset cancellation flag
+    });
   }
 }
 
