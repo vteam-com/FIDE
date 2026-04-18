@@ -9,30 +9,9 @@ import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+part 'test_panel.test_action.dart';
+
 enum TestStatus { idle, running, success, failure }
-
-/// Represents `TestAction`.
-class TestAction {
-  final String id;
-  final String title;
-  final String description;
-  final String details;
-  final IconData icon;
-  final Color color;
-  final Function() action;
-  TestStatus status;
-
-  TestAction({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.details,
-    required this.icon,
-    required this.color,
-    required this.action,
-    this.status = TestStatus.idle,
-  });
-}
 
 /// Represents `TestPanel`.
 class TestPanel extends ConsumerStatefulWidget {

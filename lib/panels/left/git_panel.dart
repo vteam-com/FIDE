@@ -13,6 +13,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:path/path.dart' as path;
 
+part 'git_panel.git_status_notifier.dart';
+part 'git_panel.git_commits_notifier.dart';
+
 /// Represents `GitPanel`.
 class GitPanel extends ConsumerStatefulWidget {
   final String projectPath;
@@ -590,50 +593,8 @@ final gitStatusProvider =
       return GitStatusNotifier();
     });
 
-/// Represents `GitStatusNotifier`.
-class GitStatusNotifier extends StateNotifier<AsyncValue<GitStatus>> {
-  GitStatusNotifier() : super(const AsyncValue.loading());
-
-  final GitService _gitService = GitService();
-
-  /// Handles `GitStatusNotifier.loadStatus`.
-  Future<void> loadStatus(String projectPath) async {
-    state = const AsyncValue.loading();
-    try {
-      final status = await _gitService.getStatus(projectPath);
-      state = AsyncValue.data(status);
-    } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
-    }
-  }
-}
-
 // Git commits provider
 final gitCommitsProvider =
     StateNotifierProvider<GitCommitsNotifier, AsyncValue<List<GitCommit>>>((_) {
       return GitCommitsNotifier();
     });
-
-/// Represents `GitCommitsNotifier`.
-class GitCommitsNotifier extends StateNotifier<AsyncValue<List<GitCommit>>> {
-  GitCommitsNotifier() : super(const AsyncValue.data([]));
-
-  final GitService _gitService = GitService();
-
-  /// Handles `GitCommitsNotifier.loadCommits`.
-  Future<void> loadCommits(
-    String projectPath, {
-    int count = AppMetric.gitCommitDefaultCount,
-  }) async {
-    state = const AsyncValue.loading();
-    try {
-      final commits = await _gitService.getRecentCommits(
-        projectPath,
-        count: count,
-      );
-      state = AsyncValue.data(commits);
-    } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
-    }
-  }
-}

@@ -207,21 +207,13 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
         }
       }
 
-      // Try to parse each file individually
-      final validArbFiles = <ArbFile>[];
+      final validArbFiles = await _arbService.loadArbFiles(l10nDir.path);
       final malformedFiles = <String>[];
 
       for (final filePath in arbFilePaths) {
-        try {
-          final arbFile = await _arbService.parseArbFile(filePath);
-          if (arbFile != null) {
-            validArbFiles.add(arbFile);
-          } else {
-            malformedFiles.add(filePath);
-          }
-        } catch (e) {
+        final isValid = await _arbService.isArbFileValid(filePath);
+        if (!isValid) {
           malformedFiles.add(filePath);
-          _logger.severe('Error parsing ARB file $filePath: $e');
         }
       }
 

@@ -5,6 +5,10 @@ import 'package:fide/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:path/path.dart' as path;
 
+part 'git_service.git_status.dart';
+part 'git_service.git_commit.dart';
+part 'git_service.git_diff_stats.dart';
+
 /// Represents `GitService`.
 class GitService {
   static final GitService _instance = GitService._internal();
@@ -547,54 +551,4 @@ class GitService {
       return GitDiffStats(added: 0, removed: 0, isNewFile: false);
     }
   }
-}
-
-/// Represents `GitStatus`.
-class GitStatus {
-  final List<String> staged;
-  final List<String> unstaged;
-  final List<String> untracked;
-
-  GitStatus({
-    required this.staged,
-    required this.unstaged,
-    required this.untracked,
-  });
-
-  /// Whether any tracked or untracked changes are present.
-  bool get hasChanges =>
-      staged.isNotEmpty || unstaged.isNotEmpty || untracked.isNotEmpty;
-}
-
-/// Represents `GitCommit`.
-class GitCommit {
-  final String hash;
-  final String message;
-
-  GitCommit({required this.hash, required this.message});
-}
-
-/// Represents `GitDiffStats`.
-class GitDiffStats {
-  final int added;
-  final int removed;
-  final bool isNewFile;
-
-  GitDiffStats({
-    required this.added,
-    required this.removed,
-    required this.isNewFile,
-  });
-
-  /// Human-readable added/removed summary (for example `+3 -1`).
-  String get displayString {
-    if (added == 0 && removed == 0) return '';
-    final parts = <String>[];
-    if (added > 0) parts.add('+$added');
-    if (removed > 0) parts.add('-$removed');
-    return parts.join(' ');
-  }
-
-  /// Whether this diff stat contains any additions or removals.
-  bool get hasChanges => added > 0 || removed > 0;
 }

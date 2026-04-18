@@ -9,62 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
 
-/// Represents `SearchResult`.
-class SearchResult {
-  final String filePath;
-  final int lineNumber;
-  final String lineContent;
-  final int matchStart;
-  final int matchEnd;
-
-  SearchResult({
-    required this.filePath,
-    required this.lineNumber,
-    required this.lineContent,
-    required this.matchStart,
-    required this.matchEnd,
-  });
-}
-
-/// Represents `SearchResultNode`.
-class SearchResultNode extends ProjectNode {
-  final List<SearchResult> matches;
-
-  SearchResultNode({
-    required super.name,
-    required super.path,
-    required super.type,
-    super.isExpanded = false,
-    super.children,
-    this.matches = const [],
-  });
-
-  factory SearchResultNode.directory(
-    String name,
-    String path, {
-    List<ProjectNode>? children,
-  }) {
-    return SearchResultNode(
-      name: name,
-      path: path,
-      type: ProjectNodeType.directory,
-      children: children,
-    );
-  }
-
-  factory SearchResultNode.file(
-    String name,
-    String path,
-    List<SearchResult> matches,
-  ) {
-    return SearchResultNode(
-      name: name,
-      path: path,
-      type: ProjectNodeType.file,
-      matches: matches,
-    );
-  }
-}
+part 'search_panel.search_result.dart';
+part 'search_panel.search_result_node.dart';
 
 /// Represents `SearchPanel`.
 class SearchPanel extends ConsumerStatefulWidget {
