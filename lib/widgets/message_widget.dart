@@ -1,8 +1,8 @@
 // ignore_for_file:  use_build_context_synchronously
 
+import 'package:fide/widgets/badge_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'badge_status.dart';
 
 enum MessageType { success, warning, error, info }
 

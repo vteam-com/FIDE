@@ -1,7 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
-import 'package:flutter/material.dart';
 import 'package:diff_match_patch/diff_match_patch.dart';
+import 'package:flutter/material.dart';
 
 // Side-by-side diff widget
 class SideBySideDiff extends StatelessWidget {

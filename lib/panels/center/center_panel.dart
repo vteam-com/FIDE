@@ -1,19 +1,11 @@
 import 'package:fide/models/document_state.dart';
+import 'package:fide/models/file_system_item.dart';
+import 'package:fide/panels/center/editor_screen.dart';
+import 'package:fide/panels/center/terminal_panel.dart';
+import 'package:fide/providers/app_providers.dart';
+import 'package:fide/widgets/resizable_splitter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-// Providers
-import '../../providers/app_providers.dart';
-
-// Screens
-import 'editor_screen.dart';
-
-// Widgets
-import 'terminal_panel.dart';
-import '../../widgets/resizable_splitter.dart';
-
-// Models
-import '../../models/file_system_item.dart';
 
 class CenterPanel extends ConsumerStatefulWidget {
   final FileSystemItem? selectedFile;

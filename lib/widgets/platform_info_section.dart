@@ -1,10 +1,11 @@
 // ignore_for_file: deprecated_member_use
 import 'dart:io';
+
+import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'badge_status.dart';
 
 class PlatformInfoSection extends StatefulWidget {
   const PlatformInfoSection({

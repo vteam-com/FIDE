@@ -1,10 +1,10 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/full_path_widget.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fide/providers/app_providers.dart';
 
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key, required this.loadingProjectName});

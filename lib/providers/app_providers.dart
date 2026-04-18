@@ -1,15 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
+
+import 'package:fide/models/document_state.dart';
+import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/project_node.dart';
+import 'package:fide/services/project_service.dart';
+import 'package:fide/utils/file_type_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:logging/logging.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as p;
-import '../models/file_system_item.dart';
-import '../models/project_node.dart';
-import '../models/document_state.dart';
-import '../services/project_service.dart';
-import '../utils/file_type_utils.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // SharedPreferences provider
 final sharedPreferencesProvider = FutureProvider<SharedPreferences>((ref) {

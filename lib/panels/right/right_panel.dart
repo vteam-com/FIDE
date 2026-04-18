@@ -1,18 +1,12 @@
+import 'package:fide/models/file_system_item.dart';
+import 'package:fide/panels/right/ai_panel.dart';
+import 'package:fide/panels/right/info_panel.dart';
+import 'package:fide/panels/right/localization/localization_panel.dart';
+import 'package:fide/panels/right/outline_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-
-// Screens
-import 'outline_panel.dart';
-import 'ai_panel.dart';
-import 'localization/localization_panel.dart';
-
-// Models
-import '../../models/file_system_item.dart';
-
-// New panels
-import 'info_panel.dart';
 
 class RightPanel extends StatefulWidget {
   const RightPanel({

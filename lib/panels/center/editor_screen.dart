@@ -2,23 +2,24 @@
 
 import 'dart:convert';
 import 'dart:io';
+
+import 'package:fide/models/document_state.dart';
 import 'package:fide/panels/center/large_file_message.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:flutter_code_crafter/code_crafter.dart';
+import 'package:fide/services/git_service.dart';
+import 'package:fide/utils/file_type_utils.dart';
 import 'package:fide/utils/message_box.dart';
+import 'package:fide/widgets/diff_counter.dart';
+import 'package:fide/widgets/search_toggle_icons.dart';
+import 'package:fide/widgets/side_by_side_diff.dart';
+import 'package:fide/widgets/toggle_experience_mode.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_code_crafter/code_crafter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:fide/utils/file_type_utils.dart';
-import 'package:fide/models/document_state.dart';
-import 'package:fide/widgets/search_toggle_icons.dart';
-import 'package:fide/widgets/diff_counter.dart';
-import 'package:fide/widgets/side_by_side_diff.dart';
-import 'package:fide/widgets/toggle_experience_mode.dart';
-import 'package:fide/services/git_service.dart';
 
 class EditorScreen extends StatefulWidget {
   const EditorScreen({

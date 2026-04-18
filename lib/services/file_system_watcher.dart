@@ -1,8 +1,9 @@
-import 'dart:io';
 import 'dart:async';
+import 'dart:io';
+
+import 'package:fide/models/project_node.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
-import 'package:fide/models/project_node.dart';
 
 /// Service for monitoring file system changes and applying incremental updates
 class FileSystemWatcher {

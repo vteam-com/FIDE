@@ -1,9 +1,9 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:fide/models/file_system_item.dart';
+import 'package:fide/services/ai_service.dart';
+import 'package:fide/utils/message_box.dart';
 import 'package:flutter/material.dart';
-import '../../services/ai_service.dart';
-import '../../models/file_system_item.dart';
-import '../../utils/message_box.dart';
 
 class AIPanel extends StatefulWidget {
   const AIPanel({super.key, this.selectedFile});

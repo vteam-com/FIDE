@@ -1,17 +1,15 @@
 // ignore_for_file: deprecated_member_use
 
 import 'dart:io';
+
+import 'package:fide/providers/app_providers.dart';
+import 'package:fide/widgets/action_tabs.dart';
 import 'package:fide/widgets/output_panel.dart';
+import 'package:fide/widgets/platform_info_section.dart';
+import 'package:fide/widgets/platform_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-// Providers
-import '../../providers/app_providers.dart';
-// Widgets
-import '../../widgets/platform_selector.dart';
-import '../../widgets/platform_info_section.dart';
-import '../../widgets/action_tabs.dart';
 
 class ExecutePanel extends ConsumerStatefulWidget {
   const ExecutePanel({super.key});

@@ -1,8 +1,8 @@
 // ignore_for_file: deprecated_member_use
 
-import 'package:flutter/material.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:flutter/material.dart';
 
 class LocalizationEntryWidget extends StatelessWidget {
   const LocalizationEntryWidget({

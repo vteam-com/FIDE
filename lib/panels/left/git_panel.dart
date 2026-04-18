@@ -1,15 +1,16 @@
 import 'dart:io';
+
+import 'package:fide/models/file_system_item.dart';
+import 'package:fide/services/git_service.dart';
+import 'package:fide/utils/message_box.dart';
+import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/filename_widget.dart';
+import 'package:fide/widgets/section_panel.dart';
+import 'package:fide/widgets/side_by_side_diff.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:path/path.dart' as path;
-import '../../services/git_service.dart';
-import '../../widgets/side_by_side_diff.dart';
-import '../../models/file_system_item.dart';
-import '../../widgets/filename_widget.dart';
-import '../../utils/message_box.dart';
-import '../../widgets/badge_status.dart';
-import '../../widgets/section_panel.dart';
 
 class GitPanel extends ConsumerStatefulWidget {
   final String projectPath;

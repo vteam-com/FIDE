@@ -1,17 +1,17 @@
 import 'dart:io';
-import 'package:fide/widgets/full_path_widget.dart';
-import 'package:flutter/material.dart';
+
+import 'package:fide/providers/app_providers.dart';
+import 'package:fide/screens/create_project_step1.dart';
+import 'package:fide/screens/create_project_step2.dart';
 import 'package:fide/screens/create_project_step3.dart';
-import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/services/ai_service.dart';
 import 'package:fide/services/localization_service.dart';
+import 'package:fide/widgets/full_path_widget.dart';
+import 'package:fide/widgets/hero_title_widget.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fide/providers/app_providers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:process_run/shell.dart';
-
-import 'create_project_step1.dart';
-import 'create_project_step2.dart';
 
 // Enum for wizard steps
 enum CreateProjectStep {

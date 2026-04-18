@@ -1,9 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
-
-// Local import
-import 'status_indicator.dart';
 
 enum BuildProcessStatus { idle, running, success, error }
 

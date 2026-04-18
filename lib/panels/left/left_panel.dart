@@ -1,19 +1,13 @@
+import 'package:fide/models/file_system_item.dart';
+import 'package:fide/panels/left/execute_panel.dart';
+import 'package:fide/panels/left/folder_panel.dart';
+import 'package:fide/panels/left/git_panel.dart';
+import 'package:fide/panels/left/organized_panel.dart';
 import 'package:fide/panels/left/search_panel.dart';
 import 'package:fide/panels/left/test_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-// Screens
-import 'folder_panel.dart';
-import 'organized_panel.dart';
-import 'git_panel.dart';
-
-// Panels
-import 'execute_panel.dart';
-
-// Models
-import '../../models/file_system_item.dart';
 
 enum PanelMode { filesystem, organized, git, search, buildrun, test }
 

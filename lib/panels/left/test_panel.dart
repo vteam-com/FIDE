@@ -1,15 +1,12 @@
 // ignore_for_file: deprecated_member_use
 
 import 'dart:io';
+
+import 'package:fide/utils/message_box.dart';
 import 'package:fide/widgets/output_panel.dart';
+import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-// Utils
-import '../../utils/message_box.dart';
-
-// Widgets
-import '../../widgets/status_indicator.dart';
 
 enum TestStatus { idle, running, success, failure }
 

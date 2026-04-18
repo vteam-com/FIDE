@@ -1,21 +1,21 @@
 // ignore_for_file:  avoid_print
 
 import 'dart:io';
+
+import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/project_node.dart';
+import 'package:fide/panels/left/shared_panel_utils.dart';
+import 'package:fide/providers/app_providers.dart';
+import 'package:fide/services/git_service.dart';
+import 'package:fide/utils/message_box.dart';
 import 'package:fide/widgets/filename_widget.dart';
 import 'package:fide/widgets/foldername_widget.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
-import 'package:file_picker/file_picker.dart';
-import 'package:fide/models/project_node.dart';
-import 'package:fide/models/file_system_item.dart';
-import 'package:fide/services/git_service.dart';
-import 'package:fide/utils/message_box.dart';
-
-import 'shared_panel_utils.dart';
-import '../../providers/app_providers.dart';
 
 /// FolderPanel provides a filesystem-style view of the project
 class FolderPanel extends ConsumerStatefulWidget {

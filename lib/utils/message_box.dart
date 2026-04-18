@@ -1,5 +1,5 @@
+import 'package:fide/widgets/message_widget.dart';
 import 'package:flutter/material.dart';
-import '../widgets/message_widget.dart';
 
 // Convenience methods for showing messages
 class MessageBox {

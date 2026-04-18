@@ -71,6 +71,7 @@ Contributions are welcome! FIDE is an open-source project dedicated to improving
 FIDE includes visual assets that help illustrate the project structure:
 
 ### Dependency Graph
+
 ![Project Dependencies](graph.svg)
 
 An automatically generated visualization of the codebase dependencies, showing how different modules and services interconnect within the FIDE architecture.

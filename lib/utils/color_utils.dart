@@ -1,4 +1,5 @@
 import 'dart:math' show pow;
+
 import 'package:flutter/material.dart';
 
 /// Utility functions for color manipulation

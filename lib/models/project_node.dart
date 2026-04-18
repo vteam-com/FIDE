@@ -1,8 +1,9 @@
-import 'dart:io';
 import 'dart:async';
+import 'dart:io';
+
+import 'package:fide/models/file_system_item.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
-import 'package:fide/models/file_system_item.dart';
 
 enum ProjectNodeType { file, directory }
 

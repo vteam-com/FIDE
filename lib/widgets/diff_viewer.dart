@@ -1,9 +1,7 @@
+import 'package:fide/utils/message_box.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
-
-// Utils
-import '../utils/message_box.dart';
 
 class DiffLine {
   final String content;

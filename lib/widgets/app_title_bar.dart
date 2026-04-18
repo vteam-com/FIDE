@@ -1,6 +1,9 @@
 // ignore_for_file:  use_build_context_synchronously
 
 import 'dart:io';
+
+import 'package:fide/providers/app_providers.dart';
+import 'package:fide/utils/message_box.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,12 +11,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:window_manager/window_manager.dart';
-
-// Providers
-import '../providers/app_providers.dart';
-
-// Utils
-import '../utils/message_box.dart';
 
 // Widgets
 

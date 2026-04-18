@@ -1,11 +1,12 @@
 import 'dart:io';
+
+import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/project_node.dart';
+import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
+import 'package:fide/widgets/search_toggle_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
-import 'package:fide/models/project_node.dart';
-import 'package:fide/models/file_system_item.dart';
-import 'package:fide/widgets/search_toggle_icons.dart';
-import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
 
 class SearchResult {
   final String filePath;

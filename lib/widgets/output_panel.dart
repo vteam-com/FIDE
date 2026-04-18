@@ -1,9 +1,7 @@
+import 'package:fide/utils/message_box.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-// Utils
-import '../utils/message_box.dart';
 
 class OutputPanel extends StatefulWidget {
   const OutputPanel({

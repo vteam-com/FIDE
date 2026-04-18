@@ -1,13 +1,14 @@
 // ignore_for_file:  avoid_print, use_build_context_synchronously
 
 import 'dart:io';
+
+import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/project_node.dart';
+import 'package:fide/services/git_service.dart';
+import 'package:fide/utils/message_box.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
-import 'package:fide/models/project_node.dart';
-import 'package:fide/models/file_system_item.dart';
-import 'package:fide/services/git_service.dart';
-import 'package:fide/utils/message_box.dart';
 
 /// Shared state management for panel widgets
 class PanelStateManager {

@@ -1,9 +1,9 @@
 // ignore_for_file: deprecated_member_use
+import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/project_node.dart';
+import 'package:fide/widgets/container_counter.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
-import '../models/project_node.dart';
-import '../models/file_system_item.dart';
-import 'container_counter.dart';
 
 /// A reusable widget for displaying folder/file items in various panels
 class FolderNameWidget extends StatelessWidget {

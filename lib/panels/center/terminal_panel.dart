@@ -1,11 +1,12 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
+
+import 'package:fide/providers/app_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_pty/flutter_pty.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
-import 'package:flutter_pty/flutter_pty.dart';
-import '../../providers/app_providers.dart';
 
 class TerminalPanel extends ConsumerStatefulWidget {
   const TerminalPanel({super.key});

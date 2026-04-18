@@ -1,33 +1,21 @@
 // ignore_for_file: use_build_context_synchronously
+import 'package:fide/controllers/app_controller.dart';
+import 'package:fide/panels/center/editor_screen.dart';
+import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/screens/create_project_screen.dart';
+import 'package:fide/screens/loading_screen.dart';
+import 'package:fide/screens/main_layout.dart';
+import 'package:fide/screens/welcome_screen.dart';
+import 'package:fide/services/project_operations.dart';
+import 'package:fide/theme/app_theme.dart';
+import 'package:fide/utils/message_box.dart';
+import 'package:fide/widgets/app_title_bar.dart';
+import 'package:fide/widgets/native_menu_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-// Controllers
-import 'controllers/app_controller.dart';
-
-// Providers
-import 'providers/app_providers.dart';
-import 'providers/ui_state_providers.dart';
-
-// Services
-import 'services/project_operations.dart';
-import 'utils/message_box.dart';
-
-// Widgets
-import 'screens/create_project_screen.dart';
-import 'widgets/app_title_bar.dart';
-import 'widgets/native_menu_builder.dart';
-
-// Screens
-import 'screens/loading_screen.dart';
-import 'screens/main_layout.dart';
-import 'screens/welcome_screen.dart';
-import 'panels/center/editor_screen.dart';
-
-// Theme
-import 'theme/app_theme.dart';
 
 // Enum for main view state
 enum AppViewState {

@@ -1,6 +1,6 @@
+import 'package:fide/services/git_service.dart';
+import 'package:fide/widgets/badge_status.dart';
 import 'package:flutter/material.dart';
-import '../services/git_service.dart';
-import 'badge_status.dart';
 
 class DiffCounter extends StatelessWidget {
   const DiffCounter({super.key, required this.gitStats});

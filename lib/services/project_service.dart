@@ -1,14 +1,15 @@
-import 'dart:io';
 import 'dart:async';
+import 'dart:io';
+
+import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/project_node.dart';
+import 'package:fide/providers/app_providers.dart';
+import 'package:fide/services/file_system_watcher.dart';
+import 'package:fide/services/git_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
-import 'package:fide/models/project_node.dart';
-import 'package:fide/models/file_system_item.dart';
-import 'package:fide/services/git_service.dart';
-import 'package:fide/services/file_system_watcher.dart';
-import 'package:fide/providers/app_providers.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:process_run/process_run.dart';
 
 /// Service for managing project operations independently of UI

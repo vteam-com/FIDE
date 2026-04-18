@@ -1,15 +1,9 @@
+import 'package:fide/providers/app_providers.dart';
+import 'package:fide/services/git_service.dart';
+import 'package:fide/utils/message_box.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-// Providers
-import '../providers/app_providers.dart';
-
-// Services
-import '../services/git_service.dart';
-
-// Utils
-import '../utils/message_box.dart';
 
 class NativeMenuBuilder {
   final BuildContext context;

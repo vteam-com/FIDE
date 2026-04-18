@@ -2,26 +2,19 @@
 
 import 'dart:convert';
 import 'dart:io';
+
+import 'package:fide/models/document_state.dart';
+import 'package:fide/providers/app_providers.dart';
+import 'package:fide/utils/message_box.dart';
+import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/output_panel.dart';
+import 'package:fide/widgets/section_panel.dart';
+import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
-
-// Models
-import '../../models/document_state.dart';
-
-// Providers
-import '../../providers/app_providers.dart';
-
-// Utils
-import '../../utils/message_box.dart';
-
-// Widgets
-import '../../widgets/status_indicator.dart';
-import '../../widgets/badge_status.dart';
-import '../../widgets/output_panel.dart';
-import '../../widgets/section_panel.dart';
 
 class InfoPanel extends ConsumerStatefulWidget {
   const InfoPanel({super.key});
