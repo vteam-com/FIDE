@@ -1,7 +1,9 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:fide/constants.dart';
 import 'package:flutter/material.dart';
 
+/// Represents `SearchToggleIcons`.
 class SearchToggleIcons extends StatelessWidget {
   const SearchToggleIcons({
     super.key,
@@ -25,17 +27,17 @@ class SearchToggleIcons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      spacing: 16,
+      spacing: AppSpacing.xLarge,
       children: [
         IconButton(
           icon: Icon(
             caseSensitive ? Icons.text_fields : Icons.text_fields_outlined,
-            size: 18,
+            size: AppIconSize.mediumLarge,
             color: caseSensitive
                 ? Theme.of(context).colorScheme.primary
                 : Theme.of(
                     context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ).colorScheme.onSurface.withValues(alpha: AppOpacity.muted),
           ),
           onPressed: () => onCaseSensitiveChanged(!caseSensitive),
           tooltip: 'Toggle case sensitivity (${caseSensitive ? 'ON' : 'OFF'})',
@@ -47,12 +49,12 @@ class SearchToggleIcons extends StatelessWidget {
           IconButton(
             icon: Icon(
               wholeWord ? Icons.format_quote : Icons.format_quote_outlined,
-              size: 18,
+              size: AppIconSize.mediumLarge,
               color: wholeWord
                   ? Theme.of(context).colorScheme.primary
                   : Theme.of(
                       context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
+                    ).colorScheme.onSurface.withValues(alpha: AppOpacity.muted),
             ),
             onPressed: () => onWholeWordChanged(!wholeWord),
             tooltip: 'Toggle whole word matching (${wholeWord ? 'ON' : 'OFF'})',

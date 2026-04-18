@@ -1,12 +1,15 @@
 // ignore_for_file: deprecated_member_use
+// ignore: fcheck_secrets
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+/// Represents `PlatformInfoSection`.
 class PlatformInfoSection extends StatefulWidget {
   const PlatformInfoSection({
     super.key,
@@ -44,7 +47,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
       title: widget.selectedPlatform,
       rightWidget: Row(
         mainAxisSize: MainAxisSize.min,
-        spacing: 8,
+        spacing: AppSpacing.medium,
         children: [
           Icon(
             widget.isSupported
@@ -52,7 +55,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                       ? Icons.info_outline
                       : Icons.warning_amber_rounded
                 : Icons.error_outline,
-            size: 16,
+            size: AppIconSize.medium,
             color: widget.isSupported
                 ? widget.canBuild
                       ? Theme.of(context).colorScheme.primary
@@ -62,12 +65,12 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
         ],
       ),
       child: Container(
-        padding: const EdgeInsets.all(10),
+        padding: AppPadding.actionTabDetails,
         decoration: BoxDecoration(
           color: Theme.of(
             context,
-          ).colorScheme.surfaceVariant.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(8),
+          ).colorScheme.surfaceVariant.withValues(alpha: AppOpacity.divider),
+          borderRadius: BorderRadius.circular(AppRadius.medium),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,14 +81,14 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                 Text(
                   'Status:',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: AppFontSize.caption,
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.medium),
                 Row(
-                  spacing: 8,
+                  spacing: AppSpacing.medium,
                   children: [
                     widget.isSupported
                         ? BadgeStatus.success(text: 'SUPPORTED')
@@ -99,7 +102,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
               ],
             ),
 
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.small),
 
             // Build Info
             Column(
@@ -108,23 +111,22 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                 Text(
                   'Build Info:',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: AppFontSize.caption,
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.tiny),
                 Row(
                   children: [
                     SizedBox(
-                      width: 70,
+                      width: AppSize.platformDetailLabelWidth,
                       child: Text(
                         'Last Build:',
                         style: TextStyle(
-                          fontSize: 11,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.8),
+                          fontSize: AppFontSize.metadata,
+                          color: Theme.of(context).colorScheme.onSurface
+                              .withValues(alpha: AppOpacity.emphasis),
                         ),
                       ),
                     ),
@@ -132,7 +134,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                       child: Text(
                         _getLastBuildTime(),
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: AppFontSize.metadata,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontFamily: 'monospace',
                         ),
@@ -142,18 +144,17 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.micro),
                 Row(
                   children: [
                     SizedBox(
-                      width: 70,
+                      width: AppSize.platformDetailLabelWidth,
                       child: Text(
                         'Size:',
                         style: TextStyle(
-                          fontSize: 11,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.8),
+                          fontSize: AppFontSize.metadata,
+                          color: Theme.of(context).colorScheme.onSurface
+                              .withValues(alpha: AppOpacity.emphasis),
                         ),
                       ),
                     ),
@@ -161,7 +162,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                       child: Text(
                         _getAppSize(),
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: AppFontSize.metadata,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontFamily: 'monospace',
                         ),
@@ -171,19 +172,18 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.micro),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(
-                      width: 70,
+                      width: AppSize.platformDetailLabelWidth,
                       child: Text(
                         'Location:',
                         style: TextStyle(
-                          fontSize: 11,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.8),
+                          fontSize: AppFontSize.metadata,
+                          color: Theme.of(context).colorScheme.onSurface
+                              .withValues(alpha: AppOpacity.emphasis),
                         ),
                       ),
                     ),
@@ -191,7 +191,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                       child: Text(
                         _getBuildLocation().split('/').last,
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: AppFontSize.metadata,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontFamily: 'monospace',
                         ),
@@ -206,15 +206,15 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
 
             // Enable instructions (if not supported)
             if (!widget.isSupported) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.medium),
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: AppPadding.infoCard,
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(AppRadius.small),
                   border: Border.all(
-                    color: Colors.blue.withValues(alpha: 0.3),
-                    width: 1,
+                    color: Colors.blue.withValues(alpha: AppOpacity.divider),
+                    width: AppSize.borderThin,
                   ),
                 ),
                 child: Column(
@@ -224,17 +224,19 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                       children: [
                         BadgeStatus(
                           text: 'ENABLE',
-                          backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                          backgroundColor: Colors.blue.withValues(
+                            alpha: AppOpacity.subtle,
+                          ),
                           textColor: Colors.blue.shade700,
-                          fontSize: 10,
+                          fontSize: AppFontSize.badge,
                           fontWeight: FontWeight.w600,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppSpacing.medium),
                         Expanded(
                           child: Text(
                             'Instructions for ${widget.selectedPlatform}',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: AppFontSize.caption,
                               fontWeight: FontWeight.w600,
                               color: Colors.blue.shade700,
                             ),
@@ -242,13 +244,13 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSpacing.small),
                     Text(
                       _getEnableInstructions(),
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: AppFontSize.metadata,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        height: 1.4,
+                        height: AppLineHeight.relaxed,
                       ),
                     ),
                   ],
@@ -257,23 +259,23 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
             ],
 
             // Icon with Context Menu at Bottom
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.medium),
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: AppPadding.infoCard,
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(AppRadius.small),
                 border: Border.all(
                   color: Theme.of(
                     context,
-                  ).colorScheme.outline.withValues(alpha: 0.3),
-                  width: 1,
+                  ).colorScheme.outline.withValues(alpha: AppOpacity.divider),
+                  width: AppBorderWidth.medium,
                 ),
               ),
               child: Row(
                 children: [
                   _buildIcon(),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.medium),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,7 +283,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                         Text(
                           _getPlatformIconPath().split('/').last,
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: AppFontSize.metadata,
                             fontWeight: FontWeight.w500,
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
@@ -291,14 +293,14 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                         Text(
                           _getPlatformIconPath(),
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: AppFontSize.badge,
                             color: Theme.of(context)
                                 .colorScheme
                                 .onSurfaceVariant
-                                .withValues(alpha: 0.7),
+                                .withValues(alpha: AppOpacity.secondaryText),
                             fontFamily: 'monospace',
                           ),
-                          maxLines: 2,
+                          maxLines: AppMetric.doubleLineLimit,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
@@ -307,16 +309,16 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                   PopupMenuButton<String>(
                     icon: Icon(
                       Icons.more_vert,
-                      size: 16,
+                      size: AppIconSize.medium,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
-                    itemBuilder: (context) => [
+                    itemBuilder: (_) => [
                       PopupMenuItem<String>(
                         value: 'copy_path',
                         child: Row(
                           children: [
-                            Icon(Icons.copy, size: 16),
-                            const SizedBox(width: 8),
+                            Icon(Icons.copy, size: AppIconSize.medium),
+                            const SizedBox(width: AppSpacing.medium),
                             const Text('Copy Path'),
                           ],
                         ),
@@ -326,8 +328,8 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                           value: 'open_finder',
                           child: Row(
                             children: [
-                              Icon(Icons.folder_open, size: 16),
-                              const SizedBox(width: 8),
+                              Icon(Icons.folder_open, size: AppIconSize.medium),
+                              const SizedBox(width: AppSpacing.medium),
                               Text(
                                 Platform.isMacOS
                                     ? 'Open in Finder'
@@ -342,8 +344,8 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                         value: 'select_in_fide',
                         child: Row(
                           children: [
-                            Icon(Icons.search, size: 16),
-                            const SizedBox(width: 8),
+                            Icon(Icons.search, size: AppIconSize.medium),
+                            const SizedBox(width: AppSpacing.medium),
                             const Text('Select in FIDE-Explorer'),
                           ],
                         ),
@@ -386,30 +388,36 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
     );
   }
 
+  /// Returns the platform icon widget — either an SVG asset or a Material icon fallback.
   Widget _buildIcon() {
     final iconPath = _getPlatformIconPath();
     if (iconPath.startsWith('assets/')) {
       // Use SVG asset
-      return SvgPicture.asset(iconPath, width: 24, height: 24);
+      return SvgPicture.asset(
+        iconPath,
+        width: AppIconSize.xLarge,
+        height: AppIconSize.xLarge,
+      );
     } else {
       // Use actual app icon file
       return Image.file(
         File(iconPath),
-        width: 24,
-        height: 24,
+        width: AppIconSize.xLarge,
+        height: AppIconSize.xLarge,
         fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
+        errorBuilder: (_, _, _) {
           // Fallback to generic SVG if image loading fails
           return SvgPicture.asset(
             'assets/platform_${widget.selectedPlatform}.svg',
-            width: 24,
-            height: 24,
+            width: AppIconSize.xLarge,
+            height: AppIconSize.xLarge,
           );
         },
       );
     }
   }
 
+  /// Searches the project directory for the platform app icon and returns its path, or `null` if not found.
   String? _findAppIconPath() {
     switch (widget.selectedPlatform) {
       case 'android':
@@ -480,6 +488,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
     return null; // No icon found
   }
 
+  /// Calculates and returns the human-readable total build output size.
   String _getAppSize() {
     final buildDir = Directory(_getBuildLocation());
     if (!buildDir.existsSync()) return 'Not built';
@@ -498,17 +507,18 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
       final units = ['B', 'KB', 'MB', 'GB'];
       var i = 0;
       var size = totalSize.toDouble();
-      while (size > 1024 && i < units.length - 1) {
-        size /= 1024;
+      while (size > AppMetric.fileSizeDivisor && i < units.length - 1) {
+        size /= AppMetric.fileSizeDivisor;
         i++;
       }
 
       return '${size.toStringAsFixed(1)} ${units[i]}';
-    } catch (e) {
+    } catch (_) {
       return 'Unknown';
     }
   }
 
+  /// Returns the filesystem path to the platform's build output directory.
   String _getBuildLocation() {
     final buildDir = Directory('${widget.projectPath}/build');
     if (!buildDir.existsSync()) return 'No build directory found';
@@ -532,6 +542,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
     return buildDir.path;
   }
 
+  /// Returns human-readable instructions for enabling this platform in the project.
   String _getEnableInstructions() {
     if (widget.isSupported) return 'Platform is already configured';
 
@@ -553,6 +564,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
     }
   }
 
+  /// Returns a formatted string of the most recent build timestamp, or 'Never' if no build exists.
   String _getLastBuildTime() {
     final buildDir = Directory('${widget.projectPath}/build');
     if (!buildDir.existsSync()) return 'Never';
@@ -567,13 +579,14 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
           latestTime = file.statSync().modified;
         }
       }
-    } catch (e) {
+    } catch (_) {
       return 'Unknown';
     }
 
     return latestTime?.toString().split('.').first ?? 'Unknown';
   }
 
+  /// Resolves the best available icon path for the current platform, falling back to a generic asset.
   String _getPlatformIconPath() {
     final appIconPath = _findAppIconPath();
     if (appIconPath != null) {
@@ -604,6 +617,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
     return 'assets/platform_linux.svg'; // fallback
   }
 
+  /// Opens the folder containing [path] in the system file manager.
   void _openFolder(String path) {
     try {
       // For assets, we can't open in file explorer (they're packaged)
@@ -623,7 +637,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
       } else if (Platform.isLinux) {
         Process.run('xdg-open', [directory]);
       }
-    } catch (e) {
+    } catch (_) {
       // Ignore errors silently
     }
   }

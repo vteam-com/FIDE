@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/panels/center/large_file_message.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -21,6 +22,7 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
 
+/// Full-featured code editor widget with syntax highlighting, search, diff view, and file-save support.
 class EditorScreen extends StatefulWidget {
   const EditorScreen({
     super.key,
@@ -42,6 +44,7 @@ class EditorScreen extends StatefulWidget {
 
   final VoidCallback? onSave;
 
+  /// Handles `EditorScreen.closeCurrentEditor`.
   static void closeCurrentEditor() {
     _currentEditor?.widget.onClose?.call();
   }
@@ -49,26 +52,27 @@ class EditorScreen extends StatefulWidget {
   @override
   State<EditorScreen> createState() => _EditorScreenState();
 
+  /// Handles `EditorScreen.findNext`.
   static void findNext() {
     _currentEditor?._nextMatch();
   }
 
+  /// Handles `EditorScreen.findPrevious`.
   static void findPrevious() {
     _currentEditor?._previousMatch();
   }
 
-  static void formatCurrentFile() {
-    _currentEditor?._formatFile();
-  }
-
+  /// Handles `EditorScreen.navigateToLine`.
   static void navigateToLine(int lineNumber, {int column = 1}) {
     _currentEditor?._navigateToLine(lineNumber, column: column);
   }
 
+  /// Handles `EditorScreen.saveCurrentEditor`.
   static void saveCurrentEditor() {
     _currentEditor?._saveFile();
   }
 
+  /// Handles `EditorScreen.toggleSearch`.
   static void toggleSearch() {
     _currentEditor?._toggleSearch();
   }
@@ -241,7 +245,7 @@ class _EditorScreenState extends State<EditorScreen> {
     }
 
     return Consumer(
-      builder: (context, ref, child) {
+      builder: (context, ref, _) {
         final openDocuments = ref.watch(openDocumentsProvider);
         final activeIndex = ref.watch(activeDocumentIndexProvider);
 
@@ -254,7 +258,7 @@ class _EditorScreenState extends State<EditorScreen> {
           children: [
             Row(
               children: [
-                SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.medium),
                 // Document dropdown on the left
                 if (openDocuments.isNotEmpty)
                   PopupMenuButton<int>(
@@ -267,10 +271,10 @@ class _EditorScreenState extends State<EditorScreen> {
                             openDocuments[activeIndex].fileName,
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.onSurface,
-                              fontSize: 14,
+                              fontSize: AppFontSize.label,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: AppSpacing.medium),
                           DiffCounter(
                             gitStats:
                                 _allGitDiffStats[openDocuments[activeIndex]
@@ -283,7 +287,7 @@ class _EditorScreenState extends State<EditorScreen> {
                         ),
                       ],
                     ),
-                    itemBuilder: (context) =>
+                    itemBuilder: (_ /*context*/) =>
                         openDocuments.asMap().entries.map((entry) {
                           final index = entry.key;
                           final doc = entry.value;
@@ -295,12 +299,17 @@ class _EditorScreenState extends State<EditorScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 if (index == activeIndex)
-                                  const Icon(Icons.check, size: 18)
+                                  const Icon(
+                                    Icons.check,
+                                    size: AppIconSize.mediumLarge,
+                                  )
                                 else
-                                  const SizedBox(width: 18),
-                                const SizedBox(width: 8),
+                                  const SizedBox(
+                                    width: AppIconSize.mediumLarge,
+                                  ),
+                                const SizedBox(width: AppSpacing.medium),
                                 Text(doc.fileName),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: AppSpacing.medium),
                                 DiffCounter(gitStats: gitStats),
                               ],
                             ),
@@ -327,8 +336,8 @@ class _EditorScreenState extends State<EditorScreen> {
                 if (_isDirty)
                   const Padding(
                     padding: EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
+                      horizontal: AppSpacing.xLarge,
+                      vertical: AppSpacing.medium,
                     ),
                     child: Center(
                       child: Text(
@@ -387,14 +396,16 @@ class _EditorScreenState extends State<EditorScreen> {
                               controller: _codeController,
                               enableGutterDivider: false, // they have a bug
                               gutterStyle: GutterStyle(
-                                dividerColor: Colors.grey.withAlpha(100),
-                                dividerThickness: 1,
+                                dividerColor: Colors.grey.withAlpha(
+                                  AppSize.gutterDividerAlpha.toInt(),
+                                ),
+                                dividerThickness: AppSize.borderThin,
                                 lineNumberStyle: TextStyle(
                                   // fontFamily: 'monospace',
                                   letterSpacing: -1,
 
                                   color: Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: 0.5),
+                                      .withValues(alpha: AppOpacity.disabled),
                                 ),
                               ),
 
@@ -405,15 +416,17 @@ class _EditorScreenState extends State<EditorScreen> {
                           // Status bar
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
+                              horizontal: AppSpacing.medium,
+                              vertical: AppSpacing.micro,
                             ),
                             child: Row(
                               children: [
                                 if (_showDiffView)
                                   const Text(
                                     'Diff View',
-                                    style: TextStyle(fontSize: 12),
+                                    style: TextStyle(
+                                      fontSize: AppFontSize.caption,
+                                    ),
                                   )
                                 else ...[
                                   IconButton(
@@ -421,7 +434,7 @@ class _EditorScreenState extends State<EditorScreen> {
                                       _regionsExpanded
                                           ? Icons.unfold_less
                                           : Icons.unfold_more,
-                                      size: 16,
+                                      size: AppIconSize.medium,
                                     ),
                                     onPressed: _toggleAllRegions,
                                     tooltip: _regionsExpanded
@@ -429,25 +442,31 @@ class _EditorScreenState extends State<EditorScreen> {
                                         : 'Expand All Regions (Ctrl+Shift+])',
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(
-                                      minWidth: 24,
-                                      minHeight: 24,
+                                      minWidth: AppSize.compactIconButton,
+                                      minHeight: AppSize.compactIconButton,
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: AppSpacing.medium),
                                   Text(
                                     'Ln ${_getCurrentLineNumber()}',
-                                    style: const TextStyle(fontSize: 12),
+                                    style: const TextStyle(
+                                      fontSize: AppFontSize.caption,
+                                    ),
                                   ),
-                                  const SizedBox(width: 16),
+                                  const SizedBox(width: AppSpacing.xLarge),
                                   Text(
                                     'Col ${_getCurrentColumnNumber()}',
-                                    style: const TextStyle(fontSize: 12),
+                                    style: const TextStyle(
+                                      fontSize: AppFontSize.caption,
+                                    ),
                                   ),
                                   if (_searchMatches.isNotEmpty) ...[
-                                    const SizedBox(width: 16),
+                                    const SizedBox(width: AppSpacing.xLarge),
                                     Text(
                                       '${_currentMatchIndex + 1} of ${_searchMatches.length}',
-                                      style: const TextStyle(fontSize: 12),
+                                      style: const TextStyle(
+                                        fontSize: AppFontSize.caption,
+                                      ),
                                     ),
                                   ],
                                 ],
@@ -460,20 +479,22 @@ class _EditorScreenState extends State<EditorScreen> {
                                   IconButton(
                                     icon: const Icon(
                                       Icons.format_indent_increase,
-                                      size: 16,
+                                      size: AppIconSize.medium,
                                     ),
                                     onPressed: _formatFile,
                                     tooltip: 'Format File (Shift+Alt+F)',
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(
-                                      minWidth: 24,
-                                      minHeight: 24,
+                                      minWidth: AppSize.compactIconButton,
+                                      minHeight: AppSize.compactIconButton,
                                     ),
                                   ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: AppSpacing.medium),
                                 Text(
                                   _getFileLanguage(),
-                                  style: const TextStyle(fontSize: 12),
+                                  style: const TextStyle(
+                                    fontSize: AppFontSize.caption,
+                                  ),
                                 ),
                               ],
                             ),
@@ -488,6 +509,7 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
+  /// Handles `_EditorScreenState.findEditableText`.
   EditableText? findEditableText(BuildContext context) {
     EditableText? result;
     context.visitChildElements((element) {
@@ -501,6 +523,7 @@ class _EditorScreenState extends State<EditorScreen> {
     return result;
   }
 
+  /// Handles `_EditorScreenState.findFocusableElement`.
   FocusNode? findFocusableElement(BuildContext context) {
     FocusNode? result;
     void search(Element element) {
@@ -524,6 +547,7 @@ class _EditorScreenState extends State<EditorScreen> {
     return SideBySideDiff(oldText: _diffOldText!, newText: _diffNewText!);
   }
 
+  /// Builds the image preview UI with fallback messaging for load failures.
   Widget _buildImageView() {
     return Center(
       child: SingleChildScrollView(
@@ -533,24 +557,28 @@ class _EditorScreenState extends State<EditorScreen> {
             // Image display with error handling
             Container(
               constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.8,
-                maxHeight: MediaQuery.of(context).size.height * 0.7,
+                maxWidth:
+                    MediaQuery.of(context).size.width *
+                    EditorConfig.imagePreviewMaxWidthFactor,
+                maxHeight:
+                    MediaQuery.of(context).size.height *
+                    EditorConfig.imagePreviewMaxHeightFactor,
               ),
               child: Image.file(
                 File(_currentFile),
                 fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
+                errorBuilder: (context, _ /* error */, _ /* stackTrace */) {
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
                         Icons.broken_image,
-                        size: 64,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.error.withValues(alpha: 0.5),
+                        size: AppSize.largePreviewIcon,
+                        color: Theme.of(context).colorScheme.error.withValues(
+                          alpha: AppOpacity.disabled,
+                        ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.xLarge),
                       Text(
                         'Failed to load image',
                         style: Theme.of(context).textTheme.headlineSmall
@@ -558,13 +586,12 @@ class _EditorScreenState extends State<EditorScreen> {
                               color: Theme.of(context).colorScheme.error,
                             ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.medium),
                       Text(
                         'The image file may be corrupted or unsupported',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: Theme.of(context).colorScheme.onSurface
+                              .withValues(alpha: AppOpacity.muted),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -573,15 +600,17 @@ class _EditorScreenState extends State<EditorScreen> {
                 },
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.xLarge),
             // Image info
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xLarge,
+                vertical: AppSpacing.medium,
+              ),
               decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(8),
+                color: Theme.of(context).colorScheme.surfaceContainerHighest
+                    .withValues(alpha: AppOpacity.divider),
+                borderRadius: BorderRadius.circular(AppRadius.medium),
               ),
               child: Column(
                 children: [
@@ -592,13 +621,13 @@ class _EditorScreenState extends State<EditorScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.tiny),
                   Text(
-                    'Size: ${(widget.documentState!.content.length / 1024).round()}KB • ${path.extension(_currentFile).toUpperCase().substring(1)}',
+                    'Size: ${(widget.documentState!.content.length / AppMetric.fileSizeDivisor).round()}KB • ${path.extension(_currentFile).toUpperCase().substring(1)}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.7),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(
+                        alpha: AppOpacity.secondaryText,
+                      ),
                     ),
                   ),
                 ],
@@ -610,17 +639,20 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
+  /// Builds the inline search UI and navigation controls for the editor.
   Widget _buildSearchBar() {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(AppSpacing.medium),
       decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(
+          alpha: AppOpacity.disabled,
+        ),
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-            width: 1,
+            color: Theme.of(
+              context,
+            ).colorScheme.outline.withValues(alpha: AppOpacity.divider),
+            width: AppSize.borderThin,
           ),
         ),
       ),
@@ -636,11 +668,11 @@ class _EditorScreenState extends State<EditorScreen> {
                   decoration: InputDecoration(
                     hintText: 'Find in file...',
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(AppRadius.tiny),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+                      horizontal: AppSpacing.large,
+                      vertical: AppSpacing.medium,
                     ),
                     isDense: true,
                     filled: true,
@@ -650,7 +682,7 @@ class _EditorScreenState extends State<EditorScreen> {
                   onSubmitted: (_) => _nextMatch(),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.medium),
               IconButton(
                 icon: const Icon(Icons.close),
                 onPressed: _closeSearch,
@@ -659,7 +691,7 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.tiny),
           Row(
             children: [
               SearchToggleIcons(
@@ -685,21 +717,27 @@ class _EditorScreenState extends State<EditorScreen> {
               const Spacer(),
               if (_searchMatches.isNotEmpty) ...[
                 IconButton(
-                  icon: const Icon(Icons.keyboard_arrow_up, size: 18),
+                  icon: const Icon(
+                    Icons.keyboard_arrow_up,
+                    size: AppIconSize.mediumLarge,
+                  ),
                   onPressed: _previousMatch,
                   tooltip: 'Previous (Shift+F3)',
                   visualDensity: VisualDensity.compact,
                 ),
                 IconButton(
-                  icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+                  icon: const Icon(
+                    Icons.keyboard_arrow_down,
+                    size: AppIconSize.mediumLarge,
+                  ),
                   onPressed: _nextMatch,
                   tooltip: 'Next (F3)',
                   visualDensity: VisualDensity.compact,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.medium),
                 Text(
                   '${_currentMatchIndex + 1} of ${_searchMatches.length}',
-                  style: const TextStyle(fontSize: 12),
+                  style: const TextStyle(fontSize: AppFontSize.caption),
                 ),
               ],
             ],
@@ -709,6 +747,7 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
+  /// Builds the placeholder view for file types that are not yet supported.
   Widget _buildUnsupportedFileView() {
     final extension = _currentFile.split('.').last.toLowerCase();
     return Center(
@@ -717,19 +756,19 @@ class _EditorScreenState extends State<EditorScreen> {
         children: [
           Icon(
             Icons.insert_drive_file_outlined,
-            size: 64,
+            size: AppSize.largePreviewIcon,
             color: Theme.of(
               context,
-            ).colorScheme.onSurface.withValues(alpha: 0.5),
+            ).colorScheme.onSurface.withValues(alpha: AppOpacity.disabled),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.xLarge),
           RichText(
             textAlign: TextAlign.center,
             text: TextSpan(
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.7),
+                color: Theme.of(context).colorScheme.onSurface.withValues(
+                  alpha: AppOpacity.secondaryText,
+                ),
               ),
               children: [
                 const TextSpan(text: 'The file type '),
@@ -744,14 +783,14 @@ class _EditorScreenState extends State<EditorScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.xLarge),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.xLarge),
             decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.primaryContainer.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(8),
+              color: Theme.of(context).colorScheme.primaryContainer.withValues(
+                alpha: AppOpacity.divider,
+              ),
+              borderRadius: BorderRadius.circular(AppRadius.medium),
             ),
             child: Column(
               children: [
@@ -760,11 +799,11 @@ class _EditorScreenState extends State<EditorScreen> {
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
+                    ).colorScheme.onSurface.withValues(alpha: AppOpacity.muted),
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.tiny),
                 InkWell(
                   onTap: () async {
                     const urlString =
@@ -779,7 +818,7 @@ class _EditorScreenState extends State<EditorScreen> {
                           mode: LaunchMode.externalApplication,
                         );
                       }
-                    } catch (e) {
+                    } catch (_) {
                       // Fallback: try to launch without checking if URL can be launched
                       try {
                         final url = Uri.parse(urlString);
@@ -808,14 +847,14 @@ class _EditorScreenState extends State<EditorScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppIconSize.xLarge),
           Text(
             'Currently supported: Most text files including\n'
             'programming languages, web files, configs, scripts, and images',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(
                 context,
-              ).colorScheme.onSurface.withValues(alpha: 0.5),
+              ).colorScheme.onSurface.withValues(alpha: AppOpacity.disabled),
             ),
             textAlign: TextAlign.center,
           ),
@@ -824,6 +863,7 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
+  /// Closes the search UI and resets all in-memory search state.
   void _closeSearch() {
     if (!mounted) return;
     setState(() {
@@ -836,6 +876,7 @@ class _EditorScreenState extends State<EditorScreen> {
     _searchFocusNode.unfocus();
   }
 
+  /// Scrolls the editor so the current text selection is visible.
   void _ensureSelectionVisible() {
     if (!mounted || _codeController.selection.isCollapsed) return;
 
@@ -870,7 +911,8 @@ class _EditorScreenState extends State<EditorScreen> {
       ScrollableState? mainEditorScrollable;
       for (final scrollable in allScrollables) {
         final maxExtent = scrollable.position.maxScrollExtent;
-        if (maxExtent < 1000000 && maxExtent > 100) {
+        if (maxExtent < EditorConfig.scrollableExtentMax &&
+            maxExtent > EditorConfig.scrollableExtentMin) {
           // Reasonable bounds
           mainEditorScrollable = scrollable;
           break;
@@ -884,9 +926,9 @@ class _EditorScreenState extends State<EditorScreen> {
 
       // Scroll the main editor scrollable
       if (mainEditorScrollable != null) {
-        const double lineHeight = 20.0; // More conservative line height
         final double targetScrollOffset =
-            (lineNumber - 3) * lineHeight; // Start 3 lines above target
+            (lineNumber - EditorConfig.contextLinesAboveTarget) *
+            EditorConfig.lineHeight; // Start lines above target
         final double clampedOffset = targetScrollOffset.clamp(
           0.0,
           mainEditorScrollable.position.maxScrollExtent,
@@ -901,9 +943,9 @@ class _EditorScreenState extends State<EditorScreen> {
         // Fallback: Try Scrollable.ensureVisible
         Scrollable.ensureVisible(
           codeCrafterElement,
-          duration: const Duration(milliseconds: 100),
+          duration: AppDuration.editorScroll,
           curve: Curves.easeOut,
-          alignment: 0.3, // Center the selection in the viewport
+          alignment: AppOpacity.divider, // Center the selection in the viewport
         );
       }
     } catch (e) {
@@ -911,6 +953,7 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  /// Formats the current file using Dart formatter or JSON pretty-printing.
   Future<void> _formatFile() async {
     if (_currentFile.isEmpty) return;
 
@@ -986,6 +1029,7 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  /// Formats JSON or ARB content by decoding and re-encoding with indentation.
   Future<ProcessResult> _formatJsonManually(String filePath) async {
     try {
       final file = File(filePath);
@@ -1008,6 +1052,7 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  /// Returns syntax highlight styles for the code editor based on active theme.
   Map<String, TextStyle> _getCodeTheme() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final baseTextColor = Theme.of(context).colorScheme.onPrimary;
@@ -1018,26 +1063,41 @@ class _EditorScreenState extends State<EditorScreen> {
         color: Theme.of(context).colorScheme.onSurface,
       ),
       'comment': TextStyle(
-        color: isDark ? Colors.green[300] : Colors.green[800],
+        color: isDark
+            ? Colors.green[AppShade.soft]
+            : Colors.green[AppShade.deep],
       ),
       'keyword': TextStyle(
-        color: isDark ? Colors.purple[300] : Colors.purple[700],
+        color: isDark
+            ? Colors.purple[AppShade.soft]
+            : Colors.purple[AppShade.strong],
         fontWeight: FontWeight.bold,
       ),
-      'string': TextStyle(color: isDark ? Colors.red[300] : Colors.red[700]),
-      'number': TextStyle(color: isDark ? Colors.blue[300] : Colors.blue[700]),
+      'string': TextStyle(
+        color: isDark ? Colors.red[AppShade.soft] : Colors.red[AppShade.strong],
+      ),
+      'number': TextStyle(
+        color: isDark
+            ? Colors.blue[AppShade.soft]
+            : Colors.blue[AppShade.strong],
+      ),
       'variable': TextStyle(color: isDark ? Colors.white70 : Colors.black87),
       'class': TextStyle(
-        color: isDark ? Colors.blue[300] : Colors.blue[700],
+        color: isDark
+            ? Colors.blue[AppShade.soft]
+            : Colors.blue[AppShade.strong],
         fontWeight: FontWeight.bold,
       ),
       'function': TextStyle(
-        color: isDark ? Colors.blue[200] : Colors.blue[700],
+        color: isDark
+            ? Colors.blue[AppShade.muted]
+            : Colors.blue[AppShade.strong],
       ),
       'operator': TextStyle(color: baseTextColor, fontWeight: FontWeight.bold),
     };
   }
 
+  /// Computes the 1-based column number for the current cursor position.
   int _getCurrentColumnNumber() {
     if (_codeController.text.isEmpty) {
       return 1;
@@ -1071,6 +1131,7 @@ class _EditorScreenState extends State<EditorScreen> {
     return lines.length;
   }
 
+  /// Returns a human-readable language label from the current file extension.
   String _getFileLanguage() {
     final ext = _currentFile.split('.').last.toLowerCase();
     switch (ext) {
@@ -1091,6 +1152,7 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  /// Handles editor keyboard shortcuts while search UI is active.
   void _handleKeyEvent(KeyEvent event) {
     if (event is KeyDownEvent) {
       if (_showSearch) {
@@ -1107,6 +1169,7 @@ class _EditorScreenState extends State<EditorScreen> {
     return FileTypeUtils.isImageFile(filePath);
   }
 
+  /// Loads git diff counters for every open document.
   Future<void> _loadGitDiffStatsForAllDocuments(
     List<DocumentState> documents,
   ) async {
@@ -1120,6 +1183,7 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  /// Loads git diff counters for a single file and caches the result.
   Future<void> _loadGitDiffStatsForFile(String filePath) async {
     if (filePath.isEmpty) {
       _allGitDiffStats[filePath] = null;
@@ -1147,6 +1211,7 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  /// Moves the cursor to a specific line and column in the editor.
   void _navigateToLine(int lineNumber, {int column = 1}) {
     // Don't navigate if file is still loading or not loaded
     if (_isLoading ||
@@ -1204,6 +1269,7 @@ class _EditorScreenState extends State<EditorScreen> {
     });
   }
 
+  /// Selects and reveals the search match at the given match index.
   void _navigateToMatch(int index) {
     if (index < 0 || index >= _searchMatches.length) return;
 
@@ -1234,6 +1300,7 @@ class _EditorScreenState extends State<EditorScreen> {
     });
   }
 
+  /// Navigates to the next search match, wrapping at the end.
   void _nextMatch() {
     if (_searchMatches.isEmpty) return;
     final nextIndex = (_currentMatchIndex + 1) % _searchMatches.length;
@@ -1250,6 +1317,7 @@ class _EditorScreenState extends State<EditorScreen> {
     });
   }
 
+  /// Handles editor content changes and syncs document state.
   void _onCodeChanged() {
     // Check if widget is still mounted and not disposed before calling setState
     if (!mounted || _isDisposed) return;
@@ -1277,6 +1345,7 @@ class _EditorScreenState extends State<EditorScreen> {
     EditorScreen.onCursorPositionChanged?.call(currentLine);
   }
 
+  /// Recomputes search matches for the current query and options.
   void _performSearch(String query) {
     if (query.isEmpty) {
       setState(() {
@@ -1324,6 +1393,7 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  /// Navigates to the previous search match, wrapping at the start.
   void _previousMatch() {
     if (_searchMatches.isEmpty) return;
     final prevIndex = _currentMatchIndex <= 0
@@ -1342,6 +1412,7 @@ class _EditorScreenState extends State<EditorScreen> {
     });
   }
 
+  /// Persists current editor content to disk and clears dirty state.
   Future<void> _saveFile() async {
     if (_currentFile.isEmpty) return;
 
@@ -1369,6 +1440,7 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  /// Toggles global folded-region UI state for the editor.
   void _toggleAllRegions() {
     setState(() {
       _regionsExpanded = !_regionsExpanded;
@@ -1384,6 +1456,7 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
+  /// Toggles side-by-side git diff mode for the current file.
   Future<void> _toggleDiffView() async {
     if (_showDiffView) {
       // Back to editor view
@@ -1492,6 +1565,7 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  /// Toggles the search UI and restores query input state.
   void _toggleSearch() {
     if (!mounted) return;
     setState(() {

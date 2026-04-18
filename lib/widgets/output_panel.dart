@@ -1,8 +1,10 @@
+import 'package:fide/constants.dart';
 import 'package:fide/utils/message_box.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+/// Represents `OutputPanel`.
 class OutputPanel extends StatefulWidget {
   const OutputPanel({
     super.key,
@@ -45,10 +47,13 @@ class _OutputPanelState extends State<OutputPanel> {
         children: [
           IconButton(
             onPressed: _copyToClipboard,
-            icon: const Icon(Icons.copy, size: 16),
+            icon: const Icon(Icons.copy, size: AppIconSize.medium),
             tooltip: 'Copy to clipboard',
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+            constraints: const BoxConstraints(
+              minWidth: AppSize.compactIconButton,
+              minHeight: AppSize.compactIconButton,
+            ),
           ),
           IconButton(
             onPressed: () {
@@ -56,17 +61,20 @@ class _OutputPanelState extends State<OutputPanel> {
             },
             icon: Icon(
               _wrapText ? Icons.wrap_text : Icons.text_fields,
-              size: 16,
+              size: AppIconSize.medium,
             ),
             tooltip: _wrapText
                 ? 'Disable text wrapping'
                 : 'Enable text wrapping',
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+            constraints: const BoxConstraints(
+              minWidth: AppSize.compactIconButton,
+              minHeight: AppSize.compactIconButton,
+            ),
           ),
           if (widget.onClear != null)
             IconButton(
-              icon: const Icon(Icons.backspace, size: 16),
+              icon: const Icon(Icons.backspace, size: AppIconSize.medium),
               onPressed: () => widget.onClear?.call(),
               tooltip: 'Clear output',
             ),
@@ -74,21 +82,21 @@ class _OutputPanelState extends State<OutputPanel> {
       ),
 
       child: Container(
-        constraints: const BoxConstraints(maxHeight: 400),
-        padding: const EdgeInsets.all(12),
+        constraints: const BoxConstraints(maxHeight: AppSize.terminalMaxHeight),
+        padding: const EdgeInsets.all(AppSpacing.large),
         child: SingleChildScrollView(
           child: SelectableText(
             widget.text,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: AppFontSize.metadata,
               fontFamily: _wrapText ? null : 'monospace',
               color: Theme.of(context).colorScheme.onSurface,
-              height: _wrapText ? 1.2 : 1.0,
+              height: _wrapText ? AppLineHeight.tight : 1.0,
             ),
             textAlign: TextAlign.left,
             textDirection: TextDirection.ltr,
             showCursor: true,
-            contextMenuBuilder: (context, editableTextState) {
+            contextMenuBuilder: (_, editableTextState) {
               return AdaptiveTextSelectionToolbar.editableText(
                 editableTextState: editableTextState,
               );

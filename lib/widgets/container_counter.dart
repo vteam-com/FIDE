@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:fide/constants.dart';
 import 'package:flutter/material.dart';
 
 /// A specialized widget for displaying container/item counters using Chip
@@ -7,7 +8,7 @@ class ContainerCounter extends StatelessWidget {
   const ContainerCounter({
     super.key,
     required this.count,
-    this.fontSize = 10.0,
+    this.fontSize = AppFontSize.badge,
     this.tooltip,
   });
 

@@ -1,8 +1,11 @@
+// ignore: fcheck_dead_code
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:path/path.dart' as path;
 
+/// Represents `GitService`.
 class GitService {
   static final GitService _instance = GitService._internal();
   factory GitService() => _instance;
@@ -33,6 +36,7 @@ class GitService {
   }
 
   // Check if Git is available
+  /// Returns true when the `git` executable is available on the system.
   Future<bool> isGitAvailable() async {
     try {
       final result = await Process.run('git', ['--version']);
@@ -43,6 +47,7 @@ class GitService {
   }
 
   // Check if directory is a Git repository
+  /// Returns true if the provided path is inside a valid Git repository.
   Future<bool> isGitRepository(String path) async {
     try {
       final result = await Process.run('git', [
@@ -56,6 +61,7 @@ class GitService {
   }
 
   // Initialize Git repository
+  /// Initializes a new Git repository at the provided path.
   Future<String> initRepository(String path) async {
     try {
       final result = await Process.run('git', ['init'], workingDirectory: path);
@@ -70,6 +76,7 @@ class GitService {
   }
 
   // Get Git status
+  /// Reads Git porcelain status and groups files into staged/unstaged/untracked.
   Future<GitStatus> getStatus(String path) async {
     try {
       final result = await Process.run('git', [
@@ -86,9 +93,9 @@ class GitService {
         final untracked = <String>[];
 
         for (final line in lines) {
-          if (line.length < 3) continue;
-          final status = line.substring(0, 2);
-          final file = line.substring(3);
+          if (line.length < AppMetric.gitStatusFieldOffset) continue;
+          final status = line.substring(0, AppMetric.doubleLineLimit);
+          final file = line.substring(AppMetric.gitStatusFieldOffset);
 
           // Check if file path ends with / (directory) and expand it
           final isDirectory = file.endsWith('/');
@@ -139,6 +146,7 @@ class GitService {
   }
 
   // Stage files
+  /// Stages the provided file paths.
   Future<String> stageFiles(String path, List<String> files) async {
     try {
       final args = ['add', ...files];
@@ -154,6 +162,7 @@ class GitService {
   }
 
   // Unstage files
+  /// Unstages the provided file paths from the index.
   Future<String> unstageFiles(String path, List<String> files) async {
     try {
       final args = ['reset', 'HEAD', ...files];
@@ -169,6 +178,7 @@ class GitService {
   }
 
   // Commit changes
+  /// Creates a commit with the given commit message.
   Future<String> commit(String path, String message) async {
     try {
       final result = await Process.run('git', [
@@ -187,6 +197,7 @@ class GitService {
   }
 
   // Push to remote
+  /// Pushes local commits to the configured remote.
   Future<String> push(String path) async {
     try {
       final result = await Process.run('git', ['push'], workingDirectory: path);
@@ -201,6 +212,7 @@ class GitService {
   }
 
   // Pull from remote
+  /// Pulls remote changes into the current branch.
   Future<String> pull(String path) async {
     try {
       final result = await Process.run('git', ['pull'], workingDirectory: path);
@@ -215,6 +227,7 @@ class GitService {
   }
 
   // Get current branch
+  /// Returns the current checked-out branch name, if available.
   Future<String?> getCurrentBranch(String path) async {
     try {
       final result = await Process.run('git', [
@@ -231,9 +244,10 @@ class GitService {
   }
 
   // Get recent commits
+  /// Returns recent commits up to [count] in one-line format.
   Future<List<GitCommit>> getRecentCommits(
     String path, {
-    int count = 10,
+    int count = AppMetric.gitCommitDefaultCount,
   }) async {
     try {
       final result = await Process.run('git', [
@@ -265,6 +279,7 @@ class GitService {
   }
 
   // Get diff for a specific file
+  /// Returns a unified diff for one file, including new/untracked fallbacks.
   Future<String> getFileDiff(String path, String filePath) async {
     try {
       final result = await Process.run('git', [
@@ -333,6 +348,7 @@ class GitService {
   }
 
   // Get diff for staged files
+  /// Returns staged diff output for a file.
   Future<String> getStagedDiff(String path, String filePath) async {
     try {
       final result = await Process.run('git', [
@@ -348,6 +364,7 @@ class GitService {
   }
 
   // Get diff for unstaged files
+  /// Returns unstaged diff output for a file.
   Future<String> getUnstagedDiff(String path, String filePath) async {
     try {
       final result = await Process.run('git', [
@@ -362,6 +379,7 @@ class GitService {
   }
 
   // Get file content at a specific revision
+  /// Returns file content resolved from a specific Git revision.
   Future<String> getFileContentAtRevision(
     String path,
     String filePath,
@@ -384,6 +402,7 @@ class GitService {
   }
 
   // Discard changes for files (git checkout -- files or git rm for untracked)
+  /// Discards local changes for tracked files and removes untracked files.
   Future<String> discardChanges(String path, List<String> files) async {
     try {
       final untrackedFiles = <String>[];
@@ -437,6 +456,7 @@ class GitService {
   }
 
   // Get diff stats for a file (added/removed lines)
+  /// Returns added/removed line counts for a file.
   Future<GitDiffStats> getFileDiffStats(String path, String filePath) async {
     try {
       // First check if file is tracked
@@ -478,7 +498,7 @@ class GitService {
         }
 
         final parts = output.split('\t');
-        if (parts.length >= 2) {
+        if (parts.length >= AppMetric.doubleLineLimit) {
           final added = int.tryParse(parts[0]) ?? 0;
           final removed = int.tryParse(parts[1]) ?? 0;
           return GitDiffStats(added: added, removed: removed, isNewFile: false);
@@ -516,6 +536,7 @@ class GitService {
   }
 }
 
+/// Represents `GitStatus`.
 class GitStatus {
   final List<String> staged;
   final List<String> unstaged;
@@ -527,10 +548,12 @@ class GitStatus {
     required this.untracked,
   });
 
+  /// Whether any tracked or untracked changes are present.
   bool get hasChanges =>
       staged.isNotEmpty || unstaged.isNotEmpty || untracked.isNotEmpty;
 }
 
+/// Represents `GitCommit`.
 class GitCommit {
   final String hash;
   final String message;
@@ -538,6 +561,7 @@ class GitCommit {
   GitCommit({required this.hash, required this.message});
 }
 
+/// Represents `GitDiffStats`.
 class GitDiffStats {
   final int added;
   final int removed;
@@ -549,6 +573,7 @@ class GitDiffStats {
     required this.isNewFile,
   });
 
+  /// Human-readable added/removed summary (for example `+3 -1`).
   String get displayString {
     if (added == 0 && removed == 0) return '';
     final parts = <String>[];
@@ -557,5 +582,6 @@ class GitDiffStats {
     return parts.join(' ');
   }
 
+  /// Whether this diff stat contains any additions or removals.
   bool get hasChanges => added > 0 || removed > 0;
 }

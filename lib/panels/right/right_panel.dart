@@ -1,3 +1,4 @@
+import 'package:fide/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/panels/right/ai_panel.dart';
 import 'package:fide/panels/right/info_panel.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+/// Represents `RightPanel`.
 class RightPanel extends StatefulWidget {
   const RightPanel({
     super.key,
@@ -33,7 +35,10 @@ class _RightPanelState extends State<RightPanel>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(
+      length: AppMetric.rightPanelTabCount,
+      vsync: this,
+    );
   }
 
   @override
@@ -45,7 +50,7 @@ class _RightPanelState extends State<RightPanel>
   @override
   Widget build(BuildContext context) {
     return Consumer(
-      builder: (context, ref, child) {
+      builder: (context, ref, _) {
         final activeTab = ref.watch(activeRightPanelTabProvider);
 
         // Update TabController to match the provider
@@ -63,7 +68,7 @@ class _RightPanelState extends State<RightPanel>
                   border: Border(
                     bottom: BorderSide(
                       color: Theme.of(context).dividerColor,
-                      width: 1.0,
+                      width: AppSize.borderThin,
                     ),
                   ),
                 ),
@@ -89,8 +94,8 @@ class _RightPanelState extends State<RightPanel>
                           final iconColor = IconTheme.of(context).color!;
                           return SvgPicture.asset(
                             'assets/ollama.svg',
-                            width: 24,
-                            height: 24,
+                            width: AppIconSize.xLarge,
+                            height: AppIconSize.xLarge,
                             colorFilter: ColorFilter.mode(
                               iconColor,
                               BlendMode.srcIn,
@@ -130,7 +135,7 @@ class _RightPanelState extends State<RightPanel>
                             child: Text(
                               'Select a file to view outline',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: AppFontSize.label,
                                 color: Colors.grey,
                               ),
                             ),

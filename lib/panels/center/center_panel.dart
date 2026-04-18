@@ -1,3 +1,4 @@
+import 'package:fide/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/panels/center/editor_screen.dart';
@@ -7,6 +8,7 @@ import 'package:fide/widgets/resizable_splitter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// The center panel host widget that displays the active editor, welcome screen, or create-project flow.
 class CenterPanel extends ConsumerStatefulWidget {
   final FileSystemItem? selectedFile;
   final bool projectLoaded;
@@ -36,9 +38,9 @@ class CenterPanel extends ConsumerStatefulWidget {
 }
 
 class _CenterPanelState extends ConsumerState<CenterPanel> {
-  double _terminalHeight = 200.0;
-  final double _minTerminalHeight = 100.0;
-  final double _maxTerminalHeight = 400.0;
+  double _terminalHeight = AppSize.terminalDefaultHeight;
+  final double _minTerminalHeight = AppSize.terminalMinHeight;
+  final double _maxTerminalHeight = AppSize.terminalMaxHeight;
 
   void _onTerminalResize(double delta) {
     setState(() {
@@ -65,7 +67,7 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
       mainContent = const Center(
         child: Text(
           'Select a file to start editing',
-          style: TextStyle(fontSize: 16, color: Colors.grey),
+          style: TextStyle(fontSize: AppFontSize.title, color: Colors.grey),
         ),
       );
     }
@@ -73,7 +75,10 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
     return Container(
       decoration: BoxDecoration(
         border: Border(
-          right: BorderSide(color: Theme.of(context).dividerColor, width: 1.0),
+          right: BorderSide(
+            color: Theme.of(context).dividerColor,
+            width: AppSize.borderThin,
+          ),
         ),
       ),
       child: Column(

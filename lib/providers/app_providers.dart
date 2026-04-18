@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
@@ -13,27 +14,27 @@ import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
 // SharedPreferences provider
-final sharedPreferencesProvider = FutureProvider<SharedPreferences>((ref) {
+final sharedPreferencesProvider = FutureProvider<SharedPreferences>((_) {
   return SharedPreferences.getInstance();
 });
 
 // State management for the selected file
-final selectedFileProvider = StateProvider<FileSystemItem?>((ref) => null);
+final selectedFileProvider = StateProvider<FileSystemItem?>((_) => null);
 
 // State management for project loading
-final projectLoadedProvider = StateProvider<bool>((ref) => false);
+final projectLoadedProvider = StateProvider<bool>((_) => false);
 
 // State management for current project path
-final currentProjectPathProvider = StateProvider<String?>((ref) => null);
+final currentProjectPathProvider = StateProvider<String?>((_) => null);
 
 // State management for current project root
-final currentProjectRootProvider = StateProvider<ProjectNode?>((ref) => null);
+final currentProjectRootProvider = StateProvider<ProjectNode?>((_) => null);
 
 // State management for project loading state
-final projectLoadingProvider = StateProvider<bool>((ref) => false);
+final projectLoadingProvider = StateProvider<bool>((_) => false);
 
 // State management for MRU folders
-final mruFoldersProvider = StateProvider<List<String>>((ref) => []);
+final mruFoldersProvider = StateProvider<List<String>>((_) => []);
 
 // MRU folders loader that loads from SharedPreferences
 final mruFoldersLoaderProvider = FutureProvider<List<String>>((ref) async {
@@ -46,6 +47,7 @@ final mruFoldersLoaderProvider = FutureProvider<List<String>>((ref) async {
 });
 
 // Project management service - unified approach for all project operations
+/// Represents `ProjectManager`.
 class ProjectManager {
   final Logger _logger = Logger('ProjectManager');
 
@@ -136,9 +138,12 @@ class ProjectManager {
     // Add to front
     updatedMruFolders.insert(0, directoryPath);
 
-    // Limit to 5 items
-    if (updatedMruFolders.length > 5) {
-      updatedMruFolders.removeRange(5, updatedMruFolders.length);
+    // Limit MRU list to configured max items
+    if (updatedMruFolders.length > AppMetric.mruFolderLimit) {
+      updatedMruFolders.removeRange(
+        AppMetric.mruFolderLimit,
+        updatedMruFolders.length,
+      );
     }
 
     // Update the provider
@@ -182,7 +187,7 @@ class ProjectManager {
       // Create FileSystemItem and set it as selected
       final fileSystemItem = FileSystemItem.fromFileSystemEntity(file);
       ref.read(selectedFileProvider.notifier).state = fileSystemItem;
-    } catch (e) {
+    } catch (_) {
       // Silently handle errors
     }
   }
@@ -199,10 +204,12 @@ final projectServiceProvider = Provider<ProjectService>((ref) {
 });
 
 // State management for open documents
-final openDocumentsProvider = StateProvider<List<DocumentState>>((ref) => []);
+final openDocumentsProvider = StateProvider<List<DocumentState>>(
+  (_ /*ref*/) => [],
+);
 
 // State management for active document index
-final activeDocumentIndexProvider = StateProvider<int>((ref) => -1);
+final activeDocumentIndexProvider = StateProvider<int>((_ /*ref*/) => -1);
 
 // Active document provider (computed from open documents and active index)
 final activeDocumentProvider = Provider<DocumentState?>((ref) {
@@ -215,12 +222,15 @@ final activeDocumentProvider = Provider<DocumentState?>((ref) {
 });
 
 // State management for project creation errors
-final projectCreationErrorProvider = StateProvider<String?>((ref) => null);
+final projectCreationErrorProvider = StateProvider<String?>(
+  (_ /*ref*/) => null,
+);
 
 // Loading action status
 enum LoadingStatus { pending, success, failed }
 
 // Loading action model
+/// Represents `LoadingAction`.
 class LoadingAction {
   final int step;
   final String text;
@@ -230,9 +240,12 @@ class LoadingAction {
 }
 
 // State management for loading actions log
-final loadingActionsProvider = StateProvider<List<LoadingAction>>((ref) => []);
+final loadingActionsProvider = StateProvider<List<LoadingAction>>(
+  (_ /*ref*/) => [],
+);
 
 // State management for project metrics (cached in SharedPreferences)
+/// Represents `ProjectMetricsNotifier`.
 class ProjectMetricsNotifier extends StateNotifier<Map<String, dynamic>> {
   final Ref ref;
   final SharedPreferences? prefs;
@@ -241,6 +254,7 @@ class ProjectMetricsNotifier extends StateNotifier<Map<String, dynamic>> {
     _loadCachedMetrics();
   }
 
+  /// Restores previously persisted project metrics from SharedPreferences on startup.
   void _loadCachedMetrics() {
     if (prefs == null) return;
 
@@ -252,13 +266,14 @@ class ProjectMetricsNotifier extends StateNotifier<Map<String, dynamic>> {
         try {
           final cached = jsonDecode(jsonString) as Map<String, dynamic>;
           state = cached;
-        } catch (e) {
+        } catch (_) {
           // Ignore invalid cached data
         }
       }
     }
   }
 
+  /// Handles `ProjectMetricsNotifier.updateMetrics`.
   Future<void> updateMetrics(
     String projectPath,
     Map<String, dynamic> metrics,
@@ -269,14 +284,6 @@ class ProjectMetricsNotifier extends StateNotifier<Map<String, dynamic>> {
     final key = 'project_metrics_$projectPath';
     final jsonString = jsonEncode(metrics);
     await prefs!.setString(key, jsonString);
-  }
-
-  void clearMetrics(String projectPath) {
-    if (prefs == null) return;
-
-    state = {};
-    final key = 'project_metrics_$projectPath';
-    prefs!.remove(key);
   }
 }
 

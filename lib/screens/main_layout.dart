@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/panels/center/center_panel.dart';
@@ -25,6 +26,7 @@ import 'package:highlight/languages/yaml.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 
+/// Represents `MainLayout`.
 class MainLayout extends ConsumerStatefulWidget {
   final Function(ThemeMode)? onThemeChanged;
   final Function(String)? onFileOpened;
@@ -35,11 +37,12 @@ class MainLayout extends ConsumerStatefulWidget {
   ConsumerState<MainLayout> createState() => MainLayoutState();
 }
 
+/// Represents `MainLayoutState`.
 class MainLayoutState extends ConsumerState<MainLayout> {
   final Logger _logger = Logger('MainLayoutState');
 
-  double _explorerWidth = 250.0;
-  double _outlineWidth = 250.0;
+  double _explorerWidth = AppSize.initialSidePanelWidth;
+  double _outlineWidth = AppSize.initialSidePanelWidth;
   final double _minExplorerWidth = 150.0;
   final double _maxExplorerWidth = 500.0;
   final double _minOutlineWidth = 150.0;
@@ -84,7 +87,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
       if (validMruFolders.isNotEmpty) {
         await _tryAutoLoadProject(validMruFolders.first);
       }
-    } catch (e) {
+    } catch (_) {
       // Silently handle errors during initialization
     }
   }
@@ -120,6 +123,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   }
 
   // Try to reopen the last opened file
+  /// Reopens the last persisted file for the given project, when valid.
   Future<void> tryReopenLastFile(String projectPath) async {
     try {
       final prefs = await ref.read(sharedPreferencesProvider.future);
@@ -154,7 +158,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
       // Create FileSystemItem for MRU loading (avoids file system calls that can hang)
       final fileSystemItem = FileSystemItem.forMruLoading(lastFilePath);
       ref.read(selectedFileProvider.notifier).state = fileSystemItem;
-    } catch (e) {
+    } catch (_) {
       // Silently handle errors
     }
   }
@@ -183,12 +187,14 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   }
 
   // Try to load a project and return success status
+  /// Loads a project through [ProjectManager] and returns whether it succeeded.
   Future<bool> tryLoadProject(String directoryPath) async {
     final projectManager = ref.read(projectManagerProvider);
     return await projectManager.loadProject(directoryPath);
   }
 
   // Method to pick directory - can be called from WelcomeScreen
+  /// Opens a folder picker and attempts to load the selected Flutter project.
   Future<void> pickDirectory() async {
     try {
       final selectedDirectory = await FilePicker.platform.getDirectoryPath();
@@ -220,7 +226,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     final mruFolders = ref.watch(mruFoldersProvider);
 
     // Listen for selected file changes to add documents
-    ref.listen<FileSystemItem?>(selectedFileProvider, (previous, next) {
+    ref.listen<FileSystemItem?>(selectedFileProvider, (_, next) {
       if (next != null && next.path != _lastSelectedFilePath) {
         // Defer async operation to avoid modifying providers during build
         WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -254,7 +260,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                       fileSystemItem;
 
                   // Wait a bit for the file to load, then navigate to line
-                  await Future.delayed(const Duration(milliseconds: 100));
+                  await Future.delayed(AppDuration.editorScroll);
                   EditorScreen.navigateToLine(line);
                 },
                 onThemeChanged: (themeMode) {
@@ -323,7 +329,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                     sharedPreferencesProvider.future,
                   );
                   await prefs.setStringList(_mruFoldersKey, updatedMruFolders);
-                } catch (e) {
+                } catch (_) {
                   // Silently handle SharedPreferences errors
                 }
               },
@@ -374,7 +380,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
           if (await file.exists()) {
             content = await FileSystemItem.fileToStringMaxSizeCheck(file);
           }
-        } catch (e) {
+        } catch (_) {
           // Silently handle file loading errors
           content = '// Error loading file\n';
         }
@@ -443,7 +449,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     try {
       final prefs = await ref.read(sharedPreferencesProvider.future);
       await prefs.setString(_lastOpenedFileKey, filePath);
-    } catch (e) {
+    } catch (_) {
       // Silently handle SharedPreferences errors
     }
   }

@@ -1,14 +1,18 @@
 // ignore_for_file: avoid_print
-
+// ignore: fcheck_dead_code
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:logging/logging.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
+/// Represents `LocalizationService`.
 class LocalizationService {
   static final Logger _logger = Logger('LocalizationService');
+
+  /// Sets up localization dependencies, config, ARB files, and generated classes.
   Future<void> initializeLocalization(String projectPath) async {
     try {
       // Add required packages using flutter pub add
@@ -115,6 +119,7 @@ class LocalizationService {
     }
   }
 
+  /// Updates `main.dart` to wire generated localization delegates and title lookup.
   Future<void> updateMainDartForLocalization(String projectPath) async {
     final mainFile = File('$projectPath/lib/main.dart');
     if (!await mainFile.exists()) {
@@ -201,8 +206,11 @@ class LocalizationService {
   }
 }
 
+/// Represents `ArbService`.
 class ArbService {
   static final Logger _logger = Logger('ArbService');
+
+  /// Loads and parses all ARB files found under the given directory tree.
   Future<List<ArbFile>> loadArbFiles(String directoryPath) async {
     final directory = Directory(directoryPath);
     final arbFiles = <ArbFile>[];
@@ -230,6 +238,7 @@ class ArbService {
     return arbFiles;
   }
 
+  /// Parses one ARB file into an [ArbFile] model with entries and metadata.
   Future<ArbFile?> parseArbFile(String path) async {
     final file = File(path);
     final content = await file.readAsString();
@@ -243,7 +252,7 @@ class ArbService {
         'ARB file $path does not contain a valid JSON object. Content length: ${content.length}, Clean content length: ${cleanContent.length}',
       );
       _logger.severe(
-        'Raw content (first 200 chars): ${content.substring(0, content.length > 200 ? 200 : content.length)}',
+        'Raw content (first ${AppMetric.logPreviewChars} chars): ${content.substring(0, content.length > AppMetric.logPreviewChars ? AppMetric.logPreviewChars : content.length)}',
       );
       return null;
     }
@@ -282,6 +291,7 @@ class ArbService {
     return ArbFile(path: path, languageCode: languageCode, entries: entries);
   }
 
+  /// Returns true if the file contains a valid ARB-compatible JSON object.
   Future<bool> isArbFileValid(String path) async {
     try {
       final file = File(path);
@@ -293,6 +303,7 @@ class ArbService {
     }
   }
 
+  /// Compares ARB files and returns per-key coverage and missing-language data.
   List<ArbComparison> compareArbFiles(List<ArbFile> arbFiles) {
     final comparisons = <ArbComparison>[];
 
@@ -341,6 +352,7 @@ class ArbService {
     return comparisons;
   }
 
+  /// Updates or inserts a key (and optional metadata) in an ARB file.
   Future<void> updateArbFile(
     String path,
     String key,

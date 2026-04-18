@@ -1,11 +1,13 @@
 // ignore_for_file:  use_build_context_synchronously
 
+import 'package:fide/constants.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 enum MessageType { success, warning, error, info }
 
+/// Represents `MessageWidget`.
 class MessageWidget extends StatefulWidget {
   const MessageWidget({
     super.key,
@@ -48,7 +50,7 @@ class _MessageWidgetState extends State<MessageWidget>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: AppDuration.messageAnimation,
       vsync: this,
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -113,55 +115,57 @@ class _MessageWidgetState extends State<MessageWidget>
       child: Tooltip(
         message: semanticLabel,
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          margin: AppPadding.messageMargin,
           decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppRadius.medium),
             border: Border.all(
-              color: foregroundColor.withValues(alpha: 0.2),
-              width: 1,
+              color: foregroundColor.withValues(alpha: AppOpacity.selected),
+              width: AppSize.borderThin,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+                color: Colors.black.withValues(alpha: AppOpacity.subtle),
+                blurRadius: AppSpacing.tiny,
+                offset: const Offset(0, AppSpacing.micro),
               ),
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: AppPadding.actionTabContent,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(icon, color: foregroundColor, size: 20),
-                const SizedBox(width: 12),
+                Icon(icon, color: foregroundColor, size: AppIconSize.large),
+                const SizedBox(width: AppSpacing.large),
                 Expanded(
                   child: Text(
                     widget.message,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: foregroundColor,
-                      height: 1.4,
+                      height: AppLineHeight.relaxed,
                     ),
                   ),
                 ),
                 if (widget.showCopyButton) ...[
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.medium),
                   SizedBox(
-                    height: 32,
+                    height: AppSize.compactActionButton,
                     child: _showCopiedText
                         ? Center(
                             child: AnimatedOpacity(
                               opacity: _showCopiedText ? 1.0 : 0.0,
-                              duration: const Duration(milliseconds: 200),
+                              duration: AppDuration.copiedBadgeFade,
                               child: BadgeStatus.success(text: 'Copied'),
                             ),
                           )
                         : IconButton(
                             icon: Icon(
                               Icons.copy,
-                              color: foregroundColor.withValues(alpha: 0.7),
-                              size: 18,
+                              color: foregroundColor.withValues(
+                                alpha: AppOpacity.secondaryText,
+                              ),
+                              size: AppIconSize.mediumLarge,
                             ),
                             onPressed: () async {
                               await Clipboard.setData(
@@ -172,7 +176,7 @@ class _MessageWidgetState extends State<MessageWidget>
                                 setState(() => _showCopiedText = true);
                                 // Hide "Copied" after 1.5 seconds
                                 Future.delayed(
-                                  const Duration(milliseconds: 1500),
+                                  AppDuration.copiedBadgeVisible,
                                   () {
                                     if (mounted) {
                                       setState(() => _showCopiedText = false);
@@ -188,19 +192,21 @@ class _MessageWidgetState extends State<MessageWidget>
                   ),
                 ],
                 if (widget.showCloseButton) ...[
-                  const SizedBox(width: 4),
+                  const SizedBox(width: AppSpacing.tiny),
                   IconButton(
                     icon: Icon(
                       Icons.close,
-                      color: foregroundColor.withValues(alpha: 0.7),
-                      size: 18,
+                      color: foregroundColor.withValues(
+                        alpha: AppOpacity.secondaryText,
+                      ),
+                      size: AppIconSize.mediumLarge,
                     ),
                     onPressed: _dismiss,
                     tooltip: 'Close message',
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
+                      minWidth: AppSize.compactActionButton,
+                      minHeight: AppSize.compactActionButton,
                     ),
                   ),
                 ],

@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:fide/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/panels/right/localization/localization_entry_widget.dart';
@@ -29,6 +30,7 @@ enum LocalizationStatus {
   error,
 }
 
+/// Represents `LocalizationPanel`.
 class LocalizationPanel extends ConsumerStatefulWidget {
   const LocalizationPanel({super.key, this.selectedFile});
 
@@ -59,7 +61,11 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
   void initState() {
     super.initState();
     _filterController.addListener(_onFilterChanged);
+
+    /// Handles `_checkLocalizationStatus`.
     _checkLocalizationStatus();
+
+    /// Handles `_loadArbFiles`.
     _loadArbFiles();
   }
 
@@ -76,6 +82,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     });
   }
 
+  /// Handles `_matchesFilter`.
   bool _matchesFilter(ArbComparison comparison, String query) {
     final lowerQuery = query.toLowerCase();
 
@@ -100,6 +107,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     return false;
   }
 
+  /// Handles `_checkLocalizationStatus`.
   Future<void> _checkLocalizationStatus() async {
     final projectRoot = ref.read(currentProjectRootProvider);
     if (projectRoot == null) {
@@ -110,6 +118,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     setState(() => _localizationStatus = LocalizationStatus.checking);
 
     try {
+      /// Handles `_evaluateLocalizationStatus`.
       final status = await _evaluateLocalizationStatus(projectRoot.path);
       setState(() => _localizationStatus = status);
     } catch (e) {
@@ -118,6 +127,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     }
   }
 
+  /// Handles `_evaluateLocalizationStatus`.
   Future<LocalizationStatus> _evaluateLocalizationStatus(
     String projectPath,
   ) async {
@@ -173,6 +183,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     }
   }
 
+  /// Handles `_loadArbFiles`.
   Future<void> _loadArbFiles() async {
     final projectRoot = ref.read(currentProjectRootProvider);
     if (projectRoot == null) return;
@@ -233,6 +244,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     }
   }
 
+  /// Handles `_initializeLocalization`.
   Future<void> _initializeLocalization() async {
     final projectRoot = ref.read(currentProjectRootProvider);
     if (projectRoot == null) return;
@@ -247,12 +259,16 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           'Adding flutter_localizations and intl packages...',
         );
       }
+
+      /// Handles `_addPackages`.
       await _addPackages(projectRoot.path);
 
       // Step 2: Configure pubspec.yaml
       if (mounted) {
         MessageBox.showInfo(context, 'Configuring pubspec.yaml...');
       }
+
+      /// Handles `_configurePubspec`.
       await _configurePubspec(projectRoot.path);
 
       // Step 3: Create l10n directory
@@ -265,12 +281,16 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       if (mounted) {
         MessageBox.showInfo(context, 'Creating template ARB files...');
       }
+
+      /// Handles `_createArbFiles`.
       await _createArbFiles(projectRoot.path);
 
       // Step 5: Generate localization classes
       if (mounted) {
         MessageBox.showInfo(context, 'Generating localization classes...');
       }
+
+      /// Handles `_generateClasses`.
       await _generateClasses(projectRoot.path);
 
       // Step 6: Update main.dart
@@ -298,6 +318,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     }
   }
 
+  /// Handles `_addPackages`.
   Future<void> _addPackages(String projectPath) async {
     // Add flutter_localizations
     final addFlutterLocalizationsResult = await Process.run('flutter', [
@@ -323,6 +344,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     }
   }
 
+  /// Handles `_configurePubspec`.
   Future<void> _configurePubspec(String projectPath) async {
     final pubspecFile = File('$projectPath/pubspec.yaml');
     if (await pubspecFile.exists()) {
@@ -343,6 +365,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     }
   }
 
+  /// Handles `_createArbFiles`.
   Future<void> _createArbFiles(String projectPath) async {
     final l10nDir = Directory('$projectPath/lib/l10n');
 
@@ -351,6 +374,8 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     final mainFile = File('$projectPath/lib/main.dart');
     if (await mainFile.exists()) {
       final mainContent = await mainFile.readAsString();
+
+      /// Handles `_extractAppTitleFromMainDart`.
       final extractedTitle = _extractAppTitleFromMainDart(mainContent);
       if (extractedTitle != null && extractedTitle.isNotEmpty) {
         appTitle = extractedTitle;
@@ -383,6 +408,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     ).writeAsString(jsonEncode(frenchArbContent));
   }
 
+  /// Handles `_generateClasses`.
   Future<void> _generateClasses(String projectPath) async {
     final result = await Process.run('flutter', [
       'gen-l10n',
@@ -395,6 +421,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     }
   }
 
+  /// Handles `_updateMainDart`.
   Future<void> _updateMainDart() async {
     final projectRoot = ref.read(currentProjectRootProvider);
     if (projectRoot == null) return;
@@ -418,6 +445,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     }
   }
 
+  /// Handles `_generateLocalizationClasses`.
   Future<void> _generateLocalizationClasses() async {
     final projectRoot = ref.read(currentProjectRootProvider);
     if (projectRoot == null) return;
@@ -491,7 +519,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(_errorMessage!),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.xLarge),
             ElevatedButton(
               onPressed: _loadArbFiles,
               child: const Text('Retry'),
@@ -506,6 +534,8 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       case LocalizationStatus.checking:
         return const Center(child: CircularProgressIndicator());
       case LocalizationStatus.noProject:
+
+        /// Handles `_buildStatusView`.
         return _buildStatusView(
           'No Project',
           'No Flutter project is currently loaded.',
@@ -525,8 +555,12 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           isInitializing: _isLoading,
         );
       case LocalizationStatus.partial:
+
+        /// Handles `_buildPartialView`.
         return _buildPartialView();
       case LocalizationStatus.complete:
+
+        /// Handles `_buildCompleteView`.
         return _buildCompleteView();
       case LocalizationStatus.error:
         return _buildStatusView(
@@ -541,6 +575,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     }
   }
 
+  /// Handles `_buildStatusView`.
   Widget _buildStatusView(
     String title,
     String message,
@@ -551,27 +586,38 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 64, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(height: 16),
+          Icon(
+            icon,
+            size: AppSize.largePreviewIcon,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(height: AppSpacing.xLarge),
           Text(title, style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.medium),
           Text(message, textAlign: TextAlign.center),
-          if (action != null) ...[const SizedBox(height: 16), action],
+          if (action != null) ...[
+            const SizedBox(height: AppSpacing.xLarge),
+            action,
+          ],
         ],
       ),
     );
   }
 
+  /// Handles `_buildPartialView`.
   Widget _buildPartialView() {
+    /// Handles `_hasArbFiles`.
     final hasArbFiles = _hasArbFiles();
     final hasValidArbFiles = _arbFiles.isNotEmpty;
     final hasGeneratedClasses = _hasGeneratedClasses();
+
+    /// Handles `_hasAppIntegration`.
     final hasAppIntegration = _hasAppIntegration();
     final hasLocalizationDependencies = _hasLocalizationDependencies();
     final hasFlutterGenerateFlag = _hasFlutterGenerateFlag();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.xLarge),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -581,7 +627,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                 Icons.warning,
                 color: Theme.of(context).colorScheme.tertiary,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.medium),
               Expanded(
                 child: Text(
                   'Localization Partially Set Up',
@@ -590,26 +636,27 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.xLarge),
           Text(
             'Your Flutter project has some localization components set up, but others are missing. Localization requires three main components:',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.medium),
           Text(
             '• ARB files (translation files in lib/l10n/)\n• Generated AppLocalizations class\n• Integration in main.dart',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.xLarge),
           Text(
             'Here\'s the current status:',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.xLarge),
 
           // Status checks
+          /// Handles `_buildStatusCheck`.
           _buildStatusCheck(
             'Localization dependencies configured',
             hasLocalizationDependencies,
@@ -622,6 +669,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           if (hasArbFiles) ...[
             hasValidArbFiles
                 ? _buildStatusCheck('ARB files are valid JSON', true)
+                /// Handles `_buildStatusCheckWithMalformedFiles`.
                 : _buildStatusCheckWithMalformedFiles(
                     'ARB files are valid JSON',
                     _malformedArbFiles,
@@ -630,7 +678,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           _buildStatusCheck('Generated classes exist', hasGeneratedClasses),
           _buildStatusCheck('App integration complete', hasAppIntegration),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxLarge),
 
           // Next Steps section
           Text(
@@ -639,10 +687,11 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.large),
 
           // Show specific actions based on what's missing
           if (!hasArbFiles) ...[
+            /// Handles `_buildActionItem`.
             _buildActionItem(
               'Create ARB files',
               'Set up localization files with template content',
@@ -677,7 +726,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
             ),
           ],
 
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxLarge),
 
           // Show ARB file management if files are loaded
           if (_arbFiles.isNotEmpty) ...[
@@ -687,13 +736,15 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.large),
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _comparisons.length,
-              itemBuilder: (context, index) {
+              itemBuilder: (_ /*context*/, index) {
                 final comparison = _comparisons[index];
+
+                /// Handles `_buildComparisonTile`.
                 return _buildComparisonTile(comparison);
               },
             ),
@@ -703,6 +754,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     );
   }
 
+  /// Handles `_buildCompleteView`.
   Widget _buildCompleteView() {
     // Filter comparisons based on filter query
     final filteredComparisons = _filterQuery.isEmpty
@@ -720,7 +772,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       }
     }
     final duplicatedValues = englishValueCounts.entries
-        .where((entry) => entry.value >= 2)
+        .where((entry) => entry.value >= AppMetric.duplicateThreshold)
         .map((entry) => entry.key)
         .toSet();
 
@@ -729,11 +781,14 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
         // Duplicate warning banner
         if (duplicatedValues.isNotEmpty)
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            margin: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xLarge,
+              vertical: AppSpacing.tiny,
+            ),
             child: BadgeStatus.warning(
               text:
                   '${duplicatedValues.length} English ${duplicatedValues.length == 1 ? 'string is' : 'strings are'} duplicated',
-              fontSize: 11,
+              fontSize: AppFontSize.metadata,
               showIcon: true,
             ),
           ),
@@ -742,7 +797,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
               ? const Center(child: Text('No ARB files found'))
               : ListView.separated(
                   itemCount: filteredComparisons.length,
-                  itemBuilder: (context, index) {
+                  itemBuilder: (_ /*context*/, index) {
                     final comparison = filteredComparisons[index];
                     final isDuplicated =
                         comparison.englishValue != null &&
@@ -752,21 +807,32 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                       showWarning: isDuplicated,
                     );
                   },
-                  separatorBuilder: (context, index) =>
-                      const Divider(height: 8, thickness: 1),
+                  separatorBuilder: (_ /*context*/, _ /*index*/) =>
+                      const Divider(
+                        height: AppSpacing.medium,
+                        thickness: AppSize.borderThin,
+                      ),
                 ),
         ),
         // Filter bar
         Padding(
-          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.medium,
+            0,
+            AppSpacing.medium,
+            AppSpacing.medium,
+          ),
           child: TextField(
             controller: _filterController,
             decoration: InputDecoration(
               hintText: 'Filter localization keys...',
-              prefixIcon: const Icon(Icons.filter_list, size: 20),
+              prefixIcon: const Icon(
+                Icons.filter_list,
+                size: AppIconSize.large,
+              ),
               suffixIcon: _filterQuery.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear, size: 20),
+                      icon: const Icon(Icons.clear, size: AppIconSize.large),
                       onPressed: () {
                         _filterController.clear();
                         setState(() {});
@@ -774,48 +840,50 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                     )
                   : null,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.medium),
                 borderSide: BorderSide.none,
               ),
               filled: true,
               fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
+                horizontal: AppSpacing.large,
+                vertical: AppSpacing.medium,
               ),
             ),
-            style: const TextStyle(fontSize: 13),
+            style: const TextStyle(fontSize: AppFontSize.body),
           ),
         ),
       ],
     );
   }
 
+  /// Handles `_buildStatusCheck`.
   Widget _buildStatusCheck(String label, bool isComplete) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: AppSpacing.medium),
       child: Row(
         children: [
           Icon(
             isComplete ? Icons.check_circle : Icons.radio_button_unchecked,
-            size: 20,
+            size: AppIconSize.large,
             color: isComplete
                 ? Theme.of(context).colorScheme.primary
                 : Theme.of(context).colorScheme.outline,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.large),
           Expanded(child: Text(label)),
         ],
       ),
     );
   }
 
+  /// Handles `_buildStatusCheckWithMalformedFiles`.
   Widget _buildStatusCheckWithMalformedFiles(
     String label,
     List<String> malformedFiles,
   ) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: AppSpacing.medium),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -823,16 +891,16 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
             children: [
               Icon(
                 Icons.radio_button_unchecked,
-                size: 20,
+                size: AppIconSize.large,
                 color: Theme.of(context).colorScheme.error,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.large),
               Expanded(child: Text(label)),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.tiny),
           Padding(
-            padding: const EdgeInsets.only(left: 32),
+            padding: const EdgeInsets.only(left: AppSpacing.huge),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -842,11 +910,11 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                     color: Theme.of(context).colorScheme.error,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.tiny),
                 ...malformedFiles.map((filePath) {
                   final fileName = filePath.split(Platform.pathSeparator).last;
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
+                    padding: const EdgeInsets.only(bottom: AppSpacing.micro),
                     child: Row(
                       children: [
                         Expanded(
@@ -859,10 +927,10 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                           ),
                         ),
                         TextButton.icon(
-                          icon: const Icon(Icons.edit, size: 14),
+                          icon: const Icon(Icons.edit, size: AppIconSize.small),
                           label: const Text(
                             'Edit',
-                            style: TextStyle(fontSize: 12),
+                            style: TextStyle(fontSize: AppFontSize.caption),
                           ),
                           onPressed: () {
                             // Open the file in FIDE's editor
@@ -874,8 +942,13 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                                 fileSystemItem;
                           },
                           style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            minimumSize: const Size(50, 28),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.tiny,
+                            ),
+                            minimumSize: const Size(
+                              AppSize.compactTextButtonMinWidth,
+                              AppSize.compactTextButtonHeight,
+                            ),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
                         ),
@@ -891,6 +964,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     );
   }
 
+  /// Handles `_buildActionItem`.
   Widget _buildActionItem(
     String title,
     String description,
@@ -898,17 +972,17 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     VoidCallback onPressed,
   ) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: AppSpacing.large),
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.xLarge),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   Icon(icon, color: Theme.of(context).colorScheme.primary),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.large),
                   Expanded(
                     child: Text(
                       title,
@@ -919,9 +993,9 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.medium),
               Text(description, style: Theme.of(context).textTheme.bodyMedium),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.large),
               Align(
                 alignment: Alignment.centerRight,
                 child: ElevatedButton.icon(
@@ -944,6 +1018,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     return file.existsSync();
   }
 
+  /// Handles `_hasArbFiles`.
   bool _hasArbFiles() {
     final projectRoot = ref.read(currentProjectRootProvider);
     if (projectRoot == null) return false;
@@ -975,6 +1050,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     return content.contains('generate: true');
   }
 
+  /// Handles `_hasAppIntegration`.
   bool _hasAppIntegration() {
     final projectRoot = ref.read(currentProjectRootProvider);
     if (projectRoot == null) return false;
@@ -986,11 +1062,15 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
         content.contains('supportedLocales');
   }
 
+  /// Handles `_buildComparisonTile`.
   Widget _buildComparisonTile(ArbComparison comparison) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.medium,
+        vertical: AppSpacing.tiny,
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.large),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1000,7 +1080,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                 context,
               ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.tiny),
             if (comparison.englishValue != null)
               Text(
                 'EN: ${comparison.englishValue}',
@@ -1009,16 +1089,16 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                   fontStyle: FontStyle.italic,
                 ),
               ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.medium),
             Wrap(
-              spacing: 8,
-              runSpacing: 4,
+              spacing: AppSpacing.medium,
+              runSpacing: AppSpacing.tiny,
               children: comparison.missingInLanguages.map((lang) {
                 final targetFile = _arbFiles.firstWhere(
                   (file) => file.languageCode == lang,
                 );
                 return ElevatedButton.icon(
-                  icon: const Icon(Icons.translate, size: 16),
+                  icon: const Icon(Icons.translate, size: AppIconSize.medium),
                   label: Text('Translate to $lang'),
                   onPressed: comparison.englishValue != null
                       ? () => _translateMissingKey(
@@ -1030,8 +1110,8 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                       : null,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+                      horizontal: AppSpacing.large,
+                      vertical: AppSpacing.small,
                     ),
                   ),
                 );
@@ -1043,6 +1123,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     );
   }
 
+  /// Handles `_translateMissingKey`.
   Future<void> _translateMissingKey(
     String key,
     String englishValue,
@@ -1088,6 +1169,7 @@ Provide only the translated text, no additional explanation or quotes.''';
     }
   }
 
+  /// Handles `_extractAppTitleFromMainDart`.
   String? _extractAppTitleFromMainDart(String content) {
     try {
       final result = parseString(content: content);

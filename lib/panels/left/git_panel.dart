@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/utils/message_box.dart';
@@ -12,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:path/path.dart' as path;
 
+/// Represents `GitPanel`.
 class GitPanel extends ConsumerStatefulWidget {
   final String projectPath;
   final Function(FileSystemItem)? onFileSelected;
@@ -71,6 +73,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     _loadGitData();
   }
 
+  /// Handles `_commit`.
   Future<void> _commit() async {
     if (_commitController.text.isEmpty) return;
 
@@ -111,6 +114,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     _loadGitData();
   }
 
+  /// Handles `_discardChanges`.
   Future<void> _discardChanges(List<String> files) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -152,6 +156,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     _loadGitData();
   }
 
+  /// Handles `_viewDiff`.
   Future<void> _viewDiff(String filePath) async {
     final gitService = GitService();
     final fullFilePath = path.join(widget.projectPath, filePath);
@@ -181,7 +186,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
             fullFilePath,
             'HEAD',
           );
-        } catch (e) {
+        } catch (_) {
           // File might be new, oldText remains empty
         }
 
@@ -207,7 +212,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
             fullFilePath,
             'HEAD',
           );
-        } catch (e) {
+        } catch (_) {
           // File might be new, oldText remains empty
         }
 
@@ -216,14 +221,14 @@ class _GitPanelState extends ConsumerState<GitPanel> {
           newText = await file.readAsString();
         }
       }
-    } catch (e) {
+    } catch (_) {
       // If any error occurs, try to show working directory content
       try {
         final file = File(fullFilePath);
         if (await file.exists()) {
           newText = await file.readAsString();
         }
-      } catch (fallbackError) {
+      } catch (_) {
         // Ignore fallback error
       }
     }
@@ -234,8 +239,8 @@ class _GitPanelState extends ConsumerState<GitPanel> {
         builder: (context) => AlertDialog(
           title: Text('Git Diff: ${path.basename(filePath)}'),
           content: SizedBox(
-            width: MediaQuery.of(context).size.width * 0.8,
-            height: MediaQuery.of(context).size.height * 0.6,
+            width: MediaQuery.of(context).size.width * AppOpacity.emphasis,
+            height: MediaQuery.of(context).size.height * AppOpacity.muted,
             child: SideBySideDiff(oldText: oldText, newText: newText),
           ),
           actions: [
@@ -257,7 +262,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
     return gitStatus.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Error: $error')),
+      error: (error, _) => Center(child: Text('Error: $error')),
       data: (status) => Column(
         children: [
           // Header
@@ -294,8 +299,8 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                 if (status.staged.isNotEmpty)
                   TextField(
                     controller: _commitController,
-                    maxLines: 3,
-                    style: const TextStyle(fontSize: 13),
+                    maxLines: AppMetric.aiInputMaxLines,
+                    style: const TextStyle(fontSize: AppFontSize.body),
                     decoration: const InputDecoration(
                       hintText: 'Enter commit message...',
                       border: OutlineInputBorder(),
@@ -306,9 +311,11 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                     onPressed: _isCommitting ? null : _commit,
                     child: _isCommitting
                         ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            width: AppIconSize.large,
+                            height: AppIconSize.large,
+                            child: CircularProgressIndicator(
+                              strokeWidth: AppBorderWidth.medium,
+                            ),
                           )
                         : const Text('Commit'),
                   ),
@@ -324,6 +331,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                 children: [
                   // Staged files
                   if (status.staged.isNotEmpty) ...[
+                    /// Handles `_buildFileSection`.
                     _buildFileSection(
                       colorScheme,
                       BadgeStatus.success(text: 'STAGED CHANGES'),
@@ -367,12 +375,14 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                     title: 'Recent Commits',
                     isExpanded:
                         true, // Recent commits should be expanded by default
-                    headerPadding: const EdgeInsets.all(8.0),
-                    contentPadding: const EdgeInsets.only(bottom: 8.0),
+                    headerPadding: const EdgeInsets.all(AppSpacing.medium),
+                    contentPadding: const EdgeInsets.only(
+                      bottom: AppSpacing.medium,
+                    ),
 
                     child: gitCommits.when(
                       loading: () => const CircularProgressIndicator(),
-                      error: (error, stack) => Text('Error: $error'),
+                      error: (error, _) => Text('Error: $error'),
                       data: (commits) => commits.isEmpty
                           ? const Text('No commits yet')
                           : Column(
@@ -382,7 +392,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                                       dense: true,
                                       leading: const Icon(
                                         Icons.commit,
-                                        size: 16,
+                                        size: AppIconSize.medium,
                                       ),
                                       title: Text(
                                         commit.message,
@@ -390,7 +400,10 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       subtitle: Text(
-                                        commit.hash.substring(0, 7),
+                                        commit.hash.substring(
+                                          0,
+                                          AppMetric.gitHashShortLength,
+                                        ),
                                       ),
                                     ),
                                   )
@@ -407,8 +420,9 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     );
   }
 
+  /// Handles `_buildFileSection`.
   Widget _buildFileSection(
-    ColorScheme colorScheme,
+    ColorScheme _ /* colorScheme */,
     Widget titleWidget,
     List<String> files, {
     Function(List<String>)? onStage,
@@ -456,8 +470,12 @@ class _GitPanelState extends ConsumerState<GitPanel> {
         // Create display name with parent folder context if not a root file
         final displayItem = FileSystemItem(
           path: item.path,
+
+          /// Handles `_getContextualFileName`.
           name: _getContextualFileName(file),
           type: item.type,
+
+          /// Handles `_determineGitStatus`.
           gitStatus: _determineGitStatus(titleWidget, files),
         );
 
@@ -475,28 +493,28 @@ class _GitPanelState extends ConsumerState<GitPanel> {
               ),
             ),
             IconButton(
-              iconSize: 16,
+              iconSize: AppIconSize.medium,
               icon: const Icon(Icons.difference),
               onPressed: () => _viewDiff(file),
               tooltip: 'View Diff',
             ),
             if (onStage != null)
               IconButton(
-                iconSize: 16,
+                iconSize: AppIconSize.medium,
                 icon: const Icon(Icons.add),
                 onPressed: () => onStage([file]),
                 tooltip: 'Stage',
               ),
             if (onUnstage != null)
               IconButton(
-                iconSize: 16,
+                iconSize: AppIconSize.medium,
                 icon: const Icon(Icons.remove),
                 onPressed: () => onUnstage([file]),
                 tooltip: 'Unstage',
               ),
             if (canDiscard && onDiscard != null)
               IconButton(
-                iconSize: 16,
+                iconSize: AppIconSize.medium,
                 icon: const Icon(Icons.undo, color: Colors.red),
                 onPressed: () => onDiscard([file]),
                 tooltip: 'Discard Changes',
@@ -510,13 +528,17 @@ class _GitPanelState extends ConsumerState<GitPanel> {
       title: titleText,
       isExpanded: true, // Git file sections should be expanded by default
       rightWidget: rightWidget,
-      headerPadding: const EdgeInsets.all(8.0),
-      contentPadding: const EdgeInsets.only(bottom: 8.0),
+      headerPadding: const EdgeInsets.all(AppSpacing.medium),
+      contentPadding: const EdgeInsets.only(bottom: AppSpacing.medium),
       child: contentWidget,
     );
   }
 
-  GitFileStatus _determineGitStatus(Widget titleWidget, List<String> files) {
+  /// Handles `_determineGitStatus`.
+  GitFileStatus _determineGitStatus(
+    Widget titleWidget,
+    List<String> _ /* files */,
+  ) {
     // Extract status from BadgeStatus widget text
     if (titleWidget is BadgeStatus) {
       final text = titleWidget.text.toUpperCase();
@@ -532,6 +554,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     return GitFileStatus.untracked;
   }
 
+  /// Handles `_getContextualFileName`.
   String _getContextualFileName(String filePath) {
     // Split the path into parts
     final parts = path.split(filePath);
@@ -543,8 +566,11 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
     // For files deeper in the hierarchy, show the immediate parent directory + filename
     // e.g., "lib/utils/file_type_utils.dart" becomes "utils/file_type_utils.dart"
-    if (parts.length >= 2) {
-      return path.join(parts[parts.length - 2], parts[parts.length - 1]);
+    if (parts.length >= AppMetric.minDirPathDepth) {
+      return path.join(
+        parts[parts.length - AppMetric.minDirPathDepth],
+        parts[parts.length - 1],
+      );
     }
 
     // Fallback
@@ -560,15 +586,17 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
 // Git status provider
 final gitStatusProvider =
-    StateNotifierProvider<GitStatusNotifier, AsyncValue<GitStatus>>((ref) {
+    StateNotifierProvider<GitStatusNotifier, AsyncValue<GitStatus>>((_) {
       return GitStatusNotifier();
     });
 
+/// Represents `GitStatusNotifier`.
 class GitStatusNotifier extends StateNotifier<AsyncValue<GitStatus>> {
   GitStatusNotifier() : super(const AsyncValue.loading());
 
   final GitService _gitService = GitService();
 
+  /// Handles `GitStatusNotifier.loadStatus`.
   Future<void> loadStatus(String projectPath) async {
     state = const AsyncValue.loading();
     try {
@@ -578,26 +606,25 @@ class GitStatusNotifier extends StateNotifier<AsyncValue<GitStatus>> {
       state = AsyncValue.error(e, StackTrace.current);
     }
   }
-
-  Future<void> refreshStatus(String projectPath) async {
-    await loadStatus(projectPath);
-  }
 }
 
 // Git commits provider
 final gitCommitsProvider =
-    StateNotifierProvider<GitCommitsNotifier, AsyncValue<List<GitCommit>>>((
-      ref,
-    ) {
+    StateNotifierProvider<GitCommitsNotifier, AsyncValue<List<GitCommit>>>((_) {
       return GitCommitsNotifier();
     });
 
+/// Represents `GitCommitsNotifier`.
 class GitCommitsNotifier extends StateNotifier<AsyncValue<List<GitCommit>>> {
   GitCommitsNotifier() : super(const AsyncValue.data([]));
 
   final GitService _gitService = GitService();
 
-  Future<void> loadCommits(String projectPath, {int count = 10}) async {
+  /// Handles `GitCommitsNotifier.loadCommits`.
+  Future<void> loadCommits(
+    String projectPath, {
+    int count = AppMetric.gitCommitDefaultCount,
+  }) async {
     state = const AsyncValue.loading();
     try {
       final commits = await _gitService.getRecentCommits(

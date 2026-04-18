@@ -1,3 +1,4 @@
+import 'package:fide/constants.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -11,23 +12,26 @@ class BadgeStatus extends StatelessWidget {
     required this.text,
     required this.backgroundColor,
     this.textColor = Colors.white,
-    this.fontSize = 10,
+    this.fontSize = AppFontSize.badge,
     this.fontWeight = FontWeight.w500,
-    this.padding = const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-    this.borderRadius = 4,
+    this.padding = const EdgeInsets.symmetric(
+      horizontal: AppSpacing.small,
+      vertical: AppSpacing.micro,
+    ),
+    this.borderRadius = AppRadius.tiny,
     this.showIcon = false,
   });
 
   /// Creates a pre-configured success badge.
   factory BadgeStatus.success({
     required String text,
-    double fontSize = 10,
+    double fontSize = AppFontSize.badge,
     bool showIcon = false,
   }) {
     return BadgeStatus(
       text: text,
       backgroundColor: AppTheme.successColor,
-      textColor: AppTheme.successText.withAlpha(160),
+      textColor: AppTheme.successText.withAlpha(AppAlpha.badgeText),
       fontSize: fontSize,
       showIcon: showIcon,
     );
@@ -36,13 +40,13 @@ class BadgeStatus extends StatelessWidget {
   /// Creates a pre-configured warning badge.
   factory BadgeStatus.warning({
     required String text,
-    double fontSize = 10,
+    double fontSize = AppFontSize.badge,
     bool showIcon = false,
   }) {
     return BadgeStatus(
       text: text,
       backgroundColor: AppTheme.warningColor,
-      textColor: AppTheme.warningText.withAlpha(160),
+      textColor: AppTheme.warningText.withAlpha(AppAlpha.badgeText),
       fontSize: fontSize,
       showIcon: showIcon,
     );
@@ -51,13 +55,13 @@ class BadgeStatus extends StatelessWidget {
   /// Creates a pre-configured error badge.
   factory BadgeStatus.error({
     required String text,
-    double fontSize = 10,
+    double fontSize = AppFontSize.badge,
     bool showIcon = false,
   }) {
     return BadgeStatus(
       text: text,
       backgroundColor: AppTheme.errorColor,
-      textColor: AppTheme.errorText.withAlpha(160),
+      textColor: AppTheme.errorText.withAlpha(AppAlpha.badgeText),
       fontSize: fontSize,
       showIcon: showIcon,
     );
@@ -66,13 +70,13 @@ class BadgeStatus extends StatelessWidget {
   /// Creates a pre-configured info badge.
   factory BadgeStatus.info({
     required String text,
-    double fontSize = 10,
+    double fontSize = AppFontSize.badge,
     bool showIcon = false,
   }) {
     return BadgeStatus(
       text: text,
       backgroundColor: AppTheme.infoColor,
-      textColor: AppTheme.infoText.withAlpha(160),
+      textColor: AppTheme.infoText.withAlpha(AppAlpha.badgeText),
       fontSize: fontSize,
       showIcon: showIcon,
     );
@@ -80,41 +84,53 @@ class BadgeStatus extends StatelessWidget {
 
   factory BadgeStatus.neutral({
     required String text,
-    double fontSize = 10,
+    double fontSize = AppFontSize.badge,
     bool showIcon = false,
   }) {
     return BadgeStatus(
       text: text,
       backgroundColor: AppTheme.neutralColor,
-      textColor: AppTheme.neutralText.withAlpha(160),
+      textColor: AppTheme.neutralText.withAlpha(AppAlpha.badgeText),
       fontSize: fontSize,
       showIcon: showIcon,
     );
   }
 
   /// Creates a pre-configured addition badge (for Git diff stats).
-  factory BadgeStatus.addition({required int count, double fontSize = 12}) {
+  factory BadgeStatus.addition({
+    required int count,
+    double fontSize = AppFontSize.caption,
+  }) {
     final text = '+$count';
     return BadgeStatus(
       text: text,
       backgroundColor: AppTheme.successColor,
-      textColor: AppTheme.successText.withAlpha(160),
+      textColor: AppTheme.successText.withAlpha(AppAlpha.badgeText),
       fontSize: fontSize,
       fontWeight: FontWeight.w600,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.tiny,
+        vertical: AppSize.borderThin,
+      ),
     );
   }
 
   /// Creates a pre-configured deletion badge (for Git diff stats).
-  factory BadgeStatus.deletion({required int count, double fontSize = 12}) {
+  factory BadgeStatus.deletion({
+    required int count,
+    double fontSize = AppFontSize.caption,
+  }) {
     final text = '-$count';
     return BadgeStatus(
       text: text,
       backgroundColor: AppTheme.errorColor,
-      textColor: AppTheme.errorText.withAlpha(160),
+      textColor: AppTheme.errorText.withAlpha(AppAlpha.badgeText),
       fontSize: fontSize,
       fontWeight: FontWeight.w600,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.tiny,
+        vertical: AppSize.borderThin,
+      ),
     );
   }
 
@@ -147,16 +163,23 @@ class BadgeStatus extends StatelessWidget {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: backgroundColor.withAlpha(150),
+        color: backgroundColor.withAlpha(AppAlpha.badgeFill),
         borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
-        border: Border.all(color: _borderColor, width: 1.5),
+        border: Border.all(
+          color: _borderColor,
+          width: AppBorderWidth.emphasized,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (_icon != null) ...[
-            Icon(_icon, size: fontSize * 0.9, color: textColor),
-            const SizedBox(width: 3),
+            Icon(
+              _icon,
+              size: fontSize * AppOpacity.prominent,
+              color: textColor,
+            ),
+            const SizedBox(width: AppSpacing.narrow),
           ],
           Text(
             text,
@@ -176,9 +199,9 @@ class BadgeStatus extends StatelessWidget {
   /// Creates a solid border color from the background color by removing opacity
   Color get _borderColor {
     return Color.fromRGBO(
-      (backgroundColor.r * 255).round(),
-      (backgroundColor.g * 255).round(),
-      (backgroundColor.b * 255).round(),
+      (backgroundColor.r * AppMetric.colorChannelMax).round(),
+      (backgroundColor.g * AppMetric.colorChannelMax).round(),
+      (backgroundColor.b * AppMetric.colorChannelMax).round(),
       1.0, // Full opacity
     );
   }

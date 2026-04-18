@@ -1,11 +1,13 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:fide/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/full_path_widget.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// Represents `LoadingScreen`.
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key, required this.loadingProjectName});
 
@@ -19,16 +21,16 @@ class _LoadingScreenState extends State<LoadingScreen> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(32),
+      padding: const EdgeInsets.all(AppSize.compactActionButton),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
             Theme.of(context).colorScheme.surface,
-            Theme.of(
-              context,
-            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            Theme.of(context).colorScheme.surfaceContainerHighest.withValues(
+              alpha: AppOpacity.divider,
+            ),
           ],
         ),
       ),
@@ -42,11 +44,11 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
           Center(
             child: SizedBox(
-              width: 600,
+              width: AppSize.panelFallbackHeight,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.xLarge),
                 child: Consumer(
-                  builder: (context, ref, child) {
+                  builder: (context, ref, _) {
                     final loadingActions = ref.watch(loadingActionsProvider);
                     final hasFailed = loadingActions.any(
                       (action) => action.status == LoadingStatus.failed,
@@ -55,13 +57,13 @@ class _LoadingScreenState extends State<LoadingScreen> {
                     return Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: 16,
+                      spacing: AppSpacing.xLarge,
                       children: [
                         // Project Path
 
                         // Loading Progress (deterministic based on step counters - 6 total steps)
                         Consumer(
-                          builder: (context, ref, child) {
+                          builder: (context, ref, _) {
                             final loadingActions = ref.watch(
                               loadingActionsProvider,
                             );
@@ -91,7 +93,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
                         // Loading Actions Log
                         if (loadingActions.isNotEmpty)
                           Container(
-                            constraints: const BoxConstraints(maxHeight: 300),
+                            constraints: const BoxConstraints(
+                              maxHeight: AppSize.statusLogMaxHeight,
+                            ),
                             child: ListView.builder(
                               shrinkWrap: true,
                               itemCount: loadingActions.length,
@@ -100,10 +104,10 @@ class _LoadingScreenState extends State<LoadingScreen> {
                                     loadingActions[index];
                                 return Padding(
                                   padding: const EdgeInsets.symmetric(
-                                    vertical: 4,
+                                    vertical: AppSpacing.tiny,
                                   ),
                                   child: Row(
-                                    spacing: 8,
+                                    spacing: AppSpacing.medium,
                                     children: [
                                       // Status icon
                                       _buildStatusIcon(action.status, context),
@@ -127,7 +131,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
                         // Error message and retry button if failed
                         if (hasFailed)
                           Column(
-                            spacing: 16,
+                            spacing: AppSpacing.xLarge,
                             children: [
                               Text(
                                 'Project loading failed. Please check the errors above.',
@@ -164,14 +168,15 @@ class _LoadingScreenState extends State<LoadingScreen> {
     );
   }
 
+  /// Returns a status icon widget (spinner, check, or error) for the given [LoadingStatus].
   Widget _buildStatusIcon(LoadingStatus status, BuildContext context) {
     switch (status) {
       case LoadingStatus.pending:
         return SizedBox(
-          width: 24,
-          height: 25,
+          width: AppIconSize.xLarge,
+          height: AppSize.statusIconTall,
           child: CircularProgressIndicator(
-            strokeWidth: 1,
+            strokeWidth: AppSize.borderThin,
             valueColor: AlwaysStoppedAnimation<Color>(
               Theme.of(context).colorScheme.primary,
             ),

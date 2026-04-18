@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:fide/constants.dart';
 import 'package:flutter/material.dart';
 
 /// Widget to display a message when a file is too large to load in the editor
@@ -21,10 +22,10 @@ class LargeFileMessage extends StatelessWidget {
         children: [
           Icon(
             Icons.warning,
-            size: 64,
+            size: AppSize.largePreviewIcon,
             color: Theme.of(context).colorScheme.error,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.xLarge),
           Text(
             'File "$fileName" is too large to load in the editor',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -32,22 +33,22 @@ class LargeFileMessage extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.medium),
           Text(
             'File size: ${fileSizeMB.toStringAsFixed(1)} MB',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.7),
+              color: Theme.of(context).colorScheme.onSurface.withValues(
+                alpha: AppOpacity.secondaryText,
+              ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.xLarge),
           Text(
             'Consider using an external editor for large files',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(
                 context,
-              ).colorScheme.onSurface.withValues(alpha: 0.6),
+              ).colorScheme.onSurface.withValues(alpha: AppOpacity.muted),
             ),
             textAlign: TextAlign.center,
           ),

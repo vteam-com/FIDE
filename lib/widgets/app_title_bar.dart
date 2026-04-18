@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/utils/message_box.dart';
 import 'package:file_picker/file_picker.dart';
@@ -14,6 +15,7 @@ import 'package:window_manager/window_manager.dart';
 
 // Widgets
 
+/// Represents `AppTitleBar`.
 class AppTitleBar extends ConsumerStatefulWidget {
   final ThemeMode themeMode;
   final Function(ThemeMode)? onThemeChanged;
@@ -53,6 +55,7 @@ class AppTitleBar extends ConsumerStatefulWidget {
 class _TitleBarState extends ConsumerState<AppTitleBar> {
   final Logger _logger = Logger('_TitleBarState');
 
+  /// Toggles the window between maximised and restored states.
   Future<void> _toggleMaximize() async {
     try {
       final isMaximized = await windowManager.isMaximized();
@@ -72,18 +75,18 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     return GestureDetector(
       onDoubleTap: _toggleMaximize,
       child: Container(
-        height: 40,
+        height: AppSize.titleBarHeight,
         color: Theme.of(context).colorScheme.surfaceContainerLow,
         child: Row(
           children: [
             // Platform-specific spacing for window controls
             if (Platform.isMacOS)
               const SizedBox(
-                width: 80,
+                width: AppSize.macWindowControlsSpacing,
               ), // Space for macOS traffic lights (left side)
             // Left section: Project dropdown or app title
             Consumer(
-              builder: (context, ref, child) {
+              builder: (_, ref, _) {
                 final currentProjectPath = ref.watch(
                   currentProjectPathProvider,
                 );
@@ -116,13 +119,15 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
             if (!Platform.isMacOS) const Spacer(),
 
             // Space for Windows/Linux window controls (right side)
-            if (!Platform.isMacOS) const SizedBox(width: 120),
+            if (!Platform.isMacOS)
+              const SizedBox(width: AppSize.desktopWindowControlsSpacing),
           ],
         ),
       ),
     );
   }
 
+  /// Builds the project name dropdown button that shows the active project and MRU list.
   Widget _buildProjectDropdown(
     String currentProjectPath,
     List<String> mruFolders,
@@ -131,8 +136,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     final onSurface = Theme.of(context).colorScheme.onSurface;
 
     return GestureDetector(
-      onTap: () =>
-          _showProjectMenu(context, currentProjectPath, mruFolders, ref),
+      onTap: () => _showProjectMenu(context, mruFolders, ref),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -142,34 +146,36 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
               style: TextStyle(
-                color: onSurface.withValues(alpha: 0.9),
+                color: onSurface.withValues(alpha: AppOpacity.prominent),
                 fontWeight: FontWeight.w500,
-                fontSize: 14,
+                fontSize: AppFontSize.label,
               ),
             ),
           ),
           Icon(
             Icons.arrow_drop_down,
-            color: onSurface.withValues(alpha: 0.7),
-            size: 16,
+            color: onSurface.withValues(alpha: AppOpacity.secondaryText),
+            size: AppIconSize.medium,
           ),
         ],
       ),
     );
   }
 
+  /// Builds the centred app title text widget.
   Widget _buildAppTitle() {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     return Text(
       'The Flutter IDE',
       style: TextStyle(
-        color: onSurface.withValues(alpha: 0.9),
+        color: onSurface.withValues(alpha: AppOpacity.prominent),
         fontWeight: FontWeight.w500,
-        fontSize: 14,
+        fontSize: AppFontSize.label,
       ),
     );
   }
 
+  /// Builds the row of icon buttons for toggling left, center, and right panels.
   Widget _buildPanelToggleButtons() {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -181,8 +187,8 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
           key: const Key('togglePanelLeft'),
           icon: SvgPicture.asset(
             'assets/toggle_panel_left.svg',
-            width: 18,
-            height: 18,
+            width: AppIconSize.mediumLarge,
+            height: AppIconSize.mediumLarge,
             colorFilter: ColorFilter.mode(
               widget.leftPanelVisible
                   ? colorScheme.primary
@@ -198,8 +204,8 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
           key: const Key('togglePanelBottom'),
           icon: SvgPicture.asset(
             'assets/toggle_panel_bottom.svg',
-            width: 18,
-            height: 18,
+            width: AppIconSize.mediumLarge,
+            height: AppIconSize.mediumLarge,
             colorFilter: ColorFilter.mode(
               widget.bottomPanelVisible
                   ? colorScheme.primary
@@ -215,8 +221,8 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
           key: const Key('togglePanelRight'),
           icon: SvgPicture.asset(
             'assets/toggle_panel_right.svg',
-            width: 18,
-            height: 18,
+            width: AppIconSize.mediumLarge,
+            height: AppIconSize.mediumLarge,
             colorFilter: ColorFilter.mode(
               widget.rightPanelVisible
                   ? colorScheme.primary
@@ -231,20 +237,22 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     );
   }
 
+  /// Builds the settings gear icon button in the title bar.
   Widget _buildSettingsButton() {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     return IconButton(
-      icon: const Icon(Icons.settings, size: 18),
+      icon: const Icon(Icons.settings, size: AppIconSize.mediumLarge),
       onPressed: () {
         _showSettingsDialog();
       },
       tooltip: 'Settings',
       style: IconButton.styleFrom(
-        foregroundColor: onSurface.withValues(alpha: 0.9),
+        foregroundColor: onSurface.withValues(alpha: AppOpacity.prominent),
       ),
     );
   }
 
+  /// Handles a selection from the project dropdown — opens a folder, closes the project, or switches to an MRU entry.
   Future<void> _handleDropdownSelection(String value, WidgetRef ref) async {
     final projectManager = ref.read(projectManagerProvider);
 
@@ -282,7 +290,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     } else if (value == 'close_project') {
       widget.onCloseProject?.call();
     } else if (value.startsWith('remove_')) {
-      final pathToRemove = value.substring(7);
+      final pathToRemove = value.substring(AppMetric.removePrefixLength);
       final updatedMru = List<String>.from(ref.read(mruFoldersProvider))
         ..remove(pathToRemove);
       ref.read(mruFoldersProvider.notifier).state = updatedMru;
@@ -291,7 +299,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
       try {
         final prefs = await ref.read(sharedPreferencesProvider.future);
         await prefs.setStringList('mru_folders', updatedMru);
-      } catch (e) {
+      } catch (_) {
         // Silently handle SharedPreferences errors
       }
     } else {
@@ -308,6 +316,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     }
   }
 
+  /// Builds the popup menu items for the project dropdown, including MRU entries and actions.
   List<PopupMenuEntry<String>> _buildDropdownMenuItems(
     List<String> mruFolders,
   ) {
@@ -327,9 +336,9 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
                 color: hasAccess
                     ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).colorScheme.error,
-                size: 16,
+                size: AppIconSize.medium,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.medium),
               Expanded(
                 child: Text(
                   dirName,
@@ -343,11 +352,11 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
                 ),
               ),
               if (!hasAccess) ...[
-                const SizedBox(width: 4),
+                const SizedBox(width: AppSpacing.tiny),
                 Icon(
                   Icons.lock,
                   color: Theme.of(context).colorScheme.error,
-                  size: 14,
+                  size: AppIconSize.small,
                 ),
               ],
             ],
@@ -368,10 +377,10 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
           children: [
             Icon(
               Icons.create_new_folder_outlined,
-              size: 16,
+              size: AppIconSize.medium,
               color: Theme.of(context).colorScheme.primary,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.medium),
             Text(
               'Open Existing Project...',
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
@@ -388,10 +397,10 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
           children: [
             Icon(
               Icons.add_box_outlined,
-              size: 16,
+              size: AppIconSize.medium,
               color: Theme.of(context).colorScheme.primary,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.medium),
             Text(
               'Create new Project...',
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
@@ -408,10 +417,10 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
           children: [
             Icon(
               Icons.folder_off_outlined,
-              size: 16,
+              size: AppIconSize.medium,
               color: Theme.of(context).colorScheme.primary,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.medium),
             Text(
               'Close Project',
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
@@ -424,9 +433,9 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     return items;
   }
 
+  /// Shows a positioned popup menu anchored below the project name button.
   void _showProjectMenu(
     BuildContext context,
-    String currentProjectPath,
     List<String> mruFolders,
     WidgetRef ref,
   ) {
@@ -449,6 +458,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     });
   }
 
+  /// Opens the settings dialog for configuring app-level preferences.
   void _showSettingsDialog() {
     showDialog(
       context: context,
@@ -459,7 +469,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text('Theme'),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.medium),
               ListTile(
                 leading: const Icon(Icons.brightness_auto),
                 title: const Text('System'),

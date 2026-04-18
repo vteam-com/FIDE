@@ -1,3 +1,4 @@
+import 'package:fide/constants.dart';
 import 'package:fide/widgets/container_counter.dart';
 import 'package:flutter/material.dart';
 
@@ -10,17 +11,14 @@ class SectionPanel extends StatefulWidget {
     this.onExpansionToggle,
     this.rightWidget,
     this.child,
-    this.contentPadding = const EdgeInsets.only(left: 16.0, bottom: 8.0),
-    this.headerPadding = const EdgeInsets.symmetric(
-      horizontal: 8.0,
-      vertical: 4.0,
-    ),
+    this.contentPadding = AppPadding.sectionContent,
+    this.headerPadding = AppPadding.sectionHeader,
     this.headerBackgroundColor,
     this.titleStyle,
     this.iconColor,
     this.iconExpanded = Icons.expand_more,
     this.iconCollapsed = Icons.chevron_right,
-    this.iconSize = 16,
+    this.iconSize = AppIconSize.medium,
     this.count,
   });
 
@@ -82,7 +80,7 @@ class _SectionPanelState extends State<SectionPanel> {
     final titleStyle =
         widget.titleStyle ??
         TextStyle(
-          fontSize: 12,
+          fontSize: AppFontSize.caption,
           fontWeight: FontWeight.bold,
           color: theme.colorScheme.primary,
           letterSpacing: -1.0,
@@ -99,7 +97,7 @@ class _SectionPanelState extends State<SectionPanel> {
             padding: widget.headerPadding,
             color: headerBackgroundColor,
             child: Row(
-              spacing: 4,
+              spacing: AppSpacing.tiny,
               children: [
                 Icon(
                   _isExpanded ? widget.iconExpanded : widget.iconCollapsed,

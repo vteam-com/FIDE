@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
@@ -8,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
 
+/// Represents `SearchResult`.
 class SearchResult {
   final String filePath;
   final int lineNumber;
@@ -24,6 +26,7 @@ class SearchResult {
   });
 }
 
+/// Represents `SearchResultNode`.
 class SearchResultNode extends ProjectNode {
   final List<SearchResult> matches;
 
@@ -63,6 +66,7 @@ class SearchResultNode extends ProjectNode {
   }
 }
 
+/// Represents `SearchPanel`.
 class SearchPanel extends ConsumerStatefulWidget {
   final String projectPath;
   final Function(FileSystemItem)? onFileSelected;
@@ -93,6 +97,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     super.dispose();
   }
 
+  /// Handles `_performSearch`.
   Future<void> _performSearch() async {
     final query = _searchController.text.trim();
     if (query.isEmpty) {
@@ -109,18 +114,22 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
 
     try {
       final libPath = path.join(widget.projectPath, 'lib');
+
+      /// Handles `_searchInDirectory`.
       final results = await _searchInDirectory(
         libPath,
         query,
         _matchCase,
         _wholeWord,
       );
+
+      /// Handles `_buildResultsTree`.
       final tree = _buildResultsTree(results, libPath);
       setState(() {
         _resultsTree = tree;
         _isSearching = false;
       });
-    } catch (e) {
+    } catch (_) {
       setState(() {
         _isSearching = false;
       });
@@ -128,6 +137,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     }
   }
 
+  /// Handles `_searchInDirectory`.
   Future<List<SearchResult>> _searchInDirectory(
     String dirPath,
     String query,
@@ -146,6 +156,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
       followLinks: false,
     )) {
       if (entity is File) {
+        /// Handles `_searchInFile`.
         final fileResults = await _searchInFile(
           entity.path,
           query,
@@ -159,6 +170,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     return results;
   }
 
+  /// Handles `_searchInFile`.
   Future<List<SearchResult>> _searchInFile(
     String filePath,
     String query,
@@ -208,13 +220,14 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
           startIndex += query.length;
         }
       }
-    } catch (e) {
+    } catch (_) {
       // Skip files that can't be read
     }
 
     return results;
   }
 
+  /// Handles `_buildResultsTree`.
   SearchResultNode? _buildResultsTree(
     List<SearchResult> results,
     String libPath,
@@ -270,11 +283,13 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     }
 
     // Sort children alphabetically (directories first, then files)
+    /// Handles `_sortTreeNode`.
     _sortTreeNode(libNode);
 
     return libNode;
   }
 
+  /// Handles `_sortTreeNode`.
   void _sortTreeNode(SearchResultNode node) {
     node.children.sort((a, b) {
       // Directories before files
@@ -296,7 +311,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(AppSpacing.medium),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -321,7 +336,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
             ),
             onSubmitted: (_) => _performSearch(),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.medium),
 
           // Options
           SearchToggleIcons(
@@ -367,18 +382,22 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     );
   }
 
+  /// Handles `_buildSearchResultNode`.
   Widget _buildSearchResultNode(ProjectNode node) {
     if (node is! SearchResultNode) {
       return const SizedBox();
     }
 
     if (node.isDirectory) {
+      /// Handles `_buildDirectoryResultNode`.
       return _buildDirectoryResultNode(node);
     } else {
+      /// Handles `_buildFileResultNode`.
       return _buildFileResultNode(node);
     }
   }
 
+  /// Handles `_buildDirectoryResultNode`.
   Widget _buildDirectoryResultNode(SearchResultNode node) {
     final isExpanded = _expandedState[node.path] ?? false;
 
@@ -396,7 +415,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
         ),
         if (isExpanded)
           Padding(
-            padding: const EdgeInsets.only(left: 16.0),
+            padding: const EdgeInsets.only(left: AppSpacing.xLarge),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: node.children
@@ -408,6 +427,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     );
   }
 
+  /// Handles `_buildFileResultNode`.
   Widget _buildFileResultNode(SearchResultNode node) {
     final relativePath = path.relative(node.path, from: widget.projectPath);
 
@@ -422,20 +442,23 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
             widget.onFileSelected?.call(fileSystemItem);
           },
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.medium,
+              vertical: AppSpacing.tiny,
+            ),
             child: Row(
               children: [
                 Icon(
                   Icons.insert_drive_file,
                   color: Theme.of(context).colorScheme.primary,
-                  size: 16,
+                  size: AppIconSize.medium,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSpacing.small),
                 Expanded(
                   child: Text(
                     relativePath,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: AppFontSize.caption,
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w500,
                     ),
@@ -447,7 +470,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
         ),
         // Match results
         Padding(
-          padding: const EdgeInsets.only(left: 24.0),
+          padding: const EdgeInsets.only(left: AppIconSize.xLarge),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: node.matches
@@ -459,19 +482,19 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     );
   }
 
+  /// Handles `_buildMatchResult`.
   Widget _buildMatchResult(SearchResult result) {
     return GestureDetector(
       onTap: () {
         widget.onJumpToLine?.call(result.filePath, result.lineNumber);
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 4),
-        padding: const EdgeInsets.all(8),
+        margin: const EdgeInsets.only(bottom: AppSpacing.tiny),
+        padding: const EdgeInsets.all(AppSpacing.medium),
         decoration: BoxDecoration(
-          color: Theme.of(
-            context,
-          ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(4),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest
+              .withValues(alpha: AppOpacity.divider),
+          borderRadius: BorderRadius.circular(AppRadius.tiny),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -479,14 +502,15 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
             Text(
               'Line ${result.lineNumber}',
               style: TextStyle(
-                fontSize: 10,
+                fontSize: AppFontSize.badge,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: AppSpacing.micro),
             RichText(
               text: TextSpan(
+                /// Handles `_buildHighlightedText`.
                 children: _buildHighlightedText(
                   result.lineContent,
                   result.matchStart,
@@ -494,7 +518,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
                 ),
                 style: TextStyle(
                   fontFamily: 'monospace',
-                  fontSize: 12,
+                  fontSize: AppFontSize.caption,
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
@@ -505,6 +529,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     );
   }
 
+  /// Handles `_buildHighlightedText`.
   List<TextSpan> _buildHighlightedText(
     String text,
     int matchStart,

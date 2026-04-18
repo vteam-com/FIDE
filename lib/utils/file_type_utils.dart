@@ -1,9 +1,11 @@
 // Utility functions for file type detection
-
+// ignore: fcheck_dead_code
+import 'package:fide/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+/// Represents `FileTypeUtils`.
 class FileTypeUtils {
   // Well-known text file extensions that should open in text editor
   static const List<String> supportedTextExtensions = [
@@ -95,9 +97,10 @@ class FileTypeUtils {
 
 /// Shared utility for getting file icons
 class FileIconUtils {
+  /// Returns an icon widget for the provided file item and extension.
   static Widget getFileIcon(
     FileSystemItem item, {
-    double size = 16,
+    double size = AppIconSize.medium,
     final Color? color,
   }) {
     switch (item.fileExtension.toLowerCase()) {

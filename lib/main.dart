@@ -38,6 +38,7 @@ void main() async {
   runApp(UncontrolledProviderScope(container: container, child: const FIDE()));
 }
 
+/// Root widget of the FIDE application.
 class FIDE extends ConsumerStatefulWidget {
   const FIDE({super.key});
 
@@ -46,21 +47,29 @@ class FIDE extends ConsumerStatefulWidget {
 }
 
 // Global functions for menu actions - now delegate to ProjectOperations service
+/// Handles `triggerSave`.
 void triggerSave() => ProjectOperations.triggerSave();
 
+/// Handles `pickDirectoryAndLoadProject`.
 Future<void> pickDirectoryAndLoadProject(BuildContext context, WidgetRef ref) =>
     ProjectOperations.pickDirectoryAndLoadProject(context, ref);
 
+/// Handles `triggerOpenFolder`.
 void triggerOpenFolder() => ProjectOperations.triggerOpenFolder();
 
+/// Handles `triggerReopenLastFile`.
 void triggerReopenLastFile() => ProjectOperations.triggerReopenLastFile();
 
+/// Handles `triggerCloseDocument`.
 void triggerCloseDocument() => ProjectOperations.triggerCloseDocument();
 
+/// Handles `triggerSearch`.
 void triggerSearch() => ProjectOperations.triggerSearch();
 
+/// Handles `triggerSearchNext`.
 void triggerSearchNext() => ProjectOperations.triggerSearchNext();
 
+/// Handles `triggerSearchPrevious`.
 void triggerSearchPrevious() => ProjectOperations.triggerSearchPrevious();
 
 void Function(WidgetRef ref) triggerTogglePanelLeft = (ref) {
@@ -110,6 +119,7 @@ class _FIDEState extends ConsumerState<FIDE> {
   }
 
   // Project loading function accessible by TitleBar
+  /// Handles `_FIDEState.tryLoadProject`.
   Future<bool> tryLoadProject(String directoryPathToProject) async {
     try {
       // Set loading state
@@ -153,6 +163,7 @@ class _FIDEState extends ConsumerState<FIDE> {
     _initializeApp();
   }
 
+  /// Initializes app services, restores settings, and attempts MRU auto-load.
   Future<void> _initializeApp() async {
     _prefs = await SharedPreferences.getInstance();
 
@@ -173,6 +184,7 @@ class _FIDEState extends ConsumerState<FIDE> {
     _tryAutoLoadFirstMruProject();
   }
 
+  /// Schedules auto-loading of the first MRU project after startup.
   Future<void> _tryAutoLoadFirstMruProject() async {
     try {
       // Get current MRU folders from provider - they were loaded by AppController.initializeAppServices()
@@ -186,11 +198,12 @@ class _FIDEState extends ConsumerState<FIDE> {
           }
         }
       });
-    } catch (e) {
+    } catch (_) {
       // Silently handle errors during initialization
     }
   }
 
+  /// Loads the first MRU project and updates loading and view state.
   Future<void> _tryLoadFirstMruProject(
     ProviderContainer container,
     String projectPath,
@@ -236,6 +249,7 @@ class _FIDEState extends ConsumerState<FIDE> {
     }
   }
 
+  /// Parses a persisted theme mode string into a [ThemeMode].
   ThemeMode _parseThemeMode(String themeString) {
     switch (themeString) {
       case 'light':
@@ -265,6 +279,7 @@ class _FIDEState extends ConsumerState<FIDE> {
     });
   }
 
+  /// Closes the active project and returns the app to the welcome screen.
   void _closeCurrentProject() {
     if (_currentViewState == AppViewState.mainLayout) {
       // Clear project state
@@ -299,7 +314,7 @@ class _FIDEState extends ConsumerState<FIDE> {
           children: [
             // Custom title bar widget - conditional based on screen
             Consumer(
-              builder: (context, ref, child) {
+              builder: (_, ref, _) {
                 // Show TitleBar for all cases - it handles the logic internally
                 return AppTitleBar(
                   themeMode: _themeMode,
@@ -353,7 +368,7 @@ class _FIDEState extends ConsumerState<FIDE> {
                   currentThemeMode: _themeMode,
                 ).buildMenus(),
                 child: Consumer(
-                  builder: (context, ref, child) {
+                  builder: (context, ref, _) {
                     final mruFolders = ref.watch(mruFoldersProvider);
 
                     // Project loading functions with access to ref
@@ -401,7 +416,7 @@ class _FIDEState extends ConsumerState<FIDE> {
                                 'mru_folders',
                                 updatedMru,
                               );
-                            } catch (e) {
+                            } catch (_) {
                               // Silently handle SharedPreferences errors
                             }
                           },
@@ -429,6 +444,7 @@ class _FIDEState extends ConsumerState<FIDE> {
     );
   }
 
+  /// Validates goto-line input and triggers editor navigation.
   void _handleGotoLine(String value, BuildContext context) {
     if (value.isEmpty) return;
 
@@ -443,6 +459,7 @@ class _FIDEState extends ConsumerState<FIDE> {
     }
   }
 
+  /// Opens the goto-line dialog and focuses its numeric input field.
   void _showGotoLineDialog(BuildContext context) {
     final TextEditingController lineController = TextEditingController();
     final FocusNode focusNode = FocusNode();

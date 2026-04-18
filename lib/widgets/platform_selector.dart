@@ -1,8 +1,10 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:fide/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+/// Represents `PlatformSelector`.
 class PlatformSelector extends StatefulWidget {
   const PlatformSelector({
     super.key,
@@ -68,9 +70,11 @@ class _PlatformSelectorState extends State<PlatformSelector>
     ];
 
     return LayoutBuilder(
-      builder: (context, constraints) {
+      builder: (_, constraints) {
         final showLabels =
-            constraints.maxWidth > 300; // Show labels if wider than 240px
+            constraints.maxWidth >
+            AppSize
+                .platformSelectorLabelBreakpoint; // Show labels if wider than 240px
 
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -79,22 +83,28 @@ class _PlatformSelectorState extends State<PlatformSelector>
             isScrollable: true,
             tabAlignment: TabAlignment.start,
             labelColor: colorScheme.primary,
-            unselectedLabelColor: colorScheme.onSurface.withValues(alpha: 0.6),
+            unselectedLabelColor: colorScheme.onSurface.withValues(
+              alpha: AppOpacity.muted,
+            ),
             indicatorColor: colorScheme.primary,
             indicatorSize: TabBarIndicatorSize.tab,
             dividerColor: Colors.transparent,
             labelStyle: const TextStyle(
-              fontSize: 12,
+              fontSize: AppFontSize.caption,
               fontWeight: FontWeight.w600,
             ),
-            unselectedLabelStyle: const TextStyle(fontSize: 12),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: AppFontSize.caption,
+            ),
             tabs: platforms.map((p) {
               final isSupported = widget.supportedPlatforms.contains(p['id']);
               final isSelected = widget.selectedPlatform == p['id'];
               final needsTooltip = !showLabels;
 
               final tab = Tab(
-                height: showLabels ? 48 : 40,
+                height: showLabels
+                    ? AppIconSize.emptyState
+                    : AppSize.titleBarHeight,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -103,24 +113,32 @@ class _PlatformSelectorState extends State<PlatformSelector>
                         isSelected
                             ? colorScheme.primary
                             : isSupported
-                            ? colorScheme.onSurface.withValues(alpha: 0.8)
-                            : colorScheme.onSurface.withValues(alpha: 0.4),
+                            ? colorScheme.onSurface.withValues(
+                                alpha: AppOpacity.emphasis,
+                              )
+                            : colorScheme.onSurface.withValues(
+                                alpha: AppOpacity.faint,
+                              ),
                         BlendMode.srcIn,
                       ),
                       child: SvgPicture.asset(
                         p['asset'] as String,
-                        width: showLabels ? 20 : 18,
-                        height: showLabels ? 20 : 18,
+                        width: showLabels
+                            ? AppIconSize.large
+                            : AppIconSize.mediumLarge,
+                        height: showLabels
+                            ? AppIconSize.large
+                            : AppIconSize.mediumLarge,
                       ),
                     ),
                     if (showLabels) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.tiny),
                       Text(
                         (p['name'] as String)
                             .replaceAll('macOS', 'macOS')
                             .replaceAll('iOS', 'iOS'),
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: AppFontSize.badge,
                           fontWeight: isSelected
                               ? FontWeight.w700
                               : FontWeight.w500,
@@ -150,6 +168,7 @@ class _PlatformSelectorState extends State<PlatformSelector>
     );
   }
 
+  /// Creates and configures the [TabController] based on the ordered list of supported platforms.
   void _setupTabController() {
     final platformOrder = [
       'android',
@@ -176,6 +195,7 @@ class _PlatformSelectorState extends State<PlatformSelector>
     });
   }
 
+  /// Recreates the [TabController] when the set of supported platforms changes.
   void _updateTabController() {
     final platformOrder = [
       'android',

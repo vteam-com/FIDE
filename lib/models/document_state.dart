@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Represents an open document in the editor, including its path, content, cursor state, and dirty flag.
 class DocumentState {
   final String filePath;
   String content;
@@ -16,6 +17,7 @@ class DocumentState {
   });
 
   // Create a copy with updated fields
+  /// Handles `DocumentState.copyWith`.
   DocumentState copyWith({
     String? filePath,
     String? content,
@@ -33,12 +35,8 @@ class DocumentState {
   }
 
   // Get the file name from path
+  /// Returns `fileName`.
   String get fileName {
     return filePath.split('/').last;
-  }
-
-  // Check if this document represents the given file path
-  bool matchesFile(String path) {
-    return filePath == path;
   }
 }

@@ -1,5 +1,7 @@
+import 'package:fide/constants.dart';
 import 'package:flutter/material.dart';
 
+/// Represents `CreateProjectStep2`.
 class CreateProjectStep2 extends StatelessWidget {
   const CreateProjectStep2({
     super.key,
@@ -51,14 +53,14 @@ class CreateProjectStep2 extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 24,
+      spacing: AppIconSize.xLarge,
       children: [
         // Step indicator
         Row(
           children: [
             Container(
-              width: 24,
-              height: 24,
+              width: AppIconSize.xLarge,
+              height: AppIconSize.xLarge,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Theme.of(context).colorScheme.primary,
@@ -73,30 +75,30 @@ class CreateProjectStep2 extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.medium),
             const Text('Localization Settings'),
-            const SizedBox(width: 16),
+            const SizedBox(width: AppSpacing.xLarge),
             Expanded(
               child: Container(
-                height: 2,
+                height: AppBorderWidth.medium,
                 color: Theme.of(context).colorScheme.outlineVariant,
               ),
             ),
           ],
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.xLarge),
 
         // Project summary
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.xLarge),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppRadius.medium),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: 8,
+            spacing: AppSpacing.medium,
             children: [
               Text(
                 'Project: $projectName',
@@ -110,7 +112,7 @@ class CreateProjectStep2 extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.xLarge),
 
         Text(
           'Do you want to localize your app?',
@@ -137,7 +139,7 @@ class CreateProjectStep2 extends StatelessWidget {
         ),
 
         if (wantsLocalization) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.xLarge),
 
           Text(
             'Select languages to support:',
@@ -158,7 +160,7 @@ class CreateProjectStep2 extends StatelessWidget {
                 .toList(),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.xLarge),
 
           Text(
             'Select default language:',
@@ -181,10 +183,10 @@ class CreateProjectStep2 extends StatelessWidget {
           ),
         ] else ...[
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.xLarge),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppRadius.medium),
             ),
             child: Text(
               'Localization can be added later in your project settings.',

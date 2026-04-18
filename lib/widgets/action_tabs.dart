@@ -1,10 +1,12 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:fide/constants.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 
 enum BuildProcessStatus { idle, running, success, error }
 
+/// Represents `ActionTabsWithExecute`.
 class ActionTabsWithExecute extends StatefulWidget {
   const ActionTabsWithExecute({super.key, required this.actions});
 
@@ -47,17 +49,18 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
     final colorScheme = Theme.of(context).colorScheme;
 
     return LayoutBuilder(
-      builder: (context, constraints) {
+      builder: (_, constraints) {
         final showLabels =
-            constraints.maxWidth > 240; // Show labels if wider than 240px
+            constraints.maxWidth >
+            AppSize.tabLabelBreakpoint; // Show labels if wider than 240px
 
         return Container(
-          padding: const EdgeInsets.all(12),
+          padding: AppPadding.actionTabContainer,
           decoration: BoxDecoration(
             color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppRadius.medium),
             border: Border.all(
-              color: colorScheme.outline.withValues(alpha: 0.3),
+              color: colorScheme.outline.withValues(alpha: AppOpacity.divider),
             ),
           ),
           child: Column(
@@ -77,10 +80,14 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                       children: [
                         if (isRunning)
                           SizedBox(
-                            width: showLabels ? 20 : 24,
-                            height: showLabels ? 20 : 24,
+                            width: showLabels
+                                ? AppSize.regularProgressIndicator
+                                : AppSize.expandedProgressIndicator,
+                            height: showLabels
+                                ? AppSize.regularProgressIndicator
+                                : AppSize.expandedProgressIndicator,
                             child: CircularProgressIndicator(
-                              strokeWidth: 2,
+                              strokeWidth: AppBorderWidth.medium,
                               valueColor: AlwaysStoppedAnimation<Color>(
                                 Colors.amber,
                               ),
@@ -93,14 +100,16 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                                 : status == BuildProcessStatus.error
                                 ? Icons.error
                                 : icon,
-                            size: showLabels ? 20 : 22,
+                            size: showLabels
+                                ? AppIconSize.large
+                                : AppIconSize.largeCompact,
                           ),
                         if (showLabels) ...[
-                          const SizedBox(height: 4),
+                          const SizedBox(height: AppSpacing.tiny),
                           Text(
                             action['title'] as String,
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: AppFontSize.badge,
                               fontWeight: FontWeight.w500,
                             ),
                             textAlign: TextAlign.center,
@@ -112,23 +121,21 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                 }).toList(),
                 labelColor: colorScheme.primary,
                 unselectedLabelColor: colorScheme.onSurface.withValues(
-                  alpha: 0.6,
+                  alpha: AppOpacity.muted,
                 ),
                 indicatorColor: colorScheme.primary,
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
-                labelPadding: EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: showLabels ? 4 : 8,
-                ),
+                labelPadding: showLabels
+                    ? AppPadding.actionTabLabelExpanded
+                    : AppPadding.actionTabLabelCompact,
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.xLarge),
 
               // Content area showing selected action details
               SizedBox(
-                height:
-                    220, // Fixed height for content area - increased for no scroll
+                height: AppSize.actionTabContentHeight,
                 child: TabBarView(
                   controller: _tabController,
                   physics: const NeverScrollableScrollPhysics(),
@@ -138,7 +145,7 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                     final color = action['color'] as Color;
 
                     return Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: AppPadding.actionTabContent,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -147,10 +154,10 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                             children: [
                               Icon(
                                 action['icon'] as IconData,
-                                size: 24,
+                                size: AppIconSize.xLarge,
                                 color: color,
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: AppSpacing.large),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,7 +165,7 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                                     Text(
                                       action['title'] as String,
                                       style: TextStyle(
-                                        fontSize: 16,
+                                        fontSize: AppFontSize.title,
                                         fontWeight: FontWeight.bold,
                                         color: colorScheme.onSurface,
                                       ),
@@ -166,9 +173,9 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                                     Text(
                                       action['description'] as String,
                                       style: TextStyle(
-                                        fontSize: 12,
+                                        fontSize: AppFontSize.caption,
                                         color: colorScheme.onSurface.withValues(
-                                          alpha: 0.7,
+                                          alpha: AppOpacity.secondaryText,
                                         ),
                                       ),
                                     ),
@@ -178,27 +185,29 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                             ],
                           ),
 
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AppSpacing.large),
 
                           // Action details - reduced size and made expandable
                           Expanded(
                             child: Container(
-                              padding: const EdgeInsets.all(10),
+                              padding: AppPadding.actionTabDetails,
                               decoration: BoxDecoration(
                                 color: colorScheme.surfaceContainerHighest
-                                    .withValues(alpha: 0.3),
-                                borderRadius: BorderRadius.circular(6),
+                                    .withValues(alpha: AppOpacity.divider),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.small,
+                                ),
                               ),
                               child: SingleChildScrollView(
                                 // Keep only this for the details text
                                 child: Text(
                                   action['details'] as String,
                                   style: TextStyle(
-                                    fontSize: 11,
+                                    fontSize: AppFontSize.metadata,
                                     color: colorScheme.onSurface.withValues(
-                                      alpha: 0.8,
+                                      alpha: AppOpacity.emphasis,
                                     ),
-                                    height: 1.3,
+                                    height: AppLineHeight.compact,
                                     fontFamily: 'monospace',
                                   ),
                                 ),
@@ -206,7 +215,7 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                             ),
                           ),
 
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AppSpacing.large),
 
                           // Execute button and status in a compact footer
                           Column(
@@ -224,17 +233,22 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                                         },
                                   icon: isRunning
                                       ? SizedBox(
-                                          width: 18,
-                                          height: 18,
+                                          width:
+                                              AppSize.compactProgressIndicator,
+                                          height:
+                                              AppSize.compactProgressIndicator,
                                           child: CircularProgressIndicator(
-                                            strokeWidth: 2,
+                                            strokeWidth: AppBorderWidth.medium,
                                             valueColor:
                                                 AlwaysStoppedAnimation<Color>(
                                                   Colors.white,
                                                 ),
                                           ),
                                         )
-                                      : Icon(Icons.play_arrow, size: 18),
+                                      : Icon(
+                                          Icons.play_arrow,
+                                          size: AppIconSize.mediumLarge,
+                                        ),
                                   label: Text(
                                     isRunning ? 'Running...' : 'Execute',
                                     style: TextStyle(
@@ -246,22 +260,26 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                                         ? Colors.grey
                                         : color,
                                     foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(vertical: 10),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: AppSpacing.regular,
+                                    ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadius.medium,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
 
                               // Status message - compact
-                              SizedBox(height: 6),
+                              const SizedBox(height: AppSpacing.small),
                               if (isRunning)
                                 StatusIndicator(
                                   icon: Icons.hourglass_top,
                                   label: 'In progress...',
                                   color: colorScheme.onSurface.withValues(
-                                    alpha: 0.6,
+                                    alpha: AppOpacity.muted,
                                   ),
                                 )
                               else if (status == BuildProcessStatus.success)

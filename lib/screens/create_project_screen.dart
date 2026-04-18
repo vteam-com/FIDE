@@ -1,5 +1,7 @@
+// ignore: fcheck_dead_code
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/screens/create_project_step1.dart';
 import 'package:fide/screens/create_project_step2.dart';
@@ -20,6 +22,7 @@ enum CreateProjectStep {
   creating, // Step 3
 }
 
+/// Represents `CreateProjectScreen`.
 class CreateProjectScreen extends ConsumerStatefulWidget {
   final String? initialDirectory;
   final VoidCallback onCancel;
@@ -36,6 +39,7 @@ class CreateProjectScreen extends ConsumerStatefulWidget {
   });
 
   // Method to set initial directory for testing
+  /// Handles `CreateProjectScreen.setTestInitialDirectory`.
   static void setTestInitialDirectory(String? directory) {
     _testInitialDirectory = directory;
   }
@@ -84,13 +88,14 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   final Map<int, LoadingAction> _pendingActionUpdates = {};
   bool _hasScheduledLoadingUpdate = false;
 
+  /// Batches rapid state changes into a single UI update after a short delay.
   void _scheduleLoadingUpdate() {
     if (_hasScheduledLoadingUpdate) return;
 
     _hasScheduledLoadingUpdate = true;
 
-    // Batch updates every 50ms to avoid overwhelming the UI
-    Future.delayed(const Duration(milliseconds: 50), () {
+    // Batch updates to avoid overwhelming the UI.
+    Future.delayed(AppDuration.loadingUpdateBatch, () {
       if (!mounted) return;
 
       final actions = ref.read(loadingActionsProvider);
@@ -127,6 +132,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     _checkOllamaStatus();
   }
 
+  /// Detects Flutter availability and version, updating [_flutterAvailable] and [_flutterVersion].
   Future<void> _checkFlutterStatus() async {
     try {
       // Check Flutter availability and get version
@@ -177,6 +183,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     }
   }
 
+  /// Detects Git availability and version, updating [_gitAvailable] and [_gitVersion].
   Future<void> _checkGitStatus() async {
     try {
       // Check Git availability and get version
@@ -226,6 +233,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     });
   }
 
+  /// Checks whether Ollama is installed and running, updating the corresponding state fields.
   Future<void> _checkOllamaStatus() async {
     try {
       // Check if Ollama is installed using which
@@ -255,6 +263,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     }
   }
 
+  /// Advances the wizard to the next step, or triggers project creation on the final step.
   void _nextStep() {
     if (_currentStep == CreateProjectStep.nameAndFolder && _canGoToNextStep()) {
       setState(() {
@@ -283,26 +292,39 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   late String _userFinalProjectName;
   late String _userDirectory;
 
+  /// Initialises loading actions and transitions to the creation screen before executing the project creation.
   void _startProjectCreation() {
     // Disable Open button while creating - already set in _nextStep
 
     // Initialize loading actions
     ref.read(loadingActionsProvider.notifier).state = [
       LoadingAction(
-        1,
+        AppMetric.projectCreateStepValidate,
         'Validating settings and checking dependencies...',
         LoadingStatus.pending,
       ),
-      LoadingAction(2, 'Creating Flutter project...', LoadingStatus.pending),
-      LoadingAction(3, 'Setting up localization...', LoadingStatus.pending),
       LoadingAction(
-        4,
+        AppMetric.projectCreateStepFlutterCreate,
+        'Creating Flutter project...',
+        LoadingStatus.pending,
+      ),
+      LoadingAction(
+        AppMetric.projectCreateStepLocalization,
+        'Setting up localization...',
+        LoadingStatus.pending,
+      ),
+      LoadingAction(
+        AppMetric.projectCreateStepCodegen,
         'Generating initial code structure...',
         LoadingStatus.pending,
       ),
-      LoadingAction(5, 'Initializing Git repository...', LoadingStatus.pending),
       LoadingAction(
-        6,
+        AppMetric.projectCreateStepGitInit,
+        'Initializing Git repository...',
+        LoadingStatus.pending,
+      ),
+      LoadingAction(
+        AppMetric.projectCreateStepVerification,
         'Final verification and cleanup...',
         LoadingStatus.pending,
       ),
@@ -312,6 +334,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     _executeProjectCreation();
   }
 
+  /// Runs the full project creation pipeline, updating loading actions as each step completes.
   Future<void> _executeProjectCreation() async {
     final projectPath =
         '$_userDirectory/${_userFinalProjectName.isNotEmpty ? _userFinalProjectName : _userProjectName}';
@@ -319,7 +342,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     try {
       // Step 1: Validate settings and check dependencies
       await _updateLoadingAction(
-        1,
+        AppMetric.projectCreateStepValidate,
         'Validating settings and checking dependencies...',
         LoadingStatus.pending,
       );
@@ -331,14 +354,14 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
       }
 
       await _updateLoadingAction(
-        1,
+        AppMetric.projectCreateStepValidate,
         'Dependencies validated successfully',
         LoadingStatus.success,
       );
 
       // Step 2: Create Flutter project
       await _updateLoadingAction(
-        2,
+        AppMetric.projectCreateStepFlutterCreate,
         'Creating Flutter project...',
         LoadingStatus.pending,
       );
@@ -354,9 +377,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
             'android,ios,web,linux,macos,windows',
             projectPath,
           ], workingDirectory: _userDirectory).timeout(
-            const Duration(
-              seconds: 60,
-            ), // 60 second timeout for project creation
+            AppDuration.projectCreateTimeout,
             onTimeout: () => ProcessResult(
               0,
               -1,
@@ -372,14 +393,14 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
       }
 
       await _updateLoadingAction(
-        2,
+        AppMetric.projectCreateStepFlutterCreate,
         'Flutter project created successfully',
         LoadingStatus.success,
       );
 
       // Step 3: Set up localization
       await _updateLoadingAction(
-        3,
+        AppMetric.projectCreateStepLocalization,
         'Setting up localization...',
         LoadingStatus.pending,
       );
@@ -400,13 +421,13 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
         }
 
         await _updateLoadingAction(
-          3,
+          AppMetric.projectCreateStepLocalization,
           'Localization setup completed',
           LoadingStatus.success,
         );
       } else {
         await _updateLoadingAction(
-          3,
+          AppMetric.projectCreateStepLocalization,
           'Localization skipped',
           LoadingStatus.success,
         );
@@ -414,7 +435,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
 
       // Step 4: Generate initial code structure using AI
       await _updateLoadingAction(
-        4,
+        AppMetric.projectCreateStepCodegen,
         'Generating initial code structure...',
         LoadingStatus.pending,
       );
@@ -441,9 +462,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
           );
 
           final generatedFiles = await aiFuture.timeout(
-            const Duration(
-              seconds: 120,
-            ), // 120 second timeout for AI project generation
+            AppDuration.aiProjectCreateTimeout,
             onTimeout: () => {
               'error': 'AI generation timed out after 120 seconds',
             },
@@ -451,7 +470,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
 
           if (generatedFiles.containsKey('error')) {
             await _updateLoadingAction(
-              4,
+              AppMetric.projectCreateStepCodegen,
               'AI code generation failed: ${generatedFiles['error']}',
               LoadingStatus.success,
             );
@@ -473,21 +492,21 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
             }
 
             await _updateLoadingAction(
-              4,
+              AppMetric.projectCreateStepCodegen,
               'AI-generated project files completed',
               LoadingStatus.success,
             );
           }
         } catch (e) {
           await _updateLoadingAction(
-            4,
+            AppMetric.projectCreateStepCodegen,
             'AI code generation failed, using defaults',
             LoadingStatus.success,
           );
         }
       } else {
         await _updateLoadingAction(
-          4,
+          AppMetric.projectCreateStepCodegen,
           'AI not available, using default structure',
           LoadingStatus.success,
         );
@@ -495,7 +514,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
 
       // Step 5: Initialize Git repository
       await _updateLoadingAction(
-        5,
+        AppMetric.projectCreateStepGitInit,
         'Initializing Git repository...',
         LoadingStatus.pending,
       );
@@ -506,7 +525,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
               await Process.run('git', [
                 'init',
               ], workingDirectory: projectPath).timeout(
-                const Duration(seconds: 10),
+                AppDuration.gitInitTimeout,
                 onTimeout: () =>
                     ProcessResult(0, -1, '', 'Git init command timed out'),
               );
@@ -516,7 +535,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
               'add',
               '.',
             ], workingDirectory: projectPath).timeout(
-              const Duration(seconds: 30),
+              AppDuration.gitOperationTimeout,
               onTimeout: () =>
                   ProcessResult(0, -1, '', 'Git add command timed out'),
             );
@@ -525,32 +544,32 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
               '-m',
               'Initial commit',
             ], workingDirectory: projectPath).timeout(
-              const Duration(seconds: 30),
+              AppDuration.gitOperationTimeout,
               onTimeout: () =>
                   ProcessResult(0, -1, '', 'Git commit command timed out'),
             );
             await _updateLoadingAction(
-              5,
+              AppMetric.projectCreateStepGitInit,
               'Git repository initialized',
               LoadingStatus.success,
             );
           } else {
             await _updateLoadingAction(
-              5,
+              AppMetric.projectCreateStepGitInit,
               'Git initialization failed',
               LoadingStatus.failed,
             );
           }
         } catch (e) {
           await _updateLoadingAction(
-            5,
+            AppMetric.projectCreateStepGitInit,
             'Git initialization failed',
             LoadingStatus.failed,
           );
         }
       } else {
         await _updateLoadingAction(
-          5,
+          AppMetric.projectCreateStepGitInit,
           'Git not available, skipped',
           LoadingStatus.success,
         );
@@ -558,7 +577,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
 
       // Step 6: Final verification
       await _updateLoadingAction(
-        6,
+        AppMetric.projectCreateStepVerification,
         'Final verification and cleanup...',
         LoadingStatus.pending,
       );
@@ -574,7 +593,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
           await androidDir.exists() &&
           await iosDir.exists()) {
         await _updateLoadingAction(
-          6,
+          AppMetric.projectCreateStepVerification,
           'Project verification completed successfully',
           LoadingStatus.success,
         );
@@ -641,6 +660,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   void _onWantsLocalizationChanged(bool value) =>
       setState(() => _wantsLocalization = value);
 
+  /// Adds or removes [lang] from the selected language set and ensures the primary language stays selected.
   void _onLanguageSelectionChanged(String lang, bool selected) {
     setState(() {
       if (selected) {
@@ -672,13 +692,16 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     setState(() => _step2CanProceed = canProceed);
   }
 
+  /// Returns the appropriate step widget for the current wizard step.
   Widget _buildStepContent() {
     switch (_currentStep) {
       case CreateProjectStep.nameAndFolder:
         return SingleChildScrollView(
           child: Center(
             child: Container(
-              constraints: const BoxConstraints(maxWidth: 600),
+              constraints: const BoxConstraints(
+                maxWidth: AppSize.wizardMaxWidth,
+              ),
               child: CreateProjectStep1(
                 initialDirectory: widget.initialDirectory,
                 testInitialDirectory: CreateProjectScreen._testInitialDirectory,
@@ -706,7 +729,9 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
         return SingleChildScrollView(
           child: Center(
             child: Container(
-              constraints: const BoxConstraints(maxWidth: 600),
+              constraints: const BoxConstraints(
+                maxWidth: AppSize.wizardMaxWidth,
+              ),
               child: CreateProjectStep2(
                 projectName: _userFinalProjectName.isNotEmpty
                     ? _userFinalProjectName
@@ -755,16 +780,16 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
 
     return Scaffold(
       body: Container(
-        padding: EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.huge),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
               Theme.of(context).colorScheme.surface,
-              Theme.of(
-                context,
-              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              Theme.of(context).colorScheme.surfaceContainerHighest.withValues(
+                alpha: AppOpacity.divider,
+              ),
             ],
           ),
         ),
@@ -778,14 +803,14 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                   ? FullPathWidget(path: _currentFullPathToNewProject!)
                   : null,
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.huge),
 
             // Form section - wizard steps
             Expanded(child: _buildStepContent()),
 
             // Action buttons at the bottom
             Container(
-              padding: const EdgeInsets.only(top: 24),
+              padding: const EdgeInsets.only(top: AppSpacing.xxLarge),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -794,13 +819,13 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                     onPressed: widget.onCancel,
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
+                        horizontal: AppSpacing.huge,
+                        vertical: AppSpacing.xLarge,
                       ),
                     ),
                     child: const Text('Cancel'),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: AppSpacing.xLarge),
 
                   // Step 1: Next button
                   if (_currentStep == CreateProjectStep.nameAndFolder)
@@ -808,8 +833,8 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                       onPressed: _canGoToNextStep() ? _nextStep : null,
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
+                          horizontal: AppSpacing.huge,
+                          vertical: AppSpacing.xLarge,
                         ),
                       ),
                       child: const Text('Next'),
@@ -821,8 +846,8 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                       onPressed: _canGoToNextStep() ? _nextStep : null,
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
+                          horizontal: AppSpacing.huge,
+                          vertical: AppSpacing.xLarge,
                         ),
                       ),
                       child: const Text('Create'),
@@ -836,8 +861,8 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                           : null,
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
+                          horizontal: AppSpacing.huge,
+                          vertical: AppSpacing.xLarge,
                         ),
                       ),
                       child: Text('Open'),

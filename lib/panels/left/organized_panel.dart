@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/panels/left/shared_panel_utils.dart';
@@ -39,10 +40,10 @@ class OrganizedPanel extends ConsumerStatefulWidget {
   final FileSystemItem? selectedFile;
 
   @override
-  ConsumerState<OrganizedPanel> createState() => OrganizedPanelState();
+  ConsumerState<OrganizedPanel> createState() => _OrganizedPanelState();
 }
 
-class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
+class _OrganizedPanelState extends ConsumerState<OrganizedPanel> {
   final PanelStateManager _panelState = PanelStateManager();
   final Map<String, bool> _filesWithShowDialog = {};
   final Map<String, int> _cachedElementCounts = {};
@@ -67,14 +68,19 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
   }
 
   // Getters for panel state
+  /// Returns `projectRoot`.
   ProjectNode? get projectRoot => _panelState.projectRoot;
+
+  /// Returns `expandedState`.
   Map<String, bool> get expandedState => _panelState.expandedState;
 
   // Helper methods
+  /// Handles `_OrganizedPanelState.showError`.
   void showError(String message) {
     MessageBox.showError(context, message, showCopyButton: true);
   }
 
+  /// Handles `_OrganizedPanelState.pickDirectory`.
   Future<void> pickDirectory() async {
     try {
       final selectedDirectory = await FilePicker.platform.getDirectoryPath();
@@ -86,10 +92,12 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     }
   }
 
+  /// Handles `_OrganizedPanelState.ensureDirectoryLoaded`.
   Future<void> ensureDirectoryLoaded(ProjectNode node) async {
     await _panelState.ensureDirectoryLoaded(node);
   }
 
+  /// Handles `_onNodeTapped`.
   void _onNodeTapped(ProjectNode node, bool isExpanded) async {
     if (node.isDirectory) {
       if (mounted) {
@@ -109,10 +117,12 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
         }
       }
     } else {
+      /// Handles `_handleFileTap`.
       _handleFileTap(node);
     }
   }
 
+  /// Handles `_handleFileTap`.
   void _handleFileTap(ProjectNode node) {
     final item = FileSystemItem.fromFileSystemEntity(File(node.path));
     if (widget.selectedFile?.path == item.path) return;
@@ -138,6 +148,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     );
   }
 
+  /// Handles `_handleContextMenuAction`.
   void _handleContextMenuAction(String action, ProjectNode node) {
     switch (action) {
       case 'open':
@@ -179,6 +190,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     }
   }
 
+  /// Handles `_refreshProjectTree`.
   Future<void> _refreshProjectTree() async {
     if (_panelState.projectRoot == null) return;
 
@@ -219,6 +231,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     for (final category in categoryDirs.keys) {
       categoryNodes[category] = [];
       for (final dirPath in categoryDirs[category]!) {
+        /// Handles `_findDirectoryNode`.
         final dirNode = _findDirectoryNode(projectRoot!, dirPath);
         if (dirNode != null) {
           ensureDirectoryLoaded(dirNode);
@@ -244,11 +257,13 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
         if (content.contains('MaterialApp(')) {
           categoryNodes['Views']!.add(fileNode);
           categorizedFiles.add(fileNode.path);
+
+          /// Handles `_isWidgetClass`.
         } else if (_isWidgetClass(content)) {
           categoryNodes['Widgets']!.add(fileNode);
           categorizedFiles.add(fileNode.path);
         }
-      } catch (e) {
+      } catch (_) {
         // ignore
       }
     }
@@ -265,7 +280,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
               _filesWithShowDialog[node.path] = true;
               filesToMove.add(node);
             }
-          } catch (e) {
+          } catch (_) {
             // ignore
           }
         }
@@ -284,7 +299,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
           if (content.contains('showDialog')) {
             _filesWithShowDialog[node.path] = true;
           }
-        } catch (e) {
+        } catch (_) {
           // ignore
         }
       }
@@ -325,12 +340,16 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
         ? Container(
             color: Theme.of(context).colorScheme.surface,
             child: const Center(
-              child: Text('No project loaded', style: TextStyle(fontSize: 16)),
+              child: Text(
+                'No project loaded',
+                style: TextStyle(fontSize: AppFontSize.title),
+              ),
             ),
           )
         : buildPanelContent();
   }
 
+  /// Handles `_OrganizedPanelState.buildPanelContent`.
   Widget buildPanelContent() {
     if (projectRoot == null) {
       return Container(
@@ -339,10 +358,14 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.folder_open, size: 48, color: Colors.grey),
-              SizedBox(height: 16),
+              Icon(
+                Icons.folder_open,
+                size: AppIconSize.emptyState,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: AppSpacing.xLarge),
               const Text('No project loaded'),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.medium),
               ElevatedButton.icon(
                 onPressed: pickDirectory,
                 icon: const Icon(Icons.folder_open),
@@ -354,9 +377,11 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
       );
     }
 
+    /// Handles `_buildOrganizedView`.
     return _buildOrganizedView();
   }
 
+  /// Handles `_buildOrganizedView`.
   Widget _buildOrganizedView() {
     if (projectRoot == null) return const SizedBox();
 
@@ -369,16 +394,20 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     for (final category in categoryNodes.keys) {
       final nodes = categoryNodes[category]!;
       if (nodes.isNotEmpty) {
+        /// Handles `_countFiles`.
         final fileCount = _countFiles(nodes);
+
+        /// Handles `_countElements`.
         final elementCount = _countElements(nodes, category);
         sections.add(
+          /// Handles `_buildCategorySection`.
           _buildCategorySection(category, nodes, fileCount, elementCount),
         );
       }
     }
 
     return LayoutBuilder(
-      builder: (context, constraints) {
+      builder: (_, constraints) {
         final isConstrained = constraints.maxHeight.isFinite;
 
         if (isConstrained) {
@@ -387,7 +416,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
 
         // For unconstrained layouts, use a Container with fixed height (no flex)
         return SizedBox(
-          height: 600, // Reasonable default height for unconstrained layouts
+          height: AppSize.panelFallbackHeight,
           child: SingleChildScrollView(child: Column(children: sections)),
         );
       },
@@ -409,10 +438,13 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     Set<String> categorizedFiles,
   ) {
     final List<ProjectNode> unmatched = [];
+
+    /// Handles `_findDartFilesRecursive`.
     _findDartFilesRecursive(root, unmatched, categorizedFiles);
     return unmatched;
   }
 
+  /// Handles `_findDartFilesRecursive`.
   void _findDartFilesRecursive(
     ProjectNode node,
     List<ProjectNode> unmatched,
@@ -428,13 +460,14 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     }
   }
 
+  /// Handles `_isWidgetClass`.
   bool _isWidgetClass(String content) {
     final classDeclarations = RegExp(
       r'class\s+(\w+)\s+extends\s+(\w+)',
       multiLine: true,
     ).allMatches(content);
     for (final match in classDeclarations) {
-      final baseClass = match.group(2)!;
+      final baseClass = match.group(AppMetric.regexBaseClassGroupIndex)!;
       if (baseClass.endsWith('Widget')) {
         return true;
       }
@@ -442,6 +475,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     return false;
   }
 
+  /// Handles `_findDirectoryNode`.
   ProjectNode? _findDirectoryNode(ProjectNode root, String path) {
     final parts = path.split('/');
     ProjectNode? current = root;
@@ -460,6 +494,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     return current;
   }
 
+  /// Handles `_countFiles`.
   int _countFiles(List<ProjectNode> nodes) {
     int count = 0;
     for (final node in nodes) {
@@ -472,6 +507,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     return count;
   }
 
+  /// Handles `_countElements`.
   int _countElements(List<ProjectNode> nodes, String category) {
     // Create a cache key based on category and nodes
     final cacheKey =
@@ -504,7 +540,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
           final json = jsonDecode(content) as Map<String, dynamic>;
           // Count keys that don't start with @
           count += json.keys.where((key) => !key.startsWith('@')).length;
-        } catch (e) {
+        } catch (_) {
           // ignore
         }
       }
@@ -515,6 +551,7 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     return count;
   }
 
+  /// Handles `_buildCategorySection`.
   Widget _buildCategorySection(
     String category,
     List<ProjectNode> nodes,
@@ -530,14 +567,14 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
       children: [
         Icon(
           Icons.description,
-          size: 14,
+          size: AppIconSize.small,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
-        const SizedBox(width: 2),
+        const SizedBox(width: AppSpacing.micro),
         Text(
           '$fileCount',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: AppFontSize.metadata,
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
@@ -640,14 +677,14 @@ class OrganizedPanelState extends ConsumerState<OrganizedPanel> {
           ),
           if (item.isExpanded)
             Padding(
-              padding: const EdgeInsets.only(left: 16.0),
+              padding: AppPadding.nestedFolder,
               child: node.children.isEmpty
                   ? const Text(
                       'empty folder',
                       style: TextStyle(
                         fontStyle: FontStyle.italic,
                         color: Colors.grey,
-                        fontSize: 12,
+                        fontSize: AppFontSize.caption,
                       ),
                     )
                   : Column(

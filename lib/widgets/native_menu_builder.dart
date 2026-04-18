@@ -1,3 +1,4 @@
+import 'package:fide/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/utils/message_box.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// Represents `NativeMenuBuilder`.
 class NativeMenuBuilder {
   final BuildContext context;
   final WidgetRef ref;
@@ -46,6 +48,7 @@ class NativeMenuBuilder {
     required this.currentThemeMode,
   });
 
+  /// Builds the native platform menu structure for the app shell.
   List<PlatformMenu> buildMenus() {
     return [
       _buildFideMenu(),
@@ -55,6 +58,7 @@ class NativeMenuBuilder {
     ];
   }
 
+  /// Builds the FIDE application menu (About, Hide, Quit, etc.).
   PlatformMenu _buildFideMenu() {
     return PlatformMenu(
       label: 'FIDE',
@@ -86,6 +90,7 @@ class NativeMenuBuilder {
     );
   }
 
+  /// Builds the File menu with open-folder, save, and close-project items.
   PlatformMenu _buildFileMenu() {
     return PlatformMenu(
       label: 'File',
@@ -165,6 +170,7 @@ class NativeMenuBuilder {
     );
   }
 
+  /// Builds the Edit menu with find, find-previous, and go-to-line items.
   PlatformMenu _buildEditMenu() {
     return PlatformMenu(
       label: 'Edit',
@@ -208,6 +214,7 @@ class NativeMenuBuilder {
     );
   }
 
+  /// Builds the View menu with panel-visibility and layout toggle items.
   PlatformMenu _buildViewMenu() {
     return PlatformMenu(
       label: 'View',
@@ -252,7 +259,7 @@ class NativeMenuBuilder {
                 shift: true,
               ),
               onSelected: () {
-                onSwitchPanel(0);
+                onSwitchPanel(AppPanelIndex.explorer);
               },
             ),
             PlatformMenuItem(
@@ -263,7 +270,7 @@ class NativeMenuBuilder {
                 shift: true,
               ),
               onSelected: () {
-                onSwitchPanel(1);
+                onSwitchPanel(AppPanelIndex.organized);
               },
             ),
             PlatformMenuItem(
@@ -274,7 +281,7 @@ class NativeMenuBuilder {
                 shift: true,
               ),
               onSelected: () {
-                onSwitchPanel(2);
+                onSwitchPanel(AppPanelIndex.git);
               },
             ),
             PlatformMenuItem(
@@ -285,7 +292,7 @@ class NativeMenuBuilder {
                 shift: true,
               ),
               onSelected: () {
-                onSwitchPanel(3);
+                onSwitchPanel(AppPanelIndex.search);
               },
             ),
           ],
@@ -294,6 +301,7 @@ class NativeMenuBuilder {
     );
   }
 
+  /// Shows the app-level settings dialog from the native menu bar.
   void _showSettingsDialog() {
     showDialog(
       context: context,
@@ -304,7 +312,7 @@ class NativeMenuBuilder {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text('Theme'),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.medium),
               ListTile(
                 leading: const Icon(Icons.brightness_auto),
                 title: const Text('System'),

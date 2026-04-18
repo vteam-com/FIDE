@@ -1,3 +1,4 @@
+import 'package:fide/constants.dart';
 import 'package:flutter/material.dart';
 
 /// A reusable widget for toggling between different experience modes in the editor.
@@ -11,7 +12,7 @@ class ToggleExperienceMode extends StatelessWidget {
     required this.primaryTooltip,
     required this.alternativeTooltip,
     required this.onPressed,
-    this.iconSize = 18,
+    this.iconSize = AppIconSize.mediumLarge,
   });
 
   /// Icon to show when in alternative mode

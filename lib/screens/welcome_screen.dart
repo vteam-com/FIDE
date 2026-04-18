@@ -2,12 +2,14 @@
 
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+/// Represents `WelcomeScreen`.
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({
     super.key,
@@ -44,7 +46,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Consumer(
-      builder: (context, ref, child) {
+      builder: (context, ref, _) {
         // Watch for project creation errors
         final projectCreationError = ref.watch(projectCreationErrorProvider);
 
@@ -58,28 +60,27 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         });
 
         return Container(
-          padding: EdgeInsets.all(32),
+          padding: const EdgeInsets.all(AppSize.compactActionButton),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
                 Theme.of(context).colorScheme.surface,
-                Theme.of(
-                  context,
-                ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                Theme.of(context).colorScheme.surfaceContainerHighest
+                    .withValues(alpha: AppOpacity.divider),
               ],
             ),
           ),
           child: LayoutBuilder(
-            builder: (context, constraints) {
+            builder: (context, _) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
-                spacing: 16,
+                spacing: AppSpacing.xLarge,
                 children: [
                   // Fixed content at top (centered)
                   Row(
-                    spacing: 32,
+                    spacing: AppSize.compactActionButton,
                     children: [
                       HeroTitleWidget(
                         title: 'Welcome to FIDE',
@@ -89,9 +90,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       Text(
                         'Version\n$_appVersion',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.5),
+                          color: Theme.of(context).colorScheme.onSurface
+                              .withValues(alpha: AppOpacity.disabled),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -102,31 +102,31 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     child: SingleChildScrollView(
                       child: Center(
                         child: Container(
-                          width: 700,
-                          padding: const EdgeInsets.all(24),
+                          width: AppSize.welcomeContentWidth,
+                          padding: const EdgeInsets.all(AppIconSize.xLarge),
                           decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surface.withAlpha(100),
-                            borderRadius: BorderRadius.circular(16),
+                            color: Theme.of(context).colorScheme.surface
+                                .withAlpha(AppSize.gutterDividerAlpha.toInt()),
+                            borderRadius: BorderRadius.circular(
+                              AppSpacing.xLarge,
+                            ),
                             boxShadow: [
                               BoxShadow(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.shadow.withValues(alpha: 0.1),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
+                                color: Theme.of(context).colorScheme.shadow
+                                    .withValues(alpha: AppOpacity.subtle),
+                                blurRadius: AppSpacing.regular,
+                                offset: const Offset(0, AppSpacing.tiny),
                               ),
                             ],
                           ),
                           child: Column(
-                            spacing: 16,
+                            spacing: AppSpacing.xLarge,
                             children: [
                               // Action Buttons
                               // Open Folder Button
                               SizedBox(
                                 width: double.infinity,
-                                height: 56,
+                                height: AppSize.largeActionButtonHeight,
                                 child: ElevatedButton.icon(
                                   onPressed: widget.onOpenFolder,
                                   icon: Icon(
@@ -154,12 +154,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                     foregroundColor: Theme.of(
                                       context,
                                     ).colorScheme.onPrimary,
-                                    elevation: 4,
+                                    elevation: AppSpacing.tiny,
                                     shadowColor: Theme.of(
                                       context,
                                     ).colorScheme.shadow,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(
+                                        AppSpacing.large,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -167,7 +169,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               // Create Project Button
                               SizedBox(
                                 width: double.infinity,
-                                height: 56,
+                                height: AppSize.largeActionButtonHeight,
                                 child: OutlinedButton.icon(
                                   onPressed: widget.onCreateProject,
                                   icon: Icon(
@@ -193,10 +195,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                       color: Theme.of(
                                         context,
                                       ).colorScheme.primary,
-                                      width: 2,
+                                      width: AppBorderWidth.medium,
                                     ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(
+                                        AppSpacing.large,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -221,10 +225,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
+  /// Builds the list of recent project tiles from [mruFolders], limited to the most recent entries.
   List<Widget> _buildRecentProjectsList() {
     final validMruFolders = widget.mruFolders
         .where((path) => path.isNotEmpty)
-        .take(5) // Limit to 5 recent projects
+        .take(AppMetric.mruFolderLimit) // Limit to configured recent projects
         .toList();
 
     return validMruFolders.map((path) {
@@ -232,14 +237,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       final hasAccess = Directory(path).existsSync();
 
       return Container(
-        margin: const EdgeInsets.only(bottom: 8),
+        margin: const EdgeInsets.only(bottom: AppSpacing.medium),
         decoration: BoxDecoration(
-          color: Theme.of(
-            context,
-          ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(8),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest
+              .withValues(alpha: AppOpacity.disabled),
+          borderRadius: BorderRadius.circular(AppRadius.medium),
           border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+            color: Theme.of(
+              context,
+            ).colorScheme.outline.withValues(alpha: AppOpacity.divider),
           ),
         ),
         child: ListTile(
@@ -248,7 +254,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             color: hasAccess
                 ? Theme.of(context).colorScheme.primary
                 : Theme.of(context).colorScheme.error,
-            size: 20,
+            size: AppIconSize.large,
           ),
           title: Text(
             projectName,
@@ -271,7 +277,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           trailing: IconButton(
             icon: Icon(
               Icons.close,
-              size: 16,
+              size: AppIconSize.medium,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             onPressed: () => widget.onRemoveMruEntry(path),
@@ -281,14 +287,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           onTap: hasAccess ? () => widget.onOpenMruProject(path) : null,
           dense: true,
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 4,
+            horizontal: AppSpacing.xLarge,
+            vertical: AppSpacing.tiny,
           ),
         ),
       );
     }).toList();
   }
 
+  /// Fetches the app version from the package info plugin and stores it in [_appVersion].
   Future<void> _loadAppVersion() async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
@@ -297,11 +304,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           _appVersion = packageInfo.version;
         });
       }
-    } catch (e) {
+    } catch (_) {
       // Keep default version if loading fails
     }
   }
 
+  /// Shows an alert dialog describing a project creation error.
   void _showErrorDialog(BuildContext context, String errorMessage) {
     showDialog(
       context: context,

@@ -1,5 +1,7 @@
+import 'package:fide/constants.dart';
 import 'package:flutter/material.dart';
 
+/// Represents `HeroTitleWidget`.
 class HeroTitleWidget extends StatelessWidget {
   const HeroTitleWidget({
     super.key,
@@ -19,10 +21,13 @@ class HeroTitleWidget extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
-      spacing: 32,
+      spacing: AppSpacing.huge,
       children: [
         // App Logo
-        SizedBox(height: 100, child: Image.asset('assets/app.png')),
+        SizedBox(
+          height: AppSize.heroLogoHeight,
+          child: Image.asset('assets/app.png'),
+        ),
 
         Flexible(
           child: Text(

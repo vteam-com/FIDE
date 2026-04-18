@@ -1,5 +1,7 @@
+import 'package:fide/constants.dart';
 import 'package:flutter/material.dart';
 
+/// Represents `ResizableSplitter`.
 class ResizableSplitter extends StatefulWidget {
   const ResizableSplitter({
     super.key,
@@ -76,20 +78,30 @@ class _ResizableSplitterState extends State<ResizableSplitter> {
               }
             : null,
         child: Container(
-          width: widget.isHorizontal ? double.infinity : 8,
-          height: widget.isHorizontal ? 8 : double.infinity,
+          width: widget.isHorizontal
+              ? double.infinity
+              : AppSize.splitterThickness,
+          height: widget.isHorizontal
+              ? AppSize.splitterThickness
+              : double.infinity,
           color: _isHovering || _isDragging
-              ? Theme.of(context).colorScheme.primary.withAlpha(50)
+              ? Theme.of(
+                  context,
+                ).colorScheme.primary.withAlpha(AppAlpha.splitterHover)
               : Colors.transparent,
           child: Center(
             child: Container(
-              width: widget.isHorizontal ? 40 : 4,
-              height: widget.isHorizontal ? 4 : 40,
+              width: widget.isHorizontal
+                  ? AppSize.splitterGripLength
+                  : AppSize.splitterGripThickness,
+              height: widget.isHorizontal
+                  ? AppSize.splitterGripThickness
+                  : AppSize.splitterGripLength,
               decoration: BoxDecoration(
                 color: _isHovering || _isDragging
                     ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).dividerColor,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(AppSpacing.micro),
               ),
             ),
           ),

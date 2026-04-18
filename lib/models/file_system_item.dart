@@ -1,5 +1,7 @@
+// ignore: fcheck_dead_code
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
@@ -17,6 +19,7 @@ enum GitFileStatus {
   clean, // No changes
 }
 
+/// A node in the file-system tree used by the explorer panels, representing a file or directory.
 class FileSystemItem {
   final String name;
   final String path;
@@ -93,6 +96,7 @@ class FileSystemItem {
   }
 
   // Get file extension for icons
+  /// Returns `fileExtension`.
   String get fileExtension {
     if (type != FileSystemItemType.file) return '';
     final basename = p.basename(path);
@@ -111,13 +115,6 @@ class FileSystemItem {
 
     final ext = p.extension(basename);
     return ext.isNotEmpty ? ext.substring(1) : ''; // Remove the dot
-  }
-
-  // Toggle expanded state
-  void toggleExpanded() {
-    if (type == FileSystemItemType.directory) {
-      isExpanded = !isExpanded;
-    }
   }
 
   static const int maxFileSize = 1 * 1024 * 1024; // 1MB
@@ -141,6 +138,7 @@ class FileSystemItem {
   }
 
   // Read file content as string
+  /// Handles `FileSystemItem.readAsString`.
   Future<String> readAsString() async {
     if (type != FileSystemItemType.file) {
       throw Exception('Cannot read content of a directory');
@@ -150,6 +148,7 @@ class FileSystemItem {
   }
 
   // Get file extension for filtering
+  /// Returns `extension`.
   String get extension {
     if (type != FileSystemItemType.file) return '';
     final ext = p.extension(name).toLowerCase();
@@ -157,6 +156,7 @@ class FileSystemItem {
   }
 
   // Check if file is supported for outline view
+  /// Returns `isSupportedForOutline`.
   bool get isSupportedForOutline {
     if (type != FileSystemItemType.file) return false;
     final ext = extension;
@@ -171,6 +171,7 @@ class FileSystemItem {
   }
 
   // Get color for Git status
+  /// Handles `FileSystemItem.getGitStatusColor`.
   Color getGitStatusColor(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -182,15 +183,20 @@ class FileSystemItem {
       case GitFileStatus.deleted:
         return Colors.red; // 🟥 Red
       case GitFileStatus.untracked:
-        return isDark ? Colors.grey[600]! : Colors.grey[400]!; // ⚪️ Gray
+        return isDark
+            ? Colors.grey[AppShade.medium]!
+            : Colors.grey[AppShade.mild]!; // ⚪️ Gray
       case GitFileStatus.ignored:
-        return isDark ? Colors.grey[700]! : Colors.grey[500]!; // Gray italic
+        return isDark
+            ? Colors.grey[AppShade.strong]!
+            : Colors.grey[AppShade.neutral]!; // Gray italic
       default:
         return Theme.of(context).colorScheme.onSurface; // Default color
     }
   }
 
   // Get badge text for Git status
+  /// Handles `FileSystemItem.getGitStatusBadge`.
   String getGitStatusBadge() {
     switch (gitStatus) {
       case GitFileStatus.modified:
@@ -209,6 +215,7 @@ class FileSystemItem {
   }
 
   // Get text style for Git status
+  /// Handles `FileSystemItem.getGitStatusTextStyle`.
   TextStyle getGitStatusTextStyle(BuildContext context) {
     final baseStyle =
         Theme.of(context).textTheme.bodyMedium ?? const TextStyle();
@@ -234,5 +241,6 @@ class FileSystemItem {
   }
 
   // Check if item has Git status changes
+  /// Returns `hasGitChanges`.
   bool get hasGitChanges => gitStatus != GitFileStatus.clean;
 }

@@ -1,8 +1,10 @@
+import 'package:fide/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/full_path_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// Represents `CreateProjectStep3`.
 class CreateProjectStep3 extends StatefulWidget {
   const CreateProjectStep3({
     super.key,
@@ -22,28 +24,30 @@ class _CreateProjectStep3State extends State<CreateProjectStep3> {
   @override
   Widget build(BuildContext context) {
     return Consumer(
-      builder: (context, ref, child) {
+      builder: (context, ref, _) {
         final loadingActions = ref.watch(loadingActionsProvider);
         final hasFailed = loadingActions.any(
           (action) => action.status == LoadingStatus.failed,
         );
 
         return Container(
-          width: 600,
-          constraints: const BoxConstraints(maxHeight: 400),
+          width: AppSize.panelFallbackHeight,
+          constraints: const BoxConstraints(
+            maxHeight: AppSize.terminalMaxHeight,
+          ),
           child: Column(
-            spacing: 16,
+            spacing: AppSpacing.xLarge,
             children: [
               // Project info
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.xLarge),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadius.medium),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 8,
+                  spacing: AppSpacing.medium,
                   children: [
                     Text(
                       'Creating project: ${widget.projectName}',
@@ -58,7 +62,7 @@ class _CreateProjectStep3State extends State<CreateProjectStep3> {
 
               // Loading Progress
               Consumer(
-                builder: (context, ref, child) {
+                builder: (context, ref, _) {
                   final loadingActions = ref.watch(loadingActionsProvider);
 
                   // Calculate progress based on current step position (max 6 steps)
@@ -87,14 +91,16 @@ class _CreateProjectStep3State extends State<CreateProjectStep3> {
               if (loadingActions.isNotEmpty)
                 Expanded(
                   child: Container(
-                    constraints: const BoxConstraints(maxHeight: 300),
+                    constraints: const BoxConstraints(
+                      maxHeight: AppSize.statusLogMaxHeight,
+                    ),
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.outline.withValues(alpha: 0.3),
+                        color: Theme.of(context).colorScheme.outline.withValues(
+                          alpha: AppOpacity.divider,
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(AppRadius.medium),
                     ),
                     child: ListView.builder(
                       shrinkWrap: true,
@@ -103,11 +109,11 @@ class _CreateProjectStep3State extends State<CreateProjectStep3> {
                         final LoadingAction action = loadingActions[index];
                         return Padding(
                           padding: const EdgeInsets.symmetric(
-                            vertical: 4,
-                            horizontal: 16,
+                            vertical: AppSpacing.tiny,
+                            horizontal: AppSpacing.xLarge,
                           ),
                           child: Row(
-                            spacing: 8,
+                            spacing: AppSpacing.medium,
                             children: [
                               // Status icon
                               _buildStatusIcon(action.status, context),
@@ -152,26 +158,31 @@ class _CreateProjectStep3State extends State<CreateProjectStep3> {
     );
   }
 
+  /// Returns a status icon widget (spinner, check, or error) for the given [LoadingStatus].
   Widget _buildStatusIcon(LoadingStatus status, BuildContext context) {
     switch (status) {
       case LoadingStatus.pending:
         return SizedBox(
-          width: 20,
-          height: 20,
+          width: AppIconSize.large,
+          height: AppIconSize.large,
           child: CircularProgressIndicator(
-            strokeWidth: 1,
+            strokeWidth: AppSize.borderThin,
             valueColor: AlwaysStoppedAnimation<Color>(
               Theme.of(context).colorScheme.primary,
             ),
           ),
         );
       case LoadingStatus.success:
-        return Icon(Icons.check_circle, color: Colors.green, size: 20);
+        return Icon(
+          Icons.check_circle,
+          color: Colors.green,
+          size: AppIconSize.large,
+        );
       case LoadingStatus.failed:
         return Icon(
           Icons.error,
           color: Theme.of(context).colorScheme.error,
-          size: 20,
+          size: AppIconSize.large,
         );
     }
   }

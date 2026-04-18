@@ -1,3 +1,4 @@
+import 'package:fide/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/panels/left/execute_panel.dart';
 import 'package:fide/panels/left/folder_panel.dart';
@@ -11,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum PanelMode { filesystem, organized, git, search, buildrun, test }
 
+/// Represents `LeftPanel`.
 class LeftPanel extends ConsumerStatefulWidget {
   final FileSystemItem? selectedFile;
   final String? currentProjectPath;
@@ -60,6 +62,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
     super.dispose();
   }
 
+  /// Handles `_handleTabChange`.
   void _handleTabChange() {
     if (_tabController.indexIsChanging) {
       // Update the provider when tab changes
@@ -81,7 +84,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
   @override
   Widget build(BuildContext context) {
     // Listen for changes to the active left panel tab provider
-    ref.listen<int>(activeLeftPanelTabProvider, (previous, next) {
+    ref.listen<int>(activeLeftPanelTabProvider, (_, next) {
       if (_tabController.index != next) {
         _tabController.animateTo(next);
       }
@@ -129,7 +132,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                   Tab(
                     key: const Key('keyTabGit'),
                     icon: Icon(
-                      _tabController.index == 2
+                      _tabController.index == AppPanelIndex.git
                           ? Icons.commit
                           : Icons.commit_outlined,
                     ),
@@ -137,7 +140,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                   Tab(
                     key: const Key('keyTabSearch'),
                     icon: Icon(
-                      _tabController.index == 3
+                      _tabController.index == AppPanelIndex.search
                           ? Icons.search
                           : Icons.search_outlined,
                     ),
@@ -145,7 +148,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                   Tab(
                     key: const Key('keyTabRun'),
                     icon: Icon(
-                      _tabController.index == 4
+                      _tabController.index == AppPanelIndex.run
                           ? Icons.play_arrow
                           : Icons.play_arrow_outlined,
                     ),
@@ -153,7 +156,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                   Tab(
                     key: const Key('keyTabTest'),
                     icon: Icon(
-                      _tabController.index == 5
+                      _tabController.index == AppPanelIndex.test
                           ? Icons.check_circle
                           : Icons.check_circle_outlined,
                     ),

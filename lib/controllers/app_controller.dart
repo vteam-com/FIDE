@@ -1,3 +1,4 @@
+// ignore: fcheck_dead_code
 import 'dart:io';
 
 import 'package:fide/providers/app_providers.dart';

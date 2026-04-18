@@ -1,4 +1,5 @@
 // ignore_for_file: deprecated_member_use
+import 'package:fide/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/widgets/container_counter.dart';
@@ -48,8 +49,8 @@ class FolderNameWidget extends StatelessWidget {
       textColor = colorScheme.error;
       iconColor = colorScheme.error;
     } else if (node.isHidden) {
-      textColor = colorScheme.onSurface.withValues(alpha: 0.5);
-      iconColor = colorScheme.primary.withValues(alpha: 0.5);
+      textColor = colorScheme.onSurface.withValues(alpha: AppOpacity.disabled);
+      iconColor = colorScheme.primary.withValues(alpha: AppOpacity.disabled);
     } else if (isExpanded) {
       textColor = colorScheme.primary;
       iconColor = colorScheme.primary;
@@ -60,7 +61,7 @@ class FolderNameWidget extends StatelessWidget {
 
     // Highlight if filtered
     final backgroundColor = isFiltered
-        ? colorScheme.primaryContainer.withValues(alpha: 0.1)
+        ? colorScheme.primaryContainer.withValues(alpha: AppOpacity.subtle)
         : null;
 
     return InkWell(
@@ -71,9 +72,9 @@ class FolderNameWidget extends StatelessWidget {
 
       child: Container(
         color: backgroundColor,
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+        padding: AppPadding.listItem,
         child: Row(
-          spacing: 4,
+          spacing: AppSpacing.tiny,
           children: [
             // Icon
             _buildIcon(context, iconColor),
@@ -84,11 +85,11 @@ class FolderNameWidget extends StatelessWidget {
                 message: rootPath != null
                     ? p.join('~', p.relative(node.path, from: rootPath))
                     : node.path,
-                waitDuration: Duration(seconds: 1),
+                waitDuration: AppDuration.tooltipWait,
                 child: Text(
                   node.name,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: AppFontSize.body,
                     color: textColor,
                     fontWeight: isFiltered ? FontWeight.w600 : FontWeight.w400,
                   ),
@@ -110,7 +111,7 @@ class FolderNameWidget extends StatelessWidget {
                     ? Icons.lock
                     : Icons.error,
                 color: colorScheme.error,
-                size: 14,
+                size: AppIconSize.small,
               ),
             ],
 
@@ -127,7 +128,7 @@ class FolderNameWidget extends StatelessWidget {
                 child: Icon(
                   Icons.more_vert,
                   color: colorScheme.primary,
-                  size: 14,
+                  size: AppIconSize.small,
                 ),
               ),
           ],
@@ -136,7 +137,8 @@ class FolderNameWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildGitStatusIcon(ColorScheme colorScheme) {
+  /// Builds a small Git-status badge icon overlaid on the folder tile.
+  Widget _buildGitStatusIcon(ColorScheme _ /* colorScheme */) {
     IconData iconData;
     Color iconColor;
 
@@ -158,18 +160,18 @@ class FolderNameWidget extends StatelessWidget {
         return const SizedBox(); // No icon for clean files
     }
 
-    return Icon(iconData, color: iconColor, size: 12);
+    return Icon(iconData, color: iconColor, size: AppIconSize.tiny);
   }
 
-  Widget _buildIcon(final BuildContext context, final Color iconColor) {
+  Widget _buildIcon(final BuildContext _ /* context */, final Color iconColor) {
     IconData iconData;
 
     if (hasError) {
       iconData = node.isDirectory ? Icons.folder_off : Icons.insert_drive_file;
-      return Icon(iconData, color: iconColor, size: 16);
+      return Icon(iconData, color: iconColor, size: AppIconSize.medium);
     }
 
     iconData = isExpanded ? Icons.folder : Icons.folder_outlined;
-    return Icon(iconData, color: iconColor, size: 20);
+    return Icon(iconData, color: iconColor, size: AppIconSize.large);
   }
 }

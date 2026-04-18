@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/action_tabs.dart';
 import 'package:fide/widgets/output_panel.dart';
@@ -11,14 +12,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Panel providing one-click build, run, and clean actions for the loaded Flutter project.
 class ExecutePanel extends ConsumerStatefulWidget {
   const ExecutePanel({super.key});
 
   @override
-  ConsumerState<ExecutePanel> createState() => ExecutePanelState();
+  ConsumerState<ExecutePanel> createState() => _ExecutePanelState();
 }
 
-class ExecutePanelState extends ConsumerState<ExecutePanel> {
+class _ExecutePanelState extends ConsumerState<ExecutePanel> {
   BuildProcessStatus _cleanStatus = BuildProcessStatus.idle;
   BuildProcessStatus _buildStatus = BuildProcessStatus.idle;
   BuildProcessStatus _runStatus = BuildProcessStatus.idle;
@@ -96,6 +98,7 @@ class ExecutePanelState extends ConsumerState<ExecutePanel> {
     setState(() => _hasOutputMap[_selectedPlatform] = value);
   }
 
+  /// Handles `_updateCocoaPods`.
   Future<void> _updateCocoaPods() async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
@@ -168,7 +171,7 @@ class ExecutePanelState extends ConsumerState<ExecutePanel> {
     } finally {
       _currentProcess = null;
       // Reset status after a delay
-      Future.delayed(const Duration(seconds: 5), () {
+      Future.delayed(AppDuration.buildStatusResetDelay, () {
         if (mounted) {
           setState(() {
             _podStatus = BuildProcessStatus.idle;
@@ -184,6 +187,7 @@ class ExecutePanelState extends ConsumerState<ExecutePanel> {
     super.dispose();
   }
 
+  /// Handles `_getSupportedPlatforms`.
   Set<String> _getSupportedPlatforms(String projectPath) {
     final supported = <String>{};
     final projectDir = Directory(projectPath);
@@ -210,6 +214,7 @@ class ExecutePanelState extends ConsumerState<ExecutePanel> {
     return supported;
   }
 
+  /// Handles `_canBuildOnCurrentPlatform`.
   bool _canBuildOnCurrentPlatform(String targetPlatform) {
     final currentPlatform = Platform.operatingSystem;
 
@@ -228,6 +233,7 @@ class ExecutePanelState extends ConsumerState<ExecutePanel> {
     return false;
   }
 
+  /// Handles `_getPlatformInstructions`.
   String _getPlatformInstructions(String platform) {
     final currentPlatform = Platform.operatingSystem;
     final isProjectSupported = _supportedPlatforms.contains(platform);
@@ -263,13 +269,11 @@ class ExecutePanelState extends ConsumerState<ExecutePanel> {
     return 'Platform configuration verified.';
   }
 
-  Widget _buildExecutePanelContent(
-    BuildContext context,
-    String currentProjectPath,
-  ) {
+  /// Handles `_buildExecutePanelContent`.
+  Widget _buildExecutePanelContent(String currentProjectPath) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 16,
+      spacing: AppSpacing.xLarge,
       children: [
         // Platform Selection Section
         PlatformSelector(
@@ -293,14 +297,17 @@ class ExecutePanelState extends ConsumerState<ExecutePanel> {
         ),
 
         // Actions Section - actions that can be performed on selected platform
+        /// Handles `_buildActionsSection`.
         _buildActionsSection(),
 
         // Output Section - shows the output of the actions
+        /// Handles `_buildOutputSection`.
         _buildOutputSection(),
       ],
     );
   }
 
+  /// Handles `_buildActionsSection`.
   Widget _buildActionsSection() {
     final colorScheme = Theme.of(context).colorScheme;
     final canBuild =
@@ -310,23 +317,29 @@ class ExecutePanelState extends ConsumerState<ExecutePanel> {
     if (!canBuild) {
       // Instructions for unsupported platforms
       return Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.large),
         decoration: BoxDecoration(
           color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(AppRadius.medium),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: AppOpacity.divider),
+          ),
         ),
         child: Row(
           children: [
-            Icon(Icons.info_outline, size: 20, color: colorScheme.secondary),
-            const SizedBox(width: 12),
+            Icon(
+              Icons.info_outline,
+              size: AppIconSize.large,
+              color: colorScheme.secondary,
+            ),
+            const SizedBox(width: AppSpacing.large),
             Expanded(
               child: Text(
                 _getPlatformInstructions(_selectedPlatform),
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: AppFontSize.caption,
                   color: colorScheme.onSurface,
-                  height: 1.4,
+                  height: AppLineHeight.relaxed,
                 ),
               ),
             ),
@@ -335,9 +348,11 @@ class ExecutePanelState extends ConsumerState<ExecutePanel> {
       );
     }
 
+    /// Handles `_buildActionTabsWithDetails`.
     return _buildActionTabsWithDetails();
   }
 
+  /// Handles `_buildActionTabsWithDetails`.
   Widget _buildActionTabsWithDetails() {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -472,7 +487,7 @@ Updates iOS CocoaPods dependencies.
 • Ensures native iOS code compatibility
 • Required before iOS builds
         ''',
-        'color': const Color(0xFF007ACC),
+        'color': AppColor.nativeDependencyAccent,
         'action': _updateCocoaPods,
         'status': _podStatus,
       });
@@ -490,7 +505,7 @@ Updates macOS CocoaPods dependencies.
 • Ensures native macOS code compatibility
 • Required before macOS builds
         ''',
-        'color': const Color(0xFF007ACC),
+        'color': AppColor.nativeDependencyAccent,
         'action': _updateCocoaPods,
         'status': _podStatus,
       });
@@ -499,6 +514,7 @@ Updates macOS CocoaPods dependencies.
     return ActionTabsWithExecute(actions: actions);
   }
 
+  /// Handles `_buildOutputSection`.
   Widget _buildOutputSection() {
     if (_hasOutput || _hasErrors) {
       return OutputPanel(
@@ -524,20 +540,20 @@ Updates macOS CocoaPods dependencies.
           children: [
             Icon(
               Icons.build_circle_outlined,
-              size: 48,
+              size: AppIconSize.emptyState,
               color: Theme.of(
                 context,
-              ).colorScheme.onSurface.withValues(alpha: 0.3),
+              ).colorScheme.onSurface.withValues(alpha: AppOpacity.divider),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.xLarge),
             Text(
               'Load a project to use\nBuild/Run/Debug features',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.7),
-                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface.withValues(
+                  alpha: AppOpacity.secondaryText,
+                ),
+                fontSize: AppFontSize.label,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -554,14 +570,15 @@ Updates macOS CocoaPods dependencies.
         children: [
           // Main Content Area with Platform Selector as Top Section
           Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: _buildExecutePanelContent(context, currentProjectPath),
+            padding: const EdgeInsets.all(AppSpacing.medium),
+            child: _buildExecutePanelContent(currentProjectPath),
           ),
         ],
       ),
     );
   }
 
+  /// Handles `_cleanFlutterApp`.
   Future<void> _cleanFlutterApp() async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
@@ -590,6 +607,7 @@ Updates macOS CocoaPods dependencies.
 
     try {
       if (shouldDoDeepClean) {
+        /// Handles `_performDeepMacOSClean`.
         await _performDeepMacOSClean(currentProjectPath);
       } else {
         await _performStandardClean(currentProjectPath);
@@ -608,7 +626,7 @@ Updates macOS CocoaPods dependencies.
     } finally {
       _currentProcess = null;
       // Reset status after a delay
-      Future.delayed(const Duration(seconds: 5), () {
+      Future.delayed(AppDuration.buildStatusResetDelay, () {
         if (mounted) {
           setState(() {
             _cleanStatus = BuildProcessStatus.idle;
@@ -619,9 +637,11 @@ Updates macOS CocoaPods dependencies.
   }
 
   Future<void> _performStandardClean(String projectPath) async {
+    /// Handles `_performStandardCleanInternal`.
     await _performStandardCleanInternal(projectPath, false);
   }
 
+  /// Handles `_performStandardCleanInternal`.
   Future<void> _performStandardCleanInternal(
     String projectPath,
     bool isRetry,
@@ -746,6 +766,7 @@ Updates macOS CocoaPods dependencies.
     }
   }
 
+  /// Handles `_performDeepMacOSClean`.
   Future<void> _performDeepMacOSClean(String projectPath) async {
     // Step 1: Update pod repo in macOS directory
     setState(() {
@@ -973,9 +994,11 @@ Updates macOS CocoaPods dependencies.
   }
 
   Future<void> _buildFlutterApp(String target) async {
+    /// Handles `_buildFlutterAppInternal`.
     await _buildFlutterAppInternal(target, false);
   }
 
+  /// Handles `_buildFlutterAppInternal`.
   Future<void> _buildFlutterAppInternal(String target, bool isRetry) async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
@@ -1133,7 +1156,7 @@ Updates macOS CocoaPods dependencies.
       _currentProcess = null;
       if (!hasCocoapodsError || isRetry) {
         // Reset status after a delay (don't reset for CocoaPods auto-fix)
-        Future.delayed(const Duration(seconds: 5), () {
+        Future.delayed(AppDuration.buildStatusResetDelay, () {
           if (mounted) {
             setState(() {
               _buildStatus = BuildProcessStatus.idle;
@@ -1144,6 +1167,7 @@ Updates macOS CocoaPods dependencies.
     }
   }
 
+  /// Handles `_getDeviceTarget`.
   String _getDeviceTarget(String platform) {
     switch (platform) {
       case 'macos':
@@ -1163,6 +1187,7 @@ Updates macOS CocoaPods dependencies.
     }
   }
 
+  /// Handles `_runFlutterApp`.
   Future<void> _runFlutterApp({required bool isDebug}) async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
@@ -1251,6 +1276,7 @@ Updates macOS CocoaPods dependencies.
     });
   }
 
+  /// Handles `_ExecutePanelState.appendOutput`.
   void appendOutput(String text) {
     if (mounted) {
       setState(() {
@@ -1260,6 +1286,7 @@ Updates macOS CocoaPods dependencies.
     }
   }
 
+  /// Handles `_ExecutePanelState.appendError`.
   void appendError(String text) {
     if (mounted) {
       setState(() {
@@ -1269,6 +1296,7 @@ Updates macOS CocoaPods dependencies.
     }
   }
 
+  /// Handles `_ExecutePanelState.getPlatformDisplayName`.
   String getPlatformDisplayName(String platform) {
     switch (platform) {
       case 'macos':

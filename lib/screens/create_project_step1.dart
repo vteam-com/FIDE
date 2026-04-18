@@ -1,7 +1,9 @@
+import 'package:fide/constants.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
+/// Represents `CreateProjectStep1`.
 class CreateProjectStep1 extends StatefulWidget {
   const CreateProjectStep1({
     super.key,
@@ -93,14 +95,14 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 24,
+      spacing: AppIconSize.xLarge,
       children: [
         // Step indicator
         Row(
           children: [
             Container(
-              width: 24,
-              height: 24,
+              width: AppIconSize.xLarge,
+              height: AppIconSize.xLarge,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Theme.of(context).colorScheme.primary,
@@ -115,19 +117,19 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.medium),
             const Text('Project Details'),
-            const SizedBox(width: 16),
+            const SizedBox(width: AppSpacing.xLarge),
             Expanded(
               child: Container(
-                height: 2,
+                height: AppBorderWidth.medium,
                 color: Theme.of(context).colorScheme.outlineVariant,
               ),
             ),
           ],
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.xLarge),
 
         TextField(
           controller: nameController,
@@ -151,11 +153,11 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
                 readOnly: true,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: AppSpacing.xLarge),
             ElevatedButton(
               onPressed: _handleBrowseDirectory,
               child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.xLarge),
                 child: Text('Browse'),
               ),
             ),
@@ -166,16 +168,23 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
         if (_finalProjectName != null &&
             _finalProjectName != nameController.text)
           Container(
-            padding: const EdgeInsets.only(top: 4, bottom: 16),
+            padding: const EdgeInsets.only(
+              top: AppSpacing.tiny,
+              bottom: AppSpacing.xLarge,
+            ),
             child: Row(
-              spacing: 8,
+              spacing: AppSpacing.medium,
               children: [
-                Icon(Icons.info_outline, color: Colors.orange, size: 16),
+                Icon(
+                  Icons.info_outline,
+                  color: Colors.orange,
+                  size: AppIconSize.medium,
+                ),
                 Text(
                   'Project name will be: "$_finalProjectName"',
                   style: TextStyle(
                     color: Colors.orange,
-                    fontSize: 12,
+                    fontSize: AppFontSize.caption,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -186,15 +195,15 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
         // Flutter status
         if (widget.flutterStatusChecked)
           Container(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(bottom: AppSpacing.medium),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
-              spacing: 8,
+              spacing: AppSpacing.medium,
               children: [
                 Icon(
                   widget.flutterAvailable ? Icons.check_circle : Icons.error,
                   color: widget.flutterAvailable ? Colors.green : Colors.red,
-                  size: 16,
+                  size: AppIconSize.medium,
                 ),
                 Text(
                   widget.flutterAvailable
@@ -202,7 +211,7 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
                       : 'Flutter SDK: Not Found',
                   style: TextStyle(
                     color: widget.flutterAvailable ? Colors.green : Colors.red,
-                    fontSize: 12,
+                    fontSize: AppFontSize.caption,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -242,12 +251,15 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
                     },
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.zero,
-                      minimumSize: const Size(50, 30),
+                      minimumSize: const Size(
+                        AppSize.compactTextButtonMinWidth,
+                        AppSize.compactButtonHeight,
+                      ),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     child: const Text(
                       'Install',
-                      style: TextStyle(fontSize: 12),
+                      style: TextStyle(fontSize: AppFontSize.caption),
                     ),
                   ),
                 ],
@@ -258,15 +270,15 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
         // Git status
         if (widget.gitStatusChecked)
           Container(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(bottom: AppSpacing.medium),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
-              spacing: 8,
+              spacing: AppSpacing.medium,
               children: [
                 Icon(
                   widget.gitAvailable ? Icons.check_circle : Icons.error,
                   color: widget.gitAvailable ? Colors.green : Colors.red,
-                  size: 16,
+                  size: AppIconSize.medium,
                 ),
                 Text(
                   widget.gitAvailable
@@ -274,7 +286,7 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
                       : 'Git: Not Found',
                   style: TextStyle(
                     color: widget.gitAvailable ? Colors.green : Colors.red,
-                    fontSize: 12,
+                    fontSize: AppFontSize.caption,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -312,12 +324,15 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
                     },
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.zero,
-                      minimumSize: const Size(50, 30),
+                      minimumSize: const Size(
+                        AppSize.compactTextButtonMinWidth,
+                        AppSize.compactButtonHeight,
+                      ),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     child: const Text(
                       'Install',
-                      style: TextStyle(fontSize: 12),
+                      style: TextStyle(fontSize: AppFontSize.caption),
                     ),
                   ),
                 ],
@@ -352,13 +367,14 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
               hintText: 'Describe what kind of app you want to create...',
               border: OutlineInputBorder(),
             ),
-            maxLines: 3,
-            minLines: 2,
+            maxLines: AppMetric.aiInputMaxLines,
+            minLines: AppMetric.doubleLineLimit,
           ),
       ],
     );
   }
 
+  /// Opens a directory picker and updates the project directory selection.
   void _handleBrowseDirectory() async {
     final selectedDir = await FilePicker.platform.getDirectoryPath();
     if (selectedDir != null && mounted) {
@@ -372,6 +388,7 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
     }
   }
 
+  /// Resolves the initial directory (from args or documents folder) and populates the directory controller.
   Future<void> _initializeDirectoryController() async {
     final directoryPath =
         widget.testInitialDirectory ??
@@ -388,6 +405,7 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
     });
   }
 
+  /// Reacts to project name field changes by validating and notifying the parent widget.
   void _onProjectNameChanged() {
     final validatedName = _validateProjectName(nameController.text);
     if (_finalProjectName != validatedName) {
@@ -414,6 +432,7 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
     widget.onValidationChanged(canProceed);
   }
 
+  /// Returns a normalised, Dart-package-safe project name, or `null` if the input is empty.
   String? _validateProjectName(String inputName) {
     if (inputName.isEmpty) {
       return null;

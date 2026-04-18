@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/panels/left/shared_panel_utils.dart';
@@ -39,10 +40,10 @@ class FolderPanel extends ConsumerStatefulWidget {
   final FileSystemItem? selectedFile;
 
   @override
-  ConsumerState<FolderPanel> createState() => FolderPanelState();
+  ConsumerState<FolderPanel> createState() => _FolderPanelState();
 }
 
-class FolderPanelState extends ConsumerState<FolderPanel> {
+class _FolderPanelState extends ConsumerState<FolderPanel> {
   final Logger _logger = Logger('FolderPanelState');
   final PanelStateManager _panelState = PanelStateManager();
   final GitService _gitService = GitService();
@@ -63,16 +64,25 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
   }
 
   // Getters for panel state
+  /// Returns `projectRoot`.
   ProjectNode? get projectRoot => _panelState.projectRoot;
+
+  /// Returns `filterController`.
   TextEditingController get filterController => _panelState.filterController;
+
+  /// Returns `filterQuery`.
   String get filterQuery => _panelState.filterQuery;
+
+  /// Returns `expandedState`.
   Map<String, bool> get expandedState => _panelState.expandedState;
 
   // Helper methods
+  /// Handles `_FolderPanelState.showError`.
   void showError(String message) {
     MessageBox.showError(context, message, showCopyButton: true);
   }
 
+  /// Handles `_FolderPanelState.pickDirectory`.
   Future<void> pickDirectory() async {
     try {
       final selectedDirectory = await FilePicker.platform.getDirectoryPath();
@@ -108,12 +118,14 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     }
   }
 
+  /// Handles `_ensureSelectedFileVisible`.
   void _ensureSelectedFileVisible(String filePath) {
     if (_panelState.projectRoot == null || !mounted) return;
 
     // For filesystem view, expand the directory containing the file
     final fileDir = path.dirname(filePath);
     if (fileDir != _panelState.projectRoot!.path) {
+      /// Handles `_findNodeByPath`.
       final directoryNode = _findNodeByPath(fileDir);
       if (directoryNode != null && mounted) {
         setState(() {
@@ -123,6 +135,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     }
   }
 
+  /// Handles `_onNodeTapped`.
   void _onNodeTapped(ProjectNode node, bool isExpanded) async {
     if (node.isDirectory) {
       // Directory can be selected for navigation/display purposes, not for opening in editor
@@ -152,10 +165,12 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
         }
       }
     } else {
+      /// Handles `_handleFileTap`.
       _handleFileTap(node);
     }
   }
 
+  /// Handles `_handleFileTap`.
   void _handleFileTap(ProjectNode node) {
     final item = FileSystemItem.fromFileSystemEntity(File(node.path));
     if (widget.selectedFile?.path == item.path) return;
@@ -190,6 +205,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     );
   }
 
+  /// Handles `_handleContextMenuAction`.
   void _handleContextMenuAction(String action, ProjectNode node) {
     switch (action) {
       case 'open':
@@ -210,6 +226,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     }
   }
 
+  /// Handles `_handleFileContextMenuAction`.
   void _handleFileContextMenuAction(String action, ProjectNode node) {
     switch (action) {
       case 'reveal':
@@ -245,6 +262,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     }
   }
 
+  /// Handles `_findNodeByPath`.
   ProjectNode? _findNodeByPath(String targetPath) {
     if (_panelState.projectRoot == null) return null;
 
@@ -267,6 +285,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     return findInNode(_panelState.projectRoot!);
   }
 
+  /// Handles `_refreshProjectTree`.
   Future<void> _refreshProjectTree() async {
     if (_panelState.projectRoot == null) return;
 
@@ -315,12 +334,16 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
         ? Container(
             color: Theme.of(context).colorScheme.surface,
             child: const Center(
-              child: Text('No project loaded', style: TextStyle(fontSize: 16)),
+              child: Text(
+                'No project loaded',
+                style: TextStyle(fontSize: AppFontSize.title),
+              ),
             ),
           )
         : buildPanelContent();
   }
 
+  /// Handles `_FolderPanelState.buildPanelContent`.
   Widget buildPanelContent() {
     if (projectRoot == null) {
       return Container(
@@ -329,10 +352,14 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.folder_open, size: 48, color: Colors.grey),
-              const SizedBox(height: 16),
+              const Icon(
+                Icons.folder_open,
+                size: AppIconSize.emptyState,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: AppSpacing.xLarge),
               const Text('No project loaded'),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.medium),
               ElevatedButton.icon(
                 onPressed: pickDirectory,
                 icon: const Icon(Icons.folder_open),
@@ -360,13 +387,13 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
                               .map((node) => _buildNode(node))
                               .toList(),
                         )
+                      /// Handles `_buildFilteredTree`.
                       : _buildFilteredTree(),
                 ),
               )
             else
               SizedBox(
-                height:
-                    400, // Default reasonable height for unconstrained layouts
+                height: AppSize.folderPanelFallbackHeight,
                 child: SingleChildScrollView(
                   child: filterQuery.isEmpty
                       ? Column(
@@ -379,15 +406,26 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
               ),
             // Filter bar
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.medium,
+                0,
+                AppSpacing.medium,
+                AppSpacing.medium,
+              ),
               child: TextField(
                 controller: filterController,
                 decoration: InputDecoration(
                   hintText: 'Filter...',
-                  prefixIcon: const Icon(Icons.filter_list, size: 20),
+                  prefixIcon: const Icon(
+                    Icons.filter_list,
+                    size: AppIconSize.large,
+                  ),
                   suffixIcon: filterQuery.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear, size: 20),
+                          icon: const Icon(
+                            Icons.clear,
+                            size: AppIconSize.large,
+                          ),
                           onPressed: () {
                             filterController.clear();
                             // Clear filter query by triggering the filter change listener
@@ -396,7 +434,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
                         )
                       : null,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadius.medium),
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
@@ -404,11 +442,11 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
                     context,
                   ).colorScheme.surfaceContainerHighest,
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+                    horizontal: AppSpacing.large,
+                    vertical: AppSpacing.medium,
                   ),
                 ),
-                style: const TextStyle(fontSize: 13),
+                style: const TextStyle(fontSize: AppFontSize.body),
               ),
             ),
           ],
@@ -417,6 +455,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     );
   }
 
+  /// Handles `_buildFilteredTree`.
   Widget _buildFilteredTree() {
     if (projectRoot == null) return const SizedBox();
 
@@ -431,12 +470,14 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
 
   Widget _buildFilteredNode(ProjectNode node) {
     if (node.isDirectory) {
+      /// Handles `_buildFilteredDirectoryNode`.
       return _buildFilteredDirectoryNode(node);
     } else {
       return _buildNode(node);
     }
   }
 
+  /// Handles `_buildFilteredDirectoryNode`.
   Widget _buildFilteredDirectoryNode(ProjectNode node) {
     final isExpanded =
         expandedState[node.path] ?? true; // Auto-expand filtered directories
@@ -451,7 +492,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     } else if (node.isHidden) {
       textColor = Theme.of(
         context,
-      ).colorScheme.onSurface.withValues(alpha: 0.5);
+      ).colorScheme.onSurface.withValues(alpha: AppOpacity.disabled);
     } else {
       textColor = Theme.of(context).colorScheme.onSurface;
     }
@@ -461,7 +502,9 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     if (hasError) {
       iconColor = Theme.of(context).colorScheme.error;
     } else if (node.isHidden) {
-      iconColor = Theme.of(context).colorScheme.primary.withValues(alpha: 0.5);
+      iconColor = Theme.of(
+        context,
+      ).colorScheme.primary.withValues(alpha: AppOpacity.disabled);
     } else {
       iconColor = Theme.of(context).colorScheme.primary;
     }
@@ -480,31 +523,29 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
         GestureDetector(
           onTap: () => _onFilteredNodeTapped(node, isExpanded),
           onLongPressStart: (details) =>
+              /// Handles `_showFilteredNodeContextMenu`.
               _showFilteredNodeContextMenu(node, details.globalPosition),
           child: Container(
             color: isMatching
-                ? Theme.of(
-                    context,
-                  ).colorScheme.primaryContainer.withValues(alpha: 0.1)
+                ? Theme.of(context).colorScheme.primaryContainer.withValues(
+                    alpha: AppOpacity.subtle,
+                  )
                 : null,
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8.0,
-                vertical: 2.0,
-              ),
+              padding: AppPadding.listItem,
               child: Row(
                 children: [
                   Icon(
                     hasError ? Icons.folder_off : Icons.folder,
                     color: iconColor,
-                    size: 16,
+                    size: AppIconSize.medium,
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: AppSpacing.small),
                   Expanded(
                     child: Text(
                       node.name,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: AppFontSize.body,
                         color: textColor,
                         fontWeight: isMatching
                             ? FontWeight.w600
@@ -514,13 +555,13 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
                     ),
                   ),
                   if (hasError) ...[
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppSpacing.tiny),
                     Icon(
                       node.loadResult == LoadChildrenResult.accessDenied
                           ? Icons.lock
                           : Icons.error,
                       color: Theme.of(context).colorScheme.error,
-                      size: 14,
+                      size: AppIconSize.small,
                     ),
                   ],
                 ],
@@ -530,22 +571,28 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
         ),
         if (node.isDirectory && isExpanded)
           Padding(
-            padding: EdgeInsets.only(left: node.children.isEmpty ? 32 : 16.0),
+            padding: EdgeInsets.only(
+              left: node.children.isEmpty
+                  ? AppSize.compactActionButton
+                  : AppSpacing.xLarge,
+            ),
             child: node.children.isEmpty
                 ? const Text(
                     'empty folder',
                     style: TextStyle(
                       fontStyle: FontStyle.italic,
                       color: Colors.grey,
-                      fontSize: 12,
+                      fontSize: AppFontSize.caption,
                     ),
                   )
+                /// Handles `_buildFilteredNodeChildren`.
                 : _buildFilteredNodeChildren(node),
           ),
       ],
     );
   }
 
+  /// Handles `_buildFilteredNodeChildren`.
   Widget _buildFilteredNodeChildren(ProjectNode node) {
     // Deduplicate children by path to prevent duplicate entries
     final uniqueChildren = <String, ProjectNode>{};
@@ -582,6 +629,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     return node.name.toLowerCase().contains(filterQuery);
   }
 
+  /// Handles `_onFilteredNodeTapped`.
   void _onFilteredNodeTapped(ProjectNode node, bool isExpanded) async {
     if (node.isDirectory) {
       if (mounted) {
@@ -612,6 +660,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
 
       // Seed Git status for the selected file if not already loaded
       if (node.gitStatus == GitFileStatus.clean && projectRoot != null) {
+        /// Handles `_seedGitStatusForFile`.
         _seedGitStatusForFile(node);
       }
 
@@ -622,6 +671,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     }
   }
 
+  /// Handles `_showFilteredNodeContextMenu`.
   void _showFilteredNodeContextMenu(ProjectNode node, Offset position) {
     showMenu(
       context: context,
@@ -645,10 +695,13 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
       ],
     ).then((value) {
       if (value == null) return;
+
+      /// Handles `_handleFilteredContextMenuAction`.
       _handleFilteredContextMenuAction(value, node);
     });
   }
 
+  /// Handles `_handleFilteredContextMenuAction`.
   void _handleFilteredContextMenuAction(String action, ProjectNode node) {
     _logger.info(
       'Handling filtered context menu action: $action for ${node.name}',
@@ -663,17 +716,24 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
         break;
       case 'new_folder':
         _logger.info('Creating new folder in ${node.path}');
+
+        /// Handles `_createNewFolder`.
         _createNewFolder(node);
         break;
       case 'rename':
+
+        /// Handles `_renameFile`.
         _renameFile(node);
         break;
       case 'delete':
+
+        /// Handles `_deleteFile`.
         _deleteFile(node);
         break;
     }
   }
 
+  /// Handles `_seedGitStatusForFile`.
   Future<void> _seedGitStatusForFile(ProjectNode node) async {
     if (projectRoot == null || !mounted) return;
 
@@ -790,6 +850,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     }
   }
 
+  /// Handles `_createNewFolder`.
   Future<void> _createNewFolder(ProjectNode parent) async {
     if (!parent.isDirectory) return;
 
@@ -846,6 +907,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     }
   }
 
+  /// Handles `_renameFile`.
   Future<void> _renameFile(ProjectNode node) async {
     final TextEditingController controller = TextEditingController(
       text: node.name,
@@ -905,6 +967,7 @@ class FolderPanelState extends ConsumerState<FolderPanel> {
     }
   }
 
+  /// Handles `_deleteFile`.
   Future<void> _deleteFile(ProjectNode node) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -988,13 +1051,16 @@ class NodeBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (node.isDirectory) {
-      return _buildDirectoryNode(context);
+      /// Handles `_buildDirectoryNode`.
+      return _buildDirectoryNode();
     } else {
-      return _buildFileNode(context);
+      /// Handles `_buildFileNode`.
+      return _buildFileNode();
     }
   }
 
-  Widget _buildDirectoryNode(BuildContext context) {
+  /// Handles `_buildDirectoryNode`.
+  Widget _buildDirectoryNode() {
     final isExpanded = expandedState[node.path] ?? false;
     final hasError =
         node.loadResult != null &&
@@ -1017,23 +1083,29 @@ class NodeBuilder extends StatelessWidget {
 
         if (node.isDirectory && isExpanded)
           Padding(
-            padding: EdgeInsets.only(left: node.children.isEmpty ? 32 : 16.0),
+            padding: EdgeInsets.only(
+              left: node.children.isEmpty
+                  ? AppSize.compactActionButton
+                  : AppSpacing.xLarge,
+            ),
             child: node.children.isEmpty
                 ? const Text(
                     'empty folder',
                     style: TextStyle(
                       fontStyle: FontStyle.italic,
                       color: Colors.grey,
-                      fontSize: 12,
+                      fontSize: AppFontSize.caption,
                     ),
                   )
-                : _buildNodeChildren(context),
+                /// Handles `_buildNodeChildren`.
+                : _buildNodeChildren(),
           ),
       ],
     );
   }
 
-  Widget _buildFileNode(BuildContext context) {
+  /// Handles `_buildFileNode`.
+  Widget _buildFileNode() {
     // Create FileSystemItem from ProjectNode
     final item = FileSystemItem.fromFileSystemEntity(File(node.path));
     item.gitStatus = node.gitStatus;
@@ -1050,12 +1122,13 @@ class NodeBuilder extends StatelessWidget {
       fileItem: item,
       isSelected: isSelected,
       rootPath: rootPath,
-      onTap: () => _handleFileTap(context),
+      onTap: _handleFileTap,
       onContextMenu: (offset) => onShowContextMenu(node, offset),
     );
   }
 
-  Widget _buildNodeChildren(BuildContext context) {
+  /// Handles `_buildNodeChildren`.
+  Widget _buildNodeChildren() {
     // Deduplicate children by path to prevent duplicate entries
     final uniqueChildren = <String, ProjectNode>{};
     for (final child in node.children) {
@@ -1082,7 +1155,7 @@ class NodeBuilder extends StatelessWidget {
     );
   }
 
-  void _handleFileTap(BuildContext context) {
+  void _handleFileTap() {
     if (onFileSelected != null) {
       onFileSelected!(node);
     }

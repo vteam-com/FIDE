@@ -1,14 +1,18 @@
+// ignore: fcheck_dead_code
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:fide/constants.dart';
 import 'package:http/http.dart' as http;
 
+/// Represents `AIService`.
 class AIService {
   static const String _ollamaUrl = 'http://localhost:11434/api/generate';
   static const String _defaultModel =
       'codellama'; // Can be changed to other models like 'llama2', 'mistral', etc.
 
+  /// Requests a coding suggestion from Ollama using prompt and contextual text.
   Future<String> getCodeSuggestion(String prompt, String context) async {
     try {
       final fullPrompt =
@@ -32,10 +36,10 @@ Please provide a helpful response focused on the coding request.''';
             }),
           )
           .timeout(
-            const Duration(seconds: 30),
+            AppDuration.aiSuggestionTimeout,
           ); // Timeout after 30 seconds to prevent hanging
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == HttpStatus.ok) {
         final data = jsonDecode(response.body);
         return data['response'] ?? 'No suggestion available';
       } else {
@@ -46,6 +50,7 @@ Please provide a helpful response focused on the coding request.''';
     }
   }
 
+  /// Requests a plain-language explanation for the provided source code.
   Future<String> explainCode(String code) async {
     return await getCodeSuggestion(
       'Explain what this code does in simple terms:',
@@ -78,6 +83,7 @@ Please provide a helpful response focused on the coding request.''';
     }
   }
 
+  /// Builds the AI prompt used to generate an initial Flutter project file.
   Future<String> getAiPrompt(
     final String projectName,
     final String description,
@@ -103,6 +109,7 @@ Customer description:
     return prompt;
   }
 
+  /// Generates starter project files (including `pubspec.yaml` and `lib/main.dart`).
   Future<Map<String, String>> generateProject(
     String projectName,
     String description,
@@ -121,10 +128,10 @@ Customer description:
             }),
           )
           .timeout(
-            const Duration(seconds: 60),
+            AppDuration.aiGenerateTimeout,
           ); // Timeout after 60 seconds to prevent hanging
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == HttpStatus.ok) {
         final data = jsonDecode(response.body);
         final rawResponse = data['response'] ?? '';
 
@@ -287,7 +294,7 @@ class _MyHomePageState extends State<MyHomePage> {
             '🔍 Debug: Found main.dart: ${files['lib/main.dart']?.length ?? 0} chars',
           );
           print(
-            '🔍 Debug: Response preview: ${rawResponse.substring(0, min(200, rawResponse.length))}',
+            '🔍 Debug: Response preview: ${rawResponse.substring(0, min(AppMetric.logPreviewChars, rawResponse.length))}',
           );
 
           return {
@@ -309,6 +316,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  /// Generates code for a requirement by delegating to the suggestion endpoint.
   Future<String> generateCode(String description) async {
     return await getCodeSuggestion(
       'Generate Flutter/Dart code for the following requirement:',
@@ -316,6 +324,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  /// Refactors code according to a natural-language instruction.
   Future<String> refactorCode(String code, String instruction) async {
     return await getCodeSuggestion(
       'Refactor this code with the following instruction: $instruction',
@@ -397,7 +406,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
 
     // Give it a moment to start up
-    await Future.delayed(const Duration(seconds: 3));
+    await Future.delayed(AppDuration.ollamaStartupDelay);
   }
 
   /// Downloads the default model

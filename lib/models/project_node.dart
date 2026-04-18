@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
@@ -9,6 +10,7 @@ enum ProjectNodeType { file, directory }
 
 enum LoadChildrenResult { success, accessDenied, fileSystemError, unknownError }
 
+/// A node in the project file-tree, representing a file or directory with optional Git status and lazy-loaded children.
 class ProjectNode {
   final String name;
   final String path;
@@ -33,10 +35,14 @@ class ProjectNode {
            : null,
        isHidden = name.startsWith('.');
 
+  /// Returns `isDirectory`.
   bool get isDirectory => type == ProjectNodeType.directory;
+
+  /// Returns `isFile`.
   bool get isFile => type == ProjectNodeType.file;
 
   // Create a ProjectNode from a FileSystemEntity
+  /// Handles `ProjectNode.fromFileSystemEntity`.
   static Future<ProjectNode> fromFileSystemEntity(
     FileSystemEntity entity,
   ) async {
@@ -52,6 +58,7 @@ class ProjectNode {
   }
 
   // Enumerate contents for a directory node
+  /// Handles `ProjectNode.enumerateContents`.
   Future<LoadChildrenResult> enumerateContents() async {
     if (!isDirectory) return LoadChildrenResult.success;
 
@@ -103,6 +110,7 @@ class ProjectNode {
   }
 
   // Recursively enumerate all contents for a directory node (background enumeration)
+  /// Handles `ProjectNode.enumerateContentsRecursive`.
   Future<LoadChildrenResult> enumerateContentsRecursive() async {
     if (!isDirectory) return LoadChildrenResult.success;
 
@@ -160,6 +168,7 @@ class ProjectNode {
   }
 
   // Synchronous version for isolates (doesn't return a Future)
+  /// Handles `ProjectNode.enumerateContentsRecursiveSync`.
   void enumerateContentsRecursiveSync() {
     if (!isDirectory) return;
 
@@ -207,6 +216,7 @@ class ProjectNode {
   }
 
   // Synchronous version of fromFileSystemEntity for isolates
+  /// Handles `ProjectNode.fromFileSystemEntitySync`.
   static ProjectNode fromFileSystemEntitySync(FileSystemEntity entity) {
     final stat = entity.statSync();
     final isDirectory = stat.type == FileSystemEntityType.directory;
@@ -220,6 +230,7 @@ class ProjectNode {
   }
 
   // Find a node by path
+  /// Handles `ProjectNode.findNode`.
   ProjectNode? findNode(String targetPath) {
     if (path == targetPath) return this;
 
@@ -231,12 +242,8 @@ class ProjectNode {
     return null;
   }
 
-  // Toggle expanded state
-  void toggleExpanded() {
-    isExpanded = !isExpanded;
-  }
-
   // Get Git status color
+  /// Handles `ProjectNode.getGitStatusColor`.
   Color getGitStatusColor(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     switch (gitStatus) {
@@ -249,7 +256,7 @@ class ProjectNode {
       case GitFileStatus.untracked:
         return Colors.grey;
       case GitFileStatus.ignored:
-        return Colors.grey[600]!;
+        return Colors.grey[AppShade.medium]!;
       case GitFileStatus.clean:
       default:
         return colorScheme.onSurface;
@@ -257,6 +264,7 @@ class ProjectNode {
   }
 
   // Get Git status badge text
+  /// Handles `ProjectNode.getGitStatusBadge`.
   String getGitStatusBadge() {
     switch (gitStatus) {
       case GitFileStatus.added:
@@ -276,9 +284,10 @@ class ProjectNode {
   }
 
   // Get Git status text style
+  /// Handles `ProjectNode.getGitStatusTextStyle`.
   TextStyle getGitStatusTextStyle(BuildContext context) {
     final baseStyle = TextStyle(
-      fontSize: 13,
+      fontSize: AppFontSize.body,
       color: Theme.of(context).colorScheme.onSurface,
     );
 
@@ -291,7 +300,7 @@ class ProjectNode {
       case GitFileStatus.ignored:
         return baseStyle.copyWith(
           fontStyle: FontStyle.italic,
-          color: Colors.grey[600],
+          color: Colors.grey[AppShade.medium],
         );
       case GitFileStatus.added:
         return baseStyle.copyWith(color: Colors.green);
@@ -306,6 +315,7 @@ class ProjectNode {
   }
 
   // Add a child node (for incremental updates)
+  /// Handles `ProjectNode.addChild`.
   void addChild(ProjectNode child) {
     // Find the correct insertion position to maintain sorted order
     int insertIndex = 0;
@@ -332,20 +342,11 @@ class ProjectNode {
   }
 
   // Remove a child node by path (for incremental updates)
+  /// Handles `ProjectNode.removeChild`.
   bool removeChild(String childPath) {
     final index = children.indexWhere((child) => child.path == childPath);
     if (index != -1) {
       children.removeAt(index);
-      return true;
-    }
-    return false;
-  }
-
-  // Update a child node (for incremental updates)
-  bool updateChild(String childPath, ProjectNode newChild) {
-    final index = children.indexWhere((child) => child.path == childPath);
-    if (index != -1) {
-      children[index] = newChild;
       return true;
     }
     return false;

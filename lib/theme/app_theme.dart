@@ -1,5 +1,8 @@
+// ignore: fcheck_dead_code
+import 'package:fide/constants.dart';
 import 'package:flutter/material.dart';
 
+/// Represents `AppTheme`.
 class AppTheme {
   // Single seed color for consistent theming
   static const Color _seedColor = Colors.blue;
@@ -21,11 +24,22 @@ class AppTheme {
   ); // Dark grey for neutral states
 
   /// Light backgrounds for semantic color themes (with alpha for theme adaptation)
-  static Color get successBackground => successColor.withAlpha(150);
-  static Color get warningBackground => warningColor.withAlpha(150);
-  static Color get errorBackground => errorColor.withAlpha(150);
-  static Color get infoBackground => infoColor.withAlpha(150);
-  static Color get neutralBackground => neutralColor.withAlpha(150);
+  static Color get successBackground =>
+      successColor.withAlpha(AppAlpha.badgeFill);
+
+  /// Returns the warning background color used by semantic status UI.
+  static Color get warningBackground =>
+      warningColor.withAlpha(AppAlpha.badgeFill);
+
+  /// Returns the error background color used by semantic status UI.
+  static Color get errorBackground => errorColor.withAlpha(AppAlpha.badgeFill);
+
+  /// Returns the info background color used by semantic status UI.
+  static Color get infoBackground => infoColor.withAlpha(AppAlpha.badgeFill);
+
+  /// Returns the neutral background color used by semantic status UI.
+  static Color get neutralBackground =>
+      neutralColor.withAlpha(AppAlpha.badgeFill);
 
   /// Text colors for semantic themes
   static const Color successText = Colors.white;
@@ -34,6 +48,7 @@ class AppTheme {
   static const Color infoText = Colors.white;
   static const Color neutralText = Colors.white;
 
+  /// Builds the application's light theme.
   static ThemeData get lightTheme {
     return ThemeData.from(
       colorScheme: ColorScheme.fromSeed(
@@ -46,24 +61,31 @@ class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8)),
+          borderRadius: BorderRadius.all(Radius.circular(AppSpacing.medium)),
         ),
       ),
       appBarTheme: const AppBarTheme(
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        titleTextStyle: TextStyle(
+          fontSize: AppIconSize.mediumLarge,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       popupMenuTheme: PopupMenuThemeData(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(6)),
-          side: BorderSide(color: const Color(0xFFCCCCCC), width: 1.0),
+          borderRadius: BorderRadius.all(Radius.circular(AppRadius.small)),
+          side: BorderSide(
+            color: AppColor.popupBorderLight,
+            width: AppSize.borderThin,
+          ),
         ),
-        elevation: 6,
+        elevation: AppSpacing.small,
       ),
     );
   }
 
+  /// Builds the application's dark theme.
   static ThemeData get darkTheme {
     return ThemeData.from(
       colorScheme: ColorScheme.fromSeed(
@@ -76,39 +98,46 @@ class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8)),
+          borderRadius: BorderRadius.all(Radius.circular(AppSpacing.medium)),
         ),
       ),
       appBarTheme: const AppBarTheme(
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        titleTextStyle: TextStyle(
+          fontSize: AppIconSize.mediumLarge,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       popupMenuTheme: PopupMenuThemeData(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(6)),
-          side: BorderSide(color: const Color(0xFF4A4A4A), width: 1.0),
+          borderRadius: BorderRadius.all(Radius.circular(AppRadius.small)),
+          side: BorderSide(
+            color: AppColor.popupBorderDark,
+            width: AppSize.borderThin,
+          ),
         ),
-        elevation: 6,
+        elevation: AppSpacing.small,
       ),
     );
   }
 
-  // Side panel surface color for cards/containers within the side panel
+  /// Returns the side-panel surface color for cards and nested containers.
   static Color sidePanelSurface(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     return brightness == Brightness.light
-        ? const Color(0xFFFFFFFF) // Pure white for light mode
-        : const Color(
-            0xFF252526,
-          ); // Slightly lighter than background for dark mode
+        ? AppColor
+              .sidePanelSurfaceLight // Pure white for light mode
+        : AppColor
+              .sidePanelSurfaceDark; // Slightly lighter than background for dark mode
   }
 
-  // Side panel divider color
+  /// Returns the side-panel divider color for the active brightness.
   static Color sidePanelDivider(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     return brightness == Brightness.light
-        ? const Color(0xFFE5E5E5) // Light gray divider
-        : const Color(0xFF3E3E42); // Dark gray divider
+        ? AppColor
+              .sidePanelDividerLight // Light gray divider
+        : AppColor.sidePanelDividerDark; // Dark gray divider
   }
 }

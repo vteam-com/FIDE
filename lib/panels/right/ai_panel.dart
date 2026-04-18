@@ -1,10 +1,12 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:fide/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/services/ai_service.dart';
 import 'package:fide/utils/message_box.dart';
 import 'package:flutter/material.dart';
 
+/// Represents `AIPanel`.
 class AIPanel extends StatefulWidget {
   const AIPanel({super.key, this.selectedFile});
 
@@ -40,6 +42,8 @@ class _AIPanelState extends State<AIPanel> {
   @override
   void initState() {
     super.initState();
+
+    /// Handles `_checkStatus`.
     _checkStatus();
   }
 
@@ -62,15 +66,15 @@ class _AIPanelState extends State<AIPanel> {
           if (_messages.isEmpty &&
               !(_hasOllamaInstalled && _isOllamaRunning && _hasModelInstalled))
             Container(
-              padding: const EdgeInsets.all(16.0),
-              margin: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(AppSpacing.xLarge),
+              margin: const EdgeInsets.all(AppSpacing.medium),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8.0),
+                borderRadius: BorderRadius.circular(AppRadius.medium),
                 border: Border.all(
                   color: Theme.of(
                     context,
-                  ).colorScheme.outline.withValues(alpha: 0.3),
+                  ).colorScheme.outline.withValues(alpha: AppOpacity.divider),
                 ),
               ),
               child: Column(
@@ -82,7 +86,7 @@ class _AIPanelState extends State<AIPanel> {
                         Icons.info_outline,
                         color: Theme.of(context).colorScheme.primary,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.medium),
                       Text(
                         'Setup',
                         style: TextStyle(
@@ -92,7 +96,7 @@ class _AIPanelState extends State<AIPanel> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.medium),
                   if (_isCheckingStatus)
                     const Center(child: CircularProgressIndicator())
                   else if (!_hasOllamaInstalled)
@@ -101,9 +105,9 @@ class _AIPanelState extends State<AIPanel> {
                       children: [
                         const Text(
                           'Ollama is not installed.',
-                          style: TextStyle(fontSize: 12),
+                          style: TextStyle(fontSize: AppFontSize.caption),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.medium),
                         if (_isInstalling)
                           const CircularProgressIndicator()
                         else
@@ -119,9 +123,9 @@ class _AIPanelState extends State<AIPanel> {
                       children: [
                         const Text(
                           'Ollama is installed but not running.',
-                          style: TextStyle(fontSize: 12),
+                          style: TextStyle(fontSize: AppFontSize.caption),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.medium),
                         if (_isInstalling)
                           const CircularProgressIndicator()
                         else
@@ -137,9 +141,9 @@ class _AIPanelState extends State<AIPanel> {
                       children: [
                         const Text(
                           'Ollama is running but the codellama model is not downloaded.',
-                          style: TextStyle(fontSize: 12),
+                          style: TextStyle(fontSize: AppFontSize.caption),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.medium),
                         if (_isInstalling)
                           const CircularProgressIndicator()
                         else
@@ -152,7 +156,7 @@ class _AIPanelState extends State<AIPanel> {
                   else
                     const Text(
                       'Ollama is ready to use!',
-                      style: TextStyle(fontSize: 12),
+                      style: TextStyle(fontSize: AppFontSize.caption),
                     ),
                 ],
               ),
@@ -169,10 +173,12 @@ class _AIPanelState extends State<AIPanel> {
                   )
                 : ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(AppSpacing.medium),
                     itemCount: _messages.length,
-                    itemBuilder: (context, index) {
+                    itemBuilder: (_ /*context*/, index) {
                       final message = _messages[index];
+
+                      /// Handles `_buildMessageBubble`.
                       return _buildMessageBubble(message);
                     },
                   ),
@@ -180,25 +186,29 @@ class _AIPanelState extends State<AIPanel> {
           Divider(),
           PopupMenuButton<String>(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xLarge,
+                vertical: AppSpacing.large,
+              ),
               child: Row(
                 children: [
+                  /// Handles `_getActionText`.
                   Text(_getActionText()),
                   const Spacer(),
                   const Icon(Icons.arrow_drop_down),
                 ],
               ),
             ),
-            itemBuilder: (context) => [
+            itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'ask',
                 child: Row(
                   children: [
                     if ('ask' == _selectedAction)
-                      const Icon(Icons.check, size: 18)
+                      const Icon(Icons.check, size: AppIconSize.mediumLarge)
                     else
-                      const SizedBox(width: 18),
-                    const SizedBox(width: 8),
+                      const SizedBox(width: AppIconSize.mediumLarge),
+                    const SizedBox(width: AppSpacing.medium),
                     const Text('Ask AI'),
                   ],
                 ),
@@ -208,10 +218,10 @@ class _AIPanelState extends State<AIPanel> {
                 child: Row(
                   children: [
                     if ('explain' == _selectedAction)
-                      const Icon(Icons.check, size: 18)
+                      const Icon(Icons.check, size: AppIconSize.mediumLarge)
                     else
-                      const SizedBox(width: 18),
-                    const SizedBox(width: 8),
+                      const SizedBox(width: AppIconSize.mediumLarge),
+                    const SizedBox(width: AppSpacing.medium),
                     const Text('Explain Code'),
                   ],
                 ),
@@ -221,10 +231,10 @@ class _AIPanelState extends State<AIPanel> {
                 child: Row(
                   children: [
                     if ('generate' == _selectedAction)
-                      const Icon(Icons.check, size: 18)
+                      const Icon(Icons.check, size: AppIconSize.mediumLarge)
                     else
-                      const SizedBox(width: 18),
-                    const SizedBox(width: 8),
+                      const SizedBox(width: AppIconSize.mediumLarge),
+                    const SizedBox(width: AppSpacing.medium),
                     const Text('Generate Code'),
                   ],
                 ),
@@ -234,10 +244,10 @@ class _AIPanelState extends State<AIPanel> {
                 child: Row(
                   children: [
                     if ('refactor' == _selectedAction)
-                      const Icon(Icons.check, size: 18)
+                      const Icon(Icons.check, size: AppIconSize.mediumLarge)
                     else
-                      const SizedBox(width: 18),
-                    const SizedBox(width: 8),
+                      const SizedBox(width: AppIconSize.mediumLarge),
+                    const SizedBox(width: AppSpacing.medium),
                     const Text('Refactor Code'),
                   ],
                 ),
@@ -249,20 +259,21 @@ class _AIPanelState extends State<AIPanel> {
           ),
           // Input area
           Row(
-            spacing: 8,
+            spacing: AppSpacing.medium,
             children: [
               Expanded(
                 child: TextField(
                   controller: _promptController,
                   decoration: InputDecoration(
+                    /// Handles `_getHintText`.
                     hintText: _getHintText(),
                     border: const OutlineInputBorder(),
                     contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+                      horizontal: AppSpacing.large,
+                      vertical: AppSpacing.medium,
                     ),
                   ),
-                  maxLines: 3,
+                  maxLines: AppMetric.aiInputMaxLines,
                   minLines: 1,
                   onSubmitted: (_) => _sendMessage(),
                 ),
@@ -272,9 +283,11 @@ class _AIPanelState extends State<AIPanel> {
                 onPressed: _isLoading ? null : _sendMessage,
                 icon: _isLoading
                     ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        width: AppIconSize.large,
+                        height: AppIconSize.large,
+                        child: CircularProgressIndicator(
+                          strokeWidth: AppBorderWidth.medium,
+                        ),
                       )
                     : const Icon(Icons.send),
                 tooltip: 'Send',
@@ -286,21 +299,22 @@ class _AIPanelState extends State<AIPanel> {
     );
   }
 
+  /// Handles `_buildMessageBubble`.
   Widget _buildMessageBubble(ChatMessage message) {
     final isUser = message.isUser;
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.symmetric(vertical: AppSpacing.tiny),
+        padding: const EdgeInsets.all(AppSpacing.large),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.8,
+          maxWidth: MediaQuery.of(context).size.width * AppOpacity.emphasis,
         ),
         decoration: BoxDecoration(
           color: isUser
               ? Theme.of(context).colorScheme.primary
               : Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppSpacing.large),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,18 +329,19 @@ class _AIPanelState extends State<AIPanel> {
             ),
             if (message.timestamp != null)
               Padding(
-                padding: const EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.only(top: AppSpacing.tiny),
                 child: Text(
+                  /// Handles `_formatTimestamp`.
                   _formatTimestamp(message.timestamp!),
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: AppFontSize.badge,
                     color: isUser
-                        ? Theme.of(
-                            context,
-                          ).colorScheme.onPrimary.withValues(alpha: 0.7)
-                        : Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.5),
+                        ? Theme.of(context).colorScheme.onPrimary.withValues(
+                            alpha: AppOpacity.secondaryText,
+                          )
+                        : Theme.of(context).colorScheme.onSurface.withValues(
+                            alpha: AppOpacity.disabled,
+                          ),
                   ),
                 ),
               ),
@@ -336,6 +351,7 @@ class _AIPanelState extends State<AIPanel> {
     );
   }
 
+  /// Handles `_checkStatus`.
   Future<void> _checkStatus() async {
     setState(() => _isCheckingStatus = true);
     try {
@@ -351,7 +367,7 @@ class _AIPanelState extends State<AIPanel> {
         _isOllamaRunning = false;
         _hasModelInstalled = false;
       }
-    } catch (e) {
+    } catch (_) {
       // Ollama not available
       _hasOllamaInstalled = false;
       _isOllamaRunning = false;
@@ -360,6 +376,7 @@ class _AIPanelState extends State<AIPanel> {
     setState(() => _isCheckingStatus = false);
   }
 
+  /// Handles `_downloadModel`.
   Future<void> _downloadModel() async {
     setState(() => _isInstalling = true);
     try {
@@ -377,6 +394,7 @@ class _AIPanelState extends State<AIPanel> {
     }
   }
 
+  /// Handles `_formatTimestamp`.
   String _formatTimestamp(DateTime timestamp) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
@@ -392,6 +410,7 @@ class _AIPanelState extends State<AIPanel> {
     }
   }
 
+  /// Handles `_getActionText`.
   String _getActionText() {
     switch (_selectedAction) {
       case 'ask':
@@ -407,6 +426,7 @@ class _AIPanelState extends State<AIPanel> {
     }
   }
 
+  /// Handles `_getHintText`.
   String _getHintText() {
     switch (_selectedAction) {
       case 'ask':
@@ -422,6 +442,7 @@ class _AIPanelState extends State<AIPanel> {
     }
   }
 
+  /// Handles `_installOllama`.
   Future<void> _installOllama() async {
     setState(() => _isInstalling = true);
     try {
@@ -448,6 +469,7 @@ class _AIPanelState extends State<AIPanel> {
     }
   }
 
+  /// Handles `_runOllama`.
   Future<void> _runOllama() async {
     setState(() => _isInstalling = true);
     try {
@@ -465,6 +487,7 @@ class _AIPanelState extends State<AIPanel> {
     }
   }
 
+  /// Handles `_sendMessage`.
   Future<void> _sendMessage() async {
     final text = _promptController.text.trim();
     if (text.isEmpty) return;
@@ -486,10 +509,11 @@ class _AIPanelState extends State<AIPanel> {
       if (widget.selectedFile != null) {
         try {
           context = await widget.selectedFile!.readAsString();
-          if (context.length > 2000) {
-            context = '${context.substring(0, 2000)}...';
+          if (context.length > AppMetric.aiContextPreviewChars) {
+            context =
+                '${context.substring(0, AppMetric.aiContextPreviewChars)}...';
           }
-        } catch (e) {
+        } catch (_) {
           context = 'Could not read file content';
         }
       }
@@ -536,7 +560,7 @@ class _AIPanelState extends State<AIPanel> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
+          duration: AppDuration.messageAnimation,
           curve: Curves.easeOut,
         );
       });
@@ -544,6 +568,7 @@ class _AIPanelState extends State<AIPanel> {
   }
 }
 
+/// Represents `ChatMessage`.
 class ChatMessage {
   final String content;
   final bool isUser;

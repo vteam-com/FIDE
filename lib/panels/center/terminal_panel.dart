@@ -2,12 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:fide/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
 
+/// Embedded terminal panel powered by xterm, launching a shell inside the current project directory.
 class TerminalPanel extends ConsumerStatefulWidget {
   const TerminalPanel({super.key});
 
@@ -27,7 +29,7 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
   @override
   void initState() {
     super.initState();
-    terminal = Terminal(maxLines: 1000);
+    terminal = Terminal(maxLines: AppMetric.terminalMaxLines);
     controller = TerminalController();
 
     // Initialize current project path
@@ -45,7 +47,7 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
   @override
   Widget build(BuildContext context) {
     // Listen for changes to the current project path
-    ref.listen<String?>(currentProjectPathProvider, (previous, next) {
+    ref.listen<String?>(currentProjectPathProvider, (_, next) {
       if (next != _currentProjectPath) {
         _currentProjectPath = next;
         if (next == null) {
@@ -65,32 +67,33 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
       backgroundOpacity: 1,
       theme: TerminalTheme(
         cursor: Colors.white,
-        selection: Colors.blue.withAlpha(100),
+        selection: Colors.blue.withAlpha(AppSize.gutterDividerAlpha.toInt()),
         searchHitBackground: Colors.yellow,
         searchHitBackgroundCurrent: Colors.orange,
         searchHitForeground: Colors.black,
-        black: Color(0xFF1E1E1E),
-        red: Color(0xFFFF5C57),
-        green: Color(0xFF5AF78E),
-        yellow: Color(0xFFF3F99D),
-        blue: Color(0xFF57C7FF),
-        magenta: Color(0xFFFF6AC1),
-        cyan: Color(0xFF9AEDFE),
-        white: Color(0xFFF1F1F0),
-        brightBlack: Color(0xFF686868),
-        brightRed: Color(0xFFFF5C57),
-        brightGreen: Color(0xFF5AF78E),
-        brightYellow: Color(0xFFF3F99D),
-        brightBlue: Color(0xFF57C7FF),
-        brightMagenta: Color(0xFFFF6AC1),
-        brightCyan: Color(0xFF9AEDFE),
-        brightWhite: Color(0xFFFFFFFF),
-        background: Color(0xFF1E1E1E),
-        foreground: Color(0xFFF1F1F0),
+        black: TerminalPalette.background,
+        red: TerminalPalette.red,
+        green: TerminalPalette.green,
+        yellow: TerminalPalette.yellow,
+        blue: TerminalPalette.blue,
+        magenta: TerminalPalette.magenta,
+        cyan: TerminalPalette.cyan,
+        white: TerminalPalette.white,
+        brightBlack: TerminalPalette.brightBlack,
+        brightRed: TerminalPalette.red,
+        brightGreen: TerminalPalette.green,
+        brightYellow: TerminalPalette.yellow,
+        brightBlue: TerminalPalette.blue,
+        brightMagenta: TerminalPalette.magenta,
+        brightCyan: TerminalPalette.cyan,
+        brightWhite: TerminalPalette.brightWhite,
+        background: TerminalPalette.background,
+        foreground: TerminalPalette.white,
       ),
     );
   }
 
+  /// Starts a zsh PTY session and wires terminal input/output streams.
   void _startShell() {
     try {
       final env = Map<String, String>.from(Platform.environment)

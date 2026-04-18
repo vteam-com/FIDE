@@ -1,3 +1,4 @@
+import 'package:fide/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
@@ -25,7 +26,7 @@ class FullPathWidget extends StatelessWidget {
             TextSpan(
               text: prefix,
               style: bodyLarge.copyWith(
-                color: textColor.withAlpha(200),
+                color: textColor.withAlpha(AppAlpha.pathPrefix),
                 fontWeight: FontWeight.normal,
               ),
             ),

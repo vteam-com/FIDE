@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/services/git_service.dart';
@@ -21,30 +22,39 @@ class PanelStateManager {
   final Set<String> _loadingDirectories = {};
 
   // Getters
+  /// Returns `expandedState`.
   Map<String, bool> get expandedState => _expandedState;
-  TextEditingController get filterController => _filterController;
-  String get filterQuery => _filterQuery;
-  Set<String> get loadingDirectories => _loadingDirectories;
 
+  /// Returns `filterController`.
+  TextEditingController get filterController => _filterController;
+
+  /// Returns `filterQuery`.
+  String get filterQuery => _filterQuery;
+
+  /// Handles `PanelStateManager.initialize`.
   void initialize() {
     _filterController.addListener(_onFilterChanged);
   }
 
+  /// Handles `PanelStateManager.dispose`.
   void dispose() {
     _filterController.removeListener(_onFilterChanged);
     _filterController.dispose();
   }
 
+  /// Handles `_onFilterChanged`.
   void _onFilterChanged() {
     _filterQuery = _filterController.text.toLowerCase();
     // Clear expansion state when filter changes
     _expandedState.clear();
     // Expand directories that contain matching files when filtering
     if (_filterQuery.isNotEmpty && projectRoot != null) {
+      /// Handles `_expandDirectoriesWithMatchingFiles`.
       _expandDirectoriesWithMatchingFiles(projectRoot!);
     }
   }
 
+  /// Handles `_expandDirectoriesWithMatchingFiles`.
   void _expandDirectoriesWithMatchingFiles(ProjectNode node) {
     if (node.isDirectory) {
       bool hasMatchingDescendant = false;
@@ -92,8 +102,7 @@ class PanelStateManager {
     return node.name.toLowerCase().contains(_filterQuery);
   }
 
-  bool matchesFilter(ProjectNode node) => _matchesFilter(node);
-
+  /// Handles `PanelStateManager.ensureDirectoryLoaded`.
   Future<void> ensureDirectoryLoaded(ProjectNode node) async {
     if (node.children.isEmpty && node.isDirectory) {
       // Mark this directory as loading
@@ -109,6 +118,7 @@ class PanelStateManager {
     }
   }
 
+  /// Handles `PanelStateManager.seedGitStatusForFile`.
   Future<void> seedGitStatusForFile(ProjectNode node) async {
     if (projectRoot == null) return;
 
@@ -138,6 +148,7 @@ class PanelStateManager {
 
 /// Shared file operations utility
 class FileOperations {
+  /// Handles `FileOperations.createNewFile`.
   static Future<void> createNewFile(
     BuildContext context,
     ProjectNode parent,
@@ -198,6 +209,7 @@ class FileOperations {
     }
   }
 
+  /// Handles `FileOperations.createNewFolder`.
   static Future<void> createNewFolder(
     BuildContext context,
     ProjectNode parent,
@@ -258,6 +270,7 @@ class FileOperations {
     }
   }
 
+  /// Handles `FileOperations.renameFile`.
   static Future<void> renameFile(
     BuildContext context,
     ProjectNode node,
@@ -324,6 +337,7 @@ class FileOperations {
     }
   }
 
+  /// Handles `FileOperations.deleteFile`.
   static Future<void> deleteFile(
     BuildContext context,
     ProjectNode node,
@@ -374,6 +388,7 @@ class FileOperations {
     }
   }
 
+  /// Handles `FileOperations.revealInFileExplorer`.
   static Future<void> revealInFileExplorer(ProjectNode node) async {
     try {
       final directoryPath = node.isDirectory
@@ -390,7 +405,7 @@ class FileOperations {
         // Use 'xdg-open' command on Linux
         await Process.run('xdg-open', [directoryPath]);
       }
-    } catch (e) {
+    } catch (_) {
       // Error handling will be done by caller
     }
   }
@@ -398,6 +413,7 @@ class FileOperations {
 
 /// Shared context menu handler
 class ContextMenuHandler {
+  /// Handles `ContextMenuHandler.showNodeContextMenu`.
   static void showNodeContextMenu(
     BuildContext context,
     ProjectNode node,
@@ -438,6 +454,7 @@ class ContextMenuHandler {
     });
   }
 
+  /// Handles `ContextMenuHandler.showFileContextMenu`.
   static void showFileContextMenu(
     BuildContext context,
     ProjectNode node,
@@ -459,10 +476,10 @@ class ContextMenuHandler {
             children: [
               Icon(
                 Platform.isMacOS ? Icons.folder_open : Icons.folder,
-                size: 16,
+                size: AppIconSize.medium,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.medium),
               Text(Platform.isMacOS ? 'Reveal in Finder' : 'Show in Explorer'),
             ],
           ),
@@ -473,10 +490,10 @@ class ContextMenuHandler {
             children: [
               Icon(
                 Icons.content_copy,
-                size: 16,
+                size: AppIconSize.medium,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.medium),
               const Text('Copy Full Path'),
             ],
           ),
@@ -487,10 +504,10 @@ class ContextMenuHandler {
             children: [
               Icon(
                 Icons.content_copy,
-                size: 16,
+                size: AppIconSize.medium,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.medium),
               const Text('Copy Relative Path'),
             ],
           ),
@@ -501,10 +518,10 @@ class ContextMenuHandler {
             children: [
               Icon(
                 Icons.edit,
-                size: 16,
+                size: AppIconSize.medium,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.medium),
               const Text('Rename'),
             ],
           ),
@@ -515,10 +532,10 @@ class ContextMenuHandler {
             children: [
               Icon(
                 Icons.delete,
-                size: 16,
+                size: AppIconSize.medium,
                 color: Theme.of(context).colorScheme.error,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.medium),
               Text(
                 'Delete',
                 style: TextStyle(color: Theme.of(context).colorScheme.error),

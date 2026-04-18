@@ -1,9 +1,11 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:fide/constants.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:flutter/material.dart';
 
+/// Represents `LocalizationEntryWidget`.
 class LocalizationEntryWidget extends StatelessWidget {
   const LocalizationEntryWidget({
     super.key,
@@ -33,12 +35,15 @@ class LocalizationEntryWidget extends StatelessWidget {
     }
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.tiny,
+        vertical: AppSpacing.micro,
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.all(AppSpacing.tiny),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: 4,
+          spacing: AppSpacing.tiny,
           children: [
             // Key at the top with optional warning badge
             Row(
@@ -53,16 +58,17 @@ class LocalizationEntryWidget extends StatelessWidget {
                   ),
                 ),
                 if (showWarning) ...[
-                  const SizedBox(width: 8),
-                  BadgeStatus.warning(text: 'D', fontSize: 9),
+                  const SizedBox(width: AppSpacing.medium),
+                  BadgeStatus.warning(text: 'D', fontSize: AppFontSize.micro),
                 ],
               ],
             ),
 
             // Translations
             Column(
-              spacing: 8,
+              spacing: AppSpacing.medium,
               children: translations.entries.map((entry) {
+                /// Handles `_buildLocString`.
                 return _buildLocString(context, entry.key, entry.value);
               }).toList(),
             ),
@@ -70,10 +76,11 @@ class LocalizationEntryWidget extends StatelessWidget {
             // Show missing languages if any
             if (comparison.missingInLanguages.isNotEmpty ||
                 comparison.isMissingInEnglish) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.large),
+              const SizedBox(height: AppSpacing.large),
               const Divider(),
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: AppSpacing.medium),
                 child: Text(
                   'Missing in: ${comparison.isMissingInEnglish ? 'EN, ' : ''}${comparison.missingInLanguages.join(', ')}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -89,6 +96,7 @@ class LocalizationEntryWidget extends StatelessWidget {
     );
   }
 
+  /// Handles `_buildLocString`.
   Widget _buildLocString(
     BuildContext context,
     String languageCode,
@@ -96,7 +104,7 @@ class LocalizationEntryWidget extends StatelessWidget {
   ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 4,
+      spacing: AppSpacing.tiny,
       children: [
         // Language label
         Text(
@@ -109,20 +117,23 @@ class LocalizationEntryWidget extends StatelessWidget {
         // Translation value
         Expanded(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.medium,
+              vertical: AppSpacing.tiny,
+            ),
             decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.surfaceVariant.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(4),
+              color: Theme.of(context).colorScheme.surfaceVariant.withValues(
+                alpha: AppOpacity.divider,
+              ),
+              borderRadius: BorderRadius.circular(AppRadius.tiny),
             ),
             child: Text(
               translation,
               softWrap: true,
-              maxLines: 5,
+              maxLines: AppMetric.translationPreviewLines,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: AppFontSize.caption,
                 fontFamily: 'monospace',
                 fontFamilyFallback: ['Courier', 'Courier New'],
               ),

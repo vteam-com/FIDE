@@ -1,6 +1,8 @@
+// ignore: fcheck_dead_code
 import 'dart:async';
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -61,7 +63,7 @@ class ProjectService {
 
   /// Load a project completely independently of UI
   Future<bool> loadProject(String directoryPath) async {
-    final Duration duration = const Duration(milliseconds: 500);
+    final Duration duration = AppDuration.projectLoadDelay;
 
     try {
       // Clear loading actions

@@ -1,3 +1,4 @@
+import 'package:fide/constants.dart';
 import 'package:flutter/material.dart';
 
 /// A reusable status indicator widget that displays an icon with text
@@ -8,9 +9,9 @@ class StatusIndicator extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.color,
-    this.iconSize = 14,
-    this.textSize = 11,
-    this.spacing = 6,
+    this.iconSize = AppIconSize.small,
+    this.textSize = AppFontSize.metadata,
+    this.spacing = AppSpacing.small,
     this.fontWeight = FontWeight.w500,
     this.mainAxisSize = MainAxisSize.min,
   });

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="320" height="4740" viewBox="0 0 320 4740" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
+<svg width="320" height="4600" viewBox="0 0 320 4600" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
 <defs>
   <filter id="whiteShadow" x="-20%" y="-20%" width="140%" height="140%">
     <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
@@ -229,1024 +229,1092 @@
   }
 </style>
 <rect width="100%" height="100%" fill="white"/>
-<rect x="25.0" y="50" width="270.0" height="4640.0" rx="8.0" class="layerBackground"/>
+<rect x="25.0" y="50" width="270.0" height="4500.0" rx="8.0" class="layerBackground"/>
 <text x="160.0" y="75.0" class="layerTitle">0</text>
-<rect x="50.0" y="90.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart
+<rect x="50.0" y="90.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/constants.dart</title></rect>
+<rect x="50.0" y="160.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title></rect>
+<rect x="50.0" y="230.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart
 
-14 Dead Code warnings
-6 Documentation warnings
-2 Magic Numbers warnings</title></rect>
-<rect x="50.0" y="160.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart
-
-10 Documentation warnings
-4 Magic Numbers warnings
-3 Dead Code warnings
 1 Duplicate Code warning</title></rect>
-<rect x="50.0" y="230.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart
+<rect x="50.0" y="300.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title></rect>
+<rect x="50.0" y="370.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/models/project_node.dart
 
-6 Documentation warnings
-5 Magic Numbers warnings</title></rect>
-<rect x="50.0" y="300.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/models/project_node.dart
+3 Duplicate Code warnings</title></rect>
+<rect x="50.0" y="440.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart
 
-16 Documentation warnings
-3 Duplicate Code warnings
-3 Magic Numbers warnings
-2 Dead Code warnings</title></rect>
-<rect x="50.0" y="370.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart
-
-27 Magic Numbers warnings
 2 Duplicate Code warnings</title></rect>
-<rect x="50.0" y="440.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/services/git_service.dart
+<rect x="50.0" y="510.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/services/git_service.dart
 
-24 Documentation warnings
-10 Dead Code warnings
-5 Magic Numbers warnings
 4 Duplicate Code warnings</title></rect>
-<rect x="50.0" y="510.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart
+<rect x="50.0" y="580.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart</title></rect>
+<rect x="50.0" y="650.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart</title></rect>
+<rect x="50.0" y="720.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/models/document_state.dart</title></rect>
+<rect x="50.0" y="790.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/providers/ui_state_providers.dart</title></rect>
+<rect x="50.0" y="860.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart</title></rect>
+<rect x="50.0" y="930.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/utils/file_type_utils.dart</title></rect>
+<rect x="50.0" y="1000.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart</title></rect>
+<rect x="50.0" y="1070.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/filename_widget.dart</title></rect>
+<rect x="50.0" y="1140.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/services/ai_service.dart</title></rect>
+<rect x="50.0" y="1210.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/full_path_widget.dart</title></rect>
+<rect x="50.0" y="1280.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/hero_title_widget.dart</title></rect>
+<rect x="50.0" y="1350.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/models/localization_data.dart</title></rect>
+<rect x="50.0" y="1420.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/status_indicator.dart</title></rect>
+<rect x="50.0" y="1490.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart</title></rect>
+<rect x="50.0" y="1560.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart
 
-83 Magic Numbers warnings
-33 Documentation warnings
-6 Dead Code warnings</title></rect>
-<rect x="50.0" y="580.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart
-
-7 Magic Numbers warnings</title></rect>
-<rect x="50.0" y="650.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/models/document_state.dart
-
-4 Documentation warnings
-1 Dead Code warning</title></rect>
-<rect x="50.0" y="720.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/providers/ui_state_providers.dart
-
-6 Dead Code warnings</title></rect>
-<rect x="50.0" y="790.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart
-
-11 Magic Numbers warnings
-1 Dead Code warning
-1 Documentation warning</title></rect>
-<rect x="50.0" y="860.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/utils/file_type_utils.dart
-
-2 Dead Code warnings
-2 Documentation warnings
-1 Magic Numbers warning</title></rect>
-<rect x="50.0" y="930.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart
-
-12 Magic Numbers warnings
-2 Dead Code warnings
-1 Documentation warning</title></rect>
-<rect x="50.0" y="1000.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/filename_widget.dart
-
-15 Magic Numbers warnings
-1 Documentation warning</title></rect>
-<rect x="50.0" y="1070.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/services/ai_service.dart
-
-7 Documentation warnings
-6 Dead Code warnings
-6 Magic Numbers warnings</title></rect>
-<rect x="50.0" y="1140.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/full_path_widget.dart
-
-1 Magic Numbers warning</title></rect>
-<rect x="50.0" y="1210.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/hero_title_widget.dart
-
-2 Magic Numbers warnings
-1 Documentation warning</title></rect>
-<rect x="50.0" y="1280.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/models/localization_data.dart
-
-4 Documentation warnings
-1 Magic Numbers warning</title></rect>
-<rect x="50.0" y="1350.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/status_indicator.dart
-
-3 Magic Numbers warnings</title></rect>
-<rect x="50.0" y="1420.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart
-
-6 Dead Code warnings
-5 Documentation warnings
-3 Magic Numbers warnings</title></rect>
-<rect x="50.0" y="1490.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart
-
-17 Documentation warnings
-10 Magic Numbers warnings
-3 Dead Code warnings
 2 Duplicate Code warnings</title></rect>
-<rect x="50.0" y="1560.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/services/localization_service.dart
+<rect x="50.0" y="1630.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/services/localization_service.dart</title></rect>
+<rect x="50.0" y="1700.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/theme/app_theme.dart
 
-9 Documentation warnings
-4 Dead Code warnings
-2 Magic Numbers warnings</title></rect>
-<rect x="50.0" y="1630.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/theme/app_theme.dart
-
-19 Magic Numbers warnings
-9 Documentation warnings
-7 Dead Code warnings
 2 Duplicate Code warnings</title></rect>
-<rect x="50.0" y="1700.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/container_counter.dart
+<rect x="50.0" y="1770.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/container_counter.dart</title></rect>
+<rect x="50.0" y="1840.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/resizable_splitter.dart</title></rect>
+<rect x="50.0" y="1910.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/search_toggle_icons.dart</title></rect>
+<rect x="50.0" y="1980.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/side_by_side_diff.dart</title></rect>
+<rect x="50.0" y="2050.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart</title></rect>
+<rect x="50.0" y="2120.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart</title></rect>
+<rect x="50.0" y="2190.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart
 
-1 Magic Numbers warning</title></rect>
-<rect x="50.0" y="1770.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/resizable_splitter.dart
+3 Duplicate Code warnings</title></rect>
+<rect x="50.0" y="2260.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart</title></rect>
+<rect x="50.0" y="2330.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart
 
-8 Magic Numbers warnings
-1 Documentation warning</title></rect>
-<rect x="50.0" y="1840.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/search_toggle_icons.dart
-
-5 Magic Numbers warnings
-1 Documentation warning</title></rect>
-<rect x="50.0" y="1910.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/side_by_side_diff.dart
-
-31 Magic Numbers warnings
-2 Documentation warnings</title></rect>
-<rect x="50.0" y="1980.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart
-
-59 Magic Numbers warnings
-23 Documentation warnings
-4 Dead Code warnings</title></rect>
-<rect x="50.0" y="2050.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart
-
-43 Magic Numbers warnings
-11 Documentation warnings
-6 Dead Code warnings</title></rect>
-<rect x="50.0" y="2120.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart
-
-30 Magic Numbers warnings
-28 Documentation warnings
-3 Duplicate Code warnings
-2 Dead Code warnings</title></rect>
-<rect x="50.0" y="2190.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart
-
-4 Magic Numbers warnings
-2 Documentation warnings
-1 Dead Code warning</title></rect>
-<rect x="50.0" y="2260.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart
-
-18 Documentation warnings
-11 Magic Numbers warnings
-5 Dead Code warnings
 1 Duplicate Code warning</title></rect>
-<rect x="50.0" y="2330.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart
+<rect x="50.0" y="2400.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart</title></rect>
+<rect x="50.0" y="2470.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart</title></rect>
+<rect x="50.0" y="2540.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart</title></rect>
+<rect x="50.0" y="2610.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart</title></rect>
+<rect x="50.0" y="2680.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart
 
-20 Magic Numbers warnings
-12 Documentation warnings
-11 Dead Code warnings</title></rect>
-<rect x="50.0" y="2400.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart
+2 Duplicate Code warnings</title></rect>
+<rect x="50.0" y="2750.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/services/project_service.dart
 
-89 Magic Numbers warnings
-22 Documentation warnings
-3 Dead Code warnings</title></rect>
-<rect x="50.0" y="2470.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart
+1 Layers warning</title></rect>
+<rect x="50.0" y="2820.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/services/project_operations.dart
 
-2 Magic Numbers warnings
-1 Documentation warning</title></rect>
-<rect x="50.0" y="2540.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart
+2 Duplicate Code warnings</title></rect>
+<rect x="50.0" y="2890.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/search_panel.dart</title></rect>
+<rect x="50.0" y="2960.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/right/ai_panel.dart
 
-4 Magic Numbers warnings
-1 Dead Code warning
-1 Documentation warning</title></rect>
-<rect x="50.0" y="2610.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart
-
-19 Documentation warnings
-19 Magic Numbers warnings
-2 Duplicate Code warnings
-1 Dead Code warning</title></rect>
-<rect x="50.0" y="2680.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/services/project_service.dart
-
-3 Dead Code warnings
-1 Layers warning
-1 Magic Numbers warning</title></rect>
-<rect x="50.0" y="2750.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/services/project_operations.dart
-
-5 Documentation warnings
-4 Dead Code warnings
-2 Duplicate Code warnings
-2 Magic Numbers warnings</title></rect>
-<rect x="50.0" y="2820.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/search_panel.dart
-
-16 Magic Numbers warnings
-13 Documentation warnings
-2 Dead Code warnings</title></rect>
-<rect x="50.0" y="2890.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/right/ai_panel.dart
-
-46 Magic Numbers warnings
-11 Documentation warnings
-4 Dead Code warnings
 4 Duplicate Code warnings</title></rect>
-<rect x="50.0" y="2960.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/screens/loading_screen.dart
+<rect x="50.0" y="3030.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/screens/loading_screen.dart</title></rect>
+<rect x="50.0" y="3100.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/native_menu_builder.dart
 
-11 Magic Numbers warnings
-2 Dead Code warnings
-2 Documentation warnings
 1 Duplicate Code warning</title></rect>
-<rect x="50.0" y="3030.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/native_menu_builder.dart
+<rect x="50.0" y="3170.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/right/outline_panel.dart</title></rect>
+<rect x="50.0" y="3240.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/test_panel.dart</title></rect>
+<rect x="50.0" y="3310.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/app_title_bar.dart
 
-7 Documentation warnings
-3 Magic Numbers warnings
 1 Duplicate Code warning</title></rect>
-<rect x="50.0" y="3100.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/right/outline_panel.dart
+<rect x="50.0" y="3380.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/screens/create_project_step3.dart</title></rect>
+<rect x="50.0" y="3450.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_entry_widget.dart</title></rect>
+<rect x="50.0" y="3520.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/platform_info_section.dart</title></rect>
+<rect x="50.0" y="3590.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/screens/welcome_screen.dart</title></rect>
+<rect x="50.0" y="3660.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/action_tabs.dart</title></rect>
+<rect x="50.0" y="3730.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/controllers/app_controller.dart</title></rect>
+<rect x="50.0" y="3800.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/diff_counter.dart</title></rect>
+<rect x="50.0" y="3870.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/message_widget.dart</title></rect>
+<rect x="50.0" y="3940.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/center/terminal_panel.dart</title></rect>
+<rect x="50.0" y="4010.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/screens/create_project_step1.dart</title></rect>
+<rect x="50.0" y="4080.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/screens/create_project_step2.dart</title></rect>
+<rect x="50.0" y="4150.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/services/file_system_watcher.dart</title></rect>
+<rect x="50.0" y="4220.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/center/large_file_message.dart</title></rect>
+<rect x="50.0" y="4290.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_setup_widget.dart</title></rect>
+<rect x="50.0" y="4360.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/platform_selector.dart</title></rect>
+<rect x="50.0" y="4430.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/toggle_experience_mode.dart</title></rect>
+<rect x="50.0" y="4500.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/main.dart
 
-9 Dead Code warnings
-9 Documentation warnings
-9 Magic Numbers warnings</title></rect>
-<rect x="50.0" y="3170.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/test_panel.dart
-
-22 Magic Numbers warnings
-8 Documentation warnings
-1 Dead Code warning</title></rect>
-<rect x="50.0" y="3240.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/controllers/app_controller.dart
-
-1 Dead Code warning</title></rect>
-<rect x="50.0" y="3310.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/app_title_bar.dart
-
-29 Magic Numbers warnings
-10 Documentation warnings
-4 Dead Code warnings
-1 Duplicate Code warning</title></rect>
-<rect x="50.0" y="3380.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/screens/create_project_step3.dart
-
-16 Magic Numbers warnings
-2 Dead Code warnings
-2 Documentation warnings
-1 Duplicate Code warning</title></rect>
-<rect x="50.0" y="3450.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/diff_counter.dart
-
-1 Documentation warning</title></rect>
-<rect x="50.0" y="3520.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_entry_widget.dart
-
-16 Magic Numbers warnings
-2 Documentation warnings</title></rect>
-<rect x="50.0" y="3590.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/platform_info_section.dart
-
-60 Magic Numbers warnings
-9 Documentation warnings
-7 Dead Code warnings
-1 Secrets warning</title></rect>
-<rect x="50.0" y="3660.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/screens/welcome_screen.dart
-
-28 Magic Numbers warnings
-4 Documentation warnings
-3 Dead Code warnings</title></rect>
-<rect x="50.0" y="3730.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/action_tabs.dart
-
-41 Magic Numbers warnings
-1 Dead Code warning
-1 Documentation warning</title></rect>
-<rect x="50.0" y="3800.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/services/file_system_watcher.dart
-
-2 Dead Code warnings</title></rect>
-<rect x="50.0" y="3870.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/message_widget.dart
-
-23 Magic Numbers warnings
-1 Documentation warning</title></rect>
-<rect x="50.0" y="3940.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/center/terminal_panel.dart
-
-20 Magic Numbers warnings
-2 Documentation warnings
-1 Dead Code warning</title></rect>
-<rect x="50.0" y="4010.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/screens/create_project_step1.dart
-
-30 Magic Numbers warnings
-5 Documentation warnings</title></rect>
-<rect x="50.0" y="4080.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/screens/create_project_step2.dart
-
-15 Magic Numbers warnings
-1 Documentation warning</title></rect>
-<rect x="50.0" y="4150.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/center/large_file_message.dart
-
-6 Magic Numbers warnings</title></rect>
-<rect x="50.0" y="4220.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_setup_widget.dart
-
-13 Magic Numbers warnings
-2 Documentation warnings</title></rect>
-<rect x="50.0" y="4290.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/platform_selector.dart
-
-14 Magic Numbers warnings
-3 Documentation warnings
-1 Dead Code warning</title></rect>
-<rect x="50.0" y="4360.0" width="220" height="50" class="fileNode fileNodeWarning"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/toggle_experience_mode.dart
-
-1 Magic Numbers warning</title></rect>
-<rect x="50.0" y="4430.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/main.dart
-
-17 Documentation warnings
-5 Dead Code warnings
 2 Duplicate Code warnings</title></rect>
-<rect x="50.0" y="4500.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/diff_viewer.dart
-
-32 Magic Numbers warnings
-11 Dead Code warnings
-8 Documentation warnings
-2 Duplicate Code warnings</title></rect>
-<rect x="50.0" y="4570.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/utils/color_utils.dart
-
-20 Magic Numbers warnings
-8 Dead Code warnings</title></rect>
-<rect x="50.0" y="4640.0" width="220" height="50" class="fileNode fileNodeError"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/left_panel_controls.dart
-
-5 Magic Numbers warnings
-3 Dead Code warnings
-2 Documentation warnings</title></rect>
 <g>
-  <path d="M 270.0 535.0 C 377.0 551.0, -51.0 481.0, 56.0 465.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/git_service.dart</title>
-</g>
-<g>
-  <path d="M 270.0 115.0 C 377.0 131.0, -51.0 201.0, 56.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2215.0 C 377.0 2231.0, -51.0 2161.0, 56.0 2145.0" class="edge"/>
+  <path d="M 270.0 2285.0 C 377.0 2301.0, -51.0 2231.0, 56.0 2215.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2215.0 C 377.0 2231.0, -51.0 2301.0, 56.0 2285.0" class="edge"/>
+  <path d="M 270.0 185.0 C 377.0 201.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+</g>
+<g>
+  <path d="M 270.0 605.0 C 377.0 621.0, -51.0 551.0, 56.0 535.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/git_service.dart</title>
+</g>
+<g>
+  <path d="M 270.0 185.0 C 377.0 201.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2285.0 C 377.0 2301.0, -51.0 2371.0, 56.0 2355.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2215.0 C 377.0 2231.0, -51.0 2371.0, 56.0 2355.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart</title>
-</g>
-<g>
-  <path d="M 270.0 1025.0 C 377.0 1041.0, -51.0 901.0, 56.0 885.0" class="edge"/>
+  <path d="M 270.0 1095.0 C 377.0 1111.0, -51.0 971.0, 56.0 955.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/filename_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/file_type_utils.dart</title>
 </g>
 <g>
-  <path d="M 270.0 325.0 C 377.0 341.0, -51.0 201.0, 56.0 185.0" class="edge"/>
+  <path d="M 270.0 255.0 C 377.0 271.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 395.0 C 377.0 411.0, -51.0 271.0, 56.0 255.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/models/project_node.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2565.0 C 377.0 2581.0, -51.0 2441.0, 56.0 2425.0" class="edge"/>
+  <path d="M 270.0 2635.0 C 377.0 2651.0, -51.0 2511.0, 56.0 2495.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart</title>
 </g>
 <g>
-  <path d="M 270.0 535.0 C 377.0 551.0, -51.0 691.0, 56.0 675.0" class="edge"/>
+  <path d="M 270.0 605.0 C 377.0 621.0, -51.0 761.0, 56.0 745.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/document_state.dart</title>
 </g>
 <g>
-  <path d="M 270.0 115.0 C 377.0 131.0, -51.0 341.0, 56.0 325.0" class="edge"/>
+  <path d="M 270.0 2285.0 C 377.0 2301.0, -51.0 2441.0, 56.0 2425.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart</title>
+</g>
+<g>
+  <path d="M 270.0 185.0 C 377.0 201.0, -51.0 411.0, 56.0 395.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
 </g>
 <g>
-  <path d="M 270.0 815.0 C 377.0 831.0, -51.0 621.0, 56.0 605.0" class="edge"/>
+  <path d="M 270.0 885.0 C 377.0 901.0, -51.0 691.0, 56.0 675.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart</title>
 </g>
 <g>
-  <path d="M 270.0 465.0 C 377.0 481.0, -51.0 201.0, 56.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/services/git_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+  <path d="M 270.0 325.0 C 377.0 341.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/utils/message_box.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
-  <path d="M 270.0 1585.0 C 377.0 1601.0, -51.0 1321.0, 56.0 1305.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/services/localization_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/localization_data.dart</title>
+  <path d="M 270.0 395.0 C 377.0 411.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/models/project_node.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
-  <path d="M 270.0 535.0 C 377.0 551.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <path d="M 270.0 605.0 C 377.0 621.0, -51.0 341.0, 56.0 325.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2565.0 C 377.0 2581.0, -51.0 2931.0, 56.0 2915.0" class="edge"/>
+  <path d="M 270.0 535.0 C 377.0 551.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/services/git_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1655.0 C 377.0 1671.0, -51.0 1391.0, 56.0 1375.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/services/localization_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/localization_data.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2635.0 C 377.0 2651.0, -51.0 3001.0, 56.0 2985.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/ai_panel.dart</title>
 </g>
 <g>
-  <path d="M 270.0 535.0 C 377.0 551.0, -51.0 901.0, 56.0 885.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/file_type_utils.dart</title>
+  <path d="M 270.0 465.0 C 377.0 481.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
-  <path d="M 270.0 1445.0 C 377.0 1461.0, -51.0 1811.0, 56.0 1795.0" class="edge"/>
+  <path d="M 270.0 1515.0 C 377.0 1531.0, -51.0 1881.0, 56.0 1865.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/resizable_splitter.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2215.0 C 377.0 2231.0, -51.0 2651.0, 56.0 2635.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2005.0 C 377.0 2021.0, -51.0 1601.0, 56.0 1585.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/localization_service.dart</title>
+  <path d="M 270.0 605.0 C 377.0 621.0, -51.0 971.0, 56.0 955.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/file_type_utils.dart</title>
 </g>
 <g>
   <path d="M 270.0 535.0 C 377.0 551.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/services/git_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 605.0 C 377.0 621.0, -51.0 201.0, 56.0 185.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2355.0 C 377.0 2371.0, -51.0 1951.0, 56.0 1935.0" class="edge"/>
+  <path d="M 270.0 2425.0 C 377.0 2441.0, -51.0 2021.0, 56.0 2005.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/side_by_side_diff.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 1601.0, 56.0 1585.0" class="edge"/>
+  <path d="M 270.0 2285.0 C 377.0 2301.0, -51.0 2721.0, 56.0 2705.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 1671.0, 56.0 1655.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/localization_service.dart</title>
+</g>
+<g>
+  <path d="M 270.0 605.0 C 377.0 621.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2145.0 C 377.0 2161.0, -51.0 1671.0, 56.0 1655.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/localization_service.dart</title>
 </g>
 <g>
-  <path d="M 270.0 815.0 C 377.0 831.0, -51.0 271.0, 56.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2565.0 C 377.0 2581.0, -51.0 2021.0, 56.0 2005.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2565.0 C 377.0 2581.0, -51.0 3141.0, 56.0 3125.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/outline_panel.dart</title>
-</g>
-<g>
-  <path d="M 270.0 115.0 C 377.0 131.0, -51.0 691.0, 56.0 675.0" class="edge"/>
+  <path d="M 270.0 185.0 C 377.0 201.0, -51.0 761.0, 56.0 745.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/document_state.dart</title>
 </g>
 <g>
-  <path d="M 270.0 1445.0 C 377.0 1461.0, -51.0 901.0, 56.0 885.0" class="edge"/>
+  <path d="M 270.0 2635.0 C 377.0 2651.0, -51.0 2091.0, 56.0 2075.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2635.0 C 377.0 2651.0, -51.0 3211.0, 56.0 3195.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/outline_panel.dart</title>
+</g>
+<g>
+  <path d="M 270.0 675.0 C 377.0 691.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 885.0 C 377.0 901.0, -51.0 341.0, 56.0 325.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1515.0 C 377.0 1531.0, -51.0 971.0, 56.0 955.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/file_type_utils.dart</title>
 </g>
 <g>
-  <path d="M 270.0 955.0 C 377.0 971.0, -51.0 341.0, 56.0 325.0" class="edge"/>
+  <path d="M 270.0 1025.0 C 377.0 1041.0, -51.0 411.0, 56.0 395.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2145.0 C 377.0 2161.0, -51.0 1531.0, 56.0 1515.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2215.0 C 377.0 2231.0, -51.0 2861.0, 56.0 2845.0" class="edge"/>
+  <path d="M 270.0 2285.0 C 377.0 2301.0, -51.0 2931.0, 56.0 2915.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/search_panel.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2005.0 C 377.0 2021.0, -51.0 1321.0, 56.0 1305.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/localization_data.dart</title>
+  <path d="M 270.0 2215.0 C 377.0 2231.0, -51.0 1601.0, 56.0 1585.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart</title>
 </g>
 <g>
-  <path d="M 270.0 885.0 C 377.0 901.0, -51.0 201.0, 56.0 185.0" class="edge"/>
+  <path d="M 270.0 955.0 C 377.0 971.0, -51.0 271.0, 56.0 255.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/utils/file_type_utils.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2495.0 C 377.0 2511.0, -51.0 1811.0, 56.0 1795.0" class="edge"/>
+  <path d="M 270.0 2565.0 C 377.0 2581.0, -51.0 1881.0, 56.0 1865.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/resizable_splitter.dart</title>
 </g>
 <g>
-  <path d="M 270.0 1445.0 C 377.0 1461.0, -51.0 761.0, 56.0 745.0" class="edge"/>
+  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 1391.0, 56.0 1375.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/localization_data.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1515.0 C 377.0 1531.0, -51.0 831.0, 56.0 815.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ui_state_providers.dart</title>
 </g>
 <g>
-  <path d="M 270.0 115.0 C 377.0 131.0, -51.0 901.0, 56.0 885.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/file_type_utils.dart</title>
-</g>
-<g>
-  <path d="M 270.0 4455.0 C 377.0 4471.0, -51.0 3701.0, 56.0 3685.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/welcome_screen.dart</title>
-</g>
-<g>
-  <path d="M 270.0 955.0 C 377.0 971.0, -51.0 1741.0, 56.0 1725.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/container_counter.dart</title>
-</g>
-<g>
-  <path d="M 270.0 955.0 C 377.0 971.0, -51.0 201.0, 56.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
-</g>
-<g>
-  <path d="M 270.0 1445.0 C 377.0 1461.0, -51.0 2231.0, 56.0 2215.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2285.0 C 377.0 2301.0, -51.0 1531.0, 56.0 1515.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart</title>
-</g>
-<g>
-  <path d="M 270.0 1445.0 C 377.0 1461.0, -51.0 691.0, 56.0 675.0" class="edge"/>
+  <path d="M 270.0 1515.0 C 377.0 1531.0, -51.0 761.0, 56.0 745.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/document_state.dart</title>
 </g>
 <g>
-  <path d="M 270.0 1025.0 C 377.0 1041.0, -51.0 201.0, 56.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/filename_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+  <path d="M 270.0 1025.0 C 377.0 1041.0, -51.0 1811.0, 56.0 1795.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/container_counter.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 1251.0, 56.0 1235.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/hero_title_widget.dart</title>
+  <path d="M 270.0 185.0 C 377.0 201.0, -51.0 971.0, 56.0 955.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/file_type_utils.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2005.0 C 377.0 2021.0, -51.0 1111.0, 56.0 1095.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/ai_service.dart</title>
+  <path d="M 270.0 1025.0 C 377.0 1041.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 1181.0, 56.0 1165.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/full_path_widget.dart</title>
+  <path d="M 270.0 885.0 C 377.0 901.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
-  <path d="M 270.0 1445.0 C 377.0 1461.0, -51.0 551.0, 56.0 535.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2215.0 C 377.0 2231.0, -51.0 3211.0, 56.0 3195.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/test_panel.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 1111.0, 56.0 1095.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/ai_service.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2845.0 C 377.0 2861.0, -51.0 1881.0, 56.0 1865.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/search_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/search_toggle_icons.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2635.0 C 377.0 2651.0, -51.0 3631.0, 56.0 3615.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/platform_info_section.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2425.0 C 377.0 2441.0, -51.0 1391.0, 56.0 1375.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/status_indicator.dart</title>
-</g>
-<g>
-  <path d="M 270.0 1445.0 C 377.0 1461.0, -51.0 2511.0, 56.0 2495.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart</title>
-</g>
-<g>
-  <path d="M 270.0 1515.0 C 377.0 1531.0, -51.0 481.0, 56.0 465.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/git_service.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2145.0 C 377.0 2161.0, -51.0 1041.0, 56.0 1025.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/filename_widget.dart</title>
-</g>
-<g>
-  <path d="M 270.0 1445.0 C 377.0 1461.0, -51.0 2581.0, 56.0 2565.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2635.0 C 377.0 2651.0, -51.0 3771.0, 56.0 3755.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/action_tabs.dart</title>
-</g>
-<g>
-  <path d="M 270.0 605.0 C 377.0 621.0, -51.0 1741.0, 56.0 1725.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/container_counter.dart</title>
-</g>
-<g>
-  <path d="M 270.0 4455.0 C 377.0 4471.0, -51.0 3351.0, 56.0 3335.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/app_title_bar.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2705.0 C 377.0 2721.0, -51.0 3841.0, 56.0 3825.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/services/project_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/file_system_watcher.dart</title>
-</g>
-<g>
-  <path d="M 270.0 1445.0 C 377.0 1461.0, -51.0 271.0, 56.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
-</g>
-<g>
-  <path d="M 270.0 4455.0 C 377.0 4471.0, -51.0 3281.0, 56.0 3265.0" class="edge"/>
+  <path d="M 270.0 4525.0 C 377.0 4541.0, -51.0 3771.0, 56.0 3755.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/controllers/app_controller.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2145.0 C 377.0 2161.0, -51.0 971.0, 56.0 955.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart</title>
+  <path d="M 270.0 2355.0 C 377.0 2371.0, -51.0 1601.0, 56.0 1585.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1515.0 C 377.0 1531.0, -51.0 2301.0, 56.0 2285.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart</title>
+</g>
+<g>
+  <path d="M 270.0 955.0 C 377.0 971.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/utils/file_type_utils.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2145.0 C 377.0 2161.0, -51.0 1321.0, 56.0 1305.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/hero_title_widget.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2705.0 C 377.0 2721.0, -51.0 3561.0, 56.0 3545.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/platform_info_section.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1095.0 C 377.0 1111.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/filename_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2145.0 C 377.0 2161.0, -51.0 1251.0, 56.0 1235.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/full_path_widget.dart</title>
+</g>
+<g>
+  <path d="M 270.0 4525.0 C 377.0 4541.0, -51.0 3631.0, 56.0 3615.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/welcome_screen.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 1181.0, 56.0 1165.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/ai_service.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1515.0 C 377.0 1531.0, -51.0 621.0, 56.0 605.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1025.0 C 377.0 1041.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2705.0 C 377.0 2721.0, -51.0 3701.0, 56.0 3685.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/action_tabs.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2285.0 C 377.0 2301.0, -51.0 3281.0, 56.0 3265.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/test_panel.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2145.0 C 377.0 2161.0, -51.0 1181.0, 56.0 1165.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/ai_service.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2915.0 C 377.0 2931.0, -51.0 1951.0, 56.0 1935.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/search_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/search_toggle_icons.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1095.0 C 377.0 1111.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/filename_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1585.0 C 377.0 1601.0, -51.0 551.0, 56.0 535.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/git_service.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1165.0 C 377.0 1181.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/services/ai_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1515.0 C 377.0 1531.0, -51.0 2581.0, 56.0 2565.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2495.0 C 377.0 2511.0, -51.0 1461.0, 56.0 1445.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/status_indicator.dart</title>
+</g>
+<g>
+  <path d="M 270.0 675.0 C 377.0 691.0, -51.0 1811.0, 56.0 1795.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/container_counter.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1235.0 C 377.0 1251.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/full_path_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1515.0 C 377.0 1531.0, -51.0 2651.0, 56.0 2635.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2215.0 C 377.0 2231.0, -51.0 1111.0, 56.0 1095.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/filename_widget.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1305.0 C 377.0 1321.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/hero_title_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
   <path d="M 270.0 1515.0 C 377.0 1531.0, -51.0 341.0, 56.0 325.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1585.0 C 377.0 1601.0, -51.0 411.0, 56.0 395.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
 </g>
 <g>
-  <path d="M 270.0 1515.0 C 377.0 1531.0, -51.0 271.0, 56.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
+  <path d="M 270.0 4525.0 C 377.0 4541.0, -51.0 3351.0, 56.0 3335.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/app_title_bar.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2285.0 C 377.0 2301.0, -51.0 1041.0, 56.0 1025.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/filename_widget.dart</title>
+  <path d="M 270.0 2215.0 C 377.0 2231.0, -51.0 1041.0, 56.0 1025.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart</title>
 </g>
 <g>
-  <path d="M 270.0 395.0 C 377.0 411.0, -51.0 1671.0, 56.0 1655.0" class="edge"/>
+  <path d="M 270.0 465.0 C 377.0 481.0, -51.0 1741.0, 56.0 1725.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart ▶ /Users/jp/src/github/vteam/fide/lib/theme/app_theme.dart</title>
 </g>
 <g>
-  <path d="M 270.0 1445.0 C 377.0 1461.0, -51.0 201.0, 56.0 185.0" class="edge"/>
+  <path d="M 270.0 1585.0 C 377.0 1601.0, -51.0 341.0, 56.0 325.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1515.0 C 377.0 1531.0, -51.0 271.0, 56.0 255.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2775.0 C 377.0 2791.0, -51.0 1461.0, 56.0 1445.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/services/project_operations.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart</title>
+  <path d="M 270.0 1375.0 C 377.0 1391.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/models/localization_data.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 3421.0, 56.0 3405.0" class="edge"/>
+  <path d="M 270.0 2355.0 C 377.0 2371.0, -51.0 1111.0, 56.0 1095.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/filename_widget.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2145.0 C 377.0 2161.0, -51.0 3421.0, 56.0 3405.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/create_project_step3.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2355.0 C 377.0 2371.0, -51.0 1041.0, 56.0 1025.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/filename_widget.dart</title>
-</g>
-<g>
-  <path d="M 270.0 535.0 C 377.0 551.0, -51.0 1881.0, 56.0 1865.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/search_toggle_icons.dart</title>
-</g>
-<g>
-  <path d="M 270.0 1445.0 C 377.0 1461.0, -51.0 131.0, 56.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
+  <path d="M 270.0 2845.0 C 377.0 2861.0, -51.0 1531.0, 56.0 1515.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/services/project_operations.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart</title>
 </g>
 <g>
   <path d="M 270.0 1515.0 C 377.0 1531.0, -51.0 201.0, 56.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2425.0 C 377.0 2441.0, -51.0 1111.0, 56.0 1095.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/filename_widget.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1585.0 C 377.0 1601.0, -51.0 271.0, 56.0 255.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2285.0 C 377.0 2301.0, -51.0 971.0, 56.0 955.0" class="edge"/>
+  <path d="M 270.0 1445.0 C 377.0 1461.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/status_indicator.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2355.0 C 377.0 2371.0, -51.0 1041.0, 56.0 1025.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart</title>
 </g>
 <g>
-  <path d="M 270.0 4455.0 C 377.0 4471.0, -51.0 3071.0, 56.0 3055.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/native_menu_builder.dart</title>
+  <path d="M 270.0 605.0 C 377.0 621.0, -51.0 1951.0, 56.0 1935.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/search_toggle_icons.dart</title>
 </g>
 <g>
-  <path d="M 270.0 535.0 C 377.0 551.0, -51.0 1951.0, 56.0 1935.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/side_by_side_diff.dart</title>
+  <path d="M 270.0 1515.0 C 377.0 1531.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2495.0 C 377.0 2511.0, -51.0 3981.0, 56.0 3965.0" class="edge"/>
+  <path d="M 270.0 2565.0 C 377.0 2581.0, -51.0 3981.0, 56.0 3965.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/terminal_panel.dart</title>
 </g>
 <g>
-  <path d="M 270.0 4455.0 C 377.0 4471.0, -51.0 3001.0, 56.0 2985.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/loading_screen.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2215.0 C 377.0 2231.0, -51.0 761.0, 56.0 745.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ui_state_providers.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2005.0 C 377.0 2021.0, -51.0 3561.0, 56.0 3545.0" class="edge"/>
+  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 3491.0, 56.0 3475.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_entry_widget.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2005.0 C 377.0 2021.0, -51.0 411.0, 56.0 395.0" class="edge"/>
+  <path d="M 270.0 4525.0 C 377.0 4541.0, -51.0 3141.0, 56.0 3125.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/native_menu_builder.dart</title>
+</g>
+<g>
+  <path d="M 270.0 605.0 C 377.0 621.0, -51.0 2021.0, 56.0 2005.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/side_by_side_diff.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2775.0 C 377.0 2791.0, -51.0 4191.0, 56.0 4175.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/services/project_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/file_system_watcher.dart</title>
+</g>
+<g>
+  <path d="M 270.0 4525.0 C 377.0 4541.0, -51.0 3071.0, 56.0 3055.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/loading_screen.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1585.0 C 377.0 1601.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2285.0 C 377.0 2301.0, -51.0 831.0, 56.0 815.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ui_state_providers.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1655.0 C 377.0 1671.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/services/localization_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 481.0, 56.0 465.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2425.0 C 377.0 2441.0, -51.0 831.0, 56.0 815.0" class="edge"/>
+  <path d="M 270.0 1725.0 C 377.0 1741.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/theme/app_theme.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2495.0 C 377.0 2511.0, -51.0 901.0, 56.0 885.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2635.0 C 377.0 2651.0, -51.0 4331.0, 56.0 4315.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/platform_selector.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2145.0 C 377.0 2161.0, -51.0 481.0, 56.0 465.0" class="edge"/>
+  <path d="M 270.0 2215.0 C 377.0 2231.0, -51.0 551.0, 56.0 535.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/git_service.dart</title>
 </g>
 <g>
-  <path d="M 270.0 4455.0 C 377.0 4471.0, -51.0 2791.0, 56.0 2775.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/project_operations.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2285.0 C 377.0 2301.0, -51.0 621.0, 56.0 605.0" class="edge"/>
+  <path d="M 270.0 2355.0 C 377.0 2371.0, -51.0 691.0, 56.0 675.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2005.0 C 377.0 2021.0, -51.0 271.0, 56.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
+  <path d="M 270.0 2705.0 C 377.0 2721.0, -51.0 4401.0, 56.0 4385.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/platform_selector.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2985.0 C 377.0 3001.0, -51.0 1251.0, 56.0 1235.0" class="edge"/>
+  <path d="M 270.0 4525.0 C 377.0 4541.0, -51.0 2861.0, 56.0 2845.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/project_operations.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1795.0 C 377.0 1811.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/container_counter.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3055.0 C 377.0 3071.0, -51.0 1321.0, 56.0 1305.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/loading_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/hero_title_widget.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2355.0 C 377.0 2371.0, -51.0 621.0, 56.0 605.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart</title>
+  <path d="M 270.0 1865.0 C 377.0 1881.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/resizable_splitter.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
   <path d="M 270.0 2425.0 C 377.0 2441.0, -51.0 691.0, 56.0 675.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2495.0 C 377.0 2511.0, -51.0 761.0, 56.0 745.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/document_state.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2425.0 C 377.0 2441.0, -51.0 621.0, 56.0 605.0" class="edge"/>
+  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 341.0, 56.0 325.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3265.0 C 377.0 3281.0, -51.0 1461.0, 56.0 1445.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/test_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/status_indicator.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2565.0 C 377.0 2581.0, -51.0 761.0, 56.0 745.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/document_state.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2495.0 C 377.0 2511.0, -51.0 691.0, 56.0 675.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2915.0 C 377.0 2931.0, -51.0 1111.0, 56.0 1095.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/ai_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/ai_service.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2145.0 C 377.0 2161.0, -51.0 341.0, 56.0 325.0" class="edge"/>
+  <path d="M 270.0 2215.0 C 377.0 2231.0, -51.0 411.0, 56.0 395.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
 </g>
 <g>
   <path d="M 270.0 2985.0 C 377.0 3001.0, -51.0 1181.0, 56.0 1165.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/ai_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/ai_service.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3055.0 C 377.0 3071.0, -51.0 1251.0, 56.0 1235.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/loading_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/full_path_widget.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3195.0 C 377.0 3211.0, -51.0 1391.0, 56.0 1375.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/test_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/status_indicator.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2005.0 C 377.0 2021.0, -51.0 201.0, 56.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2495.0 C 377.0 2511.0, -51.0 691.0, 56.0 675.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/document_state.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2635.0 C 377.0 2651.0, -51.0 831.0, 56.0 815.0" class="edge"/>
+  <path d="M 270.0 2705.0 C 377.0 2721.0, -51.0 901.0, 56.0 885.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2565.0 C 377.0 2581.0, -51.0 761.0, 56.0 745.0" class="edge"/>
+  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+</g>
+<g>
+  <path d="M 270.0 1935.0 C 377.0 1951.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/search_toggle_icons.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2635.0 C 377.0 2651.0, -51.0 831.0, 56.0 815.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ui_state_providers.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2005.0 C 377.0 2021.0, -51.0 131.0, 56.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2145.0 C 377.0 2161.0, -51.0 271.0, 56.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2845.0 C 377.0 2861.0, -51.0 971.0, 56.0 955.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/search_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2355.0 C 377.0 2371.0, -51.0 481.0, 56.0 465.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/git_service.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 4051.0, 56.0 4035.0" class="edge"/>
+  <path d="M 270.0 2145.0 C 377.0 2161.0, -51.0 4051.0, 56.0 4035.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/create_project_step1.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2145.0 C 377.0 2161.0, -51.0 201.0, 56.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+  <path d="M 270.0 2005.0 C 377.0 2021.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/side_by_side_diff.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2285.0 C 377.0 2301.0, -51.0 341.0, 56.0 325.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
+  <path d="M 270.0 2215.0 C 377.0 2231.0, -51.0 341.0, 56.0 325.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2355.0 C 377.0 2371.0, -51.0 411.0, 56.0 395.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
+  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 201.0, 56.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2495.0 C 377.0 2511.0, -51.0 551.0, 56.0 535.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart</title>
+  <path d="M 270.0 2425.0 C 377.0 2441.0, -51.0 551.0, 56.0 535.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/git_service.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 131.0, 56.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
+  <path d="M 270.0 2915.0 C 377.0 2931.0, -51.0 1041.0, 56.0 1025.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/search_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 4121.0, 56.0 4105.0" class="edge"/>
+  <path d="M 270.0 2145.0 C 377.0 2161.0, -51.0 4121.0, 56.0 4105.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/create_project_step2.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2215.0 C 377.0 2231.0, -51.0 201.0, 56.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+  <path d="M 270.0 2145.0 C 377.0 2161.0, -51.0 201.0, 56.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2285.0 C 377.0 2301.0, -51.0 271.0, 56.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
+  <path d="M 270.0 2355.0 C 377.0 2371.0, -51.0 411.0, 56.0 395.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2425.0 C 377.0 2441.0, -51.0 411.0, 56.0 395.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
+  <path d="M 270.0 2565.0 C 377.0 2581.0, -51.0 621.0, 56.0 605.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2215.0 C 377.0 2231.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2425.0 C 377.0 2441.0, -51.0 481.0, 56.0 465.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
   <path d="M 270.0 2145.0 C 377.0 2161.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2285.0 C 377.0 2301.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2215.0 C 377.0 2231.0, -51.0 201.0, 56.0 185.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2285.0 C 377.0 2301.0, -51.0 201.0, 56.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+  <path d="M 270.0 2495.0 C 377.0 2511.0, -51.0 481.0, 56.0 465.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2355.0 C 377.0 2371.0, -51.0 341.0, 56.0 325.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
 </g>
 <g>
   <path d="M 270.0 2355.0 C 377.0 2371.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2215.0 C 377.0 2231.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3475.0 C 377.0 3491.0, -51.0 1391.0, 56.0 1375.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_entry_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/localization_data.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2425.0 C 377.0 2441.0, -51.0 341.0, 56.0 325.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
 </g>
 <g>
   <path d="M 270.0 2355.0 C 377.0 2371.0, -51.0 201.0, 56.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2285.0 C 377.0 2301.0, -51.0 131.0, 56.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2425.0 C 377.0 2441.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <path d="M 270.0 2495.0 C 377.0 2511.0, -51.0 341.0, 56.0 325.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3545.0 C 377.0 3561.0, -51.0 1321.0, 56.0 1305.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_entry_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/localization_data.dart</title>
+  <path d="M 270.0 2285.0 C 377.0 2301.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2775.0 C 377.0 2791.0, -51.0 551.0, 56.0 535.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/services/project_operations.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart</title>
+  <path d="M 270.0 2425.0 C 377.0 2441.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3405.0 C 377.0 3421.0, -51.0 1181.0, 56.0 1165.0" class="edge"/>
+  <path d="M 270.0 3405.0 C 377.0 3421.0, -51.0 1251.0, 56.0 1235.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_step3.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/full_path_widget.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2705.0 C 377.0 2721.0, -51.0 481.0, 56.0 465.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/services/project_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/git_service.dart</title>
+  <path d="M 270.0 2845.0 C 377.0 2861.0, -51.0 621.0, 56.0 605.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/services/project_operations.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2005.0 C 377.0 2021.0, -51.0 4261.0, 56.0 4245.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_setup_widget.dart</title>
+  <path d="M 270.0 2355.0 C 377.0 2371.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2425.0 C 377.0 2441.0, -51.0 131.0, 56.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2495.0 C 377.0 2511.0, -51.0 201.0, 56.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
-</g>
-<g>
-  <path d="M 270.0 3125.0 C 377.0 3141.0, -51.0 831.0, 56.0 815.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/outline_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart</title>
-</g>
-<g>
-  <path d="M 270.0 4455.0 C 377.0 4471.0, -51.0 2091.0, 56.0 2075.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart</title>
-</g>
-<g>
-  <path d="M 270.0 3755.0 C 377.0 3771.0, -51.0 1391.0, 56.0 1375.0" class="edge"/>
+  <path d="M 270.0 3685.0 C 377.0 3701.0, -51.0 1461.0, 56.0 1445.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/action_tabs.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/status_indicator.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2495.0 C 377.0 2511.0, -51.0 131.0, 56.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
+  <path d="M 270.0 2075.0 C 377.0 2091.0, -51.0 4331.0, 56.0 4315.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_setup_widget.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2705.0 C 377.0 2721.0, -51.0 341.0, 56.0 325.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/services/project_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
+  <path d="M 270.0 2775.0 C 377.0 2791.0, -51.0 551.0, 56.0 535.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/services/project_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/git_service.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3195.0 C 377.0 3211.0, -51.0 831.0, 56.0 815.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/test_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2565.0 C 377.0 2581.0, -51.0 201.0, 56.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
-</g>
-<g>
-  <path d="M 270.0 3685.0 C 377.0 3701.0, -51.0 1251.0, 56.0 1235.0" class="edge"/>
+  <path d="M 270.0 3615.0 C 377.0 3631.0, -51.0 1321.0, 56.0 1305.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/welcome_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/hero_title_widget.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2705.0 C 377.0 2721.0, -51.0 201.0, 56.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/services/project_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+  <path d="M 270.0 3195.0 C 377.0 3211.0, -51.0 901.0, 56.0 885.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/outline_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2635.0 C 377.0 2651.0, -51.0 131.0, 56.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
+  <path d="M 270.0 2495.0 C 377.0 2511.0, -51.0 201.0, 56.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3265.0 C 377.0 3281.0, -51.0 761.0, 56.0 745.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/controllers/app_controller.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ui_state_providers.dart</title>
+  <path d="M 270.0 2425.0 C 377.0 2441.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2775.0 C 377.0 2791.0, -51.0 271.0, 56.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/services/project_operations.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
+  <path d="M 270.0 2565.0 C 377.0 2581.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2845.0 C 377.0 2861.0, -51.0 341.0, 56.0 325.0" class="edge"/>
+  <path d="M 270.0 2495.0 C 377.0 2511.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3265.0 C 377.0 3281.0, -51.0 901.0, 56.0 885.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/test_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart</title>
+</g>
+<g>
+  <path d="M 270.0 4525.0 C 377.0 4541.0, -51.0 2161.0, 56.0 2145.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2635.0 C 377.0 2651.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2775.0 C 377.0 2791.0, -51.0 411.0, 56.0 395.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/services/project_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2565.0 C 377.0 2581.0, -51.0 201.0, 56.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2565.0 C 377.0 2581.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2915.0 C 377.0 2931.0, -51.0 411.0, 56.0 395.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/search_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
 </g>
 <g>
-  <path d="M 270.0 115.0 C 377.0 131.0, -51.0 2721.0, 56.0 2705.0" class="edge cycleEdge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/project_service.dart</title>
+  <path d="M 270.0 2705.0 C 377.0 2721.0, -51.0 201.0, 56.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3055.0 C 377.0 3071.0, -51.0 481.0, 56.0 465.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/native_menu_builder.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/git_service.dart</title>
+  <path d="M 270.0 2635.0 C 377.0 2651.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2705.0 C 377.0 2721.0, -51.0 131.0, 56.0 115.0" class="edge cycleEdge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/services/project_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
+  <path d="M 270.0 2775.0 C 377.0 2791.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/services/project_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2845.0 C 377.0 2861.0, -51.0 341.0, 56.0 325.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/services/project_operations.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
 </g>
 <g>
   <path d="M 270.0 3125.0 C 377.0 3141.0, -51.0 551.0, 56.0 535.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/native_menu_builder.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/git_service.dart</title>
+</g>
+<g>
+  <path d="M 270.0 185.0 C 377.0 201.0, -51.0 2791.0, 56.0 2775.0" class="edge cycleEdge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/project_service.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2705.0 C 377.0 2721.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2775.0 C 377.0 2791.0, -51.0 201.0, 56.0 185.0" class="edge cycleEdge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/services/project_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3195.0 C 377.0 3211.0, -51.0 621.0, 56.0 605.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/outline_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2775.0 C 377.0 2791.0, -51.0 131.0, 56.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/services/project_operations.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
-</g>
-<g>
-  <path d="M 270.0 2845.0 C 377.0 2861.0, -51.0 201.0, 56.0 185.0" class="edge"/>
+  <path d="M 270.0 2915.0 C 377.0 2931.0, -51.0 271.0, 56.0 255.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/search_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2915.0 C 377.0 2931.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <path d="M 270.0 2775.0 C 377.0 2791.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/services/project_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2845.0 C 377.0 2861.0, -51.0 201.0, 56.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/services/project_operations.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2985.0 C 377.0 3001.0, -51.0 341.0, 56.0 325.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/ai_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2915.0 C 377.0 2931.0, -51.0 201.0, 56.0 185.0" class="edge"/>
+  <path d="M 270.0 2845.0 C 377.0 2861.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/services/project_operations.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 2985.0 C 377.0 3001.0, -51.0 271.0, 56.0 255.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/ai_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 270.0 4455.0 C 377.0 4471.0, -51.0 1671.0, 56.0 1655.0" class="edge"/>
+  <path d="M 270.0 4525.0 C 377.0 4541.0, -51.0 1741.0, 56.0 1725.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/theme/app_theme.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3055.0 C 377.0 3071.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <path d="M 270.0 2915.0 C 377.0 2931.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/search_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3125.0 C 377.0 3141.0, -51.0 341.0, 56.0 325.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/native_menu_builder.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
 </g>
 <g>
-  <path d="M 270.0 2985.0 C 377.0 3001.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <path d="M 270.0 3055.0 C 377.0 3071.0, -51.0 201.0, 56.0 185.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/loading_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3055.0 C 377.0 3071.0, -51.0 131.0, 56.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/native_menu_builder.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
-</g>
-<g>
-  <path d="M 270.0 535.0 C 377.0 551.0, -51.0 3491.0, 56.0 3475.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/diff_counter.dart</title>
-</g>
-<g>
-  <path d="M 270.0 3125.0 C 377.0 3141.0, -51.0 201.0, 56.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/outline_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
-</g>
-<g>
-  <path d="M 270.0 3195.0 C 377.0 3211.0, -51.0 271.0, 56.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/test_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
-</g>
-<g>
-  <path d="M 270.0 3615.0 C 377.0 3631.0, -51.0 621.0, 56.0 605.0" class="edge"/>
+  <path d="M 270.0 3545.0 C 377.0 3561.0, -51.0 691.0, 56.0 675.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/platform_info_section.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3475.0 C 377.0 3491.0, -51.0 481.0, 56.0 465.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/diff_counter.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/git_service.dart</title>
+  <path d="M 270.0 2985.0 C 377.0 3001.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/ai_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
-  <path d="M 270.0 4455.0 C 377.0 4471.0, -51.0 1461.0, 56.0 1445.0" class="edge"/>
+  <path d="M 270.0 3195.0 C 377.0 3211.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/outline_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3755.0 C 377.0 3771.0, -51.0 831.0, 56.0 815.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/controllers/app_controller.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ui_state_providers.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3265.0 C 377.0 3281.0, -51.0 341.0, 56.0 325.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/test_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3055.0 C 377.0 3071.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/loading_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3125.0 C 377.0 3141.0, -51.0 201.0, 56.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/native_menu_builder.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
+</g>
+<g>
+  <path d="M 270.0 4525.0 C 377.0 4541.0, -51.0 1531.0, 56.0 1515.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3335.0 C 377.0 3351.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <path d="M 270.0 3335.0 C 377.0 3351.0, -51.0 341.0, 56.0 325.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/app_title_bar.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3475.0 C 377.0 3491.0, -51.0 411.0, 56.0 395.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/diff_counter.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
+  <path d="M 270.0 3125.0 C 377.0 3141.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/native_menu_builder.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3545.0 C 377.0 3561.0, -51.0 411.0, 56.0 395.0" class="edge"/>
+  <path d="M 270.0 3475.0 C 377.0 3491.0, -51.0 481.0, 56.0 465.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_entry_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3265.0 C 377.0 3281.0, -51.0 131.0, 56.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/controllers/app_controller.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
+  <path d="M 270.0 3195.0 C 377.0 3211.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/outline_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3615.0 C 377.0 3631.0, -51.0 411.0, 56.0 395.0" class="edge"/>
+  <path d="M 270.0 3545.0 C 377.0 3561.0, -51.0 481.0, 56.0 465.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/platform_info_section.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3335.0 C 377.0 3351.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <path d="M 270.0 3265.0 C 377.0 3281.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/test_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3335.0 C 377.0 3351.0, -51.0 201.0, 56.0 185.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/app_title_bar.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3405.0 C 377.0 3421.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <path d="M 270.0 605.0 C 377.0 621.0, -51.0 3841.0, 56.0 3825.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/diff_counter.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3335.0 C 377.0 3351.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/app_title_bar.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3405.0 C 377.0 3421.0, -51.0 201.0, 56.0 185.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_step3.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3825.0 C 377.0 3841.0, -51.0 341.0, 56.0 325.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/services/file_system_watcher.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
+  <path d="M 270.0 3825.0 C 377.0 3841.0, -51.0 551.0, 56.0 535.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/diff_counter.dart ▶ /Users/jp/src/github/vteam/fide/lib/services/git_service.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3895.0 C 377.0 3911.0, -51.0 411.0, 56.0 395.0" class="edge"/>
+  <path d="M 270.0 3405.0 C 377.0 3421.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_step3.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3825.0 C 377.0 3841.0, -51.0 481.0, 56.0 465.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/diff_counter.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3475.0 C 377.0 3491.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_entry_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3895.0 C 377.0 3911.0, -51.0 481.0, 56.0 465.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/message_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3685.0 C 377.0 3701.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <path d="M 270.0 3545.0 C 377.0 3561.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/platform_info_section.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3615.0 C 377.0 3631.0, -51.0 201.0, 56.0 185.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/welcome_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
-  <path d="M 270.0 535.0 C 377.0 551.0, -51.0 4191.0, 56.0 4175.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/large_file_message.dart</title>
+  <path d="M 270.0 3615.0 C 377.0 3631.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/welcome_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
-  <path d="M 270.0 255.0 C 377.0 271.0, -51.0 3911.0, 56.0 3895.0" class="edge"/>
+  <path d="M 270.0 3685.0 C 377.0 3701.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/action_tabs.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 325.0 C 377.0 341.0, -51.0 3911.0, 56.0 3895.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/utils/message_box.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_widget.dart</title>
 </g>
 <g>
-  <path d="M 270.0 4455.0 C 377.0 4471.0, -51.0 761.0, 56.0 745.0" class="edge"/>
+  <path d="M 270.0 3755.0 C 377.0 3771.0, -51.0 201.0, 56.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/controllers/app_controller.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
+</g>
+<g>
+  <path d="M 270.0 605.0 C 377.0 621.0, -51.0 4261.0, 56.0 4245.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/large_file_message.dart</title>
+</g>
+<g>
+  <path d="M 270.0 4525.0 C 377.0 4541.0, -51.0 831.0, 56.0 815.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ui_state_providers.dart</title>
 </g>
 <g>
-  <path d="M 270.0 535.0 C 377.0 551.0, -51.0 4401.0, 56.0 4385.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/toggle_experience_mode.dart</title>
+  <path d="M 270.0 4175.0 C 377.0 4191.0, -51.0 411.0, 56.0 395.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/services/file_system_watcher.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
 </g>
 <g>
-  <path d="M 270.0 3965.0 C 377.0 3981.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <path d="M 270.0 3965.0 C 377.0 3981.0, -51.0 201.0, 56.0 185.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/center/terminal_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
-  <path d="M 270.0 4455.0 C 377.0 4471.0, -51.0 551.0, 56.0 535.0" class="edge"/>
+  <path d="M 270.0 3895.0 C 377.0 3911.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/message_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 3965.0 C 377.0 3981.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/terminal_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 605.0 C 377.0 621.0, -51.0 4471.0, 56.0 4455.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/toggle_experience_mode.dart</title>
+</g>
+<g>
+  <path d="M 270.0 4035.0 C 377.0 4051.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_step1.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 4525.0 C 377.0 4541.0, -51.0 621.0, 56.0 605.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/editor_screen.dart</title>
 </g>
 <g>
-  <path d="M 270.0 4455.0 C 377.0 4471.0, -51.0 271.0, 56.0 255.0" class="edge"/>
+  <path d="M 270.0 4105.0 C 377.0 4121.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_step2.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 4245.0 C 377.0 4261.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/large_file_message.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 4315.0 C 377.0 4331.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_setup_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 4525.0 C 377.0 4541.0, -51.0 341.0, 56.0 325.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
 </g>
 <g>
-  <path d="M 270.0 4525.0 C 377.0 4541.0, -51.0 271.0, 56.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/diff_viewer.dart ▶ /Users/jp/src/github/vteam/fide/lib/utils/message_box.dart</title>
+  <path d="M 270.0 4385.0 C 377.0 4401.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/platform_selector.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
 </g>
 <g>
   <path d="M 270.0 4455.0 C 377.0 4471.0, -51.0 131.0, 56.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/toggle_experience_mode.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants.dart</title>
+</g>
+<g>
+  <path d="M 270.0 4525.0 C 377.0 4541.0, -51.0 201.0, 56.0 185.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g class="badge incomingBadge">
   <path d="M 64.0,115.0 L 48.0,107.4 Q 45.0,107.4 45.0,110.4 L 45.0,119.6 Q 45.0,122.6 48.0,122.6 Z" fill="#3b82f6"/>
-  <text x="50.72" y="116.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold" textLength="10.120000000000001" lengthAdjust="spacingAndGlyphs">19</text><title>1. app_controller.dart
+  <text x="50.72" y="116.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold" textLength="10.120000000000001" lengthAdjust="spacingAndGlyphs">57</text><title>1. action_tabs.dart
+2. ai_panel.dart
+3. ai_service.dart
+4. app_providers.dart
+5. app_theme.dart
+6. app_title_bar.dart
+7. badge_status.dart
+8. center_panel.dart
+9. container_counter.dart
+10. create_project_screen.dart
+11. create_project_step1.dart
+12. create_project_step2.dart
+13. create_project_step3.dart
+14. editor_screen.dart
+15. execute_panel.dart
+16. file_system_item.dart
+17. file_type_utils.dart
+18. filename_widget.dart
+19. folder_panel.dart
+20. foldername_widget.dart
+21. full_path_widget.dart
+22. git_panel.dart
+23. git_service.dart
+24. hero_title_widget.dart
+25. info_panel.dart
+26. large_file_message.dart
+27. left_panel.dart
+28. loading_screen.dart
+29. localization_data.dart
+30. localization_entry_widget.dart
+31. localization_panel.dart
+32. localization_service.dart
+33. localization_setup_widget.dart
+34. main_layout.dart
+35. message_box.dart
+36. message_widget.dart
+37. native_menu_builder.dart
+38. organized_panel.dart
+39. outline_panel.dart
+40. output_panel.dart
+41. platform_info_section.dart
+42. platform_selector.dart
+43. project_node.dart
+44. project_operations.dart
+45. project_service.dart
+46. resizable_splitter.dart
+47. right_panel.dart
+48. search_panel.dart
+49. search_toggle_icons.dart
+50. section_panel.dart
+51. shared_panel_utils.dart
+52. side_by_side_diff.dart
+53. status_indicator.dart
+54. terminal_panel.dart
+55. test_panel.dart
+56. toggle_experience_mode.dart
+57. welcome_screen.dart</title></g><text x="160.0" y="115.0" class="textNormal">constants.dart</text>
+<g class="badge incomingBadge">
+  <path d="M 64.0,185.0 L 48.0,177.4 Q 45.0,177.4 45.0,180.4 L 45.0,189.6 Q 45.0,192.6 48.0,192.6 Z" fill="#3b82f6"/>
+  <text x="50.72" y="186.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold" textLength="10.120000000000001" lengthAdjust="spacingAndGlyphs">19</text><title>1. app_controller.dart
 2. app_title_bar.dart
 3. center_panel.dart
 4. create_project_screen.dart
@@ -1265,15 +1333,16 @@
 17. project_service.dart
 18. terminal_panel.dart
 19. welcome_screen.dart</title></g><g class="badge outgoingBadge">
-  <path d="M 276.0,115.0 L 264.0,108.0 Q 261.0,108.0 261.0,111.0 L 261.0,119.0 Q 261.0,122.0 264.0,122.0 Z" fill="#10b981"/>
-  <text x="265.68" y="116.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">5</text><title>1. document_state.dart
-2. file_system_item.dart
-3. file_type_utils.dart
-4. project_node.dart
-5. project_service.dart</title></g><text x="160.0" y="115.0" class="textNormal">app_providers.dart</text>
+  <path d="M 276.0,185.0 L 264.0,178.0 Q 261.0,178.0 261.0,181.0 L 261.0,189.0 Q 261.0,192.0 264.0,192.0 Z" fill="#10b981"/>
+  <text x="265.68" y="186.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">6</text><title>1. constants.dart
+2. document_state.dart
+3. file_system_item.dart
+4. file_type_utils.dart
+5. project_node.dart
+6. project_service.dart</title></g><text x="160.0" y="185.0" class="textNormal">app_providers.dart</text>
 <g class="badge incomingBadge">
-  <path d="M 64.0,185.0 L 48.0,177.4 Q 45.0,177.4 45.0,180.4 L 45.0,189.6 Q 45.0,192.6 48.0,192.6 Z" fill="#3b82f6"/>
-  <text x="50.72" y="186.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold" textLength="10.120000000000001" lengthAdjust="spacingAndGlyphs">19</text><title>1. ai_panel.dart
+  <path d="M 64.0,255.0 L 48.0,247.4 Q 45.0,247.4 45.0,250.4 L 45.0,259.6 Q 45.0,262.6 48.0,262.6 Z" fill="#3b82f6"/>
+  <text x="50.72" y="256.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold" textLength="10.120000000000001" lengthAdjust="spacingAndGlyphs">19</text><title>1. ai_panel.dart
 2. app_providers.dart
 3. center_panel.dart
 4. file_type_utils.dart
@@ -1291,30 +1360,32 @@
 16. project_service.dart
 17. right_panel.dart
 18. search_panel.dart
-19. shared_panel_utils.dart</title></g><text x="160.0" y="185.0" class="textNormal">file_system_item.dart</text>
-<g class="badge incomingBadge">
-  <path d="M 64.0,255.0 L 48.0,247.4 Q 45.0,247.4 45.0,250.4 L 45.0,259.6 Q 45.0,262.6 48.0,262.6 Z" fill="#3b82f6"/>
-  <text x="50.72" y="256.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold" textLength="10.120000000000001" lengthAdjust="spacingAndGlyphs">16</text><title>1. ai_panel.dart
-2. app_title_bar.dart
-3. diff_viewer.dart
-4. editor_screen.dart
-5. folder_panel.dart
-6. git_panel.dart
-7. info_panel.dart
-8. localization_panel.dart
-9. main.dart
-10. main_layout.dart
-11. native_menu_builder.dart
-12. organized_panel.dart
-13. output_panel.dart
-14. project_operations.dart
-15. shared_panel_utils.dart
-16. test_panel.dart</title></g><g class="badge outgoingBadge">
+19. shared_panel_utils.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,255.0 L 264.0,248.0 Q 261.0,248.0 261.0,251.0 L 261.0,259.0 Q 261.0,262.0 264.0,262.0 Z" fill="#10b981"/>
-  <text x="265.68" y="256.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. message_widget.dart</title></g><text x="160.0" y="255.0" class="textNormal">message_box.dart</text>
+  <text x="265.68" y="256.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants.dart</title></g><text x="160.0" y="255.0" class="textNormal">file_system_item.dart</text>
 <g class="badge incomingBadge">
-  <path d="M 62.0,325.0 L 50.0,318.0 Q 47.0,318.0 47.0,321.0 L 47.0,329.0 Q 47.0,332.0 50.0,332.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="326.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">8</text><title>1. app_providers.dart
+  <path d="M 64.0,325.0 L 48.0,317.4 Q 45.0,317.4 45.0,320.4 L 45.0,329.6 Q 45.0,332.6 48.0,332.6 Z" fill="#3b82f6"/>
+  <text x="50.72" y="326.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold" textLength="10.120000000000001" lengthAdjust="spacingAndGlyphs">15</text><title>1. ai_panel.dart
+2. app_title_bar.dart
+3. editor_screen.dart
+4. folder_panel.dart
+5. git_panel.dart
+6. info_panel.dart
+7. localization_panel.dart
+8. main.dart
+9. main_layout.dart
+10. native_menu_builder.dart
+11. organized_panel.dart
+12. output_panel.dart
+13. project_operations.dart
+14. shared_panel_utils.dart
+15. test_panel.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,325.0 L 264.0,318.0 Q 261.0,318.0 261.0,321.0 L 261.0,329.0 Q 261.0,332.0 264.0,332.0 Z" fill="#10b981"/>
+  <text x="265.68" y="326.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. constants.dart
+2. message_widget.dart</title></g><text x="160.0" y="325.0" class="textNormal">message_box.dart</text>
+<g class="badge incomingBadge">
+  <path d="M 62.0,395.0 L 50.0,388.0 Q 47.0,388.0 47.0,391.0 L 47.0,399.0 Q 47.0,402.0 50.0,402.0 Z" fill="#3b82f6"/>
+  <text x="51.68" y="396.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">8</text><title>1. app_providers.dart
 2. file_system_watcher.dart
 3. folder_panel.dart
 4. foldername_widget.dart
@@ -1322,436 +1393,506 @@
 6. project_service.dart
 7. search_panel.dart
 8. shared_panel_utils.dart</title></g><g class="badge outgoingBadge">
-  <path d="M 276.0,325.0 L 264.0,318.0 Q 261.0,318.0 261.0,321.0 L 261.0,329.0 Q 261.0,332.0 264.0,332.0 Z" fill="#10b981"/>
-  <text x="265.68" y="326.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. file_system_item.dart</title></g><text x="160.0" y="325.0" class="textNormal">project_node.dart</text>
+  <path d="M 276.0,395.0 L 264.0,388.0 Q 261.0,388.0 261.0,391.0 L 261.0,399.0 Q 261.0,402.0 264.0,402.0 Z" fill="#10b981"/>
+  <text x="265.68" y="396.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. constants.dart
+2. file_system_item.dart</title></g><text x="160.0" y="395.0" class="textNormal">project_node.dart</text>
 <g class="badge incomingBadge">
-  <path d="M 62.0,395.0 L 50.0,388.0 Q 47.0,388.0 47.0,391.0 L 47.0,399.0 Q 47.0,402.0 50.0,402.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="396.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">7</text><title>1. diff_counter.dart
+  <path d="M 62.0,465.0 L 50.0,458.0 Q 47.0,458.0 47.0,461.0 L 47.0,469.0 Q 47.0,472.0 50.0,472.0 Z" fill="#3b82f6"/>
+  <text x="51.68" y="466.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">7</text><title>1. diff_counter.dart
 2. git_panel.dart
 3. info_panel.dart
 4. localization_entry_widget.dart
 5. localization_panel.dart
 6. message_widget.dart
 7. platform_info_section.dart</title></g><g class="badge outgoingBadge">
-  <path d="M 276.0,395.0 L 264.0,388.0 Q 261.0,388.0 261.0,391.0 L 261.0,399.0 Q 261.0,402.0 264.0,402.0 Z" fill="#10b981"/>
-  <text x="265.68" y="396.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. app_theme.dart</title></g><text x="160.0" y="395.0" class="textNormal">badge_status.dart</text>
+  <path d="M 276.0,465.0 L 264.0,458.0 Q 261.0,458.0 261.0,461.0 L 261.0,469.0 Q 261.0,472.0 264.0,472.0 Z" fill="#10b981"/>
+  <text x="265.68" y="466.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. app_theme.dart
+2. constants.dart</title></g><text x="160.0" y="465.0" class="textNormal">badge_status.dart</text>
 <g class="badge incomingBadge">
-  <path d="M 62.0,465.0 L 50.0,458.0 Q 47.0,458.0 47.0,461.0 L 47.0,469.0 Q 47.0,472.0 50.0,472.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="466.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">7</text><title>1. diff_counter.dart
+  <path d="M 62.0,535.0 L 50.0,528.0 Q 47.0,528.0 47.0,531.0 L 47.0,539.0 Q 47.0,542.0 50.0,542.0 Z" fill="#3b82f6"/>
+  <text x="51.68" y="536.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">7</text><title>1. diff_counter.dart
 2. editor_screen.dart
 3. folder_panel.dart
 4. git_panel.dart
 5. native_menu_builder.dart
 6. project_service.dart
 7. shared_panel_utils.dart</title></g><g class="badge outgoingBadge">
-  <path d="M 276.0,465.0 L 264.0,458.0 Q 261.0,458.0 261.0,461.0 L 261.0,469.0 Q 261.0,472.0 264.0,472.0 Z" fill="#10b981"/>
-  <text x="265.68" y="466.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. file_system_item.dart</title></g><text x="160.0" y="465.0" class="textNormal">git_service.dart</text>
+  <path d="M 276.0,535.0 L 264.0,528.0 Q 261.0,528.0 261.0,531.0 L 261.0,539.0 Q 261.0,542.0 264.0,542.0 Z" fill="#10b981"/>
+  <text x="265.68" y="536.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. constants.dart
+2. file_system_item.dart</title></g><text x="160.0" y="535.0" class="textNormal">git_service.dart</text>
 <g class="badge incomingBadge">
-  <path d="M 62.0,535.0 L 50.0,528.0 Q 47.0,528.0 47.0,531.0 L 47.0,539.0 Q 47.0,542.0 50.0,542.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="536.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">5</text><title>1. center_panel.dart
+  <path d="M 62.0,605.0 L 50.0,598.0 Q 47.0,598.0 47.0,601.0 L 47.0,609.0 Q 47.0,612.0 50.0,612.0 Z" fill="#3b82f6"/>
+  <text x="51.68" y="606.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">5</text><title>1. center_panel.dart
 2. main.dart
 3. main_layout.dart
 4. outline_panel.dart
 5. project_operations.dart</title></g><g class="badge outgoingBadge">
-  <path d="M 278.0,535.0 L 262.0,527.4 Q 259.0,527.4 259.0,530.4 L 259.0,539.6 Q 259.0,542.6 262.0,542.6 Z" fill="#10b981"/>
-  <text x="264.72" y="536.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold" textLength="10.120000000000001" lengthAdjust="spacingAndGlyphs">10</text><title>1. app_providers.dart
-2. diff_counter.dart
-3. document_state.dart
-4. file_type_utils.dart
-5. git_service.dart
-6. large_file_message.dart
-7. message_box.dart
-8. search_toggle_icons.dart
-9. side_by_side_diff.dart
-10. toggle_experience_mode.dart</title></g><text x="160.0" y="535.0" class="textNormal">editor_screen.dart</text>
+  <path d="M 278.0,605.0 L 262.0,597.4 Q 259.0,597.4 259.0,600.4 L 259.0,609.6 Q 259.0,612.6 262.0,612.6 Z" fill="#10b981"/>
+  <text x="264.72" y="606.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold" textLength="10.120000000000001" lengthAdjust="spacingAndGlyphs">11</text><title>1. app_providers.dart
+2. constants.dart
+3. diff_counter.dart
+4. document_state.dart
+5. file_type_utils.dart
+6. git_service.dart
+7. large_file_message.dart
+8. message_box.dart
+9. search_toggle_icons.dart
+10. side_by_side_diff.dart
+11. toggle_experience_mode.dart</title></g><text x="160.0" y="605.0" class="textNormal">editor_screen.dart</text>
 <g class="badge incomingBadge">
-  <path d="M 62.0,605.0 L 50.0,598.0 Q 47.0,598.0 47.0,601.0 L 47.0,609.0 Q 47.0,612.0 50.0,612.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="606.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">5</text><title>1. git_panel.dart
+  <path d="M 62.0,675.0 L 50.0,668.0 Q 47.0,668.0 47.0,671.0 L 47.0,679.0 Q 47.0,682.0 50.0,682.0 Z" fill="#3b82f6"/>
+  <text x="51.68" y="676.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">5</text><title>1. git_panel.dart
 2. info_panel.dart
 3. organized_panel.dart
 4. output_panel.dart
 5. platform_info_section.dart</title></g><g class="badge outgoingBadge">
-  <path d="M 276.0,605.0 L 264.0,598.0 Q 261.0,598.0 261.0,601.0 L 261.0,609.0 Q 261.0,612.0 264.0,612.0 Z" fill="#10b981"/>
-  <text x="265.68" y="606.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. container_counter.dart</title></g><text x="160.0" y="605.0" class="textNormal">section_panel.dart</text>
+  <path d="M 276.0,675.0 L 264.0,668.0 Q 261.0,668.0 261.0,671.0 L 261.0,679.0 Q 261.0,682.0 264.0,682.0 Z" fill="#10b981"/>
+  <text x="265.68" y="676.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. constants.dart
+2. container_counter.dart</title></g><text x="160.0" y="675.0" class="textNormal">section_panel.dart</text>
 <g class="badge incomingBadge">
-  <path d="M 62.0,675.0 L 50.0,668.0 Q 47.0,668.0 47.0,671.0 L 47.0,679.0 Q 47.0,682.0 50.0,682.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="676.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">5</text><title>1. app_providers.dart
+  <path d="M 62.0,745.0 L 50.0,738.0 Q 47.0,738.0 47.0,741.0 L 47.0,749.0 Q 47.0,752.0 50.0,752.0 Z" fill="#3b82f6"/>
+  <text x="51.68" y="746.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">5</text><title>1. app_providers.dart
 2. center_panel.dart
 3. editor_screen.dart
 4. info_panel.dart
-5. main_layout.dart</title></g><text x="160.0" y="675.0" class="textNormal">document_state.dart</text>
+5. main_layout.dart</title></g><text x="160.0" y="745.0" class="textNormal">document_state.dart</text>
 <g class="badge incomingBadge">
-  <path d="M 62.0,745.0 L 50.0,738.0 Q 47.0,738.0 47.0,741.0 L 47.0,749.0 Q 47.0,752.0 50.0,752.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="746.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">5</text><title>1. app_controller.dart
+  <path d="M 62.0,815.0 L 50.0,808.0 Q 47.0,808.0 47.0,811.0 L 47.0,819.0 Q 47.0,822.0 50.0,822.0 Z" fill="#3b82f6"/>
+  <text x="51.68" y="816.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">5</text><title>1. app_controller.dart
 2. left_panel.dart
 3. main.dart
 4. main_layout.dart
-5. right_panel.dart</title></g><text x="160.0" y="745.0" class="textNormal">ui_state_providers.dart</text>
+5. right_panel.dart</title></g><text x="160.0" y="815.0" class="textNormal">ui_state_providers.dart</text>
 <g class="badge incomingBadge">
-  <path d="M 62.0,815.0 L 50.0,808.0 Q 47.0,808.0 47.0,811.0 L 47.0,819.0 Q 47.0,822.0 50.0,822.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="816.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">4</text><title>1. execute_panel.dart
+  <path d="M 62.0,885.0 L 50.0,878.0 Q 47.0,878.0 47.0,881.0 L 47.0,889.0 Q 47.0,892.0 50.0,892.0 Z" fill="#3b82f6"/>
+  <text x="51.68" y="886.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">4</text><title>1. execute_panel.dart
 2. info_panel.dart
 3. outline_panel.dart
 4. test_panel.dart</title></g><g class="badge outgoingBadge">
-  <path d="M 276.0,815.0 L 264.0,808.0 Q 261.0,808.0 261.0,811.0 L 261.0,819.0 Q 261.0,822.0 264.0,822.0 Z" fill="#10b981"/>
-  <text x="265.68" y="816.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. message_box.dart
-2. section_panel.dart</title></g><text x="160.0" y="815.0" class="textNormal">output_panel.dart</text>
+  <path d="M 276.0,885.0 L 264.0,878.0 Q 261.0,878.0 261.0,881.0 L 261.0,889.0 Q 261.0,892.0 264.0,892.0 Z" fill="#10b981"/>
+  <text x="265.68" y="886.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. constants.dart
+2. message_box.dart
+3. section_panel.dart</title></g><text x="160.0" y="885.0" class="textNormal">output_panel.dart</text>
 <g class="badge incomingBadge">
-  <path d="M 62.0,885.0 L 50.0,878.0 Q 47.0,878.0 47.0,881.0 L 47.0,889.0 Q 47.0,892.0 50.0,892.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="886.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">4</text><title>1. app_providers.dart
+  <path d="M 62.0,955.0 L 50.0,948.0 Q 47.0,948.0 47.0,951.0 L 47.0,959.0 Q 47.0,962.0 50.0,962.0 Z" fill="#3b82f6"/>
+  <text x="51.68" y="956.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">4</text><title>1. app_providers.dart
 2. editor_screen.dart
 3. filename_widget.dart
 4. main_layout.dart</title></g><g class="badge outgoingBadge">
-  <path d="M 276.0,885.0 L 264.0,878.0 Q 261.0,878.0 261.0,881.0 L 261.0,889.0 Q 261.0,892.0 264.0,892.0 Z" fill="#10b981"/>
-  <text x="265.68" y="886.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. file_system_item.dart</title></g><text x="160.0" y="885.0" class="textNormal">file_type_utils.dart</text>
-<g class="badge incomingBadge">
-  <path d="M 62.0,955.0 L 50.0,948.0 Q 47.0,948.0 47.0,951.0 L 47.0,959.0 Q 47.0,962.0 50.0,962.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="956.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. folder_panel.dart
-2. organized_panel.dart
-3. search_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,955.0 L 264.0,948.0 Q 261.0,948.0 261.0,951.0 L 261.0,959.0 Q 261.0,962.0 264.0,962.0 Z" fill="#10b981"/>
-  <text x="265.68" y="956.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. container_counter.dart
-2. file_system_item.dart
-3. project_node.dart</title></g><text x="160.0" y="955.0" class="textNormal">foldername_widget.dart</text>
+  <text x="265.68" y="956.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. constants.dart
+2. file_system_item.dart</title></g><text x="160.0" y="955.0" class="textNormal">file_type_utils.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,1025.0 L 50.0,1018.0 Q 47.0,1018.0 47.0,1021.0 L 47.0,1029.0 Q 47.0,1032.0 50.0,1032.0 Z" fill="#3b82f6"/>
   <text x="51.68" y="1026.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. folder_panel.dart
-2. git_panel.dart
-3. organized_panel.dart</title></g><g class="badge outgoingBadge">
+2. organized_panel.dart
+3. search_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,1025.0 L 264.0,1018.0 Q 261.0,1018.0 261.0,1021.0 L 261.0,1029.0 Q 261.0,1032.0 264.0,1032.0 Z" fill="#10b981"/>
-  <text x="265.68" y="1026.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. file_system_item.dart
-2. file_type_utils.dart</title></g><text x="160.0" y="1025.0" class="textNormal">filename_widget.dart</text>
+  <text x="265.68" y="1026.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">4</text><title>1. constants.dart
+2. container_counter.dart
+3. file_system_item.dart
+4. project_node.dart</title></g><text x="160.0" y="1025.0" class="textNormal">foldername_widget.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,1095.0 L 50.0,1088.0 Q 47.0,1088.0 47.0,1091.0 L 47.0,1099.0 Q 47.0,1102.0 50.0,1102.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="1096.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. ai_panel.dart
-2. create_project_screen.dart
-3. localization_panel.dart</title></g><text x="160.0" y="1095.0" class="textNormal">ai_service.dart</text>
+  <text x="51.68" y="1096.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. folder_panel.dart
+2. git_panel.dart
+3. organized_panel.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,1095.0 L 264.0,1088.0 Q 261.0,1088.0 261.0,1091.0 L 261.0,1099.0 Q 261.0,1102.0 264.0,1102.0 Z" fill="#10b981"/>
+  <text x="265.68" y="1096.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. constants.dart
+2. file_system_item.dart
+3. file_type_utils.dart</title></g><text x="160.0" y="1095.0" class="textNormal">filename_widget.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,1165.0 L 50.0,1158.0 Q 47.0,1158.0 47.0,1161.0 L 47.0,1169.0 Q 47.0,1172.0 50.0,1172.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="1166.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. create_project_screen.dart
-2. create_project_step3.dart
-3. loading_screen.dart</title></g><text x="160.0" y="1165.0" class="textNormal">full_path_widget.dart</text>
+  <text x="51.68" y="1166.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. ai_panel.dart
+2. create_project_screen.dart
+3. localization_panel.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,1165.0 L 264.0,1158.0 Q 261.0,1158.0 261.0,1161.0 L 261.0,1169.0 Q 261.0,1172.0 264.0,1172.0 Z" fill="#10b981"/>
+  <text x="265.68" y="1166.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants.dart</title></g><text x="160.0" y="1165.0" class="textNormal">ai_service.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,1235.0 L 50.0,1228.0 Q 47.0,1228.0 47.0,1231.0 L 47.0,1239.0 Q 47.0,1242.0 50.0,1242.0 Z" fill="#3b82f6"/>
   <text x="51.68" y="1236.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. create_project_screen.dart
-2. loading_screen.dart
-3. welcome_screen.dart</title></g><text x="160.0" y="1235.0" class="textNormal">hero_title_widget.dart</text>
+2. create_project_step3.dart
+3. loading_screen.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,1235.0 L 264.0,1228.0 Q 261.0,1228.0 261.0,1231.0 L 261.0,1239.0 Q 261.0,1242.0 264.0,1242.0 Z" fill="#10b981"/>
+  <text x="265.68" y="1236.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants.dart</title></g><text x="160.0" y="1235.0" class="textNormal">full_path_widget.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,1305.0 L 50.0,1298.0 Q 47.0,1298.0 47.0,1301.0 L 47.0,1309.0 Q 47.0,1312.0 50.0,1312.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="1306.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. localization_entry_widget.dart
-2. localization_panel.dart
-3. localization_service.dart</title></g><text x="160.0" y="1305.0" class="textNormal">localization_data.dart</text>
+  <text x="51.68" y="1306.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. create_project_screen.dart
+2. loading_screen.dart
+3. welcome_screen.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,1305.0 L 264.0,1298.0 Q 261.0,1298.0 261.0,1301.0 L 261.0,1309.0 Q 261.0,1312.0 264.0,1312.0 Z" fill="#10b981"/>
+  <text x="265.68" y="1306.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants.dart</title></g><text x="160.0" y="1305.0" class="textNormal">hero_title_widget.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,1375.0 L 50.0,1368.0 Q 47.0,1368.0 47.0,1371.0 L 47.0,1379.0 Q 47.0,1382.0 50.0,1382.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="1376.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. action_tabs.dart
-2. info_panel.dart
-3. test_panel.dart</title></g><text x="160.0" y="1375.0" class="textNormal">status_indicator.dart</text>
+  <text x="51.68" y="1376.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. localization_entry_widget.dart
+2. localization_panel.dart
+3. localization_service.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,1375.0 L 264.0,1368.0 Q 261.0,1368.0 261.0,1371.0 L 261.0,1379.0 Q 261.0,1382.0 264.0,1382.0 Z" fill="#10b981"/>
+  <text x="265.68" y="1376.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants.dart</title></g><text x="160.0" y="1375.0" class="textNormal">localization_data.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,1445.0 L 50.0,1438.0 Q 47.0,1438.0 47.0,1441.0 L 47.0,1449.0 Q 47.0,1452.0 50.0,1452.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="1446.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. main.dart
-2. project_operations.dart</title></g><g class="badge outgoingBadge">
-  <path d="M 278.0,1445.0 L 262.0,1437.4 Q 259.0,1437.4 259.0,1440.4 L 259.0,1449.6 Q 259.0,1452.6 262.0,1452.6 Z" fill="#10b981"/>
-  <text x="264.72" y="1446.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold" textLength="10.120000000000001" lengthAdjust="spacingAndGlyphs">11</text><title>1. app_providers.dart
-2. center_panel.dart
-3. document_state.dart
-4. editor_screen.dart
-5. file_system_item.dart
-6. file_type_utils.dart
-7. left_panel.dart
-8. message_box.dart
-9. resizable_splitter.dart
-10. right_panel.dart
-11. ui_state_providers.dart</title></g><text x="160.0" y="1445.0" class="textNormal">main_layout.dart</text>
+  <text x="51.68" y="1446.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. action_tabs.dart
+2. info_panel.dart
+3. test_panel.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,1445.0 L 264.0,1438.0 Q 261.0,1438.0 261.0,1441.0 L 261.0,1449.0 Q 261.0,1452.0 264.0,1452.0 Z" fill="#10b981"/>
+  <text x="265.68" y="1446.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants.dart</title></g><text x="160.0" y="1445.0" class="textNormal">status_indicator.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,1515.0 L 50.0,1508.0 Q 47.0,1508.0 47.0,1511.0 L 47.0,1519.0 Q 47.0,1522.0 50.0,1522.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="1516.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. folder_panel.dart
-2. organized_panel.dart</title></g><g class="badge outgoingBadge">
-  <path d="M 276.0,1515.0 L 264.0,1508.0 Q 261.0,1508.0 261.0,1511.0 L 261.0,1519.0 Q 261.0,1522.0 264.0,1522.0 Z" fill="#10b981"/>
-  <text x="265.68" y="1516.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">4</text><title>1. file_system_item.dart
-2. git_service.dart
-3. message_box.dart
-4. project_node.dart</title></g><text x="160.0" y="1515.0" class="textNormal">shared_panel_utils.dart</text>
+  <text x="51.68" y="1516.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. main.dart
+2. project_operations.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 278.0,1515.0 L 262.0,1507.4 Q 259.0,1507.4 259.0,1510.4 L 259.0,1519.6 Q 259.0,1522.6 262.0,1522.6 Z" fill="#10b981"/>
+  <text x="264.72" y="1516.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold" textLength="10.120000000000001" lengthAdjust="spacingAndGlyphs">12</text><title>1. app_providers.dart
+2. center_panel.dart
+3. constants.dart
+4. document_state.dart
+5. editor_screen.dart
+6. file_system_item.dart
+7. file_type_utils.dart
+8. left_panel.dart
+9. message_box.dart
+10. resizable_splitter.dart
+11. right_panel.dart
+12. ui_state_providers.dart</title></g><text x="160.0" y="1515.0" class="textNormal">main_layout.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,1585.0 L 50.0,1578.0 Q 47.0,1578.0 47.0,1581.0 L 47.0,1589.0 Q 47.0,1592.0 50.0,1592.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="1586.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. create_project_screen.dart
-2. localization_panel.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="1586.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. folder_panel.dart
+2. organized_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,1585.0 L 264.0,1578.0 Q 261.0,1578.0 261.0,1581.0 L 261.0,1589.0 Q 261.0,1592.0 264.0,1592.0 Z" fill="#10b981"/>
-  <text x="265.68" y="1586.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. localization_data.dart</title></g><text x="160.0" y="1585.0" class="textNormal">localization_service.dart</text>
+  <text x="265.68" y="1586.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">5</text><title>1. constants.dart
+2. file_system_item.dart
+3. git_service.dart
+4. message_box.dart
+5. project_node.dart</title></g><text x="160.0" y="1585.0" class="textNormal">shared_panel_utils.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,1655.0 L 50.0,1648.0 Q 47.0,1648.0 47.0,1651.0 L 47.0,1659.0 Q 47.0,1662.0 50.0,1662.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="1656.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. badge_status.dart
-2. main.dart</title></g><text x="160.0" y="1655.0" class="textNormal">app_theme.dart</text>
+  <text x="51.68" y="1656.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. create_project_screen.dart
+2. localization_panel.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,1655.0 L 264.0,1648.0 Q 261.0,1648.0 261.0,1651.0 L 261.0,1659.0 Q 261.0,1662.0 264.0,1662.0 Z" fill="#10b981"/>
+  <text x="265.68" y="1656.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. constants.dart
+2. localization_data.dart</title></g><text x="160.0" y="1655.0" class="textNormal">localization_service.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,1725.0 L 50.0,1718.0 Q 47.0,1718.0 47.0,1721.0 L 47.0,1729.0 Q 47.0,1732.0 50.0,1732.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="1726.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. foldername_widget.dart
-2. section_panel.dart</title></g><text x="160.0" y="1725.0" class="textNormal">container_counter.dart</text>
+  <text x="51.68" y="1726.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. badge_status.dart
+2. main.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,1725.0 L 264.0,1718.0 Q 261.0,1718.0 261.0,1721.0 L 261.0,1729.0 Q 261.0,1732.0 264.0,1732.0 Z" fill="#10b981"/>
+  <text x="265.68" y="1726.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants.dart</title></g><text x="160.0" y="1725.0" class="textNormal">app_theme.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,1795.0 L 50.0,1788.0 Q 47.0,1788.0 47.0,1791.0 L 47.0,1799.0 Q 47.0,1802.0 50.0,1802.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="1796.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. center_panel.dart
-2. main_layout.dart</title></g><text x="160.0" y="1795.0" class="textNormal">resizable_splitter.dart</text>
+  <text x="51.68" y="1796.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. foldername_widget.dart
+2. section_panel.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,1795.0 L 264.0,1788.0 Q 261.0,1788.0 261.0,1791.0 L 261.0,1799.0 Q 261.0,1802.0 264.0,1802.0 Z" fill="#10b981"/>
+  <text x="265.68" y="1796.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants.dart</title></g><text x="160.0" y="1795.0" class="textNormal">container_counter.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,1865.0 L 50.0,1858.0 Q 47.0,1858.0 47.0,1861.0 L 47.0,1869.0 Q 47.0,1872.0 50.0,1872.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="1866.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. editor_screen.dart
-2. search_panel.dart</title></g><text x="160.0" y="1865.0" class="textNormal">search_toggle_icons.dart</text>
+  <text x="51.68" y="1866.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. center_panel.dart
+2. main_layout.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,1865.0 L 264.0,1858.0 Q 261.0,1858.0 261.0,1861.0 L 261.0,1869.0 Q 261.0,1872.0 264.0,1872.0 Z" fill="#10b981"/>
+  <text x="265.68" y="1866.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants.dart</title></g><text x="160.0" y="1865.0" class="textNormal">resizable_splitter.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,1935.0 L 50.0,1928.0 Q 47.0,1928.0 47.0,1931.0 L 47.0,1939.0 Q 47.0,1942.0 50.0,1942.0 Z" fill="#3b82f6"/>
   <text x="51.68" y="1936.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. editor_screen.dart
-2. git_panel.dart</title></g><text x="160.0" y="1935.0" class="textNormal">side_by_side_diff.dart</text>
+2. search_panel.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,1935.0 L 264.0,1928.0 Q 261.0,1928.0 261.0,1931.0 L 261.0,1939.0 Q 261.0,1942.0 264.0,1942.0 Z" fill="#10b981"/>
+  <text x="265.68" y="1936.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants.dart</title></g><text x="160.0" y="1935.0" class="textNormal">search_toggle_icons.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,2005.0 L 50.0,1998.0 Q 47.0,1998.0 47.0,2001.0 L 47.0,2009.0 Q 47.0,2012.0 50.0,2012.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="2006.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. right_panel.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="2006.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. editor_screen.dart
+2. git_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,2005.0 L 264.0,1998.0 Q 261.0,1998.0 261.0,2001.0 L 261.0,2009.0 Q 261.0,2012.0 264.0,2012.0 Z" fill="#10b981"/>
-  <text x="265.68" y="2006.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">9</text><title>1. ai_service.dart
-2. app_providers.dart
-3. badge_status.dart
-4. file_system_item.dart
-5. localization_data.dart
-6. localization_entry_widget.dart
-7. localization_service.dart
-8. localization_setup_widget.dart
-9. message_box.dart</title></g><text x="160.0" y="2005.0" class="textNormal">localization_panel.dart</text>
+  <text x="265.68" y="2006.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants.dart</title></g><text x="160.0" y="2005.0" class="textNormal">side_by_side_diff.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,2075.0 L 50.0,2068.0 Q 47.0,2068.0 47.0,2071.0 L 47.0,2079.0 Q 47.0,2082.0 50.0,2082.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="2076.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main.dart</title></g><g class="badge outgoingBadge">
-  <path d="M 276.0,2075.0 L 264.0,2068.0 Q 261.0,2068.0 261.0,2071.0 L 261.0,2079.0 Q 261.0,2082.0 264.0,2082.0 Z" fill="#10b981"/>
-  <text x="265.68" y="2076.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">8</text><title>1. ai_service.dart
+  <text x="51.68" y="2076.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. right_panel.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 278.0,2075.0 L 262.0,2067.4 Q 259.0,2067.4 259.0,2070.4 L 259.0,2079.6 Q 259.0,2082.6 262.0,2082.6 Z" fill="#10b981"/>
+  <text x="264.72" y="2076.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold" textLength="10.120000000000001" lengthAdjust="spacingAndGlyphs">10</text><title>1. ai_service.dart
 2. app_providers.dart
-3. create_project_step1.dart
-4. create_project_step2.dart
-5. create_project_step3.dart
-6. full_path_widget.dart
-7. hero_title_widget.dart
-8. localization_service.dart</title></g><text x="160.0" y="2075.0" class="textSmall">create_project_screen.dart</text>
+3. badge_status.dart
+4. constants.dart
+5. file_system_item.dart
+6. localization_data.dart
+7. localization_entry_widget.dart
+8. localization_service.dart
+9. localization_setup_widget.dart
+10. message_box.dart</title></g><text x="160.0" y="2075.0" class="textNormal">localization_panel.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,2145.0 L 50.0,2138.0 Q 47.0,2138.0 47.0,2141.0 L 47.0,2149.0 Q 47.0,2152.0 50.0,2152.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="2146.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. left_panel.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="2146.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,2145.0 L 264.0,2138.0 Q 261.0,2138.0 261.0,2141.0 L 261.0,2149.0 Q 261.0,2152.0 264.0,2152.0 Z" fill="#10b981"/>
-  <text x="265.68" y="2146.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">8</text><title>1. app_providers.dart
-2. file_system_item.dart
-3. filename_widget.dart
-4. foldername_widget.dart
-5. git_service.dart
-6. message_box.dart
-7. project_node.dart
-8. shared_panel_utils.dart</title></g><text x="160.0" y="2145.0" class="textNormal">folder_panel.dart</text>
+  <text x="265.68" y="2146.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">9</text><title>1. ai_service.dart
+2. app_providers.dart
+3. constants.dart
+4. create_project_step1.dart
+5. create_project_step2.dart
+6. create_project_step3.dart
+7. full_path_widget.dart
+8. hero_title_widget.dart
+9. localization_service.dart</title></g><text x="160.0" y="2145.0" class="textSmall">create_project_screen.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,2215.0 L 50.0,2208.0 Q 47.0,2208.0 47.0,2211.0 L 47.0,2219.0 Q 47.0,2222.0 50.0,2222.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="2216.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main_layout.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="2216.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. left_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,2215.0 L 264.0,2208.0 Q 261.0,2208.0 261.0,2211.0 L 261.0,2219.0 Q 261.0,2222.0 264.0,2222.0 Z" fill="#10b981"/>
-  <text x="265.68" y="2216.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">8</text><title>1. execute_panel.dart
-2. file_system_item.dart
-3. folder_panel.dart
-4. git_panel.dart
-5. organized_panel.dart
-6. search_panel.dart
-7. test_panel.dart
-8. ui_state_providers.dart</title></g><text x="160.0" y="2215.0" class="textNormal">left_panel.dart</text>
+  <text x="265.68" y="2216.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">9</text><title>1. app_providers.dart
+2. constants.dart
+3. file_system_item.dart
+4. filename_widget.dart
+5. foldername_widget.dart
+6. git_service.dart
+7. message_box.dart
+8. project_node.dart
+9. shared_panel_utils.dart</title></g><text x="160.0" y="2215.0" class="textNormal">folder_panel.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,2285.0 L 50.0,2278.0 Q 47.0,2278.0 47.0,2281.0 L 47.0,2289.0 Q 47.0,2292.0 50.0,2292.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="2286.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. left_panel.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="2286.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main_layout.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,2285.0 L 264.0,2278.0 Q 261.0,2278.0 261.0,2281.0 L 261.0,2289.0 Q 261.0,2292.0 264.0,2292.0 Z" fill="#10b981"/>
-  <text x="265.68" y="2286.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">8</text><title>1. app_providers.dart
-2. file_system_item.dart
-3. filename_widget.dart
-4. foldername_widget.dart
-5. message_box.dart
-6. project_node.dart
-7. section_panel.dart
-8. shared_panel_utils.dart</title></g><text x="160.0" y="2285.0" class="textNormal">organized_panel.dart</text>
+  <text x="265.68" y="2286.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">9</text><title>1. constants.dart
+2. execute_panel.dart
+3. file_system_item.dart
+4. folder_panel.dart
+5. git_panel.dart
+6. organized_panel.dart
+7. search_panel.dart
+8. test_panel.dart
+9. ui_state_providers.dart</title></g><text x="160.0" y="2285.0" class="textNormal">left_panel.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,2355.0 L 50.0,2348.0 Q 47.0,2348.0 47.0,2351.0 L 47.0,2359.0 Q 47.0,2362.0 50.0,2362.0 Z" fill="#3b82f6"/>
   <text x="51.68" y="2356.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. left_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,2355.0 L 264.0,2348.0 Q 261.0,2348.0 261.0,2351.0 L 261.0,2359.0 Q 261.0,2362.0 264.0,2362.0 Z" fill="#10b981"/>
-  <text x="265.68" y="2356.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">7</text><title>1. badge_status.dart
-2. file_system_item.dart
-3. filename_widget.dart
-4. git_service.dart
-5. message_box.dart
-6. section_panel.dart
-7. side_by_side_diff.dart</title></g><text x="160.0" y="2355.0" class="textNormal">git_panel.dart</text>
+  <text x="265.68" y="2356.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">9</text><title>1. app_providers.dart
+2. constants.dart
+3. file_system_item.dart
+4. filename_widget.dart
+5. foldername_widget.dart
+6. message_box.dart
+7. project_node.dart
+8. section_panel.dart
+9. shared_panel_utils.dart</title></g><text x="160.0" y="2355.0" class="textNormal">organized_panel.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,2425.0 L 50.0,2418.0 Q 47.0,2418.0 47.0,2421.0 L 47.0,2429.0 Q 47.0,2432.0 50.0,2432.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="2426.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. right_panel.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="2426.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. left_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,2425.0 L 264.0,2418.0 Q 261.0,2418.0 261.0,2421.0 L 261.0,2429.0 Q 261.0,2432.0 264.0,2432.0 Z" fill="#10b981"/>
-  <text x="265.68" y="2426.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">7</text><title>1. app_providers.dart
-2. badge_status.dart
-3. document_state.dart
-4. message_box.dart
-5. output_panel.dart
-6. section_panel.dart
-7. status_indicator.dart</title></g><text x="160.0" y="2425.0" class="textNormal">info_panel.dart</text>
+  <text x="265.68" y="2426.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">8</text><title>1. badge_status.dart
+2. constants.dart
+3. file_system_item.dart
+4. filename_widget.dart
+5. git_service.dart
+6. message_box.dart
+7. section_panel.dart
+8. side_by_side_diff.dart</title></g><text x="160.0" y="2425.0" class="textNormal">git_panel.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,2495.0 L 50.0,2488.0 Q 47.0,2488.0 47.0,2491.0 L 47.0,2499.0 Q 47.0,2502.0 50.0,2502.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="2496.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main_layout.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="2496.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. right_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,2495.0 L 264.0,2488.0 Q 261.0,2488.0 261.0,2491.0 L 261.0,2499.0 Q 261.0,2502.0 264.0,2502.0 Z" fill="#10b981"/>
-  <text x="265.68" y="2496.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">6</text><title>1. app_providers.dart
-2. document_state.dart
-3. editor_screen.dart
-4. file_system_item.dart
-5. resizable_splitter.dart
-6. terminal_panel.dart</title></g><text x="160.0" y="2495.0" class="textNormal">center_panel.dart</text>
+  <text x="265.68" y="2496.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">8</text><title>1. app_providers.dart
+2. badge_status.dart
+3. constants.dart
+4. document_state.dart
+5. message_box.dart
+6. output_panel.dart
+7. section_panel.dart
+8. status_indicator.dart</title></g><text x="160.0" y="2495.0" class="textNormal">info_panel.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,2565.0 L 50.0,2558.0 Q 47.0,2558.0 47.0,2561.0 L 47.0,2569.0 Q 47.0,2572.0 50.0,2572.0 Z" fill="#3b82f6"/>
   <text x="51.68" y="2566.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main_layout.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,2565.0 L 264.0,2558.0 Q 261.0,2558.0 261.0,2561.0 L 261.0,2569.0 Q 261.0,2572.0 264.0,2572.0 Z" fill="#10b981"/>
-  <text x="265.68" y="2566.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">6</text><title>1. ai_panel.dart
-2. file_system_item.dart
-3. info_panel.dart
-4. localization_panel.dart
-5. outline_panel.dart
-6. ui_state_providers.dart</title></g><text x="160.0" y="2565.0" class="textNormal">right_panel.dart</text>
+  <text x="265.68" y="2566.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">7</text><title>1. app_providers.dart
+2. constants.dart
+3. document_state.dart
+4. editor_screen.dart
+5. file_system_item.dart
+6. resizable_splitter.dart
+7. terminal_panel.dart</title></g><text x="160.0" y="2565.0" class="textNormal">center_panel.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,2635.0 L 50.0,2628.0 Q 47.0,2628.0 47.0,2631.0 L 47.0,2639.0 Q 47.0,2642.0 50.0,2642.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="2636.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. left_panel.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="2636.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main_layout.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,2635.0 L 264.0,2628.0 Q 261.0,2628.0 261.0,2631.0 L 261.0,2639.0 Q 261.0,2642.0 264.0,2642.0 Z" fill="#10b981"/>
-  <text x="265.68" y="2636.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">5</text><title>1. action_tabs.dart
-2. app_providers.dart
-3. output_panel.dart
-4. platform_info_section.dart
-5. platform_selector.dart</title></g><text x="160.0" y="2635.0" class="textNormal">execute_panel.dart</text>
+  <text x="265.68" y="2636.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">7</text><title>1. ai_panel.dart
+2. constants.dart
+3. file_system_item.dart
+4. info_panel.dart
+5. localization_panel.dart
+6. outline_panel.dart
+7. ui_state_providers.dart</title></g><text x="160.0" y="2635.0" class="textNormal">right_panel.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,2705.0 L 50.0,2698.0 Q 47.0,2698.0 47.0,2701.0 L 47.0,2709.0 Q 47.0,2712.0 50.0,2712.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="2706.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. app_providers.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="2706.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. left_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,2705.0 L 264.0,2698.0 Q 261.0,2698.0 261.0,2701.0 L 261.0,2709.0 Q 261.0,2712.0 264.0,2712.0 Z" fill="#10b981"/>
-  <text x="265.68" y="2706.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">5</text><title>1. app_providers.dart
-2. file_system_item.dart
-3. file_system_watcher.dart
-4. git_service.dart
-5. project_node.dart</title></g><text x="160.0" y="2705.0" class="textNormal">project_service.dart</text>
+  <text x="265.68" y="2706.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">6</text><title>1. action_tabs.dart
+2. app_providers.dart
+3. constants.dart
+4. output_panel.dart
+5. platform_info_section.dart
+6. platform_selector.dart</title></g><text x="160.0" y="2705.0" class="textNormal">execute_panel.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,2775.0 L 50.0,2768.0 Q 47.0,2768.0 47.0,2771.0 L 47.0,2779.0 Q 47.0,2782.0 50.0,2782.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="2776.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="2776.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. app_providers.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,2775.0 L 264.0,2768.0 Q 261.0,2768.0 261.0,2771.0 L 261.0,2779.0 Q 261.0,2782.0 264.0,2782.0 Z" fill="#10b981"/>
-  <text x="265.68" y="2776.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">4</text><title>1. app_providers.dart
-2. editor_screen.dart
-3. main_layout.dart
-4. message_box.dart</title></g><text x="160.0" y="2775.0" class="textNormal">project_operations.dart</text>
+  <text x="265.68" y="2776.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">6</text><title>1. app_providers.dart
+2. constants.dart
+3. file_system_item.dart
+4. file_system_watcher.dart
+5. git_service.dart
+6. project_node.dart</title></g><text x="160.0" y="2775.0" class="textNormal">project_service.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,2845.0 L 50.0,2838.0 Q 47.0,2838.0 47.0,2841.0 L 47.0,2849.0 Q 47.0,2852.0 50.0,2852.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="2846.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. left_panel.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="2846.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,2845.0 L 264.0,2838.0 Q 261.0,2838.0 261.0,2841.0 L 261.0,2849.0 Q 261.0,2852.0 264.0,2852.0 Z" fill="#10b981"/>
-  <text x="265.68" y="2846.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">4</text><title>1. file_system_item.dart
-2. foldername_widget.dart
-3. project_node.dart
-4. search_toggle_icons.dart</title></g><text x="160.0" y="2845.0" class="textNormal">search_panel.dart</text>
+  <text x="265.68" y="2846.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">5</text><title>1. app_providers.dart
+2. constants.dart
+3. editor_screen.dart
+4. main_layout.dart
+5. message_box.dart</title></g><text x="160.0" y="2845.0" class="textNormal">project_operations.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,2915.0 L 50.0,2908.0 Q 47.0,2908.0 47.0,2911.0 L 47.0,2919.0 Q 47.0,2922.0 50.0,2922.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="2916.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. right_panel.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="2916.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. left_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,2915.0 L 264.0,2908.0 Q 261.0,2908.0 261.0,2911.0 L 261.0,2919.0 Q 261.0,2922.0 264.0,2922.0 Z" fill="#10b981"/>
-  <text x="265.68" y="2916.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. ai_service.dart
+  <text x="265.68" y="2916.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">5</text><title>1. constants.dart
 2. file_system_item.dart
-3. message_box.dart</title></g><text x="160.0" y="2915.0" class="textNormal">ai_panel.dart</text>
+3. foldername_widget.dart
+4. project_node.dart
+5. search_toggle_icons.dart</title></g><text x="160.0" y="2915.0" class="textNormal">search_panel.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,2985.0 L 50.0,2978.0 Q 47.0,2978.0 47.0,2981.0 L 47.0,2989.0 Q 47.0,2992.0 50.0,2992.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="2986.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="2986.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. right_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,2985.0 L 264.0,2978.0 Q 261.0,2978.0 261.0,2981.0 L 261.0,2989.0 Q 261.0,2992.0 264.0,2992.0 Z" fill="#10b981"/>
-  <text x="265.68" y="2986.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. app_providers.dart
-2. full_path_widget.dart
-3. hero_title_widget.dart</title></g><text x="160.0" y="2985.0" class="textNormal">loading_screen.dart</text>
+  <text x="265.68" y="2986.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">4</text><title>1. ai_service.dart
+2. constants.dart
+3. file_system_item.dart
+4. message_box.dart</title></g><text x="160.0" y="2985.0" class="textNormal">ai_panel.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,3055.0 L 50.0,3048.0 Q 47.0,3048.0 47.0,3051.0 L 47.0,3059.0 Q 47.0,3062.0 50.0,3062.0 Z" fill="#3b82f6"/>
   <text x="51.68" y="3056.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,3055.0 L 264.0,3048.0 Q 261.0,3048.0 261.0,3051.0 L 261.0,3059.0 Q 261.0,3062.0 264.0,3062.0 Z" fill="#10b981"/>
-  <text x="265.68" y="3056.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. app_providers.dart
-2. git_service.dart
-3. message_box.dart</title></g><text x="160.0" y="3055.0" class="textNormal">native_menu_builder.dart</text>
+  <text x="265.68" y="3056.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">4</text><title>1. app_providers.dart
+2. constants.dart
+3. full_path_widget.dart
+4. hero_title_widget.dart</title></g><text x="160.0" y="3055.0" class="textNormal">loading_screen.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,3125.0 L 50.0,3118.0 Q 47.0,3118.0 47.0,3121.0 L 47.0,3129.0 Q 47.0,3132.0 50.0,3132.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="3126.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. right_panel.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="3126.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,3125.0 L 264.0,3118.0 Q 261.0,3118.0 261.0,3121.0 L 261.0,3129.0 Q 261.0,3132.0 264.0,3132.0 Z" fill="#10b981"/>
-  <text x="265.68" y="3126.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. editor_screen.dart
-2. file_system_item.dart
-3. output_panel.dart</title></g><text x="160.0" y="3125.0" class="textNormal">outline_panel.dart</text>
+  <text x="265.68" y="3126.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">4</text><title>1. app_providers.dart
+2. constants.dart
+3. git_service.dart
+4. message_box.dart</title></g><text x="160.0" y="3125.0" class="textNormal">native_menu_builder.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,3195.0 L 50.0,3188.0 Q 47.0,3188.0 47.0,3191.0 L 47.0,3199.0 Q 47.0,3202.0 50.0,3202.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="3196.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. left_panel.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="3196.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. right_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,3195.0 L 264.0,3188.0 Q 261.0,3188.0 261.0,3191.0 L 261.0,3199.0 Q 261.0,3202.0 264.0,3202.0 Z" fill="#10b981"/>
-  <text x="265.68" y="3196.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. message_box.dart
-2. output_panel.dart
-3. status_indicator.dart</title></g><text x="160.0" y="3195.0" class="textNormal">test_panel.dart</text>
+  <text x="265.68" y="3196.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">4</text><title>1. constants.dart
+2. editor_screen.dart
+3. file_system_item.dart
+4. output_panel.dart</title></g><text x="160.0" y="3195.0" class="textNormal">outline_panel.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,3265.0 L 50.0,3258.0 Q 47.0,3258.0 47.0,3261.0 L 47.0,3269.0 Q 47.0,3272.0 50.0,3272.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="3266.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="3266.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. left_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,3265.0 L 264.0,3258.0 Q 261.0,3258.0 261.0,3261.0 L 261.0,3269.0 Q 261.0,3272.0 264.0,3272.0 Z" fill="#10b981"/>
-  <text x="265.68" y="3266.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. app_providers.dart
-2. ui_state_providers.dart</title></g><text x="160.0" y="3265.0" class="textNormal">app_controller.dart</text>
+  <text x="265.68" y="3266.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">4</text><title>1. constants.dart
+2. message_box.dart
+3. output_panel.dart
+4. status_indicator.dart</title></g><text x="160.0" y="3265.0" class="textNormal">test_panel.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,3335.0 L 50.0,3328.0 Q 47.0,3328.0 47.0,3331.0 L 47.0,3339.0 Q 47.0,3342.0 50.0,3342.0 Z" fill="#3b82f6"/>
   <text x="51.68" y="3336.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,3335.0 L 264.0,3328.0 Q 261.0,3328.0 261.0,3331.0 L 261.0,3339.0 Q 261.0,3342.0 264.0,3342.0 Z" fill="#10b981"/>
-  <text x="265.68" y="3336.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. app_providers.dart
-2. message_box.dart</title></g><text x="160.0" y="3335.0" class="textNormal">app_title_bar.dart</text>
+  <text x="265.68" y="3336.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. app_providers.dart
+2. constants.dart
+3. message_box.dart</title></g><text x="160.0" y="3335.0" class="textNormal">app_title_bar.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,3405.0 L 50.0,3398.0 Q 47.0,3398.0 47.0,3401.0 L 47.0,3409.0 Q 47.0,3412.0 50.0,3412.0 Z" fill="#3b82f6"/>
   <text x="51.68" y="3406.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. create_project_screen.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,3405.0 L 264.0,3398.0 Q 261.0,3398.0 261.0,3401.0 L 261.0,3409.0 Q 261.0,3412.0 264.0,3412.0 Z" fill="#10b981"/>
-  <text x="265.68" y="3406.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. app_providers.dart
-2. full_path_widget.dart</title></g><text x="160.0" y="3405.0" class="textSmall">create_project_step3.dart</text>
+  <text x="265.68" y="3406.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. app_providers.dart
+2. constants.dart
+3. full_path_widget.dart</title></g><text x="160.0" y="3405.0" class="textSmall">create_project_step3.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,3475.0 L 50.0,3468.0 Q 47.0,3468.0 47.0,3471.0 L 47.0,3479.0 Q 47.0,3482.0 50.0,3482.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="3476.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. editor_screen.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="3476.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. localization_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,3475.0 L 264.0,3468.0 Q 261.0,3468.0 261.0,3471.0 L 261.0,3479.0 Q 261.0,3482.0 264.0,3482.0 Z" fill="#10b981"/>
-  <text x="265.68" y="3476.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. badge_status.dart
-2. git_service.dart</title></g><text x="160.0" y="3475.0" class="textNormal">diff_counter.dart</text>
+  <text x="265.68" y="3476.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. badge_status.dart
+2. constants.dart
+3. localization_data.dart</title></g><text x="160.0" y="3475.0" class="textSmall">localization_entry_widget.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,3545.0 L 50.0,3538.0 Q 47.0,3538.0 47.0,3541.0 L 47.0,3549.0 Q 47.0,3552.0 50.0,3552.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="3546.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. localization_panel.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="3546.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. execute_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,3545.0 L 264.0,3538.0 Q 261.0,3538.0 261.0,3541.0 L 261.0,3549.0 Q 261.0,3552.0 264.0,3552.0 Z" fill="#10b981"/>
-  <text x="265.68" y="3546.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. badge_status.dart
-2. localization_data.dart</title></g><text x="160.0" y="3545.0" class="textSmall">localization_entry_widget.dart</text>
+  <text x="265.68" y="3546.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. badge_status.dart
+2. constants.dart
+3. section_panel.dart</title></g><text x="160.0" y="3545.0" class="textSmall">platform_info_section.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,3615.0 L 50.0,3608.0 Q 47.0,3608.0 47.0,3611.0 L 47.0,3619.0 Q 47.0,3622.0 50.0,3622.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="3616.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. execute_panel.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="3616.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,3615.0 L 264.0,3608.0 Q 261.0,3608.0 261.0,3611.0 L 261.0,3619.0 Q 261.0,3622.0 264.0,3622.0 Z" fill="#10b981"/>
-  <text x="265.68" y="3616.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. badge_status.dart
-2. section_panel.dart</title></g><text x="160.0" y="3615.0" class="textSmall">platform_info_section.dart</text>
+  <text x="265.68" y="3616.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">3</text><title>1. app_providers.dart
+2. constants.dart
+3. hero_title_widget.dart</title></g><text x="160.0" y="3615.0" class="textNormal">welcome_screen.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,3685.0 L 50.0,3678.0 Q 47.0,3678.0 47.0,3681.0 L 47.0,3689.0 Q 47.0,3692.0 50.0,3692.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="3686.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="3686.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. execute_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,3685.0 L 264.0,3678.0 Q 261.0,3678.0 261.0,3681.0 L 261.0,3689.0 Q 261.0,3692.0 264.0,3692.0 Z" fill="#10b981"/>
-  <text x="265.68" y="3686.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. app_providers.dart
-2. hero_title_widget.dart</title></g><text x="160.0" y="3685.0" class="textNormal">welcome_screen.dart</text>
+  <text x="265.68" y="3686.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. constants.dart
+2. status_indicator.dart</title></g><text x="160.0" y="3685.0" class="textNormal">action_tabs.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,3755.0 L 50.0,3748.0 Q 47.0,3748.0 47.0,3751.0 L 47.0,3759.0 Q 47.0,3762.0 50.0,3762.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="3756.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. execute_panel.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="3756.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,3755.0 L 264.0,3748.0 Q 261.0,3748.0 261.0,3751.0 L 261.0,3759.0 Q 261.0,3762.0 264.0,3762.0 Z" fill="#10b981"/>
-  <text x="265.68" y="3756.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. status_indicator.dart</title></g><text x="160.0" y="3755.0" class="textNormal">action_tabs.dart</text>
+  <text x="265.68" y="3756.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. app_providers.dart
+2. ui_state_providers.dart</title></g><text x="160.0" y="3755.0" class="textNormal">app_controller.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,3825.0 L 50.0,3818.0 Q 47.0,3818.0 47.0,3821.0 L 47.0,3829.0 Q 47.0,3832.0 50.0,3832.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="3826.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. project_service.dart</title></g><g class="badge outgoingBadge">
+  <text x="51.68" y="3826.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. editor_screen.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,3825.0 L 264.0,3818.0 Q 261.0,3818.0 261.0,3821.0 L 261.0,3829.0 Q 261.0,3832.0 264.0,3832.0 Z" fill="#10b981"/>
-  <text x="265.68" y="3826.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. project_node.dart</title></g><text x="160.0" y="3825.0" class="textNormal">file_system_watcher.dart</text>
+  <text x="265.68" y="3826.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. badge_status.dart
+2. git_service.dart</title></g><text x="160.0" y="3825.0" class="textNormal">diff_counter.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,3895.0 L 50.0,3888.0 Q 47.0,3888.0 47.0,3891.0 L 47.0,3899.0 Q 47.0,3902.0 50.0,3902.0 Z" fill="#3b82f6"/>
   <text x="51.68" y="3896.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. message_box.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,3895.0 L 264.0,3888.0 Q 261.0,3888.0 261.0,3891.0 L 261.0,3899.0 Q 261.0,3902.0 264.0,3902.0 Z" fill="#10b981"/>
-  <text x="265.68" y="3896.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. badge_status.dart</title></g><text x="160.0" y="3895.0" class="textNormal">message_widget.dart</text>
+  <text x="265.68" y="3896.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. badge_status.dart
+2. constants.dart</title></g><text x="160.0" y="3895.0" class="textNormal">message_widget.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,3965.0 L 50.0,3958.0 Q 47.0,3958.0 47.0,3961.0 L 47.0,3969.0 Q 47.0,3972.0 50.0,3972.0 Z" fill="#3b82f6"/>
   <text x="51.68" y="3966.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. center_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 276.0,3965.0 L 264.0,3958.0 Q 261.0,3958.0 261.0,3961.0 L 261.0,3969.0 Q 261.0,3972.0 264.0,3972.0 Z" fill="#10b981"/>
-  <text x="265.68" y="3966.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. app_providers.dart</title></g><text x="160.0" y="3965.0" class="textNormal">terminal_panel.dart</text>
+  <text x="265.68" y="3966.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">2</text><title>1. app_providers.dart
+2. constants.dart</title></g><text x="160.0" y="3965.0" class="textNormal">terminal_panel.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,4035.0 L 50.0,4028.0 Q 47.0,4028.0 47.0,4031.0 L 47.0,4039.0 Q 47.0,4042.0 50.0,4042.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="4036.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. create_project_screen.dart</title></g><text x="160.0" y="4035.0" class="textSmall">create_project_step1.dart</text>
+  <text x="51.68" y="4036.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. create_project_screen.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,4035.0 L 264.0,4028.0 Q 261.0,4028.0 261.0,4031.0 L 261.0,4039.0 Q 261.0,4042.0 264.0,4042.0 Z" fill="#10b981"/>
+  <text x="265.68" y="4036.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants.dart</title></g><text x="160.0" y="4035.0" class="textSmall">create_project_step1.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,4105.0 L 50.0,4098.0 Q 47.0,4098.0 47.0,4101.0 L 47.0,4109.0 Q 47.0,4112.0 50.0,4112.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="4106.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. create_project_screen.dart</title></g><text x="160.0" y="4105.0" class="textSmall">create_project_step2.dart</text>
+  <text x="51.68" y="4106.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. create_project_screen.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,4105.0 L 264.0,4098.0 Q 261.0,4098.0 261.0,4101.0 L 261.0,4109.0 Q 261.0,4112.0 264.0,4112.0 Z" fill="#10b981"/>
+  <text x="265.68" y="4106.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants.dart</title></g><text x="160.0" y="4105.0" class="textSmall">create_project_step2.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,4175.0 L 50.0,4168.0 Q 47.0,4168.0 47.0,4171.0 L 47.0,4179.0 Q 47.0,4182.0 50.0,4182.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="4176.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. editor_screen.dart</title></g><text x="160.0" y="4175.0" class="textNormal">large_file_message.dart</text>
+  <text x="51.68" y="4176.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. project_service.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,4175.0 L 264.0,4168.0 Q 261.0,4168.0 261.0,4171.0 L 261.0,4179.0 Q 261.0,4182.0 264.0,4182.0 Z" fill="#10b981"/>
+  <text x="265.68" y="4176.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. project_node.dart</title></g><text x="160.0" y="4175.0" class="textNormal">file_system_watcher.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,4245.0 L 50.0,4238.0 Q 47.0,4238.0 47.0,4241.0 L 47.0,4249.0 Q 47.0,4252.0 50.0,4252.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="4246.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. localization_panel.dart</title></g><text x="160.0" y="4245.0" class="textSmall">localization_setup_widget.dart</text>
+  <text x="51.68" y="4246.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. editor_screen.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,4245.0 L 264.0,4238.0 Q 261.0,4238.0 261.0,4241.0 L 261.0,4249.0 Q 261.0,4252.0 264.0,4252.0 Z" fill="#10b981"/>
+  <text x="265.68" y="4246.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants.dart</title></g><text x="160.0" y="4245.0" class="textNormal">large_file_message.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,4315.0 L 50.0,4308.0 Q 47.0,4308.0 47.0,4311.0 L 47.0,4319.0 Q 47.0,4322.0 50.0,4322.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="4316.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. execute_panel.dart</title></g><text x="160.0" y="4315.0" class="textNormal">platform_selector.dart</text>
+  <text x="51.68" y="4316.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. localization_panel.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,4315.0 L 264.0,4308.0 Q 261.0,4308.0 261.0,4311.0 L 261.0,4319.0 Q 261.0,4322.0 264.0,4322.0 Z" fill="#10b981"/>
+  <text x="265.68" y="4316.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants.dart</title></g><text x="160.0" y="4315.0" class="textSmall">localization_setup_widget.dart</text>
 <g class="badge incomingBadge">
   <path d="M 62.0,4385.0 L 50.0,4378.0 Q 47.0,4378.0 47.0,4381.0 L 47.0,4389.0 Q 47.0,4392.0 50.0,4392.0 Z" fill="#3b82f6"/>
-  <text x="51.68" y="4386.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. editor_screen.dart</title></g><text x="160.0" y="4385.0" class="textSmall">toggle_experience_mode.dart</text>
+  <text x="51.68" y="4386.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. execute_panel.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,4385.0 L 264.0,4378.0 Q 261.0,4378.0 261.0,4381.0 L 261.0,4389.0 Q 261.0,4392.0 264.0,4392.0 Z" fill="#10b981"/>
+  <text x="265.68" y="4386.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants.dart</title></g><text x="160.0" y="4385.0" class="textNormal">platform_selector.dart</text>
+<g class="badge incomingBadge">
+  <path d="M 62.0,4455.0 L 50.0,4448.0 Q 47.0,4448.0 47.0,4451.0 L 47.0,4459.0 Q 47.0,4462.0 50.0,4462.0 Z" fill="#3b82f6"/>
+  <text x="51.68" y="4456.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. editor_screen.dart</title></g><g class="badge outgoingBadge">
+  <path d="M 276.0,4455.0 L 264.0,4448.0 Q 261.0,4448.0 261.0,4451.0 L 261.0,4459.0 Q 261.0,4462.0 264.0,4462.0 Z" fill="#10b981"/>
+  <text x="265.68" y="4456.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants.dart</title></g><text x="160.0" y="4455.0" class="textSmall">toggle_experience_mode.dart</text>
 <g class="badge outgoingBadge">
-  <path d="M 278.0,4455.0 L 262.0,4447.4 Q 259.0,4447.4 259.0,4450.4 L 259.0,4459.6 Q 259.0,4462.6 262.0,4462.6 Z" fill="#10b981"/>
-  <text x="264.72" y="4456.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold" textLength="10.120000000000001" lengthAdjust="spacingAndGlyphs">13</text><title>1. app_controller.dart
+  <path d="M 278.0,4525.0 L 262.0,4517.4 Q 259.0,4517.4 259.0,4520.4 L 259.0,4529.6 Q 259.0,4532.6 262.0,4532.6 Z" fill="#10b981"/>
+  <text x="264.72" y="4526.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold" textLength="10.120000000000001" lengthAdjust="spacingAndGlyphs">13</text><title>1. app_controller.dart
 2. app_providers.dart
 3. app_theme.dart
 4. app_title_bar.dart
@@ -1763,10 +1904,5 @@
 10. native_menu_builder.dart
 11. project_operations.dart
 12. ui_state_providers.dart
-13. welcome_screen.dart</title></g><text x="160.0" y="4455.0" class="textNormal">main.dart</text>
-<g class="badge outgoingBadge">
-  <path d="M 276.0,4525.0 L 264.0,4518.0 Q 261.0,4518.0 261.0,4521.0 L 261.0,4529.0 Q 261.0,4532.0 264.0,4532.0 Z" fill="#10b981"/>
-  <text x="265.68" y="4526.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. message_box.dart</title></g><text x="160.0" y="4525.0" class="textNormal">diff_viewer.dart</text>
-<text x="160.0" y="4595.0" class="textNormal">color_utils.dart</text>
-<text x="160.0" y="4665.0" class="textNormal">left_panel_controls.dart</text>
+13. welcome_screen.dart</title></g><text x="160.0" y="4525.0" class="textNormal">main.dart</text>
 </svg>

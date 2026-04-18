@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/utils/message_box.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:fide/widgets/status_indicator.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum TestStatus { idle, running, success, failure }
 
+/// Represents `TestAction`.
 class TestAction {
   final String id;
   final String title;
@@ -32,16 +34,17 @@ class TestAction {
   });
 }
 
+/// Represents `TestPanel`.
 class TestPanel extends ConsumerStatefulWidget {
   final String projectPath;
 
   const TestPanel({super.key, required this.projectPath});
 
   @override
-  ConsumerState<TestPanel> createState() => TestPanelState();
+  ConsumerState<TestPanel> createState() => _TestPanelState();
 }
 
-class TestPanelState extends ConsumerState<TestPanel> {
+class _TestPanelState extends ConsumerState<TestPanel> {
   Process? _currentProcess;
   final StringBuffer _outputBuffer = StringBuffer();
   final StringBuffer _errorBuffer = StringBuffer();
@@ -54,6 +57,8 @@ class TestPanelState extends ConsumerState<TestPanel> {
   @override
   void initState() {
     super.initState();
+
+    /// Handles `_initializeTestActions`.
     _initializeTestActions();
   }
 
@@ -63,6 +68,7 @@ class TestPanelState extends ConsumerState<TestPanel> {
     super.dispose();
   }
 
+  /// Handles `_initializeTestActions`.
   void _initializeTestActions() {
     _testActions = [
       TestAction(
@@ -96,6 +102,7 @@ Runs unit tests located in the test/ directory.
         icon: Icons.science,
         color: Colors.blue,
         action: () =>
+            /// Handles `_runTests`.
             _runTests(['flutter', 'test', '--plain-name', 'unit|test']),
       ),
       TestAction(
@@ -167,6 +174,7 @@ Validates test organization and naming conventions.
     }
   }
 
+  /// Handles `_runTests`.
   Future<void> _runTests(List<String> commandArgs) async {
     if (_isRunningTests) {
       MessageBox.showInfo(context, 'Tests are already running');
@@ -223,6 +231,7 @@ Validates test organization and naming conventions.
     }
   }
 
+  /// Handles `_validateTestStructure`.
   Future<void> _validateTestStructure() async {
     _clearOutput();
 
@@ -303,6 +312,7 @@ Validates test organization and naming conventions.
     });
   }
 
+  /// Handles `_buildTestActions`.
   Widget _buildTestActions() {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -311,12 +321,19 @@ Validates test organization and naming conventions.
         Expanded(
           child: ListView.builder(
             itemCount: _testActions.length,
-            itemBuilder: (context, index) {
+            itemBuilder: (_, index) {
               final action = _testActions[index];
               return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                margin: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.medium,
+                  vertical: AppSpacing.tiny,
+                ),
                 child: ListTile(
-                  leading: Icon(action.icon, color: action.color, size: 24),
+                  leading: Icon(
+                    action.icon,
+                    color: action.color,
+                    size: AppIconSize.xLarge,
+                  ),
                   title: Text(
                     action.title,
                     style: TextStyle(
@@ -328,7 +345,7 @@ Validates test organization and naming conventions.
                     action.description,
                     style: TextStyle(
                       color: colorScheme.onSurfaceVariant,
-                      fontSize: 12,
+                      fontSize: AppFontSize.caption,
                     ),
                   ),
                   trailing: Row(
@@ -337,9 +354,11 @@ Validates test organization and naming conventions.
                       // Status indicator
                       if (action.status == TestStatus.running)
                         const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          width: AppIconSize.large,
+                          height: AppIconSize.large,
+                          child: CircularProgressIndicator(
+                            strokeWidth: AppBorderWidth.medium,
+                          ),
                         )
                       else if (action.status == TestStatus.success)
                         StatusIndicator(
@@ -355,7 +374,10 @@ Validates test organization and naming conventions.
                         ),
                       // Tooltip with details
                       IconButton(
-                        icon: const Icon(Icons.info_outline, size: 18),
+                        icon: const Icon(
+                          Icons.info_outline,
+                          size: AppIconSize.mediumLarge,
+                        ),
                         onPressed: () => _showActionDetails(action),
                         tooltip: 'Details',
                       ),
@@ -388,6 +410,7 @@ Validates test organization and naming conventions.
     );
   }
 
+  /// Handles `_showActionDetails`.
   void _showActionDetails(TestAction action) {
     showDialog(
       context: context,
@@ -395,7 +418,7 @@ Validates test organization and naming conventions.
         title: Row(
           children: [
             Icon(action.icon, color: action.color),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.large),
             Text(action.title),
           ],
         ),
@@ -407,22 +430,25 @@ Validates test organization and naming conventions.
               Text(
                 action.description,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: AppFontSize.title,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.xLarge),
               const Text(
                 'Details:',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: AppFontSize.label,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.medium),
               Text(
                 action.details,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: AppFontSize.caption,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  height: 1.4,
+                  height: AppLineHeight.relaxed,
                 ),
               ),
             ],
@@ -450,14 +476,14 @@ Validates test organization and naming conventions.
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.medium),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.xLarge),
             child: Row(
               children: [
                 Column(
@@ -466,7 +492,7 @@ Validates test organization and naming conventions.
                     Text(
                       'Test Suite',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: AppIconSize.mediumLarge,
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
@@ -474,7 +500,7 @@ Validates test organization and naming conventions.
                     Text(
                       'Run and manage Flutter tests',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: AppFontSize.caption,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
@@ -483,9 +509,11 @@ Validates test organization and naming conventions.
                 const Spacer(),
                 if (_isRunningTests)
                   const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    width: AppIconSize.large,
+                    height: AppIconSize.large,
+                    child: CircularProgressIndicator(
+                      strokeWidth: AppBorderWidth.medium,
+                    ),
                   ),
               ],
             ),

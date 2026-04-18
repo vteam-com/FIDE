@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fide/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/utils/message_box.dart';
@@ -16,6 +17,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
+/// Represents `InfoPanel`.
 class InfoPanel extends ConsumerStatefulWidget {
   const InfoPanel({super.key});
 
@@ -36,6 +38,8 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   @override
   void initState() {
     super.initState();
+
+    /// Handles `_analyzeProject`.
     _analyzeProject();
   }
 
@@ -45,6 +49,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     super.dispose();
   }
 
+  /// Handles `_analyzeProject`.
   Future<void> _analyzeProject() async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
@@ -53,6 +58,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     _outputBuffer.clear();
 
     try {
+      /// Handles `_gatherProjectMetrics`.
       final metrics = await _gatherProjectMetrics(currentProjectPath);
       await ref
           .read(projectMetricsProvider.notifier)
@@ -70,6 +76,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
+  /// Handles `_gatherProjectMetrics`.
   Future<Map<String, dynamic>> _gatherProjectMetrics(String projectPath) async {
     final metrics = <String, dynamic>{};
 
@@ -128,20 +135,25 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
 
     // File stats
+    /// Handles `_analyzeFileStats`.
     await _analyzeFileStats(projectPath, metrics);
 
     // Directory structure
+    /// Handles `_analyzeDirectoryStructure`.
     await _analyzeDirectoryStructure(projectPath, metrics);
 
     // Health indicators
+    /// Handles `_analyzeHealthIndicators`.
     await _analyzeHealthIndicators(projectPath, metrics);
 
     // Generate quality score
+    /// Handles `_calculateQualityScore`.
     _calculateQualityScore(metrics);
 
     return metrics;
   }
 
+  /// Handles `_analyzeFileStats`.
   Future<void> _analyzeFileStats(
     String projectPath,
     Map<String, dynamic> metrics,
@@ -160,6 +172,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     metrics['totalFiles'] = stats.values.fold(0, (sum, count) => sum + count);
   }
 
+  /// Handles `_analyzeDirectoryStructure`.
   Future<void> _analyzeDirectoryStructure(
     String projectPath,
     Map<String, dynamic> metrics,
@@ -172,7 +185,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         final pathSegments = entity.path
             .replaceFirst(projectPath, '')
             .split('/');
-        if (pathSegments.length >= 2) {
+        if (pathSegments.length >= AppMetric.minDirPathDepth) {
           final category = pathSegments[1];
           if ([
             'android',
@@ -193,6 +206,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     metrics['directoryStructure'] = structure;
   }
 
+  /// Handles `_analyzeHealthIndicators`.
   Future<void> _analyzeHealthIndicators(
     String projectPath,
     Map<String, dynamic> metrics,
@@ -222,7 +236,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       indicators['buildErrors'] = errorLogs;
     }
 
-    // Check for large files (>10MB)
+    // Check for large files above configured MB threshold.
     final largeFiles = <String>[];
     await for (final entity in Directory(
       projectPath,
@@ -230,11 +244,13 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       if (entity is File) {
         try {
           final size = await entity.length();
-          if (size > 10 * 1024 * 1024) {
-            // 10MB
+          if (size >
+              AppMetric.largeFileThresholdMb *
+                  AppMetric.fileSizeDivisor *
+                  AppMetric.fileSizeDivisor) {
             largeFiles.add(entity.path.replaceFirst(projectPath, ''));
           }
-        } catch (e) {
+        } catch (_) {
           // Skip files we can't read (like broken symlinks)
           continue;
         }
@@ -252,8 +268,9 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     metrics['healthIndicators'] = indicators;
   }
 
+  /// Handles `_calculateQualityScore`.
   void _calculateQualityScore(Map<String, dynamic> metrics) {
-    int score = 100;
+    int score = AppMetric.maxScore;
 
     final healthIndicators =
         metrics['healthIndicators'] as Map<String, dynamic>?;
@@ -262,34 +279,46 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
     // Deduct for missing pubspec.lock
     if (!(healthIndicators['hasPubspecLock'] ?? false)) {
-      score -= 20;
+      score -= AppMetric.missingLockDeduction;
     }
 
     // Deduct for build errors
     final buildErrors = (healthIndicators['buildErrors'] ?? 0) as int;
-    score -= (buildErrors * 10).clamp(0, 50);
+    score -= (buildErrors * AppMetric.buildErrorDeductionPer).clamp(
+      0,
+      AppMetric.buildErrorDeductionMax,
+    );
 
     // Deduct for warnings
     final buildWarnings = (healthIndicators['buildWarnings'] ?? 0) as int;
-    score -= (buildWarnings * 2).clamp(0, 20);
+    score -= (buildWarnings * AppMetric.buildWarningDeductionPer).clamp(
+      0,
+      AppMetric.buildWarningDeductionMax,
+    );
 
     // Deduct for large files
     final largeFiles = healthIndicators['largeFiles'] as List?;
-    if (largeFiles != null && largeFiles.length > 3) {
-      score -= 10;
+    if (largeFiles != null &&
+        largeFiles.length > AppMetric.maxAllowedLargeFiles) {
+      score -= AppMetric.largeFileThresholdMb;
     }
 
-    metrics['qualityScore'] = score.clamp(0, 100);
+    metrics['qualityScore'] = score.clamp(0, AppMetric.maxScore);
   }
 
   /// Builds a BadgeStatus widget based on the quality score
   BadgeStatus _buildScoreBadge(int score) {
     final text = '$score%';
-    if (score < 50) return BadgeStatus.error(text: text);
-    if (score < 80) return BadgeStatus.warning(text: text);
+    if (score < AppMetric.criticalScoreThreshold) {
+      return BadgeStatus.error(text: text);
+    }
+    if (score < AppMetric.warningScoreThreshold) {
+      return BadgeStatus.warning(text: text);
+    }
     return BadgeStatus.success(text: text);
   }
 
+  /// Handles `_showScoreDetails`.
   void _showScoreDetails(
     BuildContext context,
     Map<String, dynamic> projectMetrics,
@@ -301,7 +330,9 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     final buildErrors = (healthIndicators?['buildErrors'] ?? 0) as int;
     final buildWarnings = (healthIndicators?['buildWarnings'] ?? 0) as int;
     final largeFiles = healthIndicators?['largeFiles'] as List?;
-    final hasLargeFiles = largeFiles != null && largeFiles.length > 3;
+    final hasLargeFiles =
+        largeFiles != null &&
+        largeFiles.length > AppMetric.maxAllowedLargeFiles;
 
     showDialog(
       context: context,
@@ -315,62 +346,76 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               Text(
                 'Starting Score: 100 points',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: AppFontSize.caption,
                   fontWeight: FontWeight.w500,
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.large),
               const Text(
                 'Deductions:',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: AppFontSize.caption,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.medium),
+
+              /// Handles `_buildDeductionItem`.
               _buildDeductionItem(
                 'Missing pubspec.lock',
-                -20,
+                -AppMetric.missingLockDeduction,
                 isMissingPubspecLock,
                 context,
               ),
               _buildDeductionItem(
                 'Build errors (max 50 points)',
-                -(buildErrors * 10).clamp(0, 50),
+                -(buildErrors * AppMetric.buildErrorDeductionPer).clamp(
+                  0,
+                  AppMetric.buildErrorDeductionMax,
+                ),
                 buildErrors > 0,
                 context,
               ),
               _buildDeductionItem(
                 'Build warnings (max 20 points)',
-                -(buildWarnings * 2).clamp(0, 20),
+                -(buildWarnings * AppMetric.buildWarningDeductionPer).clamp(
+                  0,
+                  AppMetric.buildWarningDeductionMax,
+                ),
                 buildWarnings > 0,
                 context,
               ),
               _buildDeductionItem(
                 'Large files (>3 files over 10MB)',
-                -10,
+                -AppMetric.largeFileThresholdMb,
                 hasLargeFiles,
                 context,
               ),
-              const Divider(height: 24),
+              const Divider(height: AppSpacing.xxLarge),
               Text(
                 'Final Score: ${projectMetrics['qualityScore']}/100',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: AppFontSize.label,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.primary,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.medium),
               const Text(
                 'Score ranges:',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontSize: AppFontSize.caption,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.tiny),
               Text(
                 '• Green (80-100): Good project health\n'
                 '• Orange (50-79): Needs attention\n'
                 '• Red (0-49): Critical issues',
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: AppFontSize.metadata,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
@@ -387,6 +432,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     );
   }
 
+  /// Handles `_buildDeductionItem`.
   Widget _buildDeductionItem(
     String label,
     int points,
@@ -397,15 +443,15 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       children: [
         Icon(
           active ? Icons.remove : Icons.check,
-          size: 14,
+          size: AppFontSize.label,
           color: active ? Colors.red.shade600 : Colors.green.shade600,
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.medium),
         Expanded(
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: AppFontSize.metadata,
               color: active
                   ? Theme.of(context).colorScheme.onSurface
                   : Theme.of(context).colorScheme.onSurfaceVariant,
@@ -418,7 +464,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         Text(
           active ? '$points pts' : 'No deduction',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: AppFontSize.metadata,
             fontWeight: FontWeight.w500,
             color: active ? Colors.red.shade600 : Colors.green.shade600,
           ),
@@ -427,6 +473,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     );
   }
 
+  /// Handles `_performFullCleanup`.
   Future<void> _performFullCleanup() async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
@@ -460,6 +507,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
     try {
       // Flutter clean
+      /// Handles `_runCommand`.
       await _runCommand('flutter', [
         'clean',
       ], workingDirectory: currentProjectPath);
@@ -513,6 +561,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
+  /// Handles `_openPubspecYaml`.
   void _openPubspecYaml() {
     try {
       final currentProjectPath = ref.read(currentProjectPathProvider);
@@ -545,6 +594,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
+  /// Handles `_runCommand`.
   Future<void> _runCommand(
     String cmd,
     List<String> args, {
@@ -566,6 +616,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
+  /// Handles `_checkOutdated`.
   Future<void> _checkOutdated() async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
@@ -580,6 +631,8 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
       if (result.exitCode == 0) {
         final output = result.stdout as String;
+
+        /// Handles `_parseOutdated`.
         final parsed = _parseOutdated(output);
 
         // Store the full command output
@@ -617,6 +670,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
+  /// Handles `_parseOutdated`.
   Map<String, dynamic> _parseOutdated(String output) {
     final lines = output.split('\n');
     final outdated = <String, dynamic>{};
@@ -626,16 +680,20 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       if (line.isEmpty) continue;
 
       final parts = line.split(RegExp(r'\s+'));
-      if (parts.length >= 5 && parts[0] != 'Package' && parts[0] != '---') {
+      if (parts.length >= AppMetric.outdatedMinColumns &&
+          parts[0] != 'Package' &&
+          parts[0] != '---') {
         final package = parts[0];
         final current = parts[1];
-        final upgradable = parts[2];
-        final resolvable = parts[3];
+        final upgradable = parts[AppMetric.outdatedUpgradableColIndex];
+        final resolvable = parts[AppMetric.outdatedResolvableColIndex];
         outdated[package] = {
           'current': current,
           'upgradable': upgradable,
           'resolvable': resolvable,
-          'latest': parts.length > 4 ? parts[4] : '',
+          'latest': parts.length > AppMetric.outdatedLatestColIndex
+              ? parts[AppMetric.outdatedLatestColIndex]
+              : '',
         };
       }
     }
@@ -643,6 +701,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     return outdated;
   }
 
+  /// Handles `_openPubDev`.
   Future<void> _openPubDev(String packageName) async {
     final uri = Uri.parse('https://pub.dev/packages/$packageName');
     if (await canLaunchUrl(uri)) {
@@ -654,6 +713,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
+  /// Handles `_parseDependencyConflictError`.
   void _parseDependencyConflictError(String error) {
     final lines = error.split('\n');
     String? cleanErrorMessage;
@@ -692,6 +752,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
+  /// Handles `_buildDependencyChip`.
   Widget _buildDependencyChip(
     String packageName,
     String version,
@@ -730,15 +791,15 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           Text(
             label,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: AppFontSize.badge,
               color: isProblematic || hasIncompatibleVersion
                   ? Colors.red
                   : (isOutdated ? Colors.orange.shade700 : null),
             ),
           ),
           if (isProblematic || hasIncompatibleVersion) ...[
-            const SizedBox(width: 4),
-            Icon(Icons.warning, size: 12, color: Colors.red),
+            const SizedBox(width: AppSpacing.tiny),
+            Icon(Icons.warning, size: AppIconSize.tiny, color: Colors.red),
           ],
         ],
       ),
@@ -746,11 +807,12 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       backgroundColor: isProblematic || hasIncompatibleVersion
           ? Colors.red.shade50
           : null,
-      labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+      labelPadding: AppPadding.chipLabel,
       visualDensity: VisualDensity.compact,
     );
   }
 
+  /// Handles `_upgradePackages`.
   Future<void> _upgradePackages() async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
@@ -874,7 +936,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           yamlEditor.update(pathToUpdate, newVersion);
           changed = true;
           updatedPackages.add('$packageName: $currentVersion → $newVersion');
-        } catch (e) {
+        } catch (_) {
           // Continue to next package if this one fails
           continue;
         }
@@ -938,11 +1000,11 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
 
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(AppSpacing.medium),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: 8,
+          spacing: AppSpacing.medium,
           children: [
             // Header with project info
             Column(
@@ -954,7 +1016,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                       child: Text(
                         projectMetrics['name'] as String? ?? 'Unknown Project',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: AppFontSize.title,
                           fontWeight: FontWeight.w600,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -964,7 +1026,10 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                     ),
                     IconButton(
                       onPressed: _openPubspecYaml,
-                      icon: const Icon(Icons.edit_note, size: 16),
+                      icon: const Icon(
+                        Icons.edit_note,
+                        size: AppIconSize.medium,
+                      ),
                     ),
                   ],
                 ),
@@ -972,7 +1037,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                   Text(
                     'v${projectMetrics['version']}',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: AppFontSize.metadata,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
@@ -982,19 +1047,22 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             Text(
               projectMetrics['description'] as String? ?? '< no description >',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: AppFontSize.metadata,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               overflow: TextOverflow.visible,
             ),
 
             // Health Indicators
+            /// Handles `_buildHealthCard`.
             _buildHealthCard(projectMetrics),
 
             // Dependencies
+            /// Handles `_buildDependenciesCard`.
             _buildDependenciesCard(projectMetrics),
 
             // Actions
+            /// Handles `_buildActionsCard`.
             _buildActionsCard(projectMetrics),
           ],
         ),
@@ -1002,6 +1070,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     );
   }
 
+  /// Handles `_buildHealthCard`.
   Widget _buildHealthCard(Map<String, dynamic> projectMetrics) {
     final indicators = (projectMetrics['healthIndicators'] as Map)
         .cast<String, dynamic>();
@@ -1051,14 +1120,17 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       ),
 
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.large),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (issues.isEmpty)
               Text(
                 '✅ No issues detected',
-                style: TextStyle(fontSize: 12, color: Colors.green.shade700),
+                style: TextStyle(
+                  fontSize: AppFontSize.caption,
+                  color: Colors.green.shade700,
+                ),
               )
             else
               Column(
@@ -1066,14 +1138,16 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                 children: issues
                     .map(
                       (issue) => Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
+                        padding: const EdgeInsets.only(bottom: AppSpacing.tiny),
                         child: StatusIndicator(
                           icon: issue['icon'] as IconData,
                           label: issue['message'] as String,
+
+                          /// Handles `_getIssueColor`.
                           color: _getIssueColor(issue['type'] as String),
-                          iconSize: 14,
-                          textSize: 12,
-                          spacing: 8,
+                          iconSize: AppFontSize.label,
+                          textSize: AppFontSize.caption,
+                          spacing: AppSpacing.medium,
                         ),
                       ),
                     )
@@ -1085,6 +1159,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     );
   }
 
+  /// Handles `_getIssueColor`.
   Color _getIssueColor(String type) {
     switch (type) {
       case 'error':
@@ -1098,6 +1173,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
+  /// Handles `_buildDependenciesCard`.
   Widget _buildDependenciesCard(Map<String, dynamic> projectMetrics) {
     final depsDirect =
         (projectMetrics['dependencies'] as Map<String, dynamic>?) ?? {};
@@ -1115,28 +1191,36 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               onPressed: _checkingOutdated ? null : _checkOutdated,
               icon: _checkingOutdated
                   ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      width: AppIconSize.medium,
+                      height: AppIconSize.medium,
+                      child: CircularProgressIndicator(
+                        strokeWidth: AppBorderWidth.medium,
+                      ),
                     )
-                  : const Icon(Icons.update, size: 16),
+                  : const Icon(Icons.update, size: AppIconSize.medium),
               label: const Text('Outdated'),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.medium,
+                ),
               ),
             ),
             ElevatedButton.icon(
               onPressed: _upgrading ? null : _upgradePackages,
               icon: _upgrading
                   ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      width: AppIconSize.medium,
+                      height: AppIconSize.medium,
+                      child: CircularProgressIndicator(
+                        strokeWidth: AppBorderWidth.medium,
+                      ),
                     )
-                  : const Icon(Icons.arrow_upward, size: 16),
+                  : const Icon(Icons.arrow_upward, size: AppIconSize.medium),
               label: const Text('Upgrade'),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.medium,
+                ),
               ),
             ),
           ],
@@ -1147,8 +1231,8 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             title: 'Direct',
             count: depsDirect.length,
             child: Wrap(
-              spacing: 8,
-              runSpacing: 4,
+              spacing: AppSpacing.medium,
+              runSpacing: AppSpacing.tiny,
               children: depsDirect.entries.map((entry) {
                 return _buildDependencyChip(
                   entry.key,
@@ -1164,8 +1248,8 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             title: 'Developer',
             count: depsDev.length,
             child: Wrap(
-              spacing: 8,
-              runSpacing: 4,
+              spacing: AppSpacing.medium,
+              runSpacing: AppSpacing.tiny,
               children: depsDev.entries.map((entry) {
                 return _buildDependencyChip(
                   entry.key,
@@ -1177,11 +1261,11 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           ),
 
         if (depsDirect.isEmpty && depsDev.isEmpty) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.medium),
           Text(
             'No dependencies',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: AppFontSize.caption,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
@@ -1202,7 +1286,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
         // Outdated command output (always visible when present)
         if (_outdatedCommandOutput != null) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.large),
           OutputPanel(
             title: '📄 Package Analysis Output',
             text: _outdatedCommandOutput!,
@@ -1212,7 +1296,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
         // Dependency conflict output (always visible when present)
         if (_dependencyConflictError != null) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.large),
           OutputPanel(
             title: '⚠️ Dependency Conflicts',
             text: _dependencyConflictError!,
@@ -1223,49 +1307,63 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     );
   }
 
-  Widget _buildActionsCard(Map<String, dynamic> projectMetrics) {
+  /// Handles `_buildActionsCard`.
+  Widget _buildActionsCard(Map<String, dynamic> _ /*projectMetrics*/) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.large),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Actions',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: AppFontSize.label,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.large),
             ElevatedButton.icon(
               onPressed: _isRefreshing ? null : _performFullCleanup,
               icon: _isRefreshing
                   ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      width: AppIconSize.medium,
+                      height: AppIconSize.medium,
+                      child: CircularProgressIndicator(
+                        strokeWidth: AppBorderWidth.medium,
+                      ),
                     )
-                  : const Icon(Icons.cleaning_services, size: 16),
+                  : const Icon(
+                      Icons.cleaning_services,
+                      size: AppIconSize.medium,
+                    ),
               label: const Text('Full Project Cleanup'),
               style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 36),
+                minimumSize: const Size(
+                  double.infinity,
+                  AppSize.actionButtonHeight,
+                ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.medium),
             ElevatedButton.icon(
               onPressed: _isRefreshing ? null : _analyzeProject,
               icon: _isRefreshing
                   ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      width: AppIconSize.medium,
+                      height: AppIconSize.medium,
+                      child: CircularProgressIndicator(
+                        strokeWidth: AppBorderWidth.medium,
+                      ),
                     )
-                  : const Icon(Icons.refresh, size: 16),
+                  : const Icon(Icons.refresh, size: AppIconSize.medium),
               label: const Text('Refresh Analysis'),
               style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 36),
+                minimumSize: const Size(
+                  double.infinity,
+                  AppSize.actionButtonHeight,
+                ),
               ),
             ),
           ],

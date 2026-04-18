@@ -1,9 +1,11 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:diff_match_patch/diff_match_patch.dart';
+import 'package:fide/constants.dart';
 import 'package:flutter/material.dart';
 
 // Side-by-side diff widget
+/// Represents `SideBySideDiff`.
 class SideBySideDiff extends StatelessWidget {
   const SideBySideDiff({
     super.key,
@@ -99,22 +101,23 @@ class SideBySideDiff extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+          color: Theme.of(
+            context,
+          ).colorScheme.outline.withValues(alpha: AppOpacity.divider),
         ),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(AppRadius.tiny),
       ),
       child: Column(
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: AppPadding.diffHeader,
             decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest
+                  .withValues(alpha: AppOpacity.disabled),
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(4),
-                topRight: Radius.circular(4),
+                topLeft: Radius.circular(AppRadius.tiny),
+                topRight: Radius.circular(AppRadius.tiny),
               ),
             ),
             child: Row(
@@ -124,27 +127,27 @@ class SideBySideDiff extends StatelessWidget {
                     'Original',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.7),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(
+                        alpha: AppOpacity.secondaryText,
+                      ),
                     ),
                   ),
                 ),
                 Container(
-                  width: 1,
-                  height: 16,
+                  width: AppSize.borderThin,
+                  height: AppSize.diffHeaderDividerHeight,
                   color: Theme.of(
                     context,
-                  ).colorScheme.outline.withValues(alpha: 0.3),
+                  ).colorScheme.outline.withValues(alpha: AppOpacity.divider),
                 ),
                 Expanded(
                   child: Text(
                     'Modified',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.7),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(
+                        alpha: AppOpacity.secondaryText,
+                      ),
                     ),
                   ),
                 ),
@@ -160,9 +163,9 @@ class SideBySideDiff extends StatelessWidget {
                 return Container(
                   decoration: BoxDecoration(
                     color: line.type == DiffType.deletion
-                        ? Colors.red.withValues(alpha: 0.1)
+                        ? Colors.red.withValues(alpha: AppOpacity.subtle)
                         : line.type == DiffType.addition
-                        ? Colors.green.withValues(alpha: 0.1)
+                        ? Colors.green.withValues(alpha: AppOpacity.subtle)
                         : null,
                   ),
                   child: Row(
@@ -170,36 +173,33 @@ class SideBySideDiff extends StatelessWidget {
                       // Old side
                       Expanded(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
+                          padding: AppPadding.diffRow,
                           child: Row(
                             children: [
                               SizedBox(
-                                width: 40,
+                                width: AppSize.diffLineNumberWidth,
                                 child: Text(
                                   line.oldLine,
                                   style: TextStyle(
                                     fontFamily: 'monospace',
-                                    fontSize: 12,
+                                    fontSize: AppFontSize.caption,
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onSurface
-                                        .withValues(alpha: 0.5),
+                                        .withValues(alpha: AppOpacity.disabled),
                                   ),
                                   textAlign: TextAlign.right,
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: AppSpacing.medium),
                               Expanded(
                                 child: Text(
                                   line.oldContent,
                                   style: TextStyle(
                                     fontFamily: 'monospace',
-                                    fontSize: 12,
+                                    fontSize: AppFontSize.caption,
                                     color: line.type == DiffType.deletion
-                                        ? Colors.red[700]
+                                        ? Colors.red[AppShade.strong]
                                         : Theme.of(
                                             context,
                                           ).colorScheme.onSurface,
@@ -212,45 +212,42 @@ class SideBySideDiff extends StatelessWidget {
                       ),
                       // Divider
                       Container(
-                        width: 1,
-                        height: 20,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.outline.withValues(alpha: 0.3),
+                        width: AppSize.borderThin,
+                        height: AppSize.diffRowDividerHeight,
+                        color: Theme.of(context).colorScheme.outline.withValues(
+                          alpha: AppOpacity.divider,
+                        ),
                       ),
                       // New side
                       Expanded(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
+                          padding: AppPadding.diffRow,
                           child: Row(
                             children: [
                               SizedBox(
-                                width: 40,
+                                width: AppSize.diffLineNumberWidth,
                                 child: Text(
                                   line.newLine,
                                   style: TextStyle(
                                     fontFamily: 'monospace',
-                                    fontSize: 12,
+                                    fontSize: AppFontSize.caption,
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onSurface
-                                        .withValues(alpha: 0.5),
+                                        .withValues(alpha: AppOpacity.disabled),
                                   ),
                                   textAlign: TextAlign.right,
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: AppSpacing.medium),
                               Expanded(
                                 child: Text(
                                   line.newContent,
                                   style: TextStyle(
                                     fontFamily: 'monospace',
-                                    fontSize: 12,
+                                    fontSize: AppFontSize.caption,
                                     color: line.type == DiffType.addition
-                                        ? Colors.green[700]
+                                        ? Colors.green[AppShade.strong]
                                         : Theme.of(
                                             context,
                                           ).colorScheme.onSurface,
@@ -275,6 +272,7 @@ class SideBySideDiff extends StatelessWidget {
 
 enum DiffType { equal, addition, deletion }
 
+/// Represents `DiffLine`.
 class DiffLine {
   final String oldLine;
   final String oldContent;

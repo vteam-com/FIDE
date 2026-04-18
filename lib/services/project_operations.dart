@@ -1,3 +1,5 @@
+// ignore: fcheck_dead_code
+import 'package:fide/constants.dart';
 import 'package:fide/panels/center/editor_screen.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/screens/main_layout.dart';
@@ -40,9 +42,12 @@ class ProjectOperations {
           final currentMru = List<String>.from(ref.read(mruFoldersProvider));
           if (!currentMru.contains(selectedDirectory)) {
             currentMru.insert(0, selectedDirectory); // Add to beginning
-            // Keep only the most recent 10
-            if (currentMru.length > 10) {
-              currentMru.removeRange(10, currentMru.length);
+            // Keep only the most recent configured entries.
+            if (currentMru.length > AppMetric.maxMruFolders) {
+              currentMru.removeRange(
+                AppMetric.maxMruFolders,
+                currentMru.length,
+              );
             }
             ref.read(mruFoldersProvider.notifier).state = currentMru;
 
@@ -104,6 +109,7 @@ class ProjectOperations {
     EditorScreen.findNext();
   }
 
+  /// Triggers navigation to the previous search match in the active editor.
   static void triggerSearchPrevious() {
     // Call the static method to toggle search in the current editor
     EditorScreen.findPrevious();
@@ -114,26 +120,19 @@ class ProjectOperations {
   static VoidCallback? _onBottomPanelVisibilityChanged;
   static VoidCallback? _onRightPanelVisibilityChanged;
 
-  static void setVisibilityCallbacks({
-    VoidCallback? onLeftPanelVisibilityChanged,
-    VoidCallback? onBottomPanelVisibilityChanged,
-    VoidCallback? onRightPanelVisibilityChanged,
-  }) {
-    _onLeftPanelVisibilityChanged = onLeftPanelVisibilityChanged;
-    _onBottomPanelVisibilityChanged = onBottomPanelVisibilityChanged;
-    _onRightPanelVisibilityChanged = onRightPanelVisibilityChanged;
-  }
-
+  /// Toggles visibility of the left panel through the registered callback.
   static void triggerTogglePanelLeft() {
     // Update visibility state
     _onLeftPanelVisibilityChanged?.call();
   }
 
+  /// Toggles visibility of the bottom panel through the registered callback.
   static void triggerTogglePanelBottom() {
     // Update visibility state
     _onBottomPanelVisibilityChanged?.call();
   }
 
+  /// Toggles visibility of the right panel through the registered callback.
   static void triggerTogglePanelRight() {
     // Update visibility state
     _onRightPanelVisibilityChanged?.call();

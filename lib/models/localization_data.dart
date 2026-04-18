@@ -1,3 +1,6 @@
+import 'package:fide/constants.dart';
+
+/// A single key-value translation entry parsed from an ARB file, optionally carrying `@`-prefixed metadata.
 class ArbEntry {
   final String key;
   final String value;
@@ -14,6 +17,7 @@ class ArbEntry {
   }
 }
 
+/// Represents a parsed ARB localization file, identified by its language code and keyed entries.
 class ArbFile {
   final String path;
   final String languageCode;
@@ -25,10 +29,11 @@ class ArbFile {
     required this.entries,
   });
 
+  /// Handles `ArbFile.extractLanguageCode`.
   static String extractLanguageCode(String filename) {
     // Assuming format like app_en.arb, intl_en.arb, etc.
     final parts = filename.split('_');
-    if (parts.length >= 2) {
+    if (parts.length >= AppMetric.minDirPathDepth) {
       final lastPart = parts.last;
       if (lastPart.endsWith('.arb')) {
         return lastPart.replaceAll('.arb', '');
@@ -38,6 +43,7 @@ class ArbFile {
   }
 }
 
+/// A cross-language comparison record for one ARB key, capturing values present or missing per locale.
 class ArbComparison {
   final String key;
   final String? englishValue;

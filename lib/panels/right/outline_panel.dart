@@ -4,12 +4,14 @@ import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:fide/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/panels/center/editor_screen.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:yaml/yaml.dart';
 
+/// Represents `OutlinePanel`.
 class OutlinePanel extends StatefulWidget {
   const OutlinePanel({
     super.key,
@@ -82,7 +84,7 @@ class _OutlinePanelState extends State<OutlinePanel> {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
-      builder: (context, constraints) {
+      builder: (_ /*context*/, constraints) {
         final isConstrained = constraints.maxHeight.isFinite;
 
         return Column(
@@ -104,14 +106,14 @@ class _OutlinePanelState extends State<OutlinePanel> {
               )
             else if (_outlineNodes.isEmpty)
               const Padding(
-                padding: EdgeInsets.all(8.0),
+                padding: EdgeInsets.all(AppSpacing.medium),
                 child: Text('No outline available'),
               )
             else if (isConstrained)
               Expanded(
                 child: ListView.builder(
                   itemCount: _outlineNodes.length,
-                  itemBuilder: (context, index) {
+                  itemBuilder: (_ /*context*/, index) {
                     final node = _outlineNodes[index];
                     return _buildOutlineNode(node);
                   },
@@ -120,10 +122,10 @@ class _OutlinePanelState extends State<OutlinePanel> {
             else
               Flexible(
                 child: SizedBox(
-                  height: 200, // Default reasonable height when unconstrained
+                  height: AppSize.outlineFallbackHeight,
                   child: ListView.builder(
                     itemCount: _outlineNodes.length,
-                    itemBuilder: (context, index) {
+                    itemBuilder: (_ /*context*/, index) {
                       final node = _outlineNodes[index];
                       return _buildOutlineNode(node);
                     },
@@ -136,10 +138,12 @@ class _OutlinePanelState extends State<OutlinePanel> {
     );
   }
 
+  /// Handles `_OutlinePanelState.refreshOutline`.
   void refreshOutline() {
     _debouncedParseFile();
   }
 
+  /// Builds a single outline tree node widget with icon, label, and cursor-based highlight.
   Widget _buildOutlineNode(OutlineNode node) {
     // Check if this node should be highlighted (cursor is on or near this line)
     final isHighlighted = _isNodeHighlighted(node);
@@ -212,19 +216,19 @@ class _OutlinePanelState extends State<OutlinePanel> {
         hoverColor: Colors.blue,
         child: Padding(
           padding: EdgeInsets.only(
-            left: 16.0 * node.level,
-            top: 2.0,
-            bottom: 2.0,
+            left: AppSpacing.xLarge * node.level,
+            top: AppSpacing.micro,
+            bottom: AppSpacing.micro,
           ),
           child: Row(
             children: [
-              Icon(iconData, color: iconColor, size: 16),
-              const SizedBox(width: 6),
+              Icon(iconData, color: iconColor, size: AppIconSize.medium),
+              const SizedBox(width: AppSpacing.small),
               Expanded(
                 child: Text(
                   node.name,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: AppFontSize.body,
                     color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: isHighlighted ? FontWeight.w600 : null,
                   ),
@@ -239,6 +243,7 @@ class _OutlinePanelState extends State<OutlinePanel> {
     );
   }
 
+  /// Triggers a debounced parse, cancelling any in-flight parse before scheduling a new one.
   void _debouncedParseFile() {
     if (_isDebouncing) {
       // Mark cancellation flag and allow previous future to complete naturally
@@ -253,7 +258,7 @@ class _OutlinePanelState extends State<OutlinePanel> {
             // If not cancelled, start new parsing operation
             _startDebouncedParse();
           })
-          .catchError((error) {
+          .catchError((_) {
             // If previous operation failed, start new one anyway
             _startDebouncedParse();
           });
@@ -263,6 +268,7 @@ class _OutlinePanelState extends State<OutlinePanel> {
     }
   }
 
+  /// Returns `true` when the cursor's current line falls on or within the given node's range.
   bool _isNodeHighlighted(OutlineNode node) {
     if (_currentHighlightedLine == -1) return false;
 
@@ -298,6 +304,7 @@ class _OutlinePanelState extends State<OutlinePanel> {
     }
   }
 
+  /// Parses the current file, updates [_outlineNodes], and stores results in the cache.
   Future<void> _parseFile() async {
     if (!mounted) return;
 
@@ -320,7 +327,7 @@ class _OutlinePanelState extends State<OutlinePanel> {
           }
           return;
         }
-      } catch (e) {
+      } catch (_) {
         // If we can't stat the file, continue with parsing
       }
     }
@@ -348,7 +355,7 @@ class _OutlinePanelState extends State<OutlinePanel> {
             final fileStat = await io.File(filePath).stat();
             _cachedOutlines[filePath] = nodes;
             _cachedFileModTimes[filePath] = fileStat.modified;
-          } catch (e) {
+          } catch (_) {
             // Silently fail if we can't cache
           }
         }
@@ -370,7 +377,8 @@ class _OutlinePanelState extends State<OutlinePanel> {
             nodes.add(
               OutlineNode(
                 name: title,
-                type: 'Heading ${level.clamp(1, 6)}',
+                type:
+                    'Heading ${level.clamp(1, AppMetric.markdownMaxHeadingLevel)}',
                 line: i + 1,
                 column: level + 1, // Position after the # characters
                 level: level - 1,
@@ -385,7 +393,7 @@ class _OutlinePanelState extends State<OutlinePanel> {
             final fileStat = await io.File(filePath).stat();
             _cachedOutlines[filePath] = nodes;
             _cachedFileModTimes[filePath] = fileStat.modified;
-          } catch (e) {
+          } catch (_) {
             // Silently fail if we can't cache
           }
         }
@@ -439,7 +447,7 @@ class _OutlinePanelState extends State<OutlinePanel> {
             final fileStat = await io.File(filePath).stat();
             _cachedOutlines[filePath] = nodes;
             _cachedFileModTimes[filePath] = fileStat.modified;
-          } catch (e) {
+          } catch (_) {
             // Silently fail if we can't cache
           }
         }
@@ -461,6 +469,7 @@ class _OutlinePanelState extends State<OutlinePanel> {
     }
   }
 
+  /// Starts the debounce timer, initiating a new parse after [_debounceDuration] elapses.
   void _startDebouncedParse() {
     _isDebouncing = true;
     _debouncingParse = Future.delayed(_debounceDuration, () {
@@ -473,6 +482,7 @@ class _OutlinePanelState extends State<OutlinePanel> {
   }
 }
 
+/// Represents `OutlineNode`.
 class OutlineNode {
   final String name;
   final String type;
@@ -498,7 +508,7 @@ class _OutlineVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitClassDeclaration(ClassDeclaration node) {
-    _addNode(node.name.toString(), 'class', node.offset, node.length);
+    _addNode(node.namePart.toString(), 'class', node.offset, node.length);
     _currentLevel++;
     super.visitClassDeclaration(node);
     _currentLevel--;
@@ -528,7 +538,8 @@ class _OutlineVisitor extends RecursiveAstVisitor<void> {
     super.visitVariableDeclaration(node);
   }
 
-  void _addNode(String name, String type, int offset, int length) {
+  /// Converts a source [offset] to a 1-indexed line/column and appends an [OutlineNode] to [nodes].
+  void _addNode(String name, String type, int offset, int _ /* length */) {
     // Calculate the actual line number and column from the offset
     int lineNumber = 1; // Lines are 1-indexed
     int lastNewlineIndex = -1;

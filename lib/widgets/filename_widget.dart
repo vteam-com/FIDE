@@ -1,4 +1,5 @@
 // ignore_for_file: deprecated_member_use
+import 'package:fide/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/utils/file_type_utils.dart';
 import 'package:flutter/material.dart';
@@ -51,7 +52,7 @@ class FileNameWidget extends StatelessWidget {
     if (isSelected) {
       backgroundColor = Theme.of(
         context,
-      ).colorScheme.primaryContainer.withValues(alpha: 0.3);
+      ).colorScheme.primaryContainer.withValues(alpha: AppOpacity.divider);
     }
 
     final String relativePath = p.join(
@@ -69,9 +70,9 @@ class FileNameWidget extends StatelessWidget {
       child: Container(
         color: backgroundColor,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+          padding: AppPadding.listItem,
           child: Row(
-            spacing: 4,
+            spacing: AppSpacing.tiny,
             children: [
               _getIcon(context),
 
@@ -79,11 +80,11 @@ class FileNameWidget extends StatelessWidget {
               Expanded(
                 child: Tooltip(
                   message: message,
-                  waitDuration: Duration(seconds: 1),
+                  waitDuration: AppDuration.tooltipWait,
                   child: Text(
                     fileItem.name,
                     style: gitTextStyle.copyWith(
-                      fontSize: 13,
+                      fontSize: AppFontSize.body,
                       fontWeight: isSelected
                           ? FontWeight.w600
                           : FontWeight.w400,
@@ -95,21 +96,18 @@ class FileNameWidget extends StatelessWidget {
               ),
               if (badgeText.isNotEmpty)
                 Container(
-                  margin: const EdgeInsets.only(left: 4),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 1,
-                  ),
+                  margin: AppPadding.selectedBadgeMargin,
+                  padding: AppPadding.badge,
                   decoration: BoxDecoration(
                     color: fileItem
                         .getGitStatusColor(context)
-                        .withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+                        .withValues(alpha: AppOpacity.subtle),
+                    borderRadius: BorderRadius.circular(AppRadius.medium),
                   ),
                   child: Text(
                     badgeText,
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: AppFontSize.badge,
                       fontWeight: FontWeight.bold,
                       color: fileItem.getGitStatusColor(context),
                     ),
@@ -121,12 +119,12 @@ class FileNameWidget extends StatelessWidget {
                   onTapDown: (details) =>
                       onContextMenu?.call(details.globalPosition),
                   child: Container(
-                    width: 20,
-                    height: 20,
+                    width: AppSize.compactContextButton,
+                    height: AppSize.compactContextButton,
                     alignment: Alignment.center,
                     child: Icon(
                       Icons.more_vert,
-                      size: 14,
+                      size: AppIconSize.small,
                       color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
@@ -138,15 +136,24 @@ class FileNameWidget extends StatelessWidget {
     );
   }
 
+  /// Returns the file-type icon widget for this entry, using the file extension or item type.
   Widget _getIcon(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
 
     if (fileItem.type == FileSystemItemType.parent) {
-      return Icon(Icons.folder_special, color: colorScheme.primary, size: 16);
+      return Icon(
+        Icons.folder_special,
+        color: colorScheme.primary,
+        size: AppIconSize.medium,
+      );
     }
 
     if (fileItem.type == FileSystemItemType.directory) {
-      return Icon(Icons.folder, color: colorScheme.primary, size: 16);
+      return Icon(
+        Icons.folder,
+        color: colorScheme.primary,
+        size: AppIconSize.medium,
+      );
     }
 
     // For files, use the shared icon utility
