@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="4702" height="2850" viewBox="0 0 4702 2850" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
+<svg width="4702" height="2920" viewBox="0 0 4702 2920" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
 <defs>
   <filter id="whiteShadow" x="-20%" y="-20%" width="140%" height="140%">
     <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
@@ -229,29 +229,29 @@
   }
 </style>
 <rect width="100%" height="100%" fill="white"/>
-<rect x="25.0" y="50" width="270.0" height="2750.0" rx="8.0" class="layerBackground"/>
+<rect x="25.0" y="50" width="270.0" height="2820.0" rx="8.0" class="layerBackground"/>
 <text x="160.0" y="75.0" class="layerTitle">1</text>
-<rect x="345.0" y="50" width="270.0" height="2750.0" rx="8.0" class="layerBackground"/>
+<rect x="345.0" y="50" width="270.0" height="2820.0" rx="8.0" class="layerBackground"/>
 <text x="480.0" y="75.0" class="layerTitle">2</text>
-<rect x="665.0" y="50" width="271.0" height="2750.0" rx="8.0" class="layerBackground"/>
+<rect x="665.0" y="50" width="271.0" height="2820.0" rx="8.0" class="layerBackground"/>
 <text x="800.5" y="75.0" class="layerTitle">3</text>
-<rect x="988.0" y="50" width="281.0" height="2750.0" rx="8.0" class="layerBackground"/>
+<rect x="988.0" y="50" width="281.0" height="2820.0" rx="8.0" class="layerBackground"/>
 <text x="1128.5" y="75.0" class="layerTitle">4</text>
-<rect x="1339.0" y="50" width="316.0" height="2750.0" rx="8.0" class="layerBackground"/>
+<rect x="1339.0" y="50" width="316.0" height="2820.0" rx="8.0" class="layerBackground"/>
 <text x="1497.0" y="75.0" class="layerTitle">5</text>
-<rect x="1777.0" y="50" width="349.5" height="2750.0" rx="8.0" class="layerBackground"/>
+<rect x="1777.0" y="50" width="349.5" height="2820.0" rx="8.0" class="layerBackground"/>
 <text x="1951.75" y="75.0" class="layerTitle">6</text>
-<rect x="2263.5" y="50" width="351.5" height="2750.0" rx="8.0" class="layerBackground"/>
+<rect x="2263.5" y="50" width="351.5" height="2820.0" rx="8.0" class="layerBackground"/>
 <text x="2439.25" y="75.0" class="layerTitle">7</text>
-<rect x="2741.0" y="50" width="338.0" height="2750.0" rx="8.0" class="layerBackground"/>
+<rect x="2741.0" y="50" width="338.0" height="2820.0" rx="8.0" class="layerBackground"/>
 <text x="2910.0" y="75.0" class="layerTitle">8</text>
-<rect x="3189.0" y="50" width="327.5" height="2750.0" rx="8.0" class="layerBackground"/>
+<rect x="3189.0" y="50" width="327.5" height="2820.0" rx="8.0" class="layerBackground"/>
 <text x="3352.75" y="75.0" class="layerTitle">9</text>
-<rect x="3621.5" y="50" width="317.0" height="2750.0" rx="8.0" class="layerBackground"/>
+<rect x="3621.5" y="50" width="317.0" height="2820.0" rx="8.0" class="layerBackground"/>
 <text x="3780.0" y="75.0" class="layerTitle">10</text>
-<rect x="4027.5" y="50" width="299.5" height="2750.0" rx="8.0" class="layerBackground"/>
+<rect x="4027.5" y="50" width="299.5" height="2820.0" rx="8.0" class="layerBackground"/>
 <text x="4177.25" y="75.0" class="layerTitle">11</text>
-<rect x="4397.0" y="50" width="280.0" height="2750.0" rx="8.0" class="layerBackground"/>
+<rect x="4397.0" y="50" width="280.0" height="2820.0" rx="8.0" class="layerBackground"/>
 <text x="4537.0" y="75.0" class="layerTitle">12</text>
 <rect x="50.0" y="90.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/main.dart</title></rect>
 <rect x="50.0" y="160.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/constants/constants.app_alpha.dart</title></rect>
@@ -282,16 +282,17 @@
 <rect x="50.0" y="1910.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/models/localization_data.arb_entry.dart</title></rect>
 <rect x="50.0" y="1980.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/models/localization_data.arb_file.dart</title></rect>
 <rect x="50.0" y="2050.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/providers/localization_service.arb_service.dart</title></rect>
-<rect x="50.0" y="2120.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/screens/main_layout.state.dart</title></rect>
-<rect x="50.0" y="2190.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/providers/project_manager.dart</title></rect>
-<rect x="50.0" y="2260.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/providers/project_metrics_notifier.dart</title></rect>
-<rect x="50.0" y="2330.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/providers/provider_project_state_sink.dart</title></rect>
-<rect x="50.0" y="2400.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/search_panel.search_result.dart</title></rect>
-<rect x="50.0" y="2470.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/search_panel.search_result_node.dart</title></rect>
-<rect x="50.0" y="2540.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.context_menu_handler.dart</title></rect>
-<rect x="50.0" y="2610.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.file_operations.dart</title></rect>
-<rect x="50.0" y="2680.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/side_by_side_diff.diff_line.dart</title></rect>
-<rect x="50.0" y="2750.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/test_panel.test_action.dart</title></rect>
+<rect x="50.0" y="2120.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/test_output/tictactoe_game/lib/main.dart</title></rect>
+<rect x="50.0" y="2190.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/screens/main_layout.state.dart</title></rect>
+<rect x="50.0" y="2260.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/providers/project_manager.dart</title></rect>
+<rect x="50.0" y="2330.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/providers/project_metrics_notifier.dart</title></rect>
+<rect x="50.0" y="2400.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/providers/provider_project_state_sink.dart</title></rect>
+<rect x="50.0" y="2470.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/search_panel.search_result.dart</title></rect>
+<rect x="50.0" y="2540.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/search_panel.search_result_node.dart</title></rect>
+<rect x="50.0" y="2610.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.context_menu_handler.dart</title></rect>
+<rect x="50.0" y="2680.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.file_operations.dart</title></rect>
+<rect x="50.0" y="2750.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widgets/side_by_side_diff.diff_line.dart</title></rect>
+<rect x="50.0" y="2820.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/panels/left/test_panel.test_action.dart</title></rect>
 <rect x="370.0" y="90.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart</title></rect>
 <rect x="370.0" y="160.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/widget_services/native_menu_builder.dart</title></rect>
 <rect x="370.0" y="230.0" width="220" height="50" class="fileNode"><title>File: /Users/jp/src/github/vteam/fide/lib/controllers/project_operations.dart</title></rect>
@@ -367,128 +368,156 @@
 <linearGradient id="flatEdgeGradient1" gradientUnits="userSpaceOnUse" x1="4298.0" y1="115.0" x2="4438.0" y2="115.0"><stop offset="0%" stop-color="#28a745"/><stop offset="100%" stop-color="#007bff"/></linearGradient>
 </defs>
 <g>
-  <path d="M 918.0 185.0 Q 969.0 179.0 1020.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart</title>
-</g>
-<g>
-  <path d="M 2064.0 185.0 Q 2201.0 179.0 2338.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart</title>
-</g>
-<g>
-  <path d="M 4298.0 115.0 L 4438.0 115.0" class="edge edgeFlat" style="stroke:url(#flatEdgeGradient1);"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
-</g>
-<g>
-  <path d="M 3900.0 185.0 Q 3989.0 179.0 4078.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/app_theme.dart</title>
-</g>
-<g>
-  <path d="M 3900.0 115.0 Q 3989.0 109.0 4078.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/models/project_node.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
-</g>
-<g>
-  <path d="M 596.0 115.0 Q 646.0 109.0 696.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/hero_title_widget.dart</title>
+  <path d="M 1600.0 325.0 Q 1722.0 319.0 1844.0 325.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widget_services/filename_widget.dart</title>
 </g>
 <g>
   <path d="M 2066.0 115.0 Q 2202.0 109.0 2338.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
+  <path d="M 2064.0 185.0 Q 2201.0 179.0 2338.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart</title>
+</g>
+<g>
+  <path d="M 3900.0 115.0 Q 3989.0 109.0 4078.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/models/project_node.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+</g>
+<g>
+  <path d="M 3900.0 185.0 Q 3989.0 179.0 4078.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/app_theme.dart</title>
+</g>
+<g>
+  <path d="M 4298.0 115.0 L 4438.0 115.0" class="edge edgeFlat" style="stroke:url(#flatEdgeGradient1);"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
+</g>
+<g>
   <path d="M 278.0 115.0 Q 327.0 109.0 376.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart</title>
 </g>
 <g>
-  <path d="M 1600.0 325.0 Q 1722.0 319.0 1844.0 325.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widget_services/filename_widget.dart</title>
+  <path d="M 918.0 185.0 Q 969.0 179.0 1020.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart</title>
 </g>
 <g>
-  <path d="M 1600.0 325.0 L 1638.0 325.0 Q 1644.0 325.0 1644.0 319.0 V 261.0 Q 1644.0 255.0 1650.0 255.0 L 1835.0 255.0 L 1844.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart</title>
-</g>
-<g>
-  <path d="M 2558.0 115.0 L 2568.0 115.0 Q 2574.0 115.0 2574.0 121.0 V 179.0 Q 2574.0 185.0 2580.0 185.0 L 2801.0 185.0 L 2810.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/document_state.dart</title>
-</g>
-<g>
-  <path d="M 3470.0 185.0 L 3476.0 185.0 Q 3482.0 185.0 3482.0 191.0 V 249.0 Q 3482.0 255.0 3488.0 255.0 L 3671.0 255.0 L 3680.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/providers/project_state_sink.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/loading_action.dart</title>
-</g>
-<g>
-  <path d="M 3470.0 185.0 L 3478.0 185.0 Q 3484.0 185.0 3484.0 179.0 V 121.0 Q 3484.0 115.0 3490.0 115.0 L 3671.0 115.0 L 3680.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/providers/project_state_sink.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
-</g>
-<g>
-  <path d="M 918.0 185.0 L 924.0 185.0 Q 930.0 185.0 930.0 191.0 V 249.0 Q 930.0 255.0 936.0 255.0 L 1011.0 255.0 L 1020.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart</title>
-</g>
-<g>
-  <path d="M 3470.0 255.0 L 3482.0 255.0 Q 3488.0 255.0 3488.0 249.0 V 191.0 Q 3488.0 185.0 3494.0 185.0 L 3671.0 185.0 L 3680.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/message_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
+  <path d="M 596.0 115.0 Q 646.0 109.0 696.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/hero_title_widget.dart</title>
 </g>
 <g>
   <path d="M 596.0 185.0 L 616.0 185.0 Q 622.0 185.0 622.0 191.0 V 249.0 Q 622.0 255.0 628.0 255.0 L 687.0 255.0 L 696.0 255.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widget_services/native_menu_builder.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/theme_settings_dialog.dart</title>
 </g>
 <g>
-  <path d="M 4298.0 185.0 L 4302.0 185.0 Q 4308.0 185.0 4308.0 179.0 V 121.0 Q 4308.0 115.0 4314.0 115.0 L 4427.0 115.0 L 4438.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/models/app_theme.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
-</g>
-<g>
-  <path d="M 1240.0 325.0 L 1288.0 325.0 Q 1294.0 325.0 1294.0 319.0 V 261.0 Q 1294.0 255.0 1300.0 255.0 L 1371.0 255.0 L 1380.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart</title>
-</g>
-<g>
-  <path d="M 1240.0 255.0 L 1272.0 255.0 Q 1278.0 255.0 1278.0 249.0 V 191.0 Q 1278.0 185.0 1284.0 185.0 L 1371.0 185.0 L 1380.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/resizable_splitter.dart</title>
-</g>
-<g>
-  <path d="M 1600.0 395.0 L 1658.0 395.0 Q 1664.0 395.0 1664.0 389.0 V 331.0 Q 1664.0 325.0 1670.0 325.0 L 1835.0 325.0 L 1844.0 325.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widget_services/filename_widget.dart</title>
-</g>
-<g>
-  <path d="M 1600.0 395.0 L 1656.0 395.0 Q 1662.0 395.0 1662.0 401.0 V 459.0 Q 1662.0 465.0 1668.0 465.0 L 1835.0 465.0 L 1844.0 465.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart</title>
-</g>
-<g>
   <path d="M 1240.0 185.0 L 1256.0 185.0 Q 1262.0 185.0 1262.0 179.0 V 121.0 Q 1262.0 115.0 1268.0 115.0 L 1371.0 115.0 L 1380.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ui_state_providers.dart</title>
-</g>
-<g>
-  <path d="M 596.0 255.0 L 634.0 255.0 Q 640.0 255.0 640.0 249.0 V 191.0 Q 640.0 185.0 646.0 185.0 L 687.0 185.0 L 696.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/controllers/project_operations.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart</title>
 </g>
 <g>
   <path d="M 2558.0 465.0 L 2596.0 465.0 Q 2602.0 465.0 2602.0 471.0 V 529.0 Q 2602.0 535.0 2608.0 535.0 L 2801.0 535.0 L 2810.0 535.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen_header.dart ▶ /Users/jp/src/github/vteam/fide/lib/widget_services/diff_counter.dart</title>
 </g>
 <g>
-  <path d="M 596.0 325.0 L 642.0 325.0 Q 648.0 325.0 648.0 319.0 V 261.0 Q 648.0 255.0 654.0 255.0 L 687.0 255.0 L 696.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widget_services/app_title_bar.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/theme_settings_dialog.dart</title>
-</g>
-<g>
-  <path d="M 278.0 115.0 L 290.0 115.0 Q 296.0 115.0 296.0 121.0 V 179.0 Q 296.0 185.0 302.0 185.0 L 367.0 185.0 L 376.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/widget_services/native_menu_builder.dart</title>
+  <path d="M 596.0 255.0 L 634.0 255.0 Q 640.0 255.0 640.0 249.0 V 191.0 Q 640.0 185.0 646.0 185.0 L 687.0 185.0 L 696.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/controllers/project_operations.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart</title>
 </g>
 <g>
   <path d="M 1600.0 605.0 L 1702.0 605.0 Q 1708.0 605.0 1708.0 611.0 V 669.0 Q 1708.0 675.0 1714.0 675.0 L 1835.0 675.0 L 1844.0 675.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/platform_info_section.dart</title>
 </g>
 <g>
-  <path d="M 2558.0 535.0 L 2600.0 535.0 Q 2606.0 535.0 2606.0 529.0 V 401.0 Q 2606.0 395.0 2612.0 395.0 L 2801.0 395.0 L 2810.0 395.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen_search_bar.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/search_toggle_icons.dart</title>
+  <path d="M 1240.0 255.0 L 1272.0 255.0 Q 1278.0 255.0 1278.0 249.0 V 191.0 Q 1278.0 185.0 1284.0 185.0 L 1371.0 185.0 L 1380.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/resizable_splitter.dart</title>
 </g>
 <g>
-  <path d="M 918.0 185.0 L 922.0 185.0 Q 928.0 185.0 928.0 191.0 V 319.0 Q 928.0 325.0 934.0 325.0 L 1011.0 325.0 L 1020.0 325.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart</title>
+  <path d="M 4298.0 185.0 L 4302.0 185.0 Q 4308.0 185.0 4308.0 179.0 V 121.0 Q 4308.0 115.0 4314.0 115.0 L 4427.0 115.0 L 4438.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/models/app_theme.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
+</g>
+<g>
+  <path d="M 278.0 115.0 L 290.0 115.0 Q 296.0 115.0 296.0 121.0 V 179.0 Q 296.0 185.0 302.0 185.0 L 367.0 185.0 L 376.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/widget_services/native_menu_builder.dart</title>
+</g>
+<g>
+  <path d="M 1600.0 395.0 L 1658.0 395.0 Q 1664.0 395.0 1664.0 389.0 V 331.0 Q 1664.0 325.0 1670.0 325.0 L 1835.0 325.0 L 1844.0 325.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widget_services/filename_widget.dart</title>
+</g>
+<g>
+  <path d="M 3470.0 185.0 L 3476.0 185.0 Q 3482.0 185.0 3482.0 191.0 V 249.0 Q 3482.0 255.0 3488.0 255.0 L 3671.0 255.0 L 3680.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/providers/project_state_sink.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/loading_action.dart</title>
+</g>
+<g>
+  <path d="M 918.0 185.0 L 924.0 185.0 Q 930.0 185.0 930.0 191.0 V 249.0 Q 930.0 255.0 936.0 255.0 L 1011.0 255.0 L 1020.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart</title>
+</g>
+<g>
+  <path d="M 3470.0 185.0 L 3478.0 185.0 Q 3484.0 185.0 3484.0 179.0 V 121.0 Q 3484.0 115.0 3490.0 115.0 L 3671.0 115.0 L 3680.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/providers/project_state_sink.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
+</g>
+<g>
+  <path d="M 1600.0 395.0 L 1656.0 395.0 Q 1662.0 395.0 1662.0 401.0 V 459.0 Q 1662.0 465.0 1668.0 465.0 L 1835.0 465.0 L 1844.0 465.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart</title>
+</g>
+<g>
+  <path d="M 1600.0 325.0 L 1638.0 325.0 Q 1644.0 325.0 1644.0 319.0 V 261.0 Q 1644.0 255.0 1650.0 255.0 L 1835.0 255.0 L 1844.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart</title>
+</g>
+<g>
+  <path d="M 596.0 325.0 L 642.0 325.0 Q 648.0 325.0 648.0 319.0 V 261.0 Q 648.0 255.0 654.0 255.0 L 687.0 255.0 L 696.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widget_services/app_title_bar.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/theme_settings_dialog.dart</title>
+</g>
+<g>
+  <path d="M 2558.0 115.0 L 2568.0 115.0 Q 2574.0 115.0 2574.0 121.0 V 179.0 Q 2574.0 185.0 2580.0 185.0 L 2801.0 185.0 L 2810.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/document_state.dart</title>
+</g>
+<g>
+  <path d="M 1240.0 325.0 L 1288.0 325.0 Q 1294.0 325.0 1294.0 319.0 V 261.0 Q 1294.0 255.0 1300.0 255.0 L 1371.0 255.0 L 1380.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart</title>
+</g>
+<g>
+  <path d="M 3470.0 255.0 L 3482.0 255.0 Q 3488.0 255.0 3488.0 249.0 V 191.0 Q 3488.0 185.0 3494.0 185.0 L 3671.0 185.0 L 3680.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/message_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
+</g>
+<g>
+  <path d="M 1600.0 465.0 L 1672.0 465.0 Q 1678.0 465.0 1678.0 459.0 V 331.0 Q 1678.0 325.0 1684.0 325.0 L 1835.0 325.0 L 1844.0 325.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widget_services/filename_widget.dart</title>
 </g>
 <g>
   <path d="M 1602.0 255.0 L 1612.0 255.0 Q 1618.0 255.0 1618.0 261.0 V 389.0 Q 1618.0 395.0 1624.0 395.0 L 1835.0 395.0 L 1844.0 395.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ai_service.dart</title>
 </g>
 <g>
+  <path d="M 1600.0 605.0 L 1700.0 605.0 Q 1706.0 605.0 1706.0 611.0 V 739.0 Q 1706.0 745.0 1712.0 745.0 L 1835.0 745.0 L 1844.0 745.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/action_tabs.dart</title>
+</g>
+<g>
+  <path d="M 1240.0 185.0 L 1254.0 185.0 Q 1260.0 185.0 1260.0 191.0 V 319.0 Q 1260.0 325.0 1266.0 325.0 L 1371.0 325.0 L 1380.0 325.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart</title>
+</g>
+<g>
+  <path d="M 918.0 185.0 L 922.0 185.0 Q 928.0 185.0 928.0 191.0 V 319.0 Q 928.0 325.0 934.0 325.0 L 1011.0 325.0 L 1020.0 325.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart</title>
+</g>
+<g>
+  <path d="M 278.0 115.0 L 288.0 115.0 Q 294.0 115.0 294.0 121.0 V 249.0 Q 294.0 255.0 300.0 255.0 L 367.0 255.0 L 376.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/controllers/project_operations.dart</title>
+</g>
+<g>
+  <path d="M 1600.0 325.0 L 1636.0 325.0 Q 1642.0 325.0 1642.0 331.0 V 459.0 Q 1642.0 465.0 1648.0 465.0 L 1835.0 465.0 L 1844.0 465.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart</title>
+</g>
+<g>
+  <path d="M 2558.0 535.0 L 2600.0 535.0 Q 2606.0 535.0 2606.0 529.0 V 401.0 Q 2606.0 395.0 2612.0 395.0 L 2801.0 395.0 L 2810.0 395.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen_search_bar.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/search_toggle_icons.dart</title>
+</g>
+<g>
   <path d="M 3030.0 115.0 L 3032.0 115.0 Q 3038.0 115.0 3038.0 121.0 V 249.0 Q 3038.0 255.0 3044.0 255.0 L 3241.0 255.0 L 3250.0 255.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_widget.dart</title>
+</g>
+<g>
+  <path d="M 2558.0 465.0 L 2594.0 465.0 Q 2600.0 465.0 2600.0 471.0 V 599.0 Q 2600.0 605.0 2606.0 605.0 L 2801.0 605.0 L 2810.0 605.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen_header.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/toggle_experience_mode.dart</title>
+</g>
+<g>
+  <path d="M 1600.0 395.0 L 1654.0 395.0 Q 1660.0 395.0 1660.0 389.0 V 261.0 Q 1660.0 255.0 1666.0 255.0 L 1835.0 255.0 L 1844.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart</title>
 </g>
 <g>
   <path d="M 3030.0 465.0 L 3056.0 465.0 Q 3062.0 465.0 3062.0 459.0 V 331.0 Q 3062.0 325.0 3068.0 325.0 L 3241.0 325.0 L 3250.0 325.0" class="edge"/>
@@ -499,36 +528,28 @@
   <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/file_type_utils.dart</title>
 </g>
 <g>
-  <path d="M 1600.0 395.0 L 1654.0 395.0 Q 1660.0 395.0 1660.0 389.0 V 261.0 Q 1660.0 255.0 1666.0 255.0 L 1835.0 255.0 L 1844.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart</title>
-</g>
-<g>
   <path d="M 2558.0 185.0 L 2578.0 185.0 Q 2584.0 185.0 2584.0 191.0 V 319.0 Q 2584.0 325.0 2590.0 325.0 L 2801.0 325.0 L 2810.0 325.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/container_counter.dart</title>
 </g>
 <g>
-  <path d="M 1600.0 325.0 L 1636.0 325.0 Q 1642.0 325.0 1642.0 331.0 V 459.0 Q 1642.0 465.0 1648.0 465.0 L 1835.0 465.0 L 1844.0 465.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart</title>
+  <path d="M 916.0 325.0 L 946.0 325.0 Q 952.0 325.0 952.0 319.0 V 121.0 Q 952.0 115.0 958.0 115.0 L 1011.0 115.0 L 1020.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_step3.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/full_path_widget.dart</title>
 </g>
 <g>
-  <path d="M 278.0 115.0 L 288.0 115.0 Q 294.0 115.0 294.0 121.0 V 249.0 Q 294.0 255.0 300.0 255.0 L 367.0 255.0 L 376.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/controllers/project_operations.dart</title>
+  <path d="M 1240.0 325.0 L 1280.0 325.0 Q 1286.0 325.0 1286.0 331.0 V 529.0 Q 1286.0 535.0 1292.0 535.0 L 1371.0 535.0 L 1380.0 535.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart</title>
 </g>
 <g>
-  <path d="M 1600.0 605.0 L 1700.0 605.0 Q 1706.0 605.0 1706.0 611.0 V 739.0 Q 1706.0 745.0 1712.0 745.0 L 1835.0 745.0 L 1844.0 745.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/action_tabs.dart</title>
+  <path d="M 1240.0 325.0 L 1282.0 325.0 Q 1288.0 325.0 1288.0 319.0 V 121.0 Q 1288.0 115.0 1294.0 115.0 L 1371.0 115.0 L 1380.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ui_state_providers.dart</title>
 </g>
 <g>
-  <path d="M 2558.0 465.0 L 2594.0 465.0 Q 2600.0 465.0 2600.0 471.0 V 599.0 Q 2600.0 605.0 2606.0 605.0 L 2801.0 605.0 L 2810.0 605.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen_header.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/toggle_experience_mode.dart</title>
+  <path d="M 278.0 115.0 L 286.0 115.0 Q 292.0 115.0 292.0 121.0 V 319.0 Q 292.0 325.0 298.0 325.0 L 367.0 325.0 L 376.0 325.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/widget_services/app_title_bar.dart</title>
 </g>
 <g>
-  <path d="M 1240.0 185.0 L 1254.0 185.0 Q 1260.0 185.0 1260.0 191.0 V 319.0 Q 1260.0 325.0 1266.0 325.0 L 1371.0 325.0 L 1380.0 325.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart</title>
-</g>
-<g>
-  <path d="M 1600.0 465.0 L 1672.0 465.0 Q 1678.0 465.0 1678.0 459.0 V 331.0 Q 1678.0 325.0 1684.0 325.0 L 1835.0 325.0 L 1844.0 325.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widget_services/filename_widget.dart</title>
+  <path d="M 3470.0 325.0 L 3484.0 325.0 Q 3490.0 325.0 3490.0 319.0 V 121.0 Q 3490.0 115.0 3496.0 115.0 L 3671.0 115.0 L 3680.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/providers/file_system_watcher.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
 </g>
 <g>
   <path d="M 1240.0 185.0 L 1252.0 185.0 Q 1258.0 185.0 1258.0 191.0 V 389.0 Q 1258.0 395.0 1264.0 395.0 L 1371.0 395.0 L 1380.0 395.0" class="edge"/>
@@ -539,156 +560,136 @@
   <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/create_project_step3.dart</title>
 </g>
 <g>
-  <path d="M 916.0 325.0 L 946.0 325.0 Q 952.0 325.0 952.0 319.0 V 121.0 Q 952.0 115.0 958.0 115.0 L 1011.0 115.0 L 1020.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_step3.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/full_path_widget.dart</title>
-</g>
-<g>
-  <path d="M 1240.0 325.0 L 1282.0 325.0 Q 1288.0 325.0 1288.0 319.0 V 121.0 Q 1288.0 115.0 1294.0 115.0 L 1371.0 115.0 L 1380.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ui_state_providers.dart</title>
-</g>
-<g>
-  <path d="M 3470.0 325.0 L 3484.0 325.0 Q 3490.0 325.0 3490.0 319.0 V 121.0 Q 3490.0 115.0 3496.0 115.0 L 3671.0 115.0 L 3680.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/providers/file_system_watcher.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
-</g>
-<g>
-  <path d="M 1240.0 325.0 L 1280.0 325.0 Q 1286.0 325.0 1286.0 331.0 V 529.0 Q 1286.0 535.0 1292.0 535.0 L 1371.0 535.0 L 1380.0 535.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart</title>
-</g>
-<g>
-  <path d="M 278.0 115.0 L 286.0 115.0 Q 292.0 115.0 292.0 121.0 V 319.0 Q 292.0 325.0 298.0 325.0 L 367.0 325.0 L 376.0 325.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/widget_services/app_title_bar.dart</title>
-</g>
-<g>
   <path d="M 596.0 395.0 L 644.0 395.0 Q 650.0 395.0 650.0 389.0 V 121.0 Q 650.0 115.0 656.0 115.0 L 687.0 115.0 L 696.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/loading_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/hero_title_widget.dart</title>
-</g>
-<g>
-  <path d="M 596.0 115.0 L 602.0 115.0 Q 608.0 115.0 608.0 121.0 V 389.0 Q 608.0 395.0 614.0 395.0 L 687.0 395.0 L 696.0 395.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/create_project_step1.dart</title>
-</g>
-<g>
-  <path d="M 2066.0 115.0 L 2080.0 115.0 Q 2086.0 115.0 2086.0 121.0 V 389.0 Q 2086.0 395.0 2092.0 395.0 L 2329.0 395.0 L 2338.0 395.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/side_by_side_diff.dart</title>
-</g>
-<g>
-  <path d="M 1602.0 255.0 L 1610.0 255.0 Q 1616.0 255.0 1616.0 261.0 V 529.0 Q 1616.0 535.0 1622.0 535.0 L 1835.0 535.0 L 1844.0 535.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/localization_service.dart</title>
-</g>
-<g>
-  <path d="M 2558.0 465.0 L 2592.0 465.0 Q 2598.0 465.0 2598.0 459.0 V 191.0 Q 2598.0 185.0 2604.0 185.0 L 2801.0 185.0 L 2810.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen_header.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/document_state.dart</title>
-</g>
-<g>
-  <path d="M 1600.0 605.0 L 1698.0 605.0 Q 1704.0 605.0 1704.0 611.0 V 879.0 Q 1704.0 885.0 1710.0 885.0 L 1835.0 885.0 L 1844.0 885.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/platform_selector.dart</title>
-</g>
-<g>
-  <path d="M 3030.0 465.0 L 3052.0 465.0 Q 3058.0 465.0 3058.0 459.0 V 191.0 Q 3058.0 185.0 3064.0 185.0 L 3241.0 185.0 L 3250.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/providers/project_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/project_state_sink.dart</title>
 </g>
 <g>
   <path d="M 2064.0 535.0 L 2126.0 535.0 Q 2132.0 535.0 2132.0 529.0 V 261.0 Q 2132.0 255.0 2138.0 255.0 L 2329.0 255.0 L 2338.0 255.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/providers/localization_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/localization_data.dart</title>
 </g>
 <g>
-  <path d="M 278.0 115.0 L 284.0 115.0 Q 290.0 115.0 290.0 121.0 V 389.0 Q 290.0 395.0 296.0 395.0 L 367.0 395.0 L 376.0 395.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/loading_screen.dart</title>
-</g>
-<g>
   <path d="M 1240.0 185.0 L 1250.0 185.0 Q 1256.0 185.0 1256.0 191.0 V 459.0 Q 1256.0 465.0 1262.0 465.0 L 1371.0 465.0 L 1380.0 465.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart</title>
 </g>
 <g>
-  <path d="M 2066.0 115.0 L 2078.0 115.0 Q 2084.0 115.0 2084.0 121.0 V 459.0 Q 2084.0 465.0 2090.0 465.0 L 2329.0 465.0 L 2338.0 465.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen_header.dart</title>
+  <path d="M 278.0 115.0 L 284.0 115.0 Q 290.0 115.0 290.0 121.0 V 389.0 Q 290.0 395.0 296.0 395.0 L 367.0 395.0 L 376.0 395.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/loading_screen.dart</title>
 </g>
 <g>
-  <path d="M 1600.0 535.0 L 1682.0 535.0 Q 1688.0 535.0 1688.0 529.0 V 191.0 Q 1688.0 185.0 1694.0 185.0 L 1835.0 185.0 L 1844.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart</title>
+  <path d="M 1600.0 605.0 L 1698.0 605.0 Q 1704.0 605.0 1704.0 611.0 V 879.0 Q 1704.0 885.0 1710.0 885.0 L 1835.0 885.0 L 1844.0 885.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/platform_selector.dart</title>
+</g>
+<g>
+  <path d="M 2558.0 465.0 L 2592.0 465.0 Q 2598.0 465.0 2598.0 459.0 V 191.0 Q 2598.0 185.0 2604.0 185.0 L 2801.0 185.0 L 2810.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen_header.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/document_state.dart</title>
+</g>
+<g>
+  <path d="M 1602.0 255.0 L 1610.0 255.0 Q 1616.0 255.0 1616.0 261.0 V 529.0 Q 1616.0 535.0 1622.0 535.0 L 1835.0 535.0 L 1844.0 535.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/localization_service.dart</title>
+</g>
+<g>
+  <path d="M 596.0 115.0 L 602.0 115.0 Q 608.0 115.0 608.0 121.0 V 389.0 Q 608.0 395.0 614.0 395.0 L 687.0 395.0 L 696.0 395.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/create_project_step1.dart</title>
+</g>
+<g>
+  <path d="M 3030.0 465.0 L 3052.0 465.0 Q 3058.0 465.0 3058.0 459.0 V 191.0 Q 3058.0 185.0 3064.0 185.0 L 3241.0 185.0 L 3250.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/providers/project_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/project_state_sink.dart</title>
+</g>
+<g>
+  <path d="M 2066.0 115.0 L 2080.0 115.0 Q 2086.0 115.0 2086.0 121.0 V 389.0 Q 2086.0 395.0 2092.0 395.0 L 2329.0 395.0 L 2338.0 395.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/side_by_side_diff.dart</title>
 </g>
 <g>
   <path d="M 3030.0 465.0 L 3044.0 465.0 Q 3050.0 465.0 3050.0 459.0 V 121.0 Q 3050.0 115.0 3056.0 115.0 L 3241.0 115.0 L 3250.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/providers/project_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/git_service.dart</title>
 </g>
 <g>
-  <path d="M 596.0 465.0 L 652.0 465.0 Q 658.0 465.0 658.0 459.0 V 121.0 Q 658.0 115.0 664.0 115.0 L 687.0 115.0 L 696.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/welcome_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/hero_title_widget.dart</title>
-</g>
-<g>
-  <path d="M 596.0 115.0 L 600.0 115.0 Q 606.0 115.0 606.0 121.0 V 459.0 Q 606.0 465.0 612.0 465.0 L 687.0 465.0 L 696.0 465.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/create_project_step2.dart</title>
-</g>
-<g>
   <path d="M 1600.0 745.0 L 1720.0 745.0 Q 1726.0 745.0 1726.0 739.0 V 401.0 Q 1726.0 395.0 1732.0 395.0 L 1835.0 395.0 L 1844.0 395.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/ai_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ai_service.dart</title>
-</g>
-<g>
-  <path d="M 1602.0 255.0 L 1608.0 255.0 Q 1614.0 255.0 1614.0 261.0 V 599.0 Q 1614.0 605.0 1620.0 605.0 L 1835.0 605.0 L 1844.0 605.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_entry_widget.dart</title>
-</g>
-<g>
-  <path d="M 2064.0 605.0 L 2132.0 605.0 Q 2138.0 605.0 2138.0 599.0 V 261.0 Q 2138.0 255.0 2144.0 255.0 L 2329.0 255.0 L 2338.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_entry_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/localization_data.dart</title>
-</g>
-<g>
-  <path d="M 278.0 115.0 L 282.0 115.0 Q 288.0 115.0 288.0 121.0 V 459.0 Q 288.0 465.0 294.0 465.0 L 367.0 465.0 L 376.0 465.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/welcome_screen.dart</title>
 </g>
 <g>
   <path d="M 2558.0 115.0 L 2560.0 115.0 Q 2566.0 115.0 2566.0 121.0 V 459.0 Q 2566.0 465.0 2572.0 465.0 L 2801.0 465.0 L 2810.0 465.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/project_service.dart</title>
 </g>
 <g>
-  <path d="M 1240.0 185.0 L 1248.0 185.0 Q 1254.0 185.0 1254.0 191.0 V 599.0 Q 1254.0 605.0 1260.0 605.0 L 1371.0 605.0 L 1380.0 605.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart</title>
+  <path d="M 2064.0 605.0 L 2132.0 605.0 Q 2138.0 605.0 2138.0 599.0 V 261.0 Q 2138.0 255.0 2144.0 255.0 L 2329.0 255.0 L 2338.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_entry_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/localization_data.dart</title>
 </g>
 <g>
-  <path d="M 1600.0 605.0 L 1696.0 605.0 Q 1702.0 605.0 1702.0 599.0 V 191.0 Q 1702.0 185.0 1708.0 185.0 L 1835.0 185.0 L 1844.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart</title>
+  <path d="M 596.0 465.0 L 652.0 465.0 Q 658.0 465.0 658.0 459.0 V 121.0 Q 658.0 115.0 664.0 115.0 L 687.0 115.0 L 696.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/welcome_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/hero_title_widget.dart</title>
 </g>
 <g>
-  <path d="M 3030.0 535.0 L 3058.0 535.0 Q 3064.0 535.0 3064.0 529.0 V 121.0 Q 3064.0 115.0 3070.0 115.0 L 3241.0 115.0 L 3250.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widget_services/diff_counter.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/git_service.dart</title>
+  <path d="M 278.0 115.0 L 282.0 115.0 Q 288.0 115.0 288.0 121.0 V 459.0 Q 288.0 465.0 294.0 465.0 L 367.0 465.0 L 376.0 465.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/welcome_screen.dart</title>
 </g>
 <g>
-  <path d="M 278.0 115.0 L 280.0 115.0 Q 286.0 115.0 286.0 121.0 V 529.0 Q 286.0 535.0 292.0 535.0 L 367.0 535.0 L 376.0 535.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/controllers/app_controller.dart</title>
+  <path d="M 1600.0 535.0 L 1682.0 535.0 Q 1688.0 535.0 1688.0 529.0 V 191.0 Q 1688.0 185.0 1694.0 185.0 L 1835.0 185.0 L 1844.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart</title>
 </g>
 <g>
-  <path d="M 2066.0 115.0 L 2076.0 115.0 Q 2082.0 115.0 2082.0 121.0 V 529.0 Q 2082.0 535.0 2088.0 535.0 L 2329.0 535.0 L 2338.0 535.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen_search_bar.dart</title>
+  <path d="M 1602.0 255.0 L 1608.0 255.0 Q 1614.0 255.0 1614.0 261.0 V 599.0 Q 1614.0 605.0 1620.0 605.0 L 1835.0 605.0 L 1844.0 605.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_entry_widget.dart</title>
 </g>
 <g>
-  <path d="M 2064.0 745.0 L 2142.0 745.0 Q 2148.0 745.0 2148.0 739.0 V 331.0 Q 2148.0 325.0 2154.0 325.0 L 2329.0 325.0 L 2338.0 325.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/action_tabs.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/status_indicator.dart</title>
+  <path d="M 2066.0 115.0 L 2078.0 115.0 Q 2084.0 115.0 2084.0 121.0 V 459.0 Q 2084.0 465.0 2090.0 465.0 L 2329.0 465.0 L 2338.0 465.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen_header.dart</title>
+</g>
+<g>
+  <path d="M 596.0 115.0 L 600.0 115.0 Q 606.0 115.0 606.0 121.0 V 459.0 Q 606.0 465.0 612.0 465.0 L 687.0 465.0 L 696.0 465.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/screens/create_project_step2.dart</title>
 </g>
 <g>
   <path d="M 1240.0 325.0 L 1278.0 325.0 Q 1284.0 325.0 1284.0 331.0 V 739.0 Q 1284.0 745.0 1290.0 745.0 L 1371.0 745.0 L 1380.0 745.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/ai_panel.dart</title>
 </g>
 <g>
+  <path d="M 3030.0 535.0 L 3058.0 535.0 Q 3064.0 535.0 3064.0 529.0 V 121.0 Q 3064.0 115.0 3070.0 115.0 L 3241.0 115.0 L 3250.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widget_services/diff_counter.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/git_service.dart</title>
+</g>
+<g>
+  <path d="M 2064.0 745.0 L 2142.0 745.0 Q 2148.0 745.0 2148.0 739.0 V 331.0 Q 2148.0 325.0 2154.0 325.0 L 2329.0 325.0 L 2338.0 325.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/action_tabs.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/status_indicator.dart</title>
+</g>
+<g>
+  <path d="M 1600.0 605.0 L 1696.0 605.0 Q 1702.0 605.0 1702.0 599.0 V 191.0 Q 1702.0 185.0 1708.0 185.0 L 1835.0 185.0 L 1844.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart</title>
+</g>
+<g>
+  <path d="M 2066.0 115.0 L 2076.0 115.0 Q 2082.0 115.0 2082.0 121.0 V 529.0 Q 2082.0 535.0 2088.0 535.0 L 2329.0 535.0 L 2338.0 535.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen_search_bar.dart</title>
+</g>
+<g>
   <path d="M 1600.0 675.0 L 1710.0 675.0 Q 1716.0 675.0 1716.0 669.0 V 261.0 Q 1716.0 255.0 1722.0 255.0 L 1835.0 255.0 L 1844.0 255.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/search_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart</title>
 </g>
 <g>
-  <path d="M 1240.0 185.0 L 1246.0 185.0 Q 1252.0 185.0 1252.0 191.0 V 669.0 Q 1252.0 675.0 1258.0 675.0 L 1371.0 675.0 L 1380.0 675.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/search_panel.dart</title>
+  <path d="M 1240.0 185.0 L 1248.0 185.0 Q 1254.0 185.0 1254.0 191.0 V 599.0 Q 1254.0 605.0 1260.0 605.0 L 1371.0 605.0 L 1380.0 605.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/execute_panel.dart</title>
+</g>
+<g>
+  <path d="M 278.0 115.0 L 280.0 115.0 Q 286.0 115.0 286.0 121.0 V 529.0 Q 286.0 535.0 292.0 535.0 L 367.0 535.0 L 376.0 535.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/controllers/app_controller.dart</title>
 </g>
 <g>
   <path d="M 2558.0 605.0 L 2602.0 605.0 Q 2608.0 605.0 2608.0 599.0 V 121.0 Q 2608.0 115.0 2614.0 115.0 L 2799.0 115.0 L 2810.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen_unsupported_file_view.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart</title>
 </g>
 <g>
-  <path d="M 2064.0 675.0 L 2136.0 675.0 Q 2142.0 675.0 2142.0 669.0 V 191.0 Q 2142.0 185.0 2148.0 185.0 L 2329.0 185.0 L 2338.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/platform_info_section.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart</title>
-</g>
-<g>
   <path d="M 2066.0 115.0 L 2074.0 115.0 Q 2080.0 115.0 2080.0 121.0 V 599.0 Q 2080.0 605.0 2086.0 605.0 L 2329.0 605.0 L 2338.0 605.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen_unsupported_file_view.dart</title>
 </g>
 <g>
+  <path d="M 1240.0 185.0 L 1246.0 185.0 Q 1252.0 185.0 1252.0 191.0 V 669.0 Q 1252.0 675.0 1258.0 675.0 L 1371.0 675.0 L 1380.0 675.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/search_panel.dart</title>
+</g>
+<g>
   <path d="M 1240.0 325.0 L 1276.0 325.0 Q 1282.0 325.0 1282.0 331.0 V 809.0 Q 1282.0 815.0 1288.0 815.0 L 1371.0 815.0 L 1380.0 815.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/right/outline_panel.dart</title>
+</g>
+<g>
+  <path d="M 2064.0 675.0 L 2136.0 675.0 Q 2142.0 675.0 2142.0 669.0 V 191.0 Q 2142.0 185.0 2148.0 185.0 L 2329.0 185.0 L 2338.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/platform_info_section.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart</title>
 </g>
 <g>
   <path d="M 2066.0 115.0 L 2072.0 115.0 Q 2078.0 115.0 2078.0 121.0 V 669.0 Q 2078.0 675.0 2084.0 675.0 L 2329.0 675.0 L 2338.0 675.0" class="edge"/>
@@ -707,16 +708,12 @@
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/outline_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart</title>
 </g>
 <g>
-  <path d="M 1240.0 185.0 L 1244.0 185.0 Q 1250.0 185.0 1250.0 191.0 V 879.0 Q 1250.0 885.0 1256.0 885.0 L 1371.0 885.0 L 1380.0 885.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/test_panel.dart</title>
-</g>
-<g>
   <path d="M 2066.0 115.0 L 2068.0 115.0 Q 2074.0 115.0 2074.0 121.0 V 809.0 Q 2074.0 815.0 2080.0 815.0 L 2329.0 815.0 L 2338.0 815.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/editor/large_file_message.dart</title>
 </g>
 <g>
-  <path d="M 1600.0 885.0 L 1734.0 885.0 Q 1740.0 885.0 1740.0 879.0 V 191.0 Q 1740.0 185.0 1746.0 185.0 L 1835.0 185.0 L 1844.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/test_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart</title>
+  <path d="M 1240.0 185.0 L 1244.0 185.0 Q 1250.0 185.0 1250.0 191.0 V 879.0 Q 1250.0 885.0 1256.0 885.0 L 1371.0 885.0 L 1380.0 885.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/left/test_panel.dart</title>
 </g>
 <g>
   <path d="M 1240.0 255.0 L 1262.0 255.0 Q 1268.0 255.0 1268.0 261.0 V 949.0 Q 1268.0 955.0 1274.0 955.0 L 1371.0 955.0 L 1380.0 955.0" class="edge"/>
@@ -727,28 +724,52 @@
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/outline_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart</title>
 </g>
 <g>
-  <path d="M 2066.0 115.0 L 2092.0 115.0 Q 2098.0 115.0 2098.0 109.0 V 88.0 Q 2098.0 82.0 2104.0 82.0 L 2574.0 82.0 Q 2580.0 82.0 2580.0 88.0 V 109.0 Q 2580.0 115.0 2586.0 115.0 L 2799.0 115.0 L 2810.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart</title>
+  <path d="M 1600.0 885.0 L 1734.0 885.0 Q 1740.0 885.0 1740.0 879.0 V 191.0 Q 1740.0 185.0 1746.0 185.0 L 1835.0 185.0 L 1844.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/test_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart</title>
 </g>
 <g>
-  <path d="M 596.0 115.0 L 614.0 115.0 Q 620.0 115.0 620.0 109.0 V 88.0 Q 620.0 82.0 626.0 82.0 L 924.0 82.0 Q 930.0 82.0 930.0 88.0 V 109.0 Q 930.0 115.0 936.0 115.0 L 1011.0 115.0 L 1020.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/full_path_widget.dart</title>
+  <path d="M 2066.0 115.0 L 2092.0 115.0 Q 2098.0 115.0 2098.0 109.0 V 88.0 Q 2098.0 82.0 2104.0 82.0 L 2574.0 82.0 Q 2580.0 82.0 2580.0 88.0 V 109.0 Q 2580.0 115.0 2586.0 115.0 L 2799.0 115.0 L 2810.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart</title>
 </g>
 <g>
   <path d="M 3900.0 115.0 L 3904.0 115.0 Q 3910.0 115.0 3910.0 109.0 V 88.0 Q 3910.0 82.0 3916.0 82.0 L 4296.0 82.0 Q 4302.0 82.0 4302.0 88.0 V 109.0 Q 4302.0 115.0 4308.0 115.0 L 4427.0 115.0 L 4438.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/models/project_node.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
+  <path d="M 918.0 185.0 L 942.0 185.0 Q 948.0 185.0 948.0 179.0 V 152.0 Q 948.0 146.0 954.0 146.0 L 1234.0 146.0 L 1258.0 146.0 Q 1264.0 146.0 1264.0 152.0 V 179.0 Q 1264.0 185.0 1270.0 185.0 L 1374.0 185.0 L 1380.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/resizable_splitter.dart</title>
+</g>
+<g>
   <path d="M 1602.0 255.0 L 1624.0 255.0 Q 1630.0 255.0 1630.0 249.0 V 223.0 Q 1630.0 217.0 1636.0 217.0 L 2058.0 217.0 L 2080.0 217.0 Q 2086.0 217.0 2086.0 223.0 V 249.0 Q 2086.0 255.0 2092.0 255.0 L 2332.0 255.0 L 2338.0 255.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/localization_data.dart</title>
+</g>
+<g>
+  <path d="M 596.0 115.0 L 614.0 115.0 Q 620.0 115.0 620.0 109.0 V 88.0 Q 620.0 82.0 626.0 82.0 L 924.0 82.0 Q 930.0 82.0 930.0 88.0 V 109.0 Q 930.0 115.0 936.0 115.0 L 1011.0 115.0 L 1020.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/full_path_widget.dart</title>
 </g>
 <g>
   <path d="M 3470.0 115.0 L 3474.0 115.0 Q 3480.0 115.0 3480.0 109.0 V 88.0 Q 3480.0 82.0 3486.0 82.0 L 3896.0 82.0 Q 3902.0 82.0 3902.0 88.0 V 109.0 Q 3902.0 115.0 3908.0 115.0 L 4067.0 115.0 L 4078.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/providers/git_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 918.0 185.0 L 942.0 185.0 Q 948.0 185.0 948.0 179.0 V 152.0 Q 948.0 146.0 954.0 146.0 L 1234.0 146.0 L 1258.0 146.0 Q 1264.0 146.0 1264.0 152.0 V 179.0 Q 1264.0 185.0 1270.0 185.0 L 1374.0 185.0 L 1380.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/resizable_splitter.dart</title>
+  <path d="M 918.0 185.0 L 926.0 185.0 Q 932.0 185.0 932.0 179.0 V 82.0 Q 932.0 76.0 938.0 76.0 L 1234.0 76.0 L 1242.0 76.0 Q 1248.0 76.0 1248.0 82.0 V 109.0 Q 1248.0 115.0 1254.0 115.0 L 1374.0 115.0 L 1380.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ui_state_providers.dart</title>
+</g>
+<g>
+  <path d="M 3900.0 185.0 L 3906.0 185.0 Q 3912.0 185.0 3912.0 179.0 V 86.0 Q 3912.0 80.0 3918.0 80.0 L 4292.0 80.0 L 4298.0 80.0 Q 4304.0 80.0 4304.0 86.0 V 109.0 Q 4304.0 115.0 4310.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
+</g>
+<g>
+  <path d="M 2066.0 115.0 L 2084.0 115.0 Q 2090.0 115.0 2090.0 121.0 V 142.0 Q 2090.0 148.0 2096.0 148.0 L 2552.0 148.0 L 2570.0 148.0 Q 2576.0 148.0 2576.0 154.0 V 179.0 Q 2576.0 185.0 2582.0 185.0 L 2804.0 185.0 L 2810.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/document_state.dart</title>
+</g>
+<g>
+  <path d="M 2558.0 115.0 L 2570.0 115.0 Q 2576.0 115.0 2576.0 121.0 V 140.0 Q 2576.0 146.0 2582.0 146.0 L 3024.0 146.0 L 3036.0 146.0 Q 3042.0 146.0 3042.0 152.0 V 179.0 Q 3042.0 185.0 3048.0 185.0 L 3244.0 185.0 L 3250.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/project_state_sink.dart</title>
+</g>
+<g>
+  <path d="M 2064.0 255.0 L 2104.0 255.0 Q 2110.0 255.0 2110.0 261.0 V 281.0 Q 2110.0 287.0 2116.0 287.0 L 2552.0 287.0 L 2592.0 287.0 Q 2598.0 287.0 2598.0 293.0 V 319.0 Q 2598.0 325.0 2604.0 325.0 L 2804.0 325.0 L 2810.0 325.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/container_counter.dart</title>
 </g>
 <g>
   <path d="M 278.0 115.0 L 292.0 115.0 Q 298.0 115.0 298.0 121.0 V 141.0 Q 298.0 147.0 304.0 147.0 L 590.0 147.0 L 604.0 147.0 Q 610.0 147.0 610.0 153.0 V 179.0 Q 610.0 185.0 616.0 185.0 L 690.0 185.0 L 696.0 185.0" class="edge"/>
@@ -763,28 +784,8 @@
   <title>/Users/jp/src/github/vteam/fide/lib/widget_services/filename_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/file_type_utils.dart</title>
 </g>
 <g>
-  <path d="M 2066.0 115.0 L 2084.0 115.0 Q 2090.0 115.0 2090.0 121.0 V 142.0 Q 2090.0 148.0 2096.0 148.0 L 2552.0 148.0 L 2570.0 148.0 Q 2576.0 148.0 2576.0 154.0 V 179.0 Q 2576.0 185.0 2582.0 185.0 L 2804.0 185.0 L 2810.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/document_state.dart</title>
-</g>
-<g>
-  <path d="M 3900.0 185.0 L 3906.0 185.0 Q 3912.0 185.0 3912.0 179.0 V 86.0 Q 3912.0 80.0 3918.0 80.0 L 4292.0 80.0 L 4298.0 80.0 Q 4304.0 80.0 4304.0 86.0 V 109.0 Q 4304.0 115.0 4310.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
-</g>
-<g>
   <path d="M 2064.0 185.0 L 2092.0 185.0 Q 2098.0 185.0 2098.0 179.0 V 85.0 Q 2098.0 79.0 2104.0 79.0 L 2552.0 79.0 L 2580.0 79.0 Q 2586.0 79.0 2586.0 85.0 V 109.0 Q 2586.0 115.0 2592.0 115.0 L 2804.0 115.0 L 2810.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/output_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart</title>
-</g>
-<g>
-  <path d="M 2064.0 255.0 L 2104.0 255.0 Q 2110.0 255.0 2110.0 261.0 V 281.0 Q 2110.0 287.0 2116.0 287.0 L 2552.0 287.0 L 2592.0 287.0 Q 2598.0 287.0 2598.0 293.0 V 319.0 Q 2598.0 325.0 2604.0 325.0 L 2804.0 325.0 L 2810.0 325.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/container_counter.dart</title>
-</g>
-<g>
-  <path d="M 2558.0 115.0 L 2570.0 115.0 Q 2576.0 115.0 2576.0 121.0 V 140.0 Q 2576.0 146.0 2582.0 146.0 L 3024.0 146.0 L 3036.0 146.0 Q 3042.0 146.0 3042.0 152.0 V 179.0 Q 3042.0 185.0 3048.0 185.0 L 3244.0 185.0 L 3250.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/project_state_sink.dart</title>
-</g>
-<g>
-  <path d="M 918.0 185.0 L 926.0 185.0 Q 932.0 185.0 932.0 179.0 V 82.0 Q 932.0 76.0 938.0 76.0 L 1234.0 76.0 L 1242.0 76.0 Q 1248.0 76.0 1248.0 82.0 V 109.0 Q 1248.0 115.0 1254.0 115.0 L 1374.0 115.0 L 1380.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ui_state_providers.dart</title>
 </g>
 <g>
   <path d="M 2066.0 115.0 L 2082.0 115.0 Q 2088.0 115.0 2088.0 121.0 V 214.0 Q 2088.0 220.0 2094.0 220.0 L 2552.0 220.0 L 2568.0 220.0 Q 2574.0 220.0 2574.0 226.0 V 249.0 Q 2574.0 255.0 2580.0 255.0 L 2804.0 255.0 L 2810.0 255.0" class="edge"/>
@@ -799,20 +800,20 @@
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
-  <path d="M 1600.0 325.0 L 1624.0 325.0 Q 1630.0 325.0 1630.0 319.0 V 82.0 Q 1630.0 76.0 1636.0 76.0 L 2058.0 76.0 L 2082.0 76.0 Q 2088.0 76.0 2088.0 82.0 V 109.0 Q 2088.0 115.0 2094.0 115.0 L 2332.0 115.0 L 2338.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
-</g>
-<g>
   <path d="M 1600.0 395.0 L 1652.0 395.0 Q 1658.0 395.0 1658.0 389.0 V 153.0 Q 1658.0 147.0 1664.0 147.0 L 2058.0 147.0 L 2110.0 147.0 Q 2116.0 147.0 2116.0 153.0 V 179.0 Q 2116.0 185.0 2122.0 185.0 L 2332.0 185.0 L 2338.0 185.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart</title>
+</g>
+<g>
+  <path d="M 1600.0 535.0 L 1690.0 535.0 Q 1696.0 535.0 1696.0 529.0 V 294.0 Q 1696.0 288.0 1702.0 288.0 L 2058.0 288.0 L 2148.0 288.0 Q 2154.0 288.0 2154.0 294.0 V 319.0 Q 2154.0 325.0 2160.0 325.0 L 2332.0 325.0 L 2338.0 325.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/status_indicator.dart</title>
 </g>
 <g>
   <path d="M 3030.0 465.0 L 3054.0 465.0 Q 3060.0 465.0 3060.0 459.0 V 225.0 Q 3060.0 219.0 3066.0 219.0 L 3464.0 219.0 L 3488.0 219.0 Q 3494.0 219.0 3494.0 225.0 V 249.0 Q 3494.0 255.0 3500.0 255.0 L 3674.0 255.0 L 3680.0 255.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/providers/project_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/loading_action.dart</title>
 </g>
 <g>
-  <path d="M 1600.0 535.0 L 1690.0 535.0 Q 1696.0 535.0 1696.0 529.0 V 294.0 Q 1696.0 288.0 1702.0 288.0 L 2058.0 288.0 L 2148.0 288.0 Q 2154.0 288.0 2154.0 294.0 V 319.0 Q 2154.0 325.0 2160.0 325.0 L 2332.0 325.0 L 2338.0 325.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/status_indicator.dart</title>
+  <path d="M 1600.0 325.0 L 1624.0 325.0 Q 1630.0 325.0 1630.0 319.0 V 82.0 Q 1630.0 76.0 1636.0 76.0 L 2058.0 76.0 L 2082.0 76.0 Q 2088.0 76.0 2088.0 82.0 V 109.0 Q 2088.0 115.0 2094.0 115.0 L 2332.0 115.0 L 2338.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
   <path d="M 1600.0 465.0 L 1668.0 465.0 Q 1674.0 465.0 1674.0 459.0 V 152.0 Q 1674.0 146.0 1680.0 146.0 L 2058.0 146.0 L 2126.0 146.0 Q 2132.0 146.0 2132.0 152.0 V 179.0 Q 2132.0 185.0 2138.0 185.0 L 2332.0 185.0 L 2338.0 185.0" class="edge"/>
@@ -831,8 +832,8 @@
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart</title>
 </g>
 <g>
-  <path d="M 3030.0 535.0 L 3060.0 535.0 Q 3066.0 535.0 3066.0 529.0 V 156.0 Q 3066.0 150.0 3072.0 150.0 L 3464.0 150.0 L 3494.0 150.0 Q 3500.0 150.0 3500.0 156.0 V 179.0 Q 3500.0 185.0 3506.0 185.0 L 3674.0 185.0 L 3680.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widget_services/diff_counter.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
+  <path d="M 3030.0 465.0 L 3046.0 465.0 Q 3052.0 465.0 3052.0 459.0 V 83.0 Q 3052.0 77.0 3058.0 77.0 L 3464.0 77.0 L 3480.0 77.0 Q 3486.0 77.0 3486.0 83.0 V 109.0 Q 3486.0 115.0 3492.0 115.0 L 3674.0 115.0 L 3680.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/providers/project_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
 </g>
 <g>
   <path d="M 2558.0 465.0 L 2588.0 465.0 Q 2594.0 465.0 2594.0 459.0 V 85.0 Q 2594.0 79.0 2600.0 79.0 L 3024.0 79.0 L 3054.0 79.0 Q 3060.0 79.0 3060.0 85.0 V 109.0 Q 3060.0 115.0 3066.0 115.0 L 3244.0 115.0 L 3250.0 115.0" class="edge"/>
@@ -843,8 +844,8 @@
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/section_panel.dart</title>
 </g>
 <g>
-  <path d="M 3030.0 465.0 L 3046.0 465.0 Q 3052.0 465.0 3052.0 459.0 V 83.0 Q 3052.0 77.0 3058.0 77.0 L 3464.0 77.0 L 3480.0 77.0 Q 3486.0 77.0 3486.0 83.0 V 109.0 Q 3486.0 115.0 3492.0 115.0 L 3674.0 115.0 L 3680.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/providers/project_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
+  <path d="M 3030.0 535.0 L 3060.0 535.0 Q 3066.0 535.0 3066.0 529.0 V 156.0 Q 3066.0 150.0 3072.0 150.0 L 3464.0 150.0 L 3494.0 150.0 Q 3500.0 150.0 3500.0 156.0 V 179.0 Q 3500.0 185.0 3506.0 185.0 L 3674.0 185.0 L 3680.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widget_services/diff_counter.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
 </g>
 <g>
   <path d="M 1600.0 535.0 L 1676.0 535.0 Q 1682.0 535.0 1682.0 529.0 V 82.0 Q 1682.0 76.0 1688.0 76.0 L 2058.0 76.0 L 2134.0 76.0 Q 2140.0 76.0 2140.0 82.0 V 109.0 Q 2140.0 115.0 2146.0 115.0 L 2332.0 115.0 L 2338.0 115.0" class="edge"/>
@@ -867,20 +868,20 @@
   <title>/Users/jp/src/github/vteam/fide/lib/providers/git_service.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 2558.0 115.0 L 2576.0 115.0 Q 2582.0 115.0 2582.0 109.0 V 84.0 Q 2582.0 78.0 2588.0 78.0 L 3478.0 78.0 Q 3484.0 78.0 3484.0 84.0 V 109.0 Q 3484.0 115.0 3490.0 115.0 L 3671.0 115.0 L 3680.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
-</g>
-<g>
   <path d="M 2066.0 115.0 L 2090.0 115.0 Q 2096.0 115.0 2096.0 109.0 V 84.0 Q 2096.0 78.0 2102.0 78.0 L 3048.0 78.0 Q 3054.0 78.0 3054.0 84.0 V 109.0 Q 3054.0 115.0 3060.0 115.0 L 3241.0 115.0 L 3250.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/git_service.dart</title>
+</g>
+<g>
+  <path d="M 2558.0 115.0 L 2576.0 115.0 Q 2582.0 115.0 2582.0 109.0 V 84.0 Q 2582.0 78.0 2588.0 78.0 L 3478.0 78.0 Q 3484.0 78.0 3484.0 84.0 V 109.0 Q 3484.0 115.0 3490.0 115.0 L 3671.0 115.0 L 3680.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
 </g>
 <g>
   <path d="M 918.0 185.0 L 928.0 185.0 Q 934.0 185.0 934.0 179.0 V 82.0 Q 934.0 76.0 940.0 76.0 L 1234.0 76.0 L 1594.0 76.0 L 1604.0 76.0 Q 1610.0 76.0 1610.0 82.0 V 109.0 Q 1610.0 115.0 1616.0 115.0 L 1838.0 115.0 L 1844.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart</title>
 </g>
 <g>
-  <path d="M 3030.0 255.0 L 3036.0 255.0 Q 3042.0 255.0 3042.0 249.0 V 85.0 Q 3042.0 79.0 3048.0 79.0 L 3464.0 79.0 L 3894.0 79.0 L 3900.0 79.0 Q 3906.0 79.0 3906.0 85.0 V 109.0 Q 3906.0 115.0 3912.0 115.0 L 4072.0 115.0 L 4078.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/providers/file_type_utils.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+  <path d="M 2558.0 115.0 L 2566.0 115.0 Q 2572.0 115.0 2572.0 121.0 V 215.0 Q 2572.0 221.0 2578.0 221.0 L 3024.0 221.0 L 3464.0 221.0 L 3472.0 221.0 Q 3478.0 221.0 3478.0 227.0 V 249.0 Q 3478.0 255.0 3484.0 255.0 L 3674.0 255.0 L 3680.0 255.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/loading_action.dart</title>
 </g>
 <g>
   <path d="M 1240.0 255.0 L 1266.0 255.0 Q 1272.0 255.0 1272.0 249.0 V 84.0 Q 1272.0 78.0 1278.0 78.0 L 1594.0 78.0 L 2058.0 78.0 L 2084.0 78.0 Q 2090.0 78.0 2090.0 84.0 V 109.0 Q 2090.0 115.0 2096.0 115.0 L 2332.0 115.0 L 2338.0 115.0" class="edge"/>
@@ -895,12 +896,12 @@
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/message_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 1602.0 255.0 L 1616.0 255.0 Q 1622.0 255.0 1622.0 249.0 V 85.0 Q 1622.0 79.0 1628.0 79.0 L 2058.0 79.0 L 2552.0 79.0 L 2566.0 79.0 Q 2572.0 79.0 2572.0 85.0 V 109.0 Q 2572.0 115.0 2578.0 115.0 L 2804.0 115.0 L 2810.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart</title>
+  <path d="M 3030.0 255.0 L 3036.0 255.0 Q 3042.0 255.0 3042.0 249.0 V 85.0 Q 3042.0 79.0 3048.0 79.0 L 3464.0 79.0 L 3894.0 79.0 L 3900.0 79.0 Q 3906.0 79.0 3906.0 85.0 V 109.0 Q 3906.0 115.0 3912.0 115.0 L 4072.0 115.0 L 4078.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/providers/file_type_utils.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 2558.0 115.0 L 2566.0 115.0 Q 2572.0 115.0 2572.0 121.0 V 215.0 Q 2572.0 221.0 2578.0 221.0 L 3024.0 221.0 L 3464.0 221.0 L 3472.0 221.0 Q 3478.0 221.0 3478.0 227.0 V 249.0 Q 3478.0 255.0 3484.0 255.0 L 3674.0 255.0 L 3680.0 255.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/loading_action.dart</title>
+  <path d="M 1602.0 255.0 L 1616.0 255.0 Q 1622.0 255.0 1622.0 249.0 V 85.0 Q 1622.0 79.0 1628.0 79.0 L 2058.0 79.0 L 2552.0 79.0 L 2566.0 79.0 Q 2572.0 79.0 2572.0 85.0 V 109.0 Q 2572.0 115.0 2578.0 115.0 L 2804.0 115.0 L 2810.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart</title>
 </g>
 <g>
   <path d="M 1600.0 325.0 L 1626.0 325.0 Q 1632.0 325.0 1632.0 319.0 V 83.0 Q 1632.0 77.0 1638.0 77.0 L 2058.0 77.0 L 2552.0 77.0 L 2578.0 77.0 Q 2584.0 77.0 2584.0 83.0 V 109.0 Q 2584.0 115.0 2590.0 115.0 L 2804.0 115.0 L 2810.0 115.0" class="edge"/>
@@ -915,16 +916,16 @@
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart</title>
 </g>
 <g>
-  <path d="M 1600.0 465.0 L 1660.0 465.0 Q 1666.0 465.0 1666.0 459.0 V 84.0 Q 1666.0 78.0 1672.0 78.0 L 2058.0 78.0 L 2552.0 78.0 L 2612.0 78.0 Q 2618.0 78.0 2618.0 84.0 V 109.0 Q 2618.0 115.0 2624.0 115.0 L 2804.0 115.0 L 2810.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart</title>
+  <path d="M 1600.0 535.0 L 1686.0 535.0 Q 1692.0 535.0 1692.0 529.0 V 158.0 Q 1692.0 152.0 1698.0 152.0 L 2058.0 152.0 L 2552.0 152.0 L 2638.0 152.0 Q 2644.0 152.0 2644.0 158.0 V 179.0 Q 2644.0 185.0 2650.0 185.0 L 2804.0 185.0 L 2810.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/document_state.dart</title>
 </g>
 <g>
   <path d="M 2064.0 465.0 L 2116.0 465.0 Q 2122.0 465.0 2122.0 459.0 V 84.0 Q 2122.0 78.0 2128.0 78.0 L 2552.0 78.0 L 3024.0 78.0 L 3076.0 78.0 Q 3082.0 78.0 3082.0 84.0 V 109.0 Q 3082.0 115.0 3088.0 115.0 L 3244.0 115.0 L 3250.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/git_service.dart</title>
 </g>
 <g>
-  <path d="M 1600.0 535.0 L 1686.0 535.0 Q 1692.0 535.0 1692.0 529.0 V 158.0 Q 1692.0 152.0 1698.0 152.0 L 2058.0 152.0 L 2552.0 152.0 L 2638.0 152.0 Q 2644.0 152.0 2644.0 158.0 V 179.0 Q 2644.0 185.0 2650.0 185.0 L 2804.0 185.0 L 2810.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/document_state.dart</title>
+  <path d="M 1600.0 465.0 L 1660.0 465.0 Q 1666.0 465.0 1666.0 459.0 V 84.0 Q 1666.0 78.0 1672.0 78.0 L 2058.0 78.0 L 2552.0 78.0 L 2612.0 78.0 Q 2618.0 78.0 2618.0 84.0 V 109.0 Q 2618.0 115.0 2624.0 115.0 L 2804.0 115.0 L 2810.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart</title>
 </g>
 <g>
   <path d="M 3030.0 465.0 L 3048.0 465.0 Q 3054.0 465.0 3054.0 459.0 V 87.0 Q 3054.0 81.0 3060.0 81.0 L 3464.0 81.0 L 3894.0 81.0 L 3912.0 81.0 Q 3918.0 81.0 3918.0 87.0 V 109.0 Q 3918.0 115.0 3924.0 115.0 L 4072.0 115.0 L 4078.0 115.0" class="edge"/>
@@ -951,12 +952,12 @@
   <title>/Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 278.0 115.0 L 300.0 115.0 Q 306.0 115.0 306.0 109.0 V 80.0 Q 306.0 74.0 312.0 74.0 L 1254.0 74.0 Q 1260.0 74.0 1260.0 80.0 V 109.0 Q 1260.0 115.0 1266.0 115.0 L 1371.0 115.0 L 1380.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ui_state_providers.dart</title>
-</g>
-<g>
   <path d="M 3030.0 115.0 L 3034.0 115.0 Q 3040.0 115.0 3040.0 109.0 V 80.0 Q 3040.0 74.0 3046.0 74.0 L 4296.0 74.0 Q 4302.0 74.0 4302.0 80.0 V 109.0 Q 4302.0 115.0 4308.0 115.0 L 4427.0 115.0 L 4438.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
+</g>
+<g>
+  <path d="M 278.0 115.0 L 300.0 115.0 Q 306.0 115.0 306.0 109.0 V 80.0 Q 306.0 74.0 312.0 74.0 L 1254.0 74.0 Q 1260.0 74.0 1260.0 80.0 V 109.0 Q 1260.0 115.0 1266.0 115.0 L 1371.0 115.0 L 1380.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ui_state_providers.dart</title>
 </g>
 <g>
   <path d="M 918.0 185.0 L 930.0 185.0 Q 936.0 185.0 936.0 179.0 V 84.0 Q 936.0 78.0 942.0 78.0 L 1234.0 78.0 L 1594.0 78.0 L 2058.0 78.0 L 2070.0 78.0 Q 2076.0 78.0 2076.0 84.0 V 109.0 Q 2076.0 115.0 2082.0 115.0 L 2332.0 115.0 L 2338.0 115.0" class="edge"/>
@@ -971,16 +972,12 @@
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
 </g>
 <g>
-  <path d="M 3030.0 255.0 L 3038.0 255.0 Q 3044.0 255.0 3044.0 249.0 V 87.0 Q 3044.0 81.0 3050.0 81.0 L 3464.0 81.0 L 3894.0 81.0 L 4292.0 81.0 L 4300.0 81.0 Q 4306.0 81.0 4306.0 87.0 V 109.0 Q 4306.0 115.0 4312.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/providers/file_type_utils.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
-</g>
-<g>
   <path d="M 596.0 255.0 L 626.0 255.0 Q 632.0 255.0 632.0 249.0 V 83.0 Q 632.0 77.0 638.0 77.0 L 910.0 77.0 L 1234.0 77.0 L 1594.0 77.0 L 1624.0 77.0 Q 1630.0 77.0 1630.0 83.0 V 109.0 Q 1630.0 115.0 1636.0 115.0 L 1838.0 115.0 L 1844.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/controllers/project_operations.dart ▶ /Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart</title>
 </g>
 <g>
-  <path d="M 916.0 325.0 L 948.0 325.0 Q 954.0 325.0 954.0 319.0 V 85.0 Q 954.0 79.0 960.0 79.0 L 1234.0 79.0 L 1594.0 79.0 L 2058.0 79.0 L 2090.0 79.0 Q 2096.0 79.0 2096.0 85.0 V 109.0 Q 2096.0 115.0 2102.0 115.0 L 2332.0 115.0 L 2338.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_step3.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
+  <path d="M 3030.0 255.0 L 3038.0 255.0 Q 3044.0 255.0 3044.0 249.0 V 87.0 Q 3044.0 81.0 3050.0 81.0 L 3464.0 81.0 L 3894.0 81.0 L 4292.0 81.0 L 4300.0 81.0 Q 4306.0 81.0 4306.0 87.0 V 109.0 Q 4306.0 115.0 4312.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/providers/file_type_utils.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
   <path d="M 1600.0 325.0 L 1628.0 325.0 Q 1634.0 325.0 1634.0 319.0 V 85.0 Q 1634.0 79.0 1640.0 79.0 L 2058.0 79.0 L 2552.0 79.0 L 3024.0 79.0 L 3052.0 79.0 Q 3058.0 79.0 3058.0 85.0 V 109.0 Q 3058.0 115.0 3064.0 115.0 L 3244.0 115.0 L 3250.0 115.0" class="edge"/>
@@ -991,20 +988,24 @@
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/container_counter.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 596.0 115.0 L 604.0 115.0 Q 610.0 115.0 610.0 121.0 V 352.0 Q 610.0 358.0 616.0 358.0 L 910.0 358.0 L 1234.0 358.0 L 1594.0 358.0 L 1602.0 358.0 Q 1608.0 358.0 1608.0 364.0 V 389.0 Q 1608.0 395.0 1614.0 395.0 L 1838.0 395.0 L 1844.0 395.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ai_service.dart</title>
+  <path d="M 916.0 325.0 L 948.0 325.0 Q 954.0 325.0 954.0 319.0 V 85.0 Q 954.0 79.0 960.0 79.0 L 1234.0 79.0 L 1594.0 79.0 L 2058.0 79.0 L 2090.0 79.0 Q 2096.0 79.0 2096.0 85.0 V 109.0 Q 2096.0 115.0 2102.0 115.0 L 2332.0 115.0 L 2338.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_step3.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
   <path d="M 3030.0 395.0 L 3042.0 395.0 Q 3048.0 395.0 3048.0 389.0 V 86.0 Q 3048.0 80.0 3054.0 80.0 L 3464.0 80.0 L 3894.0 80.0 L 4292.0 80.0 L 4304.0 80.0 Q 4310.0 80.0 4310.0 86.0 V 109.0 Q 4310.0 115.0 4316.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/search_toggle_icons.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 1600.0 465.0 L 1662.0 465.0 Q 1668.0 465.0 1668.0 459.0 V 86.0 Q 1668.0 80.0 1674.0 80.0 L 2058.0 80.0 L 2552.0 80.0 L 3024.0 80.0 L 3086.0 80.0 Q 3092.0 80.0 3092.0 86.0 V 109.0 Q 3092.0 115.0 3098.0 115.0 L 3244.0 115.0 L 3250.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/git_service.dart</title>
+  <path d="M 596.0 115.0 L 604.0 115.0 Q 610.0 115.0 610.0 121.0 V 352.0 Q 610.0 358.0 616.0 358.0 L 910.0 358.0 L 1234.0 358.0 L 1594.0 358.0 L 1602.0 358.0 Q 1608.0 358.0 1608.0 364.0 V 389.0 Q 1608.0 395.0 1614.0 395.0 L 1838.0 395.0 L 1844.0 395.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/ai_service.dart</title>
 </g>
 <g>
   <path d="M 2064.0 465.0 L 2118.0 465.0 Q 2124.0 465.0 2124.0 459.0 V 86.0 Q 2124.0 80.0 2130.0 80.0 L 2552.0 80.0 L 3024.0 80.0 L 3464.0 80.0 L 3518.0 80.0 Q 3524.0 80.0 3524.0 86.0 V 109.0 Q 3524.0 115.0 3530.0 115.0 L 3674.0 115.0 L 3680.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/shared_panel_utils.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
+</g>
+<g>
+  <path d="M 1600.0 465.0 L 1662.0 465.0 Q 1668.0 465.0 1668.0 459.0 V 86.0 Q 1668.0 80.0 1674.0 80.0 L 2058.0 80.0 L 2552.0 80.0 L 3024.0 80.0 L 3086.0 80.0 Q 3092.0 80.0 3092.0 86.0 V 109.0 Q 3092.0 115.0 3098.0 115.0 L 3244.0 115.0 L 3250.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/git_service.dart</title>
 </g>
 <g>
   <path d="M 3030.0 465.0 L 3050.0 465.0 Q 3056.0 465.0 3056.0 459.0 V 89.0 Q 3056.0 83.0 3062.0 83.0 L 3464.0 83.0 L 3894.0 83.0 L 4292.0 83.0 L 4312.0 83.0 Q 4318.0 83.0 4318.0 89.0 V 109.0 Q 4318.0 115.0 4324.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
@@ -1039,10 +1040,6 @@
   <title>/Users/jp/src/github/vteam/fide/lib/screens/create_project_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
-  <path d="M 918.0 185.0 L 934.0 185.0 Q 940.0 185.0 940.0 179.0 V 86.0 Q 940.0 80.0 946.0 80.0 L 1234.0 80.0 L 1594.0 80.0 L 2058.0 80.0 L 2552.0 80.0 L 2568.0 80.0 Q 2574.0 80.0 2574.0 86.0 V 109.0 Q 2574.0 115.0 2580.0 115.0 L 2804.0 115.0 L 2810.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart</title>
-</g>
-<g>
   <path d="M 1602.0 255.0 L 1622.0 255.0 Q 1628.0 255.0 1628.0 249.0 V 157.0 Q 1628.0 151.0 1634.0 151.0 L 2058.0 151.0 L 2552.0 151.0 L 3024.0 151.0 L 3464.0 151.0 L 3484.0 151.0 Q 3490.0 151.0 3490.0 157.0 V 179.0 Q 3490.0 185.0 3496.0 185.0 L 3674.0 185.0 L 3680.0 185.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
 </g>
@@ -1059,8 +1056,8 @@
   <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/file_type_utils.dart</title>
 </g>
 <g>
-  <path d="M 2064.0 255.0 L 2100.0 255.0 Q 2106.0 255.0 2106.0 249.0 V 87.0 Q 2106.0 81.0 2112.0 81.0 L 2552.0 81.0 L 3024.0 81.0 L 3464.0 81.0 L 3894.0 81.0 L 3930.0 81.0 Q 3936.0 81.0 3936.0 87.0 V 109.0 Q 3936.0 115.0 3942.0 115.0 L 4072.0 115.0 L 4078.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+  <path d="M 918.0 185.0 L 934.0 185.0 Q 940.0 185.0 940.0 179.0 V 86.0 Q 940.0 80.0 946.0 80.0 L 1234.0 80.0 L 1594.0 80.0 L 2058.0 80.0 L 2552.0 80.0 L 2568.0 80.0 Q 2574.0 80.0 2574.0 86.0 V 109.0 Q 2574.0 115.0 2580.0 115.0 L 2804.0 115.0 L 2810.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart</title>
 </g>
 <g>
   <path d="M 2558.0 255.0 L 2582.0 255.0 Q 2588.0 255.0 2588.0 249.0 V 86.0 Q 2588.0 80.0 2594.0 80.0 L 3024.0 80.0 L 3464.0 80.0 L 3894.0 80.0 L 4292.0 80.0 L 4316.0 80.0 Q 4322.0 80.0 4322.0 86.0 V 109.0 Q 4322.0 115.0 4328.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
@@ -1071,24 +1068,24 @@
   <title>/Users/jp/src/github/vteam/fide/lib/controllers/project_operations.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
-  <path d="M 2558.0 325.0 L 2584.0 325.0 Q 2590.0 325.0 2590.0 319.0 V 86.0 Q 2590.0 80.0 2596.0 80.0 L 3024.0 80.0 L 3464.0 80.0 L 3894.0 80.0 L 4292.0 80.0 L 4318.0 80.0 Q 4324.0 80.0 4324.0 86.0 V 109.0 Q 4324.0 115.0 4330.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widgets/status_indicator.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
-</g>
-<g>
-  <path d="M 1600.0 325.0 L 1630.0 325.0 Q 1636.0 325.0 1636.0 319.0 V 87.0 Q 1636.0 81.0 1642.0 81.0 L 2058.0 81.0 L 2552.0 81.0 L 3024.0 81.0 L 3464.0 81.0 L 3494.0 81.0 Q 3500.0 81.0 3500.0 87.0 V 109.0 Q 3500.0 115.0 3506.0 115.0 L 3674.0 115.0 L 3680.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
+  <path d="M 2064.0 255.0 L 2100.0 255.0 Q 2106.0 255.0 2106.0 249.0 V 87.0 Q 2106.0 81.0 2112.0 81.0 L 2552.0 81.0 L 3024.0 81.0 L 3464.0 81.0 L 3894.0 81.0 L 3930.0 81.0 Q 3936.0 81.0 3936.0 87.0 V 109.0 Q 3936.0 115.0 3942.0 115.0 L 4072.0 115.0 L 4078.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
 <g>
   <path d="M 596.0 325.0 L 636.0 325.0 Q 642.0 325.0 642.0 319.0 V 84.0 Q 642.0 78.0 648.0 78.0 L 910.0 78.0 L 1234.0 78.0 L 1594.0 78.0 L 2058.0 78.0 L 2098.0 78.0 Q 2104.0 78.0 2104.0 84.0 V 109.0 Q 2104.0 115.0 2110.0 115.0 L 2332.0 115.0 L 2338.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widget_services/app_title_bar.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
+  <path d="M 1600.0 325.0 L 1630.0 325.0 Q 1636.0 325.0 1636.0 319.0 V 87.0 Q 1636.0 81.0 1642.0 81.0 L 2058.0 81.0 L 2552.0 81.0 L 3024.0 81.0 L 3464.0 81.0 L 3494.0 81.0 Q 3500.0 81.0 3500.0 87.0 V 109.0 Q 3500.0 115.0 3506.0 115.0 L 3674.0 115.0 L 3680.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
+</g>
+<g>
   <path d="M 2064.0 325.0 L 2106.0 325.0 Q 2112.0 325.0 2112.0 319.0 V 86.0 Q 2112.0 80.0 2118.0 80.0 L 2552.0 80.0 L 3024.0 80.0 L 3464.0 80.0 L 3894.0 80.0 L 3936.0 80.0 Q 3942.0 80.0 3942.0 86.0 V 109.0 Q 3942.0 115.0 3948.0 115.0 L 4072.0 115.0 L 4078.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widget_services/filename_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 1600.0 395.0 L 1646.0 395.0 Q 1652.0 395.0 1652.0 389.0 V 87.0 Q 1652.0 81.0 1658.0 81.0 L 2058.0 81.0 L 2552.0 81.0 L 3024.0 81.0 L 3464.0 81.0 L 3510.0 81.0 Q 3516.0 81.0 3516.0 87.0 V 109.0 Q 3516.0 115.0 3522.0 115.0 L 3674.0 115.0 L 3680.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
+  <path d="M 2558.0 325.0 L 2584.0 325.0 Q 2590.0 325.0 2590.0 319.0 V 86.0 Q 2590.0 80.0 2596.0 80.0 L 3024.0 80.0 L 3464.0 80.0 L 3894.0 80.0 L 4292.0 80.0 L 4318.0 80.0 Q 4324.0 80.0 4324.0 86.0 V 109.0 Q 4324.0 115.0 4330.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widgets/status_indicator.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
   <path d="M 596.0 395.0 L 648.0 395.0 Q 654.0 395.0 654.0 389.0 V 86.0 Q 654.0 80.0 660.0 80.0 L 910.0 80.0 L 1234.0 80.0 L 1594.0 80.0 L 2058.0 80.0 L 2110.0 80.0 Q 2116.0 80.0 2116.0 86.0 V 109.0 Q 2116.0 115.0 2122.0 115.0 L 2332.0 115.0 L 2338.0 115.0" class="edge"/>
@@ -1099,16 +1096,12 @@
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/side_by_side_diff.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
+  <path d="M 1600.0 395.0 L 1646.0 395.0 Q 1652.0 395.0 1652.0 389.0 V 87.0 Q 1652.0 81.0 1658.0 81.0 L 2058.0 81.0 L 2552.0 81.0 L 3024.0 81.0 L 3464.0 81.0 L 3510.0 81.0 Q 3516.0 81.0 3516.0 87.0 V 109.0 Q 3516.0 115.0 3522.0 115.0 L 3674.0 115.0 L 3680.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/organized_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/project_node.dart</title>
+</g>
+<g>
   <path d="M 1600.0 465.0 L 1670.0 465.0 Q 1676.0 465.0 1676.0 459.0 V 158.0 Q 1676.0 152.0 1682.0 152.0 L 2058.0 152.0 L 2552.0 152.0 L 3024.0 152.0 L 3464.0 152.0 L 3534.0 152.0 Q 3540.0 152.0 3540.0 158.0 V 179.0 Q 3540.0 185.0 3546.0 185.0 L 3674.0 185.0 L 3680.0 185.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/git_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
-</g>
-<g>
-  <path d="M 596.0 465.0 L 654.0 465.0 Q 660.0 465.0 660.0 459.0 V 85.0 Q 660.0 79.0 666.0 79.0 L 910.0 79.0 L 1234.0 79.0 L 1594.0 79.0 L 2058.0 79.0 L 2116.0 79.0 Q 2122.0 79.0 2122.0 85.0 V 109.0 Q 2122.0 115.0 2128.0 115.0 L 2332.0 115.0 L 2338.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/screens/welcome_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
-</g>
-<g>
-  <path d="M 1600.0 535.0 L 1688.0 535.0 Q 1694.0 535.0 1694.0 529.0 V 160.0 Q 1694.0 154.0 1700.0 154.0 L 2058.0 154.0 L 2552.0 154.0 L 3024.0 154.0 L 3464.0 154.0 L 3552.0 154.0 Q 3558.0 154.0 3558.0 160.0 V 179.0 Q 3558.0 185.0 3564.0 185.0 L 3674.0 185.0 L 3680.0 185.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
 </g>
 <g>
   <path d="M 2064.0 465.0 L 2120.0 465.0 Q 2126.0 465.0 2126.0 459.0 V 88.0 Q 2126.0 82.0 2132.0 82.0 L 2552.0 82.0 L 3024.0 82.0 L 3464.0 82.0 L 3894.0 82.0 L 3950.0 82.0 Q 3956.0 82.0 3956.0 88.0 V 109.0 Q 3956.0 115.0 3962.0 115.0 L 4072.0 115.0 L 4078.0 115.0" class="edge"/>
@@ -1119,12 +1112,20 @@
   <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen_header.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 2558.0 535.0 L 2598.0 535.0 Q 2604.0 535.0 2604.0 529.0 V 86.0 Q 2604.0 80.0 2610.0 80.0 L 3024.0 80.0 L 3464.0 80.0 L 3894.0 80.0 L 4292.0 80.0 L 4332.0 80.0 Q 4338.0 80.0 4338.0 86.0 V 109.0 Q 4338.0 115.0 4344.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen_search_bar.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
+  <path d="M 1600.0 535.0 L 1688.0 535.0 Q 1694.0 535.0 1694.0 529.0 V 160.0 Q 1694.0 154.0 1700.0 154.0 L 2058.0 154.0 L 2552.0 154.0 L 3024.0 154.0 L 3464.0 154.0 L 3552.0 154.0 Q 3558.0 154.0 3558.0 160.0 V 179.0 Q 3558.0 185.0 3564.0 185.0 L 3674.0 185.0 L 3680.0 185.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/info_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/badge_status.dart</title>
+</g>
+<g>
+  <path d="M 596.0 465.0 L 654.0 465.0 Q 660.0 465.0 660.0 459.0 V 85.0 Q 660.0 79.0 666.0 79.0 L 910.0 79.0 L 1234.0 79.0 L 1594.0 79.0 L 2058.0 79.0 L 2116.0 79.0 Q 2122.0 79.0 2122.0 85.0 V 109.0 Q 2122.0 115.0 2128.0 115.0 L 2332.0 115.0 L 2338.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/screens/welcome_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
   <path d="M 596.0 535.0 L 660.0 535.0 Q 666.0 535.0 666.0 529.0 V 87.0 Q 666.0 81.0 672.0 81.0 L 910.0 81.0 L 1234.0 81.0 L 1594.0 81.0 L 2058.0 81.0 L 2122.0 81.0 Q 2128.0 81.0 2128.0 87.0 V 109.0 Q 2128.0 115.0 2134.0 115.0 L 2332.0 115.0 L 2338.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/controllers/app_controller.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
+</g>
+<g>
+  <path d="M 2558.0 535.0 L 2598.0 535.0 Q 2604.0 535.0 2604.0 529.0 V 86.0 Q 2604.0 80.0 2610.0 80.0 L 3024.0 80.0 L 3464.0 80.0 L 3894.0 80.0 L 4292.0 80.0 L 4332.0 80.0 Q 4338.0 80.0 4338.0 86.0 V 109.0 Q 4338.0 115.0 4344.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen_search_bar.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
   <path d="M 2558.0 605.0 L 2604.0 605.0 Q 2610.0 605.0 2610.0 599.0 V 86.0 Q 2610.0 80.0 2616.0 80.0 L 3024.0 80.0 L 3464.0 80.0 L 3894.0 80.0 L 4292.0 80.0 L 4338.0 80.0 Q 4344.0 80.0 4344.0 86.0 V 109.0 Q 4344.0 115.0 4350.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
@@ -1147,12 +1148,12 @@
   <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/large_file_message.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 278.0 115.0 L 298.0 115.0 Q 304.0 115.0 304.0 109.0 V 72.0 Q 304.0 66.0 310.0 66.0 L 2080.0 66.0 Q 2086.0 66.0 2086.0 72.0 V 109.0 Q 2086.0 115.0 2092.0 115.0 L 2327.0 115.0 L 2338.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
-</g>
-<g>
   <path d="M 2066.0 115.0 L 2088.0 115.0 Q 2094.0 115.0 2094.0 109.0 V 72.0 Q 2094.0 66.0 2100.0 66.0 L 4318.0 66.0 Q 4324.0 66.0 4324.0 72.0 V 109.0 Q 4324.0 115.0 4330.0 115.0 L 4427.0 115.0 L 4438.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/center/editor/editor_screen.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
+</g>
+<g>
+  <path d="M 278.0 115.0 L 298.0 115.0 Q 304.0 115.0 304.0 109.0 V 72.0 Q 304.0 66.0 310.0 66.0 L 2080.0 66.0 Q 2086.0 66.0 2086.0 72.0 V 109.0 Q 2086.0 115.0 2092.0 115.0 L 2327.0 115.0 L 2338.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/main.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/app_providers.dart</title>
 </g>
 <g>
   <path d="M 2064.0 185.0 L 2094.0 185.0 Q 2100.0 185.0 2100.0 179.0 V 87.0 Q 2100.0 81.0 2106.0 81.0 L 2552.0 81.0 L 3024.0 81.0 L 3464.0 81.0 L 3894.0 81.0 L 4292.0 81.0 L 4322.0 81.0 Q 4328.0 81.0 4328.0 87.0 V 109.0 Q 4328.0 115.0 4334.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
@@ -1163,10 +1164,6 @@
   <title>/Users/jp/src/github/vteam/fide/lib/widget_services/native_menu_builder.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart</title>
 </g>
 <g>
-  <path d="M 596.0 255.0 L 630.0 255.0 Q 636.0 255.0 636.0 249.0 V 87.0 Q 636.0 81.0 642.0 81.0 L 910.0 81.0 L 1234.0 81.0 L 1594.0 81.0 L 2058.0 81.0 L 2552.0 81.0 L 2586.0 81.0 Q 2592.0 81.0 2592.0 87.0 V 109.0 Q 2592.0 115.0 2598.0 115.0 L 2804.0 115.0 L 2810.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/controllers/project_operations.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart</title>
-</g>
-<g>
   <path d="M 1602.0 255.0 L 1618.0 255.0 Q 1624.0 255.0 1624.0 249.0 V 89.0 Q 1624.0 83.0 1630.0 83.0 L 2058.0 83.0 L 2552.0 83.0 L 3024.0 83.0 L 3464.0 83.0 L 3894.0 83.0 L 3910.0 83.0 Q 3916.0 83.0 3916.0 89.0 V 109.0 Q 3916.0 115.0 3922.0 115.0 L 4072.0 115.0 L 4078.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
@@ -1175,16 +1172,20 @@
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/foldername_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
+  <path d="M 596.0 255.0 L 630.0 255.0 Q 636.0 255.0 636.0 249.0 V 87.0 Q 636.0 81.0 642.0 81.0 L 910.0 81.0 L 1234.0 81.0 L 1594.0 81.0 L 2058.0 81.0 L 2552.0 81.0 L 2586.0 81.0 Q 2592.0 81.0 2592.0 87.0 V 109.0 Q 2592.0 115.0 2598.0 115.0 L 2804.0 115.0 L 2810.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/controllers/project_operations.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart</title>
+</g>
+<g>
+  <path d="M 596.0 325.0 L 638.0 325.0 Q 644.0 325.0 644.0 319.0 V 86.0 Q 644.0 80.0 650.0 80.0 L 910.0 80.0 L 1234.0 80.0 L 1594.0 80.0 L 2058.0 80.0 L 2552.0 80.0 L 2594.0 80.0 Q 2600.0 80.0 2600.0 86.0 V 109.0 Q 2600.0 115.0 2606.0 115.0 L 2804.0 115.0 L 2810.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widget_services/app_title_bar.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart</title>
+</g>
+<g>
   <path d="M 2064.0 325.0 L 2108.0 325.0 Q 2114.0 325.0 2114.0 319.0 V 88.0 Q 2114.0 82.0 2120.0 82.0 L 2552.0 82.0 L 3024.0 82.0 L 3464.0 82.0 L 3894.0 82.0 L 4292.0 82.0 L 4336.0 82.0 Q 4342.0 82.0 4342.0 88.0 V 109.0 Q 4342.0 115.0 4348.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/widget_services/filename_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
   <path d="M 1600.0 325.0 L 1632.0 325.0 Q 1638.0 325.0 1638.0 319.0 V 89.0 Q 1638.0 83.0 1644.0 83.0 L 2058.0 83.0 L 2552.0 83.0 L 3024.0 83.0 L 3464.0 83.0 L 3894.0 83.0 L 3926.0 83.0 Q 3932.0 83.0 3932.0 89.0 V 109.0 Q 3932.0 115.0 3938.0 115.0 L 4072.0 115.0 L 4078.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
-</g>
-<g>
-  <path d="M 596.0 325.0 L 638.0 325.0 Q 644.0 325.0 644.0 319.0 V 86.0 Q 644.0 80.0 650.0 80.0 L 910.0 80.0 L 1234.0 80.0 L 1594.0 80.0 L 2058.0 80.0 L 2552.0 80.0 L 2594.0 80.0 Q 2600.0 80.0 2600.0 86.0 V 109.0 Q 2600.0 115.0 2606.0 115.0 L 2804.0 115.0 L 2810.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widget_services/app_title_bar.dart ▶ /Users/jp/src/github/vteam/fide/lib/widgets/message_box.dart</title>
 </g>
 <g>
   <path d="M 2064.0 395.0 L 2112.0 395.0 Q 2118.0 395.0 2118.0 389.0 V 86.0 Q 2118.0 80.0 2124.0 80.0 L 2552.0 80.0 L 3024.0 80.0 L 3464.0 80.0 L 3894.0 80.0 L 4292.0 80.0 L 4340.0 80.0 Q 4346.0 80.0 4346.0 86.0 V 109.0 Q 4346.0 115.0 4352.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
@@ -1227,12 +1228,12 @@
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/action_tabs.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 1600.0 815.0 L 1724.0 815.0 Q 1730.0 815.0 1730.0 809.0 V 85.0 Q 1730.0 79.0 1736.0 79.0 L 2058.0 79.0 L 2552.0 79.0 L 3024.0 79.0 L 3464.0 79.0 L 3894.0 79.0 L 4018.0 79.0 Q 4024.0 79.0 4024.0 85.0 V 109.0 Q 4024.0 115.0 4030.0 115.0 L 4072.0 115.0 L 4078.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/outline_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
-</g>
-<g>
   <path d="M 2064.0 815.0 L 2144.0 815.0 Q 2150.0 815.0 2150.0 809.0 V 86.0 Q 2150.0 80.0 2156.0 80.0 L 2552.0 80.0 L 3024.0 80.0 L 3464.0 80.0 L 3894.0 80.0 L 4292.0 80.0 L 4372.0 80.0 Q 4378.0 80.0 4378.0 86.0 V 109.0 Q 4378.0 115.0 4384.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_setup_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
+</g>
+<g>
+  <path d="M 1600.0 815.0 L 1724.0 815.0 Q 1730.0 815.0 1730.0 809.0 V 85.0 Q 1730.0 79.0 1736.0 79.0 L 2058.0 79.0 L 2552.0 79.0 L 3024.0 79.0 L 3464.0 79.0 L 3894.0 79.0 L 4018.0 79.0 Q 4024.0 79.0 4024.0 85.0 V 109.0 Q 4024.0 115.0 4030.0 115.0 L 4072.0 115.0 L 4078.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/outline_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
 <g>
   <path d="M 2064.0 885.0 L 2146.0 885.0 Q 2152.0 885.0 2152.0 879.0 V 86.0 Q 2152.0 80.0 2158.0 80.0 L 2552.0 80.0 L 3024.0 80.0 L 3464.0 80.0 L 3894.0 80.0 L 4292.0 80.0 L 4374.0 80.0 Q 4380.0 80.0 4380.0 86.0 V 109.0 Q 4380.0 115.0 4386.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
@@ -1243,28 +1244,28 @@
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/resizable_splitter.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 596.0 185.0 L 622.0 185.0 Q 628.0 185.0 628.0 179.0 V 87.0 Q 628.0 81.0 634.0 81.0 L 910.0 81.0 L 1234.0 81.0 L 1594.0 81.0 L 2058.0 81.0 L 2552.0 81.0 L 3024.0 81.0 L 3050.0 81.0 Q 3056.0 81.0 3056.0 87.0 V 109.0 Q 3056.0 115.0 3062.0 115.0 L 3244.0 115.0 L 3250.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/widget_services/native_menu_builder.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/git_service.dart</title>
-</g>
-<g>
   <path d="M 1240.0 185.0 L 1258.0 185.0 Q 1264.0 185.0 1264.0 179.0 V 85.0 Q 1264.0 79.0 1270.0 79.0 L 1594.0 79.0 L 2058.0 79.0 L 2552.0 79.0 L 3024.0 79.0 L 3464.0 79.0 L 3894.0 79.0 L 3912.0 79.0 Q 3918.0 79.0 3918.0 85.0 V 109.0 Q 3918.0 115.0 3924.0 115.0 L 4072.0 115.0 L 4078.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 1602.0 255.0 L 1620.0 255.0 Q 1626.0 255.0 1626.0 249.0 V 90.0 Q 1626.0 84.0 1632.0 84.0 L 2058.0 84.0 L 2552.0 84.0 L 3024.0 84.0 L 3464.0 84.0 L 3894.0 84.0 L 4292.0 84.0 L 4310.0 84.0 Q 4316.0 84.0 4316.0 90.0 V 109.0 Q 4316.0 115.0 4322.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
+  <path d="M 596.0 185.0 L 622.0 185.0 Q 628.0 185.0 628.0 179.0 V 87.0 Q 628.0 81.0 634.0 81.0 L 910.0 81.0 L 1234.0 81.0 L 1594.0 81.0 L 2058.0 81.0 L 2552.0 81.0 L 3024.0 81.0 L 3050.0 81.0 Q 3056.0 81.0 3056.0 87.0 V 109.0 Q 3056.0 115.0 3062.0 115.0 L 3244.0 115.0 L 3250.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/widget_services/native_menu_builder.dart ▶ /Users/jp/src/github/vteam/fide/lib/providers/git_service.dart</title>
 </g>
 <g>
   <path d="M 1240.0 255.0 L 1268.0 255.0 Q 1274.0 255.0 1274.0 249.0 V 88.0 Q 1274.0 82.0 1280.0 82.0 L 1594.0 82.0 L 2058.0 82.0 L 2552.0 82.0 L 3024.0 82.0 L 3464.0 82.0 L 3894.0 82.0 L 3922.0 82.0 Q 3928.0 82.0 3928.0 88.0 V 109.0 Q 3928.0 115.0 3934.0 115.0 L 4072.0 115.0 L 4078.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/center/center_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 1600.0 325.0 L 1634.0 325.0 Q 1640.0 325.0 1640.0 319.0 V 90.0 Q 1640.0 84.0 1646.0 84.0 L 2058.0 84.0 L 2552.0 84.0 L 3024.0 84.0 L 3464.0 84.0 L 3894.0 84.0 L 4292.0 84.0 L 4326.0 84.0 Q 4332.0 84.0 4332.0 90.0 V 109.0 Q 4332.0 115.0 4338.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
+  <path d="M 1602.0 255.0 L 1620.0 255.0 Q 1626.0 255.0 1626.0 249.0 V 90.0 Q 1626.0 84.0 1632.0 84.0 L 2058.0 84.0 L 2552.0 84.0 L 3024.0 84.0 L 3464.0 84.0 L 3894.0 84.0 L 4292.0 84.0 L 4310.0 84.0 Q 4316.0 84.0 4316.0 90.0 V 109.0 Q 4316.0 115.0 4322.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/right/localization/localization_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
   <path d="M 1240.0 325.0 L 1284.0 325.0 Q 1290.0 325.0 1290.0 319.0 V 85.0 Q 1290.0 79.0 1296.0 79.0 L 1594.0 79.0 L 2058.0 79.0 L 2552.0 79.0 L 3024.0 79.0 L 3464.0 79.0 L 3894.0 79.0 L 3938.0 79.0 Q 3944.0 79.0 3944.0 85.0 V 109.0 Q 3944.0 115.0 3950.0 115.0 L 4072.0 115.0 L 4078.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/panels/right/right_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+</g>
+<g>
+  <path d="M 1600.0 325.0 L 1634.0 325.0 Q 1640.0 325.0 1640.0 319.0 V 90.0 Q 1640.0 84.0 1646.0 84.0 L 2058.0 84.0 L 2552.0 84.0 L 3024.0 84.0 L 3464.0 84.0 L 3894.0 84.0 L 4292.0 84.0 L 4326.0 84.0 Q 4332.0 84.0 4332.0 90.0 V 109.0 Q 4332.0 115.0 4338.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/folder_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
   <path d="M 1600.0 395.0 L 1650.0 395.0 Q 1656.0 395.0 1656.0 389.0 V 90.0 Q 1656.0 84.0 1662.0 84.0 L 2058.0 84.0 L 2552.0 84.0 L 3024.0 84.0 L 3464.0 84.0 L 3894.0 84.0 L 4292.0 84.0 L 4342.0 84.0 Q 4348.0 84.0 4348.0 90.0 V 109.0 Q 4348.0 115.0 4354.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
@@ -1307,12 +1308,12 @@
   <title>/Users/jp/src/github/vteam/fide/lib/widgets/full_path_widget.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 1240.0 185.0 L 1260.0 185.0 Q 1266.0 185.0 1266.0 179.0 V 87.0 Q 1266.0 81.0 1272.0 81.0 L 1594.0 81.0 L 2058.0 81.0 L 2552.0 81.0 L 3024.0 81.0 L 3464.0 81.0 L 3894.0 81.0 L 4292.0 81.0 L 4312.0 81.0 Q 4318.0 81.0 4318.0 87.0 V 109.0 Q 4318.0 115.0 4324.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
-  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
-</g>
-<g>
   <path d="M 918.0 185.0 L 936.0 185.0 Q 942.0 185.0 942.0 179.0 V 90.0 Q 942.0 84.0 948.0 84.0 L 1234.0 84.0 L 1594.0 84.0 L 2058.0 84.0 L 2552.0 84.0 L 3024.0 84.0 L 3464.0 84.0 L 3894.0 84.0 L 3912.0 84.0 Q 3918.0 84.0 3918.0 90.0 V 109.0 Q 3918.0 115.0 3924.0 115.0 L 4072.0 115.0 L 4078.0 115.0" class="edge"/>
   <title>/Users/jp/src/github/vteam/fide/lib/screens/main_layout.dart ▶ /Users/jp/src/github/vteam/fide/lib/models/file_system_item.dart</title>
+</g>
+<g>
+  <path d="M 1240.0 185.0 L 1260.0 185.0 Q 1266.0 185.0 1266.0 179.0 V 87.0 Q 1266.0 81.0 1272.0 81.0 L 1594.0 81.0 L 2058.0 81.0 L 2552.0 81.0 L 3024.0 81.0 L 3464.0 81.0 L 3894.0 81.0 L 4292.0 81.0 L 4312.0 81.0 Q 4318.0 81.0 4318.0 87.0 V 109.0 Q 4318.0 115.0 4324.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
+  <title>/Users/jp/src/github/vteam/fide/lib/panels/left/left_panel.dart ▶ /Users/jp/src/github/vteam/fide/lib/constants/constants.dart</title>
 </g>
 <g>
   <path d="M 1240.0 255.0 L 1270.0 255.0 Q 1276.0 255.0 1276.0 249.0 V 90.0 Q 1276.0 84.0 1282.0 84.0 L 1594.0 84.0 L 2058.0 84.0 L 2552.0 84.0 L 3024.0 84.0 L 3464.0 84.0 L 3894.0 84.0 L 4292.0 84.0 L 4322.0 84.0 Q 4328.0 84.0 4328.0 90.0 V 109.0 Q 4328.0 115.0 4334.0 115.0 L 4432.0 115.0 L 4438.0 115.0" class="edge"/>
@@ -1415,16 +1416,17 @@
 <text x="160.0" y="1935.0" class="textSmall">localization_data.arb_entry.dart</text>
 <text x="160.0" y="2005.0" class="textSmall">localization_data.arb_file.dart</text>
 <text x="160.0" y="2075.0" class="textSmall">localization_service.arb_service.dart</text>
-<text x="160.0" y="2145.0" class="textNormal">main_layout.state.dart</text>
-<text x="160.0" y="2215.0" class="textNormal">project_manager.dart</text>
-<text x="160.0" y="2285.0" class="textSmall">project_metrics_notifier.dart</text>
-<text x="160.0" y="2355.0" class="textSmall">provider_project_state_sink.dart</text>
-<text x="160.0" y="2425.0" class="textSmall">search_panel.search_result.dart</text>
-<text x="160.0" y="2495.0" class="textSmall">search_panel.search_result_node.dart</text>
-<text x="160.0" y="2565.0" class="textSmall">shared_panel_utils.context_menu_handler.dart</text>
-<text x="160.0" y="2635.0" class="textSmall">shared_panel_utils.file_operations.dart</text>
-<text x="160.0" y="2705.0" class="textSmall">side_by_side_diff.diff_line.dart</text>
-<text x="160.0" y="2775.0" class="textSmall">test_panel.test_action.dart</text>
+<text x="160.0" y="2145.0" class="textNormal">main.dart</text>
+<text x="160.0" y="2215.0" class="textNormal">main_layout.state.dart</text>
+<text x="160.0" y="2285.0" class="textNormal">project_manager.dart</text>
+<text x="160.0" y="2355.0" class="textSmall">project_metrics_notifier.dart</text>
+<text x="160.0" y="2425.0" class="textSmall">provider_project_state_sink.dart</text>
+<text x="160.0" y="2495.0" class="textSmall">search_panel.search_result.dart</text>
+<text x="160.0" y="2565.0" class="textSmall">search_panel.search_result_node.dart</text>
+<text x="160.0" y="2635.0" class="textSmall">shared_panel_utils.context_menu_handler.dart</text>
+<text x="160.0" y="2705.0" class="textSmall">shared_panel_utils.file_operations.dart</text>
+<text x="160.0" y="2775.0" class="textSmall">side_by_side_diff.diff_line.dart</text>
+<text x="160.0" y="2845.0" class="textSmall">test_panel.test_action.dart</text>
 <g class="badge incomingBadge">
   <path d="M 382.0,115.0 L 370.0,108.0 Q 367.0,108.0 367.0,111.0 L 367.0,119.0 Q 367.0,122.0 370.0,122.0 Z" fill="#3b82f6"/>
   <text x="371.68" y="116.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. main.dart</title></g><g class="badge outgoingBadge">

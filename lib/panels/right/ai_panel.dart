@@ -354,6 +354,7 @@ class _AIPanelState extends State<AIPanel> {
 
   /// Handles `_checkStatus`.
   Future<void> _checkStatus() async {
+    if (!mounted) return;
     setState(() => _isCheckingStatus = true);
     try {
       _hasOllamaInstalled = await _aiService.isOllamaInstalled();
@@ -374,6 +375,7 @@ class _AIPanelState extends State<AIPanel> {
       _isOllamaRunning = false;
       _hasModelInstalled = false;
     }
+    if (!mounted) return;
     setState(() => _isCheckingStatus = false);
   }
 
@@ -525,6 +527,7 @@ class _AIPanelState extends State<AIPanel> {
           response = await _aiService.getCodeSuggestion(text, context);
       }
 
+      if (!mounted) return;
       setState(() {
         _messages.add(
           ChatMessage(
@@ -535,6 +538,7 @@ class _AIPanelState extends State<AIPanel> {
         );
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _messages.add(
           ChatMessage(
@@ -545,15 +549,18 @@ class _AIPanelState extends State<AIPanel> {
         );
       });
     } finally {
-      setState(() => _isLoading = false);
-      // Scroll to bottom
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: AppDuration.messageAnimation,
-          curve: Curves.easeOut,
-        );
-      });
+      if (mounted) {
+        setState(() => _isLoading = false);
+        // Scroll to bottom
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_scrollController.hasClients) return;
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: AppDuration.messageAnimation,
+            curve: Curves.easeOut,
+          );
+        });
+      }
     }
   }
 }
