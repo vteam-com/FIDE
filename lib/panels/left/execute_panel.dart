@@ -2,7 +2,7 @@
 
 import 'dart:io';
 
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/action_tabs.dart';
 import 'package:fide/widgets/output_panel.dart';

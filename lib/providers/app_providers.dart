@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/loading_action.dart';
 import 'package:fide/models/project_node.dart';
-import 'package:fide/services/file_type_utils.dart';
-import 'package:fide/services/project_service.dart';
-import 'package:fide/services/project_state_sink.dart';
+import 'package:fide/providers/file_type_utils.dart';
+import 'package:fide/providers/project_service.dart';
+import 'package:fide/providers/project_state_sink.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:logging/logging.dart';

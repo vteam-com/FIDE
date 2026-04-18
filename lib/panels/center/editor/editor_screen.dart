@@ -3,7 +3,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/panels/center/editor/editor_screen_header.dart';
 import 'package:fide/panels/center/editor/editor_screen_image_view.dart';
@@ -12,8 +12,8 @@ import 'package:fide/panels/center/editor/editor_screen_status_bar.dart';
 import 'package:fide/panels/center/editor/editor_screen_unsupported_file_view.dart';
 import 'package:fide/panels/center/editor/large_file_message.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/services/file_type_utils.dart';
-import 'package:fide/services/git_service.dart';
+import 'package:fide/providers/file_type_utils.dart';
+import 'package:fide/providers/git_service.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
 import 'package:flutter/material.dart';

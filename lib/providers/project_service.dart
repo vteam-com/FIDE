@@ -2,13 +2,13 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/loading_action.dart';
 import 'package:fide/models/project_node.dart';
-import 'package:fide/services/file_system_watcher.dart';
-import 'package:fide/services/git_service.dart';
-import 'package:fide/services/project_state_sink.dart';
+import 'package:fide/providers/file_system_watcher.dart';
+import 'package:fide/providers/git_service.dart';
+import 'package:fide/providers/project_state_sink.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;

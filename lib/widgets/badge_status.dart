@@ -1,5 +1,5 @@
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_theme.dart';
-import 'package:fide/models/constants.dart';
 import 'package:flutter/material.dart';
 
 /// A reusable badge widget that displays status or feedback information.

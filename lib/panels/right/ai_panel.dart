@@ -1,8 +1,8 @@
 // ignore_for_file: deprecated_member_use
 
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
-import 'package:fide/services/ai_service.dart';
+import 'package:fide/providers/ai_service.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
 

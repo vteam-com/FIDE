@@ -1,4 +1,4 @@
-import 'package:fide/services/git_service.dart';
+import 'package:fide/providers/git_service.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:flutter/material.dart';
 

@@ -1,4 +1,4 @@
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:flutter/material.dart';
 
 /// Renders the editor status bar with cursor, search, and formatting controls.

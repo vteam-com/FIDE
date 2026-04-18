@@ -1,6 +1,6 @@
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/services/git_service.dart';
+import 'package:fide/providers/git_service.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/theme_settings_dialog.dart';
 import 'package:flutter/material.dart';

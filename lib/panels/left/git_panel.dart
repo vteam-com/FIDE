@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
-import 'package:fide/services/git_service.dart';
+import 'package:fide/providers/git_service.dart';
+import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/badge_status.dart';
-import 'package:fide/widgets/filename_widget.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';

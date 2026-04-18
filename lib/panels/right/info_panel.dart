@@ -3,7 +3,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/badge_status.dart';

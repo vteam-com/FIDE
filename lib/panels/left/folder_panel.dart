@@ -2,13 +2,13 @@
 
 import 'dart:io';
 
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/panels/left/shared_panel_utils.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/services/git_service.dart';
-import 'package:fide/widgets/filename_widget.dart';
+import 'package:fide/providers/git_service.dart';
+import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/foldername_widget.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:file_picker/file_picker.dart';

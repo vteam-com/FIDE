@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 

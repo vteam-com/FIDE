@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fide/models/file_system_item.dart';
-import 'package:fide/services/file_type_utils.dart';
+import 'package:fide/providers/file_type_utils.dart';
 
 // Helper class for test cases
 class TestCase {

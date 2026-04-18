@@ -1,4 +1,4 @@
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/panels/center/editor/editor_screen.dart';

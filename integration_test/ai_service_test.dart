@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fide/services/ai_service.dart';
+import 'package:fide/providers/ai_service.dart';
 import 'package:path/path.dart' as path;
 
 import 'steps.dart';

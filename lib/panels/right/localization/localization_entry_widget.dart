@@ -1,6 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:flutter/material.dart';

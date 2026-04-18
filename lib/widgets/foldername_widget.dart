@@ -1,6 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/widgets/container_counter.dart';

@@ -1,4 +1,4 @@
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/full_path_widget.dart';
 import 'package:flutter/material.dart';

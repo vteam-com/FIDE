@@ -1,4 +1,4 @@
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
 import 'package:flutter/material.dart';
 

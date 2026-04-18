@@ -1,7 +1,7 @@
 // ignore: fcheck_dead_code
 import 'dart:io';
 
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:path/path.dart' as path;
 

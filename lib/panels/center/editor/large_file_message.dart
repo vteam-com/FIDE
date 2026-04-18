@@ -1,6 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:flutter/material.dart';
 
 /// Widget to display a message when a file is too large to load in the editor

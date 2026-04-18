@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:fide/models/constants.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pty/flutter_pty.dart';
