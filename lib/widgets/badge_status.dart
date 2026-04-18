@@ -81,7 +81,6 @@ class BadgeStatus extends StatelessWidget {
       showIcon: showIcon,
     );
   }
-
   factory BadgeStatus.neutral({
     required String text,
     double fontSize = AppFontSize.badge,
@@ -101,17 +100,12 @@ class BadgeStatus extends StatelessWidget {
     required int count,
     double fontSize = AppFontSize.caption,
   }) {
-    final text = '+$count';
-    return BadgeStatus(
-      text: text,
+    return _fromDiffCount(
+      count: count,
+      prefix: '+',
       backgroundColor: AppTheme.successColor,
-      textColor: AppTheme.successText.withAlpha(AppAlpha.badgeText),
+      textColor: AppTheme.successText,
       fontSize: fontSize,
-      fontWeight: FontWeight.w600,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.tiny,
-        vertical: AppSize.borderThin,
-      ),
     );
   }
 
@@ -120,17 +114,12 @@ class BadgeStatus extends StatelessWidget {
     required int count,
     double fontSize = AppFontSize.caption,
   }) {
-    final text = '-$count';
-    return BadgeStatus(
-      text: text,
+    return _fromDiffCount(
+      count: count,
+      prefix: '-',
       backgroundColor: AppTheme.errorColor,
-      textColor: AppTheme.errorText.withAlpha(AppAlpha.badgeText),
+      textColor: AppTheme.errorText,
       fontSize: fontSize,
-      fontWeight: FontWeight.w600,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.tiny,
-        vertical: AppSize.borderThin,
-      ),
     );
   }
 
@@ -157,7 +146,6 @@ class BadgeStatus extends StatelessWidget {
 
   /// The text color of the badge.
   final Color textColor;
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -203,6 +191,27 @@ class BadgeStatus extends StatelessWidget {
       (backgroundColor.g * AppMetric.colorChannelMax).round(),
       (backgroundColor.b * AppMetric.colorChannelMax).round(),
       1.0, // Full opacity
+    );
+  }
+
+  /// Builds a compact badge for Git diff addition or deletion counts.
+  static BadgeStatus _fromDiffCount({
+    required int count,
+    required String prefix,
+    required Color backgroundColor,
+    required Color textColor,
+    required double fontSize,
+  }) {
+    return BadgeStatus(
+      text: '$prefix$count',
+      backgroundColor: backgroundColor,
+      textColor: textColor.withAlpha(AppAlpha.badgeText),
+      fontSize: fontSize,
+      fontWeight: FontWeight.w600,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.tiny,
+        vertical: AppSize.borderThin,
+      ),
     );
   }
 

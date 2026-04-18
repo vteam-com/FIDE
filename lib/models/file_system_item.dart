@@ -19,6 +19,27 @@ enum GitFileStatus {
   clean, // No changes
 }
 
+/// Shared display helpers for Git status values.
+extension GitFileStatusDisplay on GitFileStatus {
+  /// Returns the badge symbol for this Git status.
+  String badgeSymbol({String deletedSymbol = '-'}) {
+    switch (this) {
+      case GitFileStatus.modified:
+        return '●';
+      case GitFileStatus.added:
+        return '+';
+      case GitFileStatus.deleted:
+        return deletedSymbol;
+      case GitFileStatus.untracked:
+        return '?';
+      case GitFileStatus.ignored:
+        return '!';
+      default:
+        return '';
+    }
+  }
+}
+
 /// A node in the file-system tree used by the explorer panels, representing a file or directory.
 class FileSystemItem {
   final String name;
@@ -198,20 +219,7 @@ class FileSystemItem {
   // Get badge text for Git status
   /// Handles `FileSystemItem.getGitStatusBadge`.
   String getGitStatusBadge() {
-    switch (gitStatus) {
-      case GitFileStatus.modified:
-        return '●'; // Dot for modified
-      case GitFileStatus.added:
-        return '+'; // Plus for added
-      case GitFileStatus.deleted:
-        return '-'; // Minus for deleted
-      case GitFileStatus.untracked:
-        return '?'; // Question mark for untracked
-      case GitFileStatus.ignored:
-        return '!'; // Exclamation for ignored
-      default:
-        return '';
-    }
+    return gitStatus.badgeSymbol();
   }
 
   // Get text style for Git status

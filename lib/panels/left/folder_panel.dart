@@ -172,19 +172,13 @@ class _FolderPanelState extends ConsumerState<FolderPanel> {
 
   /// Handles `_handleFileTap`.
   void _handleFileTap(ProjectNode node) {
-    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
-    if (widget.selectedFile?.path == item.path) return;
-
-    // Seed Git status for the selected file if not already loaded
-    if (node.gitStatus == GitFileStatus.clean &&
-        _panelState.projectRoot != null) {
-      _panelState.seedGitStatusForFile(node);
-    }
-
-    // Only trigger file selection if widget is still mounted
-    if (widget.onFileSelected != null && mounted) {
-      widget.onFileSelected!(item);
-    }
+    FileOperations.handleFileTap(
+      node,
+      _panelState,
+      selectedFilePath: widget.selectedFile?.path,
+      onFileSelected: widget.onFileSelected,
+      isMounted: mounted,
+    );
   }
 
   void _showNodeContextMenu(ProjectNode node, Offset position) {
@@ -768,143 +762,26 @@ class _FolderPanelState extends ConsumerState<FolderPanel> {
 
   // Helper method to build node widget
   Widget _buildNode(ProjectNode node) {
-    if (node.isDirectory) {
-      return NodeBuilder(
-        node: node,
-        selectedFile: widget.selectedFile,
-        expandedState: _panelState.expandedState,
-        rootPath: projectRoot!.path,
-        onNodeTapped: _onNodeTapped,
-        onShowContextMenu: _showNodeContextMenu,
-        onShowFileContextMenu: _showFileContextMenu,
-        onFileSelected: _handleFileSelection,
-      );
-    } else {
-      return NodeBuilder(
-        node: node,
-        selectedFile: widget.selectedFile,
-        expandedState: _panelState.expandedState,
-        rootPath: projectRoot!.path,
-        onNodeTapped: _onNodeTapped,
-        onShowContextMenu: _showNodeContextMenu,
-        onShowFileContextMenu: _showFileContextMenu,
-        onFileSelected: _handleFileSelection,
-      );
-    }
+    return NodeBuilder(
+      node: node,
+      selectedFile: widget.selectedFile,
+      expandedState: _panelState.expandedState,
+      rootPath: projectRoot!.path,
+      onNodeTapped: _onNodeTapped,
+      onShowContextMenu: _showNodeContextMenu,
+      onShowFileContextMenu: _showFileContextMenu,
+      onFileSelected: _handleFileSelection,
+    );
   }
 
   // File operations implementation
   Future<void> _createNewFile(ProjectNode parent) async {
-    if (!parent.isDirectory) return;
-
-    final TextEditingController controller = TextEditingController();
-
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('New File'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'File name',
-            hintText: 'Enter file name (e.g., main.dart)',
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: const Text('Create'),
-          ),
-        ],
-      ),
-    );
-
-    if (result == null || result.isEmpty) return;
-
-    try {
-      final newFilePath = path.join(parent.path, result);
-
-      // Check if file already exists
-      if (File(newFilePath).existsSync()) {
-        showError('A file with this name already exists');
-        return;
-      }
-
-      // Create the file
-      final file = File(newFilePath);
-      await file.create(recursive: true);
-
-      // Refresh the project tree
-      await _refreshProjectTree();
-
-      if (mounted) {
-        MessageBox.showSuccess(context, 'Created file "$result"');
-      }
-    } catch (e) {
-      showError('Failed to create file: $e');
-    }
+    await FileOperations.createNewFile(context, parent, _refreshProjectTree);
   }
 
   /// Handles `_createNewFolder`.
   Future<void> _createNewFolder(ProjectNode parent) async {
-    if (!parent.isDirectory) return;
-
-    final TextEditingController controller = TextEditingController();
-
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('New Folder'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Folder name',
-            hintText: 'Enter folder name',
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: const Text('Create'),
-          ),
-        ],
-      ),
-    );
-
-    if (result == null || result.isEmpty) return;
-
-    try {
-      final newFolderPath = path.join(parent.path, result);
-
-      // Check if directory already exists
-      if (Directory(newFolderPath).existsSync()) {
-        showError('A folder with this name already exists');
-        return;
-      }
-
-      // Create the directory
-      final directory = Directory(newFolderPath);
-      await directory.create(recursive: true);
-
-      // Refresh the project tree
-      await _refreshProjectTree();
-
-      if (mounted) {
-        MessageBox.showSuccess(context, 'Created folder "$result"');
-      }
-    } catch (e) {
-      showError('Failed to create folder: $e');
-    }
+    await FileOperations.createNewFolder(context, parent, _refreshProjectTree);
   }
 
   /// Handles `_renameFile`.

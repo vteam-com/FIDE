@@ -17,28 +17,29 @@ class AIPanel extends StatefulWidget {
 }
 
 class _AIPanelState extends State<AIPanel> {
+  static const Map<String, String> _actionHints = {
+    'ask': 'Ask me anything about your code...',
+    'explain': 'Paste code here to get explanation...',
+    'generate': 'Describe what code you want to generate...',
+    'refactor': 'Paste code and describe how to refactor it...',
+  };
+  static const Map<String, String> _actionLabels = {
+    'ask': 'Ask AI',
+    'explain': 'Explain Code',
+    'generate': 'Generate Code',
+    'refactor': 'Refactor Code',
+  };
   final AIService _aiService = AIService();
-
   bool _hasModelInstalled = false;
-
   bool _hasOllamaInstalled = false;
-
   bool _isCheckingStatus = true;
-
   bool _isInstalling = false;
-
   bool _isLoading = false;
-
   bool _isOllamaRunning = false;
-
   final List<ChatMessage> _messages = [];
-
   final TextEditingController _promptController = TextEditingController();
-
   final ScrollController _scrollController = ScrollController();
-
   String _selectedAction = 'ask';
-
   @override
   void initState() {
     super.initState();
@@ -378,20 +379,12 @@ class _AIPanelState extends State<AIPanel> {
 
   /// Handles `_downloadModel`.
   Future<void> _downloadModel() async {
-    setState(() => _isInstalling = true);
-    try {
-      await _aiService.downloadModel();
-      _hasModelInstalled = true;
-      if (!mounted) return;
-      MessageBox.showInfo(context, 'codellama model downloaded.');
-    } catch (e) {
-      if (!mounted) return;
-      MessageBox.showError(context, 'Error downloading model: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _isInstalling = false);
-      }
-    }
+    await _runInstallAction(
+      action: _aiService.downloadModel,
+      onSuccess: () => _hasModelInstalled = true,
+      successMessage: 'codellama model downloaded.',
+      errorPrefix: 'Error downloading model',
+    );
   }
 
   /// Handles `_formatTimestamp`.
@@ -412,34 +405,12 @@ class _AIPanelState extends State<AIPanel> {
 
   /// Handles `_getActionText`.
   String _getActionText() {
-    switch (_selectedAction) {
-      case 'ask':
-        return 'Ask AI';
-      case 'explain':
-        return 'Explain Code';
-      case 'generate':
-        return 'Generate Code';
-      case 'refactor':
-        return 'Refactor Code';
-      default:
-        return 'Select Action';
-    }
+    return _actionLabels[_selectedAction] ?? 'Select Action';
   }
 
   /// Handles `_getHintText`.
   String _getHintText() {
-    switch (_selectedAction) {
-      case 'ask':
-        return 'Ask me anything about your code...';
-      case 'explain':
-        return 'Paste code here to get explanation...';
-      case 'generate':
-        return 'Describe what code you want to generate...';
-      case 'refactor':
-        return 'Paste code and describe how to refactor it...';
-      default:
-        return 'Type your message...';
-    }
+    return _actionHints[_selectedAction] ?? 'Type your message...';
   }
 
   /// Handles `_installOllama`.
@@ -469,22 +440,41 @@ class _AIPanelState extends State<AIPanel> {
     }
   }
 
-  /// Handles `_runOllama`.
-  Future<void> _runOllama() async {
+  /// Runs an install-related action with shared loading state and messages.
+  Future<void> _runInstallAction({
+    required Future<void> Function() action,
+    String? successMessage,
+    required String errorPrefix,
+    void Function()? onSuccess,
+  }) async {
     setState(() => _isInstalling = true);
     try {
-      await _aiService.startOllama();
-      await _checkStatus();
-      if (!mounted) return;
-      MessageBox.showInfo(context, 'Ollama started.');
+      await action();
+      onSuccess?.call();
+      if (mounted && successMessage != null) {
+        MessageBox.showInfo(context, successMessage);
+      }
     } catch (e) {
-      if (!mounted) return;
-      MessageBox.showError(context, 'Error starting Ollama: $e');
+      if (mounted) {
+        MessageBox.showError(context, '$errorPrefix: $e');
+      }
     } finally {
       if (mounted) {
         setState(() => _isInstalling = false);
       }
     }
+  }
+
+  /// Handles `_runOllama`.
+  Future<void> _runOllama() async {
+    await _runInstallAction(
+      action: () async {
+        await _aiService.startOllama();
+        await _checkStatus();
+      },
+      successMessage: 'Ollama started.',
+      errorPrefix: 'Error starting Ollama',
+    );
   }
 
   /// Handles `_sendMessage`.

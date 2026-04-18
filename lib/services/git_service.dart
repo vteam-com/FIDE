@@ -11,6 +11,38 @@ class GitService {
   factory GitService() => _instance;
   GitService._internal();
 
+  /// Runs a mutating Git command and returns a normalized status message.
+  Future<String> _runGitFileMutation({
+    required String path,
+    required List<String> args,
+    required String successMessage,
+    required String failurePrefix,
+    required String errorPrefix,
+  }) async {
+    try {
+      final result = await Process.run('git', args, workingDirectory: path);
+      if (result.exitCode == 0) {
+        return successMessage;
+      }
+      return '$failurePrefix: ${result.stderr}';
+    } catch (e) {
+      return '$errorPrefix: $e';
+    }
+  }
+
+  Future<String> _runGitDiff({
+    required String path,
+    required List<String> args,
+    required String errorPrefix,
+  }) async {
+    try {
+      final result = await Process.run('git', args, workingDirectory: path);
+      return result.exitCode == 0 ? result.stdout.toString() : '';
+    } catch (e) {
+      return '$errorPrefix: $e';
+    }
+  }
+
   // Expand directory to all contained files
   Future<List<String>> _expandDirectoryToFiles(
     String projectPath,
@@ -148,33 +180,25 @@ class GitService {
   // Stage files
   /// Stages the provided file paths.
   Future<String> stageFiles(String path, List<String> files) async {
-    try {
-      final args = ['add', ...files];
-      final result = await Process.run('git', args, workingDirectory: path);
-      if (result.exitCode == 0) {
-        return 'Files staged successfully';
-      } else {
-        return 'Failed to stage files: ${result.stderr}';
-      }
-    } catch (e) {
-      return 'Error staging files: $e';
-    }
+    return _runGitFileMutation(
+      path: path,
+      args: ['add', ...files],
+      successMessage: 'Files staged successfully',
+      failurePrefix: 'Failed to stage files',
+      errorPrefix: 'Error staging files',
+    );
   }
 
   // Unstage files
   /// Unstages the provided file paths from the index.
   Future<String> unstageFiles(String path, List<String> files) async {
-    try {
-      final args = ['reset', 'HEAD', ...files];
-      final result = await Process.run('git', args, workingDirectory: path);
-      if (result.exitCode == 0) {
-        return 'Files unstaged successfully';
-      } else {
-        return 'Failed to unstage files: ${result.stderr}';
-      }
-    } catch (e) {
-      return 'Error unstaging files: $e';
-    }
+    return _runGitFileMutation(
+      path: path,
+      args: ['reset', 'HEAD', ...files],
+      successMessage: 'Files unstaged successfully',
+      failurePrefix: 'Failed to unstage files',
+      errorPrefix: 'Error unstaging files',
+    );
   }
 
   // Commit changes
@@ -350,32 +374,21 @@ class GitService {
   // Get diff for staged files
   /// Returns staged diff output for a file.
   Future<String> getStagedDiff(String path, String filePath) async {
-    try {
-      final result = await Process.run('git', [
-        'diff',
-        '--cached',
-        '--',
-        filePath,
-      ], workingDirectory: path);
-      return result.exitCode == 0 ? result.stdout.toString() : '';
-    } catch (e) {
-      return 'Error getting staged diff: $e';
-    }
+    return _runGitDiff(
+      path: path,
+      args: ['diff', '--cached', '--', filePath],
+      errorPrefix: 'Error getting staged diff',
+    );
   }
 
   // Get diff for unstaged files
   /// Returns unstaged diff output for a file.
   Future<String> getUnstagedDiff(String path, String filePath) async {
-    try {
-      final result = await Process.run('git', [
-        'diff',
-        '--',
-        filePath,
-      ], workingDirectory: path);
-      return result.exitCode == 0 ? result.stdout.toString() : '';
-    } catch (e) {
-      return 'Error getting unstaged diff: $e';
-    }
+    return _runGitDiff(
+      path: path,
+      args: ['diff', '--', filePath],
+      errorPrefix: 'Error getting unstaged diff',
+    );
   }
 
   // Get file content at a specific revision

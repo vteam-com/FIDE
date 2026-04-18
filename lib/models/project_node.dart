@@ -60,58 +60,19 @@ class ProjectNode {
   // Enumerate contents for a directory node
   /// Handles `ProjectNode.enumerateContents`.
   Future<LoadChildrenResult> enumerateContents() async {
-    if (!isDirectory) return LoadChildrenResult.success;
-
-    try {
-      final dir = Directory(path);
-      final List<FileSystemEntity> entities = await dir.list().toList();
-
-      // Sort directories first, then files, both alphabetically
-      // Use async stat calls to avoid blocking UI
-      final stats = <FileSystemEntity, FileStat>{};
-      for (final entity in entities) {
-        stats[entity] = await entity.stat();
-      }
-
-      entities.sort((a, b) {
-        final aStat = stats[a]!;
-        final bStat = stats[b]!;
-
-        if (aStat.type == bStat.type) {
-          final aName = p.basename(a.path).toLowerCase();
-          final bName = p.basename(b.path).toLowerCase();
-          return aName.compareTo(bName);
-        }
-
-        return aStat.type == FileSystemEntityType.directory ? -1 : 1;
-      });
-
-      children.clear();
-      for (final entity in entities) {
-        // Include all files and directories, including hidden ones
-        children.add(await ProjectNode.fromFileSystemEntity(entity));
-      }
-      loadResult = LoadChildrenResult.success;
-      return LoadChildrenResult.success;
-    } catch (e) {
-      // Categorize the error for better user experience
-      if (e is PathAccessException ||
-          e.toString().contains('Operation not permitted')) {
-        loadResult = LoadChildrenResult.accessDenied;
-        return LoadChildrenResult.accessDenied;
-      } else if (e is FileSystemException) {
-        loadResult = LoadChildrenResult.fileSystemError;
-        return LoadChildrenResult.fileSystemError;
-      } else {
-        loadResult = LoadChildrenResult.unknownError;
-        return LoadChildrenResult.unknownError;
-      }
-    }
+    return _enumerateContentsInternal(recursive: false);
   }
 
   // Recursively enumerate all contents for a directory node (background enumeration)
   /// Handles `ProjectNode.enumerateContentsRecursive`.
   Future<LoadChildrenResult> enumerateContentsRecursive() async {
+    return _enumerateContentsInternal(recursive: true);
+  }
+
+  /// Loads this directory's children and optionally recurses into subdirectories.
+  Future<LoadChildrenResult> _enumerateContentsInternal({
+    required bool recursive,
+  }) async {
     if (!isDirectory) return LoadChildrenResult.success;
 
     try {
@@ -145,7 +106,7 @@ class ProjectNode {
         children.add(childNode);
 
         // If it's a directory, recursively enumerate its contents
-        if (childNode.isDirectory) {
+        if (recursive && childNode.isDirectory) {
           await childNode.enumerateContentsRecursive();
         }
       }
@@ -266,21 +227,7 @@ class ProjectNode {
   // Get Git status badge text
   /// Handles `ProjectNode.getGitStatusBadge`.
   String getGitStatusBadge() {
-    switch (gitStatus) {
-      case GitFileStatus.added:
-        return '+';
-      case GitFileStatus.modified:
-        return '●';
-      case GitFileStatus.deleted:
-        return '−';
-      case GitFileStatus.untracked:
-        return '?';
-      case GitFileStatus.ignored:
-        return '!';
-      case GitFileStatus.clean:
-      default:
-        return '';
-    }
+    return gitStatus.badgeSymbol(deletedSymbol: '−');
   }
 
   // Get Git status text style

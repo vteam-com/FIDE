@@ -2,6 +2,7 @@ import 'package:fide/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/utils/message_box.dart';
+import 'package:fide/widgets/theme_settings_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -303,51 +304,7 @@ class NativeMenuBuilder {
 
   /// Shows the app-level settings dialog from the native menu bar.
   void _showSettingsDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Settings'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Theme'),
-              const SizedBox(height: AppSpacing.medium),
-              ListTile(
-                leading: const Icon(Icons.brightness_auto),
-                title: const Text('System'),
-                onTap: () {
-                  onThemeChanged(ThemeMode.system);
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.brightness_5),
-                title: const Text('Light'),
-                onTap: () {
-                  onThemeChanged(ThemeMode.light);
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.brightness_2),
-                title: const Text('Dark'),
-                onTap: () {
-                  onThemeChanged(ThemeMode.dark);
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
+    showThemeSettingsDialog(context, onThemeChanged);
   }
 
   String _getLastOpenedFileLabel() {

@@ -21,6 +21,24 @@ class ExecutePanel extends ConsumerStatefulWidget {
 }
 
 class _ExecutePanelState extends ConsumerState<ExecutePanel> {
+  static const Map<String, String> _deviceTargetsByPlatform = {
+    'macos': 'macos',
+    'windows': 'windows',
+    'linux': 'linux',
+    'web': 'chrome',
+    'android': 'android',
+    'ios': 'ios',
+  };
+
+  static const Map<String, String> _displayNamesByPlatform = {
+    'macos': 'macOS',
+    'windows': 'Windows',
+    'linux': 'Linux',
+    'web': 'Web',
+    'android': 'Android',
+    'ios': 'iOS',
+  };
+
   BuildProcessStatus _cleanStatus = BuildProcessStatus.idle;
   BuildProcessStatus _buildStatus = BuildProcessStatus.idle;
   BuildProcessStatus _runStatus = BuildProcessStatus.idle;
@@ -1169,22 +1187,7 @@ Updates macOS CocoaPods dependencies.
 
   /// Handles `_getDeviceTarget`.
   String _getDeviceTarget(String platform) {
-    switch (platform) {
-      case 'macos':
-        return 'macos';
-      case 'windows':
-        return 'windows';
-      case 'linux':
-        return 'linux';
-      case 'web':
-        return 'chrome';
-      case 'android':
-        return 'android'; // Flutter will auto-select available device
-      case 'ios':
-        return 'ios'; // Flutter will auto-select available simulator/device
-      default:
-        return platform;
-    }
+    return _deviceTargetsByPlatform[platform] ?? platform;
   }
 
   /// Handles `_runFlutterApp`.
@@ -1298,21 +1301,6 @@ Updates macOS CocoaPods dependencies.
 
   /// Handles `_ExecutePanelState.getPlatformDisplayName`.
   String getPlatformDisplayName(String platform) {
-    switch (platform) {
-      case 'macos':
-        return 'macOS';
-      case 'windows':
-        return 'Windows';
-      case 'linux':
-        return 'Linux';
-      case 'web':
-        return 'Web';
-      case 'android':
-        return 'Android';
-      case 'ios':
-        return 'iOS';
-      default:
-        return platform;
-    }
+    return _displayNamesByPlatform[platform] ?? platform;
   }
 }

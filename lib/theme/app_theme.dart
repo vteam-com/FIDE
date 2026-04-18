@@ -48,12 +48,15 @@ class AppTheme {
   static const Color infoText = Colors.white;
   static const Color neutralText = Colors.white;
 
-  /// Builds the application's light theme.
-  static ThemeData get lightTheme {
+  /// Builds the shared theme configuration used by both theme modes.
+  static ThemeData _buildTheme({
+    required Brightness brightness,
+    required Color popupBorderColor,
+  }) {
     return ThemeData.from(
       colorScheme: ColorScheme.fromSeed(
         seedColor: _seedColor,
-        brightness: Brightness.light,
+        brightness: brightness,
       ),
       useMaterial3: true,
     ).copyWith(
@@ -75,50 +78,26 @@ class AppTheme {
       popupMenuTheme: PopupMenuThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(AppRadius.small)),
-          side: BorderSide(
-            color: AppColor.popupBorderLight,
-            width: AppSize.borderThin,
-          ),
+          side: BorderSide(color: popupBorderColor, width: AppSize.borderThin),
         ),
         elevation: AppSpacing.small,
       ),
     );
   }
 
+  /// Builds the application's light theme.
+  static ThemeData get lightTheme {
+    return _buildTheme(
+      brightness: Brightness.light,
+      popupBorderColor: AppColor.popupBorderLight,
+    );
+  }
+
   /// Builds the application's dark theme.
   static ThemeData get darkTheme {
-    return ThemeData.from(
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: _seedColor,
-        brightness: Brightness.dark,
-      ),
-      useMaterial3: true,
-    ).copyWith(
-      cardTheme: CardThemeData(
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(AppSpacing.medium)),
-        ),
-      ),
-      appBarTheme: const AppBarTheme(
-        elevation: 0,
-        centerTitle: false,
-        titleTextStyle: TextStyle(
-          fontSize: AppIconSize.mediumLarge,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      popupMenuTheme: PopupMenuThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(AppRadius.small)),
-          side: BorderSide(
-            color: AppColor.popupBorderDark,
-            width: AppSize.borderThin,
-          ),
-        ),
-        elevation: AppSpacing.small,
-      ),
+    return _buildTheme(
+      brightness: Brightness.dark,
+      popupBorderColor: AppColor.popupBorderDark,
     );
   }
 

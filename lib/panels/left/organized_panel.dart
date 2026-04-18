@@ -124,19 +124,13 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel> {
 
   /// Handles `_handleFileTap`.
   void _handleFileTap(ProjectNode node) {
-    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
-    if (widget.selectedFile?.path == item.path) return;
-
-    // Seed Git status for the selected file if not already loaded
-    if (node.gitStatus == GitFileStatus.clean &&
-        _panelState.projectRoot != null) {
-      _panelState.seedGitStatusForFile(node);
-    }
-
-    // Only trigger file selection if widget is still mounted
-    if (widget.onFileSelected != null && mounted) {
-      widget.onFileSelected!(item);
-    }
+    FileOperations.handleFileTap(
+      node,
+      _panelState,
+      selectedFilePath: widget.selectedFile?.path,
+      onFileSelected: widget.onFileSelected,
+      isMounted: mounted,
+    );
   }
 
   void _showNodeContextMenu(ProjectNode node, Offset position) {

@@ -148,26 +148,42 @@ class PanelStateManager {
 
 /// Shared file operations utility
 class FileOperations {
-  /// Handles `FileOperations.createNewFile`.
-  static Future<void> createNewFile(
-    BuildContext context,
-    ProjectNode parent,
-    VoidCallback onRefresh,
-  ) async {
-    if (!parent.isDirectory) return;
+  /// Opens a file node and seeds its Git status before notifying listeners.
+  static void handleFileTap(
+    ProjectNode node,
+    PanelStateManager panelState, {
+    required String? selectedFilePath,
+    required void Function(FileSystemItem item)? onFileSelected,
+    required bool isMounted,
+  }) {
+    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
+    if (selectedFilePath == item.path) return;
 
+    if (node.gitStatus == GitFileStatus.clean &&
+        panelState.projectRoot != null) {
+      panelState.seedGitStatusForFile(node);
+    }
+
+    if (onFileSelected != null && isMounted) {
+      onFileSelected(item);
+    }
+  }
+
+  /// Shows the creation dialog and returns the trimmed entry name.
+  static Future<String?> _promptForCreationName(
+    BuildContext context, {
+    required String title,
+    required String labelText,
+    required String hintText,
+  }) async {
     final TextEditingController controller = TextEditingController();
-
-    final result = await showDialog<String>(
+    return showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('New File'),
+        title: Text(title),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'File name',
-            hintText: 'Enter file name (e.g., main.dart)',
-          ),
+          decoration: InputDecoration(labelText: labelText, hintText: hintText),
           autofocus: true,
         ),
         actions: [
@@ -182,31 +198,68 @@ class FileOperations {
         ],
       ),
     );
+  }
+
+  /// Creates a file-system entry, refreshes the panel, and shows feedback.
+  static Future<void> _createEntry(
+    BuildContext context,
+    ProjectNode parent,
+    VoidCallback onRefresh, {
+    required String title,
+    required String labelText,
+    required String hintText,
+    required String duplicateMessage,
+    required String successPrefix,
+    required Future<void> Function(String targetPath) create,
+  }) async {
+    if (!parent.isDirectory) return;
+
+    final result = await _promptForCreationName(
+      context,
+      title: title,
+      labelText: labelText,
+      hintText: hintText,
+    );
 
     if (result == null || result.isEmpty) return;
 
     try {
-      final newFilePath = path.join(parent.path, result);
+      final targetPath = path.join(parent.path, result);
 
-      // Check if file already exists
-      if (File(newFilePath).existsSync()) {
-        MessageBox.showError(context, 'A file with this name already exists');
+      if (File(targetPath).existsSync() || Directory(targetPath).existsSync()) {
+        MessageBox.showError(context, duplicateMessage);
         return;
       }
 
-      // Create the file
-      final file = File(newFilePath);
-      await file.create(recursive: true);
+      await create(targetPath);
 
-      // Refresh the project tree
       onRefresh();
 
       if (context.mounted) {
-        MessageBox.showSuccess(context, 'Created file "$result"');
+        MessageBox.showSuccess(context, '$successPrefix "$result"');
       }
     } catch (e) {
-      MessageBox.showError(context, 'Failed to create file: $e');
+      MessageBox.showError(context, 'Failed to ${title.toLowerCase()}: $e');
     }
+  }
+
+  /// Handles `FileOperations.createNewFile`.
+  static Future<void> createNewFile(
+    BuildContext context,
+    ProjectNode parent,
+    VoidCallback onRefresh,
+  ) async {
+    await _createEntry(
+      context,
+      parent,
+      onRefresh,
+      title: 'New File',
+      labelText: 'File name',
+      hintText: 'Enter file name (e.g., main.dart)',
+      duplicateMessage: 'A file with this name already exists',
+      successPrefix: 'Created file',
+      create: (targetPath) => File(targetPath).create(recursive: true),
+    );
   }
 
   /// Handles `FileOperations.createNewFolder`.
@@ -215,59 +268,17 @@ class FileOperations {
     ProjectNode parent,
     VoidCallback onRefresh,
   ) async {
-    if (!parent.isDirectory) return;
-
-    final TextEditingController controller = TextEditingController();
-
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('New Folder'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Folder name',
-            hintText: 'Enter folder name',
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: const Text('Create'),
-          ),
-        ],
-      ),
+    await _createEntry(
+      context,
+      parent,
+      onRefresh,
+      title: 'New Folder',
+      labelText: 'Folder name',
+      hintText: 'Enter folder name',
+      duplicateMessage: 'A folder with this name already exists',
+      successPrefix: 'Created folder',
+      create: (targetPath) => Directory(targetPath).create(recursive: true),
     );
-
-    if (result == null || result.isEmpty) return;
-
-    try {
-      final newFolderPath = path.join(parent.path, result);
-
-      // Check if directory already exists
-      if (Directory(newFolderPath).existsSync()) {
-        MessageBox.showError(context, 'A folder with this name already exists');
-        return;
-      }
-
-      // Create the directory
-      final directory = Directory(newFolderPath);
-      await directory.create(recursive: true);
-
-      // Refresh the project tree
-      onRefresh();
-
-      if (context.mounted) {
-        MessageBox.showSuccess(context, 'Created folder "$result"');
-      }
-    } catch (e) {
-      MessageBox.showError(context, 'Failed to create folder: $e');
-    }
   }
 
   /// Handles `FileOperations.renameFile`.

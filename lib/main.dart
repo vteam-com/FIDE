@@ -1,6 +1,5 @@
 // ignore_for_file: use_build_context_synchronously
 import 'package:fide/controllers/app_controller.dart';
-import 'package:fide/panels/center/editor_screen.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/screens/create_project_screen.dart';
@@ -9,7 +8,6 @@ import 'package:fide/screens/main_layout.dart';
 import 'package:fide/screens/welcome_screen.dart';
 import 'package:fide/services/project_operations.dart';
 import 'package:fide/theme/app_theme.dart';
-import 'package:fide/utils/message_box.dart';
 import 'package:fide/widgets/app_title_bar.dart';
 import 'package:fide/widgets/native_menu_builder.dart';
 import 'package:flutter/material.dart';
@@ -444,69 +442,9 @@ class _FIDEState extends ConsumerState<FIDE> {
     );
   }
 
-  /// Validates goto-line input and triggers editor navigation.
-  void _handleGotoLine(String value, BuildContext context) {
-    if (value.isEmpty) return;
-
-    final lineNumber = int.tryParse(value);
-    if (lineNumber != null && lineNumber > 0) {
-      // Navigate to the line
-      EditorScreen.navigateToLine(lineNumber);
-      Navigator.of(context).pop();
-    } else {
-      // Show error for invalid input
-      MessageBox.showError(context, 'Please enter a valid line number');
-    }
-  }
-
   /// Opens the goto-line dialog and focuses its numeric input field.
   void _showGotoLineDialog(BuildContext context) {
-    final TextEditingController lineController = TextEditingController();
-    final FocusNode focusNode = FocusNode();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Go to Line'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: lineController,
-                focusNode: focusNode,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Line number',
-                  hintText: 'Enter line number',
-                  border: OutlineInputBorder(),
-                ),
-                onSubmitted: (value) {
-                  _handleGotoLine(value, context);
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                _handleGotoLine(lineController.text, context);
-              },
-              child: const Text('Go'),
-            ),
-          ],
-        );
-      },
-    );
-
-    // Focus the text field when dialog opens
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      focusNode.requestFocus();
-    });
+    ProjectOperations.showGotoLineDialog(context);
   }
 
   void _switchToPanel(WidgetRef ref, int panelIndex) {
