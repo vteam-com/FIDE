@@ -1,4 +1,4 @@
-import 'package:fide/constants.dart';
+import 'package:fide/models/constants.dart';
 import 'package:fide/widgets/message_widget.dart';
 import 'package:flutter/material.dart';
 

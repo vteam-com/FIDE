@@ -1,4 +1,4 @@
-import 'package:fide/constants.dart';
+import 'package:fide/models/constants.dart';
 import 'package:flutter/material.dart';
 
 /// Opens a shared settings dialog for selecting the app theme mode.

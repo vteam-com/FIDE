@@ -1,4 +1,4 @@
-import 'package:fide/constants.dart';
+import 'package:fide/models/constants.dart';
 import 'package:flutter/material.dart';
 
 /// A reusable status indicator widget that displays an icon with text

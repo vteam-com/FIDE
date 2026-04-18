@@ -2,7 +2,7 @@
 
 import 'dart:io';
 
-import 'package:fide/constants.dart';
+import 'package:fide/models/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/panels/center/center_panel.dart';
@@ -11,8 +11,8 @@ import 'package:fide/panels/left/left_panel.dart';
 import 'package:fide/panels/right/right_panel.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
-import 'package:fide/utils/file_type_utils.dart';
-import 'package:fide/utils/message_box.dart';
+import 'package:fide/services/file_type_utils.dart';
+import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/resizable_splitter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';

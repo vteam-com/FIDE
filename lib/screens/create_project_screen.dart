@@ -1,7 +1,7 @@
 // ignore: fcheck_dead_code
 import 'dart:io';
 
-import 'package:fide/constants.dart';
+import 'package:fide/models/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/screens/create_project_step1.dart';
 import 'package:fide/screens/create_project_step2.dart';

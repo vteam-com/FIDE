@@ -2,14 +2,14 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:fide/constants.dart';
+import 'package:fide/models/constants.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/loading_action.dart';
 import 'package:fide/models/project_node.dart';
-import 'package:fide/providers/app_providers.dart';
 import 'package:fide/services/file_system_watcher.dart';
 import 'package:fide/services/git_service.dart';
+import 'package:fide/services/project_state_sink.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:process_run/process_run.dart';
@@ -18,14 +18,14 @@ import 'package:process_run/process_run.dart';
 class ProjectService {
   final Logger _logger = Logger('ProjectService');
 
-  final Ref _ref;
+  final ProjectStateSink _stateSink;
   final GitService _gitService = GitService();
   final FileSystemWatcher _fileSystemWatcher = FileSystemWatcher();
 
   ProjectNode? _currentProjectRoot;
   StreamSubscription? _watcherSubscription;
 
-  ProjectService(this._ref);
+  ProjectService(this._stateSink);
 
   /// Get the current project root
   ProjectNode? get currentProjectRoot => _currentProjectRoot;
@@ -67,7 +67,7 @@ class ProjectService {
 
     try {
       // Clear loading actions
-      _ref.read(loadingActionsProvider.notifier).state = [];
+      _stateSink.replaceLoadingActions(const []);
       int step = 1;
 
       // Validate that this is a Flutter project
@@ -151,14 +151,13 @@ class ProjectService {
       _addLoadingAction(step++, 'Updating application state');
       _logger.info('Updating providers...');
       _logger.fine('Setting currentProjectPathProvider to: $directoryPath');
-      _ref.read(currentProjectPathProvider.notifier).state = directoryPath;
+      _stateSink.setCurrentProjectPath(directoryPath);
       _logger.fine(
         'Setting currentProjectRootProvider to: ${_currentProjectRoot?.path}',
       );
-      _ref.read(currentProjectRootProvider.notifier).state =
-          _currentProjectRoot;
+      _stateSink.setCurrentProjectRoot(_currentProjectRoot);
       _logger.fine('Setting projectLoadedProvider to: true');
-      _ref.read(projectLoadedProvider.notifier).state = true;
+      _stateSink.setProjectLoaded(true);
       _updateLoadingActionStatus(step - 1, LoadingStatus.success);
       await Future.delayed(duration);
       await Future.delayed(duration);
@@ -173,7 +172,7 @@ class ProjectService {
     } catch (e) {
       _logger.severe('Error loading project: $e');
       // Mark the last action as failed if any
-      final actions = _ref.read(loadingActionsProvider);
+      final actions = _stateSink.loadingActions;
       if (actions.isNotEmpty) {
         _updateLoadingActionStatus(actions.last.step, LoadingStatus.failed);
         await Future.delayed(duration);
@@ -193,10 +192,10 @@ class ProjectService {
     _currentProjectRoot = null;
 
     // Update providers
-    _ref.read(projectLoadedProvider.notifier).state = false;
-    _ref.read(currentProjectPathProvider.notifier).state = null;
-    _ref.read(currentProjectRootProvider.notifier).state = null;
-    _ref.read(selectedFileProvider.notifier).state = null;
+    _stateSink.setProjectLoaded(false);
+    _stateSink.setCurrentProjectPath(null);
+    _stateSink.setCurrentProjectRoot(null);
+    _stateSink.clearSelectedFile();
 
     _logger.info('Project unloaded');
   }
@@ -260,8 +259,7 @@ class ProjectService {
     // Check if container is still available (not disposed in tests)
     try {
       if (_currentProjectRoot != null) {
-        _ref.read(currentProjectRootProvider.notifier).state =
-            _currentProjectRoot;
+        _stateSink.setCurrentProjectRoot(_currentProjectRoot);
       }
     } catch (e) {
       // Container might be disposed in test environments, ignore
@@ -362,13 +360,14 @@ For detailed instructions, visit: https://flutter.dev/docs/get-started/install
       if (!isTestEnvironment && !await isFlutterSDKAvailable()) {
         _logger.severe('Flutter SDK is not available. Cannot create project.');
         // Set an error state that the UI can check
-        _ref.read(projectCreationErrorProvider.notifier).state =
-            getFlutterInstallationInstructions();
+        _stateSink.setProjectCreationError(
+          getFlutterInstallationInstructions(),
+        );
         return false;
       }
 
       // Clear any previous error
-      _ref.read(projectCreationErrorProvider.notifier).state = null;
+      _stateSink.setProjectCreationError(null);
 
       final projectPath = path.join(parentDirectory, projectName);
 
@@ -383,8 +382,9 @@ For detailed instructions, visit: https://flutter.dev/docs/get-started/install
       final projectDir = Directory(projectPath);
       if (await projectDir.exists()) {
         _logger.warning('Project directory already exists: $projectPath');
-        _ref.read(projectCreationErrorProvider.notifier).state =
-            'Project directory already exists: $projectPath';
+        _stateSink.setProjectCreationError(
+          'Project directory already exists: $projectPath',
+        );
         return false;
       }
 
@@ -407,8 +407,9 @@ For detailed instructions, visit: https://flutter.dev/docs/get-started/install
           _logger.severe(
             'Failed to create Flutter project: exitCode=${results.isNotEmpty ? results.first.exitCode : "N/A"}, stderr=${results.isNotEmpty ? results.first.stderr : "No output"}, stdout=${results.isNotEmpty ? results.first.stdout : "No output"}',
           );
-          _ref.read(projectCreationErrorProvider.notifier).state =
-              'Failed to create Flutter project. Please check that Flutter SDK is properly installed.';
+          _stateSink.setProjectCreationError(
+            'Failed to create Flutter project. Please check that Flutter SDK is properly installed.',
+          );
           return false;
         }
 
@@ -449,8 +450,9 @@ For detailed instructions, visit: https://flutter.dev/docs/get-started/install
       return await loadProject(projectPath);
     } catch (e) {
       _logger.severe('Error creating project: $e');
-      _ref.read(projectCreationErrorProvider.notifier).state =
-          'An error occurred while creating the project: $e';
+      _stateSink.setProjectCreationError(
+        'An error occurred while creating the project: $e',
+      );
       return false;
     }
   }
@@ -643,22 +645,22 @@ void main() {
 
   /// Add a loading action to the log
   void _addLoadingAction(int step, String text) {
-    final currentActions = _ref.read(loadingActionsProvider);
+    final currentActions = _stateSink.loadingActions;
     final updatedActions = List<LoadingAction>.from(currentActions)
       ..add(LoadingAction(step, text, LoadingStatus.pending));
-    _ref.read(loadingActionsProvider.notifier).state = updatedActions;
+    _stateSink.replaceLoadingActions(updatedActions);
   }
 
   /// Update the status of a loading action
   void _updateLoadingActionStatus(int step, LoadingStatus status) {
-    final currentActions = _ref.read(loadingActionsProvider);
+    final currentActions = _stateSink.loadingActions;
     final updatedActions = currentActions.map((action) {
       if (action.step == step) {
         return LoadingAction(action.step, action.text, status);
       }
       return action;
     }).toList();
-    _ref.read(loadingActionsProvider.notifier).state = updatedActions;
+    _stateSink.replaceLoadingActions(updatedActions);
   }
 
   /// Dispose of the service

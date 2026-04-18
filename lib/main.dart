@@ -1,13 +1,13 @@
 // ignore_for_file: use_build_context_synchronously
 import 'package:fide/controllers/app_controller.dart';
+import 'package:fide/controllers/project_operations.dart';
+import 'package:fide/models/app_theme.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/screens/create_project_screen.dart';
 import 'package:fide/screens/loading_screen.dart';
 import 'package:fide/screens/main_layout.dart';
 import 'package:fide/screens/welcome_screen.dart';
-import 'package:fide/services/project_operations.dart';
-import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/app_title_bar.dart';
 import 'package:fide/widgets/native_menu_builder.dart';
 import 'package:flutter/material.dart';

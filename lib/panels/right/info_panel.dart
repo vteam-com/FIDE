@@ -3,11 +3,11 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fide/constants.dart';
+import 'package:fide/models/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/utils/message_box.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/status_indicator.dart';

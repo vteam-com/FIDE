@@ -1,7 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:diff_match_patch/diff_match_patch.dart';
-import 'package:fide/constants.dart';
+import 'package:fide/models/constants.dart';
 import 'package:flutter/material.dart';
 
 part 'side_by_side_diff.diff_line.dart';

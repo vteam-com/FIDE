@@ -1,4 +1,4 @@
-import 'package:fide/constants.dart';
+import 'package:fide/models/constants.dart';
 
 part 'localization_data.arb_entry.dart';
 part 'localization_data.arb_file.dart';

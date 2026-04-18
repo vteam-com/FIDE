@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fide/utils/message_box.dart';
+import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/message_widget.dart';
 
 void main() {

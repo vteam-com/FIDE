@@ -3,14 +3,14 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fide/constants.dart';
+import 'package:fide/models/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/panels/center/large_file_message.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/git_service.dart';
-import 'package:fide/utils/file_type_utils.dart';
-import 'package:fide/utils/message_box.dart';
 import 'package:fide/widgets/diff_counter.dart';
+import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
 import 'package:fide/widgets/toggle_experience_mode.dart';

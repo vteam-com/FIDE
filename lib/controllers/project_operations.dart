@@ -1,15 +1,15 @@
 // ignore: fcheck_dead_code
-import 'package:fide/constants.dart';
+import 'package:fide/models/constants.dart';
 import 'package:fide/panels/center/editor_screen.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/screens/main_layout.dart';
-import 'package:fide/utils/message_box.dart';
+import 'package:fide/widgets/message_box.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 
-/// Service class for project-related operations
+/// Controller class for project-related UI operations.
 class ProjectOperations {
   final Ref ref;
 

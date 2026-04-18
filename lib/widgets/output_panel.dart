@@ -1,5 +1,5 @@
-import 'package:fide/constants.dart';
-import 'package:fide/utils/message_box.dart';
+import 'package:fide/models/constants.dart';
+import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

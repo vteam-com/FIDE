@@ -2,7 +2,7 @@
 // ignore: fcheck_secrets
 import 'dart:io';
 
-import 'package:fide/constants.dart';
+import 'package:fide/models/constants.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter/material.dart';

@@ -1,21 +1,25 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fide/constants.dart';
+import 'package:fide/models/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/loading_action.dart';
 import 'package:fide/models/project_node.dart';
+import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/project_service.dart';
-import 'package:fide/utils/file_type_utils.dart';
+import 'package:fide/services/project_state_sink.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
-part 'loading_action.dart';
+export 'package:fide/models/loading_action.dart';
+
 part 'project_manager.dart';
 part 'project_metrics_notifier.dart';
+part 'provider_project_state_sink.dart';
 
 // SharedPreferences provider
 final sharedPreferencesProvider = FutureProvider<SharedPreferences>((_) {
@@ -57,8 +61,18 @@ final projectManagerProvider = Provider<ProjectManager>((ref) {
 
 // Project service provider for complete project management
 final projectServiceProvider = Provider<ProjectService>((ref) {
-  return ProjectService(ref);
+  return ProjectService(_ProviderProjectStateSink(ref));
 });
+
+// State management for project creation errors
+final projectCreationErrorProvider = StateProvider<String?>(
+  (_ /*ref*/) => null,
+);
+
+// State management for loading actions log
+final loadingActionsProvider = StateProvider<List<LoadingAction>>(
+  (_ /*ref*/) => [],
+);
 
 // State management for open documents
 final openDocumentsProvider = StateProvider<List<DocumentState>>(
@@ -77,19 +91,6 @@ final activeDocumentProvider = Provider<DocumentState?>((ref) {
   }
   return null;
 });
-
-// State management for project creation errors
-final projectCreationErrorProvider = StateProvider<String?>(
-  (_ /*ref*/) => null,
-);
-
-// Loading action status
-enum LoadingStatus { pending, success, failed }
-
-// State management for loading actions log
-final loadingActionsProvider = StateProvider<List<LoadingAction>>(
-  (_ /*ref*/) => [],
-);
 
 final projectMetricsProvider =
     StateNotifierProvider<ProjectMetricsNotifier, Map<String, dynamic>>((ref) {

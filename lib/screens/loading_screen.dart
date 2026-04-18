@@ -1,6 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
-import 'package:fide/constants.dart';
+import 'package:fide/models/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/full_path_widget.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
