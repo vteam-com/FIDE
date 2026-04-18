@@ -2,6 +2,7 @@
   "dart.coverageRunTestScript": "${workspaceFolder}/tool/run_test.sh",
   "workbench.editor.closeOnFileDelete": true,
   "cSpell.words": [
+    "ollama",
     "vteam"
   ]
 }

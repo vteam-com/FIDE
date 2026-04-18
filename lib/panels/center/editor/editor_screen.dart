@@ -5,22 +5,23 @@ import 'dart:io';
 
 import 'package:fide/models/constants.dart';
 import 'package:fide/models/document_state.dart';
-import 'package:fide/panels/center/large_file_message.dart';
+import 'package:fide/panels/center/editor/editor_screen_header.dart';
+import 'package:fide/panels/center/editor/editor_screen_image_view.dart';
+import 'package:fide/panels/center/editor/editor_screen_search_bar.dart';
+import 'package:fide/panels/center/editor/editor_screen_status_bar.dart';
+import 'package:fide/panels/center/editor/editor_screen_unsupported_file_view.dart';
+import 'package:fide/panels/center/editor/large_file_message.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/git_service.dart';
-import 'package:fide/widgets/diff_counter.dart';
 import 'package:fide/widgets/message_box.dart';
-import 'package:fide/widgets/search_toggle_icons.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
-import 'package:fide/widgets/toggle_experience_mode.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_code_crafter/code_crafter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
-import 'package:url_launcher/url_launcher.dart';
 
 /// Full-featured code editor widget with syntax highlighting, search, diff view, and file-save support.
 class EditorScreen extends StatefulWidget {
@@ -256,118 +257,24 @@ class _EditorScreenState extends State<EditorScreen> {
 
         return Column(
           children: [
-            Row(
-              children: [
-                const SizedBox(width: AppSpacing.medium),
-                // Document dropdown on the left
-                if (openDocuments.isNotEmpty)
-                  PopupMenuButton<int>(
-                    key: const Key('keyMruForFiles'),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (activeIndex < openDocuments.length) ...[
-                          Text(
-                            openDocuments[activeIndex].fileName,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontSize: AppFontSize.label,
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.medium),
-                          DiffCounter(
-                            gitStats:
-                                _allGitDiffStats[openDocuments[activeIndex]
-                                    .filePath],
-                          ),
-                        ],
-                        Icon(
-                          Icons.arrow_drop_down,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ],
-                    ),
-                    itemBuilder: (_ /*context*/) =>
-                        openDocuments.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final doc = entry.value;
-                          final gitStats = _allGitDiffStats[doc.filePath];
-
-                          return PopupMenuItem<int>(
-                            value: index,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (index == activeIndex)
-                                  const Icon(
-                                    Icons.check,
-                                    size: AppIconSize.mediumLarge,
-                                  )
-                                else
-                                  const SizedBox(
-                                    width: AppIconSize.mediumLarge,
-                                  ),
-                                const SizedBox(width: AppSpacing.medium),
-                                Text(doc.fileName),
-                                const SizedBox(width: AppSpacing.medium),
-                                DiffCounter(gitStats: gitStats),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                    onSelected: (newIndex) {
-                      ref.read(activeDocumentIndexProvider.notifier).state =
-                          newIndex;
-                    },
-                  ),
-                // Spacer to center the toggle button
-                Spacer(),
-                // Git diff button in the center (only show if there are git changes)
-                if (_allGitDiffStats[_currentFile]?.hasChanges ?? false)
-                  ToggleExperienceMode(
-                    isAlternativeMode: _showDiffView,
-                    primaryIcon: Icons.difference,
-                    alternativeIcon: Icons.edit,
-                    primaryTooltip: 'Show Diff View',
-                    alternativeTooltip: 'Back to Editor',
-                    onPressed: _toggleDiffView,
-                  ),
-                Spacer(),
-                if (_isDirty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xLarge,
-                      vertical: AppSpacing.medium,
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Unsaved Changes',
-                        style: TextStyle(
-                          color: Colors.orange,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ),
-                  ),
-                IconButton(
-                  key: const Key('keyEditorFind'),
-                  icon: const Icon(Icons.search),
-                  onPressed: _showDiffView ? null : _toggleSearch,
-                  tooltip: 'Find (Cmd+F)',
-                ),
-                IconButton(
-                  key: const Key('keyEditorSave'),
-                  icon: const Icon(Icons.download),
-                  onPressed: _isDirty ? _saveFile : null,
-                  tooltip: 'Save',
-                ),
-                IconButton(
-                  key: const Key('keyEditorClose'),
-                  icon: const Icon(Icons.close),
-                  onPressed: () => EditorScreen.closeCurrentEditor(),
-                  tooltip: 'Close Editor',
-                ),
-              ],
+            EditorScreenHeader(
+              openDocuments: openDocuments,
+              activeIndex: activeIndex,
+              currentFile: _currentFile,
+              allGitDiffStats: _allGitDiffStats,
+              isDirty: _isDirty,
+              showDiffView: _showDiffView,
+              onDocumentSelected: (newIndex) {
+                ref.read(activeDocumentIndexProvider.notifier).state = newIndex;
+              },
+              onToggleDiffView: () {
+                _toggleDiffView();
+              },
+              onToggleSearch: _toggleSearch,
+              onSave: () {
+                _saveFile();
+              },
+              onClose: EditorScreen.closeCurrentEditor,
             ),
 
             Expanded(
@@ -376,9 +283,13 @@ class _EditorScreenState extends State<EditorScreen> {
                   : _currentFile.isEmpty
                   ? const Center(child: Text('No file selected'))
                   : !FileTypeUtils.isFileSupportedInEditor(_currentFile)
-                  ? _buildUnsupportedFileView()
+                  ? EditorScreenUnsupportedFileView(filePath: _currentFile)
                   : _isImageFile(_currentFile)
-                  ? _buildImageView()
+                  ? EditorScreenImageView(
+                      filePath: _currentFile,
+                      documentContentLength:
+                          widget.documentState!.content.length,
+                    )
                   : _showDiffView
                   ? _buildDiffView()
                   // ignore: deprecated_member_use
@@ -388,7 +299,35 @@ class _EditorScreenState extends State<EditorScreen> {
                       child: Column(
                         children: [
                           // Search bar (only visible when searching)
-                          if (_showSearch) _buildSearchBar(),
+                          if (_showSearch)
+                            EditorScreenSearchBar(
+                              searchController: _searchController,
+                              searchFocusNode: _searchFocusNode,
+                              caseSensitive: _caseSensitive,
+                              wholeWord: _wholeWord,
+                              currentMatchIndex: _currentMatchIndex,
+                              matchCount: _searchMatches.length,
+                              onSearchChanged: _performSearch,
+                              onClose: _closeSearch,
+                              onPreviousMatch: _previousMatch,
+                              onNextMatch: _nextMatch,
+                              onCaseSensitiveChanged: (value) {
+                                setState(() {
+                                  _caseSensitive = value;
+                                  if (_searchQuery.isNotEmpty) {
+                                    _performSearch(_searchQuery);
+                                  }
+                                });
+                              },
+                              onWholeWordChanged: (value) {
+                                setState(() {
+                                  _wholeWord = value;
+                                  if (_searchQuery.isNotEmpty) {
+                                    _performSearch(_searchQuery);
+                                  }
+                                });
+                              },
+                            ),
                           // Editor content
                           Expanded(
                             child: CodeCrafter(
@@ -414,90 +353,23 @@ class _EditorScreenState extends State<EditorScreen> {
                             ),
                           ),
                           // Status bar
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.medium,
-                              vertical: AppSpacing.micro,
-                            ),
-                            child: Row(
-                              children: [
-                                if (_showDiffView)
-                                  const Text(
-                                    'Diff View',
-                                    style: TextStyle(
-                                      fontSize: AppFontSize.caption,
-                                    ),
-                                  )
-                                else ...[
-                                  IconButton(
-                                    icon: Icon(
-                                      _regionsExpanded
-                                          ? Icons.unfold_less
-                                          : Icons.unfold_more,
-                                      size: AppIconSize.medium,
-                                    ),
-                                    onPressed: _toggleAllRegions,
-                                    tooltip: _regionsExpanded
-                                        ? 'Collapse All Regions (Ctrl+Shift+[)'
-                                        : 'Expand All Regions (Ctrl+Shift+])',
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(
-                                      minWidth: AppSize.compactIconButton,
-                                      minHeight: AppSize.compactIconButton,
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.medium),
-                                  Text(
-                                    'Ln ${_getCurrentLineNumber()}',
-                                    style: const TextStyle(
-                                      fontSize: AppFontSize.caption,
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.xLarge),
-                                  Text(
-                                    'Col ${_getCurrentColumnNumber()}',
-                                    style: const TextStyle(
-                                      fontSize: AppFontSize.caption,
-                                    ),
-                                  ),
-                                  if (_searchMatches.isNotEmpty) ...[
-                                    const SizedBox(width: AppSpacing.xLarge),
-                                    Text(
-                                      '${_currentMatchIndex + 1} of ${_searchMatches.length}',
-                                      style: const TextStyle(
-                                        fontSize: AppFontSize.caption,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                                const Spacer(),
-                                // Format File button (only show for supported files)
-                                if (!_showDiffView &&
-                                    (_currentFile.endsWith('.dart') ||
-                                        _currentFile.endsWith('.json') ||
-                                        _currentFile.endsWith('.arb')))
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.format_indent_increase,
-                                      size: AppIconSize.medium,
-                                    ),
-                                    onPressed: _formatFile,
-                                    tooltip: 'Format File (Shift+Alt+F)',
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(
-                                      minWidth: AppSize.compactIconButton,
-                                      minHeight: AppSize.compactIconButton,
-                                    ),
-                                  ),
-                                const SizedBox(width: AppSpacing.medium),
-                                Text(
-                                  _getFileLanguage(),
-                                  style: const TextStyle(
-                                    fontSize: AppFontSize.caption,
-                                  ),
-                                ),
-                              ],
-                            ),
+                          EditorScreenStatusBar(
+                            showDiffView: _showDiffView,
+                            regionsExpanded: _regionsExpanded,
+                            currentLineNumber: _getCurrentLineNumber(),
+                            currentColumnNumber: _getCurrentColumnNumber(),
+                            currentMatchIndex: _currentMatchIndex,
+                            matchCount: _searchMatches.length,
+                            canFormat:
+                                !_showDiffView &&
+                                (_currentFile.endsWith('.dart') ||
+                                    _currentFile.endsWith('.json') ||
+                                    _currentFile.endsWith('.arb')),
+                            fileLanguage: _getFileLanguage(),
+                            onToggleAllRegions: _toggleAllRegions,
+                            onFormatFile: () {
+                              _formatFile();
+                            },
                           ),
                         ],
                       ),
@@ -545,322 +417,6 @@ class _EditorScreenState extends State<EditorScreen> {
     }
 
     return SideBySideDiff(oldText: _diffOldText!, newText: _diffNewText!);
-  }
-
-  /// Builds the image preview UI with fallback messaging for load failures.
-  Widget _buildImageView() {
-    return Center(
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Image display with error handling
-            Container(
-              constraints: BoxConstraints(
-                maxWidth:
-                    MediaQuery.of(context).size.width *
-                    EditorConfig.imagePreviewMaxWidthFactor,
-                maxHeight:
-                    MediaQuery.of(context).size.height *
-                    EditorConfig.imagePreviewMaxHeightFactor,
-              ),
-              child: Image.file(
-                File(_currentFile),
-                fit: BoxFit.contain,
-                errorBuilder: (context, _ /* error */, _ /* stackTrace */) {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.broken_image,
-                        size: AppSize.largePreviewIcon,
-                        color: Theme.of(context).colorScheme.error.withValues(
-                          alpha: AppOpacity.disabled,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xLarge),
-                      Text(
-                        'Failed to load image',
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                      ),
-                      const SizedBox(height: AppSpacing.medium),
-                      Text(
-                        'The image file may be corrupted or unsupported',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface
-                              .withValues(alpha: AppOpacity.muted),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xLarge),
-            // Image info
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.xLarge,
-                vertical: AppSpacing.medium,
-              ),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest
-                    .withValues(alpha: AppOpacity.divider),
-                borderRadius: BorderRadius.circular(AppRadius.medium),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'Image Preview',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.tiny),
-                  Text(
-                    'Size: ${(widget.documentState!.content.length / AppMetric.fileSizeDivisor).round()}KB • ${path.extension(_currentFile).toUpperCase().substring(1)}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(
-                        alpha: AppOpacity.secondaryText,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Builds the inline search UI and navigation controls for the editor.
-  Widget _buildSearchBar() {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.medium),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(
-          alpha: AppOpacity.disabled,
-        ),
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(
-              context,
-            ).colorScheme.outline.withValues(alpha: AppOpacity.divider),
-            width: AppSize.borderThin,
-          ),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  focusNode: _searchFocusNode,
-                  decoration: InputDecoration(
-                    hintText: 'Find in file...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.tiny),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.large,
-                      vertical: AppSpacing.medium,
-                    ),
-                    isDense: true,
-                    filled: true,
-                    fillColor: Theme.of(context).colorScheme.surface,
-                  ),
-                  onChanged: _performSearch,
-                  onSubmitted: (_) => _nextMatch(),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.medium),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: _closeSearch,
-                tooltip: 'Close (Esc)',
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.tiny),
-          Row(
-            children: [
-              SearchToggleIcons(
-                caseSensitive: _caseSensitive,
-                wholeWord: _wholeWord,
-                onCaseSensitiveChanged: (value) {
-                  setState(() {
-                    _caseSensitive = value;
-                    if (_searchQuery.isNotEmpty) {
-                      _performSearch(_searchQuery);
-                    }
-                  });
-                },
-                onWholeWordChanged: (value) {
-                  setState(() {
-                    _wholeWord = value;
-                    if (_searchQuery.isNotEmpty) {
-                      _performSearch(_searchQuery);
-                    }
-                  });
-                },
-              ),
-              const Spacer(),
-              if (_searchMatches.isNotEmpty) ...[
-                IconButton(
-                  icon: const Icon(
-                    Icons.keyboard_arrow_up,
-                    size: AppIconSize.mediumLarge,
-                  ),
-                  onPressed: _previousMatch,
-                  tooltip: 'Previous (Shift+F3)',
-                  visualDensity: VisualDensity.compact,
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.keyboard_arrow_down,
-                    size: AppIconSize.mediumLarge,
-                  ),
-                  onPressed: _nextMatch,
-                  tooltip: 'Next (F3)',
-                  visualDensity: VisualDensity.compact,
-                ),
-                const SizedBox(width: AppSpacing.medium),
-                Text(
-                  '${_currentMatchIndex + 1} of ${_searchMatches.length}',
-                  style: const TextStyle(fontSize: AppFontSize.caption),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Builds the placeholder view for file types that are not yet supported.
-  Widget _buildUnsupportedFileView() {
-    final extension = _currentFile.split('.').last.toLowerCase();
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.insert_drive_file_outlined,
-            size: AppSize.largePreviewIcon,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: AppOpacity.disabled),
-          ),
-          const SizedBox(height: AppSpacing.xLarge),
-          RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withValues(
-                  alpha: AppOpacity.secondaryText,
-                ),
-              ),
-              children: [
-                const TextSpan(text: 'The file type '),
-                TextSpan(
-                  text: '.${extension.toUpperCase()}',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const TextSpan(text: ' is not yet supported'),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xLarge),
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.xLarge),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer.withValues(
-                alpha: AppOpacity.divider,
-              ),
-              borderRadius: BorderRadius.circular(AppRadius.medium),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  'Request this feature at',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: AppOpacity.muted),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.tiny),
-                InkWell(
-                  onTap: () async {
-                    const urlString =
-                        'https://github.com/vteam-com/FIDE/issues';
-                    try {
-                      final url = Uri.parse(urlString);
-                      if (Platform.isMacOS) {
-                        await launchUrl(url, mode: LaunchMode.platformDefault);
-                      } else {
-                        await launchUrl(
-                          url,
-                          mode: LaunchMode.externalApplication,
-                        );
-                      }
-                    } catch (_) {
-                      // Fallback: try to launch without checking if URL can be launched
-                      try {
-                        final url = Uri.parse(urlString);
-                        await launchUrl(url, mode: LaunchMode.platformDefault);
-                      } catch (fallbackError) {
-                        if (mounted) {
-                          MessageBox.showError(
-                            context,
-                            'Could not open link: $urlString ${fallbackError.toString()}',
-                            showCopyButton: true,
-                          );
-                        }
-                      }
-                    }
-                  },
-                  child: Text(
-                    'github.com/vteam-com/FIDE/issues',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                      decoration: TextDecoration.underline,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppIconSize.xLarge),
-          Text(
-            'Currently supported: Most text files including\n'
-            'programming languages, web files, configs, scripts, and images',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: AppOpacity.disabled),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
   }
 
   /// Closes the search UI and resets all in-memory search state.

@@ -1,6 +1,7 @@
 // ignore: fcheck_dead_code
+
 import 'package:fide/models/constants.dart';
-import 'package:fide/panels/center/editor_screen.dart';
+import 'package:fide/panels/center/editor/editor_screen.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/screens/main_layout.dart';
 import 'package:fide/widgets/message_box.dart';

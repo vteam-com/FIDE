@@ -1,6 +1,7 @@
 import 'dart:io';
 
-import 'package:fide/models/constants.dart';
+import 'package:fide/models/constants.dart'
+    show AppSpacing, AppIconSize, AppFontSize, AppOpacity, AppRadius;
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;

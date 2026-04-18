@@ -1,0 +1,5 @@
+analyzers:
+  options:
+    code_size:
+      max_file_loc: 1400
+      max_class_loc: 1400

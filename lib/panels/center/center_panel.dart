@@ -1,7 +1,7 @@
 import 'package:fide/models/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/file_system_item.dart';
-import 'package:fide/panels/center/editor_screen.dart';
+import 'package:fide/panels/center/editor/editor_screen.dart';
 import 'package:fide/panels/center/terminal_panel.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/resizable_splitter.dart';

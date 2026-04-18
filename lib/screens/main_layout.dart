@@ -6,7 +6,7 @@ import 'package:fide/models/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/panels/center/center_panel.dart';
-import 'package:fide/panels/center/editor_screen.dart';
+import 'package:fide/panels/center/editor/editor_screen.dart';
 import 'package:fide/panels/left/left_panel.dart';
 import 'package:fide/panels/right/right_panel.dart';
 import 'package:fide/providers/app_providers.dart';

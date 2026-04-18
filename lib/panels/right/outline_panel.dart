@@ -6,7 +6,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:fide/models/constants.dart';
 import 'package:fide/models/file_system_item.dart';
-import 'package:fide/panels/center/editor_screen.dart';
+import 'package:fide/panels/center/editor/editor_screen.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:yaml/yaml.dart';
