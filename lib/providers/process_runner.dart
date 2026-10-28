@@ -28,6 +28,41 @@ class ProcessRunner {
     );
   }
 
+  /// Runs [executable] and returns its stdout when it exits 0, or null when
+  /// it fails or can't be started (for example, when it isn't installed).
+  Future<String?> outputOf(
+    String executable,
+    List<String> arguments, {
+    String? workingDirectory,
+    bool runInShell = false,
+  }) async {
+    try {
+      final result = await run(
+        executable,
+        arguments,
+        workingDirectory: workingDirectory,
+        runInShell: runInShell,
+      );
+      return result.exitCode == 0 ? result.stdout.toString() : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Whether [executable] runs and exits 0; false when it can't be started.
+  Future<bool> succeeds(
+    String executable,
+    List<String> arguments, {
+    String? workingDirectory,
+  }) async {
+    return await outputOf(
+          executable,
+          arguments,
+          workingDirectory: workingDirectory,
+        ) !=
+        null;
+  }
+
   /// Opens [directory] in the platform's file manager (Finder, Explorer,
   /// or the desktop's default via xdg-open).
   Future<void> revealInFileManager(String directory) async {

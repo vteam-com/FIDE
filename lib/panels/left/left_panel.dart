@@ -19,9 +19,6 @@ class LeftPanel extends ConsumerStatefulWidget {
   final bool projectLoaded;
   final Function(FileSystemItem)? onFileSelected;
   final Function(String, int)? onJumpToLine;
-  final Function(ThemeMode)? onThemeChanged;
-  final Function(bool)? onProjectLoaded;
-  final Function(String)? onProjectPathChanged;
   final VoidCallback? onToggleGitPanel;
 
   const LeftPanel({
@@ -31,9 +28,6 @@ class LeftPanel extends ConsumerStatefulWidget {
     required this.projectLoaded,
     this.onFileSelected,
     this.onJumpToLine,
-    this.onThemeChanged,
-    this.onProjectLoaded,
-    this.onProjectPathChanged,
     this.onToggleGitPanel,
   });
 
@@ -181,9 +175,6 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                 OrganizedPanel(
                   onFileSelected: widget.onFileSelected,
                   selectedFile: widget.selectedFile,
-                  onThemeChanged: widget.onThemeChanged,
-                  onProjectLoaded: widget.onProjectLoaded,
-                  onProjectPathChanged: widget.onProjectPathChanged,
                   initialProjectPath: widget.currentProjectPath,
                 ),
 
@@ -191,9 +182,6 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                 FolderPanel(
                   onFileSelected: widget.onFileSelected,
                   selectedFile: widget.selectedFile,
-                  onThemeChanged: widget.onThemeChanged,
-                  onProjectLoaded: widget.onProjectLoaded,
-                  onProjectPathChanged: widget.onProjectPathChanged,
                   initialProjectPath: widget.currentProjectPath,
                 ),
 

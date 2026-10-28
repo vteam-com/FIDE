@@ -90,7 +90,6 @@ class EditorScreenUnsupportedFileView extends StatelessWidget {
                           MessageBox.showError(
                             context,
                             'Could not open link: $urlString ${fallbackError.toString()}',
-                            showCopyButton: true,
                           );
                         }
                       }

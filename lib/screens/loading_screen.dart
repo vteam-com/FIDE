@@ -1,9 +1,12 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/app_theme.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/full_path_widget.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
+import 'package:fide/widgets/loading_actions_log.dart';
+import 'package:fide/widgets/loading_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -22,17 +25,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(AppSize.compactActionButton),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Theme.of(context).colorScheme.surface,
-            Theme.of(context).colorScheme.surfaceContainerHighest
-                .withValues(alpha: AppOpacity.divider),
-          ],
-        ),
-      ),
+      decoration: AppTheme.screenBackground(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -60,72 +53,10 @@ class _LoadingScreenState extends State<LoadingScreen> {
                       children: [
                         // Project Path
 
-                        // Loading Progress (deterministic based on step counters - 6 total steps)
-                        Consumer(
-                          builder: (context, ref, _) {
-                            final loadingActions = ref.watch(
-                              loadingActionsProvider,
-                            );
+                        LoadingProgressBar(actions: loadingActions),
 
-                            // Calculate progress based on current step position (max 6 steps)
-                            double progress = 0.0;
-                            if (loadingActions.isNotEmpty) {
-                              final currentStep = loadingActions
-                                  .map((action) => action.step)
-                                  .reduce((a, b) => a > b ? a : b);
-                              const int totalSteps = 6;
-
-                              progress = currentStep / totalSteps;
-                              // Ensure progress doesn't exceed 1.0
-                              progress = progress.clamp(0.0, 1.0);
-                            }
-
-                            return LinearProgressIndicator(
-                              value: progress,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Theme.of(context).colorScheme.primary,
-                              ),
-                            );
-                          },
-                        ),
-
-                        // Loading Actions Log
                         if (loadingActions.isNotEmpty)
-                          Container(
-                            constraints: const BoxConstraints(
-                              maxHeight: AppSize.statusLogMaxHeight,
-                            ),
-                            child: ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: loadingActions.length,
-                              itemBuilder: (context, index) {
-                                final LoadingAction action =
-                                    loadingActions[index];
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: AppSpacing.tiny,
-                                  ),
-                                  child: Row(
-                                    spacing: AppSpacing.medium,
-                                    children: [
-                                      // Status icon
-                                      _buildStatusIcon(action.status, context),
-
-                                      // Action text
-                                      Expanded(
-                                        child: Text(
-                                          action.text,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
+                          LoadingActionsLog(actions: loadingActions),
 
                         // Error message and retry button if failed
                         if (hasFailed)
@@ -165,26 +96,5 @@ class _LoadingScreenState extends State<LoadingScreen> {
         ],
       ),
     );
-  }
-
-  /// Returns a status icon widget (spinner, check, or error) for the given [LoadingStatus].
-  Widget _buildStatusIcon(LoadingStatus status, BuildContext context) {
-    switch (status) {
-      case LoadingStatus.pending:
-        return SizedBox(
-          width: AppIconSize.xLarge,
-          height: AppSize.statusIconTall,
-          child: CircularProgressIndicator(
-            strokeWidth: AppSize.borderThin,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              Theme.of(context).colorScheme.primary,
-            ),
-          ),
-        );
-      case LoadingStatus.success:
-        return Icon(Icons.check_circle, color: Colors.green);
-      case LoadingStatus.failed:
-        return Icon(Icons.error, color: Theme.of(context).colorScheme.error);
-    }
   }
 }

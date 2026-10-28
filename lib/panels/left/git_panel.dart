@@ -59,23 +59,20 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     await ref.read(gitCommitsProvider.notifier).loadCommits(widget.projectPath);
   }
 
-  Future<void> _stageFiles(List<String> files) async {
-    final gitService = ref.read(gitServiceProvider);
-    final result = await gitService.stageFiles(widget.projectPath, files);
+  /// Runs a Git [action], shows its result message, and reloads the panel.
+  Future<void> _runGitAction(Future<String> Function(GitService) action) async {
+    final result = await action(ref.read(gitServiceProvider));
     if (mounted) {
       MessageBox.showInfo(context, result);
     }
     _loadGitData();
   }
 
-  Future<void> _unstageFiles(List<String> files) async {
-    final gitService = ref.read(gitServiceProvider);
-    final result = await gitService.unstageFiles(widget.projectPath, files);
-    if (mounted) {
-      MessageBox.showInfo(context, result);
-    }
-    _loadGitData();
-  }
+  Future<void> _stageFiles(List<String> files) =>
+      _runGitAction((git) => git.stageFiles(widget.projectPath, files));
+
+  Future<void> _unstageFiles(List<String> files) =>
+      _runGitAction((git) => git.unstageFiles(widget.projectPath, files));
 
   /// Handles `_commit`.
   Future<void> _commit() async {
@@ -83,16 +80,9 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
     setState(() => _isCommitting = true);
     try {
-      final gitService = ref.read(gitServiceProvider);
-      final result = await gitService.commit(
-        widget.projectPath,
-        _commitController.text,
-      );
-      if (mounted) {
-        MessageBox.showInfo(context, result);
-      }
+      final message = _commitController.text;
       _commitController.clear();
-      _loadGitData();
+      await _runGitAction((git) => git.commit(widget.projectPath, message));
     } finally {
       if (mounted) {
         setState(() => _isCommitting = false);
@@ -100,52 +90,22 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     }
   }
 
-  Future<void> _push() async {
-    final gitService = ref.read(gitServiceProvider);
-    final result = await gitService.push(widget.projectPath);
-    if (mounted) {
-      MessageBox.showInfo(context, result);
-    }
-    _loadGitData();
-  }
+  Future<void> _push() => _runGitAction((git) => git.push(widget.projectPath));
 
-  Future<void> _pull() async {
-    final gitService = ref.read(gitServiceProvider);
-    final result = await gitService.pull(widget.projectPath);
-    if (mounted) {
-      MessageBox.showInfo(context, result);
-    }
-    _loadGitData();
-  }
+  Future<void> _pull() => _runGitAction((git) => git.pull(widget.projectPath));
 
   /// Handles `_discardChanges`.
   Future<void> _discardChanges(List<String> files) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Discard Changes'),
-        content: Text(
-          files.length == 1
-              ? 'Discard changes to "${files.first}"?\n\nThis action cannot be undone.'
-              : 'Discard changes to ${files.length} files?\n\nThis action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Discard'),
-          ),
-        ],
-      ),
+    final confirmed = await MessageBox.confirm(
+      context,
+      title: 'Discard Changes',
+      message: files.length == 1
+          ? 'Discard changes to "${files.first}"?\n\nThis action cannot be undone.'
+          : 'Discard changes to ${files.length} files?\n\nThis action cannot be undone.',
+      confirmLabel: 'Discard',
     );
 
-    if (confirmed != true) return;
+    if (!confirmed) return;
 
     final gitService = ref.read(gitServiceProvider);
     final result = await gitService.discardChanges(widget.projectPath, files);
@@ -160,6 +120,16 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     _loadGitData();
   }
 
+  /// Reads the working-directory content of [filePath], or '' when missing.
+  Future<String> _readWorkingCopy(String filePath) async {
+    try {
+      final file = File(filePath);
+      return await file.exists() ? await file.readAsString() : '';
+    } catch (_) {
+      return '';
+    }
+  }
+
   /// Handles `_viewDiff`.
   Future<void> _viewDiff(String filePath) async {
     final gitService = ref.read(gitServiceProvider);
@@ -168,74 +138,17 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     // Determine file status to get correct content
     final status = await gitService.getStatus(widget.projectPath);
     final isStaged = status.staged.contains(filePath);
-    final isUnstaged = status.unstaged.contains(filePath);
     final isUntracked = status.untracked.contains(filePath);
 
-    String oldText = '';
-    String newText = '';
-
-    try {
-      if (isUntracked) {
-        // For untracked files: empty vs working directory
-        oldText = '';
-        final file = File(fullFilePath);
-        if (await file.exists()) {
-          newText = await file.readAsString();
-        }
-      } else if (isStaged) {
-        // For staged files: HEAD vs staged content
-        try {
-          oldText = await gitService.getFileContentAtRevision(
-            widget.projectPath,
-            fullFilePath,
-            'HEAD',
-          );
-        } catch (_) {
-          // File might be new, oldText remains empty
-        }
-
-        // Get staged content (git show :file); an empty revision names the index
-        try {
-          newText = await gitService.getFileContentAtRevision(
-            widget.projectPath,
-            filePath,
-            '',
-          );
-        } catch (_) {
-          // Fallback to working directory if staged content not available
-          final file = File(fullFilePath);
-          if (await file.exists()) {
-            newText = await file.readAsString();
-          }
-        }
-      } else if (isUnstaged) {
-        // For unstaged files: HEAD vs working directory
-        try {
-          oldText = await gitService.getFileContentAtRevision(
-            widget.projectPath,
-            fullFilePath,
-            'HEAD',
-          );
-        } catch (_) {
-          // File might be new, oldText remains empty
-        }
-
-        final file = File(fullFilePath);
-        if (await file.exists()) {
-          newText = await file.readAsString();
-        }
-      }
-    } catch (_) {
-      // If any error occurs, try to show working directory content
-      try {
-        final file = File(fullFilePath);
-        if (await file.exists()) {
-          newText = await file.readAsString();
-        }
-      } catch (_) {
-        // Ignore fallback error
-      }
-    }
+    // Untracked files have no committed side; staged files compare the
+    // index, everything else the working copy
+    final oldText = isUntracked
+        ? ''
+        : await gitService.getHeadContent(fullFilePath);
+    final stagedText = isStaged
+        ? await gitService.getStagedContent(fullFilePath)
+        : null;
+    final newText = stagedText ?? await _readWorkingCopy(fullFilePath);
 
     if (mounted) {
       showDialog(

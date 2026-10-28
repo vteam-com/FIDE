@@ -17,3 +17,4 @@ part 'constants.terminal_palette.dart';
 part 'constants.app_color.dart';
 part 'constants.app_shade.dart';
 part 'constants.app_panel_index.dart';
+part 'constants.pref_keys.dart';

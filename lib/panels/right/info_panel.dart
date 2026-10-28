@@ -239,30 +239,14 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Full Project Cleanup'),
-        content: const Text(
-          'This will:\n• Flutter clean\n• Remove build artifacts\n• Clear pub cache\n• Reset CocoaPods (if macOS)\n\nContinue?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
+    final confirmed = await MessageBox.confirm(
+      context,
+      title: 'Full Project Cleanup',
+      message: 'This will:\n• Flutter clean\n• Remove build artifacts\n• Clear pub cache\n• Reset CocoaPods (if macOS)\n\nContinue?',
+      confirmLabel: 'Continue',
     );
 
-    if (confirmed != true) return;
+    if (!confirmed) return;
 
     setState(() => _isRefreshing = true);
 

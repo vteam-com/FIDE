@@ -1,6 +1,7 @@
 import 'package:fide/providers/ai_service.dart';
 import 'package:fide/providers/file_system_watcher.dart';
 import 'package:fide/providers/flutter_build_service.dart';
+import 'package:fide/providers/flutter_sdk.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/localization_service.dart';
 import 'package:fide/providers/process_runner.dart';
@@ -43,6 +44,11 @@ final projectAnalyzerProvider = Provider<ProjectAnalyzer>(
 /// Provides the [ProjectMaintenanceService] for dependency and cleanup chores.
 final projectMaintenanceServiceProvider = Provider<ProjectMaintenanceService>(
   (ref) => ProjectMaintenanceService(ref.read(processRunnerProvider)),
+);
+
+/// Provides the [FlutterSdk] probe for the installed Flutter and Dart versions.
+final flutterSdkProvider = Provider<FlutterSdk>(
+  (ref) => FlutterSdk(ref.read(processRunnerProvider)),
 );
 
 /// Provides the shared [ArbService] for reading and writing ARB files.

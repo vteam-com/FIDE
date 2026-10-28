@@ -2,6 +2,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/app_theme.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/screens/create_project_step1.dart';
@@ -123,93 +124,24 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
 
   /// Detects Flutter availability and version, updating [_flutterAvailable] and [_flutterVersion].
   Future<void> _checkFlutterStatus() async {
-    try {
-      // Check Flutter availability and get version
-      final result = await ref.read(processRunnerProvider).run('flutter', [
-        '--version',
-      ], runInShell: true);
-
-      if (result.exitCode == 0) {
-        _flutterAvailable = true;
-        // Extract version from output (first line typically contains version)
-        final output = result.stdout.toString();
-        final lines = output.split('\n');
-        if (lines.isNotEmpty) {
-          // Look for version pattern like "Flutter 3.24.0 • channel stable"
-          final versionLine = lines.firstWhere(
-            (line) => line.contains('Flutter'),
-            orElse: () => lines.first,
-          );
-          // Extract version number using regex
-          final versionMatch = RegExp(r'Flutter (\d+\.\d+\.\d+)')
-              .firstMatch(versionLine);
-          if (versionMatch != null) {
-            _flutterVersion = versionMatch.group(1);
-          } else {
-            _flutterVersion = 'Unknown';
-          }
-        } else {
-          _flutterVersion = 'Available';
-        }
-      } else {
-        _flutterAvailable = false;
-        _flutterVersion = null;
-      }
-
-      if (mounted) {
-        setState(() {
-          _flutterStatusChecked = true;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _flutterStatusChecked = true;
-          _flutterAvailable = false;
-          _flutterVersion = null;
-        });
-      }
-    }
+    final versions = await ref.read(flutterSdkProvider).versions();
+    if (!mounted) return;
+    setState(() {
+      _flutterStatusChecked = true;
+      _flutterAvailable = versions != null;
+      _flutterVersion = versions == null ? null : versions.flutter ?? 'Unknown';
+    });
   }
 
   /// Detects Git availability and version, updating [_gitAvailable] and [_gitVersion].
   Future<void> _checkGitStatus() async {
-    try {
-      // Check Git availability and get version
-      final result = await ref.read(processRunnerProvider).run('git', [
-        '--version',
-      ], runInShell: true);
-
-      if (result.exitCode == 0) {
-        _gitAvailable = true;
-        // Extract version from output (format: "git version 2.39.3")
-        final output = result.stdout.toString().trim();
-        final versionMatch = RegExp(r'git version (\d+\.\d+\.\d+)')
-            .firstMatch(output);
-        if (versionMatch != null) {
-          _gitVersion = versionMatch.group(1);
-        } else {
-          _gitVersion = 'Unknown';
-        }
-      } else {
-        _gitAvailable = false;
-        _gitVersion = null;
-      }
-
-      if (mounted) {
-        setState(() {
-          _gitStatusChecked = true;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _gitStatusChecked = true;
-          _gitAvailable = false;
-          _gitVersion = null;
-        });
-      }
-    }
+    final version = await ref.read(gitServiceProvider).version();
+    if (!mounted) return;
+    setState(() {
+      _gitStatusChecked = true;
+      _gitAvailable = version != null;
+      _gitVersion = version;
+    });
   }
 
   Future<void> _initializeDirectoryController() async {
@@ -391,7 +323,10 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
 
       if (_wantsLocalization) {
         final localizationService = ref.read(localizationServiceProvider);
-        await localizationService.initializeLocalization(projectPath);
+        await localizationService.initializeLocalization(
+          projectPath,
+          tolerateToolFailures: true,
+        );
 
         // Setup selected languages - create ARB files for each language
         for (final lang in _selectedLanguages) {
@@ -770,17 +705,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     return Scaffold(
       body: Container(
         padding: const EdgeInsets.all(AppSpacing.huge),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).colorScheme.surface,
-              Theme.of(context).colorScheme.surfaceContainerHighest
-                  .withValues(alpha: AppOpacity.divider),
-            ],
-          ),
-        ),
+        decoration: AppTheme.screenBackground(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

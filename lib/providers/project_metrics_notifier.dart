@@ -15,7 +15,7 @@ class ProjectMetricsNotifier extends StateNotifier<Map<String, dynamic>> {
 
     final projectPath = ref.read(currentProjectPathProvider);
     if (projectPath != null) {
-      final key = 'project_metrics_$projectPath';
+      final key = '${PrefKeys.projectMetricsPrefix}$projectPath';
       final jsonString = prefs!.getString(key);
       if (jsonString != null) {
         try {
@@ -36,7 +36,7 @@ class ProjectMetricsNotifier extends StateNotifier<Map<String, dynamic>> {
     if (prefs == null) return;
 
     state = metrics;
-    final key = 'project_metrics_$projectPath';
+    final key = '${PrefKeys.projectMetricsPrefix}$projectPath';
     final jsonString = jsonEncode(metrics);
     await prefs!.setString(key, jsonString);
   }

@@ -65,27 +65,17 @@ class ProjectManager {
   }
 
   /// Update MRU list with the selected project at the top.
-  Future<void> _updateMruList(String directoryPath) async {
-    final currentMruFolders = ref.read(mruFoldersProvider);
-    final updatedMruFolders = List<String>.from(currentMruFolders);
+  Future<void> _updateMruList(String directoryPath) {
+    return ref.read(mruFoldersProvider.notifier).touch(directoryPath);
+  }
 
-    updatedMruFolders.remove(directoryPath);
-    updatedMruFolders.insert(0, directoryPath);
-
-    if (updatedMruFolders.length > AppMetric.mruFolderLimit) {
-      updatedMruFolders.removeRange(
-        AppMetric.mruFolderLimit,
-        updatedMruFolders.length,
-      );
-    }
-
-    ref.read(mruFoldersProvider.notifier).state = updatedMruFolders;
-
+  /// Remembers [filePath] so [tryReopenLastFile] can restore it next time.
+  Future<void> saveLastOpenedFile(String filePath) async {
     try {
       final prefs = await ref.read(sharedPreferencesProvider.future);
-      await prefs.setStringList('mru_folders', updatedMruFolders);
-    } catch (e) {
-      _logger.severe('Error saving MRU list: $e');
+      await prefs.setString(PrefKeys.lastOpenedFile, filePath);
+    } catch (_) {
+      // Silently handle SharedPreferences errors.
     }
   }
 
@@ -93,7 +83,7 @@ class ProjectManager {
   Future<void> tryReopenLastFile(String projectPath) async {
     try {
       final prefs = await ref.read(sharedPreferencesProvider.future);
-      final lastFilePath = prefs.getString('last_opened_file');
+      final lastFilePath = prefs.getString(PrefKeys.lastOpenedFile);
 
       if (lastFilePath == null || lastFilePath.isEmpty) {
         return;
@@ -112,8 +102,12 @@ class ProjectManager {
         return;
       }
 
-      final fileSystemItem = FileSystemItem.fromFileSystemEntity(file);
-      ref.read(selectedFileProvider.notifier).state = fileSystemItem;
+      if (!await FileSystemItem.isWithinMaxFileSize(file)) {
+        return;
+      }
+
+      ref.read(selectedFileProvider.notifier).state =
+          FileSystemItem.forMruLoading(lastFilePath);
     } catch (_) {
       // Silently handle errors.
     }

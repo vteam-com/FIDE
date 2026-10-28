@@ -1,6 +1,5 @@
 // ignore_for_file: use_build_context_synchronously
 import 'package:fide/controllers/app_controller.dart';
-import 'package:fide/controllers/project_operations.dart';
 import 'package:fide/models/app_theme.dart';
 import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -11,10 +10,12 @@ import 'package:fide/screens/main_layout.dart';
 import 'package:fide/screens/welcome_screen.dart';
 import 'package:fide/widget_services/app_title_bar.dart';
 import 'package:fide/widget_services/native_menu_builder.dart';
+import 'package:fide/widgets/goto_line_dialog.dart';
+import 'package:fide/widgets/message_box.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 // Enum for main view state
 enum AppViewState {
@@ -45,17 +46,6 @@ class FIDE extends ConsumerStatefulWidget {
   ConsumerState<FIDE> createState() => _FIDEState();
 }
 
-// Global functions for menu actions - now delegate to ProjectOperations service
-/// Handles `pickDirectoryAndLoadProject`.
-Future<void> pickDirectoryAndLoadProject(BuildContext context, WidgetRef ref) =>
-    ProjectOperations.pickDirectoryAndLoadProject(context, ref);
-
-/// Handles `triggerOpenFolder`.
-void triggerOpenFolder() => ProjectOperations.triggerOpenFolder();
-
-/// Handles `triggerReopenLastFile`.
-void triggerReopenLastFile() => ProjectOperations.triggerReopenLastFile();
-
 void Function(WidgetRef ref) triggerTogglePanelLeft = (ref) {
   final current = ref.read(leftPanelVisibleProvider);
   ref.read(leftPanelVisibleProvider.notifier).state = !current;
@@ -74,10 +64,7 @@ void Function(WidgetRef ref) triggerTogglePanelRight = (ref) {
 class _FIDEState extends ConsumerState<FIDE> {
   final Logger _logger = Logger('_FIDEState');
 
-  ThemeMode _themeMode = ThemeMode.system;
   String? _lastOpenedFileName;
-  late SharedPreferences _prefs;
-  static const String _themeModeKey = 'theme_mode';
 
   // Unified view state management
   AppViewState _currentViewState = AppViewState.welcome;
@@ -113,8 +100,7 @@ class _FIDEState extends ConsumerState<FIDE> {
       });
 
       // Use the unified ProjectManager to handle everything
-      final projectManager = ProviderScope.containerOf(context)
-          .read(projectManagerProvider);
+      final projectManager = ref.read(projectManagerProvider);
       final success = await projectManager.loadProject(directoryPathToProject);
 
       // Clear loading state and set appropriate final state
@@ -148,20 +134,8 @@ class _FIDEState extends ConsumerState<FIDE> {
 
   /// Initializes app services, restores settings, and attempts MRU auto-load.
   Future<void> _initializeApp() async {
-    _prefs = await SharedPreferences.getInstance();
-
-    // Call AppController to initialize theme and MRU folders (this will get code coverage)
-    await ProviderScope.containerOf(context)
-        .read(appControllerProvider)
-        .initializeAppServices();
-
-    // Initialize UI state with loaded values
-    final savedThemeMode = _prefs.getString(_themeModeKey);
-    if (savedThemeMode != null) {
-      setState(() {
-        _themeMode = _parseThemeMode(savedThemeMode);
-      });
-    }
+    // Restores the theme and MRU folders into their providers
+    await ref.read(appControllerProvider).initializeAppServices();
 
     // Try to auto-load the first MRU project after initialization
     _tryAutoLoadFirstMruProject();
@@ -173,11 +147,9 @@ class _FIDEState extends ConsumerState<FIDE> {
       // Get current MRU folders from provider - they were loaded by AppController.initializeAppServices()
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          final ref = ProviderScope.containerOf(context);
           final mruFolders = ref.read(mruFoldersProvider);
-
           if (mruFolders.isNotEmpty) {
-            _tryLoadFirstMruProject(ref, mruFolders.first);
+            tryLoadProject(mruFolders.first);
           }
         }
       });
@@ -186,73 +158,31 @@ class _FIDEState extends ConsumerState<FIDE> {
     }
   }
 
-  /// Loads the first MRU project and updates loading and view state.
-  Future<void> _tryLoadFirstMruProject(
-    ProviderContainer container,
-    String projectPath,
-  ) async {
+  /// Opens a folder picker and loads the chosen folder as a project.
+  Future<void> _pickAndOpenProject() async {
     try {
-      // Set loading state before starting project load
-      if (mounted) {
-        setState(() {
-          _currentViewState = AppViewState.loadingProject;
-          _loadingProjectName = projectPath;
-        });
-      }
+      final selectedDirectory = await FilePicker.getDirectoryPath();
+      if (selectedDirectory == null || !mounted) return;
 
-      // Use ProjectService to load the project (this handles enumeration and watching)
-      final projectService = container.read(projectServiceProvider);
-      final success = await projectService.loadProject(projectPath);
-
-      // Clear loading state after auto-loading completes
-      _clearLoadingState();
-
-      if (success) {
-        _logger.info('Successfully auto-loaded MRU project: $projectPath');
-        // Set state to main layout since project loaded
-        if (mounted) {
-          setState(() {
-            _currentViewState = AppViewState.mainLayout;
-          });
-        }
-      } else {
-        _logger.warning('Failed to auto-load MRU project: $projectPath');
-        // Reset to welcome state on failure
-        if (mounted) {
-          setState(() {
-            _currentViewState = AppViewState.welcome;
-          });
-        }
+      final success = await tryLoadProject(selectedDirectory);
+      if (!success && mounted) {
+        MessageBox.showError(
+          navigatorKey.currentContext ?? context,
+          'Failed to load project. Please ensure it is a valid Flutter project.',
+        );
       }
     } catch (e) {
-      // Clear loading state on error
-      _clearLoadingState();
-      // Silently handle errors during auto-loading
-      _logger.severe('Error auto-loading MRU project: $e');
+      if (mounted) {
+        MessageBox.showError(
+          navigatorKey.currentContext ?? context,
+          'Error loading project: $e',
+        );
+      }
     }
-  }
-
-  /// Parses a persisted theme mode string into a [ThemeMode].
-  ThemeMode _parseThemeMode(String themeString) {
-    switch (themeString) {
-      case 'light':
-        return ThemeMode.light;
-      case 'dark':
-        return ThemeMode.dark;
-      case 'system':
-      default:
-        return ThemeMode.system;
-    }
-  }
-
-  Future<void> _saveThemeMode(ThemeMode themeMode) async {
-    final themeString = themeMode.name; // 'light', 'dark', or 'system'
-    await _prefs.setString(_themeModeKey, themeString);
   }
 
   void _updateTheme(ThemeMode themeMode) {
-    setState(() => _themeMode = themeMode);
-    _saveThemeMode(themeMode);
+    ref.read(appControllerProvider).setThemeMode(themeMode);
   }
 
   // Helper functions for create project callbacks
@@ -265,19 +195,7 @@ class _FIDEState extends ConsumerState<FIDE> {
   /// Closes the active project and returns the app to the welcome screen.
   void _closeCurrentProject() {
     if (_currentViewState == AppViewState.mainLayout) {
-      // Clear project state
-      ProviderScope.containerOf(context)
-              .read(projectLoadedProvider.notifier)
-              .state =
-          false;
-      ProviderScope.containerOf(context)
-              .read(currentProjectPathProvider.notifier)
-              .state =
-          null;
-      ProviderScope.containerOf(context)
-              .read(selectedFileProvider.notifier)
-              .state =
-          null;
+      ref.read(projectManagerProvider).unloadProject();
 
       // Switch back to welcome state
       setState(() {
@@ -288,12 +206,13 @@ class _FIDEState extends ConsumerState<FIDE> {
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = ref.watch(themeModeProvider);
     return MaterialApp(
       title: 'FIDE - Flutter Integrated Developer Environment',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: _themeMode,
+      themeMode: themeMode,
       navigatorKey: navigatorKey,
       home: Scaffold(
         body: Column(
@@ -303,7 +222,7 @@ class _FIDEState extends ConsumerState<FIDE> {
               builder: (_, ref, _) {
                 // Show TitleBar for all cases - it handles the logic internally
                 return AppTitleBar(
-                  themeMode: _themeMode,
+                  themeMode: themeMode,
                   onThemeChanged: (themeMode) => _updateTheme(themeMode),
                   onToggleLeftPanel: () => triggerTogglePanelLeft(ref),
                   onToggleBottomPanel: () => triggerTogglePanelBottom(ref),
@@ -313,9 +232,8 @@ class _FIDEState extends ConsumerState<FIDE> {
                   rightPanelVisible: ref.watch(rightPanelVisibleProvider),
                   showPanelToggles:
                       _currentViewState == AppViewState.mainLayout,
-                  onProjectSwitch: (projectPath) async {
-                    await tryLoadProject(projectPath);
-                  },
+                  onProjectSwitch: tryLoadProject,
+                  onOpenFolder: _pickAndOpenProject,
                   onProjectCreateComplete: () {
                     _clearCreatingState();
                   },
@@ -334,7 +252,7 @@ class _FIDEState extends ConsumerState<FIDE> {
                 menus: NativeMenuBuilder(
                   context: context,
                   ref: ref,
-                  onOpenFolder: triggerOpenFolder,
+                  onOpenFolder: _pickAndOpenProject,
                   onSave: ref.read(activeEditorProvider).save,
                   onCloseDocument: ref.read(activeEditorProvider).close,
                   onFind: ref.read(activeEditorProvider).toggleSearch,
@@ -351,16 +269,11 @@ class _FIDEState extends ConsumerState<FIDE> {
                   onCloseProject: _closeCurrentProject,
                   lastOpenedFileName: _lastOpenedFileName,
                   onThemeChanged: (themeMode) => _updateTheme(themeMode),
-                  currentThemeMode: _themeMode,
+                  currentThemeMode: themeMode,
                 ).buildMenus(),
                 child: Consumer(
-                  builder: (context, ref, _) {
+                  builder: (_, ref, _) {
                     final mruFolders = ref.watch(mruFoldersProvider);
-
-                    // Project loading functions with access to ref
-                    Future<void> pickDirectory() async {
-                      await pickDirectoryAndLoadProject(context, ref);
-                    }
 
                     // Determine the widget to show based on current state
                     final Widget content;
@@ -378,7 +291,7 @@ class _FIDEState extends ConsumerState<FIDE> {
                         break;
                       case AppViewState.welcome:
                         content = WelcomeScreen(
-                          onOpenFolder: pickDirectory,
+                          onOpenFolder: _pickAndOpenProject,
                           onCreateProject: () {
                             _logger.fine('onCreateProject called');
                             setState(() {
@@ -387,31 +300,15 @@ class _FIDEState extends ConsumerState<FIDE> {
                           },
                           mruFolders: mruFolders,
                           onOpenMruProject: tryLoadProject,
-                          onRemoveMruEntry: (path) async {
-                            final updatedMru = List<String>.from(mruFolders)
-                              ..remove(path);
-                            ref.read(mruFoldersProvider.notifier).state =
-                                updatedMru;
-
-                            // Save to SharedPreferences
-                            try {
-                              final prefs = await ref.read(
-                                sharedPreferencesProvider.future,
-                              );
-                              await prefs.setStringList(
-                                'mru_folders',
-                                updatedMru,
-                              );
-                            } catch (_) {
-                              // Silently handle SharedPreferences errors
-                            }
-                          },
+                          onRemoveMruEntry: ref
+                              .read(mruFoldersProvider.notifier)
+                              .remove,
                         );
                         break;
                       case AppViewState.mainLayout:
                         content = MainLayout(
-                          onThemeChanged: (themeMode) =>
-                              _updateTheme(themeMode),
+                          onOpenProject: tryLoadProject,
+                          onOpenFolder: _pickAndOpenProject,
                           onFileOpened: (fileName) {
                             setState(() => _lastOpenedFileName = fileName);
                           },
@@ -432,10 +329,7 @@ class _FIDEState extends ConsumerState<FIDE> {
 
   /// Opens the goto-line dialog and focuses its numeric input field.
   void _showGotoLineDialog(BuildContext context) {
-    ProjectOperations.showGotoLineDialog(
-      context,
-      ref.read(activeEditorProvider),
-    );
+    GotoLineDialog.show(context, ref.read(activeEditorProvider));
   }
 
   void _switchToPanel(WidgetRef ref, int panelIndex) {

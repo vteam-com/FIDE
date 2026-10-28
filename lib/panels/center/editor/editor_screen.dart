@@ -1021,58 +1021,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
         return;
       }
 
-      // Get the original file content (HEAD version) for oldText
-      String oldText = '';
-      try {
-        final projectPath = path.dirname(_currentFile);
-        // Calculate relative path from git repo root
-        final gitRootResult = await ref.read(processRunnerProvider).run('git', [
-          'rev-parse',
-          '--show-prefix',
-        ], workingDirectory: projectPath);
-        String relativePath;
-        if (gitRootResult.exitCode == 0) {
-          final prefix = gitRootResult.stdout.toString().trim();
-          if (prefix.isNotEmpty) {
-            // Remove the prefix from the file path to get relative path from repo root
-            final fileName = path.basename(_currentFile);
-            final dirPath = path.dirname(_currentFile);
-            final relativeDir = path.relative(dirPath, from: projectPath);
-            relativePath = relativeDir.isEmpty
-                ? fileName
-                : path.join(relativeDir, fileName);
-          } else {
-            relativePath = path.basename(_currentFile);
-          }
-        } else {
-          // Fallback to just basename if we can't determine git root
-          relativePath = path.basename(_currentFile);
-        }
-
-        _logger.info('Getting HEAD content for: $relativePath in $projectPath');
-        oldText = await gitService.getFileContentAtRevision(
-          projectPath,
-          relativePath,
-          'HEAD',
-        );
-        _logger.info('Got HEAD content, length: ${oldText.length}');
-      } catch (e) {
-        // If HEAD doesn't exist (new file), oldText remains empty
-        _logger.warning('Could not get HEAD version of file: $e');
-        // For debugging, let's also try to get the current working content as a fallback
-        try {
-          final file = File(_currentFile);
-          if (await file.exists()) {
-            final currentContent = await file.readAsString();
-            _logger.info(
-              'Current file content length: ${currentContent.length}',
-            );
-            // Don't set oldText to current content, that would make diff empty
-          }
-        } catch (fileError) {
-          _logger.warning('Could not read current file: $fileError');
-        }
-      }
+      // Committed content; empty for files not yet in HEAD
+      final oldText = await gitService.getHeadContent(_currentFile);
 
       // Current file content for newText
       final newText = _codeController.text;

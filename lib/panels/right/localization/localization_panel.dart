@@ -1,12 +1,9 @@
 // ignore_for_file: deprecated_member_use
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:analyzer/dart/analysis/utilities.dart';
-import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/localization_checks.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/panels/right/localization/localization_entry_widget.dart';
 import 'package:fide/panels/right/localization/localization_setup_widget.dart';
@@ -19,7 +16,6 @@ import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
-import 'package:yaml_edit/yaml_edit.dart';
 
 enum LocalizationStatus {
   checking,
@@ -59,6 +55,9 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
 
   // Localization status
   LocalizationStatus _localizationStatus = LocalizationStatus.checking;
+
+  // Latest file checks behind [_localizationStatus]
+  LocalizationChecks _checks = LocalizationChecks.none;
 
   @override
   void initState() {
@@ -121,69 +120,30 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     setState(() => _localizationStatus = LocalizationStatus.checking);
 
     try {
-      /// Handles `_evaluateLocalizationStatus`.
-      final status = await _evaluateLocalizationStatus(projectRoot.path);
-      setState(() => _localizationStatus = status);
+      final checks = await _localizationService.inspect(projectRoot.path);
+      setState(() {
+        _checks = checks;
+        _localizationStatus = _statusFor(checks);
+      });
     } catch (e) {
       setState(() => _localizationStatus = LocalizationStatus.error);
       _logger.severe('Error checking localization status: $e');
     }
   }
 
-  /// Handles `_evaluateLocalizationStatus`.
-  Future<LocalizationStatus> _evaluateLocalizationStatus(
-    String projectPath,
-  ) async {
-    // Check if pubspec.yaml exists
-    final pubspecFile = File('$projectPath/pubspec.yaml');
-    if (!await pubspecFile.exists()) return LocalizationStatus.noProject;
-
-    final pubspecContent = await pubspecFile.readAsString();
-
-    // Check for basic Flutter project structure
-    if (!pubspecContent.contains('flutter:') ||
-        !pubspecContent.contains('sdk: flutter')) {
-      return LocalizationStatus.notFlutterProject;
-    }
-
-    // Check for ARB files in the loaded project
-    final l10nDir = Directory('$projectPath/lib/l10n');
-    final hasL10nDirectory = await l10nDir.exists();
-
-    bool hasArbFiles = false;
-    if (hasL10nDirectory) {
-      final arbFiles = await l10nDir
-          .list()
-          .where((entity) => entity.path.endsWith('.arb'))
-          .toList();
-      hasArbFiles = arbFiles.isNotEmpty;
-    }
-
-    // Check for generated classes in the loaded project
-    final generatedClassesFile = File(
-      '$projectPath/lib/l10n/app_localizations.dart',
-    );
-    final hasGeneratedClasses = await generatedClassesFile.exists();
-
-    // Check main.dart integration in the loaded project
-    final mainFile = File('$projectPath/lib/main.dart');
-    bool hasAppIntegration = false;
-    if (await mainFile.exists()) {
-      final mainContent = await mainFile.readAsString();
-      hasAppIntegration =
-          mainContent.contains('AppLocalizations') &&
-          mainContent.contains('localizationsDelegates') &&
-          mainContent.contains('supportedLocales');
-    }
-
-    // Determine overall status
-    if (hasArbFiles && hasGeneratedClasses && hasAppIntegration) {
+  /// Summarises [checks] as the status that picks which view to show.
+  LocalizationStatus _statusFor(LocalizationChecks checks) {
+    if (!checks.hasPubspec) return LocalizationStatus.noProject;
+    if (!checks.isFlutterProject) return LocalizationStatus.notFlutterProject;
+    if (checks.hasArbFiles &&
+        checks.hasGeneratedClasses &&
+        checks.hasAppIntegration) {
       return LocalizationStatus.complete;
-    } else if (hasArbFiles || hasGeneratedClasses) {
-      return LocalizationStatus.partial;
-    } else {
-      return LocalizationStatus.notStarted;
     }
+    if (checks.hasArbFiles || checks.hasGeneratedClasses) {
+      return LocalizationStatus.partial;
+    }
+    return LocalizationStatus.notStarted;
   }
 
   /// Handles `_loadArbFiles`.
@@ -247,48 +207,13 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     setState(() => _isLoading = true);
 
     try {
-      // Step 1: Add required packages
-      if (mounted) {
-        MessageBox.showInfo(
-          context,
-          'Adding flutter_localizations and intl packages...',
-        );
-      }
+      await _localizationService.initializeLocalization(
+        projectRoot.path,
+        onStep: (step) {
+          if (mounted) MessageBox.showInfo(context, step);
+        },
+      );
 
-      /// Handles `_addPackages`.
-      await _addPackages(projectRoot.path);
-
-      // Step 2: Configure pubspec.yaml
-      if (mounted) {
-        MessageBox.showInfo(context, 'Configuring pubspec.yaml...');
-      }
-
-      /// Handles `_configurePubspec`.
-      await _configurePubspec(projectRoot.path);
-
-      // Step 3: Create l10n directory
-      if (mounted) {
-        MessageBox.showInfo(context, 'Creating lib/l10n directory...');
-      }
-      await _createL10nDirectory(projectRoot.path);
-
-      // Step 4: Create ARB files
-      if (mounted) {
-        MessageBox.showInfo(context, 'Creating template ARB files...');
-      }
-
-      /// Handles `_createArbFiles`.
-      await _createArbFiles(projectRoot.path);
-
-      // Step 5: Generate localization classes
-      if (mounted) {
-        MessageBox.showInfo(context, 'Generating localization classes...');
-      }
-
-      /// Handles `_generateClasses`.
-      await _generateClasses(projectRoot.path);
-
-      // Step 6: Update main.dart
       if (mounted) {
         MessageBox.showInfo(context, 'Updating main.dart...');
       }
@@ -310,109 +235,6 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       if (mounted) {
         MessageBox.showError(context, 'Error initializing localization: $e');
       }
-    }
-  }
-
-  /// Handles `_addPackages`.
-  Future<void> _addPackages(String projectPath) async {
-    // Add flutter_localizations
-    final addFlutterLocalizationsResult = await ref
-        .read(processRunnerProvider)
-        .run('flutter', [
-          'pub',
-          'add',
-          'flutter_localizations',
-          '--sdk=flutter',
-        ], workingDirectory: projectPath);
-    if (addFlutterLocalizationsResult.exitCode != 0) {
-      throw Exception(
-        'Failed to add flutter_localizations: ${addFlutterLocalizationsResult.stderr}',
-      );
-    }
-
-    // Add intl
-    final addIntlResult = await ref.read(processRunnerProvider).run('flutter', [
-      'pub',
-      'add',
-      'intl',
-    ], workingDirectory: projectPath);
-    if (addIntlResult.exitCode != 0) {
-      throw Exception('Failed to add intl: ${addIntlResult.stderr}');
-    }
-  }
-
-  /// Handles `_configurePubspec`.
-  Future<void> _configurePubspec(String projectPath) async {
-    final pubspecFile = File('$projectPath/pubspec.yaml');
-    if (await pubspecFile.exists()) {
-      final pubspecContent = await pubspecFile.readAsString();
-      final editor = YamlEditor(pubspecContent);
-
-      // Add generate: true to flutter section
-      editor.update(['flutter', 'generate'], true);
-
-      await pubspecFile.writeAsString(editor.toString());
-    }
-  }
-
-  Future<void> _createL10nDirectory(String projectPath) async {
-    final l10nDir = Directory('$projectPath/lib/l10n');
-    if (!await l10nDir.exists()) {
-      await l10nDir.create(recursive: true);
-    }
-  }
-
-  /// Handles `_createArbFiles`.
-  Future<void> _createArbFiles(String projectPath) async {
-    final l10nDir = Directory('$projectPath/lib/l10n');
-
-    // Try to read existing app title from main.dart
-    String appTitle = 'My App';
-    final mainFile = File('$projectPath/lib/main.dart');
-    if (await mainFile.exists()) {
-      final mainContent = await mainFile.readAsString();
-
-      /// Handles `_extractAppTitleFromMainDart`.
-      final extractedTitle = _extractAppTitleFromMainDart(mainContent);
-      if (extractedTitle != null && extractedTitle.isNotEmpty) {
-        appTitle = extractedTitle;
-      }
-    }
-
-    // Create English ARB file
-    final englishArbContent = {
-      '@@locale': 'en',
-      'appTitle': appTitle,
-      '@appTitle': {'description': 'The title of the application'},
-      'helloWorld': 'Hello World',
-      '@helloWorld': {'description': 'A greeting message'},
-    };
-
-    // Create French ARB file
-    final frenchArbContent = {
-      '@@locale': 'fr',
-      'appTitle': 'Mon Application',
-      '@appTitle': {'description': 'The title of the application'},
-      'helloWorld': 'Bonjour le monde',
-      '@helloWorld': {'description': 'A greeting message'},
-    };
-
-    await File('${l10nDir.path}/app_en.arb')
-        .writeAsString(jsonEncode(englishArbContent));
-    await File('${l10nDir.path}/app_fr.arb')
-        .writeAsString(jsonEncode(frenchArbContent));
-  }
-
-  /// Handles `_generateClasses`.
-  Future<void> _generateClasses(String projectPath) async {
-    final result = await ref.read(processRunnerProvider).run('flutter', [
-      'gen-l10n',
-    ], workingDirectory: projectPath);
-
-    if (result.exitCode != 0) {
-      throw Exception(
-        'Failed to generate localization classes: ${result.stderr}',
-      );
     }
   }
 
@@ -448,13 +270,9 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     setState(() => _isLoading = true);
 
     try {
-      // Check if generate: true is set in pubspec.yaml
-      final pubspecFile = File('${projectRoot.path}/pubspec.yaml');
-      bool hasGenerateFlag = false;
-      if (await pubspecFile.exists()) {
-        final pubspecContent = await pubspecFile.readAsString();
-        hasGenerateFlag = pubspecContent.contains('generate: true');
-      }
+      final hasGenerateFlag = (await _localizationService.inspect(
+        projectRoot.path,
+      )).hasGenerateFlag;
 
       if (!hasGenerateFlag) {
         setState(() => _isLoading = false);
@@ -467,26 +285,13 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
         return;
       }
 
-      final result = await ref.read(processRunnerProvider).run('flutter', [
-        'gen-l10n',
-      ], workingDirectory: projectRoot.path);
-
-      if (result.exitCode == 0) {
-        await _checkLocalizationStatus();
-        if (mounted) {
-          MessageBox.showSuccess(
-            context,
-            'Localization classes generated successfully!',
-          );
-        }
-      } else {
-        setState(() => _isLoading = false);
-        if (mounted) {
-          MessageBox.showError(
-            context,
-            'Error generating classes: ${result.stderr}',
-          );
-        }
+      await _localizationService.generateClasses(projectRoot.path);
+      await _checkLocalizationStatus();
+      if (mounted) {
+        MessageBox.showSuccess(
+          context,
+          'Localization classes generated successfully!',
+        );
       }
     } catch (e) {
       setState(() => _isLoading = false);
@@ -601,15 +406,12 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
 
   /// Handles `_buildPartialView`.
   Widget _buildPartialView() {
-    /// Handles `_hasArbFiles`.
-    final hasArbFiles = _hasArbFiles();
+    final hasArbFiles = _checks.hasArbFiles;
     final hasValidArbFiles = _arbFiles.isNotEmpty;
-    final hasGeneratedClasses = _hasGeneratedClasses();
-
-    /// Handles `_hasAppIntegration`.
-    final hasAppIntegration = _hasAppIntegration();
-    final hasLocalizationDependencies = _hasLocalizationDependencies();
-    final hasFlutterGenerateFlag = _hasFlutterGenerateFlag();
+    final hasGeneratedClasses = _checks.hasGeneratedClasses;
+    final hasAppIntegration = _checks.hasAppIntegration;
+    final hasLocalizationDependencies = _checks.hasDependencies;
+    final hasFlutterGenerateFlag = _checks.hasGenerateFlag;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.xLarge),
@@ -1002,57 +804,6 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     );
   }
 
-  bool _hasGeneratedClasses() {
-    final projectRoot = ref.read(currentProjectRootProvider);
-    if (projectRoot == null) return false;
-    final file = File('${projectRoot.path}/lib/l10n/app_localizations.dart');
-    return file.existsSync();
-  }
-
-  /// Handles `_hasArbFiles`.
-  bool _hasArbFiles() {
-    final projectRoot = ref.read(currentProjectRootProvider);
-    if (projectRoot == null) return false;
-    final l10nDir = Directory('${projectRoot.path}/lib/l10n');
-    if (!l10nDir.existsSync()) return false;
-    final arbFiles = l10nDir
-        .listSync()
-        .where((entity) => entity.path.endsWith('.arb'))
-        .toList();
-    return arbFiles.isNotEmpty;
-  }
-
-  bool _hasLocalizationDependencies() {
-    final projectRoot = ref.read(currentProjectRootProvider);
-    if (projectRoot == null) return false;
-    final file = File('${projectRoot.path}/pubspec.yaml');
-    if (!file.existsSync()) return false;
-    final content = file.readAsStringSync();
-    return content.contains('flutter_localizations:') &&
-        content.contains('intl:');
-  }
-
-  bool _hasFlutterGenerateFlag() {
-    final projectRoot = ref.read(currentProjectRootProvider);
-    if (projectRoot == null) return false;
-    final file = File('${projectRoot.path}/pubspec.yaml');
-    if (!file.existsSync()) return false;
-    final content = file.readAsStringSync();
-    return content.contains('generate: true');
-  }
-
-  /// Handles `_hasAppIntegration`.
-  bool _hasAppIntegration() {
-    final projectRoot = ref.read(currentProjectRootProvider);
-    if (projectRoot == null) return false;
-    final file = File('${projectRoot.path}/lib/main.dart');
-    if (!file.existsSync()) return false;
-    final content = file.readAsStringSync();
-    return content.contains('AppLocalizations') &&
-        content.contains('localizationsDelegates') &&
-        content.contains('supportedLocales');
-  }
-
   /// Handles `_buildComparisonTile`.
   Widget _buildComparisonTile(ArbComparison comparison) {
     return Card(
@@ -1157,43 +908,5 @@ Provide only the translated text, no additional explanation or quotes.''';
         MessageBox.showError(context, 'Error translating: $e');
       }
     }
-  }
-
-  /// Handles `_extractAppTitleFromMainDart`.
-  String? _extractAppTitleFromMainDart(String content) {
-    try {
-      final result = parseString(content: content);
-      final unit = result.unit;
-
-      final visitor = _MaterialAppTitleVisitor();
-      unit.accept(visitor);
-      return visitor.title;
-    } catch (e) {
-      _logger.severe('Error parsing main.dart: $e');
-      return null;
-    }
-  }
-}
-
-class _MaterialAppTitleVisitor extends GeneralizingAstVisitor<void> {
-  String? title;
-
-  @override
-  void visitInstanceCreationExpression(InstanceCreationExpression node) {
-    // Check if this is a MaterialApp constructor
-    if (node.constructorName.toString() == 'MaterialApp') {
-      // Look for the title argument
-      for (final argument in node.argumentList.arguments) {
-        if (argument is NamedArgument && argument.name.lexeme == 'title') {
-          final expression = argument.argumentExpression;
-          if (expression is StringLiteral) {
-            title = expression.stringValue;
-            break;
-          }
-        }
-      }
-    }
-
-    super.visitInstanceCreationExpression(node);
   }
 }

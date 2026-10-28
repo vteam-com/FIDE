@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/app_theme.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:flutter/material.dart';
@@ -61,17 +62,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
         return Container(
           padding: const EdgeInsets.all(AppSize.compactActionButton),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Theme.of(context).colorScheme.surface,
-                Theme.of(context).colorScheme.surfaceContainerHighest
-                    .withValues(alpha: AppOpacity.divider),
-              ],
-            ),
-          ),
+          decoration: AppTheme.screenBackground(context),
           child: LayoutBuilder(
             builder: (context, _) {
               return Column(

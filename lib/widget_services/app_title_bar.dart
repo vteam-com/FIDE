@@ -4,9 +4,7 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/theme_settings_dialog.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -27,7 +25,8 @@ class AppTitleBar extends ConsumerStatefulWidget {
   final bool bottomPanelVisible;
   final bool rightPanelVisible;
   final bool showPanelToggles;
-  final Function(String)? onProjectSwitch;
+  final Future<bool> Function(String directoryPath) onProjectSwitch;
+  final VoidCallback onOpenFolder;
   final VoidCallback? onProjectCreateComplete;
   final VoidCallback? onShowCreateProjectScreen;
   final VoidCallback? onCloseProject;
@@ -43,7 +42,8 @@ class AppTitleBar extends ConsumerStatefulWidget {
     this.bottomPanelVisible = true,
     this.rightPanelVisible = true,
     this.showPanelToggles = true,
-    this.onProjectSwitch,
+    required this.onProjectSwitch,
+    required this.onOpenFolder,
     this.onProjectCreateComplete,
     this.onShowCreateProjectScreen,
     this.onCloseProject,
@@ -255,35 +255,11 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
 
   /// Handles a selection from the project dropdown — opens a folder, closes the project, or switches to an MRU entry.
   Future<void> _handleDropdownSelection(String value, WidgetRef ref) async {
-    final projectManager = ref.read(projectManagerProvider);
-
     if (value == 'add_folder') {
-      // Open folder picker first
-      try {
-        final selectedDirectory = await FilePicker.getDirectoryPath();
-        if (selectedDirectory != null && mounted && context.mounted) {
-          // Use the onProjectSwitch callback to load with loading screen
-          if (widget.onProjectSwitch != null) {
-            await widget.onProjectSwitch!(selectedDirectory);
-          } else {
-            // Fallback to direct loading if no callback provided
-            final success = await projectManager.loadProject(selectedDirectory);
-            if (success) {
-              await projectManager.tryReopenLastFile(selectedDirectory);
-            }
-          }
-        }
-      } catch (e) {
-        if (mounted && context.mounted) {
-          MessageBox.showError(context, 'Error opening folder: $e');
-        }
-      }
+      widget.onOpenFolder();
       return;
     } else if (value == 'create_project') {
-      // Close current project
-      ref.read(projectLoadedProvider.notifier).state = false;
-      ref.read(currentProjectPathProvider.notifier).state = null;
-      ref.read(selectedFileProvider.notifier).state = null;
+      ref.read(projectManagerProvider).unloadProject();
 
       // Set main app state to create project
       widget.onShowCreateProjectScreen?.call();
@@ -292,28 +268,9 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
       widget.onCloseProject?.call();
     } else if (value.startsWith('remove_')) {
       final pathToRemove = value.substring(AppMetric.removePrefixLength);
-      final updatedMru = List<String>.from(ref.read(mruFoldersProvider))
-        ..remove(pathToRemove);
-      ref.read(mruFoldersProvider.notifier).state = updatedMru;
-
-      // Save to SharedPreferences
-      try {
-        final prefs = await ref.read(sharedPreferencesProvider.future);
-        await prefs.setStringList('mru_folders', updatedMru);
-      } catch (_) {
-        // Silently handle SharedPreferences errors
-      }
+      await ref.read(mruFoldersProvider.notifier).remove(pathToRemove);
     } else {
-      // Use the callback to load project (this will set loading state)
-      if (widget.onProjectSwitch != null) {
-        await widget.onProjectSwitch!(value);
-      } else {
-        // Fallback to direct loading if no callback provided
-        final success = await projectManager.loadProject(value);
-        if (success) {
-          await projectManager.tryReopenLastFile(value);
-        }
-      }
+      await widget.onProjectSwitch(value);
     }
   }
 

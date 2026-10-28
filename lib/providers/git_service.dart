@@ -18,7 +18,7 @@ class GitService {
   const GitService([this._runner = const ProcessRunner()]);
 
   /// Runs a mutating Git command and returns a normalized status message.
-  Future<String> _runGitFileMutation({
+  Future<String> _runGitMutation({
     required String path,
     required List<String> args,
     required String successMessage,
@@ -73,44 +73,38 @@ class GitService {
     return files;
   }
 
-  // Check if Git is available
-  /// Returns true when the `git` executable is available on the system.
-  Future<bool> isGitAvailable() async {
-    try {
-      final result = await _runner.run('git', ['--version']);
-      return result.exitCode == 0;
-    } catch (e) {
-      return false;
-    }
+  /// Installed Git version (e.g. `2.39.3`); null when Git isn't available,
+  /// `Unknown` when its version output can't be parsed.
+  Future<String?> version() async {
+    final output = await _runner.outputOf('git', [
+      '--version',
+    ], runInShell: true);
+    if (output == null) return null;
+    return RegExp(r'git version (\d+\.\d+\.\d+)')
+            .firstMatch(output)
+            ?.group(1) ??
+        'Unknown';
   }
 
   // Check if directory is a Git repository
   /// Returns true if the provided path is inside a valid Git repository.
-  Future<bool> isGitRepository(String path) async {
-    try {
-      final result = await _runner.run('git', [
-        'rev-parse',
-        '--git-dir',
-      ], workingDirectory: path);
-      return result.exitCode == 0;
-    } catch (e) {
-      return false;
-    }
+  Future<bool> isGitRepository(String path) {
+    return _runner.succeeds('git', [
+      'rev-parse',
+      '--git-dir',
+    ], workingDirectory: path);
   }
 
   // Initialize Git repository
   /// Initializes a new Git repository at the provided path.
   Future<String> initRepository(String path) async {
-    try {
-      final result = await _runner.run('git', ['init'], workingDirectory: path);
-      if (result.exitCode == 0) {
-        return 'Git repository initialized successfully';
-      } else {
-        return 'Failed to initialize Git repository: ${result.stderr}';
-      }
-    } catch (e) {
-      return 'Error initializing Git repository: $e';
-    }
+    return _runGitMutation(
+      path: path,
+      args: ['init'],
+      successMessage: 'Git repository initialized successfully',
+      failurePrefix: 'Failed to initialize Git repository',
+      errorPrefix: 'Error initializing Git repository',
+    );
   }
 
   // Get Git status
@@ -186,7 +180,7 @@ class GitService {
   // Stage files
   /// Stages the provided file paths.
   Future<String> stageFiles(String path, List<String> files) async {
-    return _runGitFileMutation(
+    return _runGitMutation(
       path: path,
       args: ['add', ...files],
       successMessage: 'Files staged successfully',
@@ -198,7 +192,7 @@ class GitService {
   // Unstage files
   /// Unstages the provided file paths from the index.
   Future<String> unstageFiles(String path, List<String> files) async {
-    return _runGitFileMutation(
+    return _runGitMutation(
       path: path,
       args: ['reset', 'HEAD', ...files],
       successMessage: 'Files unstaged successfully',
@@ -210,50 +204,37 @@ class GitService {
   // Commit changes
   /// Creates a commit with the given commit message.
   Future<String> commit(String path, String message) async {
-    try {
-      final result = await _runner.run('git', [
-        'commit',
-        '-m',
-        message,
-      ], workingDirectory: path);
-      if (result.exitCode == 0) {
-        return 'Changes committed successfully';
-      } else {
-        return 'Failed to commit changes: ${result.stderr}';
-      }
-    } catch (e) {
-      return 'Error committing changes: $e';
-    }
+    return _runGitMutation(
+      path: path,
+      args: ['commit', '-m', message],
+      successMessage: 'Changes committed successfully',
+      failurePrefix: 'Failed to commit changes',
+      errorPrefix: 'Error committing changes',
+    );
   }
 
   // Push to remote
   /// Pushes local commits to the configured remote.
   Future<String> push(String path) async {
-    try {
-      final result = await _runner.run('git', ['push'], workingDirectory: path);
-      if (result.exitCode == 0) {
-        return 'Changes pushed successfully';
-      } else {
-        return 'Failed to push changes: ${result.stderr}';
-      }
-    } catch (e) {
-      return 'Error pushing changes: $e';
-    }
+    return _runGitMutation(
+      path: path,
+      args: ['push'],
+      successMessage: 'Changes pushed successfully',
+      failurePrefix: 'Failed to push changes',
+      errorPrefix: 'Error pushing changes',
+    );
   }
 
   // Pull from remote
   /// Pulls remote changes into the current branch.
   Future<String> pull(String path) async {
-    try {
-      final result = await _runner.run('git', ['pull'], workingDirectory: path);
-      if (result.exitCode == 0) {
-        return 'Changes pulled successfully';
-      } else {
-        return 'Failed to pull changes: ${result.stderr}';
-      }
-    } catch (e) {
-      return 'Error pulling changes: $e';
-    }
+    return _runGitMutation(
+      path: path,
+      args: ['pull'],
+      successMessage: 'Changes pulled successfully',
+      failurePrefix: 'Failed to pull changes',
+      errorPrefix: 'Error pulling changes',
+    );
   }
 
   // Get current branch
@@ -397,27 +378,44 @@ class GitService {
     );
   }
 
-  // Get file content at a specific revision
-  /// Returns file content resolved from a specific Git revision.
-  Future<String> getFileContentAtRevision(
-    String path,
-    String filePath,
-    String revision,
-  ) async {
+  /// Returns the committed content of the absolute [filePath] at HEAD, or an
+  /// empty string when the file isn't in HEAD (new or untracked).
+  Future<String> getHeadContent(String filePath) async {
+    return await _showRelativeToFile(filePath, 'HEAD') ?? '';
+  }
+
+  /// Returns the staged (index) content of the absolute [filePath], or null
+  /// when the file isn't in the index.
+  Future<String?> getStagedContent(String filePath) {
+    return _showRelativeToFile(filePath, '');
+  }
+
+  /// Runs `git show <revision>:./<name>` from the file's own directory, so
+  /// the path resolves correctly wherever the repository root is.
+  Future<String?> _showRelativeToFile(String filePath, String revision) async {
     try {
       final result = await _runner.run('git', [
         'show',
-        '$revision:$filePath',
-      ], workingDirectory: path);
-
-      if (result.exitCode == 0) {
-        return result.stdout.toString();
-      } else {
-        throw Exception('Failed to get file content: ${result.stderr}');
-      }
-    } catch (e) {
-      throw Exception('Error getting file content at revision: $e');
+        '$revision:./${path.basename(filePath)}',
+      ], workingDirectory: path.dirname(filePath));
+      return result.exitCode == 0 ? result.stdout.toString() : null;
+    } catch (_) {
+      return null;
     }
+  }
+
+  /// Whether [file] is tracked in the repository at [path].
+  ///
+  /// Deliberately not [ProcessRunner.succeeds]: when git can't run this
+  /// throws, so [discardChanges] never mistakes every file for an untracked
+  /// one and deletes it.
+  Future<bool> _isTracked(String path, String file) async {
+    final result = await _runner.run('git', [
+      'ls-files',
+      '--error-unmatch',
+      file,
+    ], workingDirectory: path);
+    return result.exitCode == 0;
   }
 
   // Discard changes for files (git checkout -- files or git rm for untracked)
@@ -429,13 +427,7 @@ class GitService {
 
       // Check each file individually to determine if it's tracked
       for (final file in files) {
-        final isTrackedResult = await _runner.run('git', [
-          'ls-files',
-          '--error-unmatch',
-          file,
-        ], workingDirectory: path);
-
-        if (isTrackedResult.exitCode == 0) {
+        if (await _isTracked(path, file)) {
           // File is tracked
           modifiedFiles.add(file);
         } else {
@@ -479,13 +471,7 @@ class GitService {
   Future<GitDiffStats> getFileDiffStats(String path, String filePath) async {
     try {
       // First check if file is tracked
-      final isTrackedResult = await _runner.run('git', [
-        'ls-files',
-        '--error-unmatch',
-        filePath,
-      ], workingDirectory: path);
-
-      final isTracked = isTrackedResult.exitCode == 0;
+      final isTracked = await _isTracked(path, filePath);
 
       if (!isTracked) {
         // For untracked files, count all lines as additions

@@ -1,6 +1,5 @@
 // ignore: fcheck_dead_code
-import 'dart:io';
-
+import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:flutter/material.dart';
@@ -51,49 +50,25 @@ class AppController {
     final SharedPreferences prefs = await ref.read(
       sharedPreferencesProvider.future,
     );
-    final savedThemeMode = prefs.getString('theme_mode');
-    if (savedThemeMode != null) {
-      final themeMode = _parseThemeMode(savedThemeMode);
+    final savedThemeMode = prefs.getString(PrefKeys.themeMode);
+    final themeMode = ThemeMode.values.asNameMap()[savedThemeMode];
+    if (themeMode != null) {
       ref.read(themeModeProvider.notifier).state = themeMode;
     }
   }
 
-  /// Load MRU folders and try to auto-load first project
-  Future<void> _loadMruFolders() async {
+  /// Load MRU folders, dropping ones that no longer exist
+  Future<void> _loadMruFolders() {
+    return ref.read(mruFoldersProvider.notifier).load();
+  }
+
+  /// Applies [themeMode] app-wide and persists it for the next launch.
+  Future<void> setThemeMode(ThemeMode themeMode) async {
+    ref.read(themeModeProvider.notifier).state = themeMode;
     final SharedPreferences prefs = await ref.read(
       sharedPreferencesProvider.future,
     );
-    final mruList = prefs.getStringList('mru_folders') ?? [];
-
-    // Filter out folders that don't exist
-    final validMruFolders = mruList
-        .where((path) => Directory(path).existsSync())
-        .toList();
-
-    // Update the provider
-    ref.read(mruFoldersProvider.notifier).state = validMruFolders;
-  }
-
-  /// Parse theme mode string to ThemeMode enum
-  ThemeMode _parseThemeMode(String themeString) {
-    switch (themeString) {
-      case 'light':
-        return ThemeMode.light;
-      case 'dark':
-        return ThemeMode.dark;
-      case 'system':
-      default:
-        return ThemeMode.system;
-    }
-  }
-
-  /// Save theme mode to shared preferences
-  Future<void> saveThemeMode(ThemeMode themeMode) async {
-    final SharedPreferences prefs = await ref.read(
-      sharedPreferencesProvider.future,
-    );
-    final themeString = themeMode.name;
-    await prefs.setString('theme_mode', themeString);
+    await prefs.setString(PrefKeys.themeMode, themeMode.name);
   }
 }
 

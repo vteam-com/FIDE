@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/flutter_platform.dart';
 import 'package:yaml/yaml.dart';
 
 /// Gathers project metrics (pubspec info, file and directory statistics,
@@ -9,16 +10,11 @@ import 'package:yaml/yaml.dart';
 /// Produces the metrics map persisted by `ProjectMetricsNotifier` and
 /// rendered by the Info panel.
 class ProjectAnalyzer {
-  static const List<String> _trackedTopLevelDirectories = [
-    'android',
-    'ios',
-    'web',
-    'windows',
-    'linux',
-    'macos',
+  static final Set<String> _trackedTopLevelDirectories = {
+    for (final platform in FlutterPlatform.values) platform.name,
     'lib',
     'test',
-  ];
+  };
 
   /// Creates a stateless analyzer.
   const ProjectAnalyzer();

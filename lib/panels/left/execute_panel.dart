@@ -3,6 +3,8 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/output_log.dart';
+import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/flutter_build_service.dart';
 import 'package:fide/providers/service_providers.dart';
@@ -23,24 +25,6 @@ class ExecutePanel extends ConsumerStatefulWidget {
 }
 
 class _ExecutePanelState extends ConsumerState<ExecutePanel> {
-  static const Map<String, String> _deviceTargetsByPlatform = {
-    'macos': 'macos',
-    'windows': 'windows',
-    'linux': 'linux',
-    'web': 'chrome',
-    'android': 'android',
-    'ios': 'ios',
-  };
-
-  static const Map<String, String> _displayNamesByPlatform = {
-    'macos': 'macOS',
-    'windows': 'Windows',
-    'linux': 'Linux',
-    'web': 'Web',
-    'android': 'Android',
-    'ios': 'iOS',
-  };
-
   BuildProcessStatus _cleanStatus = BuildProcessStatus.idle;
   BuildProcessStatus _buildStatus = BuildProcessStatus.idle;
   BuildProcessStatus _runStatus = BuildProcessStatus.idle;
@@ -51,10 +35,8 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
     flutterBuildServiceProvider,
   );
   Process? _currentProcess;
-  final Map<String, StringBuffer> _outputBuffers = {};
-  final Map<String, StringBuffer> _errorBuffers = {};
-  final Map<String, bool> _hasErrorsMap = {};
-  final Map<String, bool> _hasOutputMap = {};
+  // One log per platform so switching targets keeps each one's output
+  final Map<String, OutputLog> _logs = {};
   String _selectedPlatform = 'android';
   Set<String> _supportedPlatforms = {};
 
@@ -76,7 +58,8 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
 
   Future<void> _loadSelectedPlatform() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedPlatform = prefs.getString('selected_platform') ?? 'android';
+    final savedPlatform =
+        prefs.getString(PrefKeys.selectedPlatform) ?? 'android';
     setState(() {
       _selectedPlatform = savedPlatform;
     });
@@ -84,67 +67,21 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
 
   Future<void> _saveSelectedPlatform(String platform) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('selected_platform', platform);
+    await prefs.setString(PrefKeys.selectedPlatform, platform);
   }
 
-  String get _displayOutput =>
-      _outputBuffers[_selectedPlatform]?.toString() ?? '';
-  String get _displayErrors =>
-      _errorBuffers[_selectedPlatform]?.toString() ?? '';
+  /// Output log of the selected platform.
+  OutputLog get _log => _logs.putIfAbsent(_selectedPlatform, OutputLog.new);
 
-  // Ensure platform buffers are initialized
-  void _ensurePlatformBuffers(String platform) {
-    _outputBuffers.putIfAbsent(platform, () => StringBuffer());
-    _errorBuffers.putIfAbsent(platform, () => StringBuffer());
-    _hasErrorsMap.putIfAbsent(platform, () => false);
-    _hasOutputMap.putIfAbsent(platform, () => false);
-  }
-
-  // Platform-specific getters
-  StringBuffer get _outputBuffer {
-    _ensurePlatformBuffers(_selectedPlatform);
-    return _outputBuffers[_selectedPlatform]!;
-  }
-
-  StringBuffer get _errorBuffer {
-    _ensurePlatformBuffers(_selectedPlatform);
-    return _errorBuffers[_selectedPlatform]!;
-  }
-
-  bool get _hasErrors {
-    _ensurePlatformBuffers(_selectedPlatform);
-    return _hasErrorsMap[_selectedPlatform]!;
-  }
-
-  set _hasErrors(bool value) {
-    _ensurePlatformBuffers(_selectedPlatform);
-    setState(() => _hasErrorsMap[_selectedPlatform] = value);
-  }
-
-  bool get _hasOutput {
-    _ensurePlatformBuffers(_selectedPlatform);
-    return _hasOutputMap[_selectedPlatform]!;
-  }
-
-  set _hasOutput(bool value) {
-    _ensurePlatformBuffers(_selectedPlatform);
-    setState(() => _hasOutputMap[_selectedPlatform] = value);
-  }
-
-  /// Output sink that writes command output into the selected platform's buffers.
+  /// Output sink that writes command output into the selected platform's log.
   BuildOutput get _buildOutput => BuildOutput(
     onOutput: (text) => setState(() {
-      _outputBuffer.writeln(text);
-      _hasOutput = true;
+      _log.addOutput(text);
     }),
     onError: (text) => setState(() {
-      _errorBuffer.writeln(text);
-      _hasErrors = true;
+      _log.addError(text);
     }),
-    onResetErrors: () {
-      _errorBuffer.clear();
-      _hasErrors = false;
-    },
+    onResetErrors: () => setState(_log.clearErrors),
     onProcessStarted: (process) => _currentProcess = process,
   );
 
@@ -155,47 +92,69 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
     });
   }
 
-  /// Handles `_updateCocoaPods`.
-  Future<void> _updateCocoaPods() async {
-    final currentProjectPath = ref.read(currentProjectPathProvider);
-    if (currentProjectPath == null) return;
+  /// Runs `pod install --repo-update` for the selected Apple platform.
+  Future<void> _updateCocoaPods() => _runAction(
+    setStatus: (status) => _podStatus = status,
+    startMessages: [
+      '📦 Updating CocoaPods dependencies...',
+      'Running pod install --repo-update',
+    ],
+    // Only offered for CocoaPods platforms, whose folder holds the Podfile
+    command: (projectPath) => _buildService.podInstall(
+      '$projectPath/$_selectedPlatform',
+      _buildOutput,
+    ),
+    successMessage: '✅ CocoaPods update completed successfully',
+    failureMessage: (exitCode) =>
+        '❌ CocoaPods update failed with exit code $exitCode',
+    errorPrefix: '❌ CocoaPods error: ',
+  );
+
+  /// Runs one command-backed action for the loaded project: clears the log,
+  /// marks the action running with [startMessages], then records success or
+  /// failure from the exit code [command] returns or the error it throws.
+  ///
+  /// The status returns to idle after a pause, except for app runs
+  /// ([resetWhenDone] false), whose final state stays visible.
+  Future<void> _runAction({
+    required void Function(BuildProcessStatus) setStatus,
+    required List<String> startMessages,
+    required Future<int> Function(String) command,
+    required String successMessage,
+    required String Function(int) failureMessage,
+    required String errorPrefix,
+    bool resetWhenDone = true,
+  }) async {
+    final projectPath = ref.read(currentProjectPathProvider);
+    if (projectPath == null) return;
 
     _clearOutput();
     setState(() {
-      _podStatus = BuildProcessStatus.running;
-      _outputBuffer.writeln('📦 Updating CocoaPods dependencies...');
-      _outputBuffer.writeln('Running pod install --repo-update');
-      _hasOutput = true;
+      setStatus(BuildProcessStatus.running);
+      startMessages.forEach(_log.addOutput);
     });
 
     try {
-      final exitCode = await _buildService.podInstall(
-        _selectedPlatform == 'ios'
-            ? '$currentProjectPath/ios'
-            : '$currentProjectPath/macos',
-        _buildOutput,
-      );
-
+      final exitCode = await command(projectPath);
       setState(() {
         if (exitCode == 0) {
-          _podStatus = BuildProcessStatus.success;
-          _outputBuffer.writeln('✅ CocoaPods update completed successfully');
+          setStatus(BuildProcessStatus.success);
+          _log.addOutput(successMessage);
         } else {
-          _podStatus = BuildProcessStatus.error;
-          _errorBuffer.writeln(
-            '❌ CocoaPods update failed with exit code $exitCode',
-          );
+          setStatus(BuildProcessStatus.error);
+          _log.addError(failureMessage(exitCode));
         }
       });
     } catch (e) {
       setState(() {
-        _podStatus = BuildProcessStatus.error;
-        _errorBuffer.writeln('❌ CocoaPods error: $e');
-        _hasErrors = true;
+        setStatus(BuildProcessStatus.error);
+        _log.addError('$errorPrefix$e');
       });
     } finally {
       _currentProcess = null;
-      _resetStatusLater(() => _podStatus = BuildProcessStatus.idle);
+      if (resetWhenDone) {
+        _resetStatusLater(() => setStatus(BuildProcessStatus.idle));
+      }
     }
   }
 
@@ -205,50 +164,9 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
     super.dispose();
   }
 
-  /// Handles `_getSupportedPlatforms`.
-  Set<String> _getSupportedPlatforms(String projectPath) {
-    final supported = <String>{};
-    final projectDir = Directory(projectPath);
-
-    if (Directory('${projectDir.path}/android').existsSync()) {
-      supported.add('android');
-    }
-    if (Directory('${projectDir.path}/ios').existsSync()) {
-      supported.add('ios');
-    }
-    if (Directory('${projectDir.path}/web').existsSync()) {
-      supported.add('web');
-    }
-    if (Directory('${projectDir.path}/windows').existsSync()) {
-      supported.add('windows');
-    }
-    if (Directory('${projectDir.path}/linux').existsSync()) {
-      supported.add('linux');
-    }
-    if (Directory('${projectDir.path}/macos').existsSync()) {
-      supported.add('macos');
-    }
-
-    return supported;
-  }
-
-  /// Handles `_canBuildOnCurrentPlatform`.
-  bool _canBuildOnCurrentPlatform(String targetPlatform) {
-    final currentPlatform = Platform.operatingSystem;
-
-    // Web can be built from any platform
-    if (targetPlatform == 'web') return true;
-
-    // Mobile platforms - android can be built from any, ios only from macOS
-    if (targetPlatform == 'android') return true;
-    if (targetPlatform == 'ios') return currentPlatform == 'macos';
-
-    // Desktop platforms - can only be built on the same platform
-    if (targetPlatform == 'windows') return currentPlatform == 'windows';
-    if (targetPlatform == 'linux') return currentPlatform == 'linux';
-    if (targetPlatform == 'macos') return currentPlatform == 'macos';
-
-    return false;
+  /// Whether the host OS can build [platform].
+  bool _canBuildOnCurrentPlatform(String platform) {
+    return FlutterPlatform.fromId(platform)?.canBuildOnHost ?? false;
   }
 
   /// Handles `_getPlatformInstructions`.
@@ -534,13 +452,13 @@ Updates macOS CocoaPods dependencies.
 
   /// Handles `_buildOutputSection`.
   Widget _buildOutputSection() {
-    if (_hasOutput || _hasErrors) {
+    if (_log.hasOutput || _log.hasErrors) {
       return OutputPanel(
         title: 'Output',
         isExpanded: true,
         text:
-            '═══════ Errors ═══════\n$_displayErrors═══════ Error End ═══════\n'
-            '═══════ Output ═══════\n$_displayOutput═══════ Output End ═══════',
+            '═══════ Errors ═══════\n${_log.errors}═══════ Error End ═══════\n'
+            '═══════ Output ═══════\n${_log.output}═══════ Output End ═══════',
         onClear: _clearOutput,
       );
     }
@@ -578,7 +496,7 @@ Updates macOS CocoaPods dependencies.
       );
     }
 
-    _supportedPlatforms = _getSupportedPlatforms(currentProjectPath);
+    _supportedPlatforms = FlutterPlatform.configuredIn(currentProjectPath);
 
     return SingleChildScrollView(
       child: Column(
@@ -594,182 +512,85 @@ Updates macOS CocoaPods dependencies.
     );
   }
 
-  /// Handles `_cleanFlutterApp`.
-  Future<void> _cleanFlutterApp() async {
-    final currentProjectPath = ref.read(currentProjectPathProvider);
-    if (currentProjectPath == null) return;
+  /// Cleans the project; macOS targets on a Mac get a deep clean that also
+  /// refreshes CocoaPods and rebuilds.
+  Future<void> _cleanFlutterApp() {
+    final projectPath = ref.read(currentProjectPathProvider);
+    final shouldDoDeepClean =
+        Platform.isMacOS &&
+        _selectedPlatform == FlutterPlatform.macos.name &&
+        projectPath != null &&
+        Directory('$projectPath/macos').existsSync();
 
-    // Check if we should do deep macOS clean
-    final isMacOSHost = Platform.isMacOS;
-    final isMacOSTarget = _selectedPlatform == 'macos';
-    final hasMacOSDirectory = Directory('$currentProjectPath/macos')
-        .existsSync();
-    final shouldDoDeepClean = isMacOSHost && isMacOSTarget && hasMacOSDirectory;
-
-    _clearOutput();
-    setState(() {
-      _cleanStatus = BuildProcessStatus.running;
-      if (shouldDoDeepClean) {
-        _outputBuffer.writeln('🧹 Performing deep clean for macOS project...');
-        _outputBuffer.writeln(
-          '📦 This will update CocoaPods and rebuild dependencies',
-        );
-      } else {
-        _outputBuffer.writeln('🧹 Cleaning Flutter project...');
-      }
-      _hasOutput = true;
-    });
-
-    try {
-      if (shouldDoDeepClean) {
-        await _buildService.deepCleanMacOS(currentProjectPath, _buildOutput);
-      } else {
-        await _buildService.clean(currentProjectPath, _buildOutput);
-      }
-
-      setState(() {
-        _cleanStatus = BuildProcessStatus.success;
-        _outputBuffer.writeln('✓ Project cleaned successfully');
-      });
-    } catch (e) {
-      setState(() {
-        _cleanStatus = BuildProcessStatus.error;
-        _errorBuffer.writeln('✗ Clean error: $e');
-        _hasErrors = true;
-      });
-    } finally {
-      _currentProcess = null;
-      _resetStatusLater(() => _cleanStatus = BuildProcessStatus.idle);
-    }
-  }
-
-  /// Handles `_buildFlutterApp`.
-  Future<void> _buildFlutterApp(String target) async {
-    final currentProjectPath = ref.read(currentProjectPathProvider);
-    if (currentProjectPath == null) return;
-
-    _clearOutput();
-    setState(() {
-      _buildStatus = BuildProcessStatus.running;
-      _outputBuffer.writeln('Building for $target...');
-      _hasOutput = true;
-    });
-
-    try {
-      final exitCode = await _buildService.build(
-        currentProjectPath,
-        target,
-        _buildOutput,
-      );
-
-      setState(() {
-        if (exitCode == 0) {
-          _buildStatus = BuildProcessStatus.success;
-          _outputBuffer.writeln('✓ Build completed successfully for $target');
+    return _runAction(
+      setStatus: (status) => _cleanStatus = status,
+      startMessages: shouldDoDeepClean
+          ? [
+              '🧹 Performing deep clean for macOS project...',
+              '📦 This will update CocoaPods and rebuild dependencies',
+            ]
+          : ['🧹 Cleaning Flutter project...'],
+      // Clean steps throw on failure, so reaching the end means success
+      command: (projectPath) async {
+        if (shouldDoDeepClean) {
+          await _buildService.deepCleanMacOS(projectPath, _buildOutput);
         } else {
-          _buildStatus = BuildProcessStatus.error;
-          _errorBuffer.writeln('✗ Build failed with exit code $exitCode');
+          await _buildService.clean(projectPath, _buildOutput);
         }
-      });
-    } catch (e) {
-      setState(() {
-        _buildStatus = BuildProcessStatus.error;
-        _errorBuffer.writeln('✗ Build error: $e');
-        _hasErrors = true;
-      });
-    } finally {
-      _currentProcess = null;
-      _resetStatusLater(() => _buildStatus = BuildProcessStatus.idle);
-    }
+        return 0;
+      },
+      successMessage: '✓ Project cleaned successfully',
+      failureMessage: (exitCode) => '✗ Clean failed with exit code $exitCode',
+      errorPrefix: '✗ Clean error: ',
+    );
   }
 
-  /// Handles `_getDeviceTarget`.
+  /// Builds the app for [target] (a platform id, `apk` or `aab`).
+  Future<void> _buildFlutterApp(String target) => _runAction(
+    setStatus: (status) => _buildStatus = status,
+    startMessages: ['Building for $target...'],
+    command: (projectPath) =>
+        _buildService.build(projectPath, target, _buildOutput),
+    successMessage: '✓ Build completed successfully for $target',
+    failureMessage: (exitCode) => '✗ Build failed with exit code $exitCode',
+    errorPrefix: '✗ Build error: ',
+  );
+
+  /// Device id for `flutter run -d` when targeting [platform].
   String _getDeviceTarget(String platform) {
-    return _deviceTargetsByPlatform[platform] ?? platform;
+    return FlutterPlatform.fromId(platform)?.deviceTarget ?? platform;
   }
 
-  /// Handles `_runFlutterApp`.
-  Future<void> _runFlutterApp({required bool isDebug}) async {
-    final currentProjectPath = ref.read(currentProjectPathProvider);
-    if (currentProjectPath == null) return;
+  /// Runs the app on the selected platform in debug or release mode.
+  Future<void> _runFlutterApp({required bool isDebug}) => _runAction(
+    setStatus: isDebug
+        ? (status) => _debugStatus = status
+        : (status) => _runStatus = status,
+    startMessages: ['${isDebug ? 'Debugging' : 'Running'} Flutter app...'],
+    // Process runs continuously until stopped
+    command: (projectPath) => _buildService.run(
+      projectPath,
+      _getDeviceTarget(_selectedPlatform),
+      _buildOutput,
+      isDebug: isDebug,
+    ),
+    successMessage: '✓ App ${isDebug ? 'debugged' : 'ran'} successfully',
+    failureMessage: (exitCode) =>
+        '✗ App ${isDebug ? 'debug' : 'run'} failed with exit code $exitCode',
+    errorPrefix: '✗ Run error: ',
+    resetWhenDone: false,
+  );
 
-    final setStatus = isDebug
-        ? (BuildProcessStatus s) => _debugStatus = s
-        : (BuildProcessStatus s) => _runStatus = s;
-
-    _clearOutput();
-    setState(() {
-      setStatus(BuildProcessStatus.running);
-      _outputBuffer.writeln(
-        '${isDebug ? 'Debugging' : 'Running'} Flutter app...',
-      );
-      _hasOutput = true;
-    });
-
-    try {
-      // Process runs continuously until stopped
-      final exitCode = await _buildService.run(
-        currentProjectPath,
-        _getDeviceTarget(_selectedPlatform),
-        _buildOutput,
-        isDebug: isDebug,
-      );
-
-      setState(() {
-        if (exitCode == 0) {
-          setStatus(BuildProcessStatus.success);
-          _outputBuffer.writeln(
-            '✓ App ${isDebug ? 'debugged' : 'ran'} successfully',
-          );
-        } else {
-          setStatus(BuildProcessStatus.error);
-          _errorBuffer.writeln(
-            '✗ App ${isDebug ? 'debug' : 'run'} failed with exit code $exitCode',
-          );
-        }
-      });
-    } catch (e) {
-      setState(() {
-        setStatus(BuildProcessStatus.error);
-        _errorBuffer.writeln('✗ Run error: $e');
-        _hasErrors = true;
-      });
-    } finally {
-      _currentProcess = null;
-    }
-  }
-
-  void _clearOutput() {
-    setState(() {
-      _outputBuffer.clear();
-      _errorBuffer.clear();
-      _hasErrors = false;
-      _hasOutput = false;
-    });
-  }
+  void _clearOutput() => setState(_log.clear);
 
   /// Handles `_ExecutePanelState.appendOutput`.
-  void appendOutput(String text) {
-    if (mounted) {
-      setState(() {
-        _outputBuffer.write(text);
-        _hasOutput = true;
-      });
-    }
-  }
+  void appendOutput(String text) => setState(() => _log.writeOutput(text));
 
   /// Handles `_ExecutePanelState.appendError`.
-  void appendError(String text) {
-    if (mounted) {
-      setState(() {
-        _errorBuffer.write(text);
-        _hasErrors = true;
-      });
-    }
-  }
+  void appendError(String text) => setState(() => _log.writeError(text));
 
-  /// Handles `_ExecutePanelState.getPlatformDisplayName`.
+  /// Human-readable name for [platform].
   String getPlatformDisplayName(String platform) {
-    return _displayNamesByPlatform[platform] ?? platform;
+    return FlutterPlatform.fromId(platform)?.displayName ?? platform;
   }
 }

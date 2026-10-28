@@ -3,13 +3,19 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:analyzer/dart/analysis/utilities.dart';
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
+
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/localization_checks.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/providers/process_runner.dart';
 import 'package:logging/logging.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
 part 'localization_service.arb_service.dart';
+part 'localization_service.material_app_title_visitor.dart';
 
 /// Represents `LocalizationService`.
 class LocalizationService {
@@ -20,111 +26,82 @@ class LocalizationService {
   /// Creates a localization service that launches commands through [_runner].
   LocalizationService([this._runner = const ProcessRunner()]);
 
-  /// Sets up localization dependencies, config, ARB files, and generated classes.
-  Future<void> initializeLocalization(String projectPath) async {
-    try {
-      // Add required packages using flutter pub add
+  /// Runs `flutter gen-l10n`, throwing with the tool's stderr on failure.
+  Future<void> generateClasses(String projectPath) {
+    return _runFlutter(projectPath, [
+      'gen-l10n',
+    ], 'Failed to generate localization classes');
+  }
+
+  /// Sets up localization: adds `flutter_localizations` and `intl`, enables
+  /// code generation, writes template ARB files and generates classes.
+  ///
+  /// [onStep] is told about each step before it runs. Tool failures throw
+  /// unless [tolerateToolFailures] is set, in which case they are logged and
+  /// setup continues, so creating a project doesn't fail when pub is offline.
+  Future<void> initializeLocalization(
+    String projectPath, {
+    ProcessOutputCallback? onStep,
+    bool tolerateToolFailures = false,
+  }) async {
+    Future<void> runTool(List<String> arguments, String failure) async {
       try {
-        final addFlutterLocalizationsResult = await _runner.run('flutter', [
-          'pub',
-          'add',
-          'flutter_localizations',
-          '--sdk=flutter',
-        ], workingDirectory: projectPath);
-        if (addFlutterLocalizationsResult.exitCode != 0) {
-          _logger.warning(
-            'Failed to add flutter_localizations: ${addFlutterLocalizationsResult.stderr}',
-          );
-        }
+        await _runFlutter(projectPath, arguments, failure);
       } catch (e) {
-        _logger.severe('Could not add flutter_localizations: $e');
+        if (!tolerateToolFailures) rethrow;
+        _logger.warning('$e');
       }
-
-      try {
-        final addIntlResult = await _runner.run('flutter', [
-          'pub',
-          'add',
-          'intl',
-        ], workingDirectory: projectPath);
-        if (addIntlResult.exitCode != 0) {
-          _logger.warning('Failed to add intl: ${addIntlResult.stderr}');
-        }
-      } catch (e) {
-        _logger.severe('Could not add intl: $e');
-      }
-
-      // Add required configurations to pubspec.yaml
-      final pubspecFile = File('$projectPath/pubspec.yaml');
-      if (await pubspecFile.exists()) {
-        final pubspecContent = await pubspecFile.readAsString();
-        final editor = YamlEditor(pubspecContent);
-
-        // Add generate: true to flutter section
-        editor.update(['flutter', 'generate'], true);
-
-        await pubspecFile.writeAsString(editor.toString());
-      }
-
-      // Create l10n directory if it doesn't exist
-      final l10nDir = Directory('$projectPath/lib/l10n');
-      if (!await l10nDir.exists()) {
-        await l10nDir.create(recursive: true);
-      }
-
-      // Create basic ARB files
-      final englishArbPath = '${l10nDir.path}/app_en.arb';
-      final frenchArbPath = '${l10nDir.path}/app_fr.arb';
-
-      // Try to extract app title from main.dart
-      String appTitle = 'My App';
-      final mainFile = File('$projectPath/lib/main.dart');
-      if (await mainFile.exists()) {
-        final mainContent = await mainFile.readAsString();
-        final extractedTitle = _extractAppTitleFromMainDart(mainContent);
-        if (extractedTitle != null && extractedTitle.isNotEmpty) {
-          appTitle = extractedTitle;
-        }
-      }
-
-      // Create English ARB file with basic structure
-      final englishArbContent = {
-        '@@locale': 'en',
-        'appTitle': appTitle,
-        '@appTitle': {'description': 'The title of the application'},
-        'helloWorld': 'Hello World',
-        '@helloWorld': {'description': 'A greeting message'},
-      };
-
-      // Create French ARB file with translations
-      final frenchArbContent = {
-        '@@locale': 'fr',
-        'appTitle': 'Mon Application',
-        '@appTitle': {'description': 'The title of the application'},
-        'helloWorld': 'Bonjour le monde',
-        '@helloWorld': {'description': 'A greeting message'},
-      };
-
-      // Write the ARB files
-      await File(englishArbPath).writeAsString(jsonEncode(englishArbContent));
-      await File(frenchArbPath).writeAsString(jsonEncode(frenchArbContent));
-
-      // Generate localization classes
-      try {
-        final result = await _runner.run('flutter', [
-          'gen-l10n',
-        ], workingDirectory: projectPath);
-
-        if (result.exitCode != 0) {
-          _logger.warning(
-            'Failed to generate localization classes: ${result.stderr}',
-          );
-        }
-      } catch (e) {
-        _logger.severe('Could not run flutter gen-l10n: $e');
-      }
-    } catch (e) {
-      throw Exception('Error initializing localization: $e');
     }
+
+    onStep?.call('Adding flutter_localizations and intl packages...');
+    await runTool([
+      'pub',
+      'add',
+      'flutter_localizations',
+      '--sdk=flutter',
+    ], 'Failed to add flutter_localizations');
+    await runTool(['pub', 'add', 'intl'], 'Failed to add intl');
+
+    onStep?.call('Configuring pubspec.yaml...');
+    await _enableGenerate(projectPath);
+
+    onStep?.call('Creating template ARB files...');
+    await _createTemplateArbFiles(projectPath);
+
+    onStep?.call('Generating localization classes...');
+    await runTool(['gen-l10n'], 'Failed to generate localization classes');
+  }
+
+  /// Reads which localization pieces the project at [projectPath] has.
+  Future<LocalizationChecks> inspect(String projectPath) async {
+    final pubspec = await _readIfExists('$projectPath/pubspec.yaml');
+    final mainDart = await _readIfExists('$projectPath/lib/main.dart');
+    final l10nDir = Directory('$projectPath/lib/l10n');
+    final hasArbFiles =
+        await l10nDir.exists() &&
+        await l10nDir.list().any((entity) => entity.path.endsWith('.arb'));
+
+    return LocalizationChecks(
+      hasPubspec: pubspec != null,
+      isFlutterProject:
+          pubspec != null &&
+          pubspec.contains('flutter:') &&
+          pubspec.contains('sdk: flutter'),
+      hasArbFiles: hasArbFiles,
+      hasGeneratedClasses: await File(
+        '$projectPath/lib/l10n/app_localizations.dart',
+      ).exists(),
+      hasAppIntegration:
+          mainDart != null &&
+          mainDart.contains('AppLocalizations') &&
+          mainDart.contains('localizationsDelegates') &&
+          mainDart.contains('supportedLocales'),
+      hasDependencies:
+          pubspec != null &&
+          pubspec.contains('flutter_localizations:') &&
+          pubspec.contains('intl:'),
+      hasGenerateFlag: pubspec != null && pubspec.contains('generate: true'),
+    );
   }
 
   /// Updates `main.dart` to wire generated localization delegates and title lookup.
@@ -206,10 +183,83 @@ class LocalizationService {
     await mainFile.writeAsString(content);
   }
 
+  /// Writes English and French template ARB files into `lib/l10n`, using
+  /// the app title from `main.dart` when one is set.
+  Future<void> _createTemplateArbFiles(String projectPath) async {
+    final l10nDir = Directory('$projectPath/lib/l10n');
+    await l10nDir.create(recursive: true);
+
+    final mainDart = await _readIfExists('$projectPath/lib/main.dart');
+    final extractedTitle = mainDart == null
+        ? null
+        : _extractAppTitleFromMainDart(mainDart);
+    final appTitle = extractedTitle == null || extractedTitle.isEmpty
+        ? 'My App'
+        : extractedTitle;
+
+    final englishArbContent = {
+      '@@locale': 'en',
+      'appTitle': appTitle,
+      '@appTitle': {'description': 'The title of the application'},
+      'helloWorld': 'Hello World',
+      '@helloWorld': {'description': 'A greeting message'},
+    };
+    final frenchArbContent = {
+      '@@locale': 'fr',
+      'appTitle': 'Mon Application',
+      '@appTitle': {'description': 'The title of the application'},
+      'helloWorld': 'Bonjour le monde',
+      '@helloWorld': {'description': 'A greeting message'},
+    };
+
+    await File('${l10nDir.path}/app_en.arb')
+        .writeAsString(jsonEncode(englishArbContent));
+    await File('${l10nDir.path}/app_fr.arb')
+        .writeAsString(jsonEncode(frenchArbContent));
+  }
+
+  /// Turns on `flutter: generate: true` in the project's pubspec.
+  Future<void> _enableGenerate(String projectPath) async {
+    final pubspecFile = File('$projectPath/pubspec.yaml');
+    if (!await pubspecFile.exists()) return;
+
+    final editor = YamlEditor(await pubspecFile.readAsString());
+    editor.update(['flutter', 'generate'], true);
+    await pubspecFile.writeAsString(editor.toString());
+  }
+
+  /// Returns the string literal passed as `MaterialApp(title:)`, if any.
   String? _extractAppTitleFromMainDart(String content) {
-    // Use regex to find title: 'something' in MaterialApp
-    final titleRegex = RegExp(r"title\s*:\s*'([^']*)'");
-    final match = titleRegex.firstMatch(content);
-    return match?.group(1);
+    try {
+      final visitor = _MaterialAppTitleVisitor();
+      parseString(content: content).unit.accept(visitor);
+      return visitor.title;
+    } catch (e) {
+      _logger.severe('Error parsing main.dart: $e');
+      return null;
+    }
+  }
+
+  /// Returns the file's contents, or null when it doesn't exist.
+  Future<String?> _readIfExists(String filePath) async {
+    final file = File(filePath);
+    return await file.exists() ? file.readAsString() : null;
+  }
+
+  /// Runs a `flutter` subcommand in the project, throwing [failure] with the
+  /// tool's stderr when it exits non-zero.
+  Future<void> _runFlutter(
+    String projectPath,
+    List<String> arguments,
+    String failure,
+  ) async {
+    final result = await _runner.run(
+      'flutter',
+      arguments,
+      workingDirectory: projectPath,
+    );
+    if (result.exitCode != 0) {
+      throw Exception('$failure: ${result.stderr}');
+    }
   }
 }

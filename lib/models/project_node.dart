@@ -35,38 +35,55 @@ class ProjectNode {
            : null,
        isHidden = name.startsWith('.');
 
+  /// [children] with duplicate paths collapsed, keeping the last entry;
+  /// incremental watcher updates can briefly add the same path twice.
+  Iterable<ProjectNode> get uniqueChildren {
+    return {for (final child in children) child.path: child}.values;
+  }
+
   /// Returns `isDirectory`.
   bool get isDirectory => type == ProjectNodeType.directory;
 
   /// Returns `isFile`.
   bool get isFile => type == ProjectNodeType.file;
 
-  // Create a ProjectNode from a FileSystemEntity
-  /// Handles `ProjectNode.fromFileSystemEntity`.
+  /// Creates a node for [entity], reading its type from the file system.
   static Future<ProjectNode> fromFileSystemEntity(
     FileSystemEntity entity,
   ) async {
-    final stat = await entity.stat();
-    final isDirectory = stat.type == FileSystemEntityType.directory;
-
-    return ProjectNode(
-      name: p.basename(entity.path),
-      path: entity.path,
-      type: isDirectory ? ProjectNodeType.directory : ProjectNodeType.file,
-      isExpanded: false,
-    );
+    return _fromStat(entity, await entity.stat());
   }
 
-  // Enumerate contents for a directory node
-  /// Handles `ProjectNode.enumerateContents`.
+  /// Synchronous [fromFileSystemEntity], for use inside isolates.
+  static ProjectNode fromFileSystemEntitySync(FileSystemEntity entity) {
+    return _fromStat(entity, entity.statSync());
+  }
+
+  /// Loads this directory's immediate children.
   Future<LoadChildrenResult> enumerateContents() async {
     return _enumerateContentsInternal(recursive: false);
   }
 
-  // Recursively enumerate all contents for a directory node (background enumeration)
-  /// Handles `ProjectNode.enumerateContentsRecursive`.
+  /// Loads this directory's whole subtree.
   Future<LoadChildrenResult> enumerateContentsRecursive() async {
     return _enumerateContentsInternal(recursive: true);
+  }
+
+  /// Synchronous [enumerateContentsRecursive], for use inside isolates.
+  void enumerateContentsRecursiveSync() {
+    if (!isDirectory) return;
+
+    try {
+      _replaceChildren([
+        for (final entity in Directory(path).listSync())
+          (entity, entity.statSync()),
+      ]);
+      for (final child in children.where((child) => child.isDirectory)) {
+        child.enumerateContentsRecursiveSync();
+      }
+    } catch (e) {
+      loadResult = _classifyLoadError(e);
+    }
   }
 
   /// Loads this directory's children and optionally recurses into subdirectories.
@@ -76,117 +93,65 @@ class ProjectNode {
     if (!isDirectory) return LoadChildrenResult.success;
 
     try {
-      final dir = Directory(path);
-      final List<FileSystemEntity> entities = await dir.list().toList();
-
-      // Sort directories first, then files, both alphabetically
-      // Use async stat calls to avoid blocking UI
-      final stats = <FileSystemEntity, FileStat>{};
-      for (final entity in entities) {
-        stats[entity] = await entity.stat();
+      // Async stat calls avoid blocking the UI isolate
+      final entries = <(FileSystemEntity, FileStat)>[];
+      await for (final entity in Directory(path).list()) {
+        entries.add((entity, await entity.stat()));
       }
+      _replaceChildren(entries);
 
-      entities.sort((a, b) {
-        final aStat = stats[a]!;
-        final bStat = stats[b]!;
-
-        if (aStat.type == bStat.type) {
-          final aName = p.basename(a.path).toLowerCase();
-          final bName = p.basename(b.path).toLowerCase();
-          return aName.compareTo(bName);
-        }
-
-        return aStat.type == FileSystemEntityType.directory ? -1 : 1;
-      });
-
-      children.clear();
-      for (final entity in entities) {
-        // Include all files and directories, including hidden ones
-        final childNode = await ProjectNode.fromFileSystemEntity(entity);
-        children.add(childNode);
-
-        // If it's a directory, recursively enumerate its contents
-        if (recursive && childNode.isDirectory) {
-          await childNode.enumerateContentsRecursive();
+      if (recursive) {
+        for (final child in children.where((child) => child.isDirectory)) {
+          await child.enumerateContentsRecursive();
         }
       }
-      loadResult = LoadChildrenResult.success;
       return LoadChildrenResult.success;
     } catch (e) {
-      // Categorize the error for better user experience
-      if (e is PathAccessException ||
-          e.toString().contains('Operation not permitted')) {
-        loadResult = LoadChildrenResult.accessDenied;
-        return LoadChildrenResult.accessDenied;
-      } else if (e is FileSystemException) {
-        loadResult = LoadChildrenResult.fileSystemError;
-        return LoadChildrenResult.fileSystemError;
-      } else {
-        loadResult = LoadChildrenResult.unknownError;
-        return LoadChildrenResult.unknownError;
-      }
+      return loadResult = _classifyLoadError(e);
     }
   }
 
-  // Synchronous version for isolates (doesn't return a Future)
-  /// Handles `ProjectNode.enumerateContentsRecursiveSync`.
-  void enumerateContentsRecursiveSync() {
-    if (!isDirectory) return;
-
-    try {
-      final dir = Directory(path);
-      final List<FileSystemEntity> entities = dir.listSync();
-
-      // Sort directories first, then files, both alphabetically
-      entities.sort((a, b) {
-        final aStat = a.statSync();
-        final bStat = b.statSync();
-
-        if (aStat.type == bStat.type) {
-          final aName = p.basename(a.path).toLowerCase();
-          final bName = p.basename(b.path).toLowerCase();
-          return aName.compareTo(bName);
-        }
-
-        return aStat.type == FileSystemEntityType.directory ? -1 : 1;
-      });
-
-      children.clear();
-      for (final entity in entities) {
-        // Include all files and directories, including hidden ones
-        final childNode = fromFileSystemEntitySync(entity);
-        children.add(childNode);
-
-        // If it's a directory, recursively enumerate its contents
-        if (childNode.isDirectory) {
-          childNode.enumerateContentsRecursiveSync();
-        }
+  /// Replaces [children] with nodes for [entries] (hidden ones included),
+  /// directories first, each group sorted case-insensitively by name.
+  void _replaceChildren(List<(FileSystemEntity, FileStat)> entries) {
+    entries.sort((a, b) {
+      final aIsDirectory = a.$2.type == FileSystemEntityType.directory;
+      final bIsDirectory = b.$2.type == FileSystemEntityType.directory;
+      if (aIsDirectory != bIsDirectory) {
+        return aIsDirectory ? -1 : 1;
       }
-      loadResult = LoadChildrenResult.success;
-    } catch (e) {
-      // Categorize the error for better user experience
-      if (e is PathAccessException ||
-          e.toString().contains('Operation not permitted')) {
-        loadResult = LoadChildrenResult.accessDenied;
-      } else if (e is FileSystemException) {
-        loadResult = LoadChildrenResult.fileSystemError;
-      } else {
-        loadResult = LoadChildrenResult.unknownError;
-      }
-    }
+      return p
+          .basename(a.$1.path)
+          .toLowerCase()
+          .compareTo(p.basename(b.$1.path).toLowerCase());
+    });
+
+    children
+      ..clear()
+      ..addAll([for (final (entity, stat) in entries) _fromStat(entity, stat)]);
+    loadResult = LoadChildrenResult.success;
   }
 
-  // Synchronous version of fromFileSystemEntity for isolates
-  /// Handles `ProjectNode.fromFileSystemEntitySync`.
-  static ProjectNode fromFileSystemEntitySync(FileSystemEntity entity) {
-    final stat = entity.statSync();
-    final isDirectory = stat.type == FileSystemEntityType.directory;
+  /// Maps an enumeration failure to the result shown to the user.
+  static LoadChildrenResult _classifyLoadError(Object error) {
+    if (error is PathAccessException ||
+        error.toString().contains('Operation not permitted')) {
+      return LoadChildrenResult.accessDenied;
+    }
+    if (error is FileSystemException) {
+      return LoadChildrenResult.fileSystemError;
+    }
+    return LoadChildrenResult.unknownError;
+  }
 
+  /// Builds an unexpanded node for [entity] from an already-read [stat].
+  static ProjectNode _fromStat(FileSystemEntity entity, FileStat stat) {
     return ProjectNode(
       name: p.basename(entity.path),
       path: entity.path,
-      type: isDirectory ? ProjectNodeType.directory : ProjectNodeType.file,
-      isExpanded: false,
+      type: stat.type == FileSystemEntityType.directory
+          ? ProjectNodeType.directory
+          : ProjectNodeType.file,
     );
   }
 

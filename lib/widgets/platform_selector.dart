@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/flutter_platform.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -25,6 +26,11 @@ class PlatformSelector extends StatefulWidget {
 
 class _PlatformSelectorState extends State<PlatformSelector>
     with TickerProviderStateMixin {
+  /// Platform ids in tab order.
+  static final List<String> _platformIds = [
+    for (final platform in FlutterPlatform.values) platform.name,
+  ];
+
   late TabController _tabController;
 
   @override
@@ -52,22 +58,7 @@ class _PlatformSelectorState extends State<PlatformSelector>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    final platforms = [
-      {
-        'name': 'Android',
-        'id': 'android',
-        'asset': 'assets/platform_android.svg',
-      },
-      {'name': 'iOS', 'id': 'ios', 'asset': 'assets/platform_ios.svg'},
-      {'name': 'Web', 'id': 'web', 'asset': 'assets/platform_web.svg'},
-      {'name': 'macOS', 'id': 'macos', 'asset': 'assets/platform_macos.svg'},
-      {'name': 'Linux', 'id': 'linux', 'asset': 'assets/platform_linux.svg'},
-      {
-        'name': 'Windows',
-        'id': 'windows',
-        'asset': 'assets/platform_windows.svg',
-      },
-    ];
+    const platforms = FlutterPlatform.values;
 
     return LayoutBuilder(
       builder: (_, constraints) {
@@ -95,8 +86,8 @@ class _PlatformSelectorState extends State<PlatformSelector>
               fontSize: AppFontSize.caption,
             ),
             tabs: platforms.map((p) {
-              final isSupported = widget.supportedPlatforms.contains(p['id']);
-              final isSelected = widget.selectedPlatform == p['id'];
+              final isSupported = widget.supportedPlatforms.contains(p.name);
+              final isSelected = widget.selectedPlatform == p.name;
               final needsTooltip = !showLabels;
 
               final tab = Tab(
@@ -120,7 +111,7 @@ class _PlatformSelectorState extends State<PlatformSelector>
                         BlendMode.srcIn,
                       ),
                       child: SvgPicture.asset(
-                        p['asset'] as String,
+                        p.iconAsset,
                         width: showLabels
                             ? AppIconSize.large
                             : AppIconSize.mediumLarge,
@@ -132,9 +123,7 @@ class _PlatformSelectorState extends State<PlatformSelector>
                     if (showLabels) ...[
                       const SizedBox(height: AppSpacing.tiny),
                       Text(
-                        (p['name'] as String)
-                            .replaceAll('macOS', 'macOS')
-                            .replaceAll('iOS', 'iOS'),
+                        p.displayName,
                         style: TextStyle(
                           fontSize: AppFontSize.badge,
                           fontWeight: isSelected
@@ -152,8 +141,8 @@ class _PlatformSelectorState extends State<PlatformSelector>
               if (needsTooltip) {
                 return Tooltip(
                   message: isSupported
-                      ? p['name'] as String
-                      : '${p['name']} (not configured)',
+                      ? p.displayName
+                      : '${p.displayName} (not configured)',
                   child: tab,
                 );
               } else {
@@ -168,15 +157,7 @@ class _PlatformSelectorState extends State<PlatformSelector>
 
   /// Creates and configures the [TabController] based on the ordered list of supported platforms.
   void _setupTabController() {
-    final platformOrder = [
-      'android',
-      'ios',
-      'web',
-      'macos',
-      'linux',
-      'windows',
-    ];
-    final allPlatforms = platformOrder;
+    final allPlatforms = _platformIds;
 
     _tabController = TabController(
       length: allPlatforms.length,
@@ -195,15 +176,7 @@ class _PlatformSelectorState extends State<PlatformSelector>
 
   /// Recreates the [TabController] when the set of supported platforms changes.
   void _updateTabController() {
-    final platformOrder = [
-      'android',
-      'ios',
-      'web',
-      'macos',
-      'linux',
-      'windows',
-    ];
-    final targetIndex = platformOrder.indexOf(widget.selectedPlatform);
+    final targetIndex = _platformIds.indexOf(widget.selectedPlatform);
     if (targetIndex >= 0 && _tabController.index != targetIndex) {
       _tabController.animateTo(targetIndex);
     }

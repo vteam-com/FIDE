@@ -18,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 export 'package:fide/models/loading_action.dart';
 
+part 'mru_folders_notifier.dart';
 part 'project_manager.dart';
 part 'project_metrics_notifier.dart';
 part 'provider_project_state_sink.dart';
@@ -42,18 +43,11 @@ final currentProjectRootProvider = StateProvider<ProjectNode?>((_) => null);
 // State management for project loading state
 final projectLoadingProvider = StateProvider<bool>((_) => false);
 
-// State management for MRU folders
-final mruFoldersProvider = StateProvider<List<String>>((_) => []);
-
-// MRU folders loader that loads from SharedPreferences
-final mruFoldersLoaderProvider = FutureProvider<List<String>>((ref) async {
-  final prefs = await ref.watch(sharedPreferencesProvider.future);
-  const mruFoldersKey = 'mru_folders';
-  final mruList = prefs.getStringList(mruFoldersKey) ?? [];
-
-  // Filter out folders that don't exist
-  return mruList.where((path) => Directory(path).existsSync()).toList();
-});
+/// Recently opened project folders, newest first; see [MruFoldersNotifier].
+final mruFoldersProvider =
+    StateNotifierProvider<MruFoldersNotifier, List<String>>(
+      (ref) => MruFoldersNotifier(ref),
+    );
 
 // Unified project manager provider
 final projectManagerProvider = Provider<ProjectManager>((ref) {

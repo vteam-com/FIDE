@@ -2,27 +2,6 @@ part of 'shared_panel_utils.dart';
 
 /// Shared file operations utility.
 class FileOperations {
-  /// Opens a file node and seeds its Git status before notifying listeners.
-  static void handleFileTap(
-    ProjectNode node,
-    PanelStateManager panelState, {
-    required String? selectedFilePath,
-    required void Function(FileSystemItem)? onFileSelected,
-    required bool isMounted,
-  }) {
-    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
-    if (selectedFilePath == item.path) return;
-
-    if (node.gitStatus == GitFileStatus.clean &&
-        panelState.projectRoot != null) {
-      panelState.seedGitStatusForFile(node);
-    }
-
-    if (onFileSelected != null && isMounted) {
-      onFileSelected(item);
-    }
-  }
-
   /// Shows the creation dialog and returns the trimmed entry name.
   static Future<String?> _promptForCreationName(
     BuildContext context, {
@@ -219,33 +198,17 @@ class FileOperations {
     ProjectNode node,
     VoidCallback onRefresh,
   ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete'),
-        content: Text(
+    final confirmed = await MessageBox.confirm(
+      context,
+      title: 'Delete',
+      message:
           'Are you sure you want to delete "${node.name}"? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Delete',
     );
 
     if (!context.mounted) return;
 
-    if (confirmed != true) return;
+    if (!confirmed) return;
 
     try {
       if (node.isDirectory) {

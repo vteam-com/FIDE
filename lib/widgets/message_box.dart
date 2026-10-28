@@ -5,87 +5,73 @@ import 'package:flutter/material.dart';
 // Convenience methods for showing messages
 /// Represents `MessageBox`.
 class MessageBox {
-  /// Shows a success message overlay.
-  static void showSuccess(
-    BuildContext context,
-    String message, {
-    Duration duration = AppDuration.messageSuccess,
-    bool showCloseButton = true,
-    bool showCopyButton = false,
-  }) {
-    _showMessage(
-      context,
-      message,
-      MessageType.success,
-      duration: duration,
-      showCloseButton: showCloseButton,
-      showCopyButton: showCopyButton,
-    );
-  }
-
-  /// Shows a warning message overlay.
-  static void showWarning(
-    BuildContext context,
-    String message, {
-    Duration duration = AppDuration.messageWarning,
-    bool showCloseButton = true,
-    bool showCopyButton = false,
-  }) {
-    _showMessage(
-      context,
-      message,
-      MessageType.warning,
-      duration: duration,
-      showCloseButton: showCloseButton,
-      showCopyButton: showCopyButton,
-    );
-  }
-
-  /// Shows an error message overlay.
-  static void showError(
-    BuildContext context,
-    String message, {
-    Duration duration = AppDuration.messageError,
-    bool showCloseButton = true,
-    bool showCopyButton = true,
-  }) {
-    _showMessage(
-      context,
-      message,
-      MessageType.error,
-      duration: duration,
-      showCloseButton: showCloseButton,
-      showCopyButton: showCopyButton,
-    );
+  /// Shows an error message overlay, with a button to copy the text.
+  static void showError(BuildContext context, String message) {
+    _showMessage(context, message, MessageType.error);
   }
 
   /// Shows an informational message overlay.
-  static void showInfo(
-    BuildContext context,
-    String message, {
-    Duration duration = AppDuration.messageInfo,
-    bool showCloseButton = true,
-    bool showCopyButton = false,
-  }) {
-    _showMessage(
-      context,
-      message,
-      MessageType.info,
-      duration: duration,
-      showCloseButton: showCloseButton,
-      showCopyButton: showCopyButton,
-    );
+  static void showInfo(BuildContext context, String message) {
+    _showMessage(context, message, MessageType.info);
   }
 
-  /// Core implementation that presents an overlay message bar with the given [type] and [duration].
+  /// Shows a success message overlay.
+  static void showSuccess(BuildContext context, String message) {
+    _showMessage(context, message, MessageType.success);
+  }
+
+  /// Shows a warning message overlay.
+  static void showWarning(BuildContext context, String message) {
+    _showMessage(context, message, MessageType.warning);
+  }
+
+  /// Asks the user to confirm a destructive action; resolves true only when
+  /// [confirmLabel] is pressed, false on Cancel or dismissal.
+  static Future<bool> confirm(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required String confirmLabel,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: Text(confirmLabel),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
+  }
+
+  /// Presents an overlay message bar of [type], dismissed automatically
+  /// after that type's display duration.
   static void _showMessage(
     BuildContext context,
     String message,
-    MessageType type, {
-    required Duration duration,
-    required bool showCloseButton,
-    required bool showCopyButton,
-  }) {
+    MessageType type,
+  ) {
+    final duration = switch (type) {
+      MessageType.success => AppDuration.messageSuccess,
+      MessageType.warning => AppDuration.messageWarning,
+      MessageType.error => AppDuration.messageError,
+      MessageType.info => AppDuration.messageInfo,
+    };
+    // Errors are the messages users need to copy into reports
+    final showCopyButton = type == MessageType.error;
     final overlay = Overlay.of(context);
     final overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
@@ -96,7 +82,7 @@ class MessageBox {
           message: message,
           type: type,
           duration: duration,
-          showCloseButton: showCloseButton,
+          showCloseButton: true,
           showCopyButton: showCopyButton,
           onClose: () {
             // This will be called when the message is dismissed

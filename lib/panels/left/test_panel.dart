@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/output_log.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/output_panel.dart';
@@ -26,10 +27,7 @@ class TestPanel extends ConsumerStatefulWidget {
 
 class _TestPanelState extends ConsumerState<TestPanel> {
   Process? _currentProcess;
-  final StringBuffer _outputBuffer = StringBuffer();
-  final StringBuffer _errorBuffer = StringBuffer();
-  bool _hasErrors = false;
-  bool _hasOutput = false;
+  final OutputLog _log = OutputLog();
 
   List<TestAction> _testActions = [];
   bool _isRunningTests = false;
@@ -136,22 +134,13 @@ Validates test organization and naming conventions.
     ];
   }
 
-  void _handleOutput(String data) {
-    if (data.trim().isNotEmpty && mounted) {
-      setState(() {
-        _outputBuffer.writeln(data.trim());
-        _hasOutput = true;
-      });
-    }
+  // Streamed chunks arrive trimmed and non-empty from ProcessRunner.stream
+  void _handleOutput(String text) {
+    if (mounted) setState(() => _log.addOutput(text));
   }
 
-  void _handleError(String data) {
-    if (data.trim().isNotEmpty && mounted) {
-      setState(() {
-        _errorBuffer.writeln(data.trim());
-        _hasErrors = true;
-      });
-    }
+  void _handleError(String text) {
+    if (mounted) setState(() => _log.addError(text));
   }
 
   /// Handles `_runTests`.
@@ -165,44 +154,29 @@ Validates test organization and naming conventions.
     setState(() => _isRunningTests = true);
 
     try {
-      final process = await ref
+      final exitCode = await ref
           .read(processRunnerProvider)
-          .start(
+          .stream(
             commandArgs[0],
             commandArgs.sublist(1),
             workingDirectory: widget.projectPath,
-            runInShell: true,
+            onStdout: _handleOutput,
+            onStderr: _handleError,
+            onStarted: (process) => _currentProcess = process,
           );
-
-      _currentProcess = process;
-
-      // Handle stdout
-      process.stdout
-          .transform(const SystemEncoding().decoder)
-          .listen((data) => _handleOutput(data));
-
-      // Handle stderr as errors
-      process.stderr
-          .transform(const SystemEncoding().decoder)
-          .listen((data) => _handleError(data));
-
-      final exitCode = await process.exitCode;
 
       if (mounted) {
         if (exitCode == 0) {
-          setState(() => _hasOutput = true);
-          _outputBuffer.writeln('✅ Tests completed successfully');
+          _log.addOutput('✅ Tests completed successfully');
           MessageBox.showSuccess(context, 'Tests completed successfully');
         } else {
-          setState(() => _hasErrors = true);
-          _errorBuffer.writeln('❌ Tests failed with exit code: $exitCode');
+          _log.addError('❌ Tests failed with exit code: $exitCode');
           MessageBox.showError(context, 'Some tests failed');
         }
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _hasErrors = true);
-        _errorBuffer.writeln('❌ Error running tests: $e');
+        _log.addError('❌ Error running tests: $e');
         MessageBox.showError(context, 'Error running tests: $e');
       }
     } finally {
@@ -221,9 +195,8 @@ Validates test organization and naming conventions.
       final testDir = Directory('${widget.projectPath}/test');
       if (!testDir.existsSync()) {
         setState(() {
-          _outputBuffer.writeln('⚠️ No test directory found');
-          _outputBuffer.writeln('Create test/ directory to add tests');
-          _hasOutput = true;
+          _log.addOutput('⚠️ No test directory found');
+          _log.addOutput('Create test/ directory to add tests');
         });
         MessageBox.showInfo(context, 'No test directory found');
         return;
@@ -243,20 +216,20 @@ Validates test organization and naming conventions.
       }
 
       setState(() {
-        _outputBuffer.writeln('📊 Test Structure Analysis:');
-        _outputBuffer.writeln('Test files found: ${testFiles.length}');
+        _log.addOutput('📊 Test Structure Analysis:');
+        _log.addOutput('Test files found: ${testFiles.length}');
 
         if (testFiles.isNotEmpty) {
-          _outputBuffer.writeln('Valid test files:');
+          _log.addOutput('Valid test files:');
           for (final file in testFiles) {
-            _outputBuffer.writeln('  ✓ $file');
+            _log.addOutput('  ✓ $file');
           }
         }
 
         if (otherFiles.isNotEmpty) {
-          _outputBuffer.writeln('Non-test files in test/:');
+          _log.addOutput('Non-test files in test/:');
           for (final file in otherFiles) {
-            _outputBuffer.writeln('  ⚠️ $file');
+            _log.addOutput('  ⚠️ $file');
           }
         }
 
@@ -265,34 +238,24 @@ Validates test organization and naming conventions.
           '${widget.projectPath}/integration_test',
         );
         if (integrationTestDir.existsSync()) {
-          _outputBuffer.writeln('✓ Integration tests directory found');
+          _log.addOutput('✓ Integration tests directory found');
         } else {
-          _outputBuffer.writeln(
+          _log.addOutput(
             'ℹ️ Consider adding integration_test/ directory for end-to-end tests',
           );
         }
-
-        _hasOutput = true;
       });
 
       MessageBox.showSuccess(context, 'Test structure validated');
     } catch (e) {
       setState(() {
-        _errorBuffer.writeln('❌ Error analyzing test structure: $e');
-        _hasErrors = true;
+        _log.addError('❌ Error analyzing test structure: $e');
       });
       MessageBox.showError(context, 'Error analyzing test structure');
     }
   }
 
-  void _clearOutput() {
-    setState(() {
-      _outputBuffer.clear();
-      _errorBuffer.clear();
-      _hasErrors = false;
-      _hasOutput = false;
-    });
-  }
+  void _clearOutput() => setState(_log.clear);
 
   /// Handles `_buildTestActions`.
   Widget _buildTestActions() {
@@ -375,17 +338,17 @@ Validates test organization and naming conventions.
         ),
 
         // Output section
-        if (_hasErrors)
+        if (_log.hasErrors)
           OutputPanel(
             title: 'Errors',
-            text: _errorBuffer.toString(),
+            text: _log.errors,
             onClear: _clearOutput,
           ),
 
-        if (_hasOutput)
+        if (_log.hasOutput)
           OutputPanel(
             title: 'Output',
-            text: _outputBuffer.toString(),
+            text: _log.output,
             onClear: _clearOutput,
           ),
       ],

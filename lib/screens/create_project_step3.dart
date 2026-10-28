@@ -1,6 +1,8 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/full_path_widget.dart';
+import 'package:fide/widgets/loading_actions_log.dart';
+import 'package:fide/widgets/loading_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -60,84 +62,13 @@ class _CreateProjectStep3State extends State<CreateProjectStep3> {
                 ),
               ),
 
-              // Loading Progress
-              Consumer(
-                builder: (context, ref, _) {
-                  final loadingActions = ref.watch(loadingActionsProvider);
+              LoadingProgressBar(actions: loadingActions),
 
-                  // Calculate progress based on current step position (max 6 steps)
-                  double progress = 0.0;
-                  if (loadingActions.isNotEmpty) {
-                    final currentStep = loadingActions
-                        .map((action) => action.step)
-                        .reduce((a, b) => a > b ? a : b);
-                    const int totalSteps = 6;
-
-                    progress = currentStep / totalSteps;
-                    // Ensure progress doesn't exceed 1.0
-                    progress = progress.clamp(0.0, 1.0);
-                  }
-
-                  return LinearProgressIndicator(
-                    value: progress,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.primary,
-                    ),
-                  );
-                },
-              ),
-
-              // Loading Actions Log
               if (loadingActions.isNotEmpty)
                 Expanded(
-                  child: Container(
-                    constraints: const BoxConstraints(
-                      maxHeight: AppSize.statusLogMaxHeight,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.outline
-                            .withValues(alpha: AppOpacity.divider),
-                      ),
-                      borderRadius: BorderRadius.circular(AppRadius.medium),
-                    ),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: loadingActions.length,
-                      itemBuilder: (context, index) {
-                        final LoadingAction action = loadingActions[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: AppSpacing.tiny,
-                            horizontal: AppSpacing.xLarge,
-                          ),
-                          child: Row(
-                            spacing: AppSpacing.medium,
-                            children: [
-                              // Status icon
-                              _buildStatusIcon(action.status, context),
-
-                              // Action text
-                              Expanded(
-                                child: Text(
-                                  action.text,
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(
-                                        color:
-                                            action.status ==
-                                                LoadingStatus.failed
-                                            ? Theme.of(context)
-                                                  .colorScheme
-                                                  .error
-                                            : null,
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                  child: LoadingActionsLog(
+                    actions: loadingActions,
+                    framed: true,
                   ),
                 ),
 
@@ -154,34 +85,5 @@ class _CreateProjectStep3State extends State<CreateProjectStep3> {
         );
       },
     );
-  }
-
-  /// Returns a status icon widget (spinner, check, or error) for the given [LoadingStatus].
-  Widget _buildStatusIcon(LoadingStatus status, BuildContext context) {
-    switch (status) {
-      case LoadingStatus.pending:
-        return SizedBox(
-          width: AppIconSize.large,
-          height: AppIconSize.large,
-          child: CircularProgressIndicator(
-            strokeWidth: AppSize.borderThin,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              Theme.of(context).colorScheme.primary,
-            ),
-          ),
-        );
-      case LoadingStatus.success:
-        return Icon(
-          Icons.check_circle,
-          color: Colors.green,
-          size: AppIconSize.large,
-        );
-      case LoadingStatus.failed:
-        return Icon(
-          Icons.error,
-          color: Theme.of(context).colorScheme.error,
-          size: AppIconSize.large,
-        );
-    }
   }
 }

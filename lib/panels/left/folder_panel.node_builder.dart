@@ -99,14 +99,9 @@ class NodeBuilder extends StatelessWidget {
 
   /// Handles `_buildNodeChildren`.
   Widget _buildNodeChildren() {
-    final uniqueChildren = <String, ProjectNode>{};
-    for (final child in node.children) {
-      uniqueChildren[child.path] = child;
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: uniqueChildren.values
+      children: node.uniqueChildren
           .map(
             (child) => NodeBuilder(
               node: child,

@@ -4,11 +4,14 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/providers/flutter_sdk.dart';
 import 'package:fide/providers/process_runner.dart';
 import 'package:http/http.dart' as http;
 
 /// Represents `AIService`.
 class AIService {
+  /// Constraint used when the installed Dart version can't be detected.
+  static const String _fallbackDartConstraint = '^3.0.0';
   final ProcessRunner _runner;
 
   /// Creates an AI service that launches commands through [_runner].
@@ -63,29 +66,11 @@ Please provide a helpful response focused on the coding request.''';
     );
   }
 
-  /// Gets the current Flutter SDK version by running flutter --version
+  /// Dart SDK constraint matching the installed Flutter, for generated pubspecs.
   Future<String> _getFlutterSdkVersion() async {
-    try {
-      final result = await _runner.run('flutter', ['--version']);
-      if (result.exitCode == 0) {
-        final output = result.stdout.toString();
-
-        // Look for Dart SDK version in the output
-        // Example output contains: "Dart 3.9.2 • DevTools 2.32.0"
-        final dartVersionRegex = RegExp(r'Dart (\d+\.\d+\.\d+)');
-        final match = dartVersionRegex.firstMatch(output);
-        if (match != null) {
-          final version = match.group(1)!;
-          return '^$version'; // Return in pubspec format (^3.9.2)
-        }
-      }
-
-      // Fallback to a reasonable default if detection fails
-      return '^3.0.0';
-    } catch (e) {
-      // Fallback to default on error
-      return '^3.0.0';
-    }
+    final dartVersion = (await FlutterSdk(_runner).versions())?.dart;
+    // Pubspec constraint format, e.g. ^3.9.2
+    return dartVersion == null ? _fallbackDartConstraint : '^$dartVersion';
   }
 
   /// Builds the AI prompt used to generate an initial Flutter project file.
@@ -334,23 +319,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   /// Checks if Ollama is installed on the system
-  Future<bool> isOllamaInstalled() async {
-    try {
-      final whichResult = await _runner.run('which', ['ollama']);
-      return whichResult.exitCode == 0;
-    } catch (e) {
-      return false;
-    }
+  Future<bool> isOllamaInstalled() {
+    return _runner.succeeds('which', ['ollama']);
   }
 
   /// Checks if Ollama service is currently running
-  Future<bool> isOllamaRunning() async {
-    try {
-      final listResult = await _runner.run('ollama', ['list']);
-      return listResult.exitCode == 0;
-    } catch (e) {
-      return false;
-    }
+  Future<bool> isOllamaRunning() {
+    return _runner.succeeds('ollama', ['list']);
   }
 
   /// Checks if the required model (codellama) is downloaded

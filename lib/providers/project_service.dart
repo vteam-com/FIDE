@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/loading_action.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/providers/file_system_watcher.dart';
@@ -217,15 +216,7 @@ class ProjectService {
         from: _currentProjectRoot!.path,
       );
 
-      if (gitStatus.staged.contains(relativePath)) {
-        node.gitStatus = GitFileStatus.added;
-      } else if (gitStatus.unstaged.contains(relativePath)) {
-        node.gitStatus = GitFileStatus.modified;
-      } else if (gitStatus.untracked.contains(relativePath)) {
-        node.gitStatus = GitFileStatus.untracked;
-      } else {
-        node.gitStatus = GitFileStatus.clean;
-      }
+      node.gitStatus = gitStatus.statusOf(relativePath);
     }
 
     // Recursively update children

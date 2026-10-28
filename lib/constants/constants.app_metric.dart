@@ -42,5 +42,8 @@ class AppMetric {
   static const int projectCreateStepGitInit = 5;
   static const int projectCreateStepVerification = 6;
 
+  /// Steps a loading progress bar spans: the longest flow, project creation.
+  static const int loadingProgressSteps = projectCreateStepVerification;
+
   const AppMetric._();
 }

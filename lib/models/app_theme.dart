@@ -119,4 +119,22 @@ class AppTheme {
               .sidePanelDividerLight // Light gray divider
         : AppColor.sidePanelDividerDark; // Dark gray divider
   }
+
+  /// Vertical surface gradient behind the full-screen welcome, loading and
+  /// create-project views.
+  static BoxDecoration screenBackground(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          colorScheme.surface,
+          colorScheme.surfaceContainerHighest.withValues(
+            alpha: AppOpacity.divider,
+          ),
+        ],
+      ),
+    );
+  }
 }

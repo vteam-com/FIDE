@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/providers/process_runner.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/section_panel.dart';
@@ -407,7 +408,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
         errorBuilder: (_, _, _) {
           // Fallback to generic SVG if image loading fails
           return SvgPicture.asset(
-            'assets/platform_${widget.selectedPlatform}.svg',
+            _genericIconPath,
             width: AppIconSize.xLarge,
             height: AppIconSize.xLarge,
           );
@@ -485,6 +486,13 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
     }
 
     return null; // No icon found
+  }
+
+  /// Bundled icon for the selected platform, or Linux's for an unknown id.
+  String get _genericIconPath {
+    return (FlutterPlatform.fromId(widget.selectedPlatform) ??
+            FlutterPlatform.linux)
+        .iconAsset;
   }
 
   /// Calculates and returns the human-readable total build output size.
@@ -592,28 +600,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
       return appIconPath;
     }
 
-    // Fallback to generic platform icons
-    for (var platform in [
-      {
-        'name': 'Android',
-        'id': 'android',
-        'asset': 'assets/platform_android.svg',
-      },
-      {'name': 'iOS', 'id': 'ios', 'asset': 'assets/platform_ios.svg'},
-      {'name': 'Web', 'id': 'web', 'asset': 'assets/platform_web.svg'},
-      {'name': 'macOS', 'id': 'macos', 'asset': 'assets/platform_macos.svg'},
-      {'name': 'Linux', 'id': 'linux', 'asset': 'assets/platform_linux.svg'},
-      {
-        'name': 'Windows',
-        'id': 'windows',
-        'asset': 'assets/platform_windows.svg',
-      },
-    ]) {
-      if (platform['id'] == widget.selectedPlatform) {
-        return platform['asset'] as String;
-      }
-    }
-    return 'assets/platform_linux.svg'; // fallback
+    return _genericIconPath;
   }
 
   /// Opens the folder containing [path] in the system file manager.

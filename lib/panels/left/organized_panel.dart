@@ -8,46 +8,27 @@ import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/panels/left/shared_panel_utils.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/foldername_widget.dart';
-import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/section_panel.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart' as p;
 
 /// OrganizedPanel provides a categorized view of the project
-class OrganizedPanel extends ConsumerStatefulWidget {
+class OrganizedPanel extends ProjectTreePanel {
   const OrganizedPanel({
     super.key,
-    this.onFileSelected,
-    this.selectedFile,
-    this.onThemeChanged,
-    this.onProjectLoaded,
-    this.onProjectPathChanged,
-    this.initialProjectPath,
-    this.onToggleGitPanel,
+    super.onFileSelected,
+    super.selectedFile,
+    super.initialProjectPath,
   });
-
-  final String? initialProjectPath;
-  final Function(FileSystemItem)? onFileSelected;
-  final Function(bool)? onProjectLoaded;
-  final Function(String)? onProjectPathChanged;
-  final Function(ThemeMode)? onThemeChanged;
-  final VoidCallback? onToggleGitPanel;
-  final FileSystemItem? selectedFile;
 
   @override
   ConsumerState<OrganizedPanel> createState() => _OrganizedPanelState();
 }
 
-class _OrganizedPanelState extends ConsumerState<OrganizedPanel> {
-  late final PanelStateManager _panelState = PanelStateManager(
-    ref.read(gitServiceProvider),
-  );
+class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
+    with ProjectTreePanelState<OrganizedPanel> {
   final Map<String, bool> _filesWithShowDialog = {};
   final Map<String, int> _cachedElementCounts = {};
 
@@ -59,151 +40,13 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel> {
   String _currentCategory = '';
 
   @override
-  void initState() {
-    super.initState();
-    _panelState.initialize();
-  }
-
-  @override
-  void dispose() {
-    _panelState.dispose();
-    super.dispose();
-  }
-
-  // Getters for panel state
-  /// Returns `projectRoot`.
-  ProjectNode? get projectRoot => _panelState.projectRoot;
-
-  /// Returns `expandedState`.
-  Map<String, bool> get expandedState => _panelState.expandedState;
-
-  // Helper methods
-  /// Handles `_OrganizedPanelState.showError`.
-  void showError(String message) {
-    MessageBox.showError(context, message, showCopyButton: true);
-  }
-
-  /// Handles `_OrganizedPanelState.pickDirectory`.
-  Future<void> pickDirectory() async {
-    try {
-      final selectedDirectory = await FilePicker.getDirectoryPath();
-      if (selectedDirectory != null) {
-        showError('Project loading is handled by the main application');
-      }
-    } catch (e) {
-      showError('Error selecting directory: $e');
-    }
-  }
-
-  /// Handles `_OrganizedPanelState.ensureDirectoryLoaded`.
-  Future<void> ensureDirectoryLoaded(ProjectNode node) async {
-    await _panelState.ensureDirectoryLoaded(node);
-  }
-
-  /// Handles `_onNodeTapped`.
-  void _onNodeTapped(ProjectNode node, bool isExpanded) async {
-    if (node.isDirectory) {
-      if (mounted) {
-        setState(() {
-          _panelState.expandedState[node.path] = !isExpanded;
-        });
-      }
-
-      if (!isExpanded && node.children.isEmpty) {
-        try {
-          await _panelState.ensureDirectoryLoaded(node);
-          if (mounted) {
-            setState(() {});
-          }
-        } catch (e) {
-          showError('Failed to load directory: $e');
-        }
-      }
-    } else {
-      /// Handles `_handleFileTap`.
-      _handleFileTap(node);
-    }
-  }
-
-  /// Handles `_handleFileTap`.
-  void _handleFileTap(ProjectNode node) {
-    FileOperations.handleFileTap(
-      node,
-      _panelState,
-      selectedFilePath: widget.selectedFile?.path,
-      onFileSelected: widget.onFileSelected,
-      isMounted: mounted,
-    );
-  }
-
-  void _showNodeContextMenu(ProjectNode node, Offset position) {
-    ContextMenuHandler.showNodeContextMenu(
-      context,
-      node,
-      position,
-      _handleContextMenuAction,
-    );
-  }
-
-  /// Handles `_handleContextMenuAction`.
-  void _handleContextMenuAction(String action, ProjectNode node) {
-    switch (action) {
-      case 'open':
-        _onNodeTapped(node, _panelState.expandedState[node.path] ?? false);
-        break;
-      case 'copy_full_path':
-        Clipboard.setData(ClipboardData(text: node.path));
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Full path copied to clipboard')),
-          );
-        }
-        break;
-      case 'copy_relative_path':
-        if (projectRoot != null) {
-          final relative = p.relative(node.path, from: projectRoot!.path);
-          Clipboard.setData(ClipboardData(text: relative));
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Relative path copied to clipboard'),
-              ),
-            );
-          }
-        }
-        break;
-      case 'new_file':
-        FileOperations.createNewFile(context, node, _refreshProjectTree);
-        break;
-      case 'new_folder':
-        FileOperations.createNewFolder(context, node, _refreshProjectTree);
-        break;
-      case 'rename':
-        FileOperations.renameFile(context, node, _refreshProjectTree);
-        break;
-      case 'delete':
-        FileOperations.deleteFile(context, node, _refreshProjectTree);
-        break;
-    }
-  }
-
-  /// Handles `_refreshProjectTree`.
-  Future<void> _refreshProjectTree() async {
-    if (_panelState.projectRoot == null) return;
-
-    try {
-      // Reload the project tree recursively
-      await _panelState.projectRoot!.enumerateContentsRecursive();
-
-      // Invalidate caches when project tree changes
-      _needsRecachery = true;
-
-      if (mounted) {
-        setState(() {});
-      }
-    } catch (e) {
-      showError('Failed to refresh project tree: $e');
-    }
+  void onProjectTreeChanged() {
+    _filesWithShowDialog.clear();
+    _cachedElementCounts.clear();
+    _cachedCategoryNodes = null;
+    _cachedSortedNodes.clear();
+    _cachedFileSystemItems.clear();
+    _needsRecachery = true;
   }
 
   // Method to build cached categorization - only rebuilds when needed
@@ -231,7 +74,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel> {
         /// Handles `_findDirectoryNode`.
         final dirNode = _findDirectoryNode(projectRoot!, dirPath);
         if (dirNode != null) {
-          ensureDirectoryLoaded(dirNode);
+          panelState.ensureDirectoryLoaded(dirNode);
           categoryNodes[category]!.addAll(dirNode.children);
         }
       }
@@ -315,63 +158,15 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel> {
     final currentProjectRoot = ref.watch(currentProjectRootProvider);
     final isProjectLoaded = ref.watch(projectLoadedProvider);
 
-    // Update local state when project data changes
-    if (currentProjectRoot != _panelState.projectRoot) {
-      _panelState.projectRoot = currentProjectRoot;
-      // Clear expanded state when project changes
-      _panelState.expandedState.clear();
-      // Clear caches when project changes
-      _filesWithShowDialog.clear();
-      _cachedElementCounts.clear();
-      _cachedCategoryNodes = null;
-      _cachedSortedNodes.clear();
-      _cachedFileSystemItems.clear();
-      _needsRecachery = true;
+    syncProjectRoot(currentProjectRoot);
 
-      if (mounted) {
-        setState(() {});
-      }
-    }
-
-    return !isProjectLoaded
-        ? Container(
-            color: Theme.of(context).colorScheme.surface,
-            child: const Center(
-              child: Text(
-                'No project loaded',
-                style: TextStyle(fontSize: AppFontSize.title),
-              ),
-            ),
-          )
-        : buildPanelContent();
+    return !isProjectLoaded ? buildNotLoadedView() : buildPanelContent();
   }
 
   /// Handles `_OrganizedPanelState.buildPanelContent`.
   Widget buildPanelContent() {
     if (projectRoot == null) {
-      return Container(
-        color: Theme.of(context).colorScheme.inverseSurface,
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.folder_open,
-                size: AppIconSize.emptyState,
-                color: Colors.grey,
-              ),
-              const SizedBox(height: AppSpacing.xLarge),
-              const Text('No project loaded'),
-              const SizedBox(height: AppSpacing.medium),
-              ElevatedButton.icon(
-                onPressed: pickDirectory,
-                icon: const Icon(Icons.folder_open),
-                label: const Text('Open Project'),
-              ),
-            ],
-          ),
-        ),
-      );
+      return buildNoProjectView();
     }
 
     /// Handles `_buildOrganizedView`.
@@ -667,9 +462,9 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel> {
             node: node,
             isExpanded: item.isExpanded,
             rootPath: projectRoot!.path,
-            onTap: () => _onNodeTapped(node, item.isExpanded),
+            onTap: () => toggleOrOpenNode(node, item.isExpanded),
             onShowContextMenu: (position) =>
-                _showNodeContextMenu(node, position),
+                showNodeContextMenu(node, position),
           ),
           if (item.isExpanded)
             Padding(
@@ -697,8 +492,8 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel> {
         fileItem: item,
         isSelected: isSelected,
         rootPath: projectRoot!.path,
-        onTap: () => _handleFileTap(node),
-        onContextMenu: (position) => _showNodeContextMenu(node, position),
+        onTap: () => handleFileTap(node),
+        onContextMenu: (position) => showNodeContextMenu(node, position),
       );
     }
   }

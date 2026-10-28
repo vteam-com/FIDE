@@ -7,13 +7,18 @@ import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/process_runner.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 
 part 'shared_panel_utils.file_operations.dart';
 part 'shared_panel_utils.context_menu_handler.dart';
+part 'shared_panel_utils.project_tree_panel.dart';
+part 'shared_panel_utils.project_tree_panel_state.dart';
 
 /// Shared state management for panel widgets
 class PanelStateManager {
@@ -23,7 +28,6 @@ class PanelStateManager {
   String _filterQuery = '';
   ProjectNode? projectRoot;
   final GitService _gitService;
-  final Set<String> _loadingDirectories = {};
 
   PanelStateManager(this._gitService);
 
@@ -62,66 +66,30 @@ class PanelStateManager {
 
   /// Handles `_expandDirectoriesWithMatchingFiles`.
   void _expandDirectoriesWithMatchingFiles(ProjectNode node) {
-    if (node.isDirectory) {
-      bool hasMatchingDescendant = false;
-
-      // Check if this directory or any descendant matches the filter
-      if (_matchesFilter(node)) {
-        hasMatchingDescendant = true;
-      } else {
-        // Check descendants recursively
-        for (final child in node.children) {
-          if (_hasMatchingDescendant(child)) {
-            hasMatchingDescendant = true;
-            break;
-          }
-        }
-      }
-
-      // If this directory has matching descendants, expand it
-      if (hasMatchingDescendant) {
-        _expandedState[node.path] = true;
-        // Recursively expand all children that have matches
-        for (final child in node.children) {
-          if (child.isDirectory) {
-            _expandDirectoriesWithMatchingFiles(child);
-          }
-        }
-      }
-    }
-  }
-
-  bool _hasMatchingDescendant(ProjectNode node) {
-    // Check if this node matches
-    if (_matchesFilter(node)) return true;
-
-    // Check children recursively
+    if (!node.isDirectory || !hasMatchingDescendant(node)) return;
+    _expandedState[node.path] = true;
     for (final child in node.children) {
-      if (_hasMatchingDescendant(child)) return true;
+      _expandDirectoriesWithMatchingFiles(child);
     }
-
-    return false;
   }
 
-  bool _matchesFilter(ProjectNode node) {
-    if (_filterQuery.isEmpty) return true;
-    return node.name.toLowerCase().contains(_filterQuery);
+  /// Whether [node] or anything below it matches the filter.
+  bool hasMatchingDescendant(ProjectNode node) {
+    return matchesFilter(node) || node.children.any(hasMatchingDescendant);
   }
 
-  /// Handles `PanelStateManager.ensureDirectoryLoaded`.
-  Future<void> ensureDirectoryLoaded(ProjectNode node) async {
-    if (node.children.isEmpty && node.isDirectory) {
-      // Mark this directory as loading
-      _loadingDirectories.add(node.path);
+  /// Whether [node]'s name matches the filter; everything matches when empty.
+  bool matchesFilter(ProjectNode node) {
+    return _filterQuery.isEmpty ||
+        node.name.toLowerCase().contains(_filterQuery);
+  }
 
-      try {
-        await node.enumerateContents();
-      } catch (e) {
-        _logger.warning('Failed to load directory ${node.name}: $e');
-      } finally {
-        _loadingDirectories.remove(node.path);
-      }
+  /// Loads [node]'s children if it is a directory that hasn't been loaded.
+  Future<LoadChildrenResult> ensureDirectoryLoaded(ProjectNode node) async {
+    if (!node.isDirectory || node.children.isNotEmpty) {
+      return LoadChildrenResult.success;
     }
+    return node.enumerateContents();
   }
 
   /// Handles `PanelStateManager.seedGitStatusForFile`.
@@ -137,15 +105,7 @@ class PanelStateManager {
       final gitStatus = await _gitService.getStatus(projectRoot!.path);
       final relativePath = path.relative(node.path, from: projectRoot!.path);
 
-      if (gitStatus.staged.contains(relativePath)) {
-        node.gitStatus = GitFileStatus.added;
-      } else if (gitStatus.unstaged.contains(relativePath)) {
-        node.gitStatus = GitFileStatus.modified;
-      } else if (gitStatus.untracked.contains(relativePath)) {
-        node.gitStatus = GitFileStatus.untracked;
-      } else {
-        node.gitStatus = GitFileStatus.clean;
-      }
+      node.gitStatus = gitStatus.statusOf(relativePath);
     } catch (e) {
       _logger.severe('Error seeding Git status for file: $e');
     }

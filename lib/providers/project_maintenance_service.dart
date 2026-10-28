@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/providers/process_runner.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
@@ -59,8 +60,10 @@ class ProjectMaintenanceService {
     }
 
     if (Platform.isMacOS) {
-      for (final platform in const ['ios', 'macos']) {
-        final platformPath = '$projectPath/$platform';
+      for (final platform in FlutterPlatform.values.where(
+        (platform) => platform.usesCocoaPods,
+      )) {
+        final platformPath = '$projectPath/${platform.name}';
         if (Directory(platformPath).existsSync()) {
           await _runChecked('pod', [
             'install',
