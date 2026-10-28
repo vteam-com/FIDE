@@ -19,13 +19,13 @@ class ProjectService {
   final Logger _logger = Logger('ProjectService');
 
   final ProjectStateSink _stateSink;
-  final GitService _gitService = GitService();
-  final FileSystemWatcher _fileSystemWatcher = FileSystemWatcher();
+  final GitService _gitService;
+  final FileSystemWatcher _fileSystemWatcher;
 
   ProjectNode? _currentProjectRoot;
   StreamSubscription? _watcherSubscription;
 
-  ProjectService(this._stateSink);
+  ProjectService(this._stateSink, this._gitService, this._fileSystemWatcher);
 
   /// Get the current project root
   ProjectNode? get currentProjectRoot => _currentProjectRoot;

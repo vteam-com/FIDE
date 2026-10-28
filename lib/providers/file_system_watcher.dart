@@ -8,10 +8,6 @@ import 'package:path/path.dart' as path;
 
 /// Service for monitoring file system changes and applying incremental updates
 class FileSystemWatcher {
-  static final FileSystemWatcher _instance = FileSystemWatcher._internal();
-  factory FileSystemWatcher() => _instance;
-  FileSystemWatcher._internal();
-
   static final Logger _logger = Logger('FileSystemWatcher');
 
   final Map<String, StreamSubscription<FileSystemEvent>> _watchers = {};

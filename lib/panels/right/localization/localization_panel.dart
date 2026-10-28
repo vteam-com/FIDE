@@ -13,6 +13,7 @@ import 'package:fide/panels/right/localization/localization_setup_widget.dart';
 import 'package:fide/providers/ai_service.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/localization_service.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
@@ -42,9 +43,11 @@ class LocalizationPanel extends ConsumerStatefulWidget {
 
 class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
   final Logger _logger = Logger('_LocalizationPanelState');
-  final ArbService _arbService = ArbService();
-  final LocalizationService _localizationService = LocalizationService();
-  final AIService _aiService = AIService();
+  late final ArbService _arbService = ref.read(arbServiceProvider);
+  late final LocalizationService _localizationService = ref.read(
+    localizationServiceProvider,
+  );
+  late final AIService _aiService = ref.read(aiServiceProvider);
   final TextEditingController _filterController = TextEditingController();
   String _filterQuery = '';
 

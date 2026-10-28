@@ -2,9 +2,9 @@ part of 'git_panel.dart';
 
 /// Represents `GitStatusNotifier`.
 class GitStatusNotifier extends StateNotifier<AsyncValue<GitStatus>> {
-  GitStatusNotifier() : super(const AsyncValue.loading());
+  GitStatusNotifier(this._gitService) : super(const AsyncValue.loading());
 
-  final GitService _gitService = GitService();
+  final GitService _gitService;
 
   /// Handles `GitStatusNotifier.loadStatus`.
   Future<void> loadStatus(String projectPath) async {

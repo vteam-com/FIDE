@@ -11,10 +11,6 @@ part 'git_service.git_diff_stats.dart';
 
 /// Represents `GitService`.
 class GitService {
-  static final GitService _instance = GitService._internal();
-  factory GitService() => _instance;
-  GitService._internal();
-
   /// Runs a mutating Git command and returns a normalized status message.
   Future<String> _runGitFileMutation({
     required String path,

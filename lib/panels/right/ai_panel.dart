@@ -3,20 +3,24 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/providers/ai_service.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+part 'ai_panel.chat_message.dart';
 
 /// Represents `AIPanel`.
-class AIPanel extends StatefulWidget {
+class AIPanel extends ConsumerStatefulWidget {
   const AIPanel({super.key, this.selectedFile});
 
   final FileSystemItem? selectedFile;
 
   @override
-  State<AIPanel> createState() => _AIPanelState();
+  ConsumerState<AIPanel> createState() => _AIPanelState();
 }
 
-class _AIPanelState extends State<AIPanel> {
+class _AIPanelState extends ConsumerState<AIPanel> {
   static const Map<String, String> _actionHints = {
     'ask': 'Ask me anything about your code...',
     'explain': 'Paste code here to get explanation...',
@@ -29,7 +33,7 @@ class _AIPanelState extends State<AIPanel> {
     'generate': 'Generate Code',
     'refactor': 'Refactor Code',
   };
-  final AIService _aiService = AIService();
+  late final AIService _aiService = ref.read(aiServiceProvider);
   bool _hasModelInstalled = false;
   bool _hasOllamaInstalled = false;
   bool _isCheckingStatus = true;
@@ -560,13 +564,4 @@ class _AIPanelState extends State<AIPanel> {
       }
     }
   }
-}
-
-/// Represents `ChatMessage`.
-class ChatMessage {
-  final String content;
-  final bool isUser;
-  final DateTime? timestamp;
-
-  ChatMessage({required this.content, required this.isUser, this.timestamp});
 }

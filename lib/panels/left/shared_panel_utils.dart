@@ -21,8 +21,10 @@ class PanelStateManager {
   final TextEditingController _filterController = TextEditingController();
   String _filterQuery = '';
   ProjectNode? projectRoot;
-  final GitService _gitService = GitService();
+  final GitService _gitService;
   final Set<String> _loadingDirectories = {};
+
+  PanelStateManager(this._gitService);
 
   // Getters
   /// Returns `expandedState`.

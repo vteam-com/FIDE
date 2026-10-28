@@ -2,9 +2,8 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
-import 'package:fide/providers/ai_service.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/localization_service.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/screens/create_project_step1.dart';
 import 'package:fide/screens/create_project_step2.dart';
 import 'package:fide/screens/create_project_step3.dart';
@@ -404,7 +403,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
       );
 
       if (_wantsLocalization) {
-        final localizationService = LocalizationService();
+        final localizationService = ref.read(localizationServiceProvider);
         await localizationService.initializeLocalization(projectPath);
 
         // Setup selected languages - create ARB files for each language
@@ -440,7 +439,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
 
       if (_useAI && _ollamaAvailable) {
         try {
-          final aiService = AIService();
+          final aiService = ref.read(aiServiceProvider);
           final projectName = _userFinalProjectName.isNotEmpty
               ? _userFinalProjectName
               : _userProjectName;

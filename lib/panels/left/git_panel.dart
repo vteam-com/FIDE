@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/providers/git_service.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/message_box.dart';
@@ -59,7 +60,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   }
 
   Future<void> _stageFiles(List<String> files) async {
-    final gitService = GitService();
+    final gitService = ref.read(gitServiceProvider);
     final result = await gitService.stageFiles(widget.projectPath, files);
     if (mounted) {
       MessageBox.showInfo(context, result);
@@ -68,7 +69,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   }
 
   Future<void> _unstageFiles(List<String> files) async {
-    final gitService = GitService();
+    final gitService = ref.read(gitServiceProvider);
     final result = await gitService.unstageFiles(widget.projectPath, files);
     if (mounted) {
       MessageBox.showInfo(context, result);
@@ -82,7 +83,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
     setState(() => _isCommitting = true);
     try {
-      final gitService = GitService();
+      final gitService = ref.read(gitServiceProvider);
       final result = await gitService.commit(
         widget.projectPath,
         _commitController.text,
@@ -100,7 +101,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   }
 
   Future<void> _push() async {
-    final gitService = GitService();
+    final gitService = ref.read(gitServiceProvider);
     final result = await gitService.push(widget.projectPath);
     if (mounted) {
       MessageBox.showInfo(context, result);
@@ -109,7 +110,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   }
 
   Future<void> _pull() async {
-    final gitService = GitService();
+    final gitService = ref.read(gitServiceProvider);
     final result = await gitService.pull(widget.projectPath);
     if (mounted) {
       MessageBox.showInfo(context, result);
@@ -146,7 +147,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
     if (confirmed != true) return;
 
-    final gitService = GitService();
+    final gitService = ref.read(gitServiceProvider);
     final result = await gitService.discardChanges(widget.projectPath, files);
     if (mounted) {
       final isSuccess = result.contains('successfully');
@@ -161,7 +162,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
   /// Handles `_viewDiff`.
   Future<void> _viewDiff(String filePath) async {
-    final gitService = GitService();
+    final gitService = ref.read(gitServiceProvider);
     final fullFilePath = path.join(widget.projectPath, filePath);
 
     // Determine file status to get correct content
@@ -589,12 +590,14 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
 // Git status provider
 final gitStatusProvider =
-    StateNotifierProvider<GitStatusNotifier, AsyncValue<GitStatus>>((_) {
-      return GitStatusNotifier();
+    StateNotifierProvider<GitStatusNotifier, AsyncValue<GitStatus>>((ref) {
+      return GitStatusNotifier(ref.read(gitServiceProvider));
     });
 
 // Git commits provider
 final gitCommitsProvider =
-    StateNotifierProvider<GitCommitsNotifier, AsyncValue<List<GitCommit>>>((_) {
-      return GitCommitsNotifier();
+    StateNotifierProvider<GitCommitsNotifier, AsyncValue<List<GitCommit>>>((
+      ref,
+    ) {
+      return GitCommitsNotifier(ref.read(gitServiceProvider));
     });

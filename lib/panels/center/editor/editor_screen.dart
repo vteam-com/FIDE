@@ -15,6 +15,7 @@ import 'package:fide/panels/center/editor/large_file_message.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/providers/git_service.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +27,7 @@ import 'package:re_highlight/styles/atom-one-dark.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
 
 /// Full-featured code editor widget with syntax highlighting, search, diff view, and file-save support.
-class EditorScreen extends StatefulWidget {
+class EditorScreen extends ConsumerStatefulWidget {
   const EditorScreen({
     super.key,
     this.documentState,
@@ -53,7 +54,7 @@ class EditorScreen extends StatefulWidget {
   }
 
   @override
-  State<EditorScreen> createState() => _EditorScreenState();
+  ConsumerState<EditorScreen> createState() => _EditorScreenState();
 
   /// Handles `EditorScreen.findNext`.
   static void findNext() {
@@ -81,8 +82,10 @@ class EditorScreen extends StatefulWidget {
   }
 }
 
-class _EditorScreenState extends State<EditorScreen> {
+class _EditorScreenState extends ConsumerState<EditorScreen> {
   final Map<String, GitDiffStats?> _allGitDiffStats = {};
+
+  bool _appIsActive = true;
 
   bool _caseSensitive = false;
 
@@ -100,6 +103,8 @@ class _EditorScreenState extends State<EditorScreen> {
 
   String? _diffOldText;
 
+  bool _editorHasFocus = false;
+
   double _fileSizeMB = 0.0;
 
   bool _isDirty = false;
@@ -109,6 +114,8 @@ class _EditorScreenState extends State<EditorScreen> {
   bool _isLargeFile = false;
 
   bool _isLoading = false;
+
+  late final AppLifecycleListener _lifecycleListener;
 
   final Logger _logger = Logger('EditorScreenState');
 
@@ -146,6 +153,15 @@ class _EditorScreenState extends State<EditorScreen> {
 
     _codeController.addListener(_onCodeChanged);
 
+    _lifecycleListener = AppLifecycleListener(
+      onStateChange: (state) {
+        final isActive = state == AppLifecycleState.resumed;
+        if (mounted && isActive != _appIsActive) {
+          setState(() => _appIsActive = isActive);
+        }
+      },
+    );
+
     // Load git diff stats for the file
     _loadGitDiffStatsForFile(_currentFile);
 
@@ -177,6 +193,8 @@ class _EditorScreenState extends State<EditorScreen> {
     if (EditorScreen._currentEditor == this) {
       EditorScreen._currentEditor = null;
     }
+
+    _lifecycleListener.dispose();
 
     // Dispose controller
     _codeController.dispose();
@@ -323,19 +341,38 @@ class _EditorScreenState extends State<EditorScreen> {
                             ),
                           // Editor content
                           Expanded(
-                            child: CodeForge(
-                              controller: _codeController,
-                              language:
-                                  widget.documentState?.language ??
-                                  FileTypeUtils.languageForFile(_currentFile),
-                              gutterStyle: GutterStyle(
-                                lineNumberStyle: TextStyle(
-                                  letterSpacing: -1,
-                                  color: Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: AppOpacity.disabled),
+                            child: Focus(
+                              canRequestFocus: false,
+                              skipTraversal: true,
+                              onFocusChange: (hasFocus) {
+                                setState(() => _editorHasFocus = hasFocus);
+                              },
+                              // CodeForge's caret blink never stops and
+                              // repaints the whole editor every frame; pause
+                              // its tickers while the caret isn't visible.
+                              child: TickerMode(
+                                enabled: _editorHasFocus && _appIsActive,
+                                child: CodeForge(
+                                  controller: _codeController,
+                                  language:
+                                      widget.documentState?.language ??
+                                      FileTypeUtils.languageForFile(
+                                        _currentFile,
+                                      ),
+                                  gutterStyle: GutterStyle(
+                                    lineNumberStyle: TextStyle(
+                                      letterSpacing: -1,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(
+                                            alpha: AppOpacity.disabled,
+                                          ),
+                                    ),
+                                  ),
+                                  editorTheme: _getCodeTheme(),
                                 ),
                               ),
-                              editorTheme: _getCodeTheme(),
                             ),
                           ),
                           // Status bar
@@ -662,13 +699,23 @@ class _EditorScreenState extends State<EditorScreen> {
     return FileTypeUtils.isImageFile(filePath);
   }
 
-  /// Loads git diff counters for every open document.
+  /// Loads git diff counters for open documents not yet cached.
+  ///
+  /// Called after every build, so it must not trigger a rebuild when there is
+  /// nothing new to load; otherwise it loops, spawning git processes forever.
   Future<void> _loadGitDiffStatsForAllDocuments(
     List<DocumentState> documents,
   ) async {
     final futures = <Future>[];
     for (final doc in documents) {
-      futures.add(_loadGitDiffStatsForFile(doc.filePath));
+      if (!_allGitDiffStats.containsKey(doc.filePath)) {
+        // Reserve the slot so overlapping frames don't start duplicate loads.
+        _allGitDiffStats[doc.filePath] = null;
+        futures.add(_loadGitDiffStatsForFile(doc.filePath));
+      }
+    }
+    if (futures.isEmpty) {
+      return;
     }
     await Future.wait(futures);
     if (mounted) {
@@ -684,7 +731,7 @@ class _EditorScreenState extends State<EditorScreen> {
     }
 
     try {
-      final gitService = GitService();
+      final gitService = ref.read(gitServiceProvider);
       final isGitRepo = await gitService.isGitRepository(
         path.dirname(filePath),
       );
@@ -961,7 +1008,7 @@ class _EditorScreenState extends State<EditorScreen> {
     }
 
     try {
-      final gitService = GitService();
+      final gitService = ref.read(gitServiceProvider);
       final isGitRepo = await gitService.isGitRepository(
         path.dirname(_currentFile),
       );

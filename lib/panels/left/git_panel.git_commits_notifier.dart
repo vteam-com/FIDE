@@ -2,9 +2,9 @@ part of 'git_panel.dart';
 
 /// Represents `GitCommitsNotifier`.
 class GitCommitsNotifier extends StateNotifier<AsyncValue<List<GitCommit>>> {
-  GitCommitsNotifier() : super(const AsyncValue.data([]));
+  GitCommitsNotifier(this._gitService) : super(const AsyncValue.data([]));
 
-  final GitService _gitService = GitService();
+  final GitService _gitService;
 
   /// Handles `GitCommitsNotifier.loadCommits`.
   Future<void> loadCommits(

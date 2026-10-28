@@ -9,6 +9,7 @@ import 'package:fide/models/project_node.dart';
 import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/providers/project_service.dart';
 import 'package:fide/providers/project_state_sink.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:logging/logging.dart';
@@ -61,7 +62,11 @@ final projectManagerProvider = Provider<ProjectManager>((ref) {
 
 // Project service provider for complete project management
 final projectServiceProvider = Provider<ProjectService>((ref) {
-  return ProjectService(_ProviderProjectStateSink(ref));
+  return ProjectService(
+    _ProviderProjectStateSink(ref),
+    ref.read(gitServiceProvider),
+    ref.read(fileSystemWatcherProvider),
+  );
 });
 
 // State management for project creation errors

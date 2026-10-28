@@ -8,6 +8,7 @@ import 'package:fide/models/project_node.dart';
 import 'package:fide/panels/left/shared_panel_utils.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/git_service.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/foldername_widget.dart';
 import 'package:fide/widgets/message_box.dart';
@@ -47,8 +48,8 @@ class FolderPanel extends ConsumerStatefulWidget {
 
 class _FolderPanelState extends ConsumerState<FolderPanel> {
   final Logger _logger = Logger('FolderPanelState');
-  final PanelStateManager _panelState = PanelStateManager();
-  final GitService _gitService = GitService();
+  late final GitService _gitService = ref.read(gitServiceProvider);
+  late final PanelStateManager _panelState = PanelStateManager(_gitService);
 
   // Performance optimization caches
   final Map<String, FileSystemItem> _cachedFileSystemItems = {};

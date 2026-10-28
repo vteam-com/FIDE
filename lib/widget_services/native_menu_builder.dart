@@ -1,6 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/git_service.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/theme_settings_dialog.dart';
 import 'package:flutter/material.dart';
@@ -122,7 +122,7 @@ class NativeMenuBuilder {
               onSelected: () async {
                 final currentPath = ref.read(currentProjectPathProvider);
                 if (currentPath != null) {
-                  final gitService = GitService();
+                  final gitService = ref.read(gitServiceProvider);
                   final result = await gitService.initRepository(currentPath);
                   if (context.mounted) {
                     MessageBox.showInfo(context, result);
