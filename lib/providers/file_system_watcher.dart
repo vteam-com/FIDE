@@ -10,6 +10,13 @@ import 'package:path/path.dart' as path;
 class FileSystemWatcher {
   static final Logger _logger = Logger('FileSystemWatcher');
 
+  /// Whether [initialize] subscribes to file system events; tests that
+  /// can't run real watchers and timers pass false.
+  final bool watchEnabled;
+
+  /// Creates a watcher; see [watchEnabled].
+  FileSystemWatcher({this.watchEnabled = true});
+
   final Map<String, StreamSubscription<FileSystemEvent>> _watchers = {};
   final Map<String, ProjectNode> _watchedDirectories = {};
 
@@ -23,21 +30,11 @@ class FileSystemWatcher {
   void initialize(ProjectNode rootNode, Function onTreeUpdated) {
     _onTreeUpdated = onTreeUpdated;
 
-    // Check if we're in a test environment to avoid async file watching
-    const isTestEnvironment = bool.fromEnvironment(
-      'FLUTTER_TEST',
-      defaultValue: false,
-    );
-
-    if (!isTestEnvironment) {
+    if (watchEnabled) {
       // Start watching the root directory and all subdirectories
       _watchDirectoryRecursive(rootNode);
     } else {
-      // In test environments, just store the callback without watching files
-      // This maintains coverage without creating async watchers and timers
-      _logger.info(
-        'FileSystemWatcher: Test environment detected, skipping file watching',
-      );
+      _logger.info('FileSystemWatcher: watching disabled');
     }
   }
 
@@ -120,22 +117,11 @@ class FileSystemWatcher {
 
   /// Schedule a debounced tree update to prevent UI spamming
   void _scheduleTreeUpdate() {
-    // Skip timer-based updates in test environments to avoid async issues
-    const isTestEnvironment = bool.fromEnvironment(
-      'FLUTTER_TEST',
-      defaultValue: false,
-    );
-
-    if (isTestEnvironment) {
-      // In test environments, call the callback immediately to maintain some coverage
+    _updateDebounceTimer?.cancel();
+    _updateDebounceTimer = Timer(_updateDebounceDuration, () {
       _onTreeUpdated?.call();
-    } else {
-      _updateDebounceTimer?.cancel();
-      _updateDebounceTimer = Timer(_updateDebounceDuration, () {
-        _onTreeUpdated?.call();
-        _updateDebounceTimer = null;
-      });
-    }
+      _updateDebounceTimer = null;
+    });
   }
 
   /// Handle file creation

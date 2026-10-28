@@ -12,7 +12,6 @@ import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:process_run/shell.dart';
 
 // Enum for wizard steps
 enum CreateProjectStep {
@@ -27,21 +26,12 @@ class CreateProjectScreen extends ConsumerStatefulWidget {
   final VoidCallback onCancel;
   final void Function(String) onOpenProject;
 
-  // Static variable for testing to override initial directory
-  static String? _testInitialDirectory;
-
   const CreateProjectScreen({
     super.key,
     this.initialDirectory,
     required this.onOpenProject,
     required this.onCancel,
   });
-
-  // Method to set initial directory for testing
-  /// Handles `CreateProjectScreen.setTestInitialDirectory`.
-  static void setTestInitialDirectory(String? directory) {
-    _testInitialDirectory = directory;
-  }
 
   @override
   ConsumerState<CreateProjectScreen> createState() =>
@@ -135,13 +125,14 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   Future<void> _checkFlutterStatus() async {
     try {
       // Check Flutter availability and get version
-      final shell = Shell();
-      final results = await shell.run('flutter --version');
+      final result = await ref.read(processRunnerProvider).run('flutter', [
+        '--version',
+      ], runInShell: true);
 
-      if (results.isNotEmpty && results.first.exitCode == 0) {
+      if (result.exitCode == 0) {
         _flutterAvailable = true;
         // Extract version from output (first line typically contains version)
-        final output = results.first.stdout.toString();
+        final output = result.stdout.toString();
         final lines = output.split('\n');
         if (lines.isNotEmpty) {
           // Look for version pattern like "Flutter 3.24.0 • channel stable"
@@ -185,13 +176,14 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   Future<void> _checkGitStatus() async {
     try {
       // Check Git availability and get version
-      final shell = Shell();
-      final results = await shell.run('git --version');
+      final result = await ref.read(processRunnerProvider).run('git', [
+        '--version',
+      ], runInShell: true);
 
-      if (results.isNotEmpty && results.first.exitCode == 0) {
+      if (result.exitCode == 0) {
         _gitAvailable = true;
         // Extract version from output (format: "git version 2.39.3")
-        final output = results.first.stdout.toString().trim();
+        final output = result.stdout.toString().trim();
         final versionMatch = RegExp(r'git version (\d+\.\d+\.\d+)')
             .firstMatch(output);
         if (versionMatch != null) {
@@ -222,7 +214,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
 
   Future<void> _initializeDirectoryController() async {
     final directoryPath =
-        CreateProjectScreen._testInitialDirectory ??
+        ref.read(newProjectParentDirectoryProvider) ??
         widget.initialDirectory ??
         (await getApplicationDocumentsDirectory()).path;
     setState(() {
@@ -233,17 +225,10 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   /// Checks whether Ollama is installed and running, updating the corresponding state fields.
   Future<void> _checkOllamaStatus() async {
     try {
-      // Check if Ollama is installed using which
-      final whichResult = await Process.run('which', ['ollama']);
-      final isInstalled = whichResult.exitCode == 0;
-
-      if (isInstalled) {
-        // Check if running by trying to list models
-        final listResult = await Process.run('ollama', ['list']);
-        _ollamaAvailable = listResult.exitCode == 0;
-      } else {
-        _ollamaAvailable = false;
-      }
+      final aiService = ref.read(aiServiceProvider);
+      _ollamaAvailable =
+          await aiService.isOllamaInstalled() &&
+          await aiService.isOllamaRunning();
 
       if (mounted) {
         setState(() {
@@ -363,8 +348,9 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
         LoadingStatus.pending,
       );
 
-      final createResult =
-          await Process.run('flutter', [
+      final createResult = await ref
+          .read(processRunnerProvider)
+          .run('flutter', [
             'create',
             '--project-name',
             _userFinalProjectName.isNotEmpty
@@ -373,7 +359,8 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
             '--platforms',
             'android,ios,web,linux,macos,windows',
             projectPath,
-          ], workingDirectory: _userDirectory).timeout(
+          ], workingDirectory: _userDirectory)
+          .timeout(
             AppDuration.projectCreateTimeout,
             onTimeout: () => ProcessResult(
               0,
@@ -518,33 +505,36 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
 
       if (_gitAvailable) {
         try {
-          final gitInitResult =
-              await Process.run('git', [
-                'init',
-              ], workingDirectory: projectPath).timeout(
+          final gitInitResult = await ref
+              .read(processRunnerProvider)
+              .run('git', ['init'], workingDirectory: projectPath)
+              .timeout(
                 AppDuration.gitInitTimeout,
                 onTimeout: () =>
                     ProcessResult(0, -1, '', 'Git init command timed out'),
               );
           if (gitInitResult.exitCode == 0) {
             // Add initial commit
-            await Process.run('git', [
-              'add',
-              '.',
-            ], workingDirectory: projectPath).timeout(
-              AppDuration.gitOperationTimeout,
-              onTimeout: () =>
-                  ProcessResult(0, -1, '', 'Git add command timed out'),
-            );
-            await Process.run('git', [
-              'commit',
-              '-m',
-              'Initial commit',
-            ], workingDirectory: projectPath).timeout(
-              AppDuration.gitOperationTimeout,
-              onTimeout: () =>
-                  ProcessResult(0, -1, '', 'Git commit command timed out'),
-            );
+            await ref
+                .read(processRunnerProvider)
+                .run('git', ['add', '.'], workingDirectory: projectPath)
+                .timeout(
+                  AppDuration.gitOperationTimeout,
+                  onTimeout: () =>
+                      ProcessResult(0, -1, '', 'Git add command timed out'),
+                );
+            await ref
+                .read(processRunnerProvider)
+                .run('git', [
+                  'commit',
+                  '-m',
+                  'Initial commit',
+                ], workingDirectory: projectPath)
+                .timeout(
+                  AppDuration.gitOperationTimeout,
+                  onTimeout: () =>
+                      ProcessResult(0, -1, '', 'Git commit command timed out'),
+                );
             await _updateLoadingAction(
               AppMetric.projectCreateStepGitInit,
               'Git repository initialized',
@@ -701,7 +691,9 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
               ),
               child: CreateProjectStep1(
                 initialDirectory: widget.initialDirectory,
-                testInitialDirectory: CreateProjectScreen._testInitialDirectory,
+                defaultParentDirectory: ref.read(
+                  newProjectParentDirectoryProvider,
+                ),
                 flutterStatusChecked: _flutterStatusChecked,
                 flutterAvailable: _flutterAvailable,
                 flutterVersion: _flutterVersion,

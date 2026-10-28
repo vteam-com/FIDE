@@ -273,13 +273,7 @@ class FileOperations {
           ? node.path
           : path.dirname(node.path);
 
-      if (Platform.isMacOS) {
-        await Process.run('open', [directoryPath]);
-      } else if (Platform.isWindows) {
-        await Process.run('explorer', [directoryPath]);
-      } else if (Platform.isLinux) {
-        await Process.run('xdg-open', [directoryPath]);
-      }
+      await const ProcessRunner().revealInFileManager(directoryPath);
     } catch (_) {
       // Error handling will be done by caller.
     }

@@ -1,8 +1,8 @@
 // ignore: fcheck_dead_code
 
 import 'package:fide/constants/constants.dart';
-import 'package:fide/panels/center/editor/editor_screen.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/editor_commands.dart';
 import 'package:fide/screens/main_layout.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:file_picker/file_picker.dart';
@@ -17,12 +17,6 @@ class ProjectOperations {
   static final Logger _logger = Logger('ProjectOperations');
 
   ProjectOperations(this.ref);
-
-  /// Global function to save the current editor
-  static void triggerSave() {
-    // Call the static method to save the current editor
-    EditorScreen.saveCurrentEditor();
-  }
 
   /// Global function for opening folder picker and loading project
   static Future<void> pickDirectoryAndLoadProject(
@@ -92,30 +86,6 @@ class ProjectOperations {
     }
   }
 
-  /// Global function to close document
-  static void triggerCloseDocument() {
-    // Call the static method to close the current editor
-    EditorScreen.closeCurrentEditor();
-  }
-
-  /// Global function to toggle search
-  static void triggerSearch() {
-    // Call the static method to toggle search in the current editor
-    EditorScreen.toggleSearch();
-  }
-
-  /// Global functions for find next/previous
-  static void triggerSearchNext() {
-    // Call the static method to toggle search in the current editor
-    EditorScreen.findNext();
-  }
-
-  /// Triggers navigation to the previous search match in the active editor.
-  static void triggerSearchPrevious() {
-    // Call the static method to toggle search in the current editor
-    EditorScreen.findPrevious();
-  }
-
   /// Panel visibility trigger functions
   static VoidCallback? _onLeftPanelVisibilityChanged;
   static VoidCallback? _onBottomPanelVisibilityChanged;
@@ -140,13 +110,17 @@ class ProjectOperations {
   }
 
   /// Handle Go to Line action
-  static Future<void> handleGotoLine(String value, BuildContext context) async {
+  static Future<void> handleGotoLine(
+    String value,
+    BuildContext context,
+    EditorCommands editor,
+  ) async {
     if (value.isEmpty) return;
 
     final lineNumber = int.tryParse(value);
     if (lineNumber != null && lineNumber > 0) {
       // Navigate to the line
-      EditorScreen.navigateToLine(lineNumber);
+      editor.navigateToLine(lineNumber);
       Navigator.of(context).pop();
     } else {
       // Show error for invalid input
@@ -155,7 +129,7 @@ class ProjectOperations {
   }
 
   /// Show Go to Line dialog
-  static void showGotoLineDialog(BuildContext context) {
+  static void showGotoLineDialog(BuildContext context, EditorCommands editor) {
     final TextEditingController lineController = TextEditingController();
     final FocusNode focusNode = FocusNode();
 
@@ -177,7 +151,7 @@ class ProjectOperations {
                   border: OutlineInputBorder(),
                 ),
                 onSubmitted: (value) {
-                  handleGotoLine(value, context);
+                  handleGotoLine(value, context, editor);
                 },
               ),
             ],
@@ -189,7 +163,7 @@ class ProjectOperations {
             ),
             TextButton(
               onPressed: () {
-                handleGotoLine(lineController.text, context);
+                handleGotoLine(lineController.text, context, editor);
               },
               child: const Text('Go'),
             ),

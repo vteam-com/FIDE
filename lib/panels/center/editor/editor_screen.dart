@@ -12,10 +12,13 @@ import 'package:fide/panels/center/editor/editor_screen_search_bar.dart';
 import 'package:fide/panels/center/editor/editor_screen_status_bar.dart';
 import 'package:fide/panels/center/editor/editor_screen_unsupported_file_view.dart';
 import 'package:fide/panels/center/editor/large_file_message.dart';
+import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/editor_commands.dart';
 import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
 import 'package:flutter/material.dart';
@@ -36,53 +39,22 @@ class EditorScreen extends ConsumerStatefulWidget {
     this.onSave,
   });
 
-  static _EditorScreenState? _currentEditor;
-
   final DocumentState? documentState;
 
   final VoidCallback? onClose;
 
   final VoidCallback? onContentChanged;
 
-  static void Function(int)? onCursorPositionChanged;
-
   final VoidCallback? onSave;
-
-  /// Handles `EditorScreen.closeCurrentEditor`.
-  static void closeCurrentEditor() {
-    _currentEditor?.widget.onClose?.call();
-  }
 
   @override
   ConsumerState<EditorScreen> createState() => _EditorScreenState();
-
-  /// Handles `EditorScreen.findNext`.
-  static void findNext() {
-    _currentEditor?._nextMatch();
-  }
-
-  /// Handles `EditorScreen.findPrevious`.
-  static void findPrevious() {
-    _currentEditor?._previousMatch();
-  }
-
-  /// Handles `EditorScreen.navigateToLine`.
-  static void navigateToLine(int lineNumber, {int column = 1}) {
-    _currentEditor?._navigateToLine(lineNumber, column: column);
-  }
-
-  /// Handles `EditorScreen.saveCurrentEditor`.
-  static void saveCurrentEditor() {
-    _currentEditor?._saveFile();
-  }
-
-  /// Handles `EditorScreen.toggleSearch`.
-  static void toggleSearch() {
-    _currentEditor?._toggleSearch();
-  }
 }
 
-class _EditorScreenState extends ConsumerState<EditorScreen> {
+class _EditorScreenState extends ConsumerState<EditorScreen>
+    implements EditorCommands {
+  late final ActiveEditor _activeEditor;
+
   final Map<String, GitDiffStats?> _allGitDiffStats = {};
 
   bool _appIsActive = true;
@@ -165,8 +137,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     // Load git diff stats for the file
     _loadGitDiffStatsForFile(_currentFile);
 
-    // Register this editor as the current editor for global save access
-    EditorScreen._currentEditor = this;
+    // Receive menu and shortcut commands while mounted
+    _activeEditor = ref.read(activeEditorProvider)..attach(this);
   }
 
   @override
@@ -189,10 +161,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       }
     }
 
-    // Unregister this editor if it's the current one
-    if (EditorScreen._currentEditor == this) {
-      EditorScreen._currentEditor = null;
-    }
+    _activeEditor.detach(this);
 
     _lifecycleListener.dispose();
 
@@ -285,7 +254,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               onSave: () {
                 _saveFile();
               },
-              onClose: EditorScreen.closeCurrentEditor,
+              onClose: close,
             ),
 
             Expanded(
@@ -403,6 +372,25 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       },
     );
   }
+
+  @override
+  void close() => widget.onClose?.call();
+
+  @override
+  void findNext() => _nextMatch();
+
+  @override
+  void findPrevious() => _previousMatch();
+
+  @override
+  void navigateToLine(int lineNumber, {int column = 1}) =>
+      _navigateToLine(lineNumber, column: column);
+
+  @override
+  void save() => _saveFile();
+
+  @override
+  void toggleSearch() => _toggleSearch();
 
   /// Builds syntax highlight styles from a full highlight.js theme with the
   /// app's own colors layered on top.
@@ -536,7 +524,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
 
       if (isDartFile) {
         // Run dart format on Dart files
-        result = await Process.run('dart', ['format', _currentFile]);
+        result = await ref.read(processRunnerProvider).run('dart', [
+          'format',
+          _currentFile,
+        ]);
       } else {
         // For JSON/ARB files, use manual JSON formatting
         result = await _formatJsonManually(_currentFile);
@@ -874,7 +865,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
 
     // Notify cursor position changes
     final currentLine = _getCurrentLineNumber();
-    EditorScreen.onCursorPositionChanged?.call(currentLine);
+    ref.read(editorCursorLineProvider.notifier).state = currentLine;
   }
 
   /// Recomputes search matches for the current query and options.
@@ -1035,7 +1026,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       try {
         final projectPath = path.dirname(_currentFile);
         // Calculate relative path from git repo root
-        final gitRootResult = await Process.run('git', [
+        final gitRootResult = await ref.read(processRunnerProvider).run('git', [
           'rev-parse',
           '--show-prefix',
         ], workingDirectory: projectPath);

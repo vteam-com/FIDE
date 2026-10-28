@@ -663,14 +663,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.6"
-  process_run:
-    dependency: "direct main"
-    description:
-      name: process_run
-      sha256: "4818d891c15347d84abb67319f18ed605cd5710e50a2fe82822e8f3b6b9295d2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.4.1"
   provider:
     dependency: "direct main"
     description:
@@ -884,14 +876,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.1"
-  synchronized:
-    dependency: transitive
-    description:
-      name: synchronized
-      sha256: b3d516dbd3757ff2a458735e4f6cbac9ff261f576f6e87bcb17feabb39e657c5
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.5.0"
   term_glyph:
     dependency: transitive
     description:

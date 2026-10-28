@@ -1,0 +1,186 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:fide/constants/constants.dart';
+import 'package:fide/providers/process_runner.dart';
+import 'package:yaml_edit/yaml_edit.dart';
+
+/// Dependency and cleanup chores for a Flutter project: `pub outdated`,
+/// upgrading pubspec constraints, and full artifact cleanup.
+class ProjectMaintenanceService {
+  final ProcessRunner _runner;
+
+  /// Creates a maintenance service that launches commands through [_runner].
+  const ProjectMaintenanceService([this._runner = const ProcessRunner()]);
+
+  /// Parses the table printed by `flutter pub outdated` into
+  /// `{package: {current, upgradable, resolvable, latest}}`.
+  static Map<String, dynamic> parseOutdated(String output) {
+    final outdated = <String, dynamic>{};
+
+    for (String line in output.split('\n')) {
+      line = line.trim();
+      if (line.isEmpty) continue;
+
+      final parts = line.split(RegExp(r'\s+'));
+      if (parts.length >= AppMetric.outdatedMinColumns &&
+          parts[0] != 'Package' &&
+          parts[0] != '---') {
+        outdated[parts[0]] = {
+          'current': parts[1],
+          'upgradable': parts[AppMetric.outdatedUpgradableColIndex],
+          'resolvable': parts[AppMetric.outdatedResolvableColIndex],
+          'latest': parts.length > AppMetric.outdatedLatestColIndex
+              ? parts[AppMetric.outdatedLatestColIndex]
+              : '',
+        };
+      }
+    }
+
+    return outdated;
+  }
+
+  /// Cleans Flutter, removes build artifacts, repairs the pub cache, and
+  /// refreshes Gradle and CocoaPods where those platforms exist.
+  Future<void> fullCleanup(String projectPath) async {
+    await _runChecked('flutter', ['clean'], workingDirectory: projectPath);
+
+    final buildDir = Directory('$projectPath/build');
+    if (buildDir.existsSync()) {
+      await buildDir.delete(recursive: true);
+    }
+
+    await _runChecked('flutter', ['pub', 'cache', 'repair']);
+
+    if (Directory('$projectPath/android').existsSync()) {
+      await _runChecked('./gradlew', [
+        'clean',
+      ], workingDirectory: '$projectPath/android');
+    }
+
+    if (Platform.isMacOS) {
+      for (final platform in const ['ios', 'macos']) {
+        final platformPath = '$projectPath/$platform';
+        if (Directory(platformPath).existsSync()) {
+          await _runChecked('pod', [
+            'install',
+            '--repo-update',
+          ], workingDirectory: platformPath);
+        }
+      }
+    }
+  }
+
+  /// Runs `flutter pub outdated` and returns its table output.
+  ///
+  /// Throws the command's stderr when it fails.
+  Future<String> outdatedReport(String projectPath) async {
+    final result = await _runner.run('flutter', [
+      'pub',
+      'outdated',
+    ], workingDirectory: projectPath);
+    if (result.exitCode != 0) {
+      throw '${result.stderr}';
+    }
+    return result.stdout as String;
+  }
+
+  /// Raises direct and dev dependency constraints in pubspec.yaml to their
+  /// latest resolvable versions, then runs `flutter pub get`.
+  ///
+  /// Returns one `name: old → new` line per updated package; empty when
+  /// everything was already current. Throws on command or parse failure,
+  /// including pub's version-solving output.
+  Future<List<String>> upgradeToResolvable(String projectPath) async {
+    final result = await _runner.run('flutter', [
+      'pub',
+      'outdated',
+      '--json',
+    ], workingDirectory: projectPath);
+    if (result.exitCode != 0) {
+      throw 'Failed to check outdated: ${result.stderr}';
+    }
+
+    final outdatedJson = result.stdout is String
+        ? result.stdout as String
+        : utf8.decode(result.stdout as List<int>);
+    final dynamic outdatedData = json.decode(outdatedJson);
+    if (outdatedData is! Map<String, dynamic>) {
+      throw 'Invalid JSON response from flutter pub outdated: expected Map, got ${outdatedData.runtimeType}';
+    }
+
+    // Format: {"packages": [{"package", "kind", "current": {...}, "resolvable": {...}}]}
+    final packages = outdatedData['packages'];
+    if (packages is! List) {
+      throw 'Expected packages to be an array, got ${packages?.runtimeType}';
+    }
+
+    final pubspecFile = File('$projectPath/pubspec.yaml');
+    if (!pubspecFile.existsSync()) {
+      throw 'pubspec.yaml not found';
+    }
+    final yamlEditor = YamlEditor(await pubspecFile.readAsString());
+
+    final updatedPackages = <String>[];
+    for (final pkg in packages) {
+      if (pkg is! Map<String, dynamic>) continue;
+
+      final packageName = pkg['package'] as String?;
+      if (packageName == null) continue;
+
+      // Only update direct and dev dependencies
+      final kind = pkg['kind'] as String?;
+      if (kind != 'direct' && kind != 'dev') continue;
+
+      final resolvable = pkg['resolvable'];
+      if (resolvable is! Map<String, dynamic>) continue;
+      final newVersion = resolvable['version']?.toString();
+      if (newVersion == null || newVersion.isEmpty) continue;
+
+      final current = pkg['current'];
+      final currentVersion = current is Map<String, dynamic>
+          ? current['version']?.toString()
+          : null;
+      if (currentVersion == null || currentVersion == newVersion) continue;
+
+      final pathToUpdate = [
+        kind == 'direct' ? 'dependencies' : 'dev_dependencies',
+        packageName,
+      ];
+      try {
+        // Parse at the path to make sure it exists
+        yamlEditor.parseAt(pathToUpdate).value;
+        yamlEditor.update(pathToUpdate, newVersion);
+        updatedPackages.add('$packageName: $currentVersion → $newVersion');
+      } catch (_) {
+        // Continue to next package if this one fails
+        continue;
+      }
+    }
+
+    if (updatedPackages.isNotEmpty) {
+      await pubspecFile.writeAsString(yamlEditor.toString());
+    }
+
+    await _runChecked('flutter', ['pub', 'get'], workingDirectory: projectPath);
+    return updatedPackages;
+  }
+
+  /// Runs a command to completion, throwing its exit code and stderr on
+  /// failure so callers can inspect messages like pub's version solving.
+  Future<void> _runChecked(
+    String executable,
+    List<String> arguments, {
+    String? workingDirectory,
+  }) async {
+    final result = await _runner.run(
+      executable,
+      arguments,
+      workingDirectory: workingDirectory,
+      runInShell: true,
+    );
+    if (result.exitCode != 0) {
+      throw 'Command failed with exit code ${result.exitCode}\n${result.stderr}';
+    }
+  }
+}

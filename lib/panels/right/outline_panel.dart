@@ -6,13 +6,16 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
-import 'package:fide/panels/center/editor/editor_screen.dart';
+import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yaml/yaml.dart';
 
+part 'outline_panel.outline_node.dart';
+
 /// Represents `OutlinePanel`.
-class OutlinePanel extends StatefulWidget {
+class OutlinePanel extends ConsumerStatefulWidget {
   const OutlinePanel({
     super.key,
     required this.file,
@@ -27,10 +30,10 @@ class OutlinePanel extends StatefulWidget {
   final Function(VoidCallback)? onOutlineUpdate;
 
   @override
-  State<OutlinePanel> createState() => _OutlinePanelState();
+  ConsumerState<OutlinePanel> createState() => _OutlinePanelState();
 }
 
-class _OutlinePanelState extends State<OutlinePanel> {
+class _OutlinePanelState extends ConsumerState<OutlinePanel> {
   final Map<String, DateTime> _cachedFileModTimes = {};
 
   final Map<String, List<OutlineNode>> _cachedOutlines = {};
@@ -59,18 +62,6 @@ class _OutlinePanelState extends State<OutlinePanel> {
     if (widget.onOutlineUpdate != null) {
       widget.onOutlineUpdate!(() => refreshOutline());
     }
-
-    // Set up cursor position change callback
-    EditorScreen.onCursorPositionChanged = _onCursorPositionChanged;
-  }
-
-  @override
-  void dispose() {
-    // Clean up the callback
-    if (EditorScreen.onCursorPositionChanged == _onCursorPositionChanged) {
-      EditorScreen.onCursorPositionChanged = null;
-    }
-    super.dispose();
   }
 
   @override
@@ -83,6 +74,10 @@ class _OutlinePanelState extends State<OutlinePanel> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<int>(
+      editorCursorLineProvider,
+      (_, line) => _onCursorPositionChanged(line),
+    );
     return LayoutBuilder(
       builder: (_ /*context*/, constraints) {
         final isConstrained = constraints.maxHeight.isFinite;
@@ -480,23 +475,6 @@ class _OutlinePanelState extends State<OutlinePanel> {
       _isCancelled = false; // Reset cancellation flag
     });
   }
-}
-
-/// Represents `OutlineNode`.
-class OutlineNode {
-  final String name;
-  final String type;
-  final int line;
-  final int column;
-  final int level;
-
-  OutlineNode({
-    required this.name,
-    required this.type,
-    required this.line,
-    this.column = 1,
-    this.level = 0,
-  });
 }
 
 class _OutlineVisitor extends RecursiveAstVisitor<void> {

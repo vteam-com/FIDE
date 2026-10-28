@@ -66,6 +66,7 @@ final projectServiceProvider = Provider<ProjectService>((ref) {
     _ProviderProjectStateSink(ref),
     ref.read(gitServiceProvider),
     ref.read(fileSystemWatcherProvider),
+    loadTree: ref.read(projectTreeLoaderProvider),
   );
 });
 

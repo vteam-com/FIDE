@@ -200,7 +200,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                       fileSystemItem;
 
                   await Future.delayed(AppDuration.editorScroll);
-                  EditorScreen.navigateToLine(line);
+                  ref.read(activeEditorProvider).navigateToLine(line);
                 },
                 onThemeChanged: (themeMode) {
                   ref.read(themeModeProvider.notifier).state = themeMode;
@@ -275,7 +275,9 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                 selectedFile: selectedFile,
                 onOutlineUpdate: _setOutlineRefreshCallback,
                 onOutlineNodeSelected: (int line, int column) {
-                  EditorScreen.navigateToLine(line, column: column);
+                  ref
+                      .read(activeEditorProvider)
+                      .navigateToLine(line, column: column);
                 },
               ),
             ),

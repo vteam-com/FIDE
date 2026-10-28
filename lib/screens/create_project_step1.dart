@@ -8,7 +8,7 @@ class CreateProjectStep1 extends StatefulWidget {
   const CreateProjectStep1({
     super.key,
     required this.initialDirectory,
-    required this.testInitialDirectory,
+    required this.defaultParentDirectory,
     required this.flutterStatusChecked,
     required this.flutterAvailable,
     required this.flutterVersion,
@@ -22,6 +22,8 @@ class CreateProjectStep1 extends StatefulWidget {
     required this.onValidationChanged,
     required this.onUseAIChanged,
   });
+
+  final String? defaultParentDirectory;
 
   final bool flutterAvailable;
 
@@ -49,8 +51,6 @@ class CreateProjectStep1 extends StatefulWidget {
   final void Function(bool useAI) onUseAIChanged;
 
   final void Function(bool canProceed) onValidationChanged;
-
-  final String? testInitialDirectory;
 
   @override
   State<CreateProjectStep1> createState() => _CreateProjectStep1State();
@@ -391,7 +391,7 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
   /// Resolves the initial directory (from args or documents folder) and populates the directory controller.
   Future<void> _initializeDirectoryController() async {
     final directoryPath =
-        widget.testInitialDirectory ??
+        widget.defaultParentDirectory ??
         widget.initialDirectory ??
         (await getApplicationDocumentsDirectory()).path;
     setState(() {

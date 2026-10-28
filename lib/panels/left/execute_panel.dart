@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/flutter_build_service.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/action_tabs.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:fide/widgets/platform_info_section.dart';
@@ -45,6 +47,9 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
   BuildProcessStatus _debugStatus = BuildProcessStatus.idle;
   BuildProcessStatus _podStatus = BuildProcessStatus.idle;
 
+  late final FlutterBuildService _buildService = ref.read(
+    flutterBuildServiceProvider,
+  );
   Process? _currentProcess;
   final Map<String, StringBuffer> _outputBuffers = {};
   final Map<String, StringBuffer> _errorBuffers = {};
@@ -126,6 +131,30 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
     setState(() => _hasOutputMap[_selectedPlatform] = value);
   }
 
+  /// Output sink that writes command output into the selected platform's buffers.
+  BuildOutput get _buildOutput => BuildOutput(
+    onOutput: (text) => setState(() {
+      _outputBuffer.writeln(text);
+      _hasOutput = true;
+    }),
+    onError: (text) => setState(() {
+      _errorBuffer.writeln(text);
+      _hasErrors = true;
+    }),
+    onResetErrors: () {
+      _errorBuffer.clear();
+      _hasErrors = false;
+    },
+    onProcessStarted: (process) => _currentProcess = process,
+  );
+
+  /// Returns a finished action's status indicator to idle after a pause.
+  void _resetStatusLater(void Function() resetStatus) {
+    Future.delayed(AppDuration.buildStatusResetDelay, () {
+      setState(resetStatus);
+    });
+  }
+
   /// Handles `_updateCocoaPods`.
   Future<void> _updateCocoaPods() async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
@@ -140,56 +169,24 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
     });
 
     try {
-      final podProcess = await Process.start(
-        'pod',
-        ['install', '--repo-update'],
-        workingDirectory: _selectedPlatform == 'ios'
+      final exitCode = await _buildService.podInstall(
+        _selectedPlatform == 'ios'
             ? '$currentProjectPath/ios'
             : '$currentProjectPath/macos',
-        runInShell: true,
+        _buildOutput,
       );
 
-      _currentProcess = podProcess;
-
-      // Handle stdout
-      podProcess.stdout.transform(const SystemEncoding().decoder).listen((
-        data,
-      ) {
-        if (data.trim().isNotEmpty && mounted) {
-          setState(() {
-            _outputBuffer.writeln(data.trim());
-            _hasOutput = true;
-          });
-        }
-      });
-
-      // Handle stderr as errors
-      podProcess.stderr.transform(const SystemEncoding().decoder).listen((
-        data,
-      ) {
-        if (data.trim().isNotEmpty && mounted) {
-          setState(() {
-            _errorBuffer.writeln(data.trim());
-            _hasErrors = true;
-          });
-        }
-      });
-
-      final exitCode = await podProcess.exitCode;
-
-      if (exitCode == 0) {
-        setState(() {
+      setState(() {
+        if (exitCode == 0) {
           _podStatus = BuildProcessStatus.success;
           _outputBuffer.writeln('✅ CocoaPods update completed successfully');
-        });
-      } else {
-        setState(() {
+        } else {
           _podStatus = BuildProcessStatus.error;
           _errorBuffer.writeln(
             '❌ CocoaPods update failed with exit code $exitCode',
           );
-        });
-      }
+        }
+      });
     } catch (e) {
       setState(() {
         _podStatus = BuildProcessStatus.error;
@@ -198,14 +195,7 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
       });
     } finally {
       _currentProcess = null;
-      // Reset status after a delay
-      Future.delayed(AppDuration.buildStatusResetDelay, () {
-        if (mounted) {
-          setState(() {
-            _podStatus = BuildProcessStatus.idle;
-          });
-        }
-      });
+      _resetStatusLater(() => _podStatus = BuildProcessStatus.idle);
     }
   }
 
@@ -632,10 +622,9 @@ Updates macOS CocoaPods dependencies.
 
     try {
       if (shouldDoDeepClean) {
-        /// Handles `_performDeepMacOSClean`.
-        await _performDeepMacOSClean(currentProjectPath);
+        await _buildService.deepCleanMacOS(currentProjectPath, _buildOutput);
       } else {
-        await _performStandardClean(currentProjectPath);
+        await _buildService.clean(currentProjectPath, _buildOutput);
       }
 
       setState(() {
@@ -650,527 +639,38 @@ Updates macOS CocoaPods dependencies.
       });
     } finally {
       _currentProcess = null;
-      // Reset status after a delay
-      Future.delayed(AppDuration.buildStatusResetDelay, () {
-        if (mounted) {
-          setState(() {
-            _cleanStatus = BuildProcessStatus.idle;
-          });
-        }
-      });
+      _resetStatusLater(() => _cleanStatus = BuildProcessStatus.idle);
     }
   }
 
-  Future<void> _performStandardClean(String projectPath) async {
-    /// Handles `_performStandardCleanInternal`.
-    await _performStandardCleanInternal(projectPath, false);
-  }
-
-  /// Handles `_performStandardCleanInternal`.
-  Future<void> _performStandardCleanInternal(
-    String projectPath,
-    bool isRetry,
-  ) async {
-    final process = await Process.start(
-      'flutter',
-      ['clean'],
-      workingDirectory: projectPath,
-      runInShell: true,
-    );
-
-    _currentProcess = process;
-
-    bool hasCocoapodsError = false;
-
-    // Handle stdout
-    process.stdout.transform(const SystemEncoding().decoder).listen((data) {
-      if (data.trim().isNotEmpty && mounted) {
-        setState(() {
-          _outputBuffer.writeln(data.trim());
-          _hasOutput = true;
-        });
-      }
-    });
-
-    // Handle stderr as errors
-    process.stderr.transform(const SystemEncoding().decoder).listen((data) {
-      if (data.trim().isNotEmpty && mounted) {
-        // Check for CocoaPods repository out-of-date errors
-        if (data.contains("CocoaPods's specs repository is too out-of-date") ||
-            data.contains("out-of-date source repos") ||
-            (data.contains("pod repo update") &&
-                data.contains("You have either"))) {
-          hasCocoapodsError = true;
-          setState(() {
-            _outputBuffer.writeln(
-              '🛠️ CocoaPods repository error detected in output line: "${data.trim()}"',
-            );
-            _hasOutput = true;
-          });
-        }
-        setState(() {
-          _errorBuffer.writeln(data.trim());
-          _hasErrors = true;
-        });
-      }
-    });
-
-    final exitCode = await process.exitCode;
-
-    if (exitCode == 0) {
-      // Success
-    } else if (hasCocoapodsError && !isRetry) {
-      // Automatically run pod repo update and retry for clean
-      setState(() {
-        _outputBuffer.writeln(
-          '🔧 Detected CocoaPods repository issue during clean. Running pod repo update...',
-        );
-        _hasOutput = true;
-      });
-
-      try {
-        final podProcess = await Process.start('pod', [
-          'repo',
-          'update',
-        ], runInShell: true);
-
-        // Handle pod repo update output
-        podProcess.stdout.transform(const SystemEncoding().decoder).listen((
-          data,
-        ) {
-          if (data.trim().isNotEmpty && mounted) {
-            setState(() {
-              _outputBuffer.writeln('POD: ${data.trim()}');
-              _hasOutput = true;
-            });
-          }
-        });
-
-        podProcess.stderr.transform(const SystemEncoding().decoder).listen((
-          data,
-        ) {
-          if (data.trim().isNotEmpty && mounted) {
-            setState(() {
-              _errorBuffer.writeln('POD: ${data.trim()}');
-              _hasErrors = true;
-            });
-          }
-        });
-
-        final podExitCode = await podProcess.exitCode;
-
-        if (podExitCode == 0) {
-          setState(() {
-            _outputBuffer.writeln(
-              '✅ CocoaPods repository updated successfully',
-            );
-            _outputBuffer.writeln('🔄 Retrying Flutter clean...');
-            _hasOutput = true;
-          });
-
-          // Clear error state for retry
-          _errorBuffer.clear();
-          _hasErrors = false;
-
-          // Retry the clean after successful pod update
-          await _performStandardCleanInternal(projectPath, true);
-          return;
-        } else {
-          setState(() {
-            _errorBuffer.writeln('❌ Failed to update CocoaPods repository');
-          });
-        }
-      } catch (podError) {
-        setState(() {
-          _errorBuffer.writeln('❌ Error running pod repo update: $podError');
-        });
-      }
-      throw 'Flutter clean failed with exit code $exitCode after attempting CocoaPods fix';
-    } else {
-      throw 'Flutter clean failed with exit code $exitCode';
-    }
-  }
-
-  /// Handles `_performDeepMacOSClean`.
-  Future<void> _performDeepMacOSClean(String projectPath) async {
-    // Step 1: Update pod repo in macOS directory
-    setState(() {
-      _outputBuffer.writeln('📦 Updating CocoaPods repository...');
-      _hasOutput = true;
-    });
-
-    final macOSPath = '$projectPath/macos';
-    var podProcess = await Process.start(
-      'pod',
-      ['repo', 'update'],
-      workingDirectory: macOSPath,
-      runInShell: true,
-    );
-
-    // Handle pod repo update output
-    podProcess.stdout.transform(const SystemEncoding().decoder).listen((data) {
-      if (data.trim().isNotEmpty && mounted) {
-        setState(() {
-          _outputBuffer.writeln('POD: ${data.trim()}');
-          _hasOutput = true;
-        });
-      }
-    });
-
-    podProcess.stderr.transform(const SystemEncoding().decoder).listen((data) {
-      if (data.trim().isNotEmpty && mounted) {
-        setState(() {
-          _errorBuffer.writeln('POD: ${data.trim()}');
-          _hasErrors = true;
-        });
-      }
-    });
-
-    var podExitCode = await podProcess.exitCode;
-
-    if (podExitCode != 0) {
-      setState(() {
-        _outputBuffer.writeln(
-          '⚠️ Pod repo update failed, continuing with pod install...',
-        );
-        _hasOutput = true;
-      });
-    }
-
-    // Step 2: Run pod install --repo-update
-    setState(() {
-      _outputBuffer.writeln('🔧 Running pod install with repo update...');
-      _hasOutput = true;
-    });
-
-    podProcess = await Process.start(
-      'pod',
-      ['install', '--repo-update'],
-      workingDirectory: macOSPath,
-      runInShell: true,
-    );
-
-    // Handle pod install output
-    podProcess.stdout.transform(const SystemEncoding().decoder).listen((data) {
-      if (data.trim().isNotEmpty && mounted) {
-        setState(() {
-          _outputBuffer.writeln('POD: ${data.trim()}');
-          _hasOutput = true;
-        });
-      }
-    });
-
-    podProcess.stderr.transform(const SystemEncoding().decoder).listen((data) {
-      if (data.trim().isNotEmpty && mounted) {
-        setState(() {
-          _errorBuffer.writeln('POD: ${data.trim()}');
-          _hasErrors = true;
-        });
-      }
-    });
-
-    podExitCode = await podProcess.exitCode;
-
-    if (podExitCode != 0) {
-      setState(() {
-        _outputBuffer.writeln(
-          '⚠️ Pod install failed with exit code $podExitCode, continuing with Flutter cleanup...',
-        );
-        _outputBuffer.writeln(
-          '🔄 CocoaPods issues will require manual resolution',
-        );
-        _hasOutput = true;
-      });
-      // Don't throw - continue with Flutter steps
-    } else {
-      setState(() {
-        _outputBuffer.writeln('✅ CocoaPods dependencies updated successfully');
-        _hasOutput = true;
-      });
-    }
-
-    // Step 3: Flutter clean
-    setState(() {
-      _outputBuffer.writeln('🧹 Running flutter clean...');
-      _hasOutput = true;
-    });
-
-    var flutterProcess = await Process.start(
-      'flutter',
-      ['clean'],
-      workingDirectory: projectPath,
-      runInShell: true,
-    );
-
-    flutterProcess.stdout.transform(const SystemEncoding().decoder).listen((
-      data,
-    ) {
-      if (data.trim().isNotEmpty && mounted) {
-        setState(() {
-          _outputBuffer.writeln(data.trim());
-          _hasOutput = true;
-        });
-      }
-    });
-
-    flutterProcess.stderr.transform(const SystemEncoding().decoder).listen((
-      data,
-    ) {
-      if (data.trim().isNotEmpty && mounted) {
-        setState(() {
-          _errorBuffer.writeln(data.trim());
-          _hasErrors = true;
-        });
-      }
-    });
-
-    var flutterExitCode = await flutterProcess.exitCode;
-
-    if (flutterExitCode != 0) {
-      throw 'Flutter clean failed with exit code $flutterExitCode';
-    }
-
-    // Step 4: Flutter pub get
-    setState(() {
-      _outputBuffer.writeln('📦 Running flutter pub get...');
-      _hasOutput = true;
-    });
-
-    flutterProcess = await Process.start(
-      'flutter',
-      ['pub', 'get'],
-      workingDirectory: projectPath,
-      runInShell: true,
-    );
-
-    flutterProcess.stdout.transform(const SystemEncoding().decoder).listen((
-      data,
-    ) {
-      if (data.trim().isNotEmpty && mounted) {
-        setState(() {
-          _outputBuffer.writeln(data.trim());
-          _hasOutput = true;
-        });
-      }
-    });
-
-    flutterProcess.stderr.transform(const SystemEncoding().decoder).listen((
-      data,
-    ) {
-      if (data.trim().isNotEmpty && mounted) {
-        setState(() {
-          _errorBuffer.writeln(data.trim());
-          _hasErrors = true;
-        });
-      }
-    });
-
-    flutterExitCode = await flutterProcess.exitCode;
-
-    if (flutterExitCode != 0) {
-      throw 'Flutter pub get failed with exit code $flutterExitCode';
-    }
-
-    // Step 5: Flutter build macos
-    setState(() {
-      _outputBuffer.writeln('🔨 Running flutter build macos...');
-      _hasOutput = true;
-    });
-
-    flutterProcess = await Process.start(
-      'flutter',
-      ['build', 'macos'],
-      workingDirectory: projectPath,
-      runInShell: true,
-    );
-
-    flutterProcess.stdout.transform(const SystemEncoding().decoder).listen((
-      data,
-    ) {
-      if (data.trim().isNotEmpty && mounted) {
-        setState(() {
-          _outputBuffer.writeln(data.trim());
-          _hasOutput = true;
-        });
-      }
-    });
-
-    flutterProcess.stderr.transform(const SystemEncoding().decoder).listen((
-      data,
-    ) {
-      if (data.trim().isNotEmpty && mounted) {
-        setState(() {
-          _errorBuffer.writeln(data.trim());
-          _hasErrors = true;
-        });
-      }
-    });
-
-    flutterExitCode = await flutterProcess.exitCode;
-
-    if (flutterExitCode != 0) {
-      throw 'Flutter build macos failed with exit code $flutterExitCode';
-    }
-
-    setState(() {
-      _outputBuffer.writeln('✨ Deep clean and rebuild completed successfully!');
-      _hasOutput = true;
-    });
-  }
-
+  /// Handles `_buildFlutterApp`.
   Future<void> _buildFlutterApp(String target) async {
-    /// Handles `_buildFlutterAppInternal`.
-    await _buildFlutterAppInternal(target, false);
-  }
-
-  /// Handles `_buildFlutterAppInternal`.
-  Future<void> _buildFlutterAppInternal(String target, bool isRetry) async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
 
     _clearOutput();
     setState(() {
       _buildStatus = BuildProcessStatus.running;
-      _outputBuffer.writeln(
-        isRetry ? 'Retrying build for $target...' : 'Building for $target...',
-      );
+      _outputBuffer.writeln('Building for $target...');
       _hasOutput = true;
     });
 
-    // Build command with optimization flags
-    final List<String> buildArgs = ['build', target];
-    if (target == 'web') {
-      buildArgs.add('--no-wasm-dry-run');
-    }
-
-    bool hasCocoapodsError = false;
-
     try {
-      final process = await Process.start(
-        'flutter',
-        buildArgs,
-        workingDirectory: currentProjectPath,
-        runInShell: true,
+      final exitCode = await _buildService.build(
+        currentProjectPath,
+        target,
+        _buildOutput,
       );
 
-      _currentProcess = process;
-
-      // Handle stdout
-      process.stdout.transform(const SystemEncoding().decoder).listen((data) {
-        if (data.trim().isNotEmpty && mounted) {
-          setState(() {
-            _outputBuffer.writeln(data.trim());
-            _hasOutput = true;
-          });
-        }
-      });
-
-      // Handle stderr as errors
-      process.stderr.transform(const SystemEncoding().decoder).listen((data) {
-        if (data.trim().isNotEmpty && mounted) {
-          // Check for CocoaPods repository out-of-date errors
-          if (data.contains(
-                "CocoaPods's specs repository is too out-of-date",
-              ) ||
-              data.contains("out-of-date source repos") ||
-              (data.contains("pod repo update") &&
-                  data.contains("You have either"))) {
-            hasCocoapodsError = true;
-            setState(() {
-              _outputBuffer.writeln(
-                '🛠️ CocoaPods repository error detected in output line: "${data.trim()}"',
-              );
-              _hasOutput = true;
-            });
-          }
-          setState(() {
-            _errorBuffer.writeln(data.trim());
-            _hasErrors = true;
-          });
-        }
-      });
-
-      final exitCode = await process.exitCode;
-
-      if (exitCode == 0) {
-        setState(() {
+      setState(() {
+        if (exitCode == 0) {
           _buildStatus = BuildProcessStatus.success;
           _outputBuffer.writeln('✓ Build completed successfully for $target');
-        });
-      } else if (hasCocoapodsError && target == 'macos' && !isRetry) {
-        // Automatically run pod repo update and retry for macOS
-        setState(() {
-          _outputBuffer.writeln(
-            '🔧 Detected CocoaPods repository issue. Running pod repo update...',
-          );
-          _hasOutput = true;
-        });
-
-        try {
-          final podProcess = await Process.start('pod', [
-            'repo',
-            'update',
-          ], runInShell: true);
-
-          // Handle pod repo update output
-          podProcess.stdout.transform(const SystemEncoding().decoder).listen((
-            data,
-          ) {
-            if (data.trim().isNotEmpty && mounted) {
-              setState(() {
-                _outputBuffer.writeln('POD: ${data.trim()}');
-                _hasOutput = true;
-              });
-            }
-          });
-
-          podProcess.stderr.transform(const SystemEncoding().decoder).listen((
-            data,
-          ) {
-            if (data.trim().isNotEmpty && mounted) {
-              setState(() {
-                _errorBuffer.writeln('POD: ${data.trim()}');
-                _hasErrors = true;
-              });
-            }
-          });
-
-          final podExitCode = await podProcess.exitCode;
-
-          if (podExitCode == 0) {
-            setState(() {
-              _outputBuffer.writeln(
-                '✅ CocoaPods repository updated successfully',
-              );
-              _outputBuffer.writeln('🔄 Retrying Flutter build...');
-              _hasOutput = true;
-            });
-
-            // Clear error state for retry
-            _errorBuffer.clear();
-            _hasErrors = false;
-
-            // Retry the build after successful pod update
-            await _buildFlutterAppInternal(target, true);
-            return;
-          } else {
-            setState(() {
-              _errorBuffer.writeln('❌ Failed to update CocoaPods repository');
-              _buildStatus = BuildProcessStatus.error;
-            });
-          }
-        } catch (podError) {
-          setState(() {
-            _errorBuffer.writeln('❌ Error running pod repo update: $podError');
-            _buildStatus = BuildProcessStatus.error;
-          });
-        }
-      } else {
-        setState(() {
+        } else {
           _buildStatus = BuildProcessStatus.error;
           _errorBuffer.writeln('✗ Build failed with exit code $exitCode');
-        });
-      }
+        }
+      });
     } catch (e) {
       setState(() {
         _buildStatus = BuildProcessStatus.error;
@@ -1179,16 +679,7 @@ Updates macOS CocoaPods dependencies.
       });
     } finally {
       _currentProcess = null;
-      if (!hasCocoapodsError || isRetry) {
-        // Reset status after a delay (don't reset for CocoaPods auto-fix)
-        Future.delayed(AppDuration.buildStatusResetDelay, () {
-          if (mounted) {
-            setState(() {
-              _buildStatus = BuildProcessStatus.idle;
-            });
-          }
-        });
-      }
+      _resetStatusLater(() => _buildStatus = BuildProcessStatus.idle);
     }
   }
 
@@ -1216,64 +707,35 @@ Updates macOS CocoaPods dependencies.
     });
 
     try {
-      List<String> args = isDebug ? ['run'] : ['run', '--release'];
-
-      final deviceTarget = _getDeviceTarget(_selectedPlatform);
-      args.addAll(['-d', deviceTarget]);
-
-      final process = await Process.start(
-        'flutter',
-        args,
-        workingDirectory: currentProjectPath,
-        runInShell: true,
+      // Process runs continuously until stopped
+      final exitCode = await _buildService.run(
+        currentProjectPath,
+        _getDeviceTarget(_selectedPlatform),
+        _buildOutput,
+        isDebug: isDebug,
       );
 
-      _currentProcess = process;
-
-      // Handle stdout
-      process.stdout.transform(const SystemEncoding().decoder).listen((data) {
-        if (data.trim().isNotEmpty && mounted) {
-          setState(() {
-            _outputBuffer.writeln(data.trim());
-            _hasOutput = true;
-          });
-        }
-      });
-
-      // Handle stderr as errors
-      process.stderr.transform(const SystemEncoding().decoder).listen((data) {
-        if (data.trim().isNotEmpty && mounted) {
-          setState(() {
-            _errorBuffer.writeln(data.trim());
-            _hasErrors = true;
-          });
-        }
-      });
-
-      // Process runs continuously until stopped
-      final exitCode = await process.exitCode;
-
-      if (exitCode == 0) {
-        setState(() {
+      setState(() {
+        if (exitCode == 0) {
           setStatus(BuildProcessStatus.success);
           _outputBuffer.writeln(
             '✓ App ${isDebug ? 'debugged' : 'ran'} successfully',
           );
-        });
-      } else {
-        setState(() {
+        } else {
           setStatus(BuildProcessStatus.error);
           _errorBuffer.writeln(
             '✗ App ${isDebug ? 'debug' : 'run'} failed with exit code $exitCode',
           );
-        });
-      }
+        }
+      });
     } catch (e) {
       setState(() {
         setStatus(BuildProcessStatus.error);
         _errorBuffer.writeln('✗ Run error: $e');
         _hasErrors = true;
       });
+    } finally {
+      _currentProcess = null;
     }
   }
 

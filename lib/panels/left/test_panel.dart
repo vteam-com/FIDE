@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:fide/widgets/status_indicator.dart';
@@ -164,12 +165,14 @@ Validates test organization and naming conventions.
     setState(() => _isRunningTests = true);
 
     try {
-      final process = await Process.start(
-        commandArgs[0],
-        commandArgs.sublist(1),
-        workingDirectory: widget.projectPath,
-        runInShell: true,
-      );
+      final process = await ref
+          .read(processRunnerProvider)
+          .start(
+            commandArgs[0],
+            commandArgs.sublist(1),
+            workingDirectory: widget.projectPath,
+            runInShell: true,
+          );
 
       _currentProcess = process;
 

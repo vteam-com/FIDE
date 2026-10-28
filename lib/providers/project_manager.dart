@@ -51,13 +51,9 @@ class ProjectManager {
     try {
       _logger.info('Unloading project...');
 
+      // Resets project path, root, loaded flag and selection via its sink
       final projectService = ref.read(projectServiceProvider);
       projectService.unloadProject();
-
-      ref.read(projectLoadedProvider.notifier).state = false;
-      ref.read(currentProjectPathProvider.notifier).state = null;
-      ref.read(currentProjectRootProvider.notifier).state = null;
-      ref.read(selectedFileProvider.notifier).state = null;
 
       ref.read(openDocumentsProvider.notifier).state = [];
       ref.read(activeDocumentIndexProvider.notifier).state = -1;

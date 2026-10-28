@@ -1,13 +1,16 @@
 // ignore_for_file: avoid_print
 
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fide/main.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/screens/create_project_screen.dart';
+import 'package:fide/providers/file_system_watcher.dart';
+import 'package:fide/providers/project_service.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/controllers/app_controller.dart';
 import 'package:path/path.dart' as path;
 
@@ -134,7 +137,22 @@ void main() {
     // await tester.binding.setSurfaceSize(const Size(1400, 900));
 
     // Use the same container setup as in main.dart for consistency
-    final container = ProviderContainer();
+    // Prefilled parent directory for the new-project wizard
+    final projectParentDir = path.join(
+      Directory.systemTemp.path,
+      'fide_test_projects',
+    );
+    final container = ProviderContainer(
+      overrides: [
+        projectTreeLoaderProvider.overrideWithValue(loadProjectTreeInline),
+        fileSystemWatcherProvider.overrideWith(
+          (_) => FileSystemWatcher(
+            watchEnabled: !const bool.fromEnvironment('FLUTTER_TEST'),
+          ),
+        ),
+        newProjectParentDirectoryProvider.overrideWithValue(projectParentDir),
+      ],
+    );
 
     // Verify we're on the welcome screen
     stepStart('Welcome screen');
@@ -154,9 +172,6 @@ void main() {
     String expectedProjectPath = '';
     stepStart('Creating HelloWorld project');
     {
-      // Get temp directory for project creation
-      final tempDir = Directory.systemTemp;
-      final projectParentDir = path.join(tempDir.path, 'fide_test_projects');
       await Directory(projectParentDir).create(recursive: true);
 
       // Delete any existing helloworld project to ensure clean state
@@ -168,9 +183,6 @@ void main() {
           'Deleted existing helloworld project directory: $expectedProjectPath',
         );
       }
-
-      // Set the test initial directory to prevent any issues with permissions
-      CreateProjectScreen.setTestInitialDirectory(projectParentDir);
 
       // Log expected project path for debugging
       substep('Expected project path: $expectedProjectPath');

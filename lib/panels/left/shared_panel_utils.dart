@@ -6,6 +6,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/providers/git_service.dart';
+import 'package:fide/providers/process_runner.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';

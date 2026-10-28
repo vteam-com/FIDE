@@ -2,6 +2,7 @@
 import 'package:fide/controllers/app_controller.dart';
 import 'package:fide/controllers/project_operations.dart';
 import 'package:fide/models/app_theme.dart';
+import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/screens/create_project_screen.dart';
@@ -45,9 +46,6 @@ class FIDE extends ConsumerStatefulWidget {
 }
 
 // Global functions for menu actions - now delegate to ProjectOperations service
-/// Handles `triggerSave`.
-void triggerSave() => ProjectOperations.triggerSave();
-
 /// Handles `pickDirectoryAndLoadProject`.
 Future<void> pickDirectoryAndLoadProject(BuildContext context, WidgetRef ref) =>
     ProjectOperations.pickDirectoryAndLoadProject(context, ref);
@@ -57,18 +55,6 @@ void triggerOpenFolder() => ProjectOperations.triggerOpenFolder();
 
 /// Handles `triggerReopenLastFile`.
 void triggerReopenLastFile() => ProjectOperations.triggerReopenLastFile();
-
-/// Handles `triggerCloseDocument`.
-void triggerCloseDocument() => ProjectOperations.triggerCloseDocument();
-
-/// Handles `triggerSearch`.
-void triggerSearch() => ProjectOperations.triggerSearch();
-
-/// Handles `triggerSearchNext`.
-void triggerSearchNext() => ProjectOperations.triggerSearchNext();
-
-/// Handles `triggerSearchPrevious`.
-void triggerSearchPrevious() => ProjectOperations.triggerSearchPrevious();
 
 void Function(WidgetRef ref) triggerTogglePanelLeft = (ref) {
   final current = ref.read(leftPanelVisibleProvider);
@@ -349,11 +335,11 @@ class _FIDEState extends ConsumerState<FIDE> {
                   context: context,
                   ref: ref,
                   onOpenFolder: triggerOpenFolder,
-                  onSave: triggerSave,
-                  onCloseDocument: triggerCloseDocument,
-                  onFind: triggerSearch,
-                  onFindNext: triggerSearchNext,
-                  onFindPrevious: triggerSearchPrevious,
+                  onSave: ref.read(activeEditorProvider).save,
+                  onCloseDocument: ref.read(activeEditorProvider).close,
+                  onFind: ref.read(activeEditorProvider).toggleSearch,
+                  onFindNext: ref.read(activeEditorProvider).findNext,
+                  onFindPrevious: ref.read(activeEditorProvider).findPrevious,
                   onGoToLine: () => _showGotoLineDialog(
                     navigatorKey.currentContext ?? context,
                   ),
@@ -446,7 +432,10 @@ class _FIDEState extends ConsumerState<FIDE> {
 
   /// Opens the goto-line dialog and focuses its numeric input field.
   void _showGotoLineDialog(BuildContext context) {
-    ProjectOperations.showGotoLineDialog(context);
+    ProjectOperations.showGotoLineDialog(
+      context,
+      ref.read(activeEditorProvider),
+    );
   }
 
   void _switchToPanel(WidgetRef ref, int panelIndex) {

@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/localization_data.dart';
+import 'package:fide/providers/process_runner.dart';
 import 'package:logging/logging.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
@@ -14,12 +15,17 @@ part 'localization_service.arb_service.dart';
 class LocalizationService {
   static final Logger _logger = Logger('LocalizationService');
 
+  final ProcessRunner _runner;
+
+  /// Creates a localization service that launches commands through [_runner].
+  LocalizationService([this._runner = const ProcessRunner()]);
+
   /// Sets up localization dependencies, config, ARB files, and generated classes.
   Future<void> initializeLocalization(String projectPath) async {
     try {
       // Add required packages using flutter pub add
       try {
-        final addFlutterLocalizationsResult = await Process.run('flutter', [
+        final addFlutterLocalizationsResult = await _runner.run('flutter', [
           'pub',
           'add',
           'flutter_localizations',
@@ -35,7 +41,7 @@ class LocalizationService {
       }
 
       try {
-        final addIntlResult = await Process.run('flutter', [
+        final addIntlResult = await _runner.run('flutter', [
           'pub',
           'add',
           'intl',
@@ -104,7 +110,7 @@ class LocalizationService {
 
       // Generate localization classes
       try {
-        final result = await Process.run('flutter', [
+        final result = await _runner.run('flutter', [
           'gen-l10n',
         ], workingDirectory: projectPath);
 

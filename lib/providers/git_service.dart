@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/providers/process_runner.dart';
 import 'package:path/path.dart' as path;
 
 part 'git_service.git_status.dart';
@@ -11,6 +12,11 @@ part 'git_service.git_diff_stats.dart';
 
 /// Represents `GitService`.
 class GitService {
+  final ProcessRunner _runner;
+
+  /// Creates a Git service that launches commands through [_runner].
+  const GitService([this._runner = const ProcessRunner()]);
+
   /// Runs a mutating Git command and returns a normalized status message.
   Future<String> _runGitFileMutation({
     required String path,
@@ -20,7 +26,7 @@ class GitService {
     required String errorPrefix,
   }) async {
     try {
-      final result = await Process.run('git', args, workingDirectory: path);
+      final result = await _runner.run('git', args, workingDirectory: path);
       if (result.exitCode == 0) {
         return successMessage;
       }
@@ -36,7 +42,7 @@ class GitService {
     required String errorPrefix,
   }) async {
     try {
-      final result = await Process.run('git', args, workingDirectory: path);
+      final result = await _runner.run('git', args, workingDirectory: path);
       return result.exitCode == 0 ? result.stdout.toString() : '';
     } catch (e) {
       return '$errorPrefix: $e';
@@ -71,7 +77,7 @@ class GitService {
   /// Returns true when the `git` executable is available on the system.
   Future<bool> isGitAvailable() async {
     try {
-      final result = await Process.run('git', ['--version']);
+      final result = await _runner.run('git', ['--version']);
       return result.exitCode == 0;
     } catch (e) {
       return false;
@@ -82,7 +88,7 @@ class GitService {
   /// Returns true if the provided path is inside a valid Git repository.
   Future<bool> isGitRepository(String path) async {
     try {
-      final result = await Process.run('git', [
+      final result = await _runner.run('git', [
         'rev-parse',
         '--git-dir',
       ], workingDirectory: path);
@@ -96,7 +102,7 @@ class GitService {
   /// Initializes a new Git repository at the provided path.
   Future<String> initRepository(String path) async {
     try {
-      final result = await Process.run('git', ['init'], workingDirectory: path);
+      final result = await _runner.run('git', ['init'], workingDirectory: path);
       if (result.exitCode == 0) {
         return 'Git repository initialized successfully';
       } else {
@@ -111,7 +117,7 @@ class GitService {
   /// Reads Git porcelain status and groups files into staged/unstaged/untracked.
   Future<GitStatus> getStatus(String path) async {
     try {
-      final result = await Process.run('git', [
+      final result = await _runner.run('git', [
         'status',
         '--porcelain',
       ], workingDirectory: path);
@@ -205,7 +211,7 @@ class GitService {
   /// Creates a commit with the given commit message.
   Future<String> commit(String path, String message) async {
     try {
-      final result = await Process.run('git', [
+      final result = await _runner.run('git', [
         'commit',
         '-m',
         message,
@@ -224,7 +230,7 @@ class GitService {
   /// Pushes local commits to the configured remote.
   Future<String> push(String path) async {
     try {
-      final result = await Process.run('git', ['push'], workingDirectory: path);
+      final result = await _runner.run('git', ['push'], workingDirectory: path);
       if (result.exitCode == 0) {
         return 'Changes pushed successfully';
       } else {
@@ -239,7 +245,7 @@ class GitService {
   /// Pulls remote changes into the current branch.
   Future<String> pull(String path) async {
     try {
-      final result = await Process.run('git', ['pull'], workingDirectory: path);
+      final result = await _runner.run('git', ['pull'], workingDirectory: path);
       if (result.exitCode == 0) {
         return 'Changes pulled successfully';
       } else {
@@ -254,7 +260,7 @@ class GitService {
   /// Returns the current checked-out branch name, if available.
   Future<String?> getCurrentBranch(String path) async {
     try {
-      final result = await Process.run('git', [
+      final result = await _runner.run('git', [
         'branch',
         '--show-current',
       ], workingDirectory: path);
@@ -274,7 +280,7 @@ class GitService {
     int count = AppMetric.gitCommitDefaultCount,
   }) async {
     try {
-      final result = await Process.run('git', [
+      final result = await _runner.run('git', [
         'log',
         '--oneline',
         '-n',
@@ -306,7 +312,7 @@ class GitService {
   /// Returns a unified diff for one file, including new/untracked fallbacks.
   Future<String> getFileDiff(String path, String filePath) async {
     try {
-      final result = await Process.run('git', [
+      final result = await _runner.run('git', [
         'diff',
         '--no-index',
         '--',
@@ -320,7 +326,7 @@ class GitService {
       }
 
       // Try staged diff
-      final stagedResult = await Process.run('git', [
+      final stagedResult = await _runner.run('git', [
         'diff',
         '--cached',
         '--',
@@ -332,7 +338,7 @@ class GitService {
       }
 
       // Try unstaged diff
-      final unstagedResult = await Process.run('git', [
+      final unstagedResult = await _runner.run('git', [
         'diff',
         '--',
         filePath,
@@ -399,7 +405,7 @@ class GitService {
     String revision,
   ) async {
     try {
-      final result = await Process.run('git', [
+      final result = await _runner.run('git', [
         'show',
         '$revision:$filePath',
       ], workingDirectory: path);
@@ -423,7 +429,7 @@ class GitService {
 
       // Check each file individually to determine if it's tracked
       for (final file in files) {
-        final isTrackedResult = await Process.run('git', [
+        final isTrackedResult = await _runner.run('git', [
           'ls-files',
           '--error-unmatch',
           file,
@@ -440,7 +446,7 @@ class GitService {
 
       // Discard tracked files with changes using git checkout
       if (modifiedFiles.isNotEmpty) {
-        final checkoutResult = await Process.run('git', [
+        final checkoutResult = await _runner.run('git', [
           'checkout',
           '--',
           ...modifiedFiles,
@@ -473,7 +479,7 @@ class GitService {
   Future<GitDiffStats> getFileDiffStats(String path, String filePath) async {
     try {
       // First check if file is tracked
-      final isTrackedResult = await Process.run('git', [
+      final isTrackedResult = await _runner.run('git', [
         'ls-files',
         '--error-unmatch',
         filePath,
@@ -496,7 +502,7 @@ class GitService {
       }
 
       // For tracked files, get diff stats
-      final result = await Process.run('git', [
+      final result = await _runner.run('git', [
         'diff',
         '--numstat',
         '--',
@@ -519,7 +525,7 @@ class GitService {
       }
 
       // Fallback: parse diff output
-      final diffResult = await Process.run('git', [
+      final diffResult = await _runner.run('git', [
         'diff',
         '--',
         filePath,

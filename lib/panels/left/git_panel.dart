@@ -194,14 +194,14 @@ class _GitPanelState extends ConsumerState<GitPanel> {
           // File might be new, oldText remains empty
         }
 
-        // Get staged content using git show :file
-        final stagedResult = await Process.run('git', [
-          'show',
-          ':$filePath',
-        ], workingDirectory: widget.projectPath);
-        if (stagedResult.exitCode == 0) {
-          newText = stagedResult.stdout.toString();
-        } else {
+        // Get staged content (git show :file); an empty revision names the index
+        try {
+          newText = await gitService.getFileContentAtRevision(
+            widget.projectPath,
+            filePath,
+            '',
+          );
+        } catch (_) {
           // Fallback to working directory if staged content not available
           final file = File(fullFilePath);
           if (await file.exists()) {

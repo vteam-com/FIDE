@@ -4,10 +4,16 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/providers/process_runner.dart';
 import 'package:http/http.dart' as http;
 
 /// Represents `AIService`.
 class AIService {
+  final ProcessRunner _runner;
+
+  /// Creates an AI service that launches commands through [_runner].
+  const AIService([this._runner = const ProcessRunner()]);
+
   static const String _ollamaUrl = 'http://localhost:11434/api/generate';
   static const String _defaultModel = 'codellama'; // Can be changed to other models like 'llama2', 'mistral', etc.
 
@@ -60,7 +66,7 @@ Please provide a helpful response focused on the coding request.''';
   /// Gets the current Flutter SDK version by running flutter --version
   Future<String> _getFlutterSdkVersion() async {
     try {
-      final result = await Process.run('flutter', ['--version']);
+      final result = await _runner.run('flutter', ['--version']);
       if (result.exitCode == 0) {
         final output = result.stdout.toString();
 
@@ -330,7 +336,7 @@ class _MyHomePageState extends State<MyHomePage> {
   /// Checks if Ollama is installed on the system
   Future<bool> isOllamaInstalled() async {
     try {
-      final whichResult = await Process.run('which', ['ollama']);
+      final whichResult = await _runner.run('which', ['ollama']);
       return whichResult.exitCode == 0;
     } catch (e) {
       return false;
@@ -340,7 +346,7 @@ class _MyHomePageState extends State<MyHomePage> {
   /// Checks if Ollama service is currently running
   Future<bool> isOllamaRunning() async {
     try {
-      final listResult = await Process.run('ollama', ['list']);
+      final listResult = await _runner.run('ollama', ['list']);
       return listResult.exitCode == 0;
     } catch (e) {
       return false;
@@ -350,7 +356,7 @@ class _MyHomePageState extends State<MyHomePage> {
   /// Checks if the required model (codellama) is downloaded
   Future<bool> isModelInstalled() async {
     try {
-      final listResult = await Process.run('ollama', ['list']);
+      final listResult = await _runner.run('ollama', ['list']);
       if (listResult.exitCode == 0) {
         final models = listResult.stdout.toString();
         return models.contains(_defaultModel);
@@ -365,7 +371,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> installOllama() async {
     if (Platform.isMacOS || Platform.isLinux) {
       // Install Ollama using the official install script
-      final installResult = await Process.run('sh', [
+      final installResult = await _runner.run('sh', [
         '-c',
         'curl -fsSL https://ollama.ai/install.sh | sh',
       ]);
@@ -375,7 +381,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
 
       // Pull the default model
-      final pullResult = await Process.run('ollama', ['pull', _defaultModel]);
+      final pullResult = await _runner.run('ollama', ['pull', _defaultModel]);
       if (pullResult.exitCode != 0) {
         throw Exception(
           'Failed to pull $_defaultModel model: ${pullResult.stderr}',
@@ -393,7 +399,7 @@ class _MyHomePageState extends State<MyHomePage> {
   /// Starts the Ollama service in the background
   Future<void> startOllama() async {
     // Start the Ollama background server
-    await Process.start(
+    await _runner.start(
       'ollama',
       ['serve'],
       mode: ProcessStartMode
@@ -406,7 +412,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   /// Downloads the default model
   Future<void> downloadModel() async {
-    final pullResult = await Process.run('ollama', ['pull', _defaultModel]);
+    final pullResult = await _runner.run('ollama', ['pull', _defaultModel]);
     if (pullResult.exitCode != 0) {
       throw Exception(
         'Failed to download $_defaultModel model: ${pullResult.stderr}',

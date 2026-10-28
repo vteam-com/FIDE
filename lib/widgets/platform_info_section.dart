@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/providers/process_runner.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter/material.dart';
@@ -627,14 +628,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
       final file = File(path);
       final directory = file.parent.path;
 
-      // Cross-platform folder opening
-      if (Platform.isMacOS) {
-        Process.run('open', [directory]);
-      } else if (Platform.isWindows) {
-        Process.run('explorer', [directory]);
-      } else if (Platform.isLinux) {
-        Process.run('xdg-open', [directory]);
-      }
+      const ProcessRunner().revealInFileManager(directory);
     } catch (_) {
       // Ignore errors silently
     }

@@ -316,12 +316,14 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
   /// Handles `_addPackages`.
   Future<void> _addPackages(String projectPath) async {
     // Add flutter_localizations
-    final addFlutterLocalizationsResult = await Process.run('flutter', [
-      'pub',
-      'add',
-      'flutter_localizations',
-      '--sdk=flutter',
-    ], workingDirectory: projectPath);
+    final addFlutterLocalizationsResult = await ref
+        .read(processRunnerProvider)
+        .run('flutter', [
+          'pub',
+          'add',
+          'flutter_localizations',
+          '--sdk=flutter',
+        ], workingDirectory: projectPath);
     if (addFlutterLocalizationsResult.exitCode != 0) {
       throw Exception(
         'Failed to add flutter_localizations: ${addFlutterLocalizationsResult.stderr}',
@@ -329,7 +331,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     }
 
     // Add intl
-    final addIntlResult = await Process.run('flutter', [
+    final addIntlResult = await ref.read(processRunnerProvider).run('flutter', [
       'pub',
       'add',
       'intl',
@@ -403,7 +405,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
 
   /// Handles `_generateClasses`.
   Future<void> _generateClasses(String projectPath) async {
-    final result = await Process.run('flutter', [
+    final result = await ref.read(processRunnerProvider).run('flutter', [
       'gen-l10n',
     ], workingDirectory: projectPath);
 
@@ -465,7 +467,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
         return;
       }
 
-      final result = await Process.run('flutter', [
+      final result = await ref.read(processRunnerProvider).run('flutter', [
         'gen-l10n',
       ], workingDirectory: projectRoot.path);
 

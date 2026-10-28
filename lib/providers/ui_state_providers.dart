@@ -16,3 +16,6 @@ final themeModeProvider = StateProvider<ThemeMode>(
 /// Active panel index providers (moved here for UI state organization)
 final activeLeftPanelTabProvider = StateProvider<int>((_ /*ref*/) => 0);
 final activeRightPanelTabProvider = StateProvider<int>((_ /*ref*/) => 0);
+
+/// 1-based line of the caret in the active editor, for panels that track it.
+final editorCursorLineProvider = StateProvider<int>((_ /*ref*/) => 1);

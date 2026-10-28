@@ -1,11 +1,12 @@
 // ignore_for_file: deprecated_member_use
 
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/project_maintenance_service.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/output_panel.dart';
@@ -14,8 +15,6 @@ import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:yaml/yaml.dart';
-import 'package:yaml_edit/yaml_edit.dart';
 
 /// Represents `InfoPanel`.
 class InfoPanel extends ConsumerStatefulWidget {
@@ -29,8 +28,6 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   bool _isRefreshing = false;
   bool _checkingOutdated = false;
   bool _upgrading = false;
-  Process? _currentProcess;
-  final StringBuffer _outputBuffer = StringBuffer();
   String? _dependencyConflictError;
   String? _outdatedCommandOutput;
   Map<String, String> _problematicPackages = {};
@@ -43,23 +40,17 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     _analyzeProject();
   }
 
-  @override
-  void dispose() {
-    _currentProcess?.kill();
-    super.dispose();
-  }
-
   /// Handles `_analyzeProject`.
   Future<void> _analyzeProject() async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
     if (currentProjectPath == null) return;
 
     setState(() => _isRefreshing = true);
-    _outputBuffer.clear();
 
     try {
-      /// Handles `_gatherProjectMetrics`.
-      final metrics = await _gatherProjectMetrics(currentProjectPath);
+      final metrics = await ref
+          .read(projectAnalyzerProvider)
+          .analyze(currentProjectPath);
       await ref
           .read(projectMetricsProvider.notifier)
           .updateMetrics(currentProjectPath, metrics);
@@ -74,235 +65,6 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         MessageBox.showError(context, 'Failed to analyze project: $e');
       }
     }
-  }
-
-  /// Handles `_gatherProjectMetrics`.
-  Future<Map<String, dynamic>> _gatherProjectMetrics(String projectPath) async {
-    final metrics = <String, dynamic>{};
-
-    // Basic project info
-    final pubspecFile = File('$projectPath/pubspec.yaml');
-    if (pubspecFile.existsSync()) {
-      final content = pubspecFile.readAsStringSync();
-      final lines = content.split('\n');
-
-      for (final line in lines) {
-        if (line.trim().startsWith('name:') &&
-            !line.trim().startsWith('  name:')) {
-          metrics['name'] = line.split(':').last.trim();
-        }
-        if (line.trim().startsWith('version:')) {
-          metrics['version'] = line.split(':').last.trim();
-        }
-        if (line.trim().startsWith('description:')) {
-          metrics['description'] = line.split(':').last.trim();
-        }
-      }
-
-      // Parse dependencies
-      final yamlDoc = loadYamlDocument(content);
-      final yamlMap = yamlDoc.contents as YamlMap;
-
-      final deps = yamlMap['dependencies'] as YamlMap?;
-      if (deps != null) {
-        final dependencies = <String, String>{};
-        deps.forEach((key, value) {
-          if (value is String) {
-            dependencies[key as String] = value;
-          } else if (value is YamlMap && value['sdk'] == 'flutter') {
-            dependencies[key as String] = 'Flutter SDK';
-          } else {
-            dependencies[key as String] = 'Complex dependency';
-          }
-        });
-        metrics['dependencies'] = dependencies;
-      }
-
-      final devDeps = yamlMap['dev_dependencies'] as YamlMap?;
-      if (devDeps != null) {
-        final devDependencies = <String, String>{};
-        devDeps.forEach((key, value) {
-          if (value is String) {
-            devDependencies[key as String] = value;
-          } else if (value is YamlMap && value['sdk'] == 'flutter') {
-            devDependencies[key as String] = 'Flutter SDK';
-          } else {
-            devDependencies[key as String] = 'Complex dependency';
-          }
-        });
-        metrics['devDependencies'] = devDependencies;
-      }
-    }
-
-    // File stats
-    /// Handles `_analyzeFileStats`.
-    await _analyzeFileStats(projectPath, metrics);
-
-    // Directory structure
-    /// Handles `_analyzeDirectoryStructure`.
-    await _analyzeDirectoryStructure(projectPath, metrics);
-
-    // Health indicators
-    /// Handles `_analyzeHealthIndicators`.
-    await _analyzeHealthIndicators(projectPath, metrics);
-
-    // Generate quality score
-    /// Handles `_calculateQualityScore`.
-    _calculateQualityScore(metrics);
-
-    return metrics;
-  }
-
-  /// Handles `_analyzeFileStats`.
-  Future<void> _analyzeFileStats(
-    String projectPath,
-    Map<String, dynamic> metrics,
-  ) async {
-    final stats = <String, int>{};
-    final dir = Directory(projectPath);
-
-    await for (final entity in dir.list(recursive: true, followLinks: false)) {
-      if (entity is File) {
-        final extension = entity.path.split('.').last.toLowerCase();
-        stats[extension] = (stats[extension] ?? 0) + 1;
-      }
-    }
-
-    metrics['fileStats'] = stats;
-    metrics['totalFiles'] = stats.values.fold(0, (sum, count) => sum + count);
-  }
-
-  /// Handles `_analyzeDirectoryStructure`.
-  Future<void> _analyzeDirectoryStructure(
-    String projectPath,
-    Map<String, dynamic> metrics,
-  ) async {
-    final dir = Directory(projectPath);
-    final structure = <String, int>{};
-
-    await for (final entity in dir.list(recursive: true, followLinks: false)) {
-      if (entity is Directory) {
-        final pathSegments = entity.path
-            .replaceFirst(projectPath, '')
-            .split('/');
-        if (pathSegments.length >= AppMetric.minDirPathDepth) {
-          final category = pathSegments[1];
-          if ([
-            'android',
-            'ios',
-            'web',
-            'windows',
-            'linux',
-            'macos',
-            'lib',
-            'test',
-          ].contains(category)) {
-            structure[category] = (structure[category] ?? 0) + 1;
-          }
-        }
-      }
-    }
-
-    metrics['directoryStructure'] = structure;
-  }
-
-  /// Handles `_analyzeHealthIndicators`.
-  Future<void> _analyzeHealthIndicators(
-    String projectPath,
-    Map<String, dynamic> metrics,
-  ) async {
-    final indicators = <String, dynamic>{};
-
-    // Check for pubspec.lock existence
-    indicators['hasPubspecLock'] = File('$projectPath/pubspec.lock')
-        .existsSync();
-
-    // Check for build warning/error logs
-    final buildDir = Directory('$projectPath/build');
-    if (buildDir.existsSync()) {
-      int warningLogs = 0;
-      int errorLogs = 0;
-
-      await for (final entity in buildDir.list(recursive: true)) {
-        if (entity is File && entity.path.endsWith('.log')) {
-          final content = entity.readAsStringSync().toLowerCase();
-          if (content.contains('error')) errorLogs++;
-          if (content.contains('warning')) warningLogs++;
-        }
-      }
-
-      indicators['buildWarnings'] = warningLogs;
-      indicators['buildErrors'] = errorLogs;
-    }
-
-    // Check for large files above configured MB threshold.
-    final largeFiles = <String>[];
-    await for (final entity in Directory(
-      projectPath,
-    ).list(recursive: true, followLinks: false)) {
-      if (entity is File) {
-        try {
-          final size = await entity.length();
-          if (size >
-              AppMetric.largeFileThresholdMb *
-                  AppMetric.fileSizeDivisor *
-                  AppMetric.fileSizeDivisor) {
-            largeFiles.add(entity.path.replaceFirst(projectPath, ''));
-          }
-        } catch (_) {
-          // Skip files we can't read (like broken symlinks)
-          continue;
-        }
-      }
-    }
-    indicators['largeFiles'] = largeFiles;
-
-    // Check for outdated pubspec.yaml dependencies (simplified check)
-    final pubspecFile = File('$projectPath/pubspec.yaml');
-    if (pubspecFile.existsSync()) {
-      final content = pubspecFile.readAsStringSync();
-      indicators['hasDependencies'] = content.contains('dependencies:');
-    }
-
-    metrics['healthIndicators'] = indicators;
-  }
-
-  /// Handles `_calculateQualityScore`.
-  void _calculateQualityScore(Map<String, dynamic> metrics) {
-    int score = AppMetric.maxScore;
-
-    final healthIndicators =
-        metrics['healthIndicators'] as Map<String, dynamic>?;
-
-    if (healthIndicators == null) return;
-
-    // Deduct for missing pubspec.lock
-    if (!(healthIndicators['hasPubspecLock'] ?? false)) {
-      score -= AppMetric.missingLockDeduction;
-    }
-
-    // Deduct for build errors
-    final buildErrors = (healthIndicators['buildErrors'] ?? 0) as int;
-    score -= (buildErrors * AppMetric.buildErrorDeductionPer).clamp(
-      0,
-      AppMetric.buildErrorDeductionMax,
-    );
-
-    // Deduct for warnings
-    final buildWarnings = (healthIndicators['buildWarnings'] ?? 0) as int;
-    score -= (buildWarnings * AppMetric.buildWarningDeductionPer).clamp(
-      0,
-      AppMetric.buildWarningDeductionMax,
-    );
-
-    // Deduct for large files
-    final largeFiles = healthIndicators['largeFiles'] as List?;
-    if (largeFiles != null &&
-        largeFiles.length > AppMetric.maxAllowedLargeFiles) {
-      score -= AppMetric.largeFileThresholdMb;
-    }
-
-    metrics['qualityScore'] = score.clamp(0, AppMetric.maxScore);
   }
 
   /// Builds a BadgeStatus widget based on the quality score
@@ -505,46 +267,9 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     setState(() => _isRefreshing = true);
 
     try {
-      // Flutter clean
-      /// Handles `_runCommand`.
-      await _runCommand('flutter', [
-        'clean',
-      ], workingDirectory: currentProjectPath);
-
-      // Remove build directory
-      final buildDir = Directory('$currentProjectPath/build');
-      if (buildDir.existsSync()) {
-        await buildDir.delete(recursive: true);
-      }
-
-      // Clear Flutter pub cache
-      await _runCommand('flutter', ['pub', 'cache', 'repair']);
-
-      // Clean Android if exists
-      final androidDir = Directory('$currentProjectPath/android');
-      if (androidDir.existsSync()) {
-        await _runCommand('./gradlew', [
-          'clean',
-        ], workingDirectory: '$currentProjectPath/android');
-      }
-
-      // Clean iOS/macOS CocoaPods if macOS
-      if (Platform.isMacOS) {
-        final iosDir = Directory('$currentProjectPath/ios');
-        if (iosDir.existsSync()) {
-          await _runCommand('pod', [
-            'install',
-            '--repo-update',
-          ], workingDirectory: '$currentProjectPath/ios');
-        }
-        final macosDir = Directory('$currentProjectPath/macos');
-        if (macosDir.existsSync()) {
-          await _runCommand('pod', [
-            'install',
-            '--repo-update',
-          ], workingDirectory: '$currentProjectPath/macos');
-        }
-      }
+      await ref
+          .read(projectMaintenanceServiceProvider)
+          .fullCleanup(currentProjectPath);
 
       // Re-analyze project
       await _analyzeProject();
@@ -593,28 +318,6 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
-  /// Handles `_runCommand`.
-  Future<void> _runCommand(
-    String cmd,
-    List<String> args, {
-    String? workingDirectory,
-  }) async {
-    final process = await Process.start(
-      cmd,
-      args,
-      workingDirectory: workingDirectory,
-      runInShell: true,
-    );
-
-    await process.stdout.transform(utf8.decoder).drain();
-    await process.stderr.transform(utf8.decoder).drain();
-
-    final exitCode = await process.exitCode;
-    if (exitCode != 0) {
-      throw 'Command failed with exit code $exitCode';
-    }
-  }
-
   /// Handles `_checkOutdated`.
   Future<void> _checkOutdated() async {
     final currentProjectPath = ref.read(currentProjectPathProvider);
@@ -623,81 +326,34 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     setState(() => _checkingOutdated = true);
 
     try {
-      final result = await Process.run('flutter', [
-        'pub',
-        'outdated',
-      ], workingDirectory: currentProjectPath);
+      final output = await ref
+          .read(projectMaintenanceServiceProvider)
+          .outdatedReport(currentProjectPath);
 
-      if (result.exitCode == 0) {
-        final output = result.stdout as String;
+      // Store the full command output
+      setState(() {
+        _outdatedCommandOutput = output;
+        _dependencyConflictError = null;
+      });
 
-        /// Handles `_parseOutdated`.
-        final parsed = _parseOutdated(output);
+      final currentMetrics = ref.read(projectMetricsProvider);
+      final updatedMetrics = Map<String, dynamic>.from(currentMetrics)
+        ..['outdated'] = ProjectMaintenanceService.parseOutdated(output);
 
-        // Store the full command output
-        setState(() {
-          _outdatedCommandOutput = output;
-          _dependencyConflictError = null;
-        });
+      ref
+          .read(projectMetricsProvider.notifier)
+          .updateMetrics(currentProjectPath, updatedMetrics);
 
-        final currentMetrics = ref.read(projectMetricsProvider);
-        final updatedMetrics = Map<String, dynamic>.from(currentMetrics)
-          ..['outdated'] = parsed;
-
-        ref
-            .read(projectMetricsProvider.notifier)
-            .updateMetrics(currentProjectPath, updatedMetrics);
-
-        if (mounted) {
-          MessageBox.showSuccess(context, 'Outdated check completed');
-        }
-      } else {
-        if (mounted) {
-          MessageBox.showError(
-            context,
-            'Failed to check outdated: ${result.stderr}',
-          );
-        }
+      if (mounted) {
+        MessageBox.showSuccess(context, 'Outdated check completed');
       }
-
-      if (mounted) setState(() => _checkingOutdated = false);
     } catch (e) {
       if (mounted) {
-        setState(() => _checkingOutdated = false);
-        MessageBox.showError(context, 'Error checking outdated: $e');
+        MessageBox.showError(context, 'Failed to check outdated: $e');
       }
+    } finally {
+      if (mounted) setState(() => _checkingOutdated = false);
     }
-  }
-
-  /// Handles `_parseOutdated`.
-  Map<String, dynamic> _parseOutdated(String output) {
-    final lines = output.split('\n');
-    final outdated = <String, dynamic>{};
-
-    for (String line in lines) {
-      line = line.trim();
-      if (line.isEmpty) continue;
-
-      final parts = line.split(RegExp(r'\s+'));
-      if (parts.length >= AppMetric.outdatedMinColumns &&
-          parts[0] != 'Package' &&
-          parts[0] != '---') {
-        final package = parts[0];
-        final current = parts[1];
-        final upgradable = parts[AppMetric.outdatedUpgradableColIndex];
-        final resolvable = parts[AppMetric.outdatedResolvableColIndex];
-        outdated[package] = {
-          'current': current,
-          'upgradable': upgradable,
-          'resolvable': resolvable,
-          'latest': parts.length > AppMetric.outdatedLatestColIndex
-              ? parts[AppMetric.outdatedLatestColIndex]
-              : '',
-        };
-      }
-    }
-
-    return outdated;
   }
 
   /// Handles `_openPubDev`.
@@ -824,140 +480,14 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     });
 
     try {
-      // 1. Run flutter pub outdated --json
-      final result = await Process.run('flutter', [
-        'pub',
-        'outdated',
-        '--json',
-      ], workingDirectory: currentProjectPath);
-      if (result.exitCode != 0) {
-        if (mounted) {
-          MessageBox.showError(
-            context,
-            'Failed to check outdated: ${result.stderr}',
-          );
-        }
-        return;
-      }
-      // 2. Parse the JSON result
-      final outdatedJson = result.stdout is String
-          ? result.stdout as String
-          : utf8.decode(result.stdout as List<int>);
+      final updatedPackages = await ref
+          .read(projectMaintenanceServiceProvider)
+          .upgradeToResolvable(currentProjectPath);
 
-      final dynamic outdatedData = json.decode(outdatedJson);
-
-      if (outdatedData is! Map<String, dynamic>) {
-        if (mounted) {
-          MessageBox.showError(
-            context,
-            'Invalid JSON response from flutter pub outdated: expected Map, got ${outdatedData.runtimeType}',
-          );
-        }
-        return;
-      }
-
-      final Map<String, dynamic> outdatedDataMap = outdatedData;
-
-      // Handle the array format: [{"package": "name", "kind": "direct", "current": {...}, "resolvable": {...}}, ...]
-      final packagesRaw = outdatedDataMap['packages'];
-      if (packagesRaw is! List) {
-        if (mounted) {
-          MessageBox.showError(
-            context,
-            'Expected packages to be an array, got ${packagesRaw?.runtimeType}',
-          );
-        }
-        return;
-      }
-
-      final packages = packagesRaw;
-
-      if (mounted) {
-        MessageBox.showInfo(
-          context,
-          'Found ${packages.length} packages to check',
-        );
-      }
-
-      // 3. Load pubspec.yaml and create a YamlEditor
-      final pubspecFile = File('$currentProjectPath/pubspec.yaml');
-      if (!pubspecFile.existsSync()) {
-        if (mounted) {
-          MessageBox.showError(context, 'pubspec.yaml not found');
-        }
-        return;
-      }
-      final pubspecContent = await pubspecFile.readAsString();
-      final yamlEditor = YamlEditor(pubspecContent);
-
-      // 4. For each package in the array, check if it's upgradeable
-      bool changed = false;
-      final List<String> updatedPackages = [];
-      for (final pkg in packages) {
-        // Each pkg is a Map like: {"package": "name", "kind": "direct", "current": {...}, "resolvable": {...}}
-        final pkgMap = pkg is Map<String, dynamic> ? pkg : null;
-        if (pkgMap == null) continue;
-
-        final packageName = pkgMap['package'] as String?;
-        if (packageName == null) continue;
-
-        // Only update direct and dev dependencies
-        final kind = pkgMap['kind'] as String?;
-        if (kind != 'direct' && kind != 'dev') continue;
-
-        final resolvable = pkgMap['resolvable'];
-        final resolvableMap = resolvable is Map<String, dynamic>
-            ? resolvable
-            : null;
-        if (resolvableMap == null) continue;
-
-        final newVersion = resolvableMap['version']?.toString();
-        if (newVersion == null || newVersion.isEmpty) continue;
-
-        final current = pkgMap['current'];
-        final currentMap = current is Map<String, dynamic> ? current : null;
-        final currentVersion = currentMap?['version']?.toString();
-
-        // If no current version or same as new version, skip
-        if (currentVersion == null || currentVersion == newVersion) {
-          continue;
-        }
-
-        // Update dependencies or dev_dependencies
-        final depPath = ['dependencies', packageName];
-        final devDepPath = ['dev_dependencies', packageName];
-        final pathToUpdate = kind == 'direct' ? depPath : devDepPath;
-
-        try {
-          // Parse at the path to make sure it exists
-          yamlEditor.parseAt(pathToUpdate).value;
-          // Update with new version
-          yamlEditor.update(pathToUpdate, newVersion);
-          changed = true;
-          updatedPackages.add('$packageName: $currentVersion → $newVersion');
-        } catch (_) {
-          // Continue to next package if this one fails
-          continue;
-        }
-      }
-
-      // 5. Write modified YAML back to pubspec.yaml
-      if (changed) {
-        await pubspecFile.writeAsString(yamlEditor.toString());
-      }
-
-      // 6. Run flutter pub get
-      await _runCommand('flutter', [
-        'pub',
-        'get',
-      ], workingDirectory: currentProjectPath);
-
-      // 7. Re-analyze the project
       await _analyzeProject();
 
-      // 8. Show snackbar
       if (mounted) {
-        if (changed) {
+        if (updatedPackages.isNotEmpty) {
           MessageBox.showSuccess(
             context,
             'Packages upgraded to compatible versions!',
