@@ -293,7 +293,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     );
 
     if (existingIndex == -1) {
-      final Mode language = _getLanguageForFile(filePath);
+      final language = FileTypeUtils.languageForFile(filePath);
       String content = '';
       bool isImage = FileTypeUtils.isImageFile(filePath);
 
@@ -320,28 +320,6 @@ class MainLayoutState extends ConsumerState<MainLayout> {
           updatedDocuments.length - 1;
     } else {
       ref.read(activeDocumentIndexProvider.notifier).state = existingIndex;
-    }
-  }
-
-  /// Maps a file path to the syntax highlighter language used by the editor.
-  Mode _getLanguageForFile(String filePath) {
-    if (filePath.isEmpty) {
-      return plaintext;
-    }
-    final extension = filePath.split('.').last.toLowerCase();
-    switch (extension) {
-      case 'dart':
-        return dart;
-      case 'yaml':
-      case 'yml':
-        return yaml;
-      case 'arb':
-      case 'json':
-        return json;
-      case 'js':
-        return javascript;
-      default:
-        return plaintext;
     }
   }
 

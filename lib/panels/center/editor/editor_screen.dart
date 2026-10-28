@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:code_forge/code_forge.dart';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/panels/center/editor/editor_screen_header.dart';
@@ -18,10 +19,11 @@ import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_code_crafter/code_crafter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
+import 'package:re_highlight/styles/atom-one-dark.dart';
+import 'package:re_highlight/styles/atom-one-light.dart';
 
 /// Full-featured code editor widget with syntax highlighting, search, diff view, and file-save support.
 class EditorScreen extends StatefulWidget {
@@ -84,9 +86,11 @@ class _EditorScreenState extends State<EditorScreen> {
 
   bool _caseSensitive = false;
 
-  late CodeCrafterController _codeController;
+  late CodeForgeController _codeController;
 
-  late GlobalKey _codeCrafterKey;
+  Map<String, TextStyle>? _codeTheme;
+
+  ThemeData? _codeThemeSource;
 
   late String _currentFile;
 
@@ -131,20 +135,12 @@ class _EditorScreenState extends State<EditorScreen> {
     super.initState();
     _currentFile = widget.documentState?.filePath ?? '';
 
-    // Create unique key for this editor instance
-    _codeCrafterKey = GlobalKey(
-      debugLabel: 'CodeCrafter-${_currentFile.hashCode}',
-    );
-
-    _codeController = CodeCrafterController();
+    _codeController = CodeForgeController();
     _searchFocusNode = FocusNode();
 
     // Initialize from document state (always provided by CenterPanel)
     _codeController.text = widget.documentState!.content;
     _codeController.selection = widget.documentState!.selection;
-    if (widget.documentState!.language != null) {
-      _codeController.language = widget.documentState!.language;
-    }
     _isDirty = widget.documentState!.isDirty;
     _savedText = widget.documentState!.content;
 
@@ -202,9 +198,6 @@ class _EditorScreenState extends State<EditorScreen> {
         _currentFile = widget.documentState!.filePath;
 
         _codeController.text = widget.documentState!.content;
-        if (widget.documentState!.language != null) {
-          _codeController.language = widget.documentState!.language;
-        }
 
         // Re-add listener after updates
         _codeController.addListener(_onCodeChanged);
@@ -330,25 +323,18 @@ class _EditorScreenState extends State<EditorScreen> {
                             ),
                           // Editor content
                           Expanded(
-                            child: CodeCrafter(
-                              key: _codeCrafterKey,
+                            child: CodeForge(
                               controller: _codeController,
-                              enableGutterDivider: false, // they have a bug
+                              language:
+                                  widget.documentState?.language ??
+                                  FileTypeUtils.languageForFile(_currentFile),
                               gutterStyle: GutterStyle(
-                                dividerColor: Colors.grey.withAlpha(
-                                  AppSize.gutterDividerAlpha.toInt(),
-                                ),
-                                dividerThickness: AppSize.borderThin,
                                 lineNumberStyle: TextStyle(
-                                  // fontFamily: 'monospace',
                                   letterSpacing: -1,
-
                                   color: Theme.of(context).colorScheme.onSurface
                                       .withValues(alpha: AppOpacity.disabled),
                                 ),
                               ),
-
-                              // textStyle: const TextStyle(fontFamily: 'monospace'),
                               editorTheme: _getCodeTheme(),
                             ),
                           ),
@@ -381,34 +367,51 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
-  /// Handles `_EditorScreenState.findEditableText`.
-  EditableText? findEditableText(BuildContext context) {
-    EditableText? result;
-    context.visitChildElements((element) {
-      if (element.widget is EditableText) {
-        result = element.widget as EditableText;
-      } else {
-        result = findEditableText(element);
-      }
-      if (result != null) return;
-    });
-    return result;
-  }
+  /// Builds syntax highlight styles from a full highlight.js theme with the
+  /// app's own colors layered on top.
+  Map<String, TextStyle> _buildCodeTheme(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final baseTextColor = theme.colorScheme.onPrimary;
 
-  /// Handles `_EditorScreenState.findFocusableElement`.
-  FocusNode? findFocusableElement(BuildContext context) {
-    FocusNode? result;
-    void search(Element element) {
-      final widget = element.widget;
-      if (widget is EditableText) {
-        result = widget.focusNode;
-        return;
-      }
-      element.visitChildren(search);
-    }
-
-    context.visitChildElements(search);
-    return result;
+    return {
+      ...(isDark ? atomOneDarkTheme : atomOneLightTheme),
+      'root': TextStyle(
+        backgroundColor: theme.colorScheme.surface,
+        color: theme.colorScheme.onSurface,
+      ),
+      'comment': TextStyle(
+        color: isDark
+            ? Colors.green[AppShade.soft]
+            : Colors.green[AppShade.deep],
+      ),
+      'keyword': TextStyle(
+        color: isDark
+            ? Colors.purple[AppShade.soft]
+            : Colors.purple[AppShade.strong],
+        fontWeight: FontWeight.bold,
+      ),
+      'string': TextStyle(
+        color: isDark ? Colors.red[AppShade.soft] : Colors.red[AppShade.strong],
+      ),
+      'number': TextStyle(
+        color: isDark
+            ? Colors.blue[AppShade.soft]
+            : Colors.blue[AppShade.strong],
+      ),
+      'variable': TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+      'title.class_': TextStyle(
+        color: isDark
+            ? Colors.blue[AppShade.soft]
+            : Colors.blue[AppShade.strong],
+        fontWeight: FontWeight.bold,
+      ),
+      'title.function_': TextStyle(
+        color: isDark
+            ? Colors.blue[AppShade.muted]
+            : Colors.blue[AppShade.strong],
+      ),
+      'operator': TextStyle(color: baseTextColor, fontWeight: FontWeight.bold),
+    };
   }
 
   Widget _buildDiffView() {
@@ -434,78 +437,41 @@ class _EditorScreenState extends State<EditorScreen> {
 
   /// Scrolls the editor so the current text selection is visible.
   void _ensureSelectionVisible() {
-    if (!mounted || _codeController.selection.isCollapsed) return;
+    if (!mounted) return;
 
     try {
-      // Find the CodeCrafter widget in the tree
-      final codeCrafterElement = _codeCrafterKey.currentContext;
-      if (codeCrafterElement == null) return;
-
-      // Calculate line number
-      final text = _codeController.text;
       final selectionStart = _codeController.selection.baseOffset;
-      final textBeforeSelection = text.substring(0, selectionStart);
-      final lineNumber = textBeforeSelection.split('\n').length;
-
-      // Find all scrollables and choose the best one
-      final List<ScrollableState> allScrollables = [];
-
-      void findAllScrollables(Element element) {
-        if (element.widget is Scrollable) {
-          final scrollableState = element
-              .findAncestorStateOfType<ScrollableState>();
-          if (scrollableState != null) {
-            allScrollables.add(scrollableState);
-          }
-        }
-        element.visitChildElements(findAllScrollables);
-      }
-
-      codeCrafterElement.visitChildElements(findAllScrollables);
-
-      // Choose the best scrollable (one with reasonable max extent, not infinite)
-      ScrollableState? mainEditorScrollable;
-      for (final scrollable in allScrollables) {
-        final maxExtent = scrollable.position.maxScrollExtent;
-        if (maxExtent < EditorConfig.scrollableExtentMax &&
-            maxExtent > EditorConfig.scrollableExtentMin) {
-          // Reasonable bounds
-          mainEditorScrollable = scrollable;
-          break;
-        }
-      }
-
-      // If no scrollable with reasonable bounds found, use the first one
-      if (mainEditorScrollable == null && allScrollables.isNotEmpty) {
-        mainEditorScrollable = allScrollables.first;
-      }
-
-      // Scroll the main editor scrollable
-      if (mainEditorScrollable != null) {
-        final double targetScrollOffset =
-            (lineNumber - EditorConfig.contextLinesAboveTarget) *
-            EditorConfig.lineHeight; // Start lines above target
-        final double clampedOffset = targetScrollOffset.clamp(
-          0.0,
-          mainEditorScrollable.position.maxScrollExtent,
-        );
-
-        // Only scroll vertically, don't affect horizontal position
-        if (mainEditorScrollable.position.pixels != clampedOffset) {
-          mainEditorScrollable.position.jumpTo(clampedOffset);
-        }
-      } else {
-        _logger.warning('Main editor scrollable not found, using fallback');
-        // Fallback: Try Scrollable.ensureVisible
-        Scrollable.ensureVisible(
-          codeCrafterElement,
-          duration: AppDuration.editorScroll,
-          curve: Curves.easeOut,
-          alignment: AppOpacity.divider, // Center the selection in the viewport
-        );
-      }
+      if (selectionStart < 0) return;
+      _codeController.scrollToLine(
+        _codeController.getLineAtOffset(selectionStart),
+      );
     } catch (e) {
       _logger.severe('Scrolling error: $e');
+    }
+  }
+
+  /// Requests keyboard focus for the mounted code editor.
+  ///
+  /// CodeForge never removes its focus listener on dispose, so each mount
+  /// must own its focus node; it is reached through the controller instead.
+  void _focusEditor() {
+    _codeController.focusNode?.requestFocus();
+  }
+
+  /// Folds every outermost foldable region, leaving nested regions inside.
+  ///
+  /// Replaces `CodeForgeController.foldAll`, which crashes in code_forge
+  /// 11.4.0 on a null check whenever a scanned line has no fold range.
+  void _foldTopLevelRegions() {
+    final lineCount = _codeController.lineCount;
+    var line = 0;
+    while (line < lineCount) {
+      final existing = _codeController.foldings[line];
+      if (existing == null || !existing.isFolded) {
+        _codeController.toggleFold(line);
+      }
+      final fold = _codeController.foldings[line];
+      line = fold != null && fold.isFolded ? fold.endIndex + 1 : line + 1;
     }
   }
 
@@ -609,48 +575,19 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   /// Returns syntax highlight styles for the code editor based on active theme.
+  ///
+  /// The map is cached per app theme: CodeForge restarts its background
+  /// highlighter whenever it receives a new map, so rebuilding it on every
+  /// frame would discard highlighting before it ever completes.
   Map<String, TextStyle> _getCodeTheme() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseTextColor = Theme.of(context).colorScheme.onPrimary;
+    final theme = Theme.of(context);
+    if (_codeTheme != null && theme == _codeThemeSource) {
+      return _codeTheme!;
+    }
+    _codeThemeSource = theme;
+    _codeTheme = _buildCodeTheme(theme);
 
-    return {
-      'root': TextStyle(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        color: Theme.of(context).colorScheme.onSurface,
-      ),
-      'comment': TextStyle(
-        color: isDark
-            ? Colors.green[AppShade.soft]
-            : Colors.green[AppShade.deep],
-      ),
-      'keyword': TextStyle(
-        color: isDark
-            ? Colors.purple[AppShade.soft]
-            : Colors.purple[AppShade.strong],
-        fontWeight: FontWeight.bold,
-      ),
-      'string': TextStyle(
-        color: isDark ? Colors.red[AppShade.soft] : Colors.red[AppShade.strong],
-      ),
-      'number': TextStyle(
-        color: isDark
-            ? Colors.blue[AppShade.soft]
-            : Colors.blue[AppShade.strong],
-      ),
-      'variable': TextStyle(color: isDark ? Colors.white70 : Colors.black87),
-      'class': TextStyle(
-        color: isDark
-            ? Colors.blue[AppShade.soft]
-            : Colors.blue[AppShade.strong],
-        fontWeight: FontWeight.bold,
-      ),
-      'function': TextStyle(
-        color: isDark
-            ? Colors.blue[AppShade.muted]
-            : Colors.blue[AppShade.strong],
-      ),
-      'operator': TextStyle(color: baseTextColor, fontWeight: FontWeight.bold),
-    };
+    return _codeTheme!;
   }
 
   /// Computes the 1-based column number for the current cursor position.
@@ -815,13 +752,8 @@ class _EditorScreenState extends State<EditorScreen> {
     // Ensure the editor gets focus
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final focusNode = findFocusableElement(context);
-      if (focusNode != null) {
-        focusNode.requestFocus();
-      } else {
-        // Fallback: try to request focus on the current focus scope
-        FocusScope.of(context).requestFocus();
-      }
+      _ensureSelectionVisible();
+      _focusEditor();
     });
   }
 
@@ -865,10 +797,7 @@ class _EditorScreenState extends State<EditorScreen> {
     // Request focus on editor when navigating with keyboard shortcuts
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        final focusNode = findFocusableElement(context);
-        if (focusNode != null) {
-          focusNode.requestFocus();
-        }
+        _focusEditor();
       }
     });
   }
@@ -960,10 +889,7 @@ class _EditorScreenState extends State<EditorScreen> {
     // Request focus on editor when navigating with keyboard shortcuts
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        final focusNode = findFocusableElement(context);
-        if (focusNode != null) {
-          focusNode.requestFocus();
-        }
+        _focusEditor();
       }
     });
   }
@@ -1002,10 +928,15 @@ class _EditorScreenState extends State<EditorScreen> {
       _regionsExpanded = !_regionsExpanded;
     });
 
-    // Note: Actual folding functionality will be implemented when CodeCrafter
-    // supports folding operations. For now, this manages the UI state and icon.
-    // Future implementation may use LSP requests or direct folding methods
-    // depending on CodeCrafter's API.
+    try {
+      if (_regionsExpanded) {
+        _codeController.unfoldAll();
+      } else {
+        _foldTopLevelRegions();
+      }
+    } on StateError catch (e) {
+      _logger.warning('Folding unavailable: $e');
+    }
 
     _logger.info(
       'Toggle all regions requested: ${_regionsExpanded ? "expanded" : "collapsed"}',

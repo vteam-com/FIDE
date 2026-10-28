@@ -59,6 +59,16 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
     _loadSelectedPlatform();
   }
 
+  /// Ignores state updates once the panel is gone.
+  ///
+  /// Build, clean, and pod processes keep reporting output and completion
+  /// after awaits, often after the panel has been disposed.
+  @override
+  void setState(VoidCallback fn) {
+    if (!mounted) return;
+    super.setState(fn);
+  }
+
   Future<void> _loadSelectedPlatform() async {
     final prefs = await SharedPreferences.getInstance();
     final savedPlatform = prefs.getString('selected_platform') ?? 'android';

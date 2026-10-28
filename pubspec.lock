@@ -105,6 +105,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  code_forge:
+    dependency: "direct main"
+    description:
+      name: code_forge
+      sha256: c73d44c71b8f186f0ca72ea6e1696ca02a4ae7371fe949a49e63d679f9e8d50a
+      url: "https://pub.dev"
+    source: hosted
+    version: "11.4.0"
   collection:
     dependency: transitive
     description:
@@ -254,21 +262,21 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_code_crafter:
-    dependency: "direct main"
+  flutter_colorpicker:
+    dependency: transitive
     description:
-      name: flutter_code_crafter
-      sha256: a9ebba83549b0af6806487d6d1336a249c799591026f03360f10d43e19e5e414
+      name: flutter_colorpicker
+      sha256: "969de5f6f9e2a570ac660fb7b501551451ea2a1ab9e2097e89475f60e07816ea"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.1"
+    version: "1.1.0"
   flutter_driver:
     dependency: transitive
     description: flutter
     source: sdk
     version: "0.0.0"
   flutter_highlight:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: flutter_highlight
       sha256: "7b96333867aa07e122e245c033b8ad622e4e3a42a1a2372cbb098a2541d8782c"
@@ -339,7 +347,7 @@ packages:
     source: hosted
     version: "2.2.0"
   highlight:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: highlight
       sha256: "5353a83ffe3e3eca7df0abfb72dcf3fa66cc56b953728e7113ad4ad88497cf21"
@@ -463,6 +471,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.0"
+  markdown:
+    dependency: transitive
+    description:
+      name: markdown
+      sha256: ee85086ad7698b42522c6ad42fe195f1b9898e4d974a1af4576c1a3a176cada9
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.3.1"
+  markdown_widget:
+    dependency: transitive
+    description:
+      name: markdown_widget
+      sha256: b52c13d3ee4d0e60c812e15b0593f142a3b8a2003cde1babb271d001a1dbdc1c
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.2+8"
   matcher:
     dependency: transitive
     description:
@@ -671,6 +695,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.2"
+  re_highlight:
+    dependency: "direct main"
+    description:
+      name: re_highlight
+      sha256: "6c4ac3f76f939fb7ca9df013df98526634e17d8f7460e028bd23a035870024f2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.3"
   record_use:
     dependency: transitive
     description:
@@ -727,6 +759,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.2"
+  scroll_to_index:
+    dependency: transitive
+    description:
+      name: scroll_to_index
+      sha256: b707546e7500d9f070d63e5acf74fd437ec7eeeb68d3412ef7b0afada0b4f176
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.1"
   shared_preferences:
     dependency: "direct main"
     description:
@@ -876,6 +916,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
+  universal_io:
+    dependency: transitive
+    description:
+      name: universal_io
+      sha256: f63cbc48103236abf48e345e07a03ce5757ea86285ed313a6a032596ed9301e2
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.1"
   url_launcher:
     dependency: "direct main"
     description:
@@ -980,6 +1028,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.4"
+  visibility_detector:
+    dependency: transitive
+    description:
+      name: visibility_detector
+      sha256: dd5cc11e13494f432d15939c3aa8ae76844c42b723398643ce9addb88a5ed420
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.0+2"
   vm_service:
     dependency: transitive
     description:
