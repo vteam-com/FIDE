@@ -1,6 +1,5 @@
 // ignore_for_file:  use_build_context_synchronously, avoid_print
 
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:code_forge/code_forge.dart';
@@ -11,9 +10,11 @@ import 'package:fide/panels/center/editor/editor_screen_image_view.dart';
 import 'package:fide/panels/center/editor/editor_screen_search_bar.dart';
 import 'package:fide/panels/center/editor/editor_screen_status_bar.dart';
 import 'package:fide/panels/center/editor/editor_screen_unsupported_file_view.dart';
+import 'package:fide/panels/center/editor/editor_search.dart';
 import 'package:fide/panels/center/editor/large_file_message.dart';
 import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/code_formatter.dart';
 import 'package:fide/providers/editor_commands.dart';
 import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/providers/git_service.dart';
@@ -55,11 +56,14 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     implements EditorCommands {
   late final ActiveEditor _activeEditor;
 
+  /// Where edits, saves and formatting are published for the open tabs.
+  late final OpenDocumentsNotifier _documents = ref.read(
+    openDocumentsProvider.notifier,
+  );
+
   final Map<String, GitDiffStats?> _allGitDiffStats = {};
 
   bool _appIsActive = true;
-
-  bool _caseSensitive = false;
 
   late CodeForgeController _codeController;
 
@@ -68,8 +72,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   ThemeData? _codeThemeSource;
 
   late String _currentFile;
-
-  int _currentMatchIndex = -1;
 
   String? _diffNewText;
 
@@ -99,15 +101,12 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
   late FocusNode _searchFocusNode;
 
-  List<int> _searchMatches = [];
-
-  String _searchQuery = '';
+  /// Find-in-file query, options and matches.
+  final EditorSearch _search = EditorSearch();
 
   bool _showDiffView = false;
 
   bool _showSearch = false;
-
-  bool _wholeWord = false;
 
   @override
   void initState() {
@@ -175,8 +174,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   void didUpdateWidget(EditorScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Check if document state changed
-    if (widget.documentState != oldWidget.documentState) {
+    // Each keystroke publishes a new document object, so only a different
+    // file means the editor must load new content
+    if (widget.documentState?.filePath != oldWidget.documentState?.filePath) {
       if (widget.documentState != null) {
         // Temporarily remove listener to prevent notifications during programmatic update
         _codeController.removeListener(_onCodeChanged);
@@ -227,8 +227,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
     return Consumer(
       builder: (context, ref, _) {
-        final openDocuments = ref.watch(openDocumentsProvider);
-        final activeIndex = ref.watch(activeDocumentIndexProvider);
+        final openDocuments = ref.watch(openDocumentsProvider).documents;
+        final activeIndex = ref.watch(openDocumentsProvider).activeIndex;
 
         // Load git stats for all documents if not already loaded
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -245,7 +245,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
               isDirty: _isDirty,
               showDiffView: _showDiffView,
               onDocumentSelected: (newIndex) {
-                ref.read(activeDocumentIndexProvider.notifier).state = newIndex;
+                ref.read(openDocumentsProvider.notifier).activate(newIndex);
               },
               onToggleDiffView: () {
                 _toggleDiffView();
@@ -283,29 +283,21 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
                             EditorScreenSearchBar(
                               searchController: _searchController,
                               searchFocusNode: _searchFocusNode,
-                              caseSensitive: _caseSensitive,
-                              wholeWord: _wholeWord,
-                              currentMatchIndex: _currentMatchIndex,
-                              matchCount: _searchMatches.length,
+                              caseSensitive: _search.caseSensitive,
+                              wholeWord: _search.wholeWord,
+                              currentMatchIndex: _search.currentIndex,
+                              matchCount: _search.matches.length,
                               onSearchChanged: _performSearch,
                               onClose: _closeSearch,
                               onPreviousMatch: _previousMatch,
                               onNextMatch: _nextMatch,
                               onCaseSensitiveChanged: (value) {
-                                setState(() {
-                                  _caseSensitive = value;
-                                  if (_searchQuery.isNotEmpty) {
-                                    _performSearch(_searchQuery);
-                                  }
-                                });
+                                _search.caseSensitive = value;
+                                _performSearch(_search.query);
                               },
                               onWholeWordChanged: (value) {
-                                setState(() {
-                                  _wholeWord = value;
-                                  if (_searchQuery.isNotEmpty) {
-                                    _performSearch(_searchQuery);
-                                  }
-                                });
+                                _search.wholeWord = value;
+                                _performSearch(_search.query);
                               },
                             ),
                           // Editor content
@@ -350,13 +342,11 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
                             regionsExpanded: _regionsExpanded,
                             currentLineNumber: _getCurrentLineNumber(),
                             currentColumnNumber: _getCurrentColumnNumber(),
-                            currentMatchIndex: _currentMatchIndex,
-                            matchCount: _searchMatches.length,
+                            currentMatchIndex: _search.currentIndex,
+                            matchCount: _search.matches.length,
                             canFormat:
                                 !_showDiffView &&
-                                (_currentFile.endsWith('.dart') ||
-                                    _currentFile.endsWith('.json') ||
-                                    _currentFile.endsWith('.arb')),
+                                CodeFormatter.canFormat(_currentFile),
                             fileLanguage: _getFileLanguage(),
                             onToggleAllRegions: _toggleAllRegions,
                             onFormatFile: () {
@@ -453,9 +443,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     setState(() {
       _showSearch = false;
       _searchController.clear();
-      _searchQuery = '';
-      _searchMatches.clear();
-      _currentMatchIndex = -1;
+      _search.clear();
     });
     _searchFocusNode.unfocus();
   }
@@ -500,16 +488,11 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     }
   }
 
-  /// Formats the current file using Dart formatter or JSON pretty-printing.
+  /// Formats the editor's text, unsaved edits included, without saving it.
   Future<void> _formatFile() async {
     if (_currentFile.isEmpty) return;
 
-    final extension = _currentFile.split('.').last.toLowerCase();
-    final isDartFile = extension == 'dart';
-    final isJsonFile = extension == 'json' || extension == 'arb';
-
-    // Check if file type is supported for formatting
-    if (!isDartFile && !isJsonFile) {
+    if (!CodeFormatter.canFormat(_currentFile)) {
       MessageBox.showInfo(
         context,
         'Formatting is currently only supported for Dart, JSON, and ARB files',
@@ -520,53 +503,20 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     try {
       setState(() => _isLoading = true);
 
-      ProcessResult result;
+      final formattedContent = await ref
+          .read(codeFormatterProvider)
+          .format(_currentFile, _codeController.text);
 
-      if (isDartFile) {
-        // Run dart format on Dart files
-        result = await ref.read(processRunnerProvider).run('dart', [
-          'format',
-          _currentFile,
-        ]);
-      } else {
-        // For JSON/ARB files, use manual JSON formatting
-        result = await _formatJsonManually(_currentFile);
-      }
-
-      if (result.exitCode == 0) {
-        // Format successful, reload the file content
-        final file = File(_currentFile);
-        final formattedContent = await file.readAsString();
-
-        if (mounted) {
-          // Use addPostFrameCallback to ensure we're not in the middle of a build/layout
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              // Update the controller with formatted content
-              _codeController.text = formattedContent;
-              _savedText = formattedContent;
-
-              setState(() {
-                _isDirty = false;
-              });
-
-              // Update document state
-              if (widget.documentState != null) {
-                widget.documentState!.content = formattedContent;
-                widget.documentState!.isDirty = false;
-              }
-
-              MessageBox.showSuccess(context, 'File formatted successfully');
-            }
-          });
-        }
-      } else {
-        if (mounted) {
-          MessageBox.showError(
-            context,
-            'Error formatting file: ${result.stderr.toString().trim()}',
-          );
-        }
+      if (mounted) {
+        // Use addPostFrameCallback to ensure we're not in the middle of a build/layout
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            // An edit like any other: the change listener marks the buffer
+            // dirty (unless formatting changed nothing) and publishes it
+            _codeController.text = formattedContent;
+            MessageBox.showSuccess(context, 'File formatted successfully');
+          }
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -576,29 +526,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       if (mounted) {
         setState(() => _isLoading = false);
       }
-    }
-  }
-
-  /// Formats JSON or ARB content by decoding and re-encoding with indentation.
-  Future<ProcessResult> _formatJsonManually(String filePath) async {
-    try {
-      final file = File(filePath);
-      final content = await file.readAsString();
-
-      // Simple JSON validation and formatting
-      // This is a basic implementation - for production, consider using a proper JSON formatter
-      final dynamic jsonData = jsonDecode(content);
-      final formattedJson = JsonEncoder.withIndent('  ').convert(jsonData);
-
-      await file.writeAsString(formattedJson);
-      return ProcessResult(0, 0, '', ''); // Mock successful result
-    } catch (e) {
-      return ProcessResult(
-        1,
-        1,
-        '',
-        'Manual JSON formatting failed: $e',
-      ); // Mock error result
     }
   }
 
@@ -797,18 +724,18 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
   /// Selects and reveals the search match at the given match index.
   void _navigateToMatch(int index) {
-    if (index < 0 || index >= _searchMatches.length) return;
+    if (index < 0 || index >= _search.matches.length) return;
 
-    final offset = _searchMatches[index];
+    final offset = _search.matches[index];
 
     // Set selection to highlight the found text
     _codeController.selection = TextSelection(
       baseOffset: offset,
-      extentOffset: offset + _searchQuery.length,
+      extentOffset: offset + _search.query.length,
     );
 
     setState(() {
-      _currentMatchIndex = index;
+      _search.currentIndex = index;
     });
 
     // Ensure the selection is visible and properly displayed
@@ -828,9 +755,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
   /// Navigates to the next search match, wrapping at the end.
   void _nextMatch() {
-    if (_searchMatches.isEmpty) return;
-    final nextIndex = (_currentMatchIndex + 1) % _searchMatches.length;
-    _navigateToMatch(nextIndex);
+    if (!_search.hasMatches) return;
+    _navigateToMatch(_search.nextIndex);
 
     // Request focus on editor when navigating with keyboard shortcuts
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -853,12 +779,12 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       _isDirty = currentText != _savedText;
     });
 
-    // Update document state if we have document state
-    if (widget.documentState != null) {
-      widget.documentState!.content = _codeController.text;
-      widget.documentState!.selection = _codeController.selection;
-      widget.documentState!.isDirty = _isDirty;
-    }
+    _documents.update(
+      _currentFile,
+      content: _codeController.text,
+      selection: _codeController.selection,
+      isDirty: _isDirty,
+    );
 
     // Notify outline panel to refresh when content changes
     widget.onContentChanged?.call();
@@ -868,61 +794,16 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     ref.read(editorCursorLineProvider.notifier).state = currentLine;
   }
 
-  /// Recomputes search matches for the current query and options.
+  /// Recomputes search matches for [query] and selects the first one.
   void _performSearch(String query) {
-    if (query.isEmpty) {
-      setState(() {
-        _searchMatches.clear();
-        _currentMatchIndex = -1;
-      });
-      return;
-    }
-
-    final text = _codeController.text;
-    final matches = <int>[];
-    final searchText = _caseSensitive ? query : query.toLowerCase();
-    final content = _caseSensitive ? text : text.toLowerCase();
-
-    int start = 0;
-    while (true) {
-      final index = content.indexOf(searchText, start);
-      if (index == -1) break;
-
-      if (_wholeWord) {
-        // Check if it's a whole word
-        final before =
-            index == 0 || !RegExp(r'\w').hasMatch(content[index - 1]);
-        final after =
-            index + searchText.length == content.length ||
-            !RegExp(r'\w').hasMatch(content[index + searchText.length]);
-        if (before && after) {
-          matches.add(index);
-        }
-      } else {
-        matches.add(index);
-      }
-
-      start = index + 1;
-    }
-
-    setState(() {
-      _searchMatches = matches;
-      _currentMatchIndex = matches.isNotEmpty ? 0 : -1;
-      _searchQuery = query;
-    });
-
-    if (matches.isNotEmpty) {
-      _navigateToMatch(0);
-    }
+    setState(() => _search.run(_codeController.text, query));
+    if (_search.hasMatches) _navigateToMatch(0);
   }
 
   /// Navigates to the previous search match, wrapping at the start.
   void _previousMatch() {
-    if (_searchMatches.isEmpty) return;
-    final prevIndex = _currentMatchIndex <= 0
-        ? _searchMatches.length - 1
-        : _currentMatchIndex - 1;
-    _navigateToMatch(prevIndex);
+    if (!_search.hasMatches) return;
+    _navigateToMatch(_search.previousIndex);
 
     // Request focus on editor when navigating with keyboard shortcuts
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -946,10 +827,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
           _isDirty = false;
         });
 
-        // Update document state if we have document state
-        if (widget.documentState != null) {
-          widget.documentState!.isDirty = false;
-        }
+        _documents.update(_currentFile, isDirty: false);
 
         MessageBox.showSuccess(context, 'File saved successfully');
       }
@@ -1048,7 +926,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
         _closeSearch();
       } else {
         _showSearch = true;
-        _searchController.text = _searchQuery;
+        _searchController.text = _search.query;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             _searchFocusNode.requestFocus();

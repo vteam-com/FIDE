@@ -1,18 +1,19 @@
 // ignore_for_file: deprecated_member_use
-// ignore: fcheck_secrets
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/build_artifacts.dart';
 import 'package:fide/models/flutter_platform.dart';
-import 'package:fide/providers/process_runner.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 /// Represents `PlatformInfoSection`.
-class PlatformInfoSection extends StatefulWidget {
+class PlatformInfoSection extends ConsumerStatefulWidget {
   const PlatformInfoSection({
     super.key,
     required this.selectedPlatform,
@@ -39,10 +40,28 @@ class PlatformInfoSection extends StatefulWidget {
   final String selectedPlatform;
 
   @override
-  State<PlatformInfoSection> createState() => _PlatformInfoSectionState();
+  ConsumerState<PlatformInfoSection> createState() =>
+      _PlatformInfoSectionState();
 }
 
-class _PlatformInfoSectionState extends State<PlatformInfoSection> {
+class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
+  BuildArtifacts _artifacts = BuildArtifacts.pending;
+
+  @override
+  void initState() {
+    super.initState();
+    _inspectArtifacts();
+  }
+
+  @override
+  void didUpdateWidget(PlatformInfoSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.projectPath != widget.projectPath ||
+        oldWidget.selectedPlatform != widget.selectedPlatform) {
+      _inspectArtifacts();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SectionPanel(
@@ -133,7 +152,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                     ),
                     Expanded(
                       child: Text(
-                        _getLastBuildTime(),
+                        _artifacts.lastBuildTime,
                         style: TextStyle(
                           fontSize: AppFontSize.metadata,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -161,7 +180,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                     ),
                     Expanded(
                       child: Text(
-                        _getAppSize(),
+                        _artifacts.size,
                         style: TextStyle(
                           fontSize: AppFontSize.metadata,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -190,7 +209,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                     ),
                     Expanded(
                       child: Text(
-                        _getBuildLocation().split('/').last,
+                        _artifacts.location.split('/').last,
                         style: TextStyle(
                           fontSize: AppFontSize.metadata,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -281,7 +300,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _getPlatformIconPath().split('/').last,
+                          _iconPath.split('/').last,
                           style: TextStyle(
                             fontSize: AppFontSize.metadata,
                             fontWeight: FontWeight.w500,
@@ -291,7 +310,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          _getPlatformIconPath(),
+                          _iconPath,
                           style: TextStyle(
                             fontSize: AppFontSize.badge,
                             color: Theme.of(context)
@@ -323,7 +342,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                           ],
                         ),
                       ),
-                      if (!_getPlatformIconPath().startsWith('assets/'))
+                      if (!_iconPath.startsWith('assets/'))
                         PopupMenuItem<String>(
                           value: 'open_finder',
                           child: Row(
@@ -354,9 +373,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                     onSelected: (value) {
                       switch (value) {
                         case 'copy_path':
-                          Clipboard.setData(
-                            ClipboardData(text: _getPlatformIconPath()),
-                          );
+                          Clipboard.setData(ClipboardData(text: _iconPath));
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Path copied to clipboard'),
@@ -364,14 +381,14 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                           );
                           break;
                         case 'open_finder':
-                          _openFolder(_getPlatformIconPath());
+                          _openFolder(_iconPath);
                           break;
                         case 'select_in_fide':
                           // Show a message for now since we don't have access to the explorer
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                'Select in FIDE-Explorer: ${_getPlatformIconPath()}',
+                                'Select in FIDE-Explorer: $_iconPath',
                               ),
                             ),
                           );
@@ -390,7 +407,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
 
   /// Returns the platform icon widget — either an SVG asset or a Material icon fallback.
   Widget _buildIcon() {
-    final iconPath = _getPlatformIconPath();
+    final iconPath = _iconPath;
     if (iconPath.startsWith('assets/')) {
       // Use SVG asset
       return SvgPicture.asset(
@@ -417,136 +434,11 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
     }
   }
 
-  /// Searches the project directory for the platform app icon and returns its path, or `null` if not found.
-  String? _findAppIconPath() {
-    switch (widget.selectedPlatform) {
-      case 'android':
-        // Check for common Android icon paths
-        final androidPaths = [
-          '${widget.projectPath}/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png',
-          '${widget.projectPath}/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png',
-          '${widget.projectPath}/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png',
-          '${widget.projectPath}/android/app/src/main/res/mipmap-hdpi/ic_launcher.png',
-          '${widget.projectPath}/android/app/src/main/res/mipmap-mdpi/ic_launcher.png',
-          '${widget.projectPath}/android/app/src/main/res/drawable/ic_launcher.png',
-        ];
-        for (final path in androidPaths) {
-          if (File(path).existsSync()) return path;
-        }
-        break;
-
-      case 'ios':
-        // Check iOS icon paths (icon with the highest resolution)
-        final iosPaths = [
-          '${widget.projectPath}/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png',
-          '${widget.projectPath}/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png',
-          '${widget.projectPath}/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png',
-          '${widget.projectPath}/ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png',
-        ];
-        for (final path in iosPaths) {
-          if (File(path).existsSync()) return path;
-        }
-        break;
-
-      case 'macos':
-        // Check macOS icon paths from the actual project structure
-        final macosPaths = [
-          '${widget.projectPath}/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png',
-          '${widget.projectPath}/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png',
-          '${widget.projectPath}/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png',
-          '${widget.projectPath}/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png',
-        ];
-        for (final path in macosPaths) {
-          if (File(path).existsSync()) return path;
-        }
-        break;
-
-      case 'windows':
-        // Windows ICO file
-        final windowsIcon =
-            '${widget.projectPath}/windows/runner/resources/app_icon.ico';
-        if (File(windowsIcon).existsSync()) return windowsIcon;
-        break;
-
-      case 'web':
-        // Try common web favicon paths
-        final webIcons = [
-          '${widget.projectPath}/web/favicon.png',
-          '${widget.projectPath}/web/icons/Icon-192.png',
-          '${widget.projectPath}/web/icons/Icon-512.png',
-        ];
-        for (final path in webIcons) {
-          if (File(path).existsSync()) return path;
-        }
-        break;
-
-      case 'linux':
-        // Linux typically doesn't have app icons in the project
-        break;
-    }
-
-    return null; // No icon found
-  }
-
   /// Bundled icon for the selected platform, or Linux's for an unknown id.
   String get _genericIconPath {
     return (FlutterPlatform.fromId(widget.selectedPlatform) ??
             FlutterPlatform.linux)
         .iconAsset;
-  }
-
-  /// Calculates and returns the human-readable total build output size.
-  String _getAppSize() {
-    final buildDir = Directory(_getBuildLocation());
-    if (!buildDir.existsSync()) return 'Not built';
-
-    try {
-      var totalSize = 0;
-      var files = buildDir.listSync(recursive: true);
-      for (var file in files) {
-        if (file is File) {
-          totalSize += file.statSync().size;
-        }
-      }
-
-      if (totalSize == 0) return '0 B';
-
-      final units = ['B', 'KB', 'MB', 'GB'];
-      var i = 0;
-      var size = totalSize.toDouble();
-      while (size > AppMetric.fileSizeDivisor && i < units.length - 1) {
-        size /= AppMetric.fileSizeDivisor;
-        i++;
-      }
-
-      return '${size.toStringAsFixed(1)} ${units[i]}';
-    } catch (_) {
-      return 'Unknown';
-    }
-  }
-
-  /// Returns the filesystem path to the platform's build output directory.
-  String _getBuildLocation() {
-    final buildDir = Directory('${widget.projectPath}/build');
-    if (!buildDir.existsSync()) return 'No build directory found';
-
-    final platformSubdir =
-        '${widget.projectPath}/build/${widget.selectedPlatform}';
-    if (Directory(platformSubdir).existsSync()) {
-      return platformSubdir;
-    }
-
-    var files = buildDir.listSync(recursive: false, followLinks: false);
-    for (var file in files) {
-      if (file.path.contains(widget.selectedPlatform) ||
-          widget.selectedPlatform.contains(
-            file.path.split('/').last.toLowerCase(),
-          )) {
-        return file.path;
-      }
-    }
-
-    return buildDir.path;
   }
 
   /// Returns human-readable instructions for enabling this platform in the project.
@@ -571,36 +463,19 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
     }
   }
 
-  /// Returns a formatted string of the most recent build timestamp, or 'Never' if no build exists.
-  String _getLastBuildTime() {
-    final buildDir = Directory('${widget.projectPath}/build');
-    if (!buildDir.existsSync()) return 'Never';
+  /// The project's app icon, or the bundled one for the platform.
+  String get _iconPath => _artifacts.appIconPath ?? _genericIconPath;
 
-    DateTime? latestTime;
-    try {
-      var files = buildDir.listSync(recursive: true);
-      for (var file in files) {
-        if (file.statSync().modified.isAfter(
-          latestTime ?? DateTime.fromMillisecondsSinceEpoch(0),
-        )) {
-          latestTime = file.statSync().modified;
-        }
-      }
-    } catch (_) {
-      return 'Unknown';
+  /// Reads the build output off the UI thread's critical path; results for
+  /// a platform the user has since switched away from are dropped.
+  Future<void> _inspectArtifacts() async {
+    final platform = widget.selectedPlatform;
+    final artifacts = await ref
+        .read(buildArtifactsInspectorProvider)
+        .inspect(widget.projectPath, platform);
+    if (mounted && platform == widget.selectedPlatform) {
+      setState(() => _artifacts = artifacts);
     }
-
-    return latestTime?.toString().split('.').first ?? 'Unknown';
-  }
-
-  /// Resolves the best available icon path for the current platform, falling back to a generic asset.
-  String _getPlatformIconPath() {
-    final appIconPath = _findAppIconPath();
-    if (appIconPath != null) {
-      return appIconPath;
-    }
-
-    return _genericIconPath;
   }
 
   /// Opens the folder containing [path] in the system file manager.
@@ -615,7 +490,7 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
       final file = File(path);
       final directory = file.parent.path;
 
-      const ProcessRunner().revealInFileManager(directory);
+      ref.read(processRunnerProvider).revealInFileManager(directory);
     } catch (_) {
       // Ignore errors silently
     }

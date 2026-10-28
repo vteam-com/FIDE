@@ -9,6 +9,11 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
     ref.read(gitServiceProvider),
   );
 
+  /// Create, rename and delete flows for the context menu.
+  late final FileOperations _fileOperations = FileOperations(
+    ref.read(fileEntryServiceProvider),
+  );
+
   /// Expanded/collapsed state by directory path.
   Map<String, bool> get expandedState => panelState.expandedState;
 
@@ -19,20 +24,7 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
   Widget buildNoProjectView() {
     return Container(
       color: Theme.of(context).colorScheme.inverseSurface,
-      child: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.folder_open,
-              size: AppIconSize.emptyState,
-              color: Colors.grey,
-            ),
-            SizedBox(height: AppSpacing.xLarge),
-            Text('No project loaded'),
-          ],
-        ),
-      ),
+      child: const NoProjectPlaceholder(showIcon: true),
     );
   }
 
@@ -40,12 +32,7 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
   Widget buildNotLoadedView() {
     return Container(
       color: Theme.of(context).colorScheme.surface,
-      child: const Center(
-        child: Text(
-          'No project loaded',
-          style: TextStyle(fontSize: AppFontSize.title),
-        ),
-      ),
+      child: const NoProjectPlaceholder(),
     );
   }
 
@@ -53,15 +40,6 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
   void dispose() {
     panelState.dispose();
     super.dispose();
-  }
-
-  /// Handles a context-menu [action] chosen for [node].
-  void handleContextMenuAction(String action, ProjectNode node) {
-    if (action == 'open') {
-      openNode(node);
-    } else {
-      runNodeAction(action, node);
-    }
   }
 
   /// Opens [node] as the selected file, seeding its Git status first.
@@ -99,7 +77,7 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
     if (projectRoot == null) return;
 
     try {
-      await projectRoot!.enumerateContentsRecursive();
+      await const ProjectTreeReader().loadTree(projectRoot!);
       onProjectTreeChanged();
       if (mounted) {
         setState(() {});
@@ -109,29 +87,30 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
     }
   }
 
-  /// Runs a file-management context-menu [action] on [node]: reveal, copy
-  /// path, create, rename or delete. Unknown actions are ignored.
-  void runNodeAction(String action, ProjectNode node) {
+  /// Runs the context-menu [action] chosen for [node].
+  void runNodeAction(NodeAction action, ProjectNode node) {
     switch (action) {
-      case 'reveal':
-        FileOperations.revealInFileExplorer(node);
-      case 'copy_full_path':
+      case NodeAction.open:
+        openNode(node);
+      case NodeAction.reveal:
+        _reveal(node);
+      case NodeAction.copyFullPath:
         _copyPath(node.path, 'Full path copied to clipboard');
-      case 'copy_relative_path':
+      case NodeAction.copyRelativePath:
         if (projectRoot != null) {
           _copyPath(
             path.relative(node.path, from: projectRoot!.path),
             'Relative path copied to clipboard',
           );
         }
-      case 'new_file':
-        FileOperations.createNewFile(context, node, refreshProjectTree);
-      case 'new_folder':
-        FileOperations.createNewFolder(context, node, refreshProjectTree);
-      case 'rename':
-        FileOperations.renameFile(context, node, refreshProjectTree);
-      case 'delete':
-        FileOperations.deleteFile(context, node, refreshProjectTree);
+      case NodeAction.newFile:
+        _fileOperations.createNewFile(context, node, refreshProjectTree);
+      case NodeAction.newFolder:
+        _fileOperations.createNewFolder(context, node, refreshProjectTree);
+      case NodeAction.rename:
+        _fileOperations.renameFile(context, node, refreshProjectTree);
+      case NodeAction.delete:
+        _fileOperations.deleteFile(context, node, refreshProjectTree);
     }
   }
 
@@ -146,7 +125,7 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
       context,
       node,
       position,
-      handleContextMenuAction,
+      runNodeAction,
     );
   }
 
@@ -156,6 +135,19 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
     if (mounted) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(confirmation)));
+    }
+  }
+
+  /// Shows [node]'s folder (or the folder holding it) in the file manager.
+  Future<void> _reveal(ProjectNode node) async {
+    try {
+      await ref
+          .read(processRunnerProvider)
+          .revealInFileManager(
+            node.isDirectory ? node.path : path.dirname(node.path),
+          );
+    } catch (e) {
+      showError('Failed to reveal ${node.name}: $e');
     }
   }
 

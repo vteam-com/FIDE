@@ -13,6 +13,7 @@ import 'package:fide/providers/localization_service.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
@@ -306,7 +307,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     final projectRoot = ref.watch(currentProjectRootProvider);
 
     if (projectRoot == null) {
-      return const Center(child: Text('No project loaded'));
+      return const NoProjectPlaceholder();
     }
 
     if (_isLoading) {

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:fide/models/project_node.dart';
+import 'package:fide/providers/project_tree_reader.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 
@@ -131,7 +132,7 @@ class FileSystemWatcher {
       final isDirectory = entity == FileSystemEntityType.directory;
 
       // Create new ProjectNode
-      final newNode = await ProjectNode.fromFileSystemEntity(
+      final newNode = await const ProjectTreeReader().nodeFor(
         isDirectory ? Directory(filePath) : File(filePath),
       );
 

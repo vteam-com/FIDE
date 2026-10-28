@@ -6,12 +6,12 @@ import 'dart:io';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/localization_checks.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/providers/process_runner.dart';
 import 'package:logging/logging.dart';
+import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
 part 'localization_service.arb_service.dart';
@@ -218,13 +218,21 @@ class LocalizationService {
         .writeAsString(jsonEncode(frenchArbContent));
   }
 
-  /// Turns on `flutter: generate: true` in the project's pubspec.
+  /// Turns on `flutter: generate: true` in the project's pubspec, creating
+  /// the `flutter:` section when it is missing or empty.
   Future<void> _enableGenerate(String projectPath) async {
     final pubspecFile = File('$projectPath/pubspec.yaml');
     if (!await pubspecFile.exists()) return;
 
     final editor = YamlEditor(await pubspecFile.readAsString());
-    editor.update(['flutter', 'generate'], true);
+    final flutterSection = editor.parseAt([
+      'flutter',
+    ], orElse: () => wrapAsYamlNode(null));
+    if (flutterSection is YamlMap) {
+      editor.update(['flutter', 'generate'], true);
+    } else {
+      editor.update(['flutter'], {'generate': true});
+    }
     await pubspecFile.writeAsString(editor.toString());
   }
 

@@ -1,9 +1,9 @@
 // ignore: fcheck_dead_code
-import 'dart:io';
-
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_theme.dart';
+import 'package:fide/models/project_creation_request.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/project_creation_service.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/screens/create_project_step1.dart';
 import 'package:fide/screens/create_project_step2.dart';
@@ -157,10 +157,8 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   /// Checks whether Ollama is installed and running, updating the corresponding state fields.
   Future<void> _checkOllamaStatus() async {
     try {
-      final aiService = ref.read(aiServiceProvider);
-      _ollamaAvailable =
-          await aiService.isOllamaInstalled() &&
-          await aiService.isOllamaRunning();
+      final ollama = ref.read(ollamaInstallerProvider);
+      _ollamaAvailable = await ollama.isInstalled() && await ollama.isRunning();
 
       if (mounted) {
         setState(() {
@@ -206,365 +204,43 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   late String _userFinalProjectName;
   late String _userDirectory;
 
-  /// Initialises loading actions and transitions to the creation screen before executing the project creation.
-  void _startProjectCreation() {
-    // Disable Open button while creating - already set in _nextStep
+  /// Resets the progress list and runs project creation, enabling the Open
+  /// button once it succeeds.
+  Future<void> _startProjectCreation() async {
+    ref.read(loadingActionsProvider.notifier).state =
+        ProjectCreationService.initialActions();
 
-    // Initialize loading actions
-    ref.read(loadingActionsProvider.notifier).state = [
-      LoadingAction(
-        AppMetric.projectCreateStepValidate,
-        'Validating settings and checking dependencies...',
-        LoadingStatus.pending,
-      ),
-      LoadingAction(
-        AppMetric.projectCreateStepFlutterCreate,
-        'Creating Flutter project...',
-        LoadingStatus.pending,
-      ),
-      LoadingAction(
-        AppMetric.projectCreateStepLocalization,
-        'Setting up localization...',
-        LoadingStatus.pending,
-      ),
-      LoadingAction(
-        AppMetric.projectCreateStepCodegen,
-        'Generating initial code structure...',
-        LoadingStatus.pending,
-      ),
-      LoadingAction(
-        AppMetric.projectCreateStepGitInit,
-        'Initializing Git repository...',
-        LoadingStatus.pending,
-      ),
-      LoadingAction(
-        AppMetric.projectCreateStepVerification,
-        'Final verification and cleanup...',
-        LoadingStatus.pending,
-      ),
-    ];
-
-    // Execute the creation process
-    _executeProjectCreation();
-  }
-
-  /// Runs the full project creation pipeline, updating loading actions as each step completes.
-  Future<void> _executeProjectCreation() async {
-    final projectPath =
-        '$_userDirectory/${_userFinalProjectName.isNotEmpty ? _userFinalProjectName : _userProjectName}';
-
-    try {
-      // Step 1: Validate settings and check dependencies
-      await _updateLoadingAction(
-        AppMetric.projectCreateStepValidate,
-        'Validating settings and checking dependencies...',
-        LoadingStatus.pending,
-      );
-
-      if (!_flutterAvailable) {
-        throw Exception(
-          'Flutter is not available. Please install Flutter and restart FIDE.',
+    final created = await ref
+        .read(projectCreationServiceProvider)
+        .create(
+          ProjectCreationRequest(
+            name: _newProjectName,
+            parentDirectory: _userDirectory,
+            flutterAvailable: _flutterAvailable,
+            languages: _wantsLocalization ? {..._selectedLanguages} : null,
+            useAi: _useAI && _ollamaAvailable,
+            initGit: _gitAvailable,
+          ),
+          _updateLoadingAction,
         );
-      }
-
-      await _updateLoadingAction(
-        AppMetric.projectCreateStepValidate,
-        'Dependencies validated successfully',
-        LoadingStatus.success,
-      );
-
-      // Step 2: Create Flutter project
-      await _updateLoadingAction(
-        AppMetric.projectCreateStepFlutterCreate,
-        'Creating Flutter project...',
-        LoadingStatus.pending,
-      );
-
-      final createResult = await ref
-          .read(processRunnerProvider)
-          .run('flutter', [
-            'create',
-            '--project-name',
-            _userFinalProjectName.isNotEmpty
-                ? _userFinalProjectName
-                : _userProjectName,
-            '--platforms',
-            'android,ios,web,linux,macos,windows',
-            projectPath,
-          ], workingDirectory: _userDirectory)
-          .timeout(
-            AppDuration.projectCreateTimeout,
-            onTimeout: () => ProcessResult(
-              0,
-              -1,
-              '',
-              'Flutter create command timed out after 60 seconds',
-            ),
-          );
-
-      if (createResult.exitCode != 0) {
-        throw Exception(
-          'Failed to create Flutter project: ${createResult.stderr}',
-        );
-      }
-
-      await _updateLoadingAction(
-        AppMetric.projectCreateStepFlutterCreate,
-        'Flutter project created successfully',
-        LoadingStatus.success,
-      );
-
-      // Step 3: Set up localization
-      await _updateLoadingAction(
-        AppMetric.projectCreateStepLocalization,
-        'Setting up localization...',
-        LoadingStatus.pending,
-      );
-
-      if (_wantsLocalization) {
-        final localizationService = ref.read(localizationServiceProvider);
-        await localizationService.initializeLocalization(
-          projectPath,
-          tolerateToolFailures: true,
-        );
-
-        // Setup selected languages - create ARB files for each language
-        for (final lang in _selectedLanguages) {
-          if (lang != 'en') {
-            final arbPath = '$projectPath/lib/l10n/app_$lang.arb';
-            final file = File(arbPath);
-            if (!await file.exists()) {
-              await file.writeAsString('{}\n');
-            }
-          }
-        }
-
-        await _updateLoadingAction(
-          AppMetric.projectCreateStepLocalization,
-          'Localization setup completed',
-          LoadingStatus.success,
-        );
-      } else {
-        await _updateLoadingAction(
-          AppMetric.projectCreateStepLocalization,
-          'Localization skipped',
-          LoadingStatus.success,
-        );
-      }
-
-      // Step 4: Generate initial code structure using AI
-      await _updateLoadingAction(
-        AppMetric.projectCreateStepCodegen,
-        'Generating initial code structure...',
-        LoadingStatus.pending,
-      );
-
-      if (_useAI && _ollamaAvailable) {
-        try {
-          final aiService = ref.read(aiServiceProvider);
-          final projectName = _userFinalProjectName.isNotEmpty
-              ? _userFinalProjectName
-              : _userProjectName;
-
-          // Generate a basic project description based on localization settings
-          final baseDescription = _wantsLocalization
-              ? 'a Flutter app with localization support using provider for state management'
-              : 'a Flutter app using provider for state management';
-
-          final fullDescription =
-              '$baseDescription with the name "$projectName". Include proper project structure, basic routing, and theme configuration.';
-
-          // Generate complete project files with timeout
-          final aiFuture = aiService.generateProject(
-            projectName,
-            fullDescription,
-          );
-
-          final generatedFiles = await aiFuture.timeout(
-            AppDuration.aiProjectCreateTimeout,
-            onTimeout: () => {
-              'error': 'AI generation timed out after 120 seconds',
-            },
-          );
-
-          if (generatedFiles.containsKey('error')) {
-            await _updateLoadingAction(
-              AppMetric.projectCreateStepCodegen,
-              'AI code generation failed: ${generatedFiles['error']}',
-              LoadingStatus.success,
-            );
-          } else {
-            // Write generated files
-            if (generatedFiles.containsKey('pubspec.yaml')) {
-              final pubspecFile = File('$projectPath/pubspec.yaml');
-              await pubspecFile.writeAsString(generatedFiles['pubspec.yaml']!);
-            }
-
-            if (generatedFiles.containsKey('lib/main.dart')) {
-              final mainFile = File('$projectPath/lib/main.dart');
-              await mainFile.writeAsString(generatedFiles['lib/main.dart']!);
-            }
-
-            if (generatedFiles.containsKey('README.md')) {
-              final readmeFile = File('$projectPath/README.md');
-              await readmeFile.writeAsString(generatedFiles['README.md']!);
-            }
-
-            await _updateLoadingAction(
-              AppMetric.projectCreateStepCodegen,
-              'AI-generated project files completed',
-              LoadingStatus.success,
-            );
-          }
-        } catch (e) {
-          await _updateLoadingAction(
-            AppMetric.projectCreateStepCodegen,
-            'AI code generation failed, using defaults',
-            LoadingStatus.success,
-          );
-        }
-      } else {
-        await _updateLoadingAction(
-          AppMetric.projectCreateStepCodegen,
-          'AI not available, using default structure',
-          LoadingStatus.success,
-        );
-      }
-
-      // Step 5: Initialize Git repository
-      await _updateLoadingAction(
-        AppMetric.projectCreateStepGitInit,
-        'Initializing Git repository...',
-        LoadingStatus.pending,
-      );
-
-      if (_gitAvailable) {
-        try {
-          final gitInitResult = await ref
-              .read(processRunnerProvider)
-              .run('git', ['init'], workingDirectory: projectPath)
-              .timeout(
-                AppDuration.gitInitTimeout,
-                onTimeout: () =>
-                    ProcessResult(0, -1, '', 'Git init command timed out'),
-              );
-          if (gitInitResult.exitCode == 0) {
-            // Add initial commit
-            await ref
-                .read(processRunnerProvider)
-                .run('git', ['add', '.'], workingDirectory: projectPath)
-                .timeout(
-                  AppDuration.gitOperationTimeout,
-                  onTimeout: () =>
-                      ProcessResult(0, -1, '', 'Git add command timed out'),
-                );
-            await ref
-                .read(processRunnerProvider)
-                .run('git', [
-                  'commit',
-                  '-m',
-                  'Initial commit',
-                ], workingDirectory: projectPath)
-                .timeout(
-                  AppDuration.gitOperationTimeout,
-                  onTimeout: () =>
-                      ProcessResult(0, -1, '', 'Git commit command timed out'),
-                );
-            await _updateLoadingAction(
-              AppMetric.projectCreateStepGitInit,
-              'Git repository initialized',
-              LoadingStatus.success,
-            );
-          } else {
-            await _updateLoadingAction(
-              AppMetric.projectCreateStepGitInit,
-              'Git initialization failed',
-              LoadingStatus.failed,
-            );
-          }
-        } catch (e) {
-          await _updateLoadingAction(
-            AppMetric.projectCreateStepGitInit,
-            'Git initialization failed',
-            LoadingStatus.failed,
-          );
-        }
-      } else {
-        await _updateLoadingAction(
-          AppMetric.projectCreateStepGitInit,
-          'Git not available, skipped',
-          LoadingStatus.success,
-        );
-      }
-
-      // Step 6: Final verification
-      await _updateLoadingAction(
-        AppMetric.projectCreateStepVerification,
-        'Final verification and cleanup...',
-        LoadingStatus.pending,
-      );
-
-      // Verify project structure
-      final pubspecFile = File('$projectPath/pubspec.yaml');
-      final mainFile = File('$projectPath/lib/main.dart');
-      final androidDir = Directory('$projectPath/android');
-      final iosDir = Directory('$projectPath/ios');
-
-      if (await pubspecFile.exists() &&
-          await mainFile.exists() &&
-          await androidDir.exists() &&
-          await iosDir.exists()) {
-        await _updateLoadingAction(
-          AppMetric.projectCreateStepVerification,
-          'Project verification completed successfully',
-          LoadingStatus.success,
-        );
-
-        if (mounted) {
-          setState(() {
-            _projectCreationComplete = true; // Enable Open button
-          });
-        }
-      } else {
-        throw Exception(
-          'Project verification failed - missing required files/directories',
-        );
-      }
-    } catch (e) {
-      // Mark current step as failed
-      final actions = ref.read(loadingActionsProvider);
-      final currentStep =
-          actions
-              .where((action) => action.status == LoadingStatus.pending)
-              .isNotEmpty
-          ? actions.firstWhere(
-              (action) => action.status == LoadingStatus.pending,
-            )
-          : actions.last;
-
-      await _updateLoadingAction(
-        currentStep.step,
-        'Error: ${e.toString()}',
-        LoadingStatus.failed,
-      );
-
-      // Log the error
-      print('Project creation failed: $e');
+    if (created && mounted) {
+      setState(() => _projectCreationComplete = true);
     }
   }
 
-  Future<void> _updateLoadingAction(
-    int step,
-    String text,
-    LoadingStatus status,
-  ) async {
+  /// Queues a progress change for the next batched UI update.
+  void _updateLoadingAction(int step, String text, LoadingStatus status) {
     _pendingActionUpdates[step] = LoadingAction(step, text, status);
     _scheduleLoadingUpdate();
   }
 
-  String? get _currentFullPathToNewProject => _userDirectory.isEmpty
-      ? null
-      : '$_userDirectory/${_userFinalProjectName.isNotEmpty ? _userFinalProjectName : _userProjectName}';
+  String? get _currentFullPathToNewProject =>
+      _userDirectory.isEmpty ? null : '$_userDirectory/$_newProjectName';
+
+  /// The package name the user settled on.
+  String get _newProjectName => _userFinalProjectName.isNotEmpty
+      ? _userFinalProjectName
+      : _userProjectName;
 
   void _onOpenProject() {
     widget.onOpenProject(_currentFullPathToNewProject!);

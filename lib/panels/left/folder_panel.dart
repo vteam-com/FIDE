@@ -85,15 +85,6 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
     }
   }
 
-  void _showFileContextMenu(ProjectNode node, Offset position) {
-    ContextMenuHandler.showFileContextMenu(
-      context,
-      node,
-      position,
-      runNodeAction,
-    );
-  }
-
   /// Handles `_findNodeByPath`.
   ProjectNode? _findNodeByPath(String targetPath) {
     if (panelState.projectRoot == null) return null;
@@ -390,7 +381,6 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
       rootPath: projectRoot!.path,
       onNodeTapped: toggleOrOpenNode,
       onShowContextMenu: showNodeContextMenu,
-      onShowFileContextMenu: _showFileContextMenu,
       onFileSelected: _handleFileSelection,
     );
   }

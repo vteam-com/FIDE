@@ -33,153 +33,139 @@ import 'package:re_highlight/languages/xml.dart';
 import 'package:re_highlight/languages/yaml.dart';
 import 'package:re_highlight/re_highlight.dart';
 
+part 'file_type_utils.file_category.dart';
 part 'file_type_utils.file_icon_utils.dart';
+part 'file_type_utils.file_type_info.dart';
 
-/// Represents `FileTypeUtils`.
+/// Answers what FIDE knows about a file from its extension: whether the
+/// editor opens it, how it is highlighted, and which icon it gets.
+///
+/// Everything comes from the one [_types] table, so supporting a new
+/// extension is a single entry.
 class FileTypeUtils {
-  // Well-known text file extensions that should open in text editor
-  static const List<String> supportedTextExtensions = [
-    // Programming languages
-    'arb',
-    'dart',
-    'c',
-    'cc',
-    'cpp',
-    'cxx',
-    'h',
-    'hpp',
-    'rs',
-    'go',
-    'java',
-    'kt',
-    'scala',
-    // xcode
-    'swift',
-    'm',
-    'mm',
-    // Web technologies
-    'js',
-    'ts',
-    'jsx',
-    'tsx',
-    'vue',
-    'svelte',
-    'html',
-    'xml',
-    'svg',
-    'css',
-    'scss',
-    'sass',
-    'less',
-    // Data formats
-    'json', 'yaml', 'yml', 'toml', 'xml', 'csv', 'dot',
-    // Documentation
-    'md', 'txt', 'rst', 'adoc',
-    // Configuration files
-    'ini', 'cfg', 'conf', 'properties', 'env', 'lock', 'plist',
-    // Scripts
-    'sh', 'bash', 'zsh', 'fish', 'ps1', 'bat', 'cmd',
+  static final Map<String, FileTypeInfo> _types = {
+    // Dart and Flutter
+    'dart': FileTypeInfo.text(FileCategory.dart, langDart),
+    'arb': FileTypeInfo.text(FileCategory.data, langJson),
+    // Compiled languages
+    'c': FileTypeInfo.text(FileCategory.source, langC),
+    'cc': FileTypeInfo.text(FileCategory.source, langCpp),
+    'cpp': FileTypeInfo.text(FileCategory.source, langCpp),
+    'cxx': FileTypeInfo.text(FileCategory.source, langCpp),
+    'h': FileTypeInfo.text(FileCategory.source, langC),
+    'hpp': FileTypeInfo.text(FileCategory.source, langCpp),
+    'rs': FileTypeInfo.text(FileCategory.source, langRust),
+    'go': FileTypeInfo.text(FileCategory.source, langGo),
+    'java': FileTypeInfo.text(FileCategory.source, langJava),
+    'kt': FileTypeInfo.text(FileCategory.source, langKotlin),
+    'scala': FileTypeInfo.text(FileCategory.source, langScala),
+    'swift': FileTypeInfo.text(FileCategory.source, langSwift),
+    'm': FileTypeInfo.text(FileCategory.source, langObjectivec),
+    'mm': FileTypeInfo.text(FileCategory.source, langObjectivec),
     // Python
-    'py', 'pyw', 'pyx', 'pxd', 'pxi',
-    // Other common text files
-    'log', 'out', 'gitignore', 'dockerignore',
-  ];
-
-  // Image file extensions that should display as images
-  static const List<String> supportedImageExtensions = [
-    'png',
-    'jpg',
-    'jpeg',
-    'gif',
-    'bmp',
-    'webp',
-    'tiff',
-    'tif',
-  ];
-
-  // Syntax highlighting language for each file extension shown in the editor
-  static final Map<String, Mode> _languageByExtension = {
-    'arb': langJson,
-    'bash': langBash,
-    'bat': langDos,
-    'c': langC,
-    'cc': langCpp,
-    'cfg': langIni,
-    'cmd': langDos,
-    'conf': langIni,
-    'cpp': langCpp,
-    'css': langCss,
-    'cxx': langCpp,
-    'dart': langDart,
-    'fish': langBash,
-    'go': langGo,
-    'h': langC,
-    'hpp': langCpp,
-    'html': langXml,
-    'ini': langIni,
-    'java': langJava,
-    'js': langJavascript,
-    'json': langJson,
-    'jsx': langJavascript,
-    'kt': langKotlin,
-    'less': langLess,
-    'm': langObjectivec,
-    'md': langMarkdown,
-    'mm': langObjectivec,
-    'plist': langXml,
-    'properties': langProperties,
-    'ps1': langPowershell,
-    'py': langPython,
-    'pyw': langPython,
-    'rs': langRust,
-    'sass': langScss,
-    'scala': langScala,
-    'scss': langScss,
-    'sh': langBash,
-    'svg': langXml,
-    'swift': langSwift,
-    'toml': langIni,
-    'ts': langTypescript,
-    'tsx': langTypescript,
-    'xml': langXml,
-    'yaml': langYaml,
-    'yml': langYaml,
-    'zsh': langBash,
+    'py': FileTypeInfo.text(FileCategory.source, langPython),
+    'pyw': FileTypeInfo.text(FileCategory.source, langPython),
+    'pyx': const FileTypeInfo.text(FileCategory.source),
+    'pxd': const FileTypeInfo.text(FileCategory.source),
+    'pxi': const FileTypeInfo.text(FileCategory.source),
+    // Web
+    'js': FileTypeInfo.text(FileCategory.javascript, langJavascript),
+    'ts': FileTypeInfo.text(FileCategory.markup, langTypescript),
+    'jsx': FileTypeInfo.text(FileCategory.markup, langJavascript),
+    'tsx': FileTypeInfo.text(FileCategory.markup, langTypescript),
+    'vue': const FileTypeInfo.text(FileCategory.markup),
+    'svelte': const FileTypeInfo.text(FileCategory.markup),
+    'html': FileTypeInfo.text(FileCategory.markup, langXml),
+    'xml': FileTypeInfo.text(FileCategory.markup, langXml),
+    'svg': FileTypeInfo.text(FileCategory.image, langXml),
+    'css': FileTypeInfo.text(FileCategory.stylesheet, langCss),
+    'scss': FileTypeInfo.text(FileCategory.stylesheet, langScss),
+    'sass': FileTypeInfo.text(FileCategory.stylesheet, langScss),
+    'less': FileTypeInfo.text(FileCategory.stylesheet, langLess),
+    // Data formats
+    'json': FileTypeInfo.text(FileCategory.data, langJson),
+    'yaml': FileTypeInfo.text(FileCategory.data, langYaml),
+    'yml': FileTypeInfo.text(FileCategory.data, langYaml),
+    'toml': FileTypeInfo.text(FileCategory.data, langIni),
+    'csv': const FileTypeInfo.text(FileCategory.data),
+    'dot': const FileTypeInfo.text(FileCategory.data),
+    // Documentation
+    'md': FileTypeInfo.text(FileCategory.document, langMarkdown),
+    'markdown': const FileTypeInfo.other(FileCategory.document),
+    'rst': const FileTypeInfo.text(FileCategory.document),
+    'adoc': const FileTypeInfo.text(FileCategory.document),
+    'txt': const FileTypeInfo.text(FileCategory.text),
+    // Configuration
+    'ini': FileTypeInfo.text(FileCategory.config, langIni),
+    'cfg': FileTypeInfo.text(FileCategory.config, langIni),
+    'conf': FileTypeInfo.text(FileCategory.config, langIni),
+    'properties': FileTypeInfo.text(FileCategory.config, langProperties),
+    'env': const FileTypeInfo.text(FileCategory.config),
+    'plist': FileTypeInfo.text(FileCategory.config, langXml),
+    'gradle': const FileTypeInfo.other(FileCategory.config),
+    'lock': const FileTypeInfo.text(FileCategory.lock),
+    // Scripts
+    'sh': FileTypeInfo.text(FileCategory.script, langBash),
+    'bash': FileTypeInfo.text(FileCategory.script, langBash),
+    'zsh': FileTypeInfo.text(FileCategory.script, langBash),
+    'fish': FileTypeInfo.text(FileCategory.script, langBash),
+    'ps1': FileTypeInfo.text(FileCategory.script, langPowershell),
+    'bat': FileTypeInfo.text(FileCategory.script, langDos),
+    'cmd': FileTypeInfo.text(FileCategory.script, langDos),
+    // Other text
+    'log': const FileTypeInfo.text(FileCategory.text),
+    'out': const FileTypeInfo.text(FileCategory.text),
+    'gitignore': const FileTypeInfo.text(FileCategory.text),
+    'dockerignore': const FileTypeInfo.text(FileCategory.text),
+    // Images shown in the image viewer
+    'png': const FileTypeInfo.image(),
+    'jpg': const FileTypeInfo.image(),
+    'jpeg': const FileTypeInfo.image(),
+    'gif': const FileTypeInfo.image(),
+    'bmp': const FileTypeInfo.image(),
+    'webp': const FileTypeInfo.image(),
+    'tiff': const FileTypeInfo.image(),
+    'tif': const FileTypeInfo.image(),
+    // Recognized but not opened
+    'ora': const FileTypeInfo.other(FileCategory.image),
+    'pdf': const FileTypeInfo.other(FileCategory.pdf),
+    'zip': const FileTypeInfo.other(FileCategory.archive),
+    'rar': const FileTypeInfo.other(FileCategory.archive),
+    '7z': const FileTypeInfo.other(FileCategory.archive),
+    'tar': const FileTypeInfo.other(FileCategory.archive),
+    'gz': const FileTypeInfo.other(FileCategory.archive),
   };
 
   /// Check if a file is a supported source file that can be opened in the editor
   static bool isFileSupportedInEditor(String filePath) {
-    if (filePath.isEmpty) {
-      return false;
-    }
-    final extension = filePath.split('.').last.toLowerCase();
-
-    return supportedTextExtensions.contains(extension) ||
-        supportedImageExtensions.contains(extension);
-  }
-
-  /// Check if a file is a supported text file
-  static bool isTextFile(String filePath) {
-    if (filePath.isEmpty) return false;
-    final extension = filePath.split('.').last.toLowerCase();
-
-    return supportedTextExtensions.contains(extension);
+    final type = _typeOf(filePath);
+    return type != null && type.opensAs != FileOpening.none;
   }
 
   /// Check if a file is a supported image file
   static bool isImageFile(String filePath) {
-    if (filePath.isEmpty) return false;
-    final extension = filePath.split('.').last.toLowerCase();
+    return _typeOf(filePath)?.opensAs == FileOpening.image;
+  }
 
-    return supportedImageExtensions.contains(extension);
+  /// Check if a file is a supported text file
+  static bool isTextFile(String filePath) {
+    return _typeOf(filePath)?.opensAs == FileOpening.text;
   }
 
   /// Returns the syntax highlighting language for [filePath], or plain text
   /// when the extension has no known language.
   static Mode languageForFile(String filePath) {
-    if (filePath.isEmpty) return langPlaintext;
-    final extension = filePath.split('.').last.toLowerCase();
+    return _typeOf(filePath)?.language ?? langPlaintext;
+  }
 
-    return _languageByExtension[extension] ?? langPlaintext;
+  /// The icon category for files with [extension], case-insensitive.
+  static FileCategory categoryOf(String extension) {
+    return _types[extension.toLowerCase()]?.category ?? FileCategory.other;
+  }
+
+  /// The table entry for [filePath]'s extension, or null when unknown.
+  static FileTypeInfo? _typeOf(String filePath) {
+    if (filePath.isEmpty) return null;
+    return _types[filePath.split('.').last.toLowerCase()];
   }
 }

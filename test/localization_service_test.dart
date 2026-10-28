@@ -91,6 +91,21 @@ void main() {
     expect(File('${project.path}/lib/l10n/app_fr.arb').existsSync(), true);
   });
 
+  for (final (label, pubspec) in [
+    ('empty', 'name: demo\nflutter:\n'),
+    ('missing', 'name: demo\n'),
+  ]) {
+    test('enables generate when the flutter section is $label', () async {
+      File('${project.path}/pubspec.yaml').writeAsStringSync(pubspec);
+
+      await LocalizationService(FakeFlutterRunner())
+          .initializeLocalization(project.path);
+
+      final service = LocalizationService(FakeFlutterRunner());
+      expect((await service.inspect(project.path)).hasGenerateFlag, true);
+    });
+  }
+
   test('inspect reports what the project already has', () async {
     final service = LocalizationService(FakeFlutterRunner());
 

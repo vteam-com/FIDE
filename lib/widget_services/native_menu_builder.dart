@@ -1,4 +1,4 @@
-import 'package:fide/constants/constants.dart';
+import 'package:fide/models/left_panel_tab.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/message_box.dart';
@@ -260,7 +260,7 @@ class NativeMenuBuilder {
                 shift: true,
               ),
               onSelected: () {
-                onSwitchPanel(AppPanelIndex.explorer);
+                onSwitchPanel(LeftPanelTab.folder.index);
               },
             ),
             PlatformMenuItem(
@@ -271,7 +271,7 @@ class NativeMenuBuilder {
                 shift: true,
               ),
               onSelected: () {
-                onSwitchPanel(AppPanelIndex.organized);
+                onSwitchPanel(LeftPanelTab.organized.index);
               },
             ),
             PlatformMenuItem(
@@ -282,7 +282,7 @@ class NativeMenuBuilder {
                 shift: true,
               ),
               onSelected: () {
-                onSwitchPanel(AppPanelIndex.git);
+                onSwitchPanel(LeftPanelTab.git.index);
               },
             ),
             PlatformMenuItem(
@@ -293,7 +293,7 @@ class NativeMenuBuilder {
                 shift: true,
               ),
               onSelected: () {
-                onSwitchPanel(AppPanelIndex.search);
+                onSwitchPanel(LeftPanelTab.search.index);
               },
             ),
           ],

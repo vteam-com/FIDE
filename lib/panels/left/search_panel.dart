@@ -248,9 +248,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
 
     // Recursively sort children
     for (final child in node.children) {
-      if (child is SearchResultNode) {
-        _sortTreeNode(child);
-      }
+      _sortTreeNode(child);
     }
   }
 
@@ -328,12 +326,8 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     );
   }
 
-  /// Handles `_buildSearchResultNode`.
-  Widget _buildSearchResultNode(ProjectNode node) {
-    if (node is! SearchResultNode) {
-      return const SizedBox();
-    }
-
+  /// Builds the row for a results folder or file.
+  Widget _buildSearchResultNode(SearchResultNode node) {
     if (node.isDirectory) {
       /// Handles `_buildDirectoryResultNode`.
       return _buildDirectoryResultNode(node);
@@ -351,7 +345,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         FolderNameWidget(
-          node: node,
+          node: node.folderNode,
           isExpanded: isExpanded,
           onTap: () {
             setState(() {

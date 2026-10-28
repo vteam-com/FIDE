@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/flutter_platform.dart';
+import 'package:fide/models/outdated_package.dart';
 import 'package:fide/providers/process_runner.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
@@ -14,10 +15,38 @@ class ProjectMaintenanceService {
   /// Creates a maintenance service that launches commands through [_runner].
   const ProjectMaintenanceService([this._runner = const ProcessRunner()]);
 
+  /// Pub's marker for a failed resolution.
+  static const String versionSolvingFailed = 'version solving failed';
+
+  /// Summarizes pub's version-solving [error]: the first explanatory line
+  /// after the failure marker, and the package named in "X depends on both
+  /// `<package>`" when pub reports one.
+  static ({String summary, String? package}) parseVersionConflict(
+    String error,
+  ) {
+    final lines = error.split('\n').map((line) => line.trim()).toList();
+    final failureLine = lines.indexWhere(
+      (line) => line.contains('$versionSolvingFailed.'),
+    );
+    final summary = failureLine == -1
+        ? null
+        : lines
+              .skip(failureLine + 1)
+              .where(
+                (line) => line.isNotEmpty && !line.startsWith('* Consider'),
+              )
+              .firstOrNull;
+    final package = RegExp(r'\S+ depends on both (\w+) ').firstMatch(error);
+    return (
+      summary: summary ?? 'Dependency conflict detected',
+      package: package?.group(1),
+    );
+  }
+
   /// Parses the table printed by `flutter pub outdated` into
-  /// `{package: {current, upgradable, resolvable, latest}}`.
-  static Map<String, dynamic> parseOutdated(String output) {
-    final outdated = <String, dynamic>{};
+  /// one [OutdatedPackage] per package name.
+  static Map<String, OutdatedPackage> parseOutdated(String output) {
+    final outdated = <String, OutdatedPackage>{};
 
     for (String line in output.split('\n')) {
       line = line.trim();
@@ -27,14 +56,14 @@ class ProjectMaintenanceService {
       if (parts.length >= AppMetric.outdatedMinColumns &&
           parts[0] != 'Package' &&
           parts[0] != '---') {
-        outdated[parts[0]] = {
-          'current': parts[1],
-          'upgradable': parts[AppMetric.outdatedUpgradableColIndex],
-          'resolvable': parts[AppMetric.outdatedResolvableColIndex],
-          'latest': parts.length > AppMetric.outdatedLatestColIndex
+        outdated[parts[0]] = OutdatedPackage(
+          current: parts[1],
+          upgradable: parts[AppMetric.outdatedUpgradableColIndex],
+          resolvable: parts[AppMetric.outdatedResolvableColIndex],
+          latest: parts.length > AppMetric.outdatedLatestColIndex
               ? parts[AppMetric.outdatedLatestColIndex]
               : '',
-        };
+        );
       }
     }
 

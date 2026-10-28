@@ -7,6 +7,7 @@ import 'package:fide/models/project_node.dart';
 import 'package:fide/providers/file_system_watcher.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/project_state_sink.dart';
+import 'package:fide/providers/project_tree_reader.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
@@ -295,7 +296,8 @@ Future<ProjectNode> loadProjectTreeInline(String directoryPath) async {
 }
 
 ProjectNode _enumerateProjectStructureInIsolate(String directoryPath) {
-  final root = ProjectNode.fromFileSystemEntitySync(Directory(directoryPath));
-  root.enumerateContentsRecursiveSync();
+  const reader = ProjectTreeReader();
+  final root = reader.nodeForSync(Directory(directoryPath));
+  reader.loadTreeSync(root);
   return root;
 }

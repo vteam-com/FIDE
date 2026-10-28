@@ -5,20 +5,20 @@ import 'dart:math';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/flutter_sdk.dart';
-import 'package:fide/providers/process_runner.dart';
+import 'package:fide/providers/ollama_installer.dart';
 import 'package:http/http.dart' as http;
 
 /// Represents `AIService`.
 class AIService {
   /// Constraint used when the installed Dart version can't be detected.
   static const String _fallbackDartConstraint = '^3.0.0';
-  final ProcessRunner _runner;
+  final FlutterSdk _sdk;
 
-  /// Creates an AI service that launches commands through [_runner].
-  const AIService([this._runner = const ProcessRunner()]);
+  /// Creates an AI service that reads SDK versions from [_sdk].
+  const AIService([this._sdk = const FlutterSdk()]);
 
   static const String _ollamaUrl = 'http://localhost:11434/api/generate';
-  static const String _defaultModel = 'codellama'; // Can be changed to other models like 'llama2', 'mistral', etc.
+  static const String _defaultModel = OllamaInstaller.model;
 
   /// Requests a coding suggestion from Ollama using prompt and contextual text.
   Future<String> getCodeSuggestion(String prompt, String context) async {
@@ -68,7 +68,7 @@ Please provide a helpful response focused on the coding request.''';
 
   /// Dart SDK constraint matching the installed Flutter, for generated pubspecs.
   Future<String> _getFlutterSdkVersion() async {
-    final dartVersion = (await FlutterSdk(_runner).versions())?.dart;
+    final dartVersion = (await _sdk.versions())?.dart;
     // Pubspec constraint format, e.g. ^3.9.2
     return dartVersion == null ? _fallbackDartConstraint : '^$dartVersion';
   }
@@ -316,116 +316,5 @@ class _MyHomePageState extends State<MyHomePage> {
       'Refactor this code with the following instruction: $instruction',
       code,
     );
-  }
-
-  /// Checks if Ollama is installed on the system
-  Future<bool> isOllamaInstalled() {
-    return _runner.succeeds('which', ['ollama']);
-  }
-
-  /// Checks if Ollama service is currently running
-  Future<bool> isOllamaRunning() {
-    return _runner.succeeds('ollama', ['list']);
-  }
-
-  /// Checks if the required model (codellama) is downloaded
-  Future<bool> isModelInstalled() async {
-    try {
-      final listResult = await _runner.run('ollama', ['list']);
-      if (listResult.exitCode == 0) {
-        final models = listResult.stdout.toString();
-        return models.contains(_defaultModel);
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// Installs Ollama using the official installation script
-  Future<void> installOllama() async {
-    if (Platform.isMacOS || Platform.isLinux) {
-      // Install Ollama using the official install script
-      final installResult = await _runner.run('sh', [
-        '-c',
-        'curl -fsSL https://ollama.ai/install.sh | sh',
-      ]);
-
-      if (installResult.exitCode != 0) {
-        throw Exception('Failed to install Ollama: ${installResult.stderr}');
-      }
-
-      // Pull the default model
-      final pullResult = await _runner.run('ollama', ['pull', _defaultModel]);
-      if (pullResult.exitCode != 0) {
-        throw Exception(
-          'Failed to pull $_defaultModel model: ${pullResult.stderr}',
-        );
-      }
-    } else if (Platform.isWindows) {
-      throw Exception(
-        'Please install Ollama manually from https://ollama.ai/download for Windows.',
-      );
-    } else {
-      throw Exception('Unsupported platform. Please install Ollama manually.');
-    }
-  }
-
-  /// Starts the Ollama service in the background
-  Future<void> startOllama() async {
-    // Start the Ollama background server
-    await _runner.start(
-      'ollama',
-      ['serve'],
-      mode: ProcessStartMode
-          .detached, // run independently from the current process
-    );
-
-    // Give it a moment to start up
-    await Future.delayed(AppDuration.ollamaStartupDelay);
-  }
-
-  /// Downloads the default model
-  Future<void> downloadModel() async {
-    final pullResult = await _runner.run('ollama', ['pull', _defaultModel]);
-    if (pullResult.exitCode != 0) {
-      throw Exception(
-        'Failed to download $_defaultModel model: ${pullResult.stderr}',
-      );
-    }
-  }
-
-  /// Ensures Ollama is running and ready for use
-  Future<bool> ensureOllamaReady() async {
-    try {
-      // Check if Ollama is installed
-      if (!await isOllamaInstalled()) {
-        print('⚠️  Ollama not installed, attempting installation...');
-        await installOllama();
-        print('✅ Ollama installed successfully');
-      }
-
-      // Check if Ollama is running
-      if (!await isOllamaRunning()) {
-        print('🔄 Starting Ollama service...');
-        await startOllama();
-        if (!await isOllamaRunning()) {
-          throw Exception('Failed to start Ollama service');
-        }
-        print('✅ Ollama service started');
-      }
-
-      // Check if model is installed
-      if (!await isModelInstalled()) {
-        print('📥 Downloading $_defaultModel model...');
-        await downloadModel();
-        print('✅ $_defaultModel model downloaded');
-      }
-
-      return true;
-    } catch (e) {
-      print('❌ Failed to ensure Ollama readiness: $e');
-      return false;
-    }
   }
 }

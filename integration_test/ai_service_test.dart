@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fide/providers/ai_service.dart';
+import 'package:fide/providers/ollama_installer.dart';
 import 'package:path/path.dart' as path;
 
 import 'steps.dart';
@@ -55,7 +56,7 @@ void main() {
         // Ensure Ollama is running
         stepStart('Ollama');
         {
-          final ollamaRunning = await startOllamaIfNeeded(aiService);
+          final ollamaRunning = await startOllamaIfNeeded();
           if (ollamaRunning) {
             print('Ollama is running');
           } else {
@@ -268,6 +269,6 @@ Future<ProcessResult> runCommand(
 }
 
 /// Helper function to start Ollama if not running and wait for it to be ready
-Future<bool> startOllamaIfNeeded(AIService aiService) async {
-  return aiService.ensureOllamaReady();
+Future<bool> startOllamaIfNeeded() async {
+  return const OllamaInstaller().ensureReady();
 }

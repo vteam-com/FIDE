@@ -3,12 +3,14 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/document_state.dart';
+import 'package:fide/models/health_indicators.dart';
+import 'package:fide/models/project_metrics.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/project_maintenance_service.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/status_indicator.dart';
@@ -80,21 +82,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   }
 
   /// Handles `_showScoreDetails`.
-  void _showScoreDetails(
-    BuildContext context,
-    Map<String, dynamic> projectMetrics,
-  ) {
-    final healthIndicators =
-        projectMetrics['healthIndicators'] as Map<String, dynamic>?;
-    final isMissingPubspecLock =
-        !(healthIndicators?['hasPubspecLock'] ?? false);
-    final buildErrors = (healthIndicators?['buildErrors'] ?? 0) as int;
-    final buildWarnings = (healthIndicators?['buildWarnings'] ?? 0) as int;
-    final largeFiles = healthIndicators?['largeFiles'] as List?;
-    final hasLargeFiles =
-        largeFiles != null &&
-        largeFiles.length > AppMetric.maxAllowedLargeFiles;
-
+  void _showScoreDetails(BuildContext context, HealthIndicators health) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -126,36 +114,30 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               _buildDeductionItem(
                 'Missing pubspec.lock',
                 -AppMetric.missingLockDeduction,
-                isMissingPubspecLock,
+                !health.hasPubspecLock,
                 context,
               ),
               _buildDeductionItem(
                 'Build errors (max 50 points)',
-                -(buildErrors * AppMetric.buildErrorDeductionPer).clamp(
-                  0,
-                  AppMetric.buildErrorDeductionMax,
-                ),
-                buildErrors > 0,
+                -health.buildErrorDeduction,
+                health.buildErrors > 0,
                 context,
               ),
               _buildDeductionItem(
                 'Build warnings (max 20 points)',
-                -(buildWarnings * AppMetric.buildWarningDeductionPer).clamp(
-                  0,
-                  AppMetric.buildWarningDeductionMax,
-                ),
-                buildWarnings > 0,
+                -health.buildWarningDeduction,
+                health.buildWarnings > 0,
                 context,
               ),
               _buildDeductionItem(
                 'Large files (>3 files over 10MB)',
                 -AppMetric.largeFileThresholdMb,
-                hasLargeFiles,
+                health.hasTooManyLargeFiles,
                 context,
               ),
               const Divider(height: AppSpacing.xxLarge),
               Text(
-                'Final Score: ${projectMetrics['qualityScore']}/100',
+                'Final Score: ${health.qualityScore}/${AppMetric.maxScore}',
                 style: TextStyle(
                   fontSize: AppFontSize.label,
                   fontWeight: FontWeight.w600,
@@ -269,7 +251,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
-  /// Handles `_openPubspecYaml`.
+  /// Opens the project's pubspec.yaml in the editor.
   void _openPubspecYaml() {
     try {
       final currentProjectPath = ref.read(currentProjectPathProvider);
@@ -281,22 +263,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         return;
       }
 
-      final documents = ref.read(openDocumentsProvider);
-      final existingIndex = documents.indexWhere(
-        (doc) => doc.filePath == pubspecPath,
-      );
-
-      if (existingIndex == -1) {
-        // Not open, add it
-        final newDocument = DocumentState(filePath: pubspecPath);
-        final updatedDocuments = [...documents, newDocument];
-        ref.read(openDocumentsProvider.notifier).state = updatedDocuments;
-        ref.read(activeDocumentIndexProvider.notifier).state =
-            updatedDocuments.length - 1;
-      } else {
-        // Already open, switch to it
-        ref.read(activeDocumentIndexProvider.notifier).state = existingIndex;
-      }
+      ref.read(openDocumentsProvider.notifier).open(pubspecPath);
     } catch (e) {
       MessageBox.showError(context, 'Failed to open pubspec.yaml: $e');
     }
@@ -320,9 +287,9 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         _dependencyConflictError = null;
       });
 
-      final currentMetrics = ref.read(projectMetricsProvider);
-      final updatedMetrics = Map<String, dynamic>.from(currentMetrics)
-        ..['outdated'] = ProjectMaintenanceService.parseOutdated(output);
+      final updatedMetrics = ref
+          .read(projectMetricsProvider)
+          .copyWith(outdated: ProjectMaintenanceService.parseOutdated(output));
 
       ref
           .read(projectMetricsProvider.notifier)
@@ -352,61 +319,32 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
-  /// Handles `_parseDependencyConflictError`.
-  void _parseDependencyConflictError(String error) {
-    final lines = error.split('\n');
-    String? cleanErrorMessage;
-
-    // Look for the first line after "version solving failed."
-    for (int i = 0; i < lines.length; i++) {
-      final line = lines[i].trim();
-      if (line.contains('version solving failed.')) {
-        // Get the next non-empty line
-        for (int j = i + 1; j < lines.length; j++) {
-          final nextLine = lines[j].trim();
-          if (nextLine.isNotEmpty && !nextLine.startsWith('* Consider')) {
-            cleanErrorMessage = nextLine;
-            break;
-          }
-        }
-        break;
-      }
-    }
-
+  /// Shows pub's version-solving [error] and flags the package it blames.
+  void _showDependencyConflict(String error) {
+    final conflict = ProjectMaintenanceService.parseVersionConflict(error);
     setState(() {
-      _dependencyConflictError =
-          cleanErrorMessage ?? 'Dependency conflict detected';
-    });
-
-    // Look for the specific package causing the conflict
-    final regExp = RegExp(r'fide depends on both (\w+) ([^ ]+)');
-    final match = regExp.firstMatch(error);
-    if (match != null) {
-      final packageName = match.group(1);
-      if (packageName != null) {
-        setState(() {
-          _problematicPackages[packageName] = 'Incompatible version constraint';
-        });
+      _dependencyConflictError = conflict.summary;
+      final package = conflict.package;
+      if (package != null) {
+        _problematicPackages[package] = 'Incompatible version constraint';
       }
-    }
+    });
   }
 
   /// Handles `_buildDependencyChip`.
   Widget _buildDependencyChip(
     String packageName,
     String version,
-    Map<String, dynamic> projectMetrics,
+    ProjectMetrics projectMetrics,
   ) {
-    final outdated = projectMetrics['outdated'] as Map<String, dynamic>?;
-    final isOutdated = outdated?.containsKey(packageName) ?? false;
+    final outdatedInfo = projectMetrics.outdated[packageName];
+    final isOutdated = outdatedInfo != null;
     final isProblematic = _problematicPackages.containsKey(packageName);
-    final outdatedInfo = isOutdated ? outdated![packageName] : null;
-    final resolvableVersion = outdatedInfo?['resolvable'] as String?;
     final hasIncompatibleVersion =
-        isOutdated && resolvableVersion != null && resolvableVersion == 'none';
+        outdatedInfo?.hasNoResolvableVersion ?? false;
 
     final label = isOutdated
-        ? '$packageName $version → ${outdatedInfo!['latest']}'
+        ? '$packageName $version → ${outdatedInfo.latest}'
         : '$packageName $version';
 
     final isClickable =
@@ -486,8 +424,8 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     } catch (e) {
       if (mounted) {
         final errorStr = e.toString();
-        if (errorStr.contains('version solving failed')) {
-          _parseDependencyConflictError(errorStr);
+        if (errorStr.contains(ProjectMaintenanceService.versionSolvingFailed)) {
+          _showDependencyConflict(errorStr);
           MessageBox.showError(
             context,
             'Package upgrade failed due to dependency conflicts',
@@ -507,9 +445,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     final projectMetrics = ref.watch(projectMetricsProvider);
 
     if (currentProjectPath == null) {
-      return const Center(
-        child: Text('No project loaded', style: TextStyle(color: Colors.grey)),
-      );
+      return const NoProjectPlaceholder();
     }
 
     return Padding(
@@ -527,7 +463,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                   children: [
                     Expanded(
                       child: Text(
-                        projectMetrics['name'] as String? ?? 'Unknown Project',
+                        projectMetrics.name ?? 'Unknown Project',
                         style: TextStyle(
                           fontSize: AppFontSize.title,
                           fontWeight: FontWeight.w600,
@@ -546,9 +482,9 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                     ),
                   ],
                 ),
-                if (projectMetrics['version'] != null)
+                if (projectMetrics.version != null)
                   Text(
-                    'v${projectMetrics['version']}',
+                    'v${projectMetrics.version}',
                     style: TextStyle(
                       fontSize: AppFontSize.metadata,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -558,7 +494,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             ),
 
             Text(
-              projectMetrics['description'] as String? ?? '< no description >',
+              projectMetrics.description ?? '< no description >',
               style: TextStyle(
                 fontSize: AppFontSize.metadata,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -566,17 +502,16 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               overflow: TextOverflow.visible,
             ),
 
-            // Health Indicators
-            /// Handles `_buildHealthCard`.
-            _buildHealthCard(projectMetrics),
+            // Health Indicators, once the project has been analyzed
+            if (projectMetrics.health case final health?)
+              _buildHealthCard(health),
 
             // Dependencies
             /// Handles `_buildDependenciesCard`.
             _buildDependenciesCard(projectMetrics),
 
             // Actions
-            /// Handles `_buildActionsCard`.
-            _buildActionsCard(projectMetrics),
+            _buildActionsCard(),
           ],
         ),
       ),
@@ -584,13 +519,10 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   }
 
   /// Handles `_buildHealthCard`.
-  Widget _buildHealthCard(Map<String, dynamic> projectMetrics) {
-    final indicators = (projectMetrics['healthIndicators'] as Map)
-        .cast<String, dynamic>();
-
+  Widget _buildHealthCard(HealthIndicators health) {
     final issues = <Map<String, dynamic>>[];
 
-    if (!(indicators['hasPubspecLock'] ?? false)) {
+    if (!health.hasPubspecLock) {
       issues.add({
         'type': 'warning',
         'message': 'Missing pubspec.lock',
@@ -598,7 +530,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       });
     }
 
-    final buildErrors = indicators['buildErrors'] ?? 0;
+    final buildErrors = health.buildErrors;
     if (buildErrors > 0) {
       issues.add({
         'type': 'error',
@@ -607,7 +539,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       });
     }
 
-    final buildWarnings = indicators['buildWarnings'] ?? 0;
+    final buildWarnings = health.buildWarnings;
     if (buildWarnings > 0) {
       issues.add({
         'type': 'warning',
@@ -616,8 +548,8 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       });
     }
 
-    final largeFiles = indicators['largeFiles'] as List?;
-    if (largeFiles != null && largeFiles.isNotEmpty) {
+    final largeFiles = health.largeFiles;
+    if (largeFiles.isNotEmpty) {
       issues.add({
         'type': 'info',
         'message': '${largeFiles.length} large files',
@@ -628,8 +560,8 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     return SectionPanel(
       title: 'Score',
       rightWidget: GestureDetector(
-        onTap: () => _showScoreDetails(context, projectMetrics),
-        child: _buildScoreBadge(projectMetrics['qualityScore'] as int),
+        onTap: () => _showScoreDetails(context, health),
+        child: _buildScoreBadge(health.qualityScore),
       ),
 
       child: Padding(
@@ -687,11 +619,9 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   }
 
   /// Handles `_buildDependenciesCard`.
-  Widget _buildDependenciesCard(Map<String, dynamic> projectMetrics) {
-    final depsDirect =
-        (projectMetrics['dependencies'] as Map<String, dynamic>?) ?? {};
-    final depsDev =
-        (projectMetrics['devDependencies'] as Map<String, dynamic>?) ?? {};
+  Widget _buildDependenciesCard(ProjectMetrics projectMetrics) {
+    final depsDirect = projectMetrics.dependencies;
+    final depsDev = projectMetrics.devDependencies;
     final totalDeps = depsDirect.length + depsDev.length;
 
     // Build dependency content widget
@@ -821,7 +751,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   }
 
   /// Handles `_buildActionsCard`.
-  Widget _buildActionsCard(Map<String, dynamic> _ /*projectMetrics*/) {
+  Widget _buildActionsCard() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.large),

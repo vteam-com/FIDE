@@ -4,12 +4,16 @@ import 'dart:io';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/loading_action.dart';
+import 'package:fide/models/open_documents.dart';
+import 'package:fide/models/project_metrics.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/providers/project_service.dart';
 import 'package:fide/providers/project_state_sink.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:logging/logging.dart';
@@ -19,9 +23,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 export 'package:fide/models/loading_action.dart';
 
 part 'mru_folders_notifier.dart';
+part 'open_documents_notifier.dart';
 part 'project_manager.dart';
 part 'project_metrics_notifier.dart';
 part 'provider_project_state_sink.dart';
+part 'selected_platform_notifier.dart';
 
 // SharedPreferences provider
 final sharedPreferencesProvider = FutureProvider<SharedPreferences>((_) {
@@ -49,6 +55,12 @@ final mruFoldersProvider =
       (ref) => MruFoldersNotifier(ref),
     );
 
+/// The Execute panel's build target.
+final selectedPlatformProvider =
+    StateNotifierProvider<SelectedPlatformNotifier, String>(
+      (ref) => SelectedPlatformNotifier(ref),
+    );
+
 // Unified project manager provider
 final projectManagerProvider = Provider<ProjectManager>((ref) {
   return ProjectManager(ref);
@@ -74,26 +86,19 @@ final loadingActionsProvider = StateProvider<List<LoadingAction>>(
   (_ /*ref*/) => [],
 );
 
-// State management for open documents
-final openDocumentsProvider = StateProvider<List<DocumentState>>(
-  (_ /*ref*/) => [],
+/// The editor's open documents and active tab.
+final openDocumentsProvider =
+    StateNotifierProvider<OpenDocumentsNotifier, OpenDocuments>(
+      (_) => OpenDocumentsNotifier(),
+    );
+
+/// The document showing in the editor, or null.
+final activeDocumentProvider = Provider<DocumentState?>(
+  (ref) => ref.watch(openDocumentsProvider).active,
 );
 
-// State management for active document index
-final activeDocumentIndexProvider = StateProvider<int>((_ /*ref*/) => -1);
-
-// Active document provider (computed from open documents and active index)
-final activeDocumentProvider = Provider<DocumentState?>((ref) {
-  final documents = ref.watch(openDocumentsProvider);
-  final activeIndex = ref.watch(activeDocumentIndexProvider);
-  if (activeIndex >= 0 && activeIndex < documents.length) {
-    return documents[activeIndex];
-  }
-  return null;
-});
-
 final projectMetricsProvider =
-    StateNotifierProvider<ProjectMetricsNotifier, Map<String, dynamic>>((ref) {
+    StateNotifierProvider<ProjectMetricsNotifier, ProjectMetrics>((ref) {
       final prefs = ref
           .watch(sharedPreferencesProvider)
           .maybeWhen(data: (data) => data, orElse: () => null);

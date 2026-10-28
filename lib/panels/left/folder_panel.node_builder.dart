@@ -10,7 +10,6 @@ class NodeBuilder extends StatelessWidget {
     this.rootPath,
     required this.onNodeTapped,
     required this.onShowContextMenu,
-    this.onShowFileContextMenu,
     this.onFileSelected,
     this.isFilteredView = false,
   });
@@ -21,7 +20,6 @@ class NodeBuilder extends StatelessWidget {
   final Function(ProjectNode)? onFileSelected;
   final Function(ProjectNode, bool) onNodeTapped;
   final Function(ProjectNode, Offset) onShowContextMenu;
-  final Function(ProjectNode, Offset)? onShowFileContextMenu;
   final String? rootPath;
   final FileSystemItem? selectedFile;
 
@@ -110,7 +108,6 @@ class NodeBuilder extends StatelessWidget {
               rootPath: rootPath,
               onNodeTapped: onNodeTapped,
               onShowContextMenu: onShowContextMenu,
-              onShowFileContextMenu: onShowFileContextMenu,
               onFileSelected: onFileSelected,
               isFilteredView: isFilteredView,
             ),

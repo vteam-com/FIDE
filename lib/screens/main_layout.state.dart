@@ -108,7 +108,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
               onContentChanged: _refreshOutlineCallback,
               onClose: () {
                 ref.read(selectedFileProvider.notifier).state = null;
-                ref.read(activeDocumentIndexProvider.notifier).state = -1;
+                ref.read(openDocumentsProvider.notifier).deactivate();
               },
             ),
           ),
@@ -132,47 +132,9 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     );
   }
 
-  /// Opens a file as a document tab and activates it if it is already open.
-  Future<void> _addFileToOpenDocuments(String filePath) async {
-    final openDocuments = ref.read(openDocumentsProvider);
-    final existingIndex = openDocuments.indexWhere(
-      (doc) => doc.filePath == filePath,
-    );
-
-    if (existingIndex == -1) {
-      final language = FileTypeUtils.languageForFile(filePath);
-      String content = '';
-      bool isImage = FileTypeUtils.isImageFile(filePath);
-
-      if (!isImage) {
-        try {
-          final file = File(filePath);
-          if (await file.exists()) {
-            content = await FileSystemItem.fileToStringMaxSizeCheck(file);
-          }
-        } catch (_) {
-          content = '// Error loading file\n';
-        }
-      }
-
-      final newDocument = DocumentState(
-        filePath: filePath,
-        content: content,
-        language: language,
-      );
-
-      final updatedDocuments = [...openDocuments, newDocument];
-      ref.read(openDocumentsProvider.notifier).state = updatedDocuments;
-      ref.read(activeDocumentIndexProvider.notifier).state =
-          updatedDocuments.length - 1;
-    } else {
-      ref.read(activeDocumentIndexProvider.notifier).state = existingIndex;
-    }
-  }
-
   Future<void> _handleFileSelection(FileSystemItem file) async {
     await ref.read(projectManagerProvider).saveLastOpenedFile(file.path);
-    await _addFileToOpenDocuments(file.path);
+    await ref.read(openDocumentsProvider.notifier).open(file.path);
 
     final fileName = path.basename(file.path);
     widget.onFileOpened?.call(fileName);

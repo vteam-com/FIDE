@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/right_panel_tab.dart';
 import 'package:fide/panels/right/ai_panel.dart';
 import 'package:fide/panels/right/info_panel.dart';
 import 'package:fide/panels/right/localization/localization_panel.dart';
@@ -36,7 +37,7 @@ class _RightPanelState extends State<RightPanel>
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: AppMetric.rightPanelTabCount,
+      length: RightPanelTab.values.length,
       vsync: this,
     );
   }
@@ -79,35 +80,8 @@ class _RightPanelState extends State<RightPanel>
                         index;
                   },
                   tabs: [
-                    const Tab(
-                      key: Key('keyTabOutline'),
-                      icon: Icon(Icons.list),
-                    ),
-                    const Tab(
-                      key: Key('keyTabLocalize'),
-                      icon: Icon(Icons.translate),
-                    ),
-                    Tab(
-                      key: const Key('keyTabAI'),
-                      icon: Builder(
-                        builder: (context) {
-                          final iconColor = IconTheme.of(context).color!;
-                          return SvgPicture.asset(
-                            'assets/ollama.svg',
-                            width: AppIconSize.xLarge,
-                            height: AppIconSize.xLarge,
-                            colorFilter: ColorFilter.mode(
-                              iconColor,
-                              BlendMode.srcIn,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const Tab(
-                      key: Key('keyTabInfo'),
-                      icon: Icon(Icons.info_outline),
-                    ),
+                    for (final tab in RightPanelTab.values)
+                      Tab(key: tab.key, icon: _buildTabIcon(tab)),
                   ],
                   labelColor: Theme.of(context).colorScheme.primary,
                   unselectedLabelColor: Theme.of(context)
@@ -123,31 +97,7 @@ class _RightPanelState extends State<RightPanel>
                   controller: _tabController,
                   physics: const NeverScrollableScrollPhysics(), // Disable swipe gestures
                   children: [
-                    // Outline tab
-                    widget.selectedFile != null
-                        ? OutlinePanel(
-                            file: widget.selectedFile!,
-                            onOutlineUpdate: widget.onOutlineUpdate,
-                            onNodeSelected: widget.onOutlineNodeSelected,
-                          )
-                        : const Center(
-                            child: Text(
-                              'Select a file to view outline',
-                              style: TextStyle(
-                                fontSize: AppFontSize.label,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ),
-
-                    // ARB tab
-                    LocalizationPanel(selectedFile: widget.selectedFile),
-
-                    // AI tab
-                    AIPanel(selectedFile: widget.selectedFile),
-
-                    // Info tab
-                    const InfoPanel(),
+                    for (final tab in RightPanelTab.values) _buildTab(tab),
                   ],
                 ),
               ),
@@ -155,6 +105,50 @@ class _RightPanelState extends State<RightPanel>
           ),
         );
       },
+    );
+  }
+
+  /// The panel shown under [tab].
+  Widget _buildTab(RightPanelTab tab) {
+    return switch (tab) {
+      RightPanelTab.outline =>
+        widget.selectedFile != null
+            ? OutlinePanel(
+                file: widget.selectedFile!,
+                onOutlineUpdate: widget.onOutlineUpdate,
+                onNodeSelected: widget.onOutlineNodeSelected,
+              )
+            : const Center(
+                child: Text(
+                  'Select a file to view outline',
+                  style: TextStyle(
+                    fontSize: AppFontSize.label,
+                    color: Colors.grey,
+                  ),
+                ),
+              ),
+      RightPanelTab.localize => LocalizationPanel(
+        selectedFile: widget.selectedFile,
+      ),
+      RightPanelTab.ai => AIPanel(selectedFile: widget.selectedFile),
+      RightPanelTab.info => const InfoPanel(),
+    };
+  }
+
+  /// [tab]'s icon: its SVG tinted to the tab color, or its Material icon.
+  Widget _buildTabIcon(RightPanelTab tab) {
+    final svgAsset = tab.svgAsset;
+    if (svgAsset == null) return Icon(tab.icon);
+    return Builder(
+      builder: (context) => SvgPicture.asset(
+        svgAsset,
+        width: AppIconSize.xLarge,
+        height: AppIconSize.xLarge,
+        colorFilter: ColorFilter.mode(
+          IconTheme.of(context).color!,
+          BlendMode.srcIn,
+        ),
+      ),
     );
   }
 }

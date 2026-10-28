@@ -107,6 +107,23 @@ class GitService {
     );
   }
 
+  /// Initializes a repository at [path] and commits everything in it; true
+  /// only when init, add and commit all succeed within the Git timeout.
+  Future<bool> initWithInitialCommit(String path) async {
+    const steps = [
+      ['init'],
+      ['add', '.'],
+      ['commit', '-m', 'Initial commit'],
+    ];
+    for (final args in steps) {
+      final succeeded = await _runner
+          .succeeds('git', args, workingDirectory: path)
+          .timeout(AppDuration.gitOperationTimeout, onTimeout: () => false);
+      if (!succeeded) return false;
+    }
+    return true;
+  }
+
   // Get Git status
   /// Reads Git porcelain status and groups files into staged/unstaged/untracked.
   Future<GitStatus> getStatus(String path) async {

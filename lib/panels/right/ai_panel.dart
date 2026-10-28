@@ -3,6 +3,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/providers/ai_service.dart';
+import 'package:fide/providers/ollama_installer.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +35,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     'refactor': 'Refactor Code',
   };
   late final AIService _aiService = ref.read(aiServiceProvider);
+  late final OllamaInstaller _ollama = ref.read(ollamaInstallerProvider);
   bool _hasModelInstalled = false;
   bool _hasOllamaInstalled = false;
   bool _isCheckingStatus = true;
@@ -358,13 +360,13 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     if (!mounted) return;
     setState(() => _isCheckingStatus = true);
     try {
-      _hasOllamaInstalled = await _aiService.isOllamaInstalled();
+      _hasOllamaInstalled = await _ollama.isInstalled();
 
       if (_hasOllamaInstalled) {
-        _isOllamaRunning = await _aiService.isOllamaRunning();
+        _isOllamaRunning = await _ollama.isRunning();
 
         if (_isOllamaRunning) {
-          _hasModelInstalled = await _aiService.isModelInstalled();
+          _hasModelInstalled = await _ollama.isModelInstalled();
         }
       } else {
         _isOllamaRunning = false;
@@ -383,7 +385,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
   /// Handles `_downloadModel`.
   Future<void> _downloadModel() async {
     await _runInstallAction(
-      action: _aiService.downloadModel,
+      action: _ollama.downloadModel,
       onSuccess: () => _hasModelInstalled = true,
       successMessage: 'codellama model downloaded.',
       errorPrefix: 'Error downloading model',
@@ -420,7 +422,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
   Future<void> _installOllama() async {
     setState(() => _isInstalling = true);
     try {
-      await _aiService.installOllama();
+      await _ollama.install();
 
       _hasOllamaInstalled = true;
       _isOllamaRunning = true;
@@ -472,7 +474,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
   Future<void> _runOllama() async {
     await _runInstallAction(
       action: () async {
-        await _aiService.startOllama();
+        await _ollama.start();
         await _checkStatus();
       },
       successMessage: 'Ollama started.',

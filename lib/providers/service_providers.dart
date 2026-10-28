@@ -1,11 +1,16 @@
 import 'package:fide/providers/ai_service.dart';
+import 'package:fide/providers/build_artifacts_inspector.dart';
+import 'package:fide/providers/code_formatter.dart';
+import 'package:fide/providers/file_entry_service.dart';
 import 'package:fide/providers/file_system_watcher.dart';
 import 'package:fide/providers/flutter_build_service.dart';
 import 'package:fide/providers/flutter_sdk.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/localization_service.dart';
+import 'package:fide/providers/ollama_installer.dart';
 import 'package:fide/providers/process_runner.dart';
 import 'package:fide/providers/project_analyzer.dart';
+import 'package:fide/providers/project_creation_service.dart';
 import 'package:fide/providers/project_maintenance_service.dart';
 import 'package:fide/providers/project_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,7 +28,12 @@ final gitServiceProvider = Provider<GitService>(
 
 /// Provides the shared [AIService]; override in tests to stub Ollama calls.
 final aiServiceProvider = Provider<AIService>(
-  (ref) => AIService(ref.read(processRunnerProvider)),
+  (ref) => AIService(ref.read(flutterSdkProvider)),
+);
+
+/// Provides the [OllamaInstaller] that installs and starts the local model.
+final ollamaInstallerProvider = Provider<OllamaInstaller>(
+  (ref) => OllamaInstaller(ref.read(processRunnerProvider)),
 );
 
 /// Provides the shared [LocalizationService] for project l10n setup.
@@ -36,9 +46,36 @@ final flutterBuildServiceProvider = Provider<FlutterBuildService>(
   (ref) => FlutterBuildService(ref.read(processRunnerProvider)),
 );
 
+/// Provides the [BuildArtifactsInspector] the Execute panel reads build
+/// output with.
+final buildArtifactsInspectorProvider = Provider<BuildArtifactsInspector>(
+  (_) => const BuildArtifactsInspector(),
+);
+
+/// Provides the [CodeFormatter] behind the editor's Format action.
+final codeFormatterProvider = Provider<CodeFormatter>(
+  (ref) => CodeFormatter(ref.read(processRunnerProvider)),
+);
+
+/// Provides the [FileEntryService] the tree panels create, rename and delete
+/// entries with.
+final fileEntryServiceProvider = Provider<FileEntryService>(
+  (_) => const FileEntryService(),
+);
+
 /// Provides the [ProjectAnalyzer] that computes Info panel metrics.
 final projectAnalyzerProvider = Provider<ProjectAnalyzer>(
   (_) => const ProjectAnalyzer(),
+);
+
+/// Provides the [ProjectCreationService] the new-project wizard runs.
+final projectCreationServiceProvider = Provider<ProjectCreationService>(
+  (ref) => ProjectCreationService(
+    ref.read(processRunnerProvider),
+    ref.read(gitServiceProvider),
+    ref.read(localizationServiceProvider),
+    ref.read(aiServiceProvider),
+  ),
 );
 
 /// Provides the [ProjectMaintenanceService] for dependency and cleanup chores.

@@ -68,7 +68,7 @@ class FolderNameWidget extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       onSecondaryTapDown: (TapDownDetails details) {
-        onShowContextMenu!(details.globalPosition);
+        onShowContextMenu?.call(details.globalPosition);
       },
 
       child: Container(
@@ -125,7 +125,7 @@ class FolderNameWidget extends StatelessWidget {
             if (isExpanded)
               InkWell(
                 onTapDown: (detail) =>
-                    onShowContextMenu!(detail.globalPosition),
+                    onShowContextMenu?.call(detail.globalPosition),
                 child: Icon(
                   Icons.more_vert,
                   color: colorScheme.primary,

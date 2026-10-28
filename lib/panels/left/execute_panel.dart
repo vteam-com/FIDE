@@ -3,8 +3,8 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/output_log.dart';
 import 'package:fide/models/flutter_platform.dart';
+import 'package:fide/models/output_log.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/flutter_build_service.dart';
 import 'package:fide/providers/service_providers.dart';
@@ -14,7 +14,6 @@ import 'package:fide/widgets/platform_info_section.dart';
 import 'package:fide/widgets/platform_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// Panel providing one-click build, run, and clean actions for the loaded Flutter project.
 class ExecutePanel extends ConsumerStatefulWidget {
@@ -37,13 +36,12 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
   Process? _currentProcess;
   // One log per platform so switching targets keeps each one's output
   final Map<String, OutputLog> _logs = {};
-  String _selectedPlatform = 'android';
   Set<String> _supportedPlatforms = {};
 
   @override
   void initState() {
     super.initState();
-    _loadSelectedPlatform();
+    ref.read(selectedPlatformProvider.notifier).load();
   }
 
   /// Ignores state updates once the panel is gone.
@@ -56,19 +54,8 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
     super.setState(fn);
   }
 
-  Future<void> _loadSelectedPlatform() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedPlatform =
-        prefs.getString(PrefKeys.selectedPlatform) ?? 'android';
-    setState(() {
-      _selectedPlatform = savedPlatform;
-    });
-  }
-
-  Future<void> _saveSelectedPlatform(String platform) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(PrefKeys.selectedPlatform, platform);
-  }
+  /// The chosen build target; `build` watches it so changes rebuild.
+  String get _selectedPlatform => ref.read(selectedPlatformProvider);
 
   /// Output log of the selected platform.
   OutputLog get _log => _logs.putIfAbsent(_selectedPlatform, OutputLog.new);
@@ -215,10 +202,9 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
         PlatformSelector(
           supportedPlatforms: _supportedPlatforms,
           selectedPlatform: _selectedPlatform,
-          onPlatformSelected: (platform) async {
-            await _saveSelectedPlatform(platform);
-            setState(() => _selectedPlatform = platform);
-          },
+          onPlatformSelected: ref
+              .read(selectedPlatformProvider.notifier)
+              .select,
         ),
 
         // Platform Information Section - shows details about selected platform
@@ -468,6 +454,7 @@ Updates macOS CocoaPods dependencies.
   @override
   Widget build(BuildContext context) {
     final currentProjectPath = ref.watch(currentProjectPathProvider);
+    ref.watch(selectedPlatformProvider);
 
     if (currentProjectPath == null) {
       return Center(

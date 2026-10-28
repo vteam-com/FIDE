@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 
-/// Represents an open document in the editor, including its path, content, cursor state, and dirty flag.
+/// An open document in the editor: its path, content, cursor and dirty flag.
+///
+/// Immutable; `OpenDocumentsNotifier` replaces it through [copyWith] so
+/// everything watching the open documents sees each change.
+@immutable
 class DocumentState {
   final String filePath;
-  String content;
-  TextSelection selection;
-  bool isDirty;
-  dynamic language;
+  final String content;
+  final TextSelection selection;
+  final bool isDirty;
+  final dynamic language;
 
-  DocumentState({
+  /// Creates a document for [filePath].
+  const DocumentState({
     required this.filePath,
     this.content = '',
     this.selection = const TextSelection.collapsed(offset: 0),
@@ -16,26 +21,22 @@ class DocumentState {
     this.language,
   });
 
-  // Create a copy with updated fields
-  /// Handles `DocumentState.copyWith`.
+  /// Returns a copy with the given fields replaced.
   DocumentState copyWith({
-    String? filePath,
     String? content,
     TextSelection? selection,
     bool? isDirty,
-    dynamic language,
   }) {
     return DocumentState(
-      filePath: filePath ?? this.filePath,
+      filePath: filePath,
       content: content ?? this.content,
       selection: selection ?? this.selection,
       isDirty: isDirty ?? this.isDirty,
-      language: language ?? this.language,
+      language: language,
     );
   }
 
-  // Get the file name from path
-  /// Returns `fileName`.
+  /// The file name without its directory.
   String get fileName {
     return filePath.split('/').last;
   }

@@ -55,8 +55,7 @@ class ProjectManager {
       final projectService = ref.read(projectServiceProvider);
       projectService.unloadProject();
 
-      ref.read(openDocumentsProvider.notifier).state = [];
-      ref.read(activeDocumentIndexProvider.notifier).state = -1;
+      ref.read(openDocumentsProvider.notifier).closeAll();
 
       _logger.info('Project unloaded successfully');
     } catch (e) {

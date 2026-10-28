@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fide/models/project_node.dart';
+import 'package:fide/providers/project_tree_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // Flattens a tree into indented names so trees can be compared directly
@@ -10,6 +11,8 @@ List<String> _outline(ProjectNode node, [String indent = '']) => [
     ..._outline(child, '$indent  '),
   ],
 ];
+
+const reader = ProjectTreeReader();
 
 void main() {
   late Directory root;
@@ -27,8 +30,8 @@ void main() {
   tearDown(() => root.deleteSync(recursive: true));
 
   test('lists directories first, then files, case-insensitively', () async {
-    final node = await ProjectNode.fromFileSystemEntity(root);
-    await node.enumerateContentsRecursive();
+    final node = await reader.nodeFor(root);
+    await reader.loadTree(node);
 
     expect(_outline(node), [
       '.github/',
@@ -44,10 +47,10 @@ void main() {
   });
 
   test('sync and async enumeration build the same tree', () async {
-    final asyncNode = await ProjectNode.fromFileSystemEntity(root);
-    await asyncNode.enumerateContentsRecursive();
-    final syncNode = ProjectNode.fromFileSystemEntitySync(root)
-      ..enumerateContentsRecursiveSync();
+    final asyncNode = await reader.nodeFor(root);
+    await reader.loadTree(asyncNode);
+    final syncNode = reader.nodeForSync(root);
+    reader.loadTreeSync(syncNode);
 
     expect(_outline(syncNode), _outline(asyncNode));
   });
@@ -59,8 +62,8 @@ void main() {
       type: ProjectNodeType.directory,
     );
 
-    expect(await node.enumerateContents(), LoadChildrenResult.fileSystemError);
-    node.enumerateContentsRecursiveSync();
+    expect(await reader.loadChildren(node), LoadChildrenResult.fileSystemError);
+    reader.loadTreeSync(node);
     expect(node.loadResult, LoadChildrenResult.fileSystemError);
   });
 }

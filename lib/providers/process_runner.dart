@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 /// Receives the output of a streamed process, one trimmed non-empty chunk at a time.
@@ -25,6 +26,31 @@ class ProcessRunner {
       arguments,
       workingDirectory: workingDirectory,
       runInShell: runInShell,
+    );
+  }
+
+  /// Runs [executable] with [input] written to its stdin, then collects its
+  /// UTF-8 output like [run].
+  Future<ProcessResult> runWithInput(
+    String executable,
+    List<String> arguments,
+    String input, {
+    String? workingDirectory,
+  }) async {
+    final process = await start(
+      executable,
+      arguments,
+      workingDirectory: workingDirectory,
+    );
+    final stdout = process.stdout.transform(utf8.decoder).join();
+    final stderr = process.stderr.transform(utf8.decoder).join();
+    process.stdin.add(utf8.encode(input));
+    await process.stdin.close();
+    return ProcessResult(
+      process.pid,
+      await process.exitCode,
+      await stdout,
+      await stderr,
     );
   }
 

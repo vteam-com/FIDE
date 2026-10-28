@@ -299,6 +299,19 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
     }
   }
 
+  /// Remembers [nodes] for [filePath] with its modification time, so an
+  /// unchanged file isn't parsed again; caching failures are ignored.
+  Future<void> _cacheOutline(String filePath, List<OutlineNode> nodes) async {
+    if (!mounted) return;
+    try {
+      final fileStat = await io.File(filePath).stat();
+      _cachedOutlines[filePath] = nodes;
+      _cachedFileModTimes[filePath] = fileStat.modified;
+    } catch (_) {
+      // Silently fail if we can't cache
+    }
+  }
+
   /// Parses the current file, updates [_outlineNodes], and stores results in the cache.
   Future<void> _parseFile() async {
     if (!mounted) return;
@@ -344,16 +357,7 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
         result.unit.visitChildren(visitor);
         nodes = visitor.nodes;
 
-        // Cache the successful parse results
-        if (mounted) {
-          try {
-            final fileStat = await io.File(filePath).stat();
-            _cachedOutlines[filePath] = nodes;
-            _cachedFileModTimes[filePath] = fileStat.modified;
-          } catch (_) {
-            // Silently fail if we can't cache
-          }
-        }
+        await _cacheOutline(filePath, nodes);
 
         setState(() {
           _outlineNodes = nodes;
@@ -382,16 +386,7 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
           }
         }
 
-        // Cache the successful parse results
-        if (mounted) {
-          try {
-            final fileStat = await io.File(filePath).stat();
-            _cachedOutlines[filePath] = nodes;
-            _cachedFileModTimes[filePath] = fileStat.modified;
-          } catch (_) {
-            // Silently fail if we can't cache
-          }
-        }
+        await _cacheOutline(filePath, nodes);
 
         setState(() {
           _outlineNodes = nodes;
@@ -436,16 +431,7 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
           throw Exception('Error parsing YAML: $e');
         }
 
-        // Cache the successful parse results
-        if (mounted) {
-          try {
-            final fileStat = await io.File(filePath).stat();
-            _cachedOutlines[filePath] = nodes;
-            _cachedFileModTimes[filePath] = fileStat.modified;
-          } catch (_) {
-            // Silently fail if we can't cache
-          }
-        }
+        await _cacheOutline(filePath, nodes);
 
         setState(() {
           _outlineNodes = nodes;

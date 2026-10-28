@@ -1,11 +1,13 @@
 part of 'app_providers.dart';
 
-/// Represents `ProjectMetricsNotifier`.
-class ProjectMetricsNotifier extends StateNotifier<Map<String, dynamic>> {
+/// The Info panel's metrics for the current project, cached per project in
+/// preferences.
+class ProjectMetricsNotifier extends StateNotifier<ProjectMetrics> {
   final Ref ref;
   final SharedPreferences? prefs;
 
-  ProjectMetricsNotifier(this.ref, this.prefs) : super({}) {
+  /// Starts from the cached metrics of the current project, if any.
+  ProjectMetricsNotifier(this.ref, this.prefs) : super(ProjectMetrics.empty) {
     _loadCachedMetrics();
   }
 
@@ -19,8 +21,9 @@ class ProjectMetricsNotifier extends StateNotifier<Map<String, dynamic>> {
       final jsonString = prefs!.getString(key);
       if (jsonString != null) {
         try {
-          final cached = jsonDecode(jsonString) as Map<String, dynamic>;
-          state = cached;
+          state = ProjectMetrics.fromJson(
+            jsonDecode(jsonString) as Map<String, dynamic>,
+          );
         } catch (_) {
           // Ignore invalid cached data.
         }
@@ -28,16 +31,12 @@ class ProjectMetricsNotifier extends StateNotifier<Map<String, dynamic>> {
     }
   }
 
-  /// Handles `ProjectMetricsNotifier.updateMetrics`.
-  Future<void> updateMetrics(
-    String projectPath,
-    Map<String, dynamic> metrics,
-  ) async {
+  /// Shows [metrics] for [projectPath] and caches them.
+  Future<void> updateMetrics(String projectPath, ProjectMetrics metrics) async {
     if (prefs == null) return;
 
     state = metrics;
     final key = '${PrefKeys.projectMetricsPrefix}$projectPath';
-    final jsonString = jsonEncode(metrics);
-    await prefs!.setString(key, jsonString);
+    await prefs!.setString(key, jsonEncode(metrics.toJson()));
   }
 }

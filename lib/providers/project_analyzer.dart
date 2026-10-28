@@ -2,12 +2,14 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/flutter_platform.dart';
+import 'package:fide/models/health_indicators.dart';
+import 'package:fide/models/project_metrics.dart';
 import 'package:yaml/yaml.dart';
 
 /// Gathers project metrics (pubspec info, file and directory statistics,
 /// health indicators) and derives a quality score from them.
 ///
-/// Produces the metrics map persisted by `ProjectMetricsNotifier` and
+/// Produces the [ProjectMetrics] persisted by `ProjectMetricsNotifier` and
 /// rendered by the Info panel.
 class ProjectAnalyzer {
   static final Set<String> _trackedTopLevelDirectories = {
@@ -19,95 +21,53 @@ class ProjectAnalyzer {
   /// Creates a stateless analyzer.
   const ProjectAnalyzer();
 
-  /// Analyzes the project at [projectPath] and returns its metrics map.
-  Future<Map<String, dynamic>> analyze(String projectPath) async {
-    final metrics = <String, dynamic>{};
-
+  /// Analyzes the project at [projectPath].
+  Future<ProjectMetrics> analyze(String projectPath) async {
     final pubspecFile = File('$projectPath/pubspec.yaml');
     final pubspecContent = pubspecFile.existsSync()
         ? pubspecFile.readAsStringSync()
         : null;
-    if (pubspecContent != null) {
-      _readPubspec(pubspecContent, metrics);
-    }
+    final pubspec = pubspecContent == null
+        ? null
+        : _readPubspec(pubspecContent);
+    final tree = await _walkProjectTree(projectPath);
+    final buildLogs = await _countBuildLogs(projectPath);
 
-    await _walkProjectTree(projectPath, metrics);
-    await _analyzeHealthIndicators(projectPath, pubspecContent, metrics);
-    _calculateQualityScore(metrics);
-
-    return metrics;
+    return ProjectMetrics(
+      name: pubspec?.name,
+      version: pubspec?.version,
+      description: pubspec?.description,
+      dependencies: pubspec?.dependencies ?? const {},
+      devDependencies: pubspec?.devDependencies ?? const {},
+      fileStats: tree.fileStats,
+      directoryStructure: tree.structure,
+      health: HealthIndicators(
+        hasPubspecLock: File('$projectPath/pubspec.lock').existsSync(),
+        buildErrors: buildLogs.errors,
+        buildWarnings: buildLogs.warnings,
+        largeFiles: tree.largeFiles,
+        hasDependencies: pubspecContent?.contains('dependencies:') ?? false,
+      ),
+    );
   }
 
-  /// Health checks that don't come from the main tree walk.
-  Future<void> _analyzeHealthIndicators(
+  /// Counts the `.log` files under `build/` that mention errors and warnings.
+  Future<({int errors, int warnings})> _countBuildLogs(
     String projectPath,
-    String? pubspecContent,
-    Map<String, dynamic> metrics,
   ) async {
-    final indicators = metrics['healthIndicators'] as Map<String, dynamic>;
-
-    indicators['hasPubspecLock'] = File('$projectPath/pubspec.lock')
-        .existsSync();
-
-    // Check for build warning/error logs
     final buildDir = Directory('$projectPath/build');
+    var errors = 0;
+    var warnings = 0;
     if (buildDir.existsSync()) {
-      int warningLogs = 0;
-      int errorLogs = 0;
-
       await for (final entity in buildDir.list(recursive: true)) {
         if (entity is File && entity.path.endsWith('.log')) {
           final content = entity.readAsStringSync().toLowerCase();
-          if (content.contains('error')) errorLogs++;
-          if (content.contains('warning')) warningLogs++;
+          if (content.contains('error')) errors++;
+          if (content.contains('warning')) warnings++;
         }
       }
-
-      indicators['buildWarnings'] = warningLogs;
-      indicators['buildErrors'] = errorLogs;
     }
-
-    if (pubspecContent != null) {
-      indicators['hasDependencies'] = pubspecContent.contains('dependencies:');
-    }
-  }
-
-  /// Scores the project out of `AppMetric.maxScore` from its health indicators.
-  void _calculateQualityScore(Map<String, dynamic> metrics) {
-    int score = AppMetric.maxScore;
-
-    final healthIndicators =
-        metrics['healthIndicators'] as Map<String, dynamic>?;
-
-    if (healthIndicators == null) return;
-
-    // Deduct for missing pubspec.lock
-    if (!(healthIndicators['hasPubspecLock'] ?? false)) {
-      score -= AppMetric.missingLockDeduction;
-    }
-
-    // Deduct for build errors
-    final buildErrors = (healthIndicators['buildErrors'] ?? 0) as int;
-    score -= (buildErrors * AppMetric.buildErrorDeductionPer).clamp(
-      0,
-      AppMetric.buildErrorDeductionMax,
-    );
-
-    // Deduct for warnings
-    final buildWarnings = (healthIndicators['buildWarnings'] ?? 0) as int;
-    score -= (buildWarnings * AppMetric.buildWarningDeductionPer).clamp(
-      0,
-      AppMetric.buildWarningDeductionMax,
-    );
-
-    // Deduct for large files
-    final largeFiles = healthIndicators['largeFiles'] as List?;
-    if (largeFiles != null &&
-        largeFiles.length > AppMetric.maxAllowedLargeFiles) {
-      score -= AppMetric.largeFileThresholdMb;
-    }
-
-    metrics['qualityScore'] = score.clamp(0, AppMetric.maxScore);
+    return (errors: errors, warnings: warnings);
   }
 
   /// Maps each dependency name to its version, or a label for SDK and
@@ -127,39 +87,52 @@ class ProjectAnalyzer {
   }
 
   /// Reads name, version, description and dependencies from pubspec content.
-  void _readPubspec(String content, Map<String, dynamic> metrics) {
+  ({
+    String? name,
+    String? version,
+    String? description,
+    Map<String, String>? dependencies,
+    Map<String, String>? devDependencies,
+  })
+  _readPubspec(String content) {
+    String? name;
+    String? version;
+    String? description;
     for (final line in content.split('\n')) {
       if (line.trim().startsWith('name:') &&
           !line.trim().startsWith('  name:')) {
-        metrics['name'] = line.split(':').last.trim();
+        name = line.split(':').last.trim();
       }
       if (line.trim().startsWith('version:')) {
-        metrics['version'] = line.split(':').last.trim();
+        version = line.split(':').last.trim();
       }
       if (line.trim().startsWith('description:')) {
-        metrics['description'] = line.split(':').last.trim();
+        description = line.split(':').last.trim();
       }
     }
 
     final yamlMap = loadYamlDocument(content).contents as YamlMap;
-
     final deps = yamlMap['dependencies'] as YamlMap?;
-    if (deps != null) {
-      metrics['dependencies'] = _describeDependencies(deps);
-    }
-
     final devDeps = yamlMap['dev_dependencies'] as YamlMap?;
-    if (devDeps != null) {
-      metrics['devDependencies'] = _describeDependencies(devDeps);
-    }
+    return (
+      name: name,
+      version: version,
+      description: description,
+      dependencies: deps == null ? null : _describeDependencies(deps),
+      devDependencies: devDeps == null ? null : _describeDependencies(devDeps),
+    );
   }
 
   /// Walks the project tree once, collecting per-extension file counts,
   /// top-level platform directory sizes, and files over the size threshold.
-  Future<void> _walkProjectTree(
-    String projectPath,
-    Map<String, dynamic> metrics,
-  ) async {
+  Future<
+    ({
+      Map<String, int> fileStats,
+      Map<String, int> structure,
+      List<String> largeFiles,
+    })
+  >
+  _walkProjectTree(String projectPath) async {
     const largeFileBytes =
         AppMetric.largeFileThresholdMb *
         AppMetric.fileSizeDivisor *
@@ -194,12 +167,6 @@ class ProjectAnalyzer {
       }
     }
 
-    metrics['fileStats'] = fileStats;
-    metrics['totalFiles'] = fileStats.values.fold(
-      0,
-      (sum, count) => sum + count,
-    );
-    metrics['directoryStructure'] = structure;
-    metrics['healthIndicators'] = <String, dynamic>{'largeFiles': largeFiles};
+    return (fileStats: fileStats, structure: structure, largeFiles: largeFiles);
   }
 }

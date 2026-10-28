@@ -1,6 +1,3 @@
-import 'dart:async';
-import 'dart:io';
-
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +7,10 @@ enum ProjectNodeType { file, directory }
 
 enum LoadChildrenResult { success, accessDenied, fileSystemError, unknownError }
 
-/// A node in the project file-tree, representing a file or directory with optional Git status and lazy-loaded children.
+/// A node in the project file-tree, representing a file or directory with
+/// optional Git status and lazy-loaded children.
+///
+/// Plain data; `ProjectTreeReader` fills in children from the file system.
 class ProjectNode {
   final String name;
   final String path;
@@ -47,112 +47,12 @@ class ProjectNode {
   /// Returns `isFile`.
   bool get isFile => type == ProjectNodeType.file;
 
-  /// Creates a node for [entity], reading its type from the file system.
-  static Future<ProjectNode> fromFileSystemEntity(
-    FileSystemEntity entity,
-  ) async {
-    return _fromStat(entity, await entity.stat());
-  }
-
-  /// Synchronous [fromFileSystemEntity], for use inside isolates.
-  static ProjectNode fromFileSystemEntitySync(FileSystemEntity entity) {
-    return _fromStat(entity, entity.statSync());
-  }
-
-  /// Loads this directory's immediate children.
-  Future<LoadChildrenResult> enumerateContents() async {
-    return _enumerateContentsInternal(recursive: false);
-  }
-
-  /// Loads this directory's whole subtree.
-  Future<LoadChildrenResult> enumerateContentsRecursive() async {
-    return _enumerateContentsInternal(recursive: true);
-  }
-
-  /// Synchronous [enumerateContentsRecursive], for use inside isolates.
-  void enumerateContentsRecursiveSync() {
-    if (!isDirectory) return;
-
-    try {
-      _replaceChildren([
-        for (final entity in Directory(path).listSync())
-          (entity, entity.statSync()),
-      ]);
-      for (final child in children.where((child) => child.isDirectory)) {
-        child.enumerateContentsRecursiveSync();
-      }
-    } catch (e) {
-      loadResult = _classifyLoadError(e);
-    }
-  }
-
-  /// Loads this directory's children and optionally recurses into subdirectories.
-  Future<LoadChildrenResult> _enumerateContentsInternal({
-    required bool recursive,
-  }) async {
-    if (!isDirectory) return LoadChildrenResult.success;
-
-    try {
-      // Async stat calls avoid blocking the UI isolate
-      final entries = <(FileSystemEntity, FileStat)>[];
-      await for (final entity in Directory(path).list()) {
-        entries.add((entity, await entity.stat()));
-      }
-      _replaceChildren(entries);
-
-      if (recursive) {
-        for (final child in children.where((child) => child.isDirectory)) {
-          await child.enumerateContentsRecursive();
-        }
-      }
-      return LoadChildrenResult.success;
-    } catch (e) {
-      return loadResult = _classifyLoadError(e);
-    }
-  }
-
-  /// Replaces [children] with nodes for [entries] (hidden ones included),
-  /// directories first, each group sorted case-insensitively by name.
-  void _replaceChildren(List<(FileSystemEntity, FileStat)> entries) {
-    entries.sort((a, b) {
-      final aIsDirectory = a.$2.type == FileSystemEntityType.directory;
-      final bIsDirectory = b.$2.type == FileSystemEntityType.directory;
-      if (aIsDirectory != bIsDirectory) {
-        return aIsDirectory ? -1 : 1;
-      }
-      return p
-          .basename(a.$1.path)
-          .toLowerCase()
-          .compareTo(p.basename(b.$1.path).toLowerCase());
-    });
-
+  /// Replaces [children] with [nodes] and records a successful load.
+  void replaceChildren(Iterable<ProjectNode> nodes) {
     children
       ..clear()
-      ..addAll([for (final (entity, stat) in entries) _fromStat(entity, stat)]);
+      ..addAll(nodes);
     loadResult = LoadChildrenResult.success;
-  }
-
-  /// Maps an enumeration failure to the result shown to the user.
-  static LoadChildrenResult _classifyLoadError(Object error) {
-    if (error is PathAccessException ||
-        error.toString().contains('Operation not permitted')) {
-      return LoadChildrenResult.accessDenied;
-    }
-    if (error is FileSystemException) {
-      return LoadChildrenResult.fileSystemError;
-    }
-    return LoadChildrenResult.unknownError;
-  }
-
-  /// Builds an unexpanded node for [entity] from an already-read [stat].
-  static ProjectNode _fromStat(FileSystemEntity entity, FileStat stat) {
-    return ProjectNode(
-      name: p.basename(entity.path),
-      path: entity.path,
-      type: stat.type == FileSystemEntityType.directory
-          ? ProjectNodeType.directory
-          : ProjectNodeType.file,
-    );
   }
 
   // Find a node by path

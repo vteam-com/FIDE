@@ -5,10 +5,12 @@ import 'dart:io';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
+import 'package:fide/providers/file_entry_service.dart';
 import 'package:fide/providers/git_service.dart';
-import 'package:fide/providers/process_runner.dart';
+import 'package:fide/providers/project_tree_reader.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +19,7 @@ import 'package:path/path.dart' as path;
 
 part 'shared_panel_utils.file_operations.dart';
 part 'shared_panel_utils.context_menu_handler.dart';
+part 'shared_panel_utils.node_action.dart';
 part 'shared_panel_utils.project_tree_panel.dart';
 part 'shared_panel_utils.project_tree_panel_state.dart';
 
@@ -89,7 +92,7 @@ class PanelStateManager {
     if (!node.isDirectory || node.children.isNotEmpty) {
       return LoadChildrenResult.success;
     }
-    return node.enumerateContents();
+    return const ProjectTreeReader().loadChildren(node);
   }
 
   /// Handles `PanelStateManager.seedGitStatusForFile`.

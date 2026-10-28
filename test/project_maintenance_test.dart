@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/project_metrics.dart';
 import 'package:fide/providers/process_runner.dart';
 import 'package:fide/providers/project_analyzer.dart';
 import 'package:fide/providers/project_maintenance_service.dart';
@@ -55,29 +56,29 @@ void main() {
     test('reads pubspec info and dependencies', () async {
       final metrics = await const ProjectAnalyzer().analyze(project.path);
 
-      expect(metrics['name'], 'demo');
-      expect(metrics['version'], '1.2.3');
-      expect(metrics['dependencies'], {
+      expect(metrics.name, 'demo');
+      expect(metrics.version, '1.2.3');
+      expect(metrics.dependencies, {
         'flutter': 'Flutter SDK',
         'http': '^1.0.0',
       });
-      expect(metrics['devDependencies'], {'lints': '^2.0.0'});
+      expect(metrics.devDependencies, {'lints': '^2.0.0'});
     });
 
     test('counts files and tracked directories in one walk', () async {
       final metrics = await const ProjectAnalyzer().analyze(project.path);
 
-      expect(metrics['fileStats'], {'yaml': 1, 'dart': 1});
-      expect(metrics['totalFiles'], 2);
-      expect(metrics['directoryStructure'], {'lib': 1});
+      expect(metrics.fileStats, {'yaml': 1, 'dart': 1});
+      expect(metrics.totalFiles, 2);
+      expect(metrics.directoryStructure, {'lib': 1});
     });
 
     test('deducts for a missing pubspec.lock', () async {
       final metrics = await const ProjectAnalyzer().analyze(project.path);
 
-      expect(metrics['healthIndicators']['hasPubspecLock'], false);
+      expect(metrics.health?.hasPubspecLock, false);
       expect(
-        metrics['qualityScore'],
+        metrics.health?.qualityScore,
         AppMetric.maxScore - AppMetric.missingLockDeduction,
       );
     });
@@ -89,14 +90,43 @@ Package  Current  Upgradable  Resolvable  Latest
 http     1.0.0    1.1.0       1.1.0       2.0.0
 ''');
 
-    expect(parsed, {
-      'http': {
-        'current': '1.0.0',
-        'upgradable': '1.1.0',
-        'resolvable': '1.1.0',
-        'latest': '2.0.0',
-      },
+    expect(parsed.keys, ['http']);
+    expect(parsed['http']!.toJson(), {
+      'current': '1.0.0',
+      'upgradable': '1.1.0',
+      'resolvable': '1.1.0',
+      'latest': '2.0.0',
     });
+  });
+
+  test('ProjectMetrics survives the JSON cache round trip', () async {
+    final metrics = await const ProjectAnalyzer().analyze(project.path);
+
+    final restored = ProjectMetrics.fromJson(
+      jsonDecode(jsonEncode(metrics.toJson())) as Map<String, dynamic>,
+    );
+
+    expect(restored.toJson(), metrics.toJson());
+    expect(restored.health?.qualityScore, metrics.health?.qualityScore);
+  });
+
+  test('parseVersionConflict summarizes pub and names the package', () {
+    const error = '''
+Resolving dependencies...
+Because demo depends on both http ^0.13.0 and web ^1.0.0, version solving failed.
+
+Because demo depends on both http ^0.13.0 and foo any, version solving failed.
+* Consider downgrading your constraint on http
+''';
+
+    final conflict = ProjectMaintenanceService.parseVersionConflict(error);
+
+    expect(conflict.package, 'http');
+    expect(conflict.summary, startsWith('Because demo depends on both http'));
+    expect(
+      ProjectMaintenanceService.parseVersionConflict('boom').summary,
+      'Dependency conflict detected',
+    );
   });
 
   group('ProjectMaintenanceService.upgradeToResolvable', () {

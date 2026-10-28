@@ -28,7 +28,6 @@ class AppMetric {
   static const int markdownMaxHeadingLevel = 6;
   static const int aiInputMaxLines = 3;
   static const int duplicateThreshold = 2;
-  static const int rightPanelTabCount = 4;
   static const int gitHashShortLength = 7;
   static const int gitCommitDefaultCount = 10;
   static const int maxMruFolders = 10;
