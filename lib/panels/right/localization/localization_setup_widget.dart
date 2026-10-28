@@ -81,9 +81,8 @@ class LocalizationSetupWidget extends StatelessWidget {
           const SizedBox(height: AppSpacing.xxLarge),
           Text(
             'Next Steps',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: AppSpacing.medium),
           Text(
@@ -109,9 +108,8 @@ class LocalizationSetupWidget extends StatelessWidget {
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(AppSpacing.large),
         border: Border.all(
-          color: Theme.of(
-            context,
-          ).colorScheme.outline.withValues(alpha: AppOpacity.selected),
+          color: Theme.of(context).colorScheme.outline
+              .withValues(alpha: AppOpacity.selected),
         ),
       ),
       child: Column(
@@ -119,9 +117,8 @@ class LocalizationSetupWidget extends StatelessWidget {
         children: [
           Text(
             title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: AppSpacing.medium),
           Text(description, style: Theme.of(context).textTheme.bodyMedium),

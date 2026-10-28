@@ -110,9 +110,9 @@ class _RightPanelState extends State<RightPanel>
                     ),
                   ],
                   labelColor: Theme.of(context).colorScheme.primary,
-                  unselectedLabelColor: Theme.of(
-                    context,
-                  ).colorScheme.onSurfaceVariant,
+                  unselectedLabelColor: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant,
                   indicatorColor: Theme.of(context).colorScheme.primary,
                 ),
               ),
@@ -121,8 +121,7 @@ class _RightPanelState extends State<RightPanel>
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
-                  physics:
-                      const NeverScrollableScrollPhysics(), // Disable swipe gestures
+                  physics: const NeverScrollableScrollPhysics(), // Disable swipe gestures
                   children: [
                     // Outline tab
                     widget.selectedFile != null

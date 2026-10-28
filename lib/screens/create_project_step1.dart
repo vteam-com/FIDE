@@ -376,7 +376,7 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
 
   /// Opens a directory picker and updates the project directory selection.
   void _handleBrowseDirectory() async {
-    final selectedDir = await FilePicker.platform.getDirectoryPath();
+    final selectedDir = await FilePicker.getDirectoryPath();
     if (selectedDir != null && mounted) {
       setState(() {
         selectedDirectory = selectedDir;

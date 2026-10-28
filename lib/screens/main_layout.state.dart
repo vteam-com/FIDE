@@ -139,7 +139,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   /// Opens a folder picker and attempts to load the selected Flutter project.
   Future<void> pickDirectory() async {
     try {
-      final selectedDirectory = await FilePicker.platform.getDirectoryPath();
+      final selectedDirectory = await FilePicker.getDirectoryPath();
       if (!mounted) return;
 
       if (selectedDirectory != null) {

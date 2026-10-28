@@ -163,21 +163,19 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
                   ),
                 ],
                 labelColor: Theme.of(context).colorScheme.primary,
-                unselectedLabelColor: Theme.of(
-                  context,
-                ).colorScheme.onSurfaceVariant,
+                unselectedLabelColor: Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant,
                 indicatorColor: Theme.of(context).colorScheme.primary,
                 labelPadding: EdgeInsets.zero,
                 indicatorSize: TabBarIndicatorSize.tab,
-                physics:
-                    const NeverScrollableScrollPhysics(), // Disable swipe gestures
+                physics: const NeverScrollableScrollPhysics(), // Disable swipe gestures
               ),
             ),
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              physics:
-                  const NeverScrollableScrollPhysics(), // Disable swipe gestures
+              physics: const NeverScrollableScrollPhysics(), // Disable swipe gestures
               children: [
                 // Organized tab
                 OrganizedPanel(

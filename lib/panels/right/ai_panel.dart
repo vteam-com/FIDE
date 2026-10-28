@@ -73,9 +73,8 @@ class _AIPanelState extends State<AIPanel> {
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(AppRadius.medium),
                 border: Border.all(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.outline.withValues(alpha: AppOpacity.divider),
+                  color: Theme.of(context).colorScheme.outline
+                      .withValues(alpha: AppOpacity.divider),
                 ),
               ),
               child: Column(
@@ -337,12 +336,10 @@ class _AIPanelState extends State<AIPanel> {
                   style: TextStyle(
                     fontSize: AppFontSize.badge,
                     color: isUser
-                        ? Theme.of(context).colorScheme.onPrimary.withValues(
-                            alpha: AppOpacity.secondaryText,
-                          )
-                        : Theme.of(context).colorScheme.onSurface.withValues(
-                            alpha: AppOpacity.disabled,
-                          ),
+                        ? Theme.of(context).colorScheme.onPrimary
+                              .withValues(alpha: AppOpacity.secondaryText)
+                        : Theme.of(context).colorScheme.onSurface
+                              .withValues(alpha: AppOpacity.disabled),
                   ),
                 ),
               ),

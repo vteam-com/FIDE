@@ -146,9 +146,8 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
                 !RegExp(r'\w').hasMatch(searchText[startIndex - 1]);
             final after =
                 startIndex + searchQuery.length == searchText.length ||
-                !RegExp(
-                  r'\w',
-                ).hasMatch(searchText[startIndex + searchQuery.length]);
+                !RegExp(r'\w')
+                    .hasMatch(searchText[startIndex + searchQuery.length]);
             if (!before || !after) {
               startIndex += query.length;
               continue;

@@ -40,9 +40,8 @@ class EditorScreenImageView extends StatelessWidget {
                       Icon(
                         Icons.broken_image,
                         size: AppSize.largePreviewIcon,
-                        color: Theme.of(context).colorScheme.error.withValues(
-                          alpha: AppOpacity.disabled,
-                        ),
+                        color: Theme.of(context).colorScheme.error
+                            .withValues(alpha: AppOpacity.disabled),
                       ),
                       const SizedBox(height: AppSpacing.xLarge),
                       Text(
@@ -90,9 +89,8 @@ class EditorScreenImageView extends StatelessWidget {
                   Text(
                     'Size: ${(documentContentLength / AppMetric.fileSizeDivisor).round()}KB • ${path.extension(filePath).toUpperCase().substring(1)}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(
-                        alpha: AppOpacity.secondaryText,
-                      ),
+                      color: Theme.of(context).colorScheme.onSurface
+                          .withValues(alpha: AppOpacity.secondaryText),
                     ),
                   ),
                 ],

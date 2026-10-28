@@ -35,9 +35,8 @@ class SearchToggleIcons extends StatelessWidget {
             size: AppIconSize.mediumLarge,
             color: caseSensitive
                 ? Theme.of(context).colorScheme.primary
-                : Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: AppOpacity.muted),
+                : Theme.of(context).colorScheme.onSurface
+                      .withValues(alpha: AppOpacity.muted),
           ),
           onPressed: () => onCaseSensitiveChanged(!caseSensitive),
           tooltip: 'Toggle case sensitivity (${caseSensitive ? 'ON' : 'OFF'})',
@@ -52,9 +51,8 @@ class SearchToggleIcons extends StatelessWidget {
               size: AppIconSize.mediumLarge,
               color: wholeWord
                   ? Theme.of(context).colorScheme.primary
-                  : Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: AppOpacity.muted),
+                  : Theme.of(context).colorScheme.onSurface
+                        .withValues(alpha: AppOpacity.muted),
             ),
             onPressed: () => onWholeWordChanged(!wholeWord),
             tooltip: 'Toggle whole word matching (${wholeWord ? 'ON' : 'OFF'})',

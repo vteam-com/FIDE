@@ -10,6 +10,12 @@
 analyzer:
   errors:
     avoid_print: ignore
+  exclude:
+    - build/**
+    - windows/**
+    - macos/**
+    - linux/**
+    - test_output/**
 
 include: package:flutter_lints/flutter.yaml
 

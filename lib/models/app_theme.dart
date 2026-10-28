@@ -108,8 +108,7 @@ class AppTheme {
     return brightness == Brightness.light
         ? AppColor
               .sidePanelSurfaceLight // Pure white for light mode
-        : AppColor
-              .sidePanelSurfaceDark; // Slightly lighter than background for dark mode
+        : AppColor.sidePanelSurfaceDark; // Slightly lighter than background for dark mode
   }
 
   /// Returns the side-panel divider color for the active brightness.

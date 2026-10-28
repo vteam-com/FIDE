@@ -127,9 +127,8 @@ class _FIDEState extends ConsumerState<FIDE> {
       });
 
       // Use the unified ProjectManager to handle everything
-      final projectManager = ProviderScope.containerOf(
-        context,
-      ).read(projectManagerProvider);
+      final projectManager = ProviderScope.containerOf(context)
+          .read(projectManagerProvider);
       final success = await projectManager.loadProject(directoryPathToProject);
 
       // Clear loading state and set appropriate final state
@@ -166,9 +165,9 @@ class _FIDEState extends ConsumerState<FIDE> {
     _prefs = await SharedPreferences.getInstance();
 
     // Call AppController to initialize theme and MRU folders (this will get code coverage)
-    await ProviderScope.containerOf(
-      context,
-    ).read(appControllerProvider).initializeAppServices();
+    await ProviderScope.containerOf(context)
+        .read(appControllerProvider)
+        .initializeAppServices();
 
     // Initialize UI state with loaded values
     final savedThemeMode = _prefs.getString(_themeModeKey);
@@ -281,15 +280,18 @@ class _FIDEState extends ConsumerState<FIDE> {
   void _closeCurrentProject() {
     if (_currentViewState == AppViewState.mainLayout) {
       // Clear project state
-      ProviderScope.containerOf(
-        context,
-      ).read(projectLoadedProvider.notifier).state = false;
-      ProviderScope.containerOf(
-        context,
-      ).read(currentProjectPathProvider.notifier).state = null;
-      ProviderScope.containerOf(
-        context,
-      ).read(selectedFileProvider.notifier).state = null;
+      ProviderScope.containerOf(context)
+              .read(projectLoadedProvider.notifier)
+              .state =
+          false;
+      ProviderScope.containerOf(context)
+              .read(currentProjectPathProvider.notifier)
+              .state =
+          null;
+      ProviderScope.containerOf(context)
+              .read(selectedFileProvider.notifier)
+              .state =
+          null;
 
       // Switch back to welcome state
       setState(() {

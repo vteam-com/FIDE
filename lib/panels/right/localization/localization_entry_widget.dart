@@ -122,9 +122,8 @@ class LocalizationEntryWidget extends StatelessWidget {
               vertical: AppSpacing.tiny,
             ),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant.withValues(
-                alpha: AppOpacity.divider,
-              ),
+              color: Theme.of(context).colorScheme.surfaceVariant
+                  .withValues(alpha: AppOpacity.divider),
               borderRadius: BorderRadius.circular(AppRadius.tiny),
             ),
             child: Text(

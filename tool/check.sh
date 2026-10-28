@@ -1,7 +1,7 @@
 #!/bin/sh
 
 CHECK_FAILURE_EXIT_CODE="1"
-FCHECK_VERSION="1.2.0"
+FCHECK_VERSION="1.5.1"
 ANSI_RED="$(printf '\033[31m')"
 ANSI_BOLD="$(printf '\033[1m')"
 ANSI_BLINK="$(printf '\033[5m')"

@@ -9,8 +9,7 @@ import 'package:http/http.dart' as http;
 /// Represents `AIService`.
 class AIService {
   static const String _ollamaUrl = 'http://localhost:11434/api/generate';
-  static const String _defaultModel =
-      'codellama'; // Can be changed to other models like 'llama2', 'mistral', etc.
+  static const String _defaultModel = 'codellama'; // Can be changed to other models like 'llama2', 'mistral', etc.
 
   /// Requests a coding suggestion from Ollama using prompt and contextual text.
   Future<String> getCodeSuggestion(String prompt, String context) async {
@@ -84,10 +83,7 @@ Please provide a helpful response focused on the coding request.''';
   }
 
   /// Builds the AI prompt used to generate an initial Flutter project file.
-  Future<String> getAiPrompt(
-    final String projectName,
-    final String description,
-  ) async {
+  Future<String> getAiPrompt(String projectName, String description) async {
     final prompt =
         '''
 You are a professional Flutter developer.
@@ -298,8 +294,7 @@ class _MyHomePageState extends State<MyHomePage> {
           );
 
           return {
-            'error':
-                'Failed to extract project files from AI response. Expected valid pubspec.yaml and lib/main.dart code.',
+            'error': 'Failed to extract project files from AI response. Expected valid pubspec.yaml and lib/main.dart code.',
           };
         }
       } else {

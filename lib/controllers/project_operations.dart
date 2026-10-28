@@ -30,7 +30,7 @@ class ProjectOperations {
     WidgetRef ref,
   ) async {
     try {
-      final selectedDirectory = await FilePicker.platform.getDirectoryPath();
+      final selectedDirectory = await FilePicker.getDirectoryPath();
       if (selectedDirectory != null && context.mounted) {
         // Use ProjectManager to load the project
         final projectManager = ref.read(projectManagerProvider);

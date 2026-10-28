@@ -85,9 +85,8 @@ class _ResizableSplitterState extends State<ResizableSplitter> {
               ? AppSize.splitterThickness
               : double.infinity,
           color: _isHovering || _isDragging
-              ? Theme.of(
-                  context,
-                ).colorScheme.primary.withAlpha(AppAlpha.splitterHover)
+              ? Theme.of(context).colorScheme.primary
+                    .withAlpha(AppAlpha.splitterHover)
               : Colors.transparent,
           child: Center(
             child: Container(

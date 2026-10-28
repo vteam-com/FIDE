@@ -164,7 +164,7 @@ class FolderNameWidget extends StatelessWidget {
     return Icon(iconData, color: iconColor, size: AppIconSize.tiny);
   }
 
-  Widget _buildIcon(final BuildContext _ /* context */, final Color iconColor) {
+  Widget _buildIcon(BuildContext _ /* context */, Color iconColor) {
     IconData iconData;
 
     if (hasError) {

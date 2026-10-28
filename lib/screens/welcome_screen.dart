@@ -131,9 +131,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   onPressed: widget.onOpenFolder,
                                   icon: Icon(
                                     Icons.folder_open,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimary,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimary,
                                   ),
                                   label: Text(
                                     'Open Flutter Project',
@@ -141,23 +141,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                         .textTheme
                                         .titleMedium
                                         ?.copyWith(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.onPrimary,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
                                           fontWeight: FontWeight.w600,
                                         ),
                                   ),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                    foregroundColor: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimary,
+                                    backgroundColor: Theme.of(context)
+                                        .colorScheme
+                                        .primary,
+                                    foregroundColor: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimary,
                                     elevation: AppSpacing.tiny,
-                                    shadowColor: Theme.of(
-                                      context,
-                                    ).colorScheme.shadow,
+                                    shadowColor: Theme.of(context)
+                                        .colorScheme
+                                        .shadow,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(
                                         AppSpacing.large,
@@ -174,9 +174,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   onPressed: widget.onCreateProject,
                                   icon: Icon(
                                     Icons.add,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary,
                                   ),
                                   label: Text(
                                     'Create New Project',
@@ -184,17 +184,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                         .textTheme
                                         .titleMedium
                                         ?.copyWith(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.primary,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
                                           fontWeight: FontWeight.w600,
                                         ),
                                   ),
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary,
                                       width: AppBorderWidth.medium,
                                     ),
                                     shape: RoundedRectangleBorder(
@@ -243,52 +243,59 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               .withValues(alpha: AppOpacity.disabled),
           borderRadius: BorderRadius.circular(AppRadius.medium),
           border: Border.all(
-            color: Theme.of(
-              context,
-            ).colorScheme.outline.withValues(alpha: AppOpacity.divider),
+            color: Theme.of(context).colorScheme.outline
+                .withValues(alpha: AppOpacity.divider),
           ),
         ),
-        child: ListTile(
-          leading: Icon(
-            hasAccess ? Icons.folder : Icons.folder_off,
-            color: hasAccess
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.error,
-            size: AppIconSize.large,
-          ),
-          title: Text(
-            projectName,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        // Transparent Material so the ListTile's ink effects paint above the
+        // Container's background color.
+        child: Material(
+          type: MaterialType.transparency,
+          child: ListTile(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.medium),
+            ),
+            leading: Icon(
+              hasAccess ? Icons.folder : Icons.folder_off,
               color: hasAccess
-                  ? Theme.of(context).colorScheme.onSurface
+                  ? Theme.of(context).colorScheme.primary
                   : Theme.of(context).colorScheme.error,
+              size: AppIconSize.large,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Text(
-            path,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            title: Text(
+              projectName,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: hasAccess
+                    ? Theme.of(context).colorScheme.onSurface
+                    : Theme.of(context).colorScheme.error,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: IconButton(
-            icon: Icon(
-              Icons.close,
-              size: AppIconSize.medium,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            subtitle: Text(
+              path,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            onPressed: () => widget.onRemoveMruEntry(path),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-          onTap: hasAccess ? () => widget.onOpenMruProject(path) : null,
-          dense: true,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xLarge,
-            vertical: AppSpacing.tiny,
+            trailing: IconButton(
+              icon: Icon(
+                Icons.close,
+                size: AppIconSize.medium,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              onPressed: () => widget.onRemoveMruEntry(path),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+            onTap: hasAccess ? () => widget.onOpenMruProject(path) : null,
+            dense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xLarge,
+              vertical: AppSpacing.tiny,
+            ),
           ),
         ),
       );

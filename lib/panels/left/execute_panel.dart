@@ -559,18 +559,16 @@ Updates macOS CocoaPods dependencies.
             Icon(
               Icons.build_circle_outlined,
               size: AppIconSize.emptyState,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: AppOpacity.divider),
+              color: Theme.of(context).colorScheme.onSurface
+                  .withValues(alpha: AppOpacity.divider),
             ),
             const SizedBox(height: AppSpacing.xLarge),
             Text(
               'Load a project to use\nBuild/Run/Debug features',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withValues(
-                  alpha: AppOpacity.secondaryText,
-                ),
+                color: Theme.of(context).colorScheme.onSurface
+                    .withValues(alpha: AppOpacity.secondaryText),
                 fontSize: AppFontSize.label,
                 fontWeight: FontWeight.w500,
               ),
@@ -604,9 +602,8 @@ Updates macOS CocoaPods dependencies.
     // Check if we should do deep macOS clean
     final isMacOSHost = Platform.isMacOS;
     final isMacOSTarget = _selectedPlatform == 'macos';
-    final hasMacOSDirectory = Directory(
-      '$currentProjectPath/macos',
-    ).existsSync();
+    final hasMacOSDirectory = Directory('$currentProjectPath/macos')
+        .existsSync();
     final shouldDoDeepClean = isMacOSHost && isMacOSTarget && hasMacOSDirectory;
 
     _clearOutput();

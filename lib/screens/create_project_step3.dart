@@ -96,9 +96,8 @@ class _CreateProjectStep3State extends State<CreateProjectStep3> {
                     ),
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: Theme.of(context).colorScheme.outline.withValues(
-                          alpha: AppOpacity.divider,
-                        ),
+                        color: Theme.of(context).colorScheme.outline
+                            .withValues(alpha: AppOpacity.divider),
                       ),
                       borderRadius: BorderRadius.circular(AppRadius.medium),
                     ),
@@ -127,9 +126,9 @@ class _CreateProjectStep3State extends State<CreateProjectStep3> {
                                         color:
                                             action.status ==
                                                 LoadingStatus.failed
-                                            ? Theme.of(
-                                                context,
-                                              ).colorScheme.error
+                                            ? Theme.of(context)
+                                                  .colorScheme
+                                                  .error
                                             : null,
                                       ),
                                 ),
@@ -146,9 +145,8 @@ class _CreateProjectStep3State extends State<CreateProjectStep3> {
               if (hasFailed)
                 Text(
                   'Project creation failed. Please check the errors above.',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
+                  style: Theme.of(context).textTheme.bodyLarge
+                      ?.copyWith(color: Theme.of(context).colorScheme.error),
                   textAlign: TextAlign.center,
                 ),
             ],

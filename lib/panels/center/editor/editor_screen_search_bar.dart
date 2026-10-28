@@ -37,14 +37,12 @@ class EditorScreenSearchBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.medium),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(
-          alpha: AppOpacity.disabled,
-        ),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest
+            .withValues(alpha: AppOpacity.disabled),
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(
-              context,
-            ).colorScheme.outline.withValues(alpha: AppOpacity.divider),
+            color: Theme.of(context).colorScheme.outline
+                .withValues(alpha: AppOpacity.divider),
             width: AppSize.borderThin,
           ),
         ),

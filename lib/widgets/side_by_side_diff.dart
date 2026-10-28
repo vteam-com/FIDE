@@ -103,9 +103,8 @@ class SideBySideDiff extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
-          color: Theme.of(
-            context,
-          ).colorScheme.outline.withValues(alpha: AppOpacity.divider),
+          color: Theme.of(context).colorScheme.outline
+              .withValues(alpha: AppOpacity.divider),
         ),
         borderRadius: BorderRadius.circular(AppRadius.tiny),
       ),
@@ -129,27 +128,24 @@ class SideBySideDiff extends StatelessWidget {
                     'Original',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(
-                        alpha: AppOpacity.secondaryText,
-                      ),
+                      color: Theme.of(context).colorScheme.onSurface
+                          .withValues(alpha: AppOpacity.secondaryText),
                     ),
                   ),
                 ),
                 Container(
                   width: AppSize.borderThin,
                   height: AppSize.diffHeaderDividerHeight,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.outline.withValues(alpha: AppOpacity.divider),
+                  color: Theme.of(context).colorScheme.outline
+                      .withValues(alpha: AppOpacity.divider),
                 ),
                 Expanded(
                   child: Text(
                     'Modified',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(
-                        alpha: AppOpacity.secondaryText,
-                      ),
+                      color: Theme.of(context).colorScheme.onSurface
+                          .withValues(alpha: AppOpacity.secondaryText),
                     ),
                   ),
                 ),
@@ -202,9 +198,9 @@ class SideBySideDiff extends StatelessWidget {
                                     fontSize: AppFontSize.caption,
                                     color: line.type == DiffType.deletion
                                         ? Colors.red[AppShade.strong]
-                                        : Theme.of(
-                                            context,
-                                          ).colorScheme.onSurface,
+                                        : Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
                                   ),
                                 ),
                               ),
@@ -216,9 +212,8 @@ class SideBySideDiff extends StatelessWidget {
                       Container(
                         width: AppSize.borderThin,
                         height: AppSize.diffRowDividerHeight,
-                        color: Theme.of(context).colorScheme.outline.withValues(
-                          alpha: AppOpacity.divider,
-                        ),
+                        color: Theme.of(context).colorScheme.outline
+                            .withValues(alpha: AppOpacity.divider),
                       ),
                       // New side
                       Expanded(
@@ -250,9 +245,9 @@ class SideBySideDiff extends StatelessWidget {
                                     fontSize: AppFontSize.caption,
                                     color: line.type == DiffType.addition
                                         ? Colors.green[AppShade.strong]
-                                        : Theme.of(
-                                            context,
-                                          ).colorScheme.onSurface,
+                                        : Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
                                   ),
                                 ),
                               ),

@@ -51,9 +51,8 @@ class FileNameWidget extends StatelessWidget {
     // Determine background color for selection
     Color? backgroundColor;
     if (isSelected) {
-      backgroundColor = Theme.of(
-        context,
-      ).colorScheme.primaryContainer.withValues(alpha: AppOpacity.divider);
+      backgroundColor = Theme.of(context).colorScheme.primaryContainer
+          .withValues(alpha: AppOpacity.divider);
     }
 
     final String relativePath = p.join(

@@ -87,7 +87,7 @@ class _FolderPanelState extends ConsumerState<FolderPanel> {
   /// Handles `_FolderPanelState.pickDirectory`.
   Future<void> pickDirectory() async {
     try {
-      final selectedDirectory = await FilePicker.platform.getDirectoryPath();
+      final selectedDirectory = await FilePicker.getDirectoryPath();
       if (selectedDirectory != null) {
         showError('Project loading is handled by the main application');
       }
@@ -434,9 +434,9 @@ class _FolderPanelState extends ConsumerState<FolderPanel> {
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: Theme.of(
-                    context,
-                  ).colorScheme.surfaceContainerHighest,
+                  fillColor: Theme.of(context)
+                      .colorScheme
+                      .surfaceContainerHighest,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.large,
                     vertical: AppSpacing.medium,
@@ -486,9 +486,8 @@ class _FolderPanelState extends ConsumerState<FolderPanel> {
     if (hasError) {
       textColor = Theme.of(context).colorScheme.error;
     } else if (node.isHidden) {
-      textColor = Theme.of(
-        context,
-      ).colorScheme.onSurface.withValues(alpha: AppOpacity.disabled);
+      textColor = Theme.of(context).colorScheme.onSurface
+          .withValues(alpha: AppOpacity.disabled);
     } else {
       textColor = Theme.of(context).colorScheme.onSurface;
     }
@@ -498,9 +497,8 @@ class _FolderPanelState extends ConsumerState<FolderPanel> {
     if (hasError) {
       iconColor = Theme.of(context).colorScheme.error;
     } else if (node.isHidden) {
-      iconColor = Theme.of(
-        context,
-      ).colorScheme.primary.withValues(alpha: AppOpacity.disabled);
+      iconColor = Theme.of(context).colorScheme.primary
+          .withValues(alpha: AppOpacity.disabled);
     } else {
       iconColor = Theme.of(context).colorScheme.primary;
     }
@@ -523,9 +521,8 @@ class _FolderPanelState extends ConsumerState<FolderPanel> {
               _showFilteredNodeContextMenu(node, details.globalPosition),
           child: Container(
             color: isMatching
-                ? Theme.of(context).colorScheme.primaryContainer.withValues(
-                    alpha: AppOpacity.subtle,
-                  )
+                ? Theme.of(context).colorScheme.primaryContainer
+                      .withValues(alpha: AppOpacity.subtle)
                 : null,
             child: Padding(
               padding: AppPadding.listItem,

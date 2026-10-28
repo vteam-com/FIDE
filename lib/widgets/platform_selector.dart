@@ -72,9 +72,7 @@ class _PlatformSelectorState extends State<PlatformSelector>
     return LayoutBuilder(
       builder: (_, constraints) {
         final showLabels =
-            constraints.maxWidth >
-            AppSize
-                .platformSelectorLabelBreakpoint; // Show labels if wider than 240px
+            constraints.maxWidth > AppSize.platformSelectorLabelBreakpoint; // Show labels if wider than 240px
 
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,

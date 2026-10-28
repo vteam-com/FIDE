@@ -23,18 +23,16 @@ class EditorScreenUnsupportedFileView extends StatelessWidget {
           Icon(
             Icons.insert_drive_file_outlined,
             size: AppSize.largePreviewIcon,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: AppOpacity.disabled),
+            color: Theme.of(context).colorScheme.onSurface
+                .withValues(alpha: AppOpacity.disabled),
           ),
           const SizedBox(height: AppSpacing.xLarge),
           RichText(
             textAlign: TextAlign.center,
             text: TextSpan(
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withValues(
-                  alpha: AppOpacity.secondaryText,
-                ),
+                color: Theme.of(context).colorScheme.onSurface
+                    .withValues(alpha: AppOpacity.secondaryText),
               ),
               children: [
                 const TextSpan(text: 'The file type '),
@@ -53,9 +51,8 @@ class EditorScreenUnsupportedFileView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppSpacing.xLarge),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer.withValues(
-                alpha: AppOpacity.divider,
-              ),
+              color: Theme.of(context).colorScheme.primaryContainer
+                  .withValues(alpha: AppOpacity.divider),
               borderRadius: BorderRadius.circular(AppRadius.medium),
             ),
             child: Column(
@@ -63,9 +60,8 @@ class EditorScreenUnsupportedFileView extends StatelessWidget {
                 Text(
                   'Request this feature at',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: AppOpacity.muted),
+                    color: Theme.of(context).colorScheme.onSurface
+                        .withValues(alpha: AppOpacity.muted),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -118,9 +114,8 @@ class EditorScreenUnsupportedFileView extends StatelessWidget {
             'Currently supported: Most text files including\n'
             'programming languages, web files, configs, scripts, and images',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: AppOpacity.disabled),
+              color: Theme.of(context).colorScheme.onSurface
+                  .withValues(alpha: AppOpacity.disabled),
             ),
             textAlign: TextAlign.center,
           ),

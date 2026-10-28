@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -5,7 +6,7 @@ import 'dart:typed_data';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_pty/flutter_pty.dart';
+import 'package:flutter_pty2/flutter_pty2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
 
@@ -20,7 +21,10 @@ class TerminalPanel extends ConsumerStatefulWidget {
 class _TerminalPanelState extends ConsumerState<TerminalPanel> {
   TerminalController? controller;
 
-  Pty? pty;
+  PtySession? pty;
+
+  /// Incremented on every start/stop so a slow async spawn can tell it is stale.
+  int _shellGeneration = 0;
 
   late Terminal terminal;
 
@@ -40,7 +44,7 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
 
   @override
   void dispose() {
-    pty?.kill();
+    _stopShell();
     super.dispose();
   }
 
@@ -94,24 +98,33 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
   }
 
   /// Starts a zsh PTY session and wires terminal input/output streams.
-  void _startShell() {
+  Future<void> _startShell() async {
+    final generation = ++_shellGeneration;
     try {
-      final env = Map<String, String>.from(Platform.environment)
-        ..['TERM'] = 'xterm-256color';
-
       // Get the current project path, fallback to app directory if no project loaded
       final projectPath =
           ref.read(currentProjectPathProvider) ?? Directory.current.path;
 
-      pty = Pty.start(
-        '/bin/zsh',
-        arguments: [],
-        workingDirectory: projectPath,
-        environment: env,
+      final session = await Pty.spawn(
+        PtySpawnOptions(
+          executable: '/bin/zsh',
+          workingDirectory: projectPath,
+          environment: const PtyEnvironment.inherit(
+            overrides: {'TERM': 'xterm-256color'},
+          ),
+        ),
       );
 
+      // The panel was disposed, or the shell restarted, while spawning
+      if (!mounted || generation != _shellGeneration) {
+        session.kill();
+        unawaited(session.close());
+        return;
+      }
+      pty = session;
+
       // Pipe PTY output to terminal with UTF-8 decoding
-      pty!.output.listen((data) {
+      session.output.listen((data) {
         final str = utf8.decode(data, allowMalformed: true);
         terminal.write(str);
       });
@@ -119,7 +132,7 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
       // Pipe user input to PTY
       terminal.onOutput = (data) {
         final bytes = Uint8List.fromList(utf8.encode(data));
-        pty!.write(bytes);
+        unawaited(session.input.write(bytes).catchError((_) {}));
       };
 
       terminal.write(
@@ -127,15 +140,33 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
       );
       setState(() {});
     } catch (e) {
+      if (!mounted) {
+        return;
+      }
       terminal.write('Failed to start terminal: $e\r\n');
       setState(() {});
     }
   }
 
+  /// Kills the running shell (if any) and releases its PTY session.
+  void _stopShell() {
+    _shellGeneration++;
+    final session = pty;
+    pty = null;
+    if (session == null) {
+      return;
+    }
+    try {
+      session.kill();
+    } catch (_) {
+      // The shell already exited
+    }
+    unawaited(session.close());
+  }
+
   void _restartShell() {
     // Kill existing PTY
-    pty?.kill();
-    pty = null;
+    _stopShell();
 
     // Clear terminal with ANSI escape code
     terminal.write('\x1b[2J\x1b[H'); // Clear screen and move cursor to top
@@ -146,8 +177,7 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
 
   void _closeTerminal() {
     // Kill existing PTY
-    pty?.kill();
-    pty = null;
+    _stopShell();
 
     // Clear terminal and show closed message
     terminal.write('\x1b[2J\x1b[H'); // Clear screen and move cursor to top

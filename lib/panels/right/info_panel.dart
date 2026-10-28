@@ -214,9 +214,8 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     final indicators = <String, dynamic>{};
 
     // Check for pubspec.lock existence
-    indicators['hasPubspecLock'] = File(
-      '$projectPath/pubspec.lock',
-    ).existsSync();
+    indicators['hasPubspecLock'] = File('$projectPath/pubspec.lock')
+        .existsSync();
 
     // Check for build warning/error logs
     final buildDir = Directory('$projectPath/build');

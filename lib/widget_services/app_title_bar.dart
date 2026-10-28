@@ -260,7 +260,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     if (value == 'add_folder') {
       // Open folder picker first
       try {
-        final selectedDirectory = await FilePicker.platform.getDirectoryPath();
+        final selectedDirectory = await FilePicker.getDirectoryPath();
         if (selectedDirectory != null && mounted && context.mounted) {
           // Use the onProjectSwitch callback to load with loading screen
           if (widget.onProjectSwitch != null) {

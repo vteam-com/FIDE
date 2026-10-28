@@ -83,7 +83,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel> {
   /// Handles `_OrganizedPanelState.pickDirectory`.
   Future<void> pickDirectory() async {
     try {
-      final selectedDirectory = await FilePicker.platform.getDirectoryPath();
+      final selectedDirectory = await FilePicker.getDirectoryPath();
       if (selectedDirectory != null) {
         showError('Project loading is handled by the main application');
       }
@@ -649,8 +649,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel> {
         children: item.children,
         isExpanded: item.isExpanded,
         gitStatus: item.gitStatus,
-        warning:
-            'This file contains a showDialog, we suggest to move dialog related code to single file with dialog logic.',
+        warning: 'This file contains a showDialog, we suggest to move dialog related code to single file with dialog logic.',
       );
     }
 

@@ -392,12 +392,10 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       '@helloWorld': {'description': 'A greeting message'},
     };
 
-    await File(
-      '${l10nDir.path}/app_en.arb',
-    ).writeAsString(jsonEncode(englishArbContent));
-    await File(
-      '${l10nDir.path}/app_fr.arb',
-    ).writeAsString(jsonEncode(frenchArbContent));
+    await File('${l10nDir.path}/app_en.arb')
+        .writeAsString(jsonEncode(englishArbContent));
+    await File('${l10nDir.path}/app_fr.arb')
+        .writeAsString(jsonEncode(frenchArbContent));
   }
 
   /// Handles `_generateClasses`.
@@ -675,9 +673,8 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           // Next Steps section
           Text(
             'Next Steps:',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: AppSpacing.large),
 
@@ -724,9 +721,8 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           if (_arbFiles.isNotEmpty) ...[
             Text(
               'ARB File Management:',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: AppSpacing.large),
             ListView.builder(
@@ -898,9 +894,8 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
               children: [
                 Text(
                   'The following ARB files contain invalid JSON:',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: Theme.of(context).colorScheme.error),
                 ),
                 const SizedBox(height: AppSpacing.tiny),
                 ...malformedFiles.map((filePath) {
@@ -978,9 +973,8 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                   Expanded(
                     child: Text(
                       title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -1068,9 +1062,8 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           children: [
             Text(
               comparison.key,
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleSmall
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: AppSpacing.tiny),
             if (comparison.englishValue != null)
@@ -1186,9 +1179,8 @@ class _MaterialAppTitleVisitor extends GeneralizingAstVisitor<void> {
     if (node.constructorName.toString() == 'MaterialApp') {
       // Look for the title argument
       for (final argument in node.argumentList.arguments) {
-        if (argument is NamedExpression &&
-            argument.name.label.name == 'title') {
-          final expression = argument.expression;
+        if (argument is NamedArgument && argument.name.lexeme == 'title') {
+          final expression = argument.argumentExpression;
           if (expression is StringLiteral) {
             title = expression.stringValue;
             break;

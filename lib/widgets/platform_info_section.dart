@@ -67,9 +67,8 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
       child: Container(
         padding: AppPadding.actionTabDetails,
         decoration: BoxDecoration(
-          color: Theme.of(
-            context,
-          ).colorScheme.surfaceVariant.withValues(alpha: AppOpacity.divider),
+          color: Theme.of(context).colorScheme.surfaceVariant
+              .withValues(alpha: AppOpacity.divider),
           borderRadius: BorderRadius.circular(AppRadius.medium),
         ),
         child: Column(
@@ -266,9 +265,8 @@ class _PlatformInfoSectionState extends State<PlatformInfoSection> {
                 color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(AppRadius.small),
                 border: Border.all(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.outline.withValues(alpha: AppOpacity.divider),
+                  color: Theme.of(context).colorScheme.outline
+                      .withValues(alpha: AppOpacity.divider),
                   width: AppBorderWidth.medium,
                 ),
               ),

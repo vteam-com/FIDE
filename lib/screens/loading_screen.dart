@@ -28,9 +28,8 @@ class _LoadingScreenState extends State<LoadingScreen> {
           end: Alignment.bottomCenter,
           colors: [
             Theme.of(context).colorScheme.surface,
-            Theme.of(context).colorScheme.surfaceContainerHighest.withValues(
-              alpha: AppOpacity.divider,
-            ),
+            Theme.of(context).colorScheme.surfaceContainerHighest
+                .withValues(alpha: AppOpacity.divider),
           ],
         ),
       ),
@@ -116,9 +115,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
                                       Expanded(
                                         child: Text(
                                           action.text,
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodyMedium,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium,
                                         ),
                                       ),
                                     ],
@@ -137,9 +136,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
                                 'Project loading failed. Please check the errors above.',
                                 style: Theme.of(context).textTheme.bodyLarge
                                     ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.error,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .error,
                                     ),
                                 textAlign: TextAlign.center,
                               ),

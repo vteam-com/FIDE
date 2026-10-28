@@ -151,9 +151,8 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
             orElse: () => lines.first,
           );
           // Extract version number using regex
-          final versionMatch = RegExp(
-            r'Flutter (\d+\.\d+\.\d+)',
-          ).firstMatch(versionLine);
+          final versionMatch = RegExp(r'Flutter (\d+\.\d+\.\d+)')
+              .firstMatch(versionLine);
           if (versionMatch != null) {
             _flutterVersion = versionMatch.group(1);
           } else {
@@ -194,9 +193,8 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
         _gitAvailable = true;
         // Extract version from output (format: "git version 2.39.3")
         final output = results.first.stdout.toString().trim();
-        final versionMatch = RegExp(
-          r'git version (\d+\.\d+\.\d+)',
-        ).firstMatch(output);
+        final versionMatch = RegExp(r'git version (\d+\.\d+\.\d+)')
+            .firstMatch(output);
         if (versionMatch != null) {
           _gitVersion = versionMatch.group(1);
         } else {
@@ -787,9 +785,8 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
             end: Alignment.bottomCenter,
             colors: [
               Theme.of(context).colorScheme.surface,
-              Theme.of(context).colorScheme.surfaceContainerHighest.withValues(
-                alpha: AppOpacity.divider,
-              ),
+              Theme.of(context).colorScheme.surfaceContainerHighest
+                  .withValues(alpha: AppOpacity.divider),
             ],
           ),
         ),
