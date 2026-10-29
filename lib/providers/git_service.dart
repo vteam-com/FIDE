@@ -201,6 +201,33 @@ class GitService {
     );
   }
 
+  /// Rewrites the last commit with the staged changes; keeps its message
+  /// when [message] is empty.
+  Future<String> amend(String path, String message) async {
+    return _runGitMutation(
+      path: path,
+      args: [
+        'commit',
+        '--amend',
+        ...message.isEmpty ? ['--no-edit'] : ['-m', message],
+      ],
+      successMessage: 'Last commit amended successfully',
+      failureMessage: 'Failed to amend last commit',
+    );
+  }
+
+  /// Whether the last commit can be amended safely: HEAD exists and no
+  /// remote-tracking branch contains it yet (it has not been pushed).
+  Future<bool> canAmend(String path) async {
+    final remoteBranches = await _runner.outputOf('git', [
+      'branch',
+      '--remotes',
+      '--contains',
+      'HEAD',
+    ], workingDirectory: path);
+    return remoteBranches != null && remoteBranches.trim().isEmpty;
+  }
+
   /// Pushes local commits to the configured remote.
   Future<String> push(String path) async {
     return _runGitMutation(

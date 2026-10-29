@@ -83,4 +83,36 @@ void main() {
       throwsA(isA<GitException>()),
     );
   });
+
+  test('canAmend is true for an unpushed commit', () async {
+    expect(await const GitService().canAmend(repo.path), isTrue);
+  });
+
+  test('canAmend is false once the commit is on a remote branch', () async {
+    final remote = Directory.systemTemp.createTempSync('fide_git_remote_');
+    addTearDown(() => remote.deleteSync(recursive: true));
+    _git(remote.path, ['init', '-q', '--bare']);
+    _git(repo.path, ['remote', 'add', 'origin', remote.path]);
+    _git(repo.path, ['push', '-q', 'origin', 'HEAD']);
+
+    expect(await const GitService().canAmend(repo.path), isFalse);
+  });
+
+  test('amend with an empty message keeps the last commit message', () async {
+    File(nestedFile).writeAsStringSync('amended\n');
+    _git(repo.path, ['add', 'lib/main.dart']);
+
+    await const GitService().amend(repo.path, '');
+
+    final commits = await const GitService().getRecentCommits(repo.path);
+    expect(commits.map((c) => c.message), ['init']);
+    expect(await const GitService().getHeadContent(nestedFile), 'amended\n');
+  });
+
+  test('amend with a message rewords the last commit', () async {
+    await const GitService().amend(repo.path, 'reworded');
+
+    final commits = await const GitService().getRecentCommits(repo.path);
+    expect(commits.map((c) => c.message), ['reworded']);
+  });
 }

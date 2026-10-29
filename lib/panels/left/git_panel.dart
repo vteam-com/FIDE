@@ -39,6 +39,9 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   final TextEditingController _commitController = TextEditingController();
   bool _isCommitting = false;
 
+  /// Whether the last commit is unpushed, so Amend is offered.
+  bool _canAmend = false;
+
   @override
   void initState() {
     super.initState();
@@ -55,9 +58,17 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     }
   }
 
+  /// Reloads status, recent commits and whether the last commit can be
+  /// amended.
   Future<void> _loadGitData() async {
     await ref.read(gitStatusProvider.notifier).loadStatus(widget.projectPath);
     await ref.read(gitCommitsProvider.notifier).loadCommits(widget.projectPath);
+    final canAmend = await ref
+        .read(gitServiceProvider)
+        .canAmend(widget.projectPath);
+    if (mounted) {
+      setState(() => _canAmend = canAmend);
+    }
   }
 
   /// Runs a Git [action], shows its success or failure, and reloads the
@@ -85,12 +96,27 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   /// Handles `_commit`.
   Future<void> _commit() async {
     if (_commitController.text.isEmpty) return;
+    await _runCommitAction(
+      (git, message) => git.commit(widget.projectPath, message),
+    );
+  }
 
+  /// Amends the last commit with the staged changes, rewording it when a
+  /// message was entered.
+  Future<void> _amend() => _runCommitAction(
+    (git, message) => git.amend(widget.projectPath, message),
+  );
+
+  /// Runs a commit-like [action] with the entered message, clearing the
+  /// field and showing the spinner while it runs.
+  Future<void> _runCommitAction(
+    Future<String> Function(GitService, String) action,
+  ) async {
     setState(() => _isCommitting = true);
     try {
       final message = _commitController.text;
       _commitController.clear();
-      await _runGitAction((git) => git.commit(widget.projectPath, message));
+      await _runGitAction((git) => action(git, message));
     } finally {
       if (mounted) {
         setState(() => _isCommitting = false);
@@ -222,11 +248,20 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                     ),
                   ),
                 if (status.staged.isNotEmpty)
-                  ElevatedButton(
-                    onPressed: _isCommitting ? null : _commit,
-                    child: _isCommitting
-                        ? const InlineSpinner()
-                        : const Text('Commit'),
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: _isCommitting ? null : _commit,
+                        child: _isCommitting
+                            ? const InlineSpinner()
+                            : const Text('Commit'),
+                      ),
+                      if (_canAmend)
+                        TextButton(
+                          onPressed: _isCommitting ? null : _amend,
+                          child: const Text('Amend'),
+                        ),
+                    ],
                   ),
               ],
             ),
