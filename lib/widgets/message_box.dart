@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/message_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 // Convenience methods for showing messages
 /// Represents `MessageBox`.
@@ -23,6 +24,16 @@ class MessageBox {
   /// Shows a warning message overlay.
   static void showWarning(BuildContext context, String message) {
     _showMessage(context, message, MessageType.warning);
+  }
+
+  /// Copies [text] to the clipboard and confirms it with [confirmation].
+  static void copyToClipboard(
+    BuildContext context,
+    String text, {
+    String confirmation = 'Copied to clipboard',
+  }) {
+    Clipboard.setData(ClipboardData(text: text));
+    showSuccess(context, confirmation);
   }
 
   /// Asks the user to confirm a destructive action; resolves true only when

@@ -23,18 +23,23 @@ class FileTypeInfo {
   /// Syntax highlighting for text files; null means plain text.
   final Mode? language;
 
+  /// Language name when it isn't the extension in capitals.
+  final String? label;
+
   /// A file the code editor opens, highlighted as [language] when given.
-  const FileTypeInfo.text(this.category, [this.language])
+  const FileTypeInfo.text(this.category, [this.language, this.label])
     : opensAs = FileOpening.text;
 
   /// An image the image viewer opens.
   const FileTypeInfo.image()
     : category = FileCategory.image,
       opensAs = FileOpening.image,
-      language = null;
+      language = null,
+      label = null;
 
   /// A recognized file FIDE only shows an icon for.
   const FileTypeInfo.other(this.category)
     : opensAs = FileOpening.none,
-      language = null;
+      language = null,
+      label = null;
 }

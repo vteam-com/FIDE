@@ -3,7 +3,7 @@ part of 'shared_panel_utils.dart';
 /// Actions offered in the project tree's context menu, in menu order.
 enum NodeAction {
   open('Open', Icons.open_in_new),
-  reveal('Show in File Manager', Icons.folder_open),
+  reveal('Reveal in', Icons.folder_open),
   copyFullPath('Copy Full Path', Icons.content_copy),
   copyRelativePath('Copy Relative Path', Icons.content_copy),
   newFile('New File', Icons.note_add),
@@ -22,11 +22,8 @@ enum NodeAction {
   bool get isDestructive => this == delete;
 
   /// Menu label, naming the platform's file manager for [reveal].
-  String get label => switch (this) {
-    reveal when Platform.isMacOS => 'Reveal in Finder',
-    reveal when Platform.isWindows => 'Show in Explorer',
-    _ => _label,
-  };
+  String get label =>
+      this == reveal ? '$_label ${ProcessRunner.fileManagerName}' : _label;
 
   /// Whether the action is offered for [node]; creating entries needs a
   /// directory to create them in.

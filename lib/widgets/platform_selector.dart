@@ -14,11 +14,14 @@ class PlatformSelector extends StatefulWidget {
     required this.onPlatformSelected,
   });
 
-  final Function(String) onPlatformSelected;
+  /// Called when the user picks a configured platform.
+  final ValueChanged<FlutterPlatform> onPlatformSelected;
 
-  final String selectedPlatform;
+  /// The platform currently selected.
+  final FlutterPlatform selectedPlatform;
 
-  final Set<String> supportedPlatforms;
+  /// Platforms the project has a folder for; only these can be picked.
+  final Set<FlutterPlatform> supportedPlatforms;
 
   @override
   State<PlatformSelector> createState() => _PlatformSelectorState();
@@ -26,11 +29,6 @@ class PlatformSelector extends StatefulWidget {
 
 class _PlatformSelectorState extends State<PlatformSelector>
     with TickerProviderStateMixin {
-  /// Platform ids in tab order.
-  static final List<String> _platformIds = [
-    for (final platform in FlutterPlatform.values) platform.name,
-  ];
-
   late TabController _tabController;
 
   @override
@@ -86,8 +84,8 @@ class _PlatformSelectorState extends State<PlatformSelector>
               fontSize: AppFontSize.caption,
             ),
             tabs: platforms.map((p) {
-              final isSupported = widget.supportedPlatforms.contains(p.name);
-              final isSelected = widget.selectedPlatform == p.name;
+              final isSupported = widget.supportedPlatforms.contains(p);
+              final isSelected = widget.selectedPlatform == p;
               final needsTooltip = !showLabels;
 
               final tab = Tab(
@@ -157,27 +155,25 @@ class _PlatformSelectorState extends State<PlatformSelector>
 
   /// Creates and configures the [TabController] based on the ordered list of supported platforms.
   void _setupTabController() {
-    final allPlatforms = _platformIds;
-
     _tabController = TabController(
-      length: allPlatforms.length,
+      length: FlutterPlatform.values.length,
       vsync: this,
-      initialIndex: allPlatforms.indexOf(widget.selectedPlatform),
+      initialIndex: widget.selectedPlatform.index,
     );
 
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
-      final platformId = allPlatforms[_tabController.index];
-      if (widget.supportedPlatforms.contains(platformId)) {
-        widget.onPlatformSelected(platformId);
+      final platform = FlutterPlatform.values[_tabController.index];
+      if (widget.supportedPlatforms.contains(platform)) {
+        widget.onPlatformSelected(platform);
       }
     });
   }
 
   /// Recreates the [TabController] when the set of supported platforms changes.
   void _updateTabController() {
-    final targetIndex = _platformIds.indexOf(widget.selectedPlatform);
-    if (targetIndex >= 0 && _tabController.index != targetIndex) {
+    final targetIndex = widget.selectedPlatform.index;
+    if (_tabController.index != targetIndex) {
       _tabController.animateTo(targetIndex);
     }
   }

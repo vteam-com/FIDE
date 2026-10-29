@@ -38,6 +38,19 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
     );
   }
 
+  /// Writes [content] to [filePath] and records it as the clean, saved
+  /// content of its document.
+  Future<void> save(String filePath, String content) async {
+    await File(filePath).writeAsString(content);
+    update(filePath, content: content, isDirty: false);
+  }
+
+  /// Writes [content] to [filePath] immediately without changing state,
+  /// for an editor that is closing and can neither wait nor notify.
+  void saveOnClose(String filePath, String content) {
+    File(filePath).writeAsStringSync(content);
+  }
+
   /// Records the editor's latest [content], [selection] and [isDirty] for
   /// [filePath]; does nothing when nothing changed.
   void update(

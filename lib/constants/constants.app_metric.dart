@@ -5,7 +5,6 @@ class AppMetric {
   static const int terminalMaxLines = 1000;
   static const int colorChannelMax = 255;
   static const int fileSizeDivisor = 1024;
-  static const int removePrefixLength = 7;
   static const int mruFolderLimit = 5;
   static const int aiContextPreviewChars = 2000;
   static const int translationPreviewLines = 5;

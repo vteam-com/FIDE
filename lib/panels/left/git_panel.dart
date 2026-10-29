@@ -6,6 +6,7 @@ import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
@@ -59,11 +60,18 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     await ref.read(gitCommitsProvider.notifier).loadCommits(widget.projectPath);
   }
 
-  /// Runs a Git [action], shows its result message, and reloads the panel.
+  /// Runs a Git [action], shows its success or failure, and reloads the
+  /// panel.
   Future<void> _runGitAction(Future<String> Function(GitService) action) async {
-    final result = await action(ref.read(gitServiceProvider));
-    if (mounted) {
-      MessageBox.showInfo(context, result);
+    try {
+      final result = await action(ref.read(gitServiceProvider));
+      if (mounted) {
+        MessageBox.showSuccess(context, result);
+      }
+    } on GitException catch (e) {
+      if (mounted) {
+        MessageBox.showError(context, '$e');
+      }
     }
     _loadGitData();
   }
@@ -107,17 +115,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
     if (!confirmed) return;
 
-    final gitService = ref.read(gitServiceProvider);
-    final result = await gitService.discardChanges(widget.projectPath, files);
-    if (mounted) {
-      final isSuccess = result.contains('successfully');
-      if (isSuccess) {
-        MessageBox.showSuccess(context, result);
-      } else {
-        MessageBox.showError(context, result);
-      }
-    }
-    _loadGitData();
+    await _runGitAction((git) => git.discardChanges(widget.projectPath, files));
   }
 
   /// Reads the working-directory content of [filePath], or '' when missing.
@@ -227,13 +225,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   ElevatedButton(
                     onPressed: _isCommitting ? null : _commit,
                     child: _isCommitting
-                        ? const SizedBox(
-                            width: AppIconSize.large,
-                            height: AppIconSize.large,
-                            child: CircularProgressIndicator(
-                              strokeWidth: AppBorderWidth.medium,
-                            ),
-                          )
+                        ? const InlineSpinner()
                         : const Text('Commit'),
                   ),
               ],

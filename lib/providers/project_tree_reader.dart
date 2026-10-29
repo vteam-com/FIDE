@@ -103,17 +103,7 @@ class ProjectTreeReader {
   static List<ProjectNode> _sortedNodes(
     List<(FileSystemEntity, FileStat)> entries,
   ) {
-    entries.sort((a, b) {
-      final aIsDirectory = a.$2.type == FileSystemEntityType.directory;
-      final bIsDirectory = b.$2.type == FileSystemEntityType.directory;
-      if (aIsDirectory != bIsDirectory) {
-        return aIsDirectory ? -1 : 1;
-      }
-      return p
-          .basename(a.$1.path)
-          .toLowerCase()
-          .compareTo(p.basename(b.$1.path).toLowerCase());
-    });
-    return [for (final (entity, stat) in entries) _fromStat(entity, stat)];
+    return [for (final (entity, stat) in entries) _fromStat(entity, stat)]
+      ..sort(ProjectNode.compareInTree);
   }
 }

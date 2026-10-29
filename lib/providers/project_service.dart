@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/loading_action.dart';
 import 'package:fide/models/project_node.dart';
+import 'package:fide/models/project_paths.dart';
+import 'package:fide/models/pubspec.dart';
 import 'package:fide/providers/file_system_watcher.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/project_state_sink.dart';
@@ -37,28 +39,9 @@ class ProjectService {
   /// Check if a directory is a valid Flutter project
   Future<bool> _isFlutterProject(String directoryPath) async {
     try {
-      final dir = Directory(directoryPath);
-
-      // Check if pubspec.yaml exists (required for Flutter projects)
-      final pubspecFile = File('${dir.path}/pubspec.yaml');
-      if (!await pubspecFile.exists()) {
-        return false;
-      }
-
-      // Check if lib directory exists (typical Flutter project structure)
-      final libDir = Directory('${dir.path}/lib');
-      if (!await libDir.exists()) {
-        return false;
-      }
-
-      // Additional check: verify pubspec.yaml contains flutter dependency
-      final pubspecContent = await pubspecFile.readAsString();
-      if (!pubspecContent.contains('flutter:') &&
-          !pubspecContent.contains('sdk: flutter')) {
-        return false;
-      }
-
-      return true;
+      final paths = ProjectPaths(directoryPath);
+      if (!await Directory(paths.libDir).exists()) return false;
+      return (await Pubspec.read(paths.pubspec))?.isFlutter ?? false;
     } catch (_) {
       // If we can't read the directory, it's not accessible anyway
       return false;

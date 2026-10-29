@@ -1,3 +1,5 @@
+import 'package:fide/models/left_panel_tab.dart';
+import 'package:fide/models/right_panel_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
@@ -13,9 +15,15 @@ final themeModeProvider = StateProvider<ThemeMode>(
   (_ /*ref*/) => ThemeMode.system,
 );
 
-/// Active panel index providers (moved here for UI state organization)
-final activeLeftPanelTabProvider = StateProvider<int>((_ /*ref*/) => 0);
-final activeRightPanelTabProvider = StateProvider<int>((_ /*ref*/) => 0);
+/// The tab shown in the left panel.
+final activeLeftPanelTabProvider = StateProvider<LeftPanelTab>(
+  (_ /*ref*/) => LeftPanelTab.values.first,
+);
+
+/// The tab shown in the right panel.
+final activeRightPanelTabProvider = StateProvider<RightPanelTab>(
+  (_ /*ref*/) => RightPanelTab.values.first,
+);
 
 /// 1-based line of the caret in the active editor, for panels that track it.
 final editorCursorLineProvider = StateProvider<int>((_ /*ref*/) => 1);

@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/output_log.dart';
+import 'package:fide/models/panel_action.dart';
+import 'package:fide/panels/left/command_actions.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/flutter_build_service.dart';
 import 'package:fide/providers/service_providers.dart';
@@ -23,20 +25,14 @@ class ExecutePanel extends ConsumerStatefulWidget {
   ConsumerState<ExecutePanel> createState() => _ExecutePanelState();
 }
 
-class _ExecutePanelState extends ConsumerState<ExecutePanel> {
-  BuildProcessStatus _cleanStatus = BuildProcessStatus.idle;
-  BuildProcessStatus _buildStatus = BuildProcessStatus.idle;
-  BuildProcessStatus _runStatus = BuildProcessStatus.idle;
-  BuildProcessStatus _debugStatus = BuildProcessStatus.idle;
-  BuildProcessStatus _podStatus = BuildProcessStatus.idle;
-
+class _ExecutePanelState extends ConsumerState<ExecutePanel>
+    with CommandActions {
   late final FlutterBuildService _buildService = ref.read(
     flutterBuildServiceProvider,
   );
-  Process? _currentProcess;
   // One log per platform so switching targets keeps each one's output
-  final Map<String, OutputLog> _logs = {};
-  Set<String> _supportedPlatforms = {};
+  final Map<FlutterPlatform, OutputLog> _logs = {};
+  Set<FlutterPlatform> _supportedPlatforms = {};
 
   @override
   void initState() {
@@ -54,14 +50,18 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
     super.setState(fn);
   }
 
+  @override
+  OutputLog get actionLog => _log;
+
   /// The chosen build target; `build` watches it so changes rebuild.
-  String get _selectedPlatform => ref.read(selectedPlatformProvider);
+  FlutterPlatform get _selectedPlatform => ref.read(selectedPlatformProvider);
 
   /// Output log of the selected platform.
   OutputLog get _log => _logs.putIfAbsent(_selectedPlatform, OutputLog.new);
 
-  /// Output sink that writes command output into the selected platform's log.
-  BuildOutput get _buildOutput => BuildOutput(
+  /// Output sink that writes command output into the selected platform's
+  /// log and tracks the processes action [id] starts.
+  BuildOutput _buildOutputFor(String id) => BuildOutput(
     onOutput: (text) => setState(() {
       _log.addOutput(text);
     }),
@@ -69,27 +69,20 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
       _log.addError(text);
     }),
     onResetErrors: () => setState(_log.clearErrors),
-    onProcessStarted: (process) => _currentProcess = process,
+    onProcessStarted: (process) => trackProcess(id, process),
   );
 
-  /// Returns a finished action's status indicator to idle after a pause.
-  void _resetStatusLater(void Function() resetStatus) {
-    Future.delayed(AppDuration.buildStatusResetDelay, () {
-      setState(resetStatus);
-    });
-  }
-
   /// Runs `pod install --repo-update` for the selected Apple platform.
-  Future<void> _updateCocoaPods() => _runAction(
-    setStatus: (status) => _podStatus = status,
+  Future<void> _updateCocoaPods(String id) => _runProjectAction(
+    id,
     startMessages: [
       '📦 Updating CocoaPods dependencies...',
       'Running pod install --repo-update',
     ],
     // Only offered for CocoaPods platforms, whose folder holds the Podfile
     command: (projectPath) => _buildService.podInstall(
-      '$projectPath/$_selectedPlatform',
-      _buildOutput,
+      '$projectPath/${_selectedPlatform.name}',
+      _buildOutputFor(id),
     ),
     successMessage: '✅ CocoaPods update completed successfully',
     failureMessage: (exitCode) =>
@@ -97,14 +90,10 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
     errorPrefix: '❌ CocoaPods error: ',
   );
 
-  /// Runs one command-backed action for the loaded project: clears the log,
-  /// marks the action running with [startMessages], then records success or
-  /// failure from the exit code [command] returns or the error it throws.
-  ///
-  /// The status returns to idle after a pause, except for app runs
-  /// ([resetWhenDone] false), whose final state stays visible.
-  Future<void> _runAction({
-    required void Function(BuildProcessStatus) setStatus,
+  /// Runs action [id] against the loaded project; does nothing when no
+  /// project is loaded. See [runCommandAction].
+  Future<void> _runProjectAction(
+    String id, {
     required List<String> startMessages,
     required Future<int> Function(String) command,
     required String successMessage,
@@ -114,81 +103,25 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
   }) async {
     final projectPath = ref.read(currentProjectPathProvider);
     if (projectPath == null) return;
+    await runCommandAction(
+      id,
+      startMessages: startMessages,
+      command: () => command(projectPath),
+      successMessage: successMessage,
+      failureMessage: failureMessage,
+      errorPrefix: errorPrefix,
+      resetWhenDone: resetWhenDone,
+    );
+  }
 
-    _clearOutput();
-    setState(() {
-      setStatus(BuildProcessStatus.running);
-      startMessages.forEach(_log.addOutput);
-    });
-
-    try {
-      final exitCode = await command(projectPath);
-      setState(() {
-        if (exitCode == 0) {
-          setStatus(BuildProcessStatus.success);
-          _log.addOutput(successMessage);
-        } else {
-          setStatus(BuildProcessStatus.error);
-          _log.addError(failureMessage(exitCode));
-        }
-      });
-    } catch (e) {
-      setState(() {
-        setStatus(BuildProcessStatus.error);
-        _log.addError('$errorPrefix$e');
-      });
-    } finally {
-      _currentProcess = null;
-      if (resetWhenDone) {
-        _resetStatusLater(() => setStatus(BuildProcessStatus.idle));
-      }
+  /// Why the selected platform can't be built here, or how to add it.
+  String _getPlatformInstructions(FlutterPlatform platform) {
+    if (!_supportedPlatforms.contains(platform)) {
+      return platform.enableInstructions;
     }
-  }
-
-  @override
-  void dispose() {
-    _currentProcess?.kill();
-    super.dispose();
-  }
-
-  /// Whether the host OS can build [platform].
-  bool _canBuildOnCurrentPlatform(String platform) {
-    return FlutterPlatform.fromId(platform)?.canBuildOnHost ?? false;
-  }
-
-  /// Handles `_getPlatformInstructions`.
-  String _getPlatformInstructions(String platform) {
-    final currentPlatform = Platform.operatingSystem;
-    final isProjectSupported = _supportedPlatforms.contains(platform);
-    final canBuildOnCurrent = _canBuildOnCurrentPlatform(platform);
-
-    if (!isProjectSupported) {
-      // Project doesn't support this platform
-      switch (platform) {
-        case 'android':
-          return 'Android support is configured.\nYou can build and run Android apps.';
-        case 'ios':
-          return 'iOS support is configured.\nYou can build and run iOS apps.';
-        case 'web':
-          return 'To enable Flutter web:\nflutter config --enable-web\n\nThen restart the IDE.';
-        case 'windows':
-          return 'To enable Flutter Windows desktop:\nflutter config --enable-windows-desktop\n\nThen restart the IDE.';
-        case 'linux':
-          return 'To enable Flutter Linux desktop:\nflutter config --enable-linux-desktop\n\nThen restart the IDE.';
-        case 'macos':
-          return 'To enable Flutter macOS desktop:\nflutter config --enable-macos-desktop\n\nThen restart the IDE.';
-        default:
-          return 'Platform not recognized.';
-      }
-    } else if (!canBuildOnCurrent) {
-      // Project supports it but current platform can't build it
-      if (platform == 'ios' && currentPlatform != 'macos') {
-        return 'iOS builds require a macOS machine.\n\nYou cannot build iOS apps from $currentPlatform.';
-      } else {
-        return '$platform builds require a $platform machine.\n\nYou cannot build $platform apps from $currentPlatform.';
-      }
+    if (!platform.canBuildOnHost) {
+      return platform.cannotBuildOn(Platform.operatingSystem);
     }
-
     return 'Platform configuration verified.';
   }
 
@@ -211,9 +144,8 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
         PlatformInfoSection(
           selectedPlatform: _selectedPlatform,
           isSupported: _supportedPlatforms.contains(_selectedPlatform),
-          canBuild: _canBuildOnCurrentPlatform(_selectedPlatform),
+          canBuild: _selectedPlatform.canBuildOnHost,
           projectPath: currentProjectPath,
-          currentHostPlatform: Platform.operatingSystem,
           onAppendOutput: appendOutput,
           onAppendError: appendError,
         ),
@@ -234,7 +166,7 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
     final colorScheme = Theme.of(context).colorScheme;
     final canBuild =
         _supportedPlatforms.contains(_selectedPlatform) &&
-        _canBuildOnCurrentPlatform(_selectedPlatform);
+        _selectedPlatform.canBuildOnHost;
 
     if (!canBuild) {
       // Instructions for unsupported platforms
@@ -274,20 +206,41 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
     return _buildActionTabsWithDetails();
   }
 
-  /// Handles `_buildActionTabsWithDetails`.
+  /// Action [id] with its current status and a Stop for its process.
+  PanelAction _action(
+    String id, {
+    required IconData icon,
+    required String title,
+    required String description,
+    required String details,
+    required Color color,
+    required VoidCallback onRun,
+  }) {
+    return PanelAction(
+      id: id,
+      title: title,
+      description: description,
+      details: details,
+      icon: icon,
+      color: color,
+      onRun: onRun,
+      onStop: () => stopAction(id),
+      status: statusOf(id),
+    );
+  }
+
+  /// The actions offered for the selected platform.
   Widget _buildActionTabsWithDetails() {
     final colorScheme = Theme.of(context).colorScheme;
+    final platform = _selectedPlatform;
 
-    // Prepare actions based on platform
-    final actions = <Map<String, dynamic>>[];
-
-    // Clean action - always available
-    actions.add({
-      'id': 'clean',
-      'icon': Icons.cleaning_services_rounded,
-      'title': 'Clean',
-      'description': 'Clean build artifacts, cache, and temporary files',
-      'details': '''
+    final actions = <PanelAction>[
+      _action(
+        'clean',
+        icon: Icons.cleaning_services_rounded,
+        title: 'Clean',
+        description: 'Clean build artifacts, cache, and temporary files',
+        details: '''
 Cleans the Flutter build cache and artifacts.
 
 • Removes build/ directory contents
@@ -295,19 +248,16 @@ Cleans the Flutter build cache and artifacts.
 • Removes platform-specific build outputs
 • Prepares for fresh build
       ''',
-      'color': colorScheme.secondary,
-      'action': _cleanFlutterApp,
-      'status': _cleanStatus,
-    });
-
-    // Build actions
-    if (_selectedPlatform == 'android') {
-      actions.add({
-        'id': 'build_apk',
-        'icon': Icons.phone_android_rounded,
-        'title': 'Build APK',
-        'description': 'Build Android App Bundle for Play Store',
-        'details': '''
+        color: colorScheme.secondary,
+        onRun: _cleanFlutterApp,
+      ),
+      if (platform == FlutterPlatform.android) ...[
+        _action(
+          'build_apk',
+          icon: Icons.phone_android_rounded,
+          title: 'Build APK',
+          description: 'Build an installable Android package (APK)',
+          details: '''
 Builds an Android app package (APK) for the selected platform.
 
 • Compiles Dart code to native ARM/x86 binaries
@@ -315,16 +265,15 @@ Builds an Android app package (APK) for the selected platform.
 • Creates installable .apk file
 • Targets debug or release configurations
         ''',
-        'color': colorScheme.primary,
-        'action': () => _buildFlutterApp('apk'),
-        'status': _buildStatus,
-      });
-      actions.add({
-        'id': 'build_aab',
-        'icon': Icons.archive_rounded,
-        'title': 'Build AAB',
-        'description': 'Build Android App Bundle for Play Store',
-        'details': '''
+          color: colorScheme.primary,
+          onRun: () => _buildFlutterApp('build_apk', 'apk'),
+        ),
+        _action(
+          'build_aab',
+          icon: Icons.archive_rounded,
+          title: 'Build AAB',
+          description: 'Build Android App Bundle for Play Store',
+          details: '''
 Builds an Android App Bundle (AAB) for Google Play Store.
 
 • Contains optimized app binaries for multiple ABIs
@@ -332,18 +281,16 @@ Builds an Android App Bundle (AAB) for Google Play Store.
 • Smaller downloads through dynamic feature delivery
 • Required format for Play Store submissions
         ''',
-        'color': colorScheme.tertiary,
-        'action': () => _buildFlutterApp('aab'),
-        'status': _buildStatus,
-      });
-    } else {
-      actions.add({
-        'id': 'build',
-        'icon': Icons.build_rounded,
-        'title': 'Build ${getPlatformDisplayName(_selectedPlatform)}',
-        'description':
-            'Build application for ${getPlatformDisplayName(_selectedPlatform)} platform',
-        'details': '''
+          color: colorScheme.tertiary,
+          onRun: () => _buildFlutterApp('build_aab', 'aab'),
+        ),
+      ] else
+        _action(
+          'build',
+          icon: Icons.build_rounded,
+          title: 'Build ${platform.displayName}',
+          description: 'Build application for ${platform.displayName} platform',
+          details: '''
 Builds the Flutter application for the selected platform.
 
 • Compiles Dart code to native platform binaries
@@ -351,19 +298,15 @@ Builds the Flutter application for the selected platform.
 • Creates platform-specific application bundle
 • Optimizes for target platform requirements
         ''',
-        'color': colorScheme.primary,
-        'action': () => _buildFlutterApp(_selectedPlatform),
-        'status': _buildStatus,
-      });
-    }
-
-    // Run actions
-    actions.add({
-      'id': 'run',
-      'icon': Icons.rocket_launch_rounded,
-      'title': 'Run Release',
-      'description': 'Run application in release mode',
-      'details': '''
+          color: colorScheme.primary,
+          onRun: () => _buildFlutterApp('build', platform.name),
+        ),
+      _action(
+        'run',
+        icon: Icons.rocket_launch_rounded,
+        title: 'Run Release',
+        description: 'Run application in release mode',
+        details: '''
 Runs the Flutter application in release mode.
 
 • Builds and launches the app
@@ -371,17 +314,15 @@ Runs the Flutter application in release mode.
 • Hot reload disabled for performance
 • Designed for production deployment
       ''',
-      'color': Colors.green,
-      'action': () => _runFlutterApp(isDebug: false),
-      'status': _runStatus,
-    });
-
-    actions.add({
-      'id': 'debug',
-      'icon': Icons.bug_report_rounded,
-      'title': 'Run Debug',
-      'description': 'Run application in debug mode with hot reload',
-      'details': '''
+        color: Colors.green,
+        onRun: () => _runFlutterApp('run', isDebug: false),
+      ),
+      _action(
+        'debug',
+        icon: Icons.bug_report_rounded,
+        title: 'Run Debug',
+        description: 'Run application in debug mode with hot reload',
+        details: '''
 Runs the Flutter application in debug mode.
 
 • Enables hot reload for fast development
@@ -389,49 +330,29 @@ Runs the Flutter application in debug mode.
 • Allows real-time code modification
 • Development and testing mode
       ''',
-      'color': Colors.orange,
-      'action': () => _runFlutterApp(isDebug: true),
-      'status': _debugStatus,
-    });
-
-    // CocoaPods actions (separate)
-    if (_selectedPlatform == 'ios' && Platform.isMacOS) {
-      actions.add({
-        'id': 'cocoapods',
-        'icon': Icons.developer_mode,
-        'title': 'Update iOS Pods',
-        'description': 'Update CocoaPods dependencies for iOS',
-        'details': '''
-Updates iOS CocoaPods dependencies.
-
-• Updates pod repository
-• Installs/Updates iOS framework dependencies
-• Ensures native iOS code compatibility
-• Required before iOS builds
-        ''',
-        'color': AppColor.nativeDependencyAccent,
-        'action': _updateCocoaPods,
-        'status': _podStatus,
-      });
-    } else if (_selectedPlatform == 'macos' && Platform.isMacOS) {
-      actions.add({
-        'id': 'cocoapods',
-        'icon': Icons.developer_mode,
-        'title': 'Update macOS Pods',
-        'description': 'Update CocoaPods dependencies for macOS',
-        'details': '''
-Updates macOS CocoaPods dependencies.
+        color: Colors.orange,
+        onRun: () => _runFlutterApp('debug', isDebug: true),
+      ),
+      if (platform.usesCocoaPods && Platform.isMacOS)
+        _action(
+          'cocoapods',
+          icon: Icons.developer_mode,
+          title: 'Update ${platform.displayName} Pods',
+          description:
+              'Update CocoaPods dependencies for ${platform.displayName}',
+          details:
+              '''
+Updates ${platform.displayName} CocoaPods dependencies.
 
 • Updates pod repository
-• Installs/Updates macOS framework dependencies
-• Ensures native macOS code compatibility
-• Required before macOS builds
+• Installs/Updates ${platform.displayName} framework dependencies
+• Ensures native ${platform.displayName} code compatibility
+• Required before ${platform.displayName} builds
         ''',
-        'color': AppColor.nativeDependencyAccent,
-        'action': _updateCocoaPods,
-        'status': _podStatus,
-      });
-    }
+          color: AppColor.nativeDependencyAccent,
+          onRun: () => _updateCocoaPods('cocoapods'),
+        ),
+    ];
 
     return ActionTabsWithExecute(actions: actions);
   }
@@ -502,15 +423,14 @@ Updates macOS CocoaPods dependencies.
   /// Cleans the project; macOS targets on a Mac get a deep clean that also
   /// refreshes CocoaPods and rebuilds.
   Future<void> _cleanFlutterApp() {
-    final projectPath = ref.read(currentProjectPathProvider);
     final shouldDoDeepClean =
         Platform.isMacOS &&
-        _selectedPlatform == FlutterPlatform.macos.name &&
-        projectPath != null &&
-        Directory('$projectPath/macos').existsSync();
+        _selectedPlatform == FlutterPlatform.macos &&
+        _supportedPlatforms.contains(FlutterPlatform.macos);
+    const id = 'clean';
 
-    return _runAction(
-      setStatus: (status) => _cleanStatus = status,
+    return _runProjectAction(
+      id,
       startMessages: shouldDoDeepClean
           ? [
               '🧹 Performing deep clean for macOS project...',
@@ -520,9 +440,9 @@ Updates macOS CocoaPods dependencies.
       // Clean steps throw on failure, so reaching the end means success
       command: (projectPath) async {
         if (shouldDoDeepClean) {
-          await _buildService.deepCleanMacOS(projectPath, _buildOutput);
+          await _buildService.deepCleanMacOS(projectPath, _buildOutputFor(id));
         } else {
-          await _buildService.clean(projectPath, _buildOutput);
+          await _buildService.clean(projectPath, _buildOutputFor(id));
         }
         return 0;
       },
@@ -532,33 +452,31 @@ Updates macOS CocoaPods dependencies.
     );
   }
 
-  /// Builds the app for [target] (a platform id, `apk` or `aab`).
-  Future<void> _buildFlutterApp(String target) => _runAction(
-    setStatus: (status) => _buildStatus = status,
+  /// Builds the app for [target] (a platform id, `apk` or `aab`) as
+  /// action [id].
+  Future<void> _buildFlutterApp(String id, String target) => _runProjectAction(
+    id,
     startMessages: ['Building for $target...'],
     command: (projectPath) =>
-        _buildService.build(projectPath, target, _buildOutput),
+        _buildService.build(projectPath, target, _buildOutputFor(id)),
     successMessage: '✓ Build completed successfully for $target',
     failureMessage: (exitCode) => '✗ Build failed with exit code $exitCode',
     errorPrefix: '✗ Build error: ',
   );
 
-  /// Device id for `flutter run -d` when targeting [platform].
-  String _getDeviceTarget(String platform) {
-    return FlutterPlatform.fromId(platform)?.deviceTarget ?? platform;
-  }
-
-  /// Runs the app on the selected platform in debug or release mode.
-  Future<void> _runFlutterApp({required bool isDebug}) => _runAction(
-    setStatus: isDebug
-        ? (status) => _debugStatus = status
-        : (status) => _runStatus = status,
+  /// Runs the app on the selected platform in debug or release mode as
+  /// action [id].
+  Future<void> _runFlutterApp(
+    String id, {
+    required bool isDebug,
+  }) => _runProjectAction(
+    id,
     startMessages: ['${isDebug ? 'Debugging' : 'Running'} Flutter app...'],
     // Process runs continuously until stopped
     command: (projectPath) => _buildService.run(
       projectPath,
-      _getDeviceTarget(_selectedPlatform),
-      _buildOutput,
+      _selectedPlatform.deviceTarget,
+      _buildOutputFor(id),
       isDebug: isDebug,
     ),
     successMessage: '✓ App ${isDebug ? 'debugged' : 'ran'} successfully',
@@ -575,9 +493,4 @@ Updates macOS CocoaPods dependencies.
 
   /// Handles `_ExecutePanelState.appendError`.
   void appendError(String text) => setState(() => _log.writeError(text));
-
-  /// Human-readable name for [platform].
-  String getPlatformDisplayName(String platform) {
-    return FlutterPlatform.fromId(platform)?.displayName ?? platform;
-  }
 }

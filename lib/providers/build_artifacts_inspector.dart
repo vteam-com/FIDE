@@ -46,9 +46,12 @@ class BuildArtifactsInspector {
   const BuildArtifactsInspector();
 
   /// Describes [platform]'s build output and app icon in [projectPath].
-  Future<BuildArtifacts> inspect(String projectPath, String platform) async {
+  Future<BuildArtifacts> inspect(
+    String projectPath,
+    FlutterPlatform platform,
+  ) async {
     final buildDir = Directory(path.join(projectPath, 'build'));
-    final location = await _buildLocation(buildDir, platform);
+    final location = await _buildLocation(buildDir, platform.name);
     return BuildArtifacts(
       appIconPath: await _appIconPath(projectPath, platform),
       location: location ?? 'No build directory found',
@@ -58,8 +61,11 @@ class BuildArtifactsInspector {
   }
 
   /// First existing icon for [platform], or null.
-  Future<String?> _appIconPath(String projectPath, String platform) async {
-    final candidates = _iconCandidates[FlutterPlatform.fromId(platform)];
+  Future<String?> _appIconPath(
+    String projectPath,
+    FlutterPlatform platform,
+  ) async {
+    final candidates = _iconCandidates[platform];
     for (final relativePath in candidates ?? const <String>[]) {
       final iconPath = path.join(projectPath, relativePath);
       if (await File(iconPath).exists()) return iconPath;

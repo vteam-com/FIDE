@@ -2,7 +2,6 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// Represents `OutputPanel`.
 class OutputPanel extends StatefulWidget {
@@ -107,8 +106,5 @@ class _OutputPanelState extends State<OutputPanel> {
     );
   }
 
-  void _copyToClipboard() {
-    Clipboard.setData(ClipboardData(text: widget.text));
-    MessageBox.showSuccess(context, 'Copied to clipboard');
-  }
+  void _copyToClipboard() => MessageBox.copyToClipboard(context, widget.text);
 }

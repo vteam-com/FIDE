@@ -27,7 +27,10 @@ void main() {
     Directory('${project.path}/android').createSync();
     Directory('${project.path}/web').createSync();
 
-    expect(FlutterPlatform.configuredIn(project.path), {'android', 'web'});
+    expect(FlutterPlatform.configuredIn(project.path), {
+      FlutterPlatform.android,
+      FlutterPlatform.web,
+    });
   });
 
   test('web runs on Chrome and CocoaPods covers only Apple platforms', () {
@@ -36,5 +39,18 @@ void main() {
       FlutterPlatform.ios,
       FlutterPlatform.macos,
     ]);
+  });
+
+  test('enable instructions name the platform folder to create', () {
+    for (final platform in FlutterPlatform.values) {
+      expect(
+        platform.enableInstructions,
+        contains('--platforms=${platform.name}'),
+      );
+    }
+  });
+
+  test('iOS builds need a Mac', () {
+    expect(FlutterPlatform.ios.cannotBuildOn('linux'), contains('macOS'));
   });
 }

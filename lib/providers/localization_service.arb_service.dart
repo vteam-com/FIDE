@@ -4,51 +4,73 @@ part of 'localization_service.dart';
 class ArbService {
   static final Logger _logger = Logger('ArbService');
 
-  /// Loads and parses all ARB files found under the given directory tree.
-  Future<List<ArbFile>> loadArbFiles(String directoryPath) async {
+  /// Byte-order mark some editors put at the start of ARB files.
+  static const String _byteOrderMark = '\uFEFF';
+
+  /// Decodes ARB [content] (ignoring a leading byte-order mark), or null
+  /// when it isn't a JSON object.
+  static Map<String, dynamic>? decode(String content) {
+    final clean = content.startsWith(_byteOrderMark)
+        ? content.substring(_byteOrderMark.length)
+        : content;
+    try {
+      final decoded = jsonDecode(clean);
+      return decoded is Map<String, dynamic> ? decoded : null;
+    } on FormatException {
+      return null;
+    }
+  }
+
+  /// Number of translatable entries (keys not starting with `@`) in ARB
+  /// [content], or null when it isn't valid.
+  static int? countEntries(String content) {
+    return decode(content)?.keys.where((key) => !key.startsWith('@')).length;
+  }
+
+  /// Loads every ARB file under [directoryPath], splitting the ones that
+  /// parsed from the paths of the malformed ones.
+  Future<({List<ArbFile> valid, List<String> malformed})> loadArbFiles(
+    String directoryPath,
+  ) async {
     final directory = Directory(directoryPath);
-    final arbFiles = <ArbFile>[];
+    final valid = <ArbFile>[];
+    final malformed = <String>[];
 
-    if (!await directory.exists()) return arbFiles;
-
-    await for (final entity in directory.list(recursive: true)) {
-      if (entity is File && entity.path.endsWith('.arb')) {
-        _logger.info('Found ARB file: ${entity.path}');
-        try {
-          final arbFile = await parseArbFile(entity.path);
-          if (arbFile != null) {
-            arbFiles.add(arbFile);
-          } else {
-            _logger.warning('Failed to parse ARB file: ${entity.path}');
+    if (await directory.exists()) {
+      await for (final entity in directory.list(recursive: true)) {
+        if (entity is File && entity.path.endsWith('.arb')) {
+          ArbFile? arbFile;
+          try {
+            arbFile = await parseArbFile(entity.path);
+          } catch (e) {
+            _logger.severe('Error parsing ARB file ${entity.path}: $e');
           }
-        } catch (e) {
-          _logger.severe('Error parsing ARB file ${entity.path}: $e');
+          if (arbFile == null) {
+            malformed.add(entity.path);
+          } else {
+            valid.add(arbFile);
+          }
         }
       }
     }
 
-    _logger.info('Total ARB files found: ${arbFiles.length}');
-    return arbFiles;
+    _logger.info(
+      'ARB files: ${valid.length} valid, ${malformed.length} malformed',
+    );
+    return (valid: valid, malformed: malformed);
   }
 
-  /// Parses one ARB file into an [ArbFile] model with entries and metadata.
+  /// Parses one ARB file into an [ArbFile] model with entries and metadata;
+  /// null when it isn't a JSON object.
   Future<ArbFile?> parseArbFile(String path) async {
-    final file = File(path);
-    final content = await file.readAsString();
-    final cleanContent = content.startsWith('\uFEFF')
-        ? content.substring(1)
-        : content;
-    final decoded = jsonDecode(cleanContent);
-    if (decoded is! Map<String, dynamic>) {
+    final content = await File(path).readAsString();
+    final json = decode(content);
+    if (json == null) {
       _logger.severe(
-        'ARB file $path does not contain a valid JSON object. Content length: ${content.length}, Clean content length: ${cleanContent.length}',
-      );
-      _logger.severe(
-        'Raw content (first ${AppMetric.logPreviewChars} chars): ${content.substring(0, content.length > AppMetric.logPreviewChars ? AppMetric.logPreviewChars : content.length)}',
+        'ARB file $path is not a JSON object. Raw content (first ${AppMetric.logPreviewChars} chars): ${content.substring(0, content.length > AppMetric.logPreviewChars ? AppMetric.logPreviewChars : content.length)}',
       );
       return null;
     }
-    final json = decoded;
 
     final entries = <String, ArbEntry>{};
     final metadata = <String, Map<String, dynamic>>{};
@@ -79,21 +101,6 @@ class ArbService {
     final languageCode = ArbFile.extractLanguageCode(filename);
 
     return ArbFile(path: path, languageCode: languageCode, entries: entries);
-  }
-
-  /// Returns true if the file contains a valid ARB-compatible JSON object.
-  Future<bool> isArbFileValid(String path) async {
-    try {
-      final file = File(path);
-      final content = await file.readAsString();
-      final cleanContent = content.startsWith('\uFEFF')
-          ? content.substring(1)
-          : content;
-      final decoded = jsonDecode(cleanContent);
-      return decoded is Map<String, dynamic>;
-    } catch (_) {
-      return false;
-    }
   }
 
   /// Compares ARB files and returns per-key coverage and missing-language data.
@@ -151,12 +158,10 @@ class ArbService {
     Map<String, dynamic>? metadata,
   }) async {
     final file = File(path);
-    final content = await file.readAsString();
-    final decoded = jsonDecode(content);
-    if (decoded is! Map<String, dynamic>) {
+    final json = decode(await file.readAsString());
+    if (json == null) {
       throw Exception('ARB file $path does not contain a valid JSON object');
     }
-    final json = decoded;
 
     json[key] = value;
     if (metadata != null) {

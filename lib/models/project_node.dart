@@ -1,6 +1,5 @@
-import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
-import 'package:flutter/material.dart';
+import 'package:fide/models/tree_order.dart';
 import 'package:path/path.dart' as p;
 
 enum ProjectNodeType { file, directory }
@@ -68,89 +67,17 @@ class ProjectNode {
     return null;
   }
 
-  // Get Git status color
-  /// Handles `ProjectNode.getGitStatusColor`.
-  Color getGitStatusColor(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    switch (gitStatus) {
-      case GitFileStatus.added:
-        return Colors.green;
-      case GitFileStatus.modified:
-        return Colors.blue;
-      case GitFileStatus.deleted:
-        return Colors.red;
-      case GitFileStatus.untracked:
-        return Colors.grey;
-      case GitFileStatus.ignored:
-        return Colors.grey[AppShade.medium]!;
-      case GitFileStatus.clean:
-      default:
-        return colorScheme.onSurface;
-    }
-  }
-
-  // Get Git status badge text
-  /// Handles `ProjectNode.getGitStatusBadge`.
-  String getGitStatusBadge() {
-    return gitStatus.badgeSymbol(deletedSymbol: '−');
-  }
-
-  // Get Git status text style
-  /// Handles `ProjectNode.getGitStatusTextStyle`.
-  TextStyle getGitStatusTextStyle(BuildContext context) {
-    final baseStyle = TextStyle(
-      fontSize: AppFontSize.body,
-      color: Theme.of(context).colorScheme.onSurface,
-    );
-
-    switch (gitStatus) {
-      case GitFileStatus.deleted:
-        return baseStyle.copyWith(
-          decoration: TextDecoration.lineThrough,
-          color: Colors.red,
-        );
-      case GitFileStatus.ignored:
-        return baseStyle.copyWith(
-          fontStyle: FontStyle.italic,
-          color: Colors.grey[AppShade.medium],
-        );
-      case GitFileStatus.added:
-        return baseStyle.copyWith(color: Colors.green);
-      case GitFileStatus.modified:
-        return baseStyle.copyWith(color: Colors.blue);
-      case GitFileStatus.untracked:
-        return baseStyle.copyWith(color: Colors.grey);
-      case GitFileStatus.clean:
-      default:
-        return baseStyle;
-    }
-  }
-
-  // Add a child node (for incremental updates)
-  /// Handles `ProjectNode.addChild`.
+  /// Inserts [child] at its place in tree order (for incremental updates).
   void addChild(ProjectNode child) {
-    // Find the correct insertion position to maintain sorted order
-    int insertIndex = 0;
-    for (int i = 0; i < children.length; i++) {
-      final current = children[i];
+    final index = children.indexWhere(
+      (current) => compareInTree(child, current) < 0,
+    );
+    children.insert(index == -1 ? children.length : index, child);
+  }
 
-      // Directories come before files
-      if (child.isDirectory && !current.isDirectory) {
-        break;
-      } else if (!child.isDirectory && current.isDirectory) {
-        insertIndex = i;
-        break;
-      }
-
-      // Same type: alphabetical order
-      if (child.name.toLowerCase().compareTo(current.name.toLowerCase()) < 0) {
-        break;
-      }
-
-      insertIndex = i + 1;
-    }
-
-    children.insert(insertIndex, child);
+  /// Orders [a] and [b] as project trees list them.
+  static int compareInTree(ProjectNode a, ProjectNode b) {
+    return TreeOrder.compare(a.isDirectory, a.name, b.isDirectory, b.name);
   }
 
   // Remove a child node by path (for incremental updates)

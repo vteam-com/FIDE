@@ -38,6 +38,50 @@ extension GitFileStatusDisplay on GitFileStatus {
         return '';
     }
   }
+
+  /// Color for names and badges with this status; the theme's text color
+  /// for clean files.
+  Color color(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return switch (this) {
+      GitFileStatus.added => Colors.green,
+      GitFileStatus.modified => Colors.blue,
+      GitFileStatus.deleted => Colors.red,
+      GitFileStatus.untracked =>
+        Colors.grey[isDark ? AppShade.medium : AppShade.mild]!,
+      GitFileStatus.ignored =>
+        Colors.grey[isDark ? AppShade.strong : AppShade.neutral]!,
+      _ => Theme.of(context).colorScheme.onSurface,
+    };
+  }
+
+  /// Small icon marking a folder with this status; null when unmarked.
+  IconData? get icon => switch (this) {
+    GitFileStatus.added => Icons.add_circle,
+    GitFileStatus.modified => Icons.edit,
+    GitFileStatus.deleted => Icons.remove_circle,
+    GitFileStatus.untracked => Icons.new_releases,
+    _ => null,
+  };
+
+  /// [base] styled for this status: colored, struck through when deleted,
+  /// italic when ignored.
+  TextStyle textStyle(BuildContext context, TextStyle base) {
+    return switch (this) {
+      GitFileStatus.deleted => base.copyWith(
+        decoration: TextDecoration.lineThrough,
+        color: color(context),
+      ),
+      GitFileStatus.ignored => base.copyWith(
+        fontStyle: FontStyle.italic,
+        color: color(context),
+      ),
+      GitFileStatus.untracked ||
+      GitFileStatus.added ||
+      GitFileStatus.modified => base.copyWith(color: color(context)),
+      _ => base,
+    };
+  }
 }
 
 /// A node in the file-system tree used by the explorer panels, representing a file or directory.
@@ -174,78 +218,6 @@ class FileSystemItem {
     if (type != FileSystemItemType.file) return '';
     final ext = p.extension(name).toLowerCase();
     return ext.isNotEmpty ? ext.substring(1) : ''; // Remove the dot
-  }
-
-  // Check if file is supported for outline view
-  /// Returns `isSupportedForOutline`.
-  bool get isSupportedForOutline {
-    if (type != FileSystemItemType.file) return false;
-    final ext = extension;
-    return const [
-      'dart',
-      'md',
-      'markdown',
-      'yaml',
-      'yml',
-      'json',
-    ].contains(ext);
-  }
-
-  // Get color for Git status
-  /// Handles `FileSystemItem.getGitStatusColor`.
-  Color getGitStatusColor(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    switch (gitStatus) {
-      case GitFileStatus.added:
-        return Colors.green; // 🟩 Green
-      case GitFileStatus.modified:
-        return Colors.blue; // 🟦 Blue
-      case GitFileStatus.deleted:
-        return Colors.red; // 🟥 Red
-      case GitFileStatus.untracked:
-        return isDark
-            ? Colors.grey[AppShade.medium]!
-            : Colors.grey[AppShade.mild]!; // ⚪️ Gray
-      case GitFileStatus.ignored:
-        return isDark
-            ? Colors.grey[AppShade.strong]!
-            : Colors.grey[AppShade.neutral]!; // Gray italic
-      default:
-        return Theme.of(context).colorScheme.onSurface; // Default color
-    }
-  }
-
-  // Get badge text for Git status
-  /// Handles `FileSystemItem.getGitStatusBadge`.
-  String getGitStatusBadge() {
-    return gitStatus.badgeSymbol();
-  }
-
-  // Get text style for Git status
-  /// Handles `FileSystemItem.getGitStatusTextStyle`.
-  TextStyle getGitStatusTextStyle(BuildContext context) {
-    final baseStyle =
-        Theme.of(context).textTheme.bodyMedium ?? const TextStyle();
-
-    switch (gitStatus) {
-      case GitFileStatus.deleted:
-        return baseStyle.copyWith(
-          decoration: TextDecoration.lineThrough,
-          color: getGitStatusColor(context),
-        );
-      case GitFileStatus.ignored:
-        return baseStyle.copyWith(
-          fontStyle: FontStyle.italic,
-          color: getGitStatusColor(context),
-        );
-      case GitFileStatus.untracked:
-      case GitFileStatus.added:
-      case GitFileStatus.modified:
-        return baseStyle.copyWith(color: getGitStatusColor(context));
-      default:
-        return baseStyle;
-    }
   }
 
   // Check if item has Git status changes

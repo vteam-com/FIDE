@@ -61,7 +61,7 @@ void main() {
         runner,
         GitService(runner),
         LocalizationService(runner),
-        const AIService(),
+        AIService(),
       );
 
   void record(int step, String _, LoadingStatus status) =>

@@ -1,4 +1,4 @@
-import 'package:fide/panels/center/editor/editor_search.dart';
+import 'package:fide/models/editor_search.dart';
 import 'package:fide/providers/code_formatter.dart';
 import 'package:fide/providers/process_runner.dart';
 import 'package:flutter_test/flutter_test.dart';

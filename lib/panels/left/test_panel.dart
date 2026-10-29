@@ -3,17 +3,17 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/action_status.dart';
 import 'package:fide/models/output_log.dart';
+import 'package:fide/models/panel_action.dart';
+import 'package:fide/panels/left/command_actions.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-part 'test_panel.test_action.dart';
-
-enum TestStatus { idle, running, success, failure }
 
 /// Represents `TestPanel`.
 class TestPanel extends ConsumerStatefulWidget {
@@ -25,35 +25,19 @@ class TestPanel extends ConsumerStatefulWidget {
   ConsumerState<TestPanel> createState() => _TestPanelState();
 }
 
-class _TestPanelState extends ConsumerState<TestPanel> {
-  Process? _currentProcess;
+class _TestPanelState extends ConsumerState<TestPanel> with CommandActions {
   final OutputLog _log = OutputLog();
 
-  List<TestAction> _testActions = [];
-  bool _isRunningTests = false;
-
   @override
-  void initState() {
-    super.initState();
+  OutputLog get actionLog => _log;
 
-    /// Handles `_initializeTestActions`.
-    _initializeTestActions();
-  }
-
-  @override
-  void dispose() {
-    _currentProcess?.kill();
-    super.dispose();
-  }
-
-  /// Handles `_initializeTestActions`.
-  void _initializeTestActions() {
-    _testActions = [
-      TestAction(
-        id: 'run_all_tests',
-        title: 'Run All Tests',
-        description: 'Run all Flutter tests in the project',
-        details: '''
+  /// The test actions with their current status.
+  List<PanelAction> get _testActions => [
+    PanelAction(
+      id: 'run_all_tests',
+      title: 'Run All Tests',
+      description: 'Run all Flutter tests in the project',
+      details: '''
 Runs all Flutter tests including unit tests, widget tests, and integration tests.
 
 • Executes flutter test command
@@ -61,15 +45,16 @@ Runs all Flutter tests including unit tests, widget tests, and integration tests
 • Runs in parallel for better performance
 • Reports test failures and suggestions
         ''',
-        icon: Icons.play_circle_fill,
-        color: Colors.green,
-        action: () => _runTests(['flutter', 'test']),
-      ),
-      TestAction(
-        id: 'run_unit_tests',
-        title: 'Unit Tests',
-        description: 'Run only unit tests',
-        details: '''
+      icon: Icons.play_circle_fill,
+      color: Colors.green,
+      onRun: () => _runTests('run_all_tests', ['test']),
+      status: statusOf('run_all_tests'),
+    ),
+    PanelAction(
+      id: 'run_unit_tests',
+      title: 'Unit Tests',
+      description: 'Run only unit tests',
+      details: '''
 Runs unit tests located in the test/ directory.
 
 • Fast execution for pure Dart business logic
@@ -77,17 +62,17 @@ Runs unit tests located in the test/ directory.
 • Good for TDD and continuous integration
 • Typically the largest set of tests
         ''',
-        icon: Icons.science,
-        color: Colors.blue,
-        action: () =>
-            /// Handles `_runTests`.
-            _runTests(['flutter', 'test', '--plain-name', 'unit|test']),
-      ),
-      TestAction(
-        id: 'run_widget_tests',
-        title: 'Widget Tests',
-        description: 'Run Flutter widget tests',
-        details: '''
+      icon: Icons.science,
+      color: Colors.blue,
+      onRun: () =>
+          _runTests('run_unit_tests', ['test', '--plain-name', 'unit|test']),
+      status: statusOf('run_unit_tests'),
+    ),
+    PanelAction(
+      id: 'run_widget_tests',
+      title: 'Widget Tests',
+      description: 'Run Flutter widget tests',
+      details: '''
 Runs widget tests that test Flutter UI components.
 
 • Tests individual widgets and their behavior
@@ -95,15 +80,17 @@ Runs widget tests that test Flutter UI components.
 • Useful for component testing
 • Require test environment setup
         ''',
-        icon: Icons.widgets,
-        color: Colors.orange,
-        action: () => _runTests(['flutter', 'test', '--plain-name', 'widget']),
-      ),
-      TestAction(
-        id: 'run_coverage',
-        title: 'Test Coverage',
-        description: 'Run tests with coverage reporting',
-        details: '''
+      icon: Icons.widgets,
+      color: Colors.orange,
+      onRun: () =>
+          _runTests('run_widget_tests', ['test', '--plain-name', 'widget']),
+      status: statusOf('run_widget_tests'),
+    ),
+    PanelAction(
+      id: 'run_coverage',
+      title: 'Test Coverage',
+      description: 'Run tests with coverage reporting',
+      details: '''
 Runs tests with code coverage collection.
 
 • Measures how much code is tested
@@ -111,15 +98,16 @@ Runs tests with code coverage collection.
 • Helps identify untested code paths
 • Requires lcov package
         ''',
-        icon: Icons.analytics,
-        color: Colors.purple,
-        action: () => _runTests(['flutter', 'test', '--coverage']),
-      ),
-      TestAction(
-        id: 'check_test_structure',
-        title: 'Validate Tests',
-        description: 'Check test file structure and naming',
-        details: '''
+      icon: Icons.analytics,
+      color: Colors.purple,
+      onRun: () => _runTests('run_coverage', ['test', '--coverage']),
+      status: statusOf('run_coverage'),
+    ),
+    PanelAction(
+      id: 'check_test_structure',
+      title: 'Validate Tests',
+      description: 'Check test file structure and naming',
+      details: '''
 Validates test organization and naming conventions.
 
 • Checks test file locations
@@ -127,64 +115,50 @@ Validates test organization and naming conventions.
 • Ensures proper test grouping
 • Helps maintain test quality standards
         ''',
-        icon: Icons.rule,
-        color: Colors.teal,
-        action: _validateTestStructure,
-      ),
-    ];
-  }
+      icon: Icons.rule,
+      color: Colors.teal,
+      onRun: _validateTestStructure,
+    ),
+  ];
 
-  // Streamed chunks arrive trimmed and non-empty from ProcessRunner.stream
-  void _handleOutput(String text) {
-    if (mounted) setState(() => _log.addOutput(text));
-  }
-
-  void _handleError(String text) {
-    if (mounted) setState(() => _log.addError(text));
-  }
-
-  /// Handles `_runTests`.
-  Future<void> _runTests(List<String> commandArgs) async {
-    if (_isRunningTests) {
+  /// Runs `flutter` with [arguments] as test action [id]; one test run at
+  /// a time.
+  Future<void> _runTests(String id, List<String> arguments) async {
+    if (isAnyActionRunning) {
       MessageBox.showInfo(context, 'Tests are already running');
       return;
     }
 
-    _clearOutput();
-    setState(() => _isRunningTests = true);
-
-    try {
-      final exitCode = await ref
+    final succeeded = await runCommandAction(
+      id,
+      startMessages: ['Running flutter ${arguments.join(' ')}'],
+      command: () => ref
           .read(processRunnerProvider)
           .stream(
-            commandArgs[0],
-            commandArgs.sublist(1),
+            'flutter',
+            arguments,
             workingDirectory: widget.projectPath,
-            onStdout: _handleOutput,
-            onStderr: _handleError,
-            onStarted: (process) => _currentProcess = process,
-          );
-
-      if (mounted) {
-        if (exitCode == 0) {
-          _log.addOutput('✅ Tests completed successfully');
-          MessageBox.showSuccess(context, 'Tests completed successfully');
-        } else {
-          _log.addError('❌ Tests failed with exit code: $exitCode');
-          MessageBox.showError(context, 'Some tests failed');
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        _log.addError('❌ Error running tests: $e');
-        MessageBox.showError(context, 'Error running tests: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isRunningTests = false);
-      }
-      _currentProcess = null;
+            // Streamed chunks arrive trimmed and non-empty
+            onStdout: (text) => setState(() => _log.addOutput(text)),
+            onStderr: (text) => setState(() => _log.addError(text)),
+            onStarted: (process) => trackProcess(id, process),
+          ),
+      successMessage: '✅ Tests completed successfully',
+      failureMessage: (exitCode) => '❌ Tests failed with exit code: $exitCode',
+      errorPrefix: '❌ Error running tests: ',
+    );
+    if (!mounted) return;
+    if (succeeded) {
+      MessageBox.showSuccess(context, 'Tests completed successfully');
+    } else {
+      MessageBox.showError(context, 'Some tests failed');
     }
+  }
+
+  /// Ignores output that arrives after the panel is gone.
+  @override
+  void setState(VoidCallback fn) {
+    if (mounted) super.setState(fn);
   }
 
   /// Handles `_validateTestStructure`.
@@ -246,12 +220,16 @@ Validates test organization and naming conventions.
         }
       });
 
-      MessageBox.showSuccess(context, 'Test structure validated');
+      if (mounted) {
+        MessageBox.showSuccess(context, 'Test structure validated');
+      }
     } catch (e) {
       setState(() {
         _log.addError('❌ Error analyzing test structure: $e');
       });
-      MessageBox.showError(context, 'Error analyzing test structure');
+      if (mounted) {
+        MessageBox.showError(context, 'Error analyzing test structure');
+      }
     }
   }
 
@@ -261,13 +239,15 @@ Validates test organization and naming conventions.
   Widget _buildTestActions() {
     final colorScheme = Theme.of(context).colorScheme;
 
+    final testActions = _testActions;
+
     return Column(
       children: [
         Expanded(
           child: ListView.builder(
-            itemCount: _testActions.length,
+            itemCount: testActions.length,
             itemBuilder: (_, index) {
-              final action = _testActions[index];
+              final action = testActions[index];
               return Card(
                 margin: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.medium,
@@ -297,21 +277,15 @@ Validates test organization and naming conventions.
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // Status indicator
-                      if (action.status == TestStatus.running)
-                        const SizedBox(
-                          width: AppIconSize.large,
-                          height: AppIconSize.large,
-                          child: CircularProgressIndicator(
-                            strokeWidth: AppBorderWidth.medium,
-                          ),
-                        )
-                      else if (action.status == TestStatus.success)
+                      if (action.isRunning)
+                        const InlineSpinner()
+                      else if (action.status == ActionStatus.success)
                         StatusIndicator(
                           icon: Icons.check_circle,
                           label: '',
                           color: Colors.green,
                         )
-                      else if (action.status == TestStatus.failure)
+                      else if (action.status == ActionStatus.error)
                         StatusIndicator(
                           icon: Icons.error,
                           label: '',
@@ -328,9 +302,7 @@ Validates test organization and naming conventions.
                       ),
                     ],
                   ),
-                  onTap: action.status == TestStatus.running
-                      ? null
-                      : action.action,
+                  onTap: action.isRunning ? null : action.onRun,
                 ),
               );
             },
@@ -356,7 +328,7 @@ Validates test organization and naming conventions.
   }
 
   /// Handles `_showActionDetails`.
-  void _showActionDetails(TestAction action) {
+  void _showActionDetails(PanelAction action) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -407,7 +379,7 @@ Validates test organization and naming conventions.
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              action.action();
+              action.onRun();
             },
             child: const Text('Run'),
           ),
@@ -452,14 +424,7 @@ Validates test organization and naming conventions.
                   ],
                 ),
                 const Spacer(),
-                if (_isRunningTests)
-                  const SizedBox(
-                    width: AppIconSize.large,
-                    height: AppIconSize.large,
-                    child: CircularProgressIndicator(
-                      strokeWidth: AppBorderWidth.medium,
-                    ),
-                  ),
+                if (isAnyActionRunning) const InlineSpinner(),
               ],
             ),
           ),

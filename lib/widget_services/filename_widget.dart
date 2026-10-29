@@ -33,8 +33,13 @@ class FileNameWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Get Git status styling
-    final gitTextStyle = fileItem.getGitStatusTextStyle(context);
-    final badgeText = showGitBadge ? fileItem.getGitStatusBadge() : '';
+    final gitStatus = fileItem.gitStatus;
+    final gitColor = gitStatus.color(context);
+    final gitTextStyle = gitStatus.textStyle(
+      context,
+      Theme.of(context).textTheme.bodyMedium ?? const TextStyle(),
+    );
+    final badgeText = showGitBadge ? gitStatus.badgeSymbol() : '';
 
     // Determine text color based on selection, hidden status, Git status, and warning
     Color textColor;
@@ -99,9 +104,7 @@ class FileNameWidget extends StatelessWidget {
                   margin: AppPadding.selectedBadgeMargin,
                   padding: AppPadding.badge,
                   decoration: BoxDecoration(
-                    color: fileItem
-                        .getGitStatusColor(context)
-                        .withValues(alpha: AppOpacity.subtle),
+                    color: gitColor.withValues(alpha: AppOpacity.subtle),
                     borderRadius: BorderRadius.circular(AppRadius.medium),
                   ),
                   child: Text(
@@ -109,7 +112,7 @@ class FileNameWidget extends StatelessWidget {
                     style: TextStyle(
                       fontSize: AppFontSize.badge,
                       fontWeight: FontWeight.bold,
-                      color: fileItem.getGitStatusColor(context),
+                      color: gitColor,
                     ),
                   ),
                 ),

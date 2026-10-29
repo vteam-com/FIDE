@@ -9,6 +9,7 @@ import 'package:path/path.dart' as path;
 part 'git_service.git_status.dart';
 part 'git_service.git_commit.dart';
 part 'git_service.git_diff_stats.dart';
+part 'git_service.git_exception.dart';
 
 /// Represents `GitService`.
 class GitService {
@@ -17,35 +18,43 @@ class GitService {
   /// Creates a Git service that launches commands through [_runner].
   const GitService([this._runner = const ProcessRunner()]);
 
-  /// Runs a mutating Git command and returns a normalized status message.
+  /// `git diff --no-index` exit code meaning "the files differ".
+  static const int _noIndexDiffFoundExitCode = 1;
+
+  /// Runs a mutating Git command and returns [successMessage].
+  ///
+  /// Throws a [GitException] carrying [failureMessage] when git fails or
+  /// can't be started.
   Future<String> _runGitMutation({
     required String path,
     required List<String> args,
     required String successMessage,
-    required String failurePrefix,
-    required String errorPrefix,
+    required String failureMessage,
   }) async {
+    final ProcessResult result;
     try {
-      final result = await _runner.run('git', args, workingDirectory: path);
-      if (result.exitCode == 0) {
-        return successMessage;
-      }
-      return '$failurePrefix: ${result.stderr}';
+      result = await _runner.run('git', args, workingDirectory: path);
     } catch (e) {
-      return '$errorPrefix: $e';
+      throw GitException(failureMessage, '$e');
     }
+    if (result.exitCode != 0) {
+      throw GitException(failureMessage, '${result.stderr}');
+    }
+    return successMessage;
   }
 
-  Future<String> _runGitDiff({
-    required String path,
-    required List<String> args,
-    required String errorPrefix,
-  }) async {
-    try {
-      final result = await _runner.run('git', args, workingDirectory: path);
-      return result.exitCode == 0 ? result.stdout.toString() : '';
-    } catch (e) {
-      return '$errorPrefix: $e';
+  /// Files the porcelain entry for [file] with two-letter [status] into the
+  /// staged, unstaged and untracked lists of [into].
+  static void _classify(String status, String file, GitStatus into) {
+    if (status[0] != ' ') {
+      into.staged.add(file);
+    }
+    if (status[1] != ' ') {
+      if (status[0] == ' ' && status[1] == '?') {
+        into.untracked.add(file);
+      } else {
+        into.unstaged.add(file);
+      }
     }
   }
 
@@ -86,7 +95,6 @@ class GitService {
         'Unknown';
   }
 
-  // Check if directory is a Git repository
   /// Returns true if the provided path is inside a valid Git repository.
   Future<bool> isGitRepository(String path) {
     return _runner.succeeds('git', [
@@ -95,15 +103,13 @@ class GitService {
     ], workingDirectory: path);
   }
 
-  // Initialize Git repository
   /// Initializes a new Git repository at the provided path.
   Future<String> initRepository(String path) async {
     return _runGitMutation(
       path: path,
       args: ['init'],
       successMessage: 'Git repository initialized successfully',
-      failurePrefix: 'Failed to initialize Git repository',
-      errorPrefix: 'Error initializing Git repository',
+      failureMessage: 'Failed to initialize Git repository',
     );
   }
 
@@ -124,137 +130,97 @@ class GitService {
     return true;
   }
 
-  // Get Git status
   /// Reads Git porcelain status and groups files into staged/unstaged/untracked.
+  ///
+  /// Throws a [GitException] when git fails.
   Future<GitStatus> getStatus(String path) async {
+    final ProcessResult result;
     try {
-      final result = await _runner.run('git', [
+      result = await _runner.run('git', [
         'status',
         '--porcelain',
       ], workingDirectory: path);
-      if (result.exitCode == 0) {
-        final lines = result.stdout
-            .toString()
-            .split('\n')
-            .where((line) => line.isNotEmpty);
-        final staged = <String>[];
-        final unstaged = <String>[];
-        final untracked = <String>[];
+    } catch (e) {
+      throw GitException('Failed to get Git status', '$e');
+    }
+    if (result.exitCode != 0) {
+      throw GitException('Failed to get Git status', '${result.stderr}');
+    }
 
-        for (final line in lines) {
-          if (line.length < AppMetric.gitStatusFieldOffset) continue;
-          final status = line.substring(0, AppMetric.doubleLineLimit);
-          final file = line.substring(AppMetric.gitStatusFieldOffset);
+    final status = GitStatus(staged: [], unstaged: [], untracked: []);
+    final lines = result.stdout
+        .toString()
+        .split('\n')
+        .where((line) => line.isNotEmpty);
+    for (final line in lines) {
+      if (line.length < AppMetric.gitStatusFieldOffset) continue;
+      final code = line.substring(0, AppMetric.doubleLineLimit);
+      final file = line.substring(AppMetric.gitStatusFieldOffset);
 
-          // Check if file path ends with / (directory) and expand it
-          final isDirectory = file.endsWith('/');
-          if (isDirectory) {
-            // Expand directory to all contained files
-            final dirFiles = await _expandDirectoryToFiles(
+      // Porcelain reports a wholly new directory as `dir/`; list its files
+      final files = file.endsWith('/')
+          ? await _expandDirectoryToFiles(
               path,
               file.substring(0, file.length - 1),
-            );
-            for (final dirFile in dirFiles) {
-              if (status[0] != ' ') {
-                staged.add(dirFile);
-              }
-              if (status[1] != ' ') {
-                if (status[0] == ' ' && status[1] == '?') {
-                  untracked.add(dirFile);
-                } else {
-                  unstaged.add(dirFile);
-                }
-              }
-            }
-          } else {
-            // Regular file
-            if (status[0] != ' ') {
-              staged.add(file);
-            }
-            if (status[1] != ' ') {
-              if (status[0] == ' ' && status[1] == '?') {
-                untracked.add(file);
-              } else {
-                unstaged.add(file);
-              }
-            }
-          }
-        }
-
-        return GitStatus(
-          staged: staged,
-          unstaged: unstaged,
-          untracked: untracked,
-        );
-      } else {
-        throw Exception('Failed to get Git status: ${result.stderr}');
+            )
+          : [file];
+      for (final entry in files) {
+        _classify(code, entry, status);
       }
-    } catch (e) {
-      throw Exception('Error getting Git status: $e');
     }
+    return status;
   }
 
-  // Stage files
   /// Stages the provided file paths.
   Future<String> stageFiles(String path, List<String> files) async {
     return _runGitMutation(
       path: path,
       args: ['add', ...files],
       successMessage: 'Files staged successfully',
-      failurePrefix: 'Failed to stage files',
-      errorPrefix: 'Error staging files',
+      failureMessage: 'Failed to stage files',
     );
   }
 
-  // Unstage files
   /// Unstages the provided file paths from the index.
   Future<String> unstageFiles(String path, List<String> files) async {
     return _runGitMutation(
       path: path,
       args: ['reset', 'HEAD', ...files],
       successMessage: 'Files unstaged successfully',
-      failurePrefix: 'Failed to unstage files',
-      errorPrefix: 'Error unstaging files',
+      failureMessage: 'Failed to unstage files',
     );
   }
 
-  // Commit changes
   /// Creates a commit with the given commit message.
   Future<String> commit(String path, String message) async {
     return _runGitMutation(
       path: path,
       args: ['commit', '-m', message],
       successMessage: 'Changes committed successfully',
-      failurePrefix: 'Failed to commit changes',
-      errorPrefix: 'Error committing changes',
+      failureMessage: 'Failed to commit changes',
     );
   }
 
-  // Push to remote
   /// Pushes local commits to the configured remote.
   Future<String> push(String path) async {
     return _runGitMutation(
       path: path,
       args: ['push'],
       successMessage: 'Changes pushed successfully',
-      failurePrefix: 'Failed to push changes',
-      errorPrefix: 'Error pushing changes',
+      failureMessage: 'Failed to push changes',
     );
   }
 
-  // Pull from remote
   /// Pulls remote changes into the current branch.
   Future<String> pull(String path) async {
     return _runGitMutation(
       path: path,
       args: ['pull'],
       successMessage: 'Changes pulled successfully',
-      failurePrefix: 'Failed to pull changes',
-      errorPrefix: 'Error pulling changes',
+      failureMessage: 'Failed to pull changes',
     );
   }
 
-  // Get current branch
   /// Returns the current checked-out branch name, if available.
   Future<String?> getCurrentBranch(String path) async {
     try {
@@ -271,7 +237,6 @@ class GitService {
     return null;
   }
 
-  // Get recent commits
   /// Returns recent commits up to [count] in one-line format.
   Future<List<GitCommit>> getRecentCommits(
     String path, {
@@ -306,93 +271,47 @@ class GitService {
     return [];
   }
 
-  // Get diff for a specific file
-  /// Returns a unified diff for one file, including new/untracked fallbacks.
+  /// Returns the unified diff of [filePath] against HEAD (staged and
+  /// unstaged changes together); untracked files diff as wholly added.
+  /// Empty when the file has no changes.
+  ///
+  /// Throws a [GitException] when git fails.
   Future<String> getFileDiff(String path, String filePath) async {
+    const failure = 'Failed to get diff';
     try {
-      final result = await _runner.run('git', [
-        'diff',
-        '--no-index',
-        '--',
-        '/dev/null',
-        filePath,
-      ], workingDirectory: path);
-
-      // If the file is new/untracked, git diff --no-index will show it as added
-      if (result.exitCode == 0 || result.exitCode == 1) {
+      if (!await _isTracked(path, filePath)) {
+        final result = await _runner.run('git', [
+          'diff',
+          '--no-index',
+          '--',
+          '/dev/null',
+          filePath,
+        ], workingDirectory: path);
+        if (result.exitCode != _noIndexDiffFoundExitCode) {
+          throw GitException(failure, '${result.stderr}');
+        }
         return result.stdout.toString();
       }
 
-      // Try staged diff
-      final stagedResult = await _runner.run('git', [
-        'diff',
-        '--cached',
-        '--',
-        filePath,
-      ], workingDirectory: path);
-
-      if (stagedResult.exitCode == 0) {
-        return stagedResult.stdout.toString();
+      // Before the first commit there is no HEAD; the index is the base
+      for (final base in [
+        ['HEAD'],
+        ['--cached'],
+      ]) {
+        final result = await _runner.run('git', [
+          'diff',
+          ...base,
+          '--',
+          filePath,
+        ], workingDirectory: path);
+        if (result.exitCode == 0) return result.stdout.toString();
       }
-
-      // Try unstaged diff
-      final unstagedResult = await _runner.run('git', [
-        'diff',
-        '--',
-        filePath,
-      ], workingDirectory: path);
-
-      if (unstagedResult.exitCode == 0) {
-        return unstagedResult.stdout.toString();
-      }
-
-      // If no diff found, check if file is new
-      final file = File(filePath);
-      if (await file.exists()) {
-        final String content = await FileSystemItem.fileToStringMaxSizeCheck(
-          file,
-        );
-        if (content == FileSystemItem.fileTooBigMessage) {
-          return content;
-        }
-        final lines = content.split('\n');
-        final diffLines = <String>[];
-        diffLines.add('diff --git a/$filePath b/$filePath');
-        diffLines.add('new file mode 100644');
-        diffLines.add('index 0000000..0000000');
-        diffLines.add('--- /dev/null');
-        diffLines.add('+++ b/$filePath');
-        for (int i = 0; i < lines.length; i++) {
-          diffLines.add('@@ -0,0 +${i + 1},1 @@');
-          diffLines.add('+${lines[i]}');
-        }
-        return diffLines.join('\n');
-      }
-
-      return '';
+      throw const GitException(failure);
+    } on GitException {
+      rethrow;
     } catch (e) {
-      return 'Error getting diff: $e';
+      throw GitException(failure, '$e');
     }
-  }
-
-  // Get diff for staged files
-  /// Returns staged diff output for a file.
-  Future<String> getStagedDiff(String path, String filePath) async {
-    return _runGitDiff(
-      path: path,
-      args: ['diff', '--cached', '--', filePath],
-      errorPrefix: 'Error getting staged diff',
-    );
-  }
-
-  // Get diff for unstaged files
-  /// Returns unstaged diff output for a file.
-  Future<String> getUnstagedDiff(String path, String filePath) async {
-    return _runGitDiff(
-      path: path,
-      args: ['diff', '--', filePath],
-      errorPrefix: 'Error getting unstaged diff',
-    );
   }
 
   /// Returns the committed content of the absolute [filePath] at HEAD, or an
@@ -435,55 +354,44 @@ class GitService {
     return result.exitCode == 0;
   }
 
-  // Discard changes for files (git checkout -- files or git rm for untracked)
   /// Discards local changes for tracked files and removes untracked files.
+  ///
+  /// Throws a [GitException] when git fails.
   Future<String> discardChanges(String path, List<String> files) async {
+    const failure = 'Failed to discard changes';
     try {
       final untrackedFiles = <String>[];
       final modifiedFiles = <String>[];
-
-      // Check each file individually to determine if it's tracked
       for (final file in files) {
-        if (await _isTracked(path, file)) {
-          // File is tracked
-          modifiedFiles.add(file);
-        } else {
-          // File is untracked
-          untrackedFiles.add(file);
-        }
+        (await _isTracked(path, file) ? modifiedFiles : untrackedFiles).add(
+          file,
+        );
       }
 
-      // Discard tracked files with changes using git checkout
       if (modifiedFiles.isNotEmpty) {
-        final checkoutResult = await _runner.run('git', [
-          'checkout',
-          '--',
-          ...modifiedFiles,
-        ], workingDirectory: path);
-
-        if (checkoutResult.exitCode != 0) {
-          return 'Failed to discard changes: ${checkoutResult.stderr}';
-        }
+        await _runGitMutation(
+          path: path,
+          args: ['checkout', '--', ...modifiedFiles],
+          successMessage: '',
+          failureMessage: failure,
+        );
       }
 
-      // Remove untracked files by deleting them from filesystem
-      if (untrackedFiles.isNotEmpty) {
-        for (final file in untrackedFiles) {
-          final filePath = '$path/$file';
-          final fileEntity = File(filePath);
-          if (await fileEntity.exists()) {
-            await fileEntity.delete();
-          }
+      for (final file in untrackedFiles) {
+        final fileEntity = File('$path/$file');
+        if (await fileEntity.exists()) {
+          await fileEntity.delete();
         }
       }
 
       return 'Changes discarded successfully';
+    } on GitException {
+      rethrow;
     } catch (e) {
-      return 'Error discarding changes: $e';
+      throw GitException(failure, '$e');
     }
   }
 
-  // Get diff stats for a file (added/removed lines)
   /// Returns added/removed line counts for a file.
   Future<GitDiffStats> getFileDiffStats(String path, String filePath) async {
     try {

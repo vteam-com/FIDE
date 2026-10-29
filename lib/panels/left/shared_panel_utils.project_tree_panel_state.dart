@@ -7,6 +7,7 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
   /// Expansion, filter and Git state for this panel.
   late final PanelStateManager panelState = PanelStateManager(
     ref.read(gitServiceProvider),
+    ref.read(projectTreeReaderProvider),
   );
 
   /// Create, rename and delete flows for the context menu.
@@ -77,7 +78,7 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
     if (projectRoot == null) return;
 
     try {
-      await const ProjectTreeReader().loadTree(projectRoot!);
+      await ref.read(projectTreeReaderProvider).loadTree(projectRoot!);
       onProjectTreeChanged();
       if (mounted) {
         setState(() {});
@@ -129,13 +130,9 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
     );
   }
 
-  /// Copies [text] to the clipboard and confirms with a snack bar.
+  /// Copies [text] to the clipboard and confirms it with [confirmation].
   void _copyPath(String text, String confirmation) {
-    Clipboard.setData(ClipboardData(text: text));
-    if (mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(confirmation)));
-    }
+    MessageBox.copyToClipboard(context, text, confirmation: confirmation);
   }
 
   /// Shows [node]'s folder (or the folder holding it) in the file manager.

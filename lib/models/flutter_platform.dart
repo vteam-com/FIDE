@@ -30,18 +30,40 @@ enum FlutterPlatform {
     windows => Platform.isWindows,
   };
 
+  /// How to add this platform to a project that has no folder for it.
+  String get enableInstructions {
+    final create =
+        'Run in the project folder:\nflutter create --platforms=$name .';
+    return switch (this) {
+      android => '$create\n\nRequires Android Studio or the Android SDK.',
+      ios => '$create\n\nRequires macOS and Xcode.',
+      web =>
+        'If Flutter web is disabled, first run:\nflutter config --enable-web\n\n$create',
+      macos || linux || windows =>
+        'If Flutter $displayName desktop is disabled, first run:\nflutter config --enable-$name-desktop\n\n$create',
+    };
+  }
+
+  /// Why the host OS [hostOs] can't build this platform.
+  String cannotBuildOn(String hostOs) {
+    final requiredHost = switch (this) {
+      ios || macos => macos.displayName,
+      _ => displayName,
+    };
+    return '$displayName builds require a $requiredHost machine.\n\nYou cannot build $displayName apps from $hostOs.';
+  }
+
   /// Bundled SVG icon for this platform.
   String get iconAsset => 'assets/platform_$name.svg';
 
   /// Whether this platform's native dependencies are managed by CocoaPods.
   bool get usesCocoaPods => this == ios || this == macos;
 
-  /// Ids of the platforms that have a folder in the project at [projectPath].
-  static Set<String> configuredIn(String projectPath) {
+  /// The platforms that have a folder in the project at [projectPath].
+  static Set<FlutterPlatform> configuredIn(String projectPath) {
     return {
       for (final platform in values)
-        if (Directory('$projectPath/${platform.name}').existsSync())
-          platform.name,
+        if (Directory('$projectPath/${platform.name}').existsSync()) platform,
     };
   }
 

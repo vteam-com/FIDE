@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/providers/process_runner.dart';
 
 /// Formats source text: Dart with `dart format`, JSON and ARB by
@@ -11,6 +12,9 @@ class CodeFormatter {
   /// Indentation used for JSON and ARB files.
   static const String _jsonIndent = '  ';
 
+  /// The file types [format] handles, for messages.
+  static const String supportedDescription = 'Dart, JSON, and ARB';
+
   /// Extensions formatted as JSON.
   static const Set<String> _jsonExtensions = {'json', 'arb'};
 
@@ -21,7 +25,7 @@ class CodeFormatter {
 
   /// Whether [filePath] is a Dart, JSON or ARB file.
   static bool canFormat(String filePath) {
-    final extension = _extensionOf(filePath);
+    final extension = FileTypeUtils.extensionOf(filePath);
     return extension == 'dart' || _jsonExtensions.contains(extension);
   }
 
@@ -31,7 +35,7 @@ class CodeFormatter {
   /// Dart is piped through `dart format` with [filePath] as the stdin name,
   /// so the project's language version still applies.
   Future<String> format(String filePath, String content) async {
-    if (_jsonExtensions.contains(_extensionOf(filePath))) {
+    if (_jsonExtensions.contains(FileTypeUtils.extensionOf(filePath))) {
       return JsonEncoder.withIndent(_jsonIndent).convert(jsonDecode(content));
     }
     final result = await _runner.runWithInput('dart', [
@@ -43,7 +47,4 @@ class CodeFormatter {
     }
     return result.stdout as String;
   }
-
-  static String _extensionOf(String filePath) =>
-      filePath.split('.').last.toLowerCase();
 }

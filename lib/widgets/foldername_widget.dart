@@ -118,7 +118,7 @@ class FolderNameWidget extends StatelessWidget {
 
             // Git status indicator
             if (node.gitStatus != GitFileStatus.clean) ...[
-              _buildGitStatusIcon(colorScheme),
+              _buildGitStatusIcon(context),
             ],
 
             // Context menu indicator (3-dot icon) when selected
@@ -138,30 +138,15 @@ class FolderNameWidget extends StatelessWidget {
     );
   }
 
-  /// Builds a small Git-status badge icon overlaid on the folder tile.
-  Widget _buildGitStatusIcon(ColorScheme _ /* colorScheme */) {
-    IconData iconData;
-    Color iconColor;
-
-    switch (node.gitStatus) {
-      case GitFileStatus.added:
-        iconData = Icons.add_circle;
-        iconColor = Colors.green;
-        break;
-      case GitFileStatus.modified:
-        iconData = Icons.edit;
-        iconColor = Colors.orange;
-        break;
-      case GitFileStatus.untracked:
-        iconData = Icons.new_releases;
-        iconColor = Colors.blue;
-        break;
-      case GitFileStatus.clean:
-      default:
-        return const SizedBox(); // No icon for clean files
-    }
-
-    return Icon(iconData, color: iconColor, size: AppIconSize.tiny);
+  /// Small icon marking the folder's Git status; empty when unmarked.
+  Widget _buildGitStatusIcon(BuildContext context) {
+    final icon = node.gitStatus.icon;
+    if (icon == null) return const SizedBox();
+    return Icon(
+      icon,
+      color: node.gitStatus.color(context),
+      size: AppIconSize.tiny,
+    );
   }
 
   Widget _buildIcon(BuildContext _ /* context */, Color iconColor) {

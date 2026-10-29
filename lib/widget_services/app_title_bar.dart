@@ -3,7 +3,9 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/project_menu_action.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/theme_settings_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -183,58 +185,53 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Left panel toggle
-        IconButton(
-          key: const Key('togglePanelLeft'),
-          icon: SvgPicture.asset(
-            'assets/toggle_panel_left.svg',
-            width: AppIconSize.mediumLarge,
-            height: AppIconSize.mediumLarge,
-            colorFilter: ColorFilter.mode(
-              widget.leftPanelVisible
-                  ? colorScheme.primary
-                  : colorScheme.onSurface,
-              BlendMode.srcIn,
-            ),
-          ),
-          onPressed: widget.onToggleLeftPanel,
-          tooltip: 'Toggle Left Panel',
+        _panelToggle(
+          'Left',
+          'left',
+          widget.leftPanelVisible,
+          widget.onToggleLeftPanel,
+          colorScheme,
         ),
-        // Bottom panel toggle
-        IconButton(
-          key: const Key('togglePanelBottom'),
-          icon: SvgPicture.asset(
-            'assets/toggle_panel_bottom.svg',
-            width: AppIconSize.mediumLarge,
-            height: AppIconSize.mediumLarge,
-            colorFilter: ColorFilter.mode(
-              widget.bottomPanelVisible
-                  ? colorScheme.primary
-                  : colorScheme.onSurface,
-              BlendMode.srcIn,
-            ),
-          ),
-          onPressed: widget.onToggleBottomPanel,
-          tooltip: 'Toggle Bottom Panel',
+        _panelToggle(
+          'Bottom',
+          'bottom',
+          widget.bottomPanelVisible,
+          widget.onToggleBottomPanel,
+          colorScheme,
         ),
-        // Right panel toggle
-        IconButton(
-          key: const Key('togglePanelRight'),
-          icon: SvgPicture.asset(
-            'assets/toggle_panel_right.svg',
-            width: AppIconSize.mediumLarge,
-            height: AppIconSize.mediumLarge,
-            colorFilter: ColorFilter.mode(
-              widget.rightPanelVisible
-                  ? colorScheme.primary
-                  : colorScheme.onSurface,
-              BlendMode.srcIn,
-            ),
-          ),
-          onPressed: widget.onToggleRightPanel,
-          tooltip: 'Toggle Right Panel',
+        _panelToggle(
+          'Right',
+          'right',
+          widget.rightPanelVisible,
+          widget.onToggleRightPanel,
+          colorScheme,
         ),
       ],
+    );
+  }
+
+  /// The toggle for the [label] panel, whose asset and key use [side];
+  /// highlighted while [visible].
+  Widget _panelToggle(
+    String label,
+    String side,
+    bool visible,
+    VoidCallback? onPressed,
+    ColorScheme colorScheme,
+  ) {
+    return IconButton(
+      key: Key('togglePanel$label'),
+      icon: SvgPicture.asset(
+        'assets/toggle_panel_$side.svg',
+        width: AppIconSize.mediumLarge,
+        height: AppIconSize.mediumLarge,
+        colorFilter: ColorFilter.mode(
+          visible ? colorScheme.primary : colorScheme.onSurface,
+          BlendMode.srcIn,
+        ),
+      ),
+      onPressed: onPressed,
+      tooltip: 'Toggle $label Panel',
     );
   }
 
@@ -253,142 +250,104 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     );
   }
 
-  /// Handles a selection from the project dropdown — opens a folder, closes the project, or switches to an MRU entry.
-  Future<void> _handleDropdownSelection(String value, WidgetRef ref) async {
-    if (value == 'add_folder') {
-      widget.onOpenFolder();
-      return;
-    } else if (value == 'create_project') {
-      ref.read(projectManagerProvider).unloadProject();
-
-      // Set main app state to create project
-      widget.onShowCreateProjectScreen?.call();
-      return;
-    } else if (value == 'close_project') {
-      widget.onCloseProject?.call();
-    } else if (value.startsWith('remove_')) {
-      final pathToRemove = value.substring(AppMetric.removePrefixLength);
-      await ref.read(mruFoldersProvider.notifier).remove(pathToRemove);
-    } else {
-      await widget.onProjectSwitch(value);
+  /// Runs the project menu's chosen [action]; [folder] is the project to
+  /// switch to.
+  Future<void> _handleDropdownSelection(
+    ProjectMenuAction action,
+    String? folder,
+    WidgetRef ref,
+  ) async {
+    switch (action) {
+      case ProjectMenuAction.openFolder:
+        widget.onOpenFolder();
+      case ProjectMenuAction.createProject:
+        ref.read(projectManagerProvider).unloadProject();
+        widget.onShowCreateProjectScreen?.call();
+      case ProjectMenuAction.closeProject:
+        widget.onCloseProject?.call();
+      case ProjectMenuAction.switchProject:
+        if (folder != null) await widget.onProjectSwitch(folder);
     }
   }
 
-  /// Builds the popup menu items for the project dropdown, including MRU entries and actions.
-  List<PopupMenuEntry<String>> _buildDropdownMenuItems(
+  /// The project menu: recent projects ([accessible] ones openable), then
+  /// the open, create and close actions.
+  List<PopupMenuEntry<(ProjectMenuAction, String?)>> _buildDropdownMenuItems(
     List<String> mruFolders,
+    Set<String> accessible,
   ) {
-    final items = <PopupMenuEntry<String>>[];
-
-    // Add current MRU folders
-    for (final folderPath in mruFolders) {
-      final dirName = path.basename(folderPath);
-      final hasAccess = Directory(folderPath).existsSync();
-      items.add(
-        PopupMenuItem<String>(
-          value: folderPath,
-          child: Row(
-            children: [
-              Icon(
-                hasAccess ? Icons.folder : Icons.folder_off,
-                color: hasAccess
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.error,
-                size: AppIconSize.medium,
-              ),
-              const SizedBox(width: AppSpacing.medium),
-              Expanded(
-                child: Text(
-                  dirName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: hasAccess
-                        ? Theme.of(context).colorScheme.onSurface
-                        : Theme.of(context).colorScheme.error,
-                  ),
-                ),
-              ),
-              if (!hasAccess) ...[
-                const SizedBox(width: AppSpacing.tiny),
-                Icon(
-                  Icons.lock,
-                  color: Theme.of(context).colorScheme.error,
-                  size: AppIconSize.small,
-                ),
-              ],
-            ],
-          ),
+    final colorScheme = Theme.of(context).colorScheme;
+    PopupMenuItem<(ProjectMenuAction, String?)> action(
+      ProjectMenuAction value,
+      IconData icon,
+      String label,
+    ) {
+      return PopupMenuItem(
+        value: (value, null),
+        child: IconMenuRow(
+          icon: icon,
+          label: label,
+          iconColor: colorScheme.primary,
         ),
       );
     }
 
-    if (mruFolders.isNotEmpty) {
-      items.add(const PopupMenuDivider());
-    }
+    return [
+      for (final folderPath in mruFolders)
+        _buildRecentProjectItem(folderPath, accessible.contains(folderPath)),
+      if (mruFolders.isNotEmpty) const PopupMenuDivider(),
+      action(
+        ProjectMenuAction.openFolder,
+        Icons.create_new_folder_outlined,
+        'Open Existing Project...',
+      ),
+      action(
+        ProjectMenuAction.createProject,
+        Icons.add_box_outlined,
+        'Create new Project...',
+      ),
+      action(
+        ProjectMenuAction.closeProject,
+        Icons.folder_off_outlined,
+        'Close Project',
+      ),
+    ];
+  }
 
-    // Add action items
-    items.add(
-      PopupMenuItem<String>(
-        value: 'add_folder',
-        child: Row(
-          children: [
-            Icon(
-              Icons.create_new_folder_outlined,
-              size: AppIconSize.medium,
-              color: Theme.of(context).colorScheme.primary,
+  /// The menu entry switching to [folderPath], shown locked when not
+  /// [hasAccess].
+  PopupMenuItem<(ProjectMenuAction, String?)> _buildRecentProjectItem(
+    String folderPath,
+    bool hasAccess,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return PopupMenuItem(
+      value: (ProjectMenuAction.switchProject, folderPath),
+      child: Row(
+        children: [
+          Icon(
+            hasAccess ? Icons.folder : Icons.folder_off,
+            color: hasAccess ? colorScheme.primary : colorScheme.error,
+            size: AppIconSize.medium,
+          ),
+          const SizedBox(width: AppSpacing.medium),
+          Expanded(
+            child: Text(
+              path.basename(folderPath),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: hasAccess ? colorScheme.onSurface : colorScheme.error,
+              ),
             ),
-            const SizedBox(width: AppSpacing.medium),
-            Text(
-              'Open Existing Project...',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-            ),
+          ),
+          if (!hasAccess) ...[
+            const SizedBox(width: AppSpacing.tiny),
+            Icon(Icons.lock, color: colorScheme.error, size: AppIconSize.small),
           ],
-        ),
+        ],
       ),
     );
-
-    items.add(
-      PopupMenuItem<String>(
-        value: 'create_project',
-        child: Row(
-          children: [
-            Icon(
-              Icons.add_box_outlined,
-              size: AppIconSize.medium,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: AppSpacing.medium),
-            Text(
-              'Create new Project...',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    items.add(
-      PopupMenuItem<String>(
-        value: 'close_project',
-        child: Row(
-          children: [
-            Icon(
-              Icons.folder_off_outlined,
-              size: AppIconSize.medium,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: AppSpacing.medium),
-            Text(
-              'Close Project',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    return items;
   }
 
   /// Shows a positioned popup menu anchored below the project name button.
@@ -400,7 +359,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     final RenderBox button = context.findRenderObject() as RenderBox;
     final Offset offset = button.localToGlobal(Offset.zero);
 
-    showMenu<String>(
+    showMenu<(ProjectMenuAction, String?)>(
       context: context,
       position: RelativeRect.fromLTRB(
         offset.dx,
@@ -408,10 +367,13 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
         offset.dx + button.size.width,
         offset.dy + button.size.height,
       ),
-      items: _buildDropdownMenuItems(mruFolders),
-    ).then((value) async {
-      if (value != null) {
-        await _handleDropdownSelection(value, ref);
+      items: _buildDropdownMenuItems(
+        mruFolders,
+        ref.read(accessibleMruFoldersProvider),
+      ),
+    ).then((choice) async {
+      if (choice != null) {
+        await _handleDropdownSelection(choice.$1, choice.$2, ref);
       }
     });
   }

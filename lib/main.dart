@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 import 'package:fide/controllers/app_controller.dart';
 import 'package:fide/models/app_theme.dart';
+import 'package:fide/models/left_panel_tab.dart';
 import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
@@ -264,7 +265,7 @@ class _FIDEState extends ConsumerState<FIDE> {
                   onToggleLeftPanel: () => triggerTogglePanelLeft(ref),
                   onToggleBottomPanel: () => triggerTogglePanelBottom(ref),
                   onToggleRightPanel: () => triggerTogglePanelRight(ref),
-                  onSwitchPanel: (index) => _switchToPanel(ref, index),
+                  onSwitchPanel: (tab) => _switchToPanel(ref, tab),
                   onProjectSwitch: (path) async => await tryLoadProject(path),
                   onCloseProject: _closeCurrentProject,
                   lastOpenedFileName: _lastOpenedFileName,
@@ -299,6 +300,9 @@ class _FIDEState extends ConsumerState<FIDE> {
                             });
                           },
                           mruFolders: mruFolders,
+                          accessibleFolders: ref.watch(
+                            accessibleMruFoldersProvider,
+                          ),
                           onOpenMruProject: tryLoadProject,
                           onRemoveMruEntry: ref
                               .read(mruFoldersProvider.notifier)
@@ -332,10 +336,9 @@ class _FIDEState extends ConsumerState<FIDE> {
     GotoLineDialog.show(context, ref.read(activeEditorProvider));
   }
 
-  void _switchToPanel(WidgetRef ref, int panelIndex) {
-    // Use the provider to switch the active left panel tab
-    // This will be picked up by the LeftPanel widget
-    ref.read(activeLeftPanelTabProvider.notifier).state = panelIndex;
+  /// Shows [tab] in the left panel.
+  void _switchToPanel(WidgetRef ref, LeftPanelTab tab) {
+    ref.read(activeLeftPanelTabProvider.notifier).state = tab;
   }
 }
 

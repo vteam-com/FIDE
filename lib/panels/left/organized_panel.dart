@@ -1,15 +1,17 @@
-// ignore_for_file:  avoid_print
-
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/code_category.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/project_categories.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/panels/left/shared_panel_utils.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
+import 'package:fide/widgets/empty_folder_label.dart';
 import 'package:fide/widgets/foldername_widget.dart';
+import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,127 +31,31 @@ class OrganizedPanel extends ProjectTreePanel {
 
 class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     with ProjectTreePanelState<OrganizedPanel> {
-  final Map<String, bool> _filesWithShowDialog = {};
-  final Map<String, int> _cachedElementCounts = {};
-
-  // Comprehensive caching for performance
-  Map<String, List<ProjectNode>>? _cachedCategoryNodes;
-  final Map<String, List<ProjectNode>> _cachedSortedNodes = {};
   final Map<String, FileSystemItem> _cachedFileSystemItems = {};
-  bool _needsRecachery = true;
-  String _currentCategory = '';
+
+  /// The grouping of the current tree; null while it is computed.
+  ProjectCategories? _categories;
+
+  /// Bumped per categorization so a stale result is dropped.
+  int _categorizeGeneration = 0;
 
   @override
   void onProjectTreeChanged() {
-    _filesWithShowDialog.clear();
-    _cachedElementCounts.clear();
-    _cachedCategoryNodes = null;
-    _cachedSortedNodes.clear();
     _cachedFileSystemItems.clear();
-    _needsRecachery = true;
+    _categories = null;
+    _categorize();
   }
 
-  // Method to build cached categorization - only rebuilds when needed
-  Map<String, List<ProjectNode>> _getCategoryNodes() {
-    if (!_needsRecachery && _cachedCategoryNodes != null) {
-      return _cachedCategoryNodes!;
-    }
-
-    // Define concept-based categories
-    final Map<String, List<String>> categoryDirs = {
-      'Views': ['lib/views', 'lib/screens', 'lib/pages'],
-      'Dialogs': ['lib/dialogs'],
-      'Widgets': ['lib/widgets'],
-      'Services': ['lib/services'],
-      'Controllers': ['lib/providers', 'lib/controls'],
-      'Models': ['lib/models', 'lib/data'],
-      'Localization': ['lib/l10n', 'l10n'],
-    };
-
-    // Collect nodes for each category
-    final Map<String, List<ProjectNode>> categoryNodes = {};
-    for (final category in categoryDirs.keys) {
-      categoryNodes[category] = [];
-      for (final dirPath in categoryDirs[category]!) {
-        /// Handles `_findDirectoryNode`.
-        final dirNode = _findDirectoryNode(projectRoot!, dirPath);
-        if (dirNode != null) {
-          panelState.ensureDirectoryLoaded(dirNode);
-          categoryNodes[category]!.addAll(dirNode.children);
-        }
-      }
-    }
-
-    // Find unmatched Dart files and categorize based on content
-    final Set<String> categorizedFiles = {};
-    for (final nodes in categoryNodes.values) {
-      _collectFilePaths(nodes, categorizedFiles);
-    }
-
-    // Only search for unmatched files within the lib directory
-    final libDir = _findDirectoryNode(projectRoot!, 'lib');
-    final unmatchedFiles = libDir != null
-        ? _findUnmatchedDartFiles(libDir, categorizedFiles)
-        : <ProjectNode>[];
-    for (final fileNode in unmatchedFiles) {
-      try {
-        final content = File(fileNode.path).readAsStringSync();
-        if (content.contains('MaterialApp(')) {
-          categoryNodes['Views']!.add(fileNode);
-          categorizedFiles.add(fileNode.path);
-
-          /// Handles `_isWidgetClass`.
-        } else if (_isWidgetClass(content)) {
-          categoryNodes['Widgets']!.add(fileNode);
-          categorizedFiles.add(fileNode.path);
-        }
-      } catch (_) {
-        // ignore
-      }
-    }
-
-    // Move files containing 'showDialog' to Dialogs category, except for Views/Pages
-    for (final category in categoryNodes.keys.toList()) {
-      if (category == 'Dialogs' || category == 'Views') continue;
-      final filesToMove = <ProjectNode>[];
-      for (final node in categoryNodes[category]!) {
-        if (!node.isDirectory && node.path.endsWith('.dart')) {
-          try {
-            final content = File(node.path).readAsStringSync();
-            if (content.contains('showDialog')) {
-              _filesWithShowDialog[node.path] = true;
-              filesToMove.add(node);
-            }
-          } catch (_) {
-            // ignore
-          }
-        }
-      }
-      for (final node in filesToMove) {
-        categoryNodes[category]!.remove(node);
-        categoryNodes['Dialogs']!.add(node);
-      }
-    }
-
-    // Mark files in Views that have showDialog
-    for (final node in categoryNodes['Views']!) {
-      if (!node.isDirectory && node.path.endsWith('.dart')) {
-        try {
-          final content = File(node.path).readAsStringSync();
-          if (content.contains('showDialog')) {
-            _filesWithShowDialog[node.path] = true;
-          }
-        } catch (_) {
-          // ignore
-        }
-      }
-    }
-
-    // Cache the result
-    _cachedCategoryNodes = categoryNodes;
-    _needsRecachery = false;
-
-    return categoryNodes;
+  /// Groups the current tree off the build path and rebuilds with it.
+  Future<void> _categorize() async {
+    final root = projectRoot;
+    if (root == null) return;
+    final generation = ++_categorizeGeneration;
+    final categories = await ref
+        .read(projectCategorizerProvider)
+        .categorize(root);
+    if (!mounted || generation != _categorizeGeneration) return;
+    setState(() => _categories = categories);
   }
 
   @override
@@ -173,30 +79,24 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     return _buildOrganizedView();
   }
 
-  /// Handles `_buildOrganizedView`.
+  /// One section per non-empty category, or a spinner while grouping.
   Widget _buildOrganizedView() {
-    if (projectRoot == null) return const SizedBox();
-
-    // Get cached category nodes - only recomputes when filesystem changes
-    final categoryNodes = _getCategoryNodes();
-
-    // Build the organized view from cached data
-    final List<Widget> sections = [];
-
-    for (final category in categoryNodes.keys) {
-      final nodes = categoryNodes[category]!;
-      if (nodes.isNotEmpty) {
-        /// Handles `_countFiles`.
-        final fileCount = _countFiles(nodes);
-
-        /// Handles `_countElements`.
-        final elementCount = _countElements(nodes, category);
-        sections.add(
-          /// Handles `_buildCategorySection`.
-          _buildCategorySection(category, nodes, fileCount, elementCount),
-        );
-      }
+    final categories = _categories;
+    if (categories == null) {
+      return const Center(child: InlineSpinner());
     }
+
+    final sections = [
+      for (final MapEntry(key: category, value: nodes)
+          in categories.nodes.entries)
+        if (nodes.isNotEmpty)
+          _buildCategorySection(
+            category,
+            nodes,
+            nodes.fold(0, (count, node) => count + _countFiles(node)),
+            categories.elementCounts[category] ?? 0,
+          ),
+    ];
 
     return LayoutBuilder(
       builder: (_, constraints) {
@@ -215,143 +115,21 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     );
   }
 
-  void _collectFilePaths(List<ProjectNode> nodes, Set<String> filePaths) {
-    for (final node in nodes) {
-      if (node.isDirectory) {
-        _collectFilePaths(node.children, filePaths);
-      } else {
-        filePaths.add(node.path);
-      }
-    }
-  }
-
-  List<ProjectNode> _findUnmatchedDartFiles(
-    ProjectNode root,
-    Set<String> categorizedFiles,
-  ) {
-    final List<ProjectNode> unmatched = [];
-
-    /// Handles `_findDartFilesRecursive`.
-    _findDartFilesRecursive(root, unmatched, categorizedFiles);
-    return unmatched;
-  }
-
-  /// Handles `_findDartFilesRecursive`.
-  void _findDartFilesRecursive(
-    ProjectNode node,
-    List<ProjectNode> unmatched,
-    Set<String> categorizedFiles,
-  ) {
-    if (node.isDirectory) {
-      for (final child in node.children) {
-        _findDartFilesRecursive(child, unmatched, categorizedFiles);
-      }
-    } else if (node.path.endsWith('.dart') &&
-        !categorizedFiles.contains(node.path)) {
-      unmatched.add(node);
-    }
-  }
-
-  /// Handles `_isWidgetClass`.
-  bool _isWidgetClass(String content) {
-    final classDeclarations = RegExp(
-      r'class\s+(\w+)\s+extends\s+(\w+)',
-      multiLine: true,
-    ).allMatches(content);
-    for (final match in classDeclarations) {
-      final baseClass = match.group(AppMetric.regexBaseClassGroupIndex)!;
-      if (baseClass.endsWith('Widget')) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /// Handles `_findDirectoryNode`.
-  ProjectNode? _findDirectoryNode(ProjectNode root, String path) {
-    final parts = path.split('/');
-    ProjectNode? current = root;
-    for (final part in parts) {
-      if (part.isEmpty) continue;
-      final candidates = current?.children
-          .where((child) => child.name == part && child.isDirectory)
-          .toList();
-      if (candidates != null && candidates.isNotEmpty) {
-        current = candidates.first;
-      } else {
-        current = null;
-      }
-      if (current == null) return null;
-    }
-    return current;
-  }
-
-  /// Handles `_countFiles`.
-  int _countFiles(List<ProjectNode> nodes) {
-    int count = 0;
-    for (final node in nodes) {
-      if (node.isDirectory) {
-        count += _countFiles(node.children);
-      } else {
-        count++;
-      }
-    }
-    return count;
-  }
-
-  /// Handles `_countElements`.
-  int _countElements(List<ProjectNode> nodes, String category) {
-    // Create a cache key based on category and nodes
-    final cacheKey =
-        '${category}_${nodes.length}_${nodes.map((n) => n.path).join('|').hashCode}';
-    if (_cachedElementCounts.containsKey(cacheKey)) {
-      return _cachedElementCounts[cacheKey]!;
-    }
-
-    int count = 0;
-    for (final node in nodes) {
-      if (node.isDirectory) {
-        count += _countElements(node.children, category);
-      } else if (node.path.endsWith('.dart')) {
-        // Skip file reading for performance - just count files as 1
-        // This is a performance optimization to avoid sync file reads during build
-        if (category == 'Widgets' ||
-            category == 'Views' ||
-            category == 'Dialogs') {
-          count += 1; // Assume 1 class per file as a rough estimate
-        } else if (category == 'Models' || category == 'Services') {
-          count += 1; // Assume 1 class per file as a rough estimate
-        } else {
-          count += 1; // Assume at least 1 element (class/function) per file
-        }
-      } else if (node.path.endsWith('.arb') && category == 'Localization') {
-        // For ARB files, we can still read them since they're small
-        try {
-          final file = File(node.path);
-          final content = file.readAsStringSync();
-          final json = jsonDecode(content) as Map<String, dynamic>;
-          // Count keys that don't start with @
-          count += json.keys.where((key) => !key.startsWith('@')).length;
-        } catch (_) {
-          // ignore
-        }
-      }
-    }
-
-    // Cache the result
-    _cachedElementCounts[cacheKey] = count;
-    return count;
+  /// Number of files in [node]'s loaded subtree (1 for a file).
+  int _countFiles(ProjectNode node) {
+    if (!node.isDirectory) return 1;
+    return node.children.fold(0, (count, child) => count + _countFiles(child));
   }
 
   /// Handles `_buildCategorySection`.
   Widget _buildCategorySection(
-    String category,
+    CodeCategory category,
     List<ProjectNode> nodes,
     int fileCount,
     int elementCount,
   ) {
-    _currentCategory = category;
-    final isExpanded = expandedState['category_$category'] ?? false;
+    final expansionKey = 'category_${category.name}';
+    final isExpanded = expandedState[expansionKey] ?? false;
 
     // Build the right widget with file count and element counter
     final rightWidget = Row(
@@ -373,33 +151,13 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
       ],
     );
 
-    // Cache sorted nodes to avoid re-sorting on every build
-    final cacheKey =
-        '${category}_${nodes.map((n) => n.path).join('|').hashCode}';
-    List<ProjectNode> sortedNodes;
-
-    if (_cachedSortedNodes.containsKey(cacheKey)) {
-      sortedNodes = _cachedSortedNodes[cacheKey]!;
-    } else {
-      // Sort nodes: directories first, then files, both alphabetically ascending
-      sortedNodes = List.from(nodes);
-      sortedNodes.sort((a, b) {
-        if (a.isDirectory != b.isDirectory) {
-          return a.isDirectory ? -1 : 1;
-        }
-        return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-      });
-      _cachedSortedNodes[cacheKey] = sortedNodes;
-    }
-
-    // Build the content widget
     final contentWidget = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: sortedNodes.map((node) => _buildNode(node)).toList(),
+      children: [for (final node in nodes) _buildNode(node, category)],
     );
 
     return SectionPanel(
-      title: category,
+      title: category.label,
       isExpanded: isExpanded,
       rightWidget: rightWidget,
       count: elementCount,
@@ -407,15 +165,15 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
       onExpansionToggle: () {
         if (mounted) {
           setState(() {
-            expandedState['category_$category'] = !isExpanded;
+            expandedState[expansionKey] = !isExpanded;
           });
         }
       },
     );
   }
 
-  // Helper method to build node widget
-  Widget _buildNode(ProjectNode node) {
+  /// The row for [node] (and its expanded children) in [category].
+  Widget _buildNode(ProjectNode node, CodeCategory category) {
     // Cache FileSystemItem creation to avoid expensive object creation on every build
     final itemCacheKey = '${node.path}_${node.gitStatus.index}';
     FileSystemItem item;
@@ -436,8 +194,8 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     }
 
     // Add warning if applicable - this creates a new object but warnings are rare
-    if (_currentCategory == 'Views' &&
-        _filesWithShowDialog[node.path] == true) {
+    if (category == CodeCategory.views &&
+        (_categories?.viewsWithDialogs.contains(node.path) ?? false)) {
       item = FileSystemItem(
         name: item.name,
         path: item.path,
@@ -470,19 +228,13 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
             Padding(
               padding: AppPadding.nestedFolder,
               child: node.children.isEmpty
-                  ? const Text(
-                      'empty folder',
-                      style: TextStyle(
-                        fontStyle: FontStyle.italic,
-                        color: Colors.grey,
-                        fontSize: AppFontSize.caption,
-                      ),
-                    )
+                  ? const EmptyFolderLabel()
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: node.children
-                          .map((child) => _buildNode(child))
-                          .toList(),
+                      children: [
+                        for (final child in node.children)
+                          _buildNode(child, category),
+                      ],
                     ),
             ),
         ],

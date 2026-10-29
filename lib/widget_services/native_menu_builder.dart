@@ -1,5 +1,6 @@
 import 'package:fide/models/left_panel_tab.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/theme_settings_dialog.dart';
@@ -21,7 +22,7 @@ class NativeMenuBuilder {
   final Function() onToggleLeftPanel;
   final Function() onToggleBottomPanel;
   final Function() onToggleRightPanel;
-  final Function(int) onSwitchPanel;
+  final ValueChanged<LeftPanelTab> onSwitchPanel;
   final Function(String) onProjectSwitch;
   final Function()? onCloseProject;
   final String? lastOpenedFileName;
@@ -123,9 +124,15 @@ class NativeMenuBuilder {
                 final currentPath = ref.read(currentProjectPathProvider);
                 if (currentPath != null) {
                   final gitService = ref.read(gitServiceProvider);
-                  final result = await gitService.initRepository(currentPath);
-                  if (context.mounted) {
-                    MessageBox.showInfo(context, result);
+                  try {
+                    final result = await gitService.initRepository(currentPath);
+                    if (context.mounted) {
+                      MessageBox.showSuccess(context, result);
+                    }
+                  } on GitException catch (e) {
+                    if (context.mounted) {
+                      MessageBox.showError(context, '$e');
+                    }
                   }
                 }
               },
@@ -260,7 +267,7 @@ class NativeMenuBuilder {
                 shift: true,
               ),
               onSelected: () {
-                onSwitchPanel(LeftPanelTab.folder.index);
+                onSwitchPanel(LeftPanelTab.folder);
               },
             ),
             PlatformMenuItem(
@@ -271,7 +278,7 @@ class NativeMenuBuilder {
                 shift: true,
               ),
               onSelected: () {
-                onSwitchPanel(LeftPanelTab.organized.index);
+                onSwitchPanel(LeftPanelTab.organized);
               },
             ),
             PlatformMenuItem(
@@ -282,7 +289,7 @@ class NativeMenuBuilder {
                 shift: true,
               ),
               onSelected: () {
-                onSwitchPanel(LeftPanelTab.git.index);
+                onSwitchPanel(LeftPanelTab.git);
               },
             ),
             PlatformMenuItem(
@@ -293,7 +300,7 @@ class NativeMenuBuilder {
                 shift: true,
               ),
               onSelected: () {
-                onSwitchPanel(LeftPanelTab.search.index);
+                onSwitchPanel(LeftPanelTab.search);
               },
             ),
           ],

@@ -8,6 +8,8 @@ import 'package:fide/models/project_node.dart';
 import 'package:fide/panels/left/shared_panel_utils.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
+import 'package:fide/widgets/empty_folder_label.dart';
+import 'package:fide/widgets/filter_field.dart';
 import 'package:fide/widgets/foldername_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -135,84 +137,26 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
       return buildNoProjectView();
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isConstrained = constraints.maxHeight.isFinite;
+    final tree = SingleChildScrollView(
+      child: filterQuery.isEmpty
+          ? Column(
+              children: [
+                for (final node in projectRoot!.children) _buildNode(node),
+              ],
+            )
+          : _buildFilteredTree(),
+    );
 
+    return LayoutBuilder(
+      builder: (_, constraints) {
         return Column(
           children: [
-            // File tree
-            if (isConstrained)
-              Expanded(
-                child: SingleChildScrollView(
-                  child: filterQuery.isEmpty
-                      ? Column(
-                          children: projectRoot!.children
-                              .map((node) => _buildNode(node))
-                              .toList(),
-                        )
-                      /// Handles `_buildFilteredTree`.
-                      : _buildFilteredTree(),
-                ),
-              )
+            // Unbounded parents get a fixed-height tree instead of Expanded
+            if (constraints.maxHeight.isFinite)
+              Expanded(child: tree)
             else
-              SizedBox(
-                height: AppSize.folderPanelFallbackHeight,
-                child: SingleChildScrollView(
-                  child: filterQuery.isEmpty
-                      ? Column(
-                          children: projectRoot!.children
-                              .map((node) => _buildNode(node))
-                              .toList(),
-                        )
-                      : _buildFilteredTree(),
-                ),
-              ),
-            // Filter bar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.medium,
-                0,
-                AppSpacing.medium,
-                AppSpacing.medium,
-              ),
-              child: TextField(
-                controller: filterController,
-                decoration: InputDecoration(
-                  hintText: 'Filter...',
-                  prefixIcon: const Icon(
-                    Icons.filter_list,
-                    size: AppIconSize.large,
-                  ),
-                  suffixIcon: filterQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(
-                            Icons.clear,
-                            size: AppIconSize.large,
-                          ),
-                          onPressed: () {
-                            filterController.clear();
-                            // Clear filter query by triggering the filter change listener
-                            // This will be handled by the base class
-                          },
-                        )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.medium),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context)
-                      .colorScheme
-                      .surfaceContainerHighest,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.large,
-                    vertical: AppSpacing.medium,
-                  ),
-                ),
-                style: const TextStyle(fontSize: AppFontSize.body),
-              ),
-            ),
+              SizedBox(height: AppSize.folderPanelFallbackHeight, child: tree),
+            FilterField(controller: filterController),
           ],
         );
       },
@@ -245,96 +189,28 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
     }
   }
 
-  /// Handles `_buildFilteredDirectoryNode`.
+  /// A directory row in the filtered tree, highlighted when its own name
+  /// matches; filtered directories start expanded.
   Widget _buildFilteredDirectoryNode(ProjectNode node) {
-    final isExpanded =
-        expandedState[node.path] ?? true; // Auto-expand filtered directories
+    final isExpanded = expandedState[node.path] ?? true;
     final hasError =
         node.loadResult != null &&
         node.loadResult != LoadChildrenResult.success;
-
-    // Determine text color based on hidden status and error status
-    Color textColor;
-    if (hasError) {
-      textColor = Theme.of(context).colorScheme.error;
-    } else if (node.isHidden) {
-      textColor = Theme.of(context).colorScheme.onSurface
-          .withValues(alpha: AppOpacity.disabled);
-    } else {
-      textColor = Theme.of(context).colorScheme.onSurface;
-    }
-
-    // Determine icon color
-    Color iconColor;
-    if (hasError) {
-      iconColor = Theme.of(context).colorScheme.error;
-    } else if (node.isHidden) {
-      iconColor = Theme.of(context).colorScheme.primary
-          .withValues(alpha: AppOpacity.disabled);
-    } else {
-      iconColor = Theme.of(context).colorScheme.primary;
-    }
-
-    // Highlight directory if it matches the filter
-    final isMatching = panelState.matchesFilter(node);
-    if (isMatching) {
-      textColor = Theme.of(context).colorScheme.primary;
-      iconColor = Theme.of(context).colorScheme.primary;
-    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        GestureDetector(
+        FolderNameWidget(
+          node: node,
+          isExpanded: isExpanded && !hasError,
+          isFiltered: panelState.matchesFilter(node),
+          hasError: hasError,
+          rootPath: projectRoot!.path,
           onTap: () => toggleOrOpenNode(node, isExpanded),
-          onLongPressStart: (details) =>
-              /// Handles `showNodeContextMenu`.
-              showNodeContextMenu(node, details.globalPosition),
-          child: Container(
-            color: isMatching
-                ? Theme.of(context).colorScheme.primaryContainer
-                      .withValues(alpha: AppOpacity.subtle)
-                : null,
-            child: Padding(
-              padding: AppPadding.listItem,
-              child: Row(
-                children: [
-                  Icon(
-                    hasError ? Icons.folder_off : Icons.folder,
-                    color: iconColor,
-                    size: AppIconSize.medium,
-                  ),
-                  const SizedBox(width: AppSpacing.small),
-                  Expanded(
-                    child: Text(
-                      node.name,
-                      style: TextStyle(
-                        fontSize: AppFontSize.body,
-                        color: textColor,
-                        fontWeight: isMatching
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (hasError) ...[
-                    const SizedBox(width: AppSpacing.tiny),
-                    Icon(
-                      node.loadResult == LoadChildrenResult.accessDenied
-                          ? Icons.lock
-                          : Icons.error,
-                      color: Theme.of(context).colorScheme.error,
-                      size: AppIconSize.small,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
+          onShowContextMenu: (position) => showNodeContextMenu(node, position),
         ),
-        if (node.isDirectory && isExpanded)
+        if (isExpanded)
           Padding(
             padding: EdgeInsets.only(
               left: node.children.isEmpty
@@ -342,15 +218,7 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
                   : AppSpacing.xLarge,
             ),
             child: node.children.isEmpty
-                ? const Text(
-                    'empty folder',
-                    style: TextStyle(
-                      fontStyle: FontStyle.italic,
-                      color: Colors.grey,
-                      fontSize: AppFontSize.caption,
-                    ),
-                  )
-                /// Handles `_buildFilteredNodeChildren`.
+                ? const EmptyFolderLabel()
                 : _buildFilteredNodeChildren(node),
           ),
       ],

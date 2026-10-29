@@ -1,16 +1,15 @@
 // ignore_for_file:  use_build_context_synchronously, avoid_print
 
-import 'dart:io';
-
 import 'package:code_forge/code_forge.dart';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
+import 'package:fide/models/editor_search.dart';
+import 'package:fide/models/text_offsets.dart';
 import 'package:fide/panels/center/editor/editor_screen_header.dart';
 import 'package:fide/panels/center/editor/editor_screen_image_view.dart';
 import 'package:fide/panels/center/editor/editor_screen_search_bar.dart';
 import 'package:fide/panels/center/editor/editor_screen_status_bar.dart';
 import 'package:fide/panels/center/editor/editor_screen_unsupported_file_view.dart';
-import 'package:fide/panels/center/editor/editor_search.dart';
 import 'package:fide/panels/center/editor/large_file_message.dart';
 import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -151,9 +150,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     // Auto-save file if there are unsaved changes
     if (_isDirty && _currentFile.isNotEmpty) {
       try {
-        final file = File(_currentFile);
-        file.writeAsStringSync(_codeController.text);
-        // Note: We don't show a snackbar here since the widget is being disposed
+        _documents.saveOnClose(_currentFile, _codeController.text);
       } catch (e) {
         // Silently handle save errors during dispose
         _logger.warning('Error auto-saving file on close: $e');
@@ -495,7 +492,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     if (!CodeFormatter.canFormat(_currentFile)) {
       MessageBox.showInfo(
         context,
-        'Formatting is currently only supported for Dart, JSON, and ARB files',
+        'Formatting is currently only supported for ${CodeFormatter.supportedDescription} files',
       );
       return;
     }
@@ -545,60 +542,20 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     return _codeTheme!;
   }
 
-  /// Computes the 1-based column number for the current cursor position.
-  int _getCurrentColumnNumber() {
-    if (_codeController.text.isEmpty) {
-      return 1;
-    }
+  /// 1-based column of the cursor.
+  int _getCurrentColumnNumber() => _cursorPosition.column;
 
-    final offset = _codeController.selection.base.offset;
-    if (offset <= 0) {
-      return 1;
-    }
+  /// 1-based line of the cursor.
+  int _getCurrentLineNumber() => _cursorPosition.line;
 
-    final textBeforeCursor = _codeController.text.substring(0, offset);
-    final lastNewlineIndex = textBeforeCursor.lastIndexOf('\n');
+  /// Line and column of the cursor in the editor text.
+  ({int line, int column}) get _cursorPosition => TextOffsets.positionOf(
+    _codeController.text,
+    _codeController.selection.base.offset,
+  );
 
-    // If no newline found, cursor is on first line
-    if (lastNewlineIndex == -1) {
-      return offset + 1; // +1 because columns are 1-indexed
-    }
-
-    // Return characters from the last newline to cursor position
-    return offset - lastNewlineIndex; // This gives 1-indexed column
-  }
-
-  int _getCurrentLineNumber() {
-    if (_codeController.text.isEmpty) return 1;
-
-    final offset = _codeController.selection.base.offset;
-    if (offset <= 0) return 1;
-
-    final textBeforeCursor = _codeController.text.substring(0, offset);
-    final lines = textBeforeCursor.split('\n');
-    return lines.length;
-  }
-
-  /// Returns a human-readable language label from the current file extension.
-  String _getFileLanguage() {
-    final ext = _currentFile.split('.').last.toLowerCase();
-    switch (ext) {
-      case 'dart':
-        return 'Dart';
-      case 'yaml':
-      case 'yml':
-        return 'YAML';
-      case 'json':
-        return 'JSON';
-      case 'js':
-        return 'js';
-      case 'xml':
-      case 'html':
-        return ext.toUpperCase();
-      default:
-        return 'Text';
-    }
-  }
+  /// Human-readable language label from the current file extension.
+  String _getFileLanguage() => FileTypeUtils.languageLabel(_currentFile);
 
   /// Handles editor keyboard shortcuts while search UI is active.
   void _handleKeyEvent(KeyEvent event) {
@@ -678,32 +635,12 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       return;
     }
 
-    // Basic validation
-    if (_codeController.text.isEmpty || lineNumber < 1) {
-      return;
-    }
-
-    final lines = _codeController.text.split('\n');
-    if (lineNumber > lines.length) {
-      return;
-    }
-
-    // Calculate the character offset for the target line
-    int offset = 0;
-    for (int i = 0; i < lineNumber - 1 && i < lines.length; i++) {
-      offset += lines[i].length + 1; // +1 for the newline character
-    }
-
-    // Add column offset within the line (column is 1-indexed, so subtract 1)
-    final targetLine = lines[lineNumber - 1];
-    final columnOffset = (column - 1).clamp(0, targetLine.length);
-    offset += columnOffset;
-
-    // Clamp offset
-    if (offset < 0) offset = 0;
-    if (offset > _codeController.text.length) {
-      offset = _codeController.text.length;
-    }
+    final offset = TextOffsets.offsetOf(
+      _codeController.text,
+      lineNumber,
+      column: column,
+    );
+    if (_codeController.text.isEmpty || offset == null) return;
 
     _codeController.selection = TextSelection.fromPosition(
       TextPosition(offset: offset),
@@ -818,16 +755,14 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     if (_currentFile.isEmpty) return;
 
     try {
-      final file = File(_currentFile);
-      await file.writeAsString(_codeController.text);
+      final text = _codeController.text;
+      await _documents.save(_currentFile, text);
 
       if (mounted) {
         setState(() {
-          _savedText = _codeController.text;
-          _isDirty = false;
+          _savedText = text;
+          _isDirty = text != _codeController.text;
         });
-
-        _documents.update(_currentFile, isDirty: false);
 
         MessageBox.showSuccess(context, 'File saved successfully');
       }
@@ -881,6 +816,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       final isGitRepo = await gitService.isGitRepository(
         path.dirname(_currentFile),
       );
+      if (!mounted) return;
 
       if (!isGitRepo) {
         MessageBox.showError(context, 'Not a Git repository');
@@ -894,7 +830,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
       if (!mounted) return;
 
-      if (diff.isEmpty || diff.startsWith('Error')) {
+      if (diff.isEmpty) {
         MessageBox.showInfo(context, 'No changes to show');
         return;
       }

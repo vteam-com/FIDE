@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/outdated_package.dart';
+import 'package:fide/models/project_paths.dart';
 import 'package:fide/providers/process_runner.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
@@ -75,7 +76,7 @@ class ProjectMaintenanceService {
   Future<void> fullCleanup(String projectPath) async {
     await _runChecked('flutter', ['clean'], workingDirectory: projectPath);
 
-    final buildDir = Directory('$projectPath/build');
+    final buildDir = Directory(ProjectPaths(projectPath).buildDir);
     if (buildDir.existsSync()) {
       await buildDir.delete(recursive: true);
     }
@@ -147,7 +148,7 @@ class ProjectMaintenanceService {
       throw 'Expected packages to be an array, got ${packages?.runtimeType}';
     }
 
-    final pubspecFile = File('$projectPath/pubspec.yaml');
+    final pubspecFile = File(ProjectPaths(projectPath).pubspec);
     if (!pubspecFile.existsSync()) {
       throw 'pubspec.yaml not found';
     }

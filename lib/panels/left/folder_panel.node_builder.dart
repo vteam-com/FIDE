@@ -48,9 +48,7 @@ class NodeBuilder extends StatelessWidget {
           isExpanded: isExpanded && !hasError,
           rootPath: rootPath,
           onShowContextMenu: (offset) => onShowContextMenu(node, offset),
-          hasError:
-              node.loadResult != null &&
-              node.loadResult != LoadChildrenResult.success,
+          hasError: hasError,
         ),
         if (node.isDirectory && isExpanded)
           Padding(
@@ -60,14 +58,7 @@ class NodeBuilder extends StatelessWidget {
                   : AppSpacing.xLarge,
             ),
             child: node.children.isEmpty
-                ? const Text(
-                    'empty folder',
-                    style: TextStyle(
-                      fontStyle: FontStyle.italic,
-                      color: Colors.grey,
-                      fontSize: AppFontSize.caption,
-                    ),
-                  )
+                ? const EmptyFolderLabel()
                 : _buildNodeChildren(),
           ),
       ],

@@ -5,10 +5,12 @@ import 'dart:io';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/health_indicators.dart';
 import 'package:fide/models/project_metrics.dart';
+import 'package:fide/models/project_paths.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/project_maintenance_service.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/busy_icon_button.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/output_panel.dart';
@@ -257,7 +259,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       final currentProjectPath = ref.read(currentProjectPathProvider);
       if (currentProjectPath == null) return;
 
-      final pubspecPath = '$currentProjectPath/pubspec.yaml';
+      final pubspecPath = ProjectPaths(currentProjectPath).pubspec;
       if (!File(pubspecPath).existsSync()) {
         MessageBox.showError(context, 'pubspec.yaml not found');
         return;
@@ -630,36 +632,22 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       children: [
         Wrap(
           children: [
-            ElevatedButton.icon(
-              onPressed: _checkingOutdated ? null : _checkOutdated,
-              icon: _checkingOutdated
-                  ? const SizedBox(
-                      width: AppIconSize.medium,
-                      height: AppIconSize.medium,
-                      child: CircularProgressIndicator(
-                        strokeWidth: AppBorderWidth.medium,
-                      ),
-                    )
-                  : const Icon(Icons.update, size: AppIconSize.medium),
-              label: const Text('Outdated'),
+            BusyIconButton(
+              busy: _checkingOutdated,
+              icon: Icons.update,
+              label: 'Outdated',
+              onPressed: _checkOutdated,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.medium,
                 ),
               ),
             ),
-            ElevatedButton.icon(
-              onPressed: _upgrading ? null : _upgradePackages,
-              icon: _upgrading
-                  ? const SizedBox(
-                      width: AppIconSize.medium,
-                      height: AppIconSize.medium,
-                      child: CircularProgressIndicator(
-                        strokeWidth: AppBorderWidth.medium,
-                      ),
-                    )
-                  : const Icon(Icons.arrow_upward, size: AppIconSize.medium),
-              label: const Text('Upgrade'),
+            BusyIconButton(
+              busy: _upgrading,
+              icon: Icons.arrow_upward,
+              label: 'Upgrade',
+              onPressed: _upgradePackages,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.medium,
@@ -767,21 +755,11 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               ),
             ),
             const SizedBox(height: AppSpacing.large),
-            ElevatedButton.icon(
-              onPressed: _isRefreshing ? null : _performFullCleanup,
-              icon: _isRefreshing
-                  ? const SizedBox(
-                      width: AppIconSize.medium,
-                      height: AppIconSize.medium,
-                      child: CircularProgressIndicator(
-                        strokeWidth: AppBorderWidth.medium,
-                      ),
-                    )
-                  : const Icon(
-                      Icons.cleaning_services,
-                      size: AppIconSize.medium,
-                    ),
-              label: const Text('Full Project Cleanup'),
+            BusyIconButton(
+              busy: _isRefreshing,
+              icon: Icons.cleaning_services,
+              label: 'Full Project Cleanup',
+              onPressed: _performFullCleanup,
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(
                   double.infinity,
@@ -790,18 +768,11 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               ),
             ),
             const SizedBox(height: AppSpacing.medium),
-            ElevatedButton.icon(
-              onPressed: _isRefreshing ? null : _analyzeProject,
-              icon: _isRefreshing
-                  ? const SizedBox(
-                      width: AppIconSize.medium,
-                      height: AppIconSize.medium,
-                      child: CircularProgressIndicator(
-                        strokeWidth: AppBorderWidth.medium,
-                      ),
-                    )
-                  : const Icon(Icons.refresh, size: AppIconSize.medium),
-              label: const Text('Refresh Analysis'),
+            BusyIconButton(
+              busy: _isRefreshing,
+              icon: Icons.refresh,
+              label: 'Refresh Analysis',
+              onPressed: _analyzeProject,
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(
                   double.infinity,

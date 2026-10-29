@@ -4,7 +4,9 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/health_indicators.dart';
 import 'package:fide/models/project_metrics.dart';
-import 'package:yaml/yaml.dart';
+import 'package:fide/models/project_paths.dart';
+import 'package:fide/models/pubspec.dart';
+import 'package:fide/providers/file_type_utils.dart';
 
 /// Gathers project metrics (pubspec info, file and directory statistics,
 /// health indicators) and derives a quality score from them.
@@ -23,13 +25,8 @@ class ProjectAnalyzer {
 
   /// Analyzes the project at [projectPath].
   Future<ProjectMetrics> analyze(String projectPath) async {
-    final pubspecFile = File('$projectPath/pubspec.yaml');
-    final pubspecContent = pubspecFile.existsSync()
-        ? pubspecFile.readAsStringSync()
-        : null;
-    final pubspec = pubspecContent == null
-        ? null
-        : _readPubspec(pubspecContent);
+    final paths = ProjectPaths(projectPath);
+    final pubspec = await Pubspec.read(paths.pubspec);
     final tree = await _walkProjectTree(projectPath);
     final buildLogs = await _countBuildLogs(projectPath);
 
@@ -37,16 +34,18 @@ class ProjectAnalyzer {
       name: pubspec?.name,
       version: pubspec?.version,
       description: pubspec?.description,
-      dependencies: pubspec?.dependencies ?? const {},
-      devDependencies: pubspec?.devDependencies ?? const {},
+      dependencies: _describeDependencies(pubspec?.dependencies ?? const {}),
+      devDependencies: _describeDependencies(
+        pubspec?.devDependencies ?? const {},
+      ),
       fileStats: tree.fileStats,
       directoryStructure: tree.structure,
       health: HealthIndicators(
-        hasPubspecLock: File('$projectPath/pubspec.lock').existsSync(),
+        hasPubspecLock: File(paths.pubspecLock).existsSync(),
         buildErrors: buildLogs.errors,
         buildWarnings: buildLogs.warnings,
         largeFiles: tree.largeFiles,
-        hasDependencies: pubspecContent?.contains('dependencies:') ?? false,
+        hasDependencies: pubspec?.dependencies.isNotEmpty ?? false,
       ),
     );
   }
@@ -55,7 +54,7 @@ class ProjectAnalyzer {
   Future<({int errors, int warnings})> _countBuildLogs(
     String projectPath,
   ) async {
-    final buildDir = Directory('$projectPath/build');
+    final buildDir = Directory(ProjectPaths(projectPath).buildDir);
     var errors = 0;
     var warnings = 0;
     if (buildDir.existsSync()) {
@@ -72,54 +71,13 @@ class ProjectAnalyzer {
 
   /// Maps each dependency name to its version, or a label for SDK and
   /// non-version (git, path, hosted) dependencies.
-  Map<String, String> _describeDependencies(YamlMap deps) {
-    final described = <String, String>{};
-    deps.forEach((key, value) {
-      if (value is String) {
-        described[key as String] = value;
-      } else if (value is YamlMap && value['sdk'] == 'flutter') {
-        described[key as String] = 'Flutter SDK';
-      } else {
-        described[key as String] = 'Complex dependency';
-      }
-    });
-    return described;
-  }
-
-  /// Reads name, version, description and dependencies from pubspec content.
-  ({
-    String? name,
-    String? version,
-    String? description,
-    Map<String, String>? dependencies,
-    Map<String, String>? devDependencies,
-  })
-  _readPubspec(String content) {
-    String? name;
-    String? version;
-    String? description;
-    for (final line in content.split('\n')) {
-      if (line.trim().startsWith('name:') &&
-          !line.trim().startsWith('  name:')) {
-        name = line.split(':').last.trim();
-      }
-      if (line.trim().startsWith('version:')) {
-        version = line.split(':').last.trim();
-      }
-      if (line.trim().startsWith('description:')) {
-        description = line.split(':').last.trim();
-      }
-    }
-
-    final yamlMap = loadYamlDocument(content).contents as YamlMap;
-    final deps = yamlMap['dependencies'] as YamlMap?;
-    final devDeps = yamlMap['dev_dependencies'] as YamlMap?;
-    return (
-      name: name,
-      version: version,
-      description: description,
-      dependencies: deps == null ? null : _describeDependencies(deps),
-      devDependencies: devDeps == null ? null : _describeDependencies(devDeps),
+  Map<String, String> _describeDependencies(Map<String, Object?> deps) {
+    return deps.map(
+      (name, value) => MapEntry(name, switch (value) {
+        String version => version,
+        Map() when value['sdk'] == 'flutter' => 'Flutter SDK',
+        _ => 'Complex dependency',
+      }),
     );
   }
 
@@ -145,7 +103,7 @@ class ProjectAnalyzer {
       projectPath,
     ).list(recursive: true, followLinks: false)) {
       if (entity is File) {
-        final extension = entity.path.split('.').last.toLowerCase();
+        final extension = FileTypeUtils.extensionOf(entity.path);
         fileStats[extension] = (fileStats[extension] ?? 0) + 1;
         try {
           if (await entity.length() > largeFileBytes) {

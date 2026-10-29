@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// The left panel's tabs, in display order; each value's `index` is its
-/// position in the tab bar and in `activeLeftPanelTabProvider`.
+/// position in the tab bar.
 enum LeftPanelTab {
   organized(Key('keyTabOrganize'), Icons.category, Icons.category_outlined),
   folder(Key('keyTabFolder'), Icons.folder, Icons.folder_outlined),

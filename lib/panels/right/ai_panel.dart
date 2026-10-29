@@ -1,10 +1,13 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/ai_action.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/providers/ai_service.dart';
 import 'package:fide/providers/ollama_installer.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/widgets/check_mark.dart';
+import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,18 +25,6 @@ class AIPanel extends ConsumerStatefulWidget {
 }
 
 class _AIPanelState extends ConsumerState<AIPanel> {
-  static const Map<String, String> _actionHints = {
-    'ask': 'Ask me anything about your code...',
-    'explain': 'Paste code here to get explanation...',
-    'generate': 'Describe what code you want to generate...',
-    'refactor': 'Paste code and describe how to refactor it...',
-  };
-  static const Map<String, String> _actionLabels = {
-    'ask': 'Ask AI',
-    'explain': 'Explain Code',
-    'generate': 'Generate Code',
-    'refactor': 'Refactor Code',
-  };
   late final AIService _aiService = ref.read(aiServiceProvider);
   late final OllamaInstaller _ollama = ref.read(ollamaInstallerProvider);
   bool _hasModelInstalled = false;
@@ -45,7 +36,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
   final List<ChatMessage> _messages = [];
   final TextEditingController _promptController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  String _selectedAction = 'ask';
+  AiAction _selectedAction = AiAction.ask;
   @override
   void initState() {
     super.initState();
@@ -106,58 +97,22 @@ class _AIPanelState extends ConsumerState<AIPanel> {
                   if (_isCheckingStatus)
                     const Center(child: CircularProgressIndicator())
                   else if (!_hasOllamaInstalled)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Ollama is not installed.',
-                          style: TextStyle(fontSize: AppFontSize.caption),
-                        ),
-                        const SizedBox(height: AppSpacing.medium),
-                        if (_isInstalling)
-                          const CircularProgressIndicator()
-                        else
-                          ElevatedButton(
-                            onPressed: _installOllama,
-                            child: const Text('Install Ollama'),
-                          ),
-                      ],
+                    _buildSetupStep(
+                      'Ollama is not installed.',
+                      'Install Ollama',
+                      _installOllama,
                     )
                   else if (!_isOllamaRunning)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Ollama is installed but not running.',
-                          style: TextStyle(fontSize: AppFontSize.caption),
-                        ),
-                        const SizedBox(height: AppSpacing.medium),
-                        if (_isInstalling)
-                          const CircularProgressIndicator()
-                        else
-                          ElevatedButton(
-                            onPressed: _runOllama,
-                            child: const Text('Run Ollama'),
-                          ),
-                      ],
+                    _buildSetupStep(
+                      'Ollama is installed but not running.',
+                      'Run Ollama',
+                      _runOllama,
                     )
                   else if (!_hasModelInstalled)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Ollama is running but the codellama model is not downloaded.',
-                          style: TextStyle(fontSize: AppFontSize.caption),
-                        ),
-                        const SizedBox(height: AppSpacing.medium),
-                        if (_isInstalling)
-                          const CircularProgressIndicator()
-                        else
-                          ElevatedButton(
-                            onPressed: _downloadModel,
-                            child: const Text('Download Model'),
-                          ),
-                      ],
+                    _buildSetupStep(
+                      'Ollama is running but the ${OllamaInstaller.model} model is not downloaded.',
+                      'Download Model',
+                      _downloadModel,
                     )
                   else
                     const Text(
@@ -190,7 +145,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
                   ),
           ),
           Divider(),
-          PopupMenuButton<String>(
+          PopupMenuButton<AiAction>(
             child: Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.xLarge,
@@ -198,66 +153,24 @@ class _AIPanelState extends ConsumerState<AIPanel> {
               ),
               child: Row(
                 children: [
-                  /// Handles `_getActionText`.
-                  Text(_getActionText()),
+                  Text(_selectedAction.label),
                   const Spacer(),
                   const Icon(Icons.arrow_drop_down),
                 ],
               ),
             ),
             itemBuilder: (_) => [
-              PopupMenuItem(
-                value: 'ask',
-                child: Row(
-                  children: [
-                    if ('ask' == _selectedAction)
-                      const Icon(Icons.check, size: AppIconSize.mediumLarge)
-                    else
-                      const SizedBox(width: AppIconSize.mediumLarge),
-                    const SizedBox(width: AppSpacing.medium),
-                    const Text('Ask AI'),
-                  ],
+              for (final action in AiAction.values)
+                PopupMenuItem(
+                  value: action,
+                  child: Row(
+                    children: [
+                      CheckMark(checked: action == _selectedAction),
+                      const SizedBox(width: AppSpacing.medium),
+                      Text(action.label),
+                    ],
+                  ),
                 ),
-              ),
-              PopupMenuItem(
-                value: 'explain',
-                child: Row(
-                  children: [
-                    if ('explain' == _selectedAction)
-                      const Icon(Icons.check, size: AppIconSize.mediumLarge)
-                    else
-                      const SizedBox(width: AppIconSize.mediumLarge),
-                    const SizedBox(width: AppSpacing.medium),
-                    const Text('Explain Code'),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'generate',
-                child: Row(
-                  children: [
-                    if ('generate' == _selectedAction)
-                      const Icon(Icons.check, size: AppIconSize.mediumLarge)
-                    else
-                      const SizedBox(width: AppIconSize.mediumLarge),
-                    const SizedBox(width: AppSpacing.medium),
-                    const Text('Generate Code'),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'refactor',
-                child: Row(
-                  children: [
-                    if ('refactor' == _selectedAction)
-                      const Icon(Icons.check, size: AppIconSize.mediumLarge)
-                    else
-                      const SizedBox(width: AppIconSize.mediumLarge),
-                    const SizedBox(width: AppSpacing.medium),
-                    const Text('Refactor Code'),
-                  ],
-                ),
-              ),
             ],
             onSelected: (value) {
               setState(() => _selectedAction = value);
@@ -271,8 +184,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
                 child: TextField(
                   controller: _promptController,
                   decoration: InputDecoration(
-                    /// Handles `_getHintText`.
-                    hintText: _getHintText(),
+                    hintText: _selectedAction.hint,
                     border: const OutlineInputBorder(),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.large,
@@ -288,13 +200,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
               IconButton(
                 onPressed: _isLoading ? null : _sendMessage,
                 icon: _isLoading
-                    ? const SizedBox(
-                        width: AppIconSize.large,
-                        height: AppIconSize.large,
-                        child: CircularProgressIndicator(
-                          strokeWidth: AppBorderWidth.medium,
-                        ),
-                      )
+                    ? const InlineSpinner()
                     : const Icon(Icons.send),
                 tooltip: 'Send',
               ),
@@ -302,6 +208,26 @@ class _AIPanelState extends ConsumerState<AIPanel> {
           ),
         ],
       ),
+    );
+  }
+
+  /// One setup stage: what's missing and the button that fixes it, or a
+  /// spinner while an install action runs.
+  Widget _buildSetupStep(
+    String message,
+    String buttonLabel,
+    VoidCallback onPressed,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(message, style: const TextStyle(fontSize: AppFontSize.caption)),
+        const SizedBox(height: AppSpacing.medium),
+        if (_isInstalling)
+          const CircularProgressIndicator()
+        else
+          ElevatedButton(onPressed: onPressed, child: Text(buttonLabel)),
+      ],
     );
   }
 
@@ -387,7 +313,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     await _runInstallAction(
       action: _ollama.downloadModel,
       onSuccess: () => _hasModelInstalled = true,
-      successMessage: 'codellama model downloaded.',
+      successMessage: '${OllamaInstaller.model} model downloaded.',
       errorPrefix: 'Error downloading model',
     );
   }
@@ -408,41 +334,19 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     }
   }
 
-  /// Handles `_getActionText`.
-  String _getActionText() {
-    return _actionLabels[_selectedAction] ?? 'Select Action';
-  }
-
-  /// Handles `_getHintText`.
-  String _getHintText() {
-    return _actionHints[_selectedAction] ?? 'Type your message...';
-  }
-
-  /// Handles `_installOllama`.
+  /// Installs Ollama, downloads the model and starts the service.
   Future<void> _installOllama() async {
-    setState(() => _isInstalling = true);
-    try {
-      await _ollama.install();
-
-      _hasOllamaInstalled = true;
-      _isOllamaRunning = true;
-      _hasModelInstalled = true;
-
-      if (mounted) {
-        MessageBox.showInfo(
-          context,
-          'Ollama installed, codellama model downloaded, and service started.',
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        MessageBox.showError(context, 'Error installing Ollama: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isInstalling = false);
-      }
-    }
+    await _runInstallAction(
+      action: _ollama.install,
+      onSuccess: () {
+        _hasOllamaInstalled = true;
+        _isOllamaRunning = true;
+        _hasModelInstalled = true;
+      },
+      successMessage:
+          'Ollama installed, ${OllamaInstaller.model} model downloaded, and service started.',
+      errorPrefix: 'Error installing Ollama',
+    );
   }
 
   /// Runs an install-related action with shared loading state and messages.
@@ -497,7 +401,6 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     _promptController.clear();
 
     try {
-      String response;
       String context = '';
 
       // Get context from selected file if available
@@ -513,28 +416,15 @@ class _AIPanelState extends ConsumerState<AIPanel> {
         }
       }
 
-      switch (_selectedAction) {
-        case 'explain':
-          response = await _aiService.explainCode(text);
-          break;
-        case 'generate':
-          response = await _aiService.generateCode(text);
-          break;
-        case 'refactor':
-          response = await _aiService.refactorCode(
-            text,
-            'Please refactor this code',
-          );
-          break;
-        default:
-          response = await _aiService.getCodeSuggestion(text, context);
-      }
+      final response = await _aiService.respond(_selectedAction, text, context);
 
       if (!mounted) return;
       setState(() {
         _messages.add(
           ChatMessage(
-            content: response,
+            content: response.trim().isEmpty
+                ? 'No suggestion available'
+                : response,
             isUser: false,
             timestamp: DateTime.now(),
           ),

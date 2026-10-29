@@ -1,18 +1,13 @@
-import 'dart:io' as io;
-
-import 'package:analyzer/dart/analysis/features.dart';
-import 'package:analyzer/dart/analysis/utilities.dart';
-import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/open_documents.dart';
+import 'package:fide/models/outline_node.dart';
+import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/outline_parser.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:yaml/yaml.dart';
-
-part 'outline_panel.outline_node.dart';
 
 /// Represents `OutlinePanel`.
 class OutlinePanel extends ConsumerStatefulWidget {
@@ -34,9 +29,9 @@ class OutlinePanel extends ConsumerStatefulWidget {
 }
 
 class _OutlinePanelState extends ConsumerState<OutlinePanel> {
-  final Map<String, DateTime> _cachedFileModTimes = {};
-
-  final Map<String, List<OutlineNode>> _cachedOutlines = {};
+  /// Last parsed text and its outline, per file.
+  final Map<String, ({String content, List<OutlineNode> nodes})>
+  _cachedOutlines = {};
 
   int _currentHighlightedLine = -1;
 
@@ -78,6 +73,11 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
       editorCursorLineProvider,
       (_, line) => _onCursorPositionChanged(line),
     );
+    final list = ListView.builder(
+      itemCount: _outlineNodes.length,
+      itemBuilder: (_, index) => _buildOutlineNode(_outlineNodes[index]),
+    );
+
     return LayoutBuilder(
       builder: (_ /*context*/, constraints) {
         final isConstrained = constraints.maxHeight.isFinite;
@@ -105,26 +105,12 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
                 child: Text('No outline available'),
               )
             else if (isConstrained)
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _outlineNodes.length,
-                  itemBuilder: (_ /*context*/, index) {
-                    final node = _outlineNodes[index];
-                    return _buildOutlineNode(node);
-                  },
-                ),
-              )
+              Expanded(child: list)
             else
               Flexible(
                 child: SizedBox(
                   height: AppSize.outlineFallbackHeight,
-                  child: ListView.builder(
-                    itemCount: _outlineNodes.length,
-                    itemBuilder: (_ /*context*/, index) {
-                      final node = _outlineNodes[index];
-                      return _buildOutlineNode(node);
-                    },
-                  ),
+                  child: list,
                 ),
               ),
           ],
@@ -299,45 +285,31 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
     }
   }
 
-  /// Remembers [nodes] for [filePath] with its modification time, so an
-  /// unchanged file isn't parsed again; caching failures are ignored.
-  Future<void> _cacheOutline(String filePath, List<OutlineNode> nodes) async {
-    if (!mounted) return;
-    try {
-      final fileStat = await io.File(filePath).stat();
-      _cachedOutlines[filePath] = nodes;
-      _cachedFileModTimes[filePath] = fileStat.modified;
-    } catch (_) {
-      // Silently fail if we can't cache
+  /// The text to outline: the editor's, unsaved edits included, when the
+  /// file is open there, otherwise what is on disk.
+  Future<String> _contentOf(FileSystemItem file) async {
+    final openDocuments = ref.read(openDocumentsProvider);
+    final index = openDocuments.indexOf(file.path);
+    if (index != OpenDocuments.noActiveDocument) {
+      return openDocuments.documents[index].content;
     }
+    return file.readAsString();
   }
 
-  /// Parses the current file, updates [_outlineNodes], and stores results in the cache.
+  /// Outlines the current file into [_outlineNodes], reusing the last
+  /// outline when its text hasn't changed.
   Future<void> _parseFile() async {
     if (!mounted) return;
 
-    // Check if we have cached data for this file
-    final filePath = widget.file.path;
-    final cachedNodes = _cachedOutlines[filePath];
-    final cachedModTime = _cachedFileModTimes[filePath];
-
-    if (cachedNodes != null) {
-      try {
-        final fileStat = await io.File(filePath).stat();
-        if (cachedModTime == fileStat.modified) {
-          // File hasn't changed, use cached data
-          if (mounted) {
-            setState(() {
-              _outlineNodes = cachedNodes;
-              _isLoading = false;
-              _error = '';
-            });
-          }
-          return;
-        }
-      } catch (_) {
-        // If we can't stat the file, continue with parsing
-      }
+    final file = widget.file;
+    final parser = OutlineParser.forFile(file.path);
+    if (parser == null) {
+      setState(() {
+        _outlineNodes = [];
+        _isLoading = false;
+        _error = '';
+      });
+      return;
     }
 
     setState(() {
@@ -346,106 +318,22 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
     });
 
     try {
-      late List<OutlineNode> nodes;
-
-      if (widget.file.path.endsWith('.dart')) {
-        final result = parseFile(
-          path: widget.file.path,
-          featureSet: FeatureSet.latestLanguageVersion(),
-        );
-        final visitor = _OutlineVisitor(result.content);
-        result.unit.visitChildren(visitor);
-        nodes = visitor.nodes;
-
-        await _cacheOutline(filePath, nodes);
-
-        setState(() {
-          _outlineNodes = nodes;
-        });
-      } else if (widget.file.path.endsWith('.md')) {
-        // Parse markdown file for headers
-        final content = await widget.file.readAsString();
-        final lines = content.split('\n');
-        nodes = <OutlineNode>[];
-
-        for (var i = 0; i < lines.length; i++) {
-          final line = lines[i];
-          if (line.startsWith('#')) {
-            final level = line.split(' ')[0].length;
-            final title = line.substring(level).trim();
-            nodes.add(
-              OutlineNode(
-                name: title,
-                type:
-                    'Heading ${level.clamp(1, AppMetric.markdownMaxHeadingLevel)}',
-                line: i + 1,
-                column: level + 1, // Position after the # characters
-                level: level - 1,
-              ),
-            );
-          }
-        }
-
-        await _cacheOutline(filePath, nodes);
-
-        setState(() {
-          _outlineNodes = nodes;
-        });
-      } else if (widget.file.path.endsWith('.yaml') ||
-          widget.file.path.endsWith('.yml')) {
-        // Parse YAML file for top-level keys
-        final content = await widget.file.readAsString();
-        nodes = <OutlineNode>[];
-
-        try {
-          final yamlDoc = loadYaml(content);
-          if (yamlDoc is Map) {
-            int currentLine = 1;
-            final lines = content.split('\n');
-            for (final line in lines) {
-              final trimmed = line.trim();
-              if (trimmed.isNotEmpty && !trimmed.startsWith('#')) {
-                // Check if this line contains a top-level key
-                if (!line.startsWith(' ') &&
-                    !line.startsWith('\t') &&
-                    line.contains(':')) {
-                  final key = line.split(':')[0].trim();
-                  if (yamlDoc.containsKey(key)) {
-                    nodes.add(
-                      OutlineNode(
-                        name: key,
-                        type: 'YAML Key',
-                        line: currentLine,
-                        column: line.indexOf(key) + 1,
-                        level: 0,
-                      ),
-                    );
-                  }
-                }
-              }
-              currentLine++;
-            }
-          }
-        } catch (e) {
-          // If YAML parsing fails, throw to be handled by main error handler
-          throw Exception('Error parsing YAML: $e');
-        }
-
-        await _cacheOutline(filePath, nodes);
-
-        setState(() {
-          _outlineNodes = nodes;
-        });
+      final content = await _contentOf(file);
+      final cached = _cachedOutlines[file.path];
+      final nodes = cached != null && cached.content == content
+          ? cached.nodes
+          : parser.parse(content);
+      _cachedOutlines[file.path] = (content: content, nodes: nodes);
+      if (mounted && file.path == widget.file.path) {
+        setState(() => _outlineNodes = nodes);
       }
     } catch (e) {
-      setState(() {
-        _error = 'Error parsing file: $e';
-      });
+      if (mounted) {
+        setState(() => _error = 'Error parsing file: $e');
+      }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -460,72 +348,5 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
       _isDebouncing = false;
       _isCancelled = false; // Reset cancellation flag
     });
-  }
-}
-
-class _OutlineVisitor extends RecursiveAstVisitor<void> {
-  final List<OutlineNode> nodes = [];
-  final String fileContent;
-  int _currentLevel = 0;
-
-  _OutlineVisitor(this.fileContent);
-
-  @override
-  void visitClassDeclaration(ClassDeclaration node) {
-    _addNode(node.namePart.toString(), 'class', node.offset, node.length);
-    _currentLevel++;
-    super.visitClassDeclaration(node);
-    _currentLevel--;
-  }
-
-  @override
-  void visitFunctionDeclaration(FunctionDeclaration node) {
-    _addNode(node.name.toString(), 'function', node.offset, node.length);
-    _currentLevel++;
-    super.visitFunctionDeclaration(node);
-    _currentLevel--;
-  }
-
-  @override
-  void visitMethodDeclaration(MethodDeclaration node) {
-    _addNode(node.name.toString(), 'method', node.offset, node.length);
-    _currentLevel++;
-    super.visitMethodDeclaration(node);
-    _currentLevel--;
-  }
-
-  @override
-  void visitVariableDeclaration(VariableDeclaration node) {
-    if (_currentLevel == 0) {
-      _addNode(node.name.toString(), 'variable', node.offset, node.length);
-    }
-    super.visitVariableDeclaration(node);
-  }
-
-  /// Converts a source [offset] to a 1-indexed line/column and appends an [OutlineNode] to [nodes].
-  void _addNode(String name, String type, int offset, int _ /* length */) {
-    // Calculate the actual line number and column from the offset
-    int lineNumber = 1; // Lines are 1-indexed
-    int lastNewlineIndex = -1;
-
-    for (int i = 0; i < offset && i < fileContent.length; i++) {
-      if (fileContent[i] == '\n') {
-        lineNumber++;
-        lastNewlineIndex = i;
-      }
-    }
-
-    // Column is 1-indexed: characters from last newline to offset
-    int column = offset - lastNewlineIndex; // This gives 1-indexed column
-
-    nodes.add(
-      OutlineNode(
-        name: name,
-        type: type,
-        line: lineNumber,
-        column: column,
-        level: _currentLevel,
-      ),
-    );
   }
 }

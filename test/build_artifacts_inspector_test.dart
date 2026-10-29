@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/providers/build_artifacts_inspector.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -12,7 +13,7 @@ void main() {
   test('reports an unbuilt project without an icon', () async {
     final artifacts = await const BuildArtifactsInspector().inspect(
       project.path,
-      'linux',
+      FlutterPlatform.linux,
     );
 
     expect(artifacts.appIconPath, isNull);
@@ -28,7 +29,7 @@ void main() {
 
     final artifacts = await const BuildArtifactsInspector().inspect(
       project.path,
-      'web',
+      FlutterPlatform.web,
     );
 
     expect(artifacts.location, '${project.path}/build/web');

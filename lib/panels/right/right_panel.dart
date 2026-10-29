@@ -55,8 +55,8 @@ class _RightPanelState extends State<RightPanel>
         final activeTab = ref.watch(activeRightPanelTabProvider);
 
         // Update TabController to match the provider
-        if (_tabController.index != activeTab) {
-          _tabController.animateTo(activeTab);
+        if (_tabController.index != activeTab.index) {
+          _tabController.animateTo(activeTab.index);
         }
 
         return Container(
@@ -77,7 +77,7 @@ class _RightPanelState extends State<RightPanel>
                   controller: _tabController,
                   onTap: (index) {
                     ref.read(activeRightPanelTabProvider.notifier).state =
-                        index;
+                        RightPanelTab.values[index];
                   },
                   tabs: [
                     for (final tab in RightPanelTab.values)

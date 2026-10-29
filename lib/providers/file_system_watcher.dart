@@ -15,8 +15,12 @@ class FileSystemWatcher {
   /// can't run real watchers and timers pass false.
   final bool watchEnabled;
 
-  /// Creates a watcher; see [watchEnabled].
-  FileSystemWatcher({this.watchEnabled = true});
+  final ProjectTreeReader _reader;
+
+  /// Creates a watcher that reads new entries with [reader]; see
+  /// [watchEnabled].
+  FileSystemWatcher({this.watchEnabled = true, ProjectTreeReader? reader})
+    : _reader = reader ?? const ProjectTreeReader();
 
   final Map<String, StreamSubscription<FileSystemEvent>> _watchers = {};
   final Map<String, ProjectNode> _watchedDirectories = {};
@@ -132,7 +136,7 @@ class FileSystemWatcher {
       final isDirectory = entity == FileSystemEntityType.directory;
 
       // Create new ProjectNode
-      final newNode = await const ProjectTreeReader().nodeFor(
+      final newNode = await _reader.nodeFor(
         isDirectory ? Directory(filePath) : File(filePath),
       );
 

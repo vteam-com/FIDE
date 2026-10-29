@@ -9,7 +9,6 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   final double _minOutlineWidth = 150.0;
   final double _maxOutlineWidth = 500.0;
 
-  int _activeLeftPanel = 0;
   VoidCallback? _refreshOutlineCallback;
 
   String? _lastSelectedFilePath;
@@ -86,11 +85,6 @@ class MainLayoutState extends ConsumerState<MainLayout> {
 
                   await Future.delayed(AppDuration.editorScroll);
                   ref.read(activeEditorProvider).navigateToLine(line);
-                },
-                onToggleGitPanel: () {
-                  setState(
-                    () => _activeLeftPanel = _activeLeftPanel == 0 ? 1 : 0,
-                  );
                 },
               ),
             ),

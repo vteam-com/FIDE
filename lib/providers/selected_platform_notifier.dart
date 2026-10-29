@@ -1,9 +1,9 @@
 part of 'app_providers.dart';
 
 /// The build target chosen in the Execute panel, persisted to preferences.
-class SelectedPlatformNotifier extends StateNotifier<String> {
+class SelectedPlatformNotifier extends StateNotifier<FlutterPlatform> {
   /// Target used until a saved choice is restored.
-  static final String defaultPlatform = FlutterPlatform.android.name;
+  static const FlutterPlatform defaultPlatform = FlutterPlatform.android;
 
   final Ref _ref;
 
@@ -13,13 +13,16 @@ class SelectedPlatformNotifier extends StateNotifier<String> {
   /// Restores the saved target.
   Future<void> load() async {
     final prefs = await _ref.read(sharedPreferencesProvider.future);
-    state = prefs.getString(PrefKeys.selectedPlatform) ?? defaultPlatform;
+    final saved = prefs.getString(PrefKeys.selectedPlatform);
+    state =
+        (saved == null ? null : FlutterPlatform.fromId(saved)) ??
+        defaultPlatform;
   }
 
   /// Selects [platform] and saves it.
-  Future<void> select(String platform) async {
+  Future<void> select(FlutterPlatform platform) async {
     state = platform;
     final prefs = await _ref.read(sharedPreferencesProvider.future);
-    await prefs.setString(PrefKeys.selectedPlatform, platform);
+    await prefs.setString(PrefKeys.selectedPlatform, platform.name);
   }
 }

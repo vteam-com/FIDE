@@ -4,11 +4,13 @@ import 'dart:io';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/build_artifacts.dart';
 import 'package:fide/models/flutter_platform.dart';
+import 'package:fide/providers/process_runner.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/icon_menu_row.dart';
+import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -20,14 +22,11 @@ class PlatformInfoSection extends ConsumerStatefulWidget {
     required this.isSupported,
     required this.canBuild,
     required this.projectPath,
-    required this.currentHostPlatform,
     this.onAppendOutput,
     this.onAppendError,
   });
 
   final bool canBuild;
-
-  final String currentHostPlatform;
 
   final bool isSupported;
 
@@ -37,7 +36,7 @@ class PlatformInfoSection extends ConsumerStatefulWidget {
 
   final String projectPath;
 
-  final String selectedPlatform;
+  final FlutterPlatform selectedPlatform;
 
   @override
   ConsumerState<PlatformInfoSection> createState() =>
@@ -65,7 +64,7 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
   @override
   Widget build(BuildContext context) {
     return SectionPanel(
-      title: widget.selectedPlatform,
+      title: widget.selectedPlatform.displayName,
       rightWidget: Row(
         mainAxisSize: MainAxisSize.min,
         spacing: AppSpacing.medium,
@@ -254,7 +253,7 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
                         const SizedBox(width: AppSpacing.medium),
                         Expanded(
                           child: Text(
-                            'Instructions for ${widget.selectedPlatform}',
+                            'Instructions for ${widget.selectedPlatform.displayName}',
                             style: TextStyle(
                               fontSize: AppFontSize.caption,
                               fontWeight: FontWeight.w600,
@@ -334,50 +333,34 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
                     itemBuilder: (_) => [
                       PopupMenuItem<String>(
                         value: 'copy_path',
-                        child: Row(
-                          children: [
-                            Icon(Icons.copy, size: AppIconSize.medium),
-                            const SizedBox(width: AppSpacing.medium),
-                            const Text('Copy Path'),
-                          ],
+                        child: IconMenuRow(
+                          icon: Icons.copy,
+                          label: 'Copy Path',
                         ),
                       ),
                       if (!_iconPath.startsWith('assets/'))
                         PopupMenuItem<String>(
                           value: 'open_finder',
-                          child: Row(
-                            children: [
-                              Icon(Icons.folder_open, size: AppIconSize.medium),
-                              const SizedBox(width: AppSpacing.medium),
-                              Text(
-                                Platform.isMacOS
-                                    ? 'Open in Finder'
-                                    : Platform.isWindows
-                                    ? 'Open in Explorer'
-                                    : 'Open Folder',
-                              ),
-                            ],
+                          child: IconMenuRow(
+                            icon: Icons.folder_open,
+                            label: 'Open in ${ProcessRunner.fileManagerName}',
                           ),
                         ),
                       PopupMenuItem<String>(
                         value: 'select_in_fide',
-                        child: Row(
-                          children: [
-                            Icon(Icons.search, size: AppIconSize.medium),
-                            const SizedBox(width: AppSpacing.medium),
-                            const Text('Select in FIDE-Explorer'),
-                          ],
+                        child: IconMenuRow(
+                          icon: Icons.search,
+                          label: 'Select in FIDE-Explorer',
                         ),
                       ),
                     ],
                     onSelected: (value) {
                       switch (value) {
                         case 'copy_path':
-                          Clipboard.setData(ClipboardData(text: _iconPath));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Path copied to clipboard'),
-                            ),
+                          MessageBox.copyToClipboard(
+                            context,
+                            _iconPath,
+                            confirmation: 'Path copied to clipboard',
                           );
                           break;
                         case 'open_finder':
@@ -434,33 +417,13 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
     }
   }
 
-  /// Bundled icon for the selected platform, or Linux's for an unknown id.
-  String get _genericIconPath {
-    return (FlutterPlatform.fromId(widget.selectedPlatform) ??
-            FlutterPlatform.linux)
-        .iconAsset;
-  }
+  /// Bundled icon for the selected platform.
+  String get _genericIconPath => widget.selectedPlatform.iconAsset;
 
-  /// Returns human-readable instructions for enabling this platform in the project.
+  /// How to add the selected platform to the project.
   String _getEnableInstructions() {
     if (widget.isSupported) return 'Platform is already configured';
-
-    switch (widget.selectedPlatform) {
-      case 'android':
-        return 'Android support is typically enabled by default.\nEnsure Android Studio or SDK is installed.';
-      case 'ios':
-        return 'iOS support requires macOS and Xcode.\nInstall Xcode from App Store.';
-      case 'web':
-        return 'Run: flutter config --enable-web';
-      case 'windows':
-        return 'Run: flutter config --enable-windows-desktop';
-      case 'linux':
-        return 'Run: flutter config --enable-linux-desktop';
-      case 'macos':
-        return 'Run: flutter config --enable-macos-desktop';
-      default:
-        return 'Platform not recognized';
-    }
+    return widget.selectedPlatform.enableInstructions;
   }
 
   /// The project's app icon, or the bundled one for the platform.

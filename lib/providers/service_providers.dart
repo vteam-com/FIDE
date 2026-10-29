@@ -10,10 +10,14 @@ import 'package:fide/providers/localization_service.dart';
 import 'package:fide/providers/ollama_installer.dart';
 import 'package:fide/providers/process_runner.dart';
 import 'package:fide/providers/project_analyzer.dart';
+import 'package:fide/providers/project_categorizer.dart';
 import 'package:fide/providers/project_creation_service.dart';
 import 'package:fide/providers/project_maintenance_service.dart';
+import 'package:fide/providers/project_search_service.dart';
 import 'package:fide/providers/project_service.dart';
+import 'package:fide/providers/project_tree_reader.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 
 /// Provides the [ProcessRunner] every service uses to launch commands;
 /// override in tests to fake external tools.
@@ -26,9 +30,18 @@ final gitServiceProvider = Provider<GitService>(
   (ref) => GitService(ref.read(processRunnerProvider)),
 );
 
+/// Provides the HTTP client network services send requests through;
+/// override in tests with a `MockClient`.
+final httpClientProvider = Provider<http.Client>((ref) {
+  final client = http.Client();
+  ref.onDispose(client.close);
+  return client;
+});
+
 /// Provides the shared [AIService]; override in tests to stub Ollama calls.
 final aiServiceProvider = Provider<AIService>(
-  (ref) => AIService(ref.read(flutterSdkProvider)),
+  (ref) =>
+      AIService(ref.read(flutterSdkProvider), ref.read(httpClientProvider)),
 );
 
 /// Provides the [OllamaInstaller] that installs and starts the local model.
@@ -101,9 +114,27 @@ final projectTreeLoaderProvider = Provider<ProjectTreeLoader>(
 /// documents directory.
 final newProjectParentDirectoryProvider = Provider<String?>((_) => null);
 
+/// Provides the [ProjectTreeReader] panels and the watcher read folders
+/// with.
+final projectTreeReaderProvider = Provider<ProjectTreeReader>(
+  (_) => const ProjectTreeReader(),
+);
+
+/// Provides the [ProjectSearchService] behind the Search panel.
+final projectSearchServiceProvider = Provider<ProjectSearchService>(
+  (_) => const ProjectSearchService(),
+);
+
+/// Provides the [ProjectCategorizer] behind the Organized view.
+final projectCategorizerProvider = Provider<ProjectCategorizer>(
+  (ref) => ProjectCategorizer(ref.read(projectTreeReaderProvider)),
+);
+
 /// Provides the [FileSystemWatcher] used for incremental project tree updates.
 final fileSystemWatcherProvider = Provider<FileSystemWatcher>((ref) {
-  final watcher = FileSystemWatcher();
+  final watcher = FileSystemWatcher(
+    reader: ref.read(projectTreeReaderProvider),
+  );
   ref.onDispose(watcher.dispose);
   return watcher;
 });

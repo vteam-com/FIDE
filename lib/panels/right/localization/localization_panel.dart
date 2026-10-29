@@ -5,6 +5,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/localization_checks.dart';
 import 'package:fide/models/localization_data.dart';
+import 'package:fide/models/project_paths.dart';
 import 'package:fide/panels/right/localization/localization_entry_widget.dart';
 import 'package:fide/panels/right/localization/localization_setup_widget.dart';
 import 'package:fide/providers/ai_service.dart';
@@ -12,6 +13,7 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/localization_service.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/filter_field.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:flutter/material.dart';
@@ -159,27 +161,11 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     });
 
     try {
-      // First, find all ARB files
-      final l10nDir = Directory('${projectRoot.path}/lib/l10n');
-      final arbFilePaths = <String>[];
-      if (await l10nDir.exists()) {
-        final files = await l10nDir.list().toList();
-        for (final file in files) {
-          if (file.path.endsWith('.arb')) {
-            arbFilePaths.add(file.path);
-          }
-        }
-      }
-
-      final validArbFiles = await _arbService.loadArbFiles(l10nDir.path);
-      final malformedFiles = <String>[];
-
-      for (final filePath in arbFilePaths) {
-        final isValid = await _arbService.isArbFileValid(filePath);
-        if (!isValid) {
-          malformedFiles.add(filePath);
-        }
-      }
+      final arbFiles = await _arbService.loadArbFiles(
+        ProjectPaths(projectRoot.path).l10nDir,
+      );
+      final validArbFiles = arbFiles.valid;
+      final malformedFiles = arbFiles.malformed;
 
       final comparisons = _arbService.compareArbFiles(validArbFiles);
 
@@ -611,43 +597,9 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                 ),
         ),
         // Filter bar
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.medium,
-            0,
-            AppSpacing.medium,
-            AppSpacing.medium,
-          ),
-          child: TextField(
-            controller: _filterController,
-            decoration: InputDecoration(
-              hintText: 'Filter localization keys...',
-              prefixIcon: const Icon(
-                Icons.filter_list,
-                size: AppIconSize.large,
-              ),
-              suffixIcon: _filterQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear, size: AppIconSize.large),
-                      onPressed: () {
-                        _filterController.clear();
-                        setState(() {});
-                      },
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.medium),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.large,
-                vertical: AppSpacing.medium,
-              ),
-            ),
-            style: const TextStyle(fontSize: AppFontSize.body),
-          ),
+        FilterField(
+          controller: _filterController,
+          hintText: 'Filter localization keys...',
         ),
       ],
     );
@@ -883,7 +835,7 @@ Provide only the translated text, no additional explanation or quotes.''';
 
       final translation = await _aiService.getCodeSuggestion(prompt, '');
 
-      if (translation.isNotEmpty && !translation.startsWith('Error:')) {
+      if (translation.trim().isNotEmpty) {
         await _arbService.updateArbFile(
           targetFilePath,
           key,

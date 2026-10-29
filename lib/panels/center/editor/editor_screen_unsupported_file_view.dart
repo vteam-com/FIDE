@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -14,7 +15,7 @@ class EditorScreenUnsupportedFileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final extension = filePath.split('.').last.toLowerCase();
+    final extension = FileTypeUtils.extensionOf(filePath);
 
     return Center(
       child: Column(

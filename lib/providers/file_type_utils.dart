@@ -45,7 +45,7 @@ part 'file_type_utils.file_type_info.dart';
 class FileTypeUtils {
   static final Map<String, FileTypeInfo> _types = {
     // Dart and Flutter
-    'dart': FileTypeInfo.text(FileCategory.dart, langDart),
+    'dart': FileTypeInfo.text(FileCategory.dart, langDart, 'Dart'),
     'arb': FileTypeInfo.text(FileCategory.data, langJson),
     // Compiled languages
     'c': FileTypeInfo.text(FileCategory.source, langC),
@@ -85,7 +85,7 @@ class FileTypeUtils {
     // Data formats
     'json': FileTypeInfo.text(FileCategory.data, langJson),
     'yaml': FileTypeInfo.text(FileCategory.data, langYaml),
-    'yml': FileTypeInfo.text(FileCategory.data, langYaml),
+    'yml': FileTypeInfo.text(FileCategory.data, langYaml, 'YAML'),
     'toml': FileTypeInfo.text(FileCategory.data, langIni),
     'csv': const FileTypeInfo.text(FileCategory.data),
     'dot': const FileTypeInfo.text(FileCategory.data),
@@ -163,9 +163,23 @@ class FileTypeUtils {
     return _types[extension.toLowerCase()]?.category ?? FileCategory.other;
   }
 
+  /// The lowercase text after [filePath]'s last dot (the whole name when
+  /// it has none, so `.gitignore` gives `gitignore`).
+  static String extensionOf(String filePath) {
+    return filePath.split('.').last.toLowerCase();
+  }
+
+  /// Name of [filePath]'s language for the status bar; `Text` for plain
+  /// text and unknown types.
+  static String languageLabel(String filePath) {
+    final type = _typeOf(filePath);
+    if (type == null || type.language == null) return 'Text';
+    return type.label ?? extensionOf(filePath).toUpperCase();
+  }
+
   /// The table entry for [filePath]'s extension, or null when unknown.
   static FileTypeInfo? _typeOf(String filePath) {
     if (filePath.isEmpty) return null;
-    return _types[filePath.split('.').last.toLowerCase()];
+    return _types[extensionOf(filePath)];
   }
 }

@@ -89,6 +89,13 @@ class ProcessRunner {
         null;
   }
 
+  /// Name of the platform's file manager, for menu labels.
+  static String get fileManagerName {
+    if (Platform.isMacOS) return 'Finder';
+    if (Platform.isWindows) return 'Explorer';
+    return 'File Manager';
+  }
+
   /// Opens [directory] in the platform's file manager (Finder, Explorer,
   /// or the desktop's default via xdg-open).
   Future<void> revealInFileManager(String directory) async {

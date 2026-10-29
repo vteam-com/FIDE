@@ -2,6 +2,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/widget_services/diff_counter.dart';
+import 'package:fide/widgets/check_mark.dart';
 import 'package:fide/widgets/toggle_experience_mode.dart';
 import 'package:flutter/material.dart';
 
@@ -52,10 +53,7 @@ class EditorScreenHeader extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (index == activeIndex)
-                        const Icon(Icons.check, size: AppIconSize.mediumLarge)
-                      else
-                        const SizedBox(width: AppIconSize.mediumLarge),
+                      CheckMark(checked: index == activeIndex),
                       const SizedBox(width: AppSpacing.medium),
                       Text(doc.fileName),
                       const SizedBox(width: AppSpacing.medium),

@@ -1,4 +1,7 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/project_name.dart';
+import 'package:fide/widgets/step_header.dart';
+import 'package:fide/widgets/tool_status_row.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -61,6 +64,34 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
 
   String? _finalProjectName;
 
+  /// How to install Flutter, shown when it isn't found.
+  static const String _flutterInstallInstructions =
+      'Flutter SDK is not installed or not available in PATH.\n\n'
+      'To install Flutter:\n\n'
+      '1. Visit: https://flutter.dev/docs/get-started/install\n'
+      '2. Download the Flutter SDK for your platform\n'
+      '3. Extract the SDK to a location (e.g., ~/flutter)\n'
+      '4. Add the flutter/bin directory to your PATH:\n'
+      '   - macOS/Linux: Add to ~/.bashrc or ~/.zshrc:\n'
+      '     export PATH="\$PATH:~/flutter/bin"\n'
+      '   - Windows: Add to System Environment Variables\n'
+      '5. Run: flutter doctor\n\n'
+      'For detailed instructions, visit: https://flutter.dev/docs/get-started/install';
+
+  /// How to install Git, shown when it isn't found.
+  static const String _gitInstallInstructions =
+      'Git is not installed or not available in PATH.\n\n'
+      'To install Git:\n\n'
+      '• macOS: Install Xcode Command Line Tools:\n'
+      '  xcode-select --install\n'
+      '  Or install Git from: https://git-scm.com/download/mac\n\n'
+      '• Linux (Ubuntu/Debian):\n'
+      '  sudo apt-get update && sudo apt-get install git\n\n'
+      '• Windows: Download from https://git-scm.com/download/win\n\n'
+      'For detailed instructions, visit: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git';
+
+  /// This step's place in the wizard.
+  static const int _stepNumber = 1;
   bool _useAI = false;
 
   final TextEditingController descriptionController = TextEditingController();
@@ -97,37 +128,7 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: AppIconSize.xLarge,
       children: [
-        // Step indicator
-        Row(
-          children: [
-            Container(
-              width: AppIconSize.xLarge,
-              height: AppIconSize.xLarge,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              child: const Center(
-                child: Text(
-                  '1',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.medium),
-            const Text('Project Details'),
-            const SizedBox(width: AppSpacing.xLarge),
-            Expanded(
-              child: Container(
-                height: AppBorderWidth.medium,
-                color: Theme.of(context).colorScheme.outlineVariant,
-              ),
-            ),
-          ],
-        ),
+        StepHeader(number: _stepNumber, title: 'Project Details'),
 
         const SizedBox(height: AppSpacing.xLarge),
 
@@ -192,152 +193,20 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
             ),
           ),
 
-        // Flutter status
         if (widget.flutterStatusChecked)
-          Container(
-            padding: const EdgeInsets.only(bottom: AppSpacing.medium),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              spacing: AppSpacing.medium,
-              children: [
-                Icon(
-                  widget.flutterAvailable ? Icons.check_circle : Icons.error,
-                  color: widget.flutterAvailable ? Colors.green : Colors.red,
-                  size: AppIconSize.medium,
-                ),
-                Text(
-                  widget.flutterAvailable
-                      ? 'Flutter SDK: ${widget.flutterVersion}'
-                      : 'Flutter SDK: Not Found',
-                  style: TextStyle(
-                    color: widget.flutterAvailable ? Colors.green : Colors.red,
-                    fontSize: AppFontSize.caption,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (!widget.flutterAvailable) ...[
-                  TextButton(
-                    onPressed: () {
-                      // Show installation instructions
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text('Install Flutter SDK'),
-                            content: const SingleChildScrollView(
-                              child: Text(
-                                'Flutter SDK is not installed or not available in PATH.\n\n'
-                                'To install Flutter:\n\n'
-                                '1. Visit: https://flutter.dev/docs/get-started/install\n'
-                                '2. Download the Flutter SDK for your platform\n'
-                                '3. Extract the SDK to a location (e.g., ~/flutter)\n'
-                                '4. Add the flutter/bin directory to your PATH:\n'
-                                '   - macOS/Linux: Add to ~/.bashrc or ~/.zshrc:\n'
-                                '     export PATH="\$PATH:~/flutter/bin"\n'
-                                '   - Windows: Add to System Environment Variables\n'
-                                '5. Run: flutter doctor\n\n'
-                                'For detailed instructions, visit: https://flutter.dev/docs/get-started/install',
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(context).pop(),
-                                child: const Text('OK'),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(
-                        AppSize.compactTextButtonMinWidth,
-                        AppSize.compactButtonHeight,
-                      ),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: const Text(
-                      'Install',
-                      style: TextStyle(fontSize: AppFontSize.caption),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+          ToolStatusRow(
+            name: 'Flutter SDK',
+            available: widget.flutterAvailable,
+            version: widget.flutterVersion,
+            installInstructions: _flutterInstallInstructions,
           ),
 
-        // Git status
         if (widget.gitStatusChecked)
-          Container(
-            padding: const EdgeInsets.only(bottom: AppSpacing.medium),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              spacing: AppSpacing.medium,
-              children: [
-                Icon(
-                  widget.gitAvailable ? Icons.check_circle : Icons.error,
-                  color: widget.gitAvailable ? Colors.green : Colors.red,
-                  size: AppIconSize.medium,
-                ),
-                Text(
-                  widget.gitAvailable
-                      ? 'Git: ${widget.gitVersion}'
-                      : 'Git: Not Found',
-                  style: TextStyle(
-                    color: widget.gitAvailable ? Colors.green : Colors.red,
-                    fontSize: AppFontSize.caption,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (!widget.gitAvailable) ...[
-                  TextButton(
-                    onPressed: () {
-                      // Show installation instructions
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text('Install Git'),
-                            content: const SingleChildScrollView(
-                              child: Text(
-                                'Git is not installed or not available in PATH.\n\n'
-                                'To install Git:\n\n'
-                                '• macOS: Install Xcode Command Line Tools:\n'
-                                '  xcode-select --install\n'
-                                '  Or install Git from: https://git-scm.com/download/mac\n\n'
-                                '• Linux (Ubuntu/Debian):\n'
-                                '  sudo apt-get update && sudo apt-get install git\n\n'
-                                '• Windows: Download from https://git-scm.com/download/win\n\n'
-                                'For detailed instructions, visit: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git',
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(context).pop(),
-                                child: const Text('OK'),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(
-                        AppSize.compactTextButtonMinWidth,
-                        AppSize.compactButtonHeight,
-                      ),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: const Text(
-                      'Install',
-                      style: TextStyle(fontSize: AppFontSize.caption),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+          ToolStatusRow(
+            name: 'Git',
+            available: widget.gitAvailable,
+            version: widget.gitVersion,
+            installInstructions: _gitInstallInstructions,
           ),
 
         // AI-powered generation toggle
@@ -394,6 +263,7 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
         widget.defaultParentDirectory ??
         widget.initialDirectory ??
         (await getApplicationDocumentsDirectory()).path;
+    if (!mounted) return;
     setState(() {
       directoryController.text = directoryPath;
       _directory = directoryPath;
@@ -407,7 +277,7 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
 
   /// Reacts to project name field changes by validating and notifying the parent widget.
   void _onProjectNameChanged() {
-    final validatedName = _validateProjectName(nameController.text);
+    final validatedName = ProjectName.normalize(nameController.text);
     if (_finalProjectName != validatedName) {
       setState(() {
         _finalProjectName = validatedName;
@@ -430,106 +300,5 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
         _directory != null &&
         _directory!.isNotEmpty;
     widget.onValidationChanged(canProceed);
-  }
-
-  /// Returns a normalised, Dart-package-safe project name, or `null` if the input is empty.
-  String? _validateProjectName(String inputName) {
-    if (inputName.isEmpty) {
-      return null;
-    }
-
-    // Only normalize if needed (spaces, special chars, etc.)
-    String normalized = inputName;
-
-    // Replace spaces and special characters with underscores
-    normalized = normalized.replaceAll(RegExp(r'[^a-z0-9_]'), '_');
-
-    // Remove consecutive underscores
-    normalized = normalized.replaceAll(RegExp(r'_+'), '_');
-
-    // Remove leading/trailing underscores
-    normalized = normalized.replaceAll(RegExp(r'^_+|_+$'), '');
-
-    // Ensure it doesn't start with a digit
-    if (normalized.isNotEmpty && normalized.startsWith(RegExp(r'[0-9]'))) {
-      normalized = 'app_$normalized';
-    }
-
-    // Ensure it's not empty after normalization
-    if (normalized.isEmpty) {
-      normalized = 'flutter_app';
-    }
-
-    // Check if it's a reserved Dart word and prefix if needed
-    const reservedWords = {
-      'abstract',
-      'as',
-      'assert',
-      'async',
-      'await',
-      'break',
-      'case',
-      'catch',
-      'class',
-      'const',
-      'continue',
-      'default',
-      'deferred',
-      'do',
-      'dynamic',
-      'else',
-      'enum',
-      'export',
-      'extends',
-      'extension',
-      'external',
-      'factory',
-      'false',
-      'final',
-      'finally',
-      'for',
-      'function',
-      'get',
-      'hide',
-      'if',
-      'implements',
-      'import',
-      'in',
-      'interface',
-      'is',
-      'late',
-      'library',
-      'mixin',
-      'new',
-      'null',
-      'on',
-      'operator',
-      'part',
-      'required',
-      'rethrow',
-      'return',
-      'set',
-      'show',
-      'static',
-      'super',
-      'switch',
-      'sync',
-      'this',
-      'throw',
-      'true',
-      'try',
-      'typedef',
-      'var',
-      'void',
-      'while',
-      'with',
-      'yield',
-    };
-
-    if (reservedWords.contains(normalized)) {
-      normalized = '${normalized}_app';
-    }
-
-    return normalized;
   }
 }

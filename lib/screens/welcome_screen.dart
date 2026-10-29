@@ -1,7 +1,5 @@
 // ignore_for_file: deprecated_member_use
 
-import 'dart:io';
-
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_theme.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -17,9 +15,13 @@ class WelcomeScreen extends StatefulWidget {
     required this.onOpenFolder,
     required this.onCreateProject,
     required this.mruFolders,
+    this.accessibleFolders = const {},
     required this.onOpenMruProject,
     required this.onRemoveMruEntry,
   });
+
+  /// The entries of [mruFolders] that exist and can be opened.
+  final Set<String> accessibleFolders;
 
   final List<String> mruFolders;
 
@@ -225,7 +227,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
     return validMruFolders.map((path) {
       final projectName = path.split('/').last;
-      final hasAccess = Directory(path).existsSync();
+      final hasAccess = widget.accessibleFolders.contains(path);
 
       return Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.medium),

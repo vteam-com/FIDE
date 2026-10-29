@@ -1,61 +1,97 @@
 // ignore: fcheck_dead_code
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/ai_action.dart';
 import 'package:fide/providers/flutter_sdk.dart';
 import 'package:fide/providers/ollama_installer.dart';
 import 'package:http/http.dart' as http;
 
-/// Represents `AIService`.
+part 'ai_service.ai_service_exception.dart';
+
+/// Talks to the local Ollama model: code suggestions, explanations,
+/// refactoring, and generating starter project files.
+///
+/// Failed requests throw an [AiServiceException].
 class AIService {
   /// Constraint used when the installed Dart version can't be detected.
   static const String _fallbackDartConstraint = '^3.0.0';
-  final FlutterSdk _sdk;
 
-  /// Creates an AI service that reads SDK versions from [_sdk].
-  const AIService([this._sdk = const FlutterSdk()]);
+  /// Host and port Ollama listens on by default.
+  static const String ollamaHost = 'localhost:11434';
 
-  static const String _ollamaUrl = 'http://localhost:11434/api/generate';
+  /// Path of Ollama's one-shot generation endpoint.
+  static const String _generatePath = '/api/generate';
+
   static const String _defaultModel = OllamaInstaller.model;
 
-  /// Requests a coding suggestion from Ollama using prompt and contextual text.
-  Future<String> getCodeSuggestion(String prompt, String context) async {
+  final FlutterSdk _sdk;
+  final http.Client _client;
+
+  /// Creates an AI service that reads SDK versions from [_sdk] and sends
+  /// requests through [client] (a fresh one by default).
+  AIService([this._sdk = const FlutterSdk(), http.Client? client])
+    : _client = client ?? http.Client();
+
+  /// Sends [prompt] to the model and returns its response text, which may
+  /// be empty.
+  ///
+  /// Throws an [AiServiceException] when Ollama can't be reached within
+  /// [timeout] or answers with an error status.
+  Future<String> _generate(String prompt, Duration timeout) async {
+    final http.Response response;
     try {
-      final fullPrompt =
-          '''
+      response = await _client
+          .post(
+            Uri.http(ollamaHost, _generatePath),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'model': _defaultModel,
+              'prompt': prompt,
+              'stream': false,
+            }),
+          )
+          .timeout(timeout);
+    } catch (e) {
+      throw AiServiceException(
+        '$e\n\nMake sure Ollama is installed and running on $ollamaHost',
+      );
+    }
+    if (response.statusCode != HttpStatus.ok) {
+      throw AiServiceException(
+        'Failed to get AI response (${response.statusCode}). Make sure Ollama is running with the $_defaultModel model.',
+      );
+    }
+    final data = jsonDecode(response.body);
+    return data is Map ? data['response']?.toString() ?? '' : '';
+  }
+
+  /// Requests a coding suggestion from Ollama using prompt and contextual
+  /// text; empty when the model has nothing to say.
+  Future<String> getCodeSuggestion(String prompt, String context) {
+    return _generate(
+      '''
 You are a helpful coding assistant. Provide concise, accurate code suggestions.
 
 Context: $context
 
 Request: $prompt
 
-Please provide a helpful response focused on the coding request.''';
+Please provide a helpful response focused on the coding request.''',
+      AppDuration.aiSuggestionTimeout,
+    );
+  }
 
-      final response = await http
-          .post(
-            Uri.parse(_ollamaUrl),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'model': _defaultModel,
-              'prompt': fullPrompt,
-              'stream': false,
-            }),
-          )
-          .timeout(
-            AppDuration.aiSuggestionTimeout,
-          ); // Timeout after 30 seconds to prevent hanging
-
-      if (response.statusCode == HttpStatus.ok) {
-        final data = jsonDecode(response.body);
-        return data['response'] ?? 'No suggestion available';
-      } else {
-        return 'Error: Failed to get AI suggestion (${response.statusCode}). Make sure Ollama is running with the $_defaultModel model.';
-      }
-    } catch (e) {
-      return 'Error: $e\n\nMake sure Ollama is installed and running on localhost:11434';
-    }
+  /// Runs [action] on the user's [text]; [context] (the selected file's
+  /// content) is only sent for [AiAction.ask].
+  Future<String> respond(AiAction action, String text, String context) {
+    return switch (action) {
+      AiAction.ask => getCodeSuggestion(text, context),
+      AiAction.explain => explainCode(text),
+      AiAction.generate => generateCode(text),
+      AiAction.refactor => refactorCode(text, 'Please refactor this code'),
+    };
   }
 
   /// Requests a plain-language explanation for the provided source code.
@@ -96,39 +132,27 @@ Customer description:
     return prompt;
   }
 
-  /// Generates starter project files (including `pubspec.yaml` and `lib/main.dart`).
+  /// Generates starter project files: `pubspec.yaml`, `README.md` and
+  /// `lib/main.dart` (a basic app when the model's answer has no usable
+  /// code).
+  ///
+  /// Throws an [AiServiceException] when the request fails.
   Future<Map<String, String>> generateProject(
     String projectName,
     String description,
   ) async {
-    try {
-      final prompt = await getAiPrompt(projectName, description);
+    final rawResponse = await _generate(
+      await getAiPrompt(projectName, description),
+      AppDuration.aiGenerateTimeout,
+    );
 
-      final response = await http
-          .post(
-            Uri.parse(_ollamaUrl),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'model': _defaultModel,
-              'prompt': prompt,
-              'stream': false,
-            }),
-          )
-          .timeout(
-            AppDuration.aiGenerateTimeout,
-          ); // Timeout after 60 seconds to prevent hanging
+    // Parse the response - extract main.dart from code blocks
+    final Map<String, String> files = {};
 
-      if (response.statusCode == HttpStatus.ok) {
-        final data = jsonDecode(response.body);
-        final rawResponse = data['response'] ?? '';
-
-        // Parse the response - extract main.dart from code blocks
-        final Map<String, String> files = {};
-
-        // Create pubspec.yaml directly
-        final sdkVersion = await _getFlutterSdkVersion();
-        files['pubspec.yaml'] =
-            '''
+    // Create pubspec.yaml directly
+    final sdkVersion = await _getFlutterSdkVersion();
+    files['pubspec.yaml'] =
+        '''
 name: $projectName
 description: Generated Flutter app with AI.
 publish_to: 'none'
@@ -148,9 +172,9 @@ dev_dependencies:
 
 ''';
 
-        // Create README.md directly
-        files['README.md'] =
-            '''
+    // Create README.md directly
+    files['README.md'] =
+        '''
 # $projectName
 
 $description
@@ -170,47 +194,45 @@ This Flutter app was generated with AI assistance.
 - `pubspec.yaml`: Dependencies and project configuration
 ''';
 
-        // Extract Dart code (lib/main.dart) from AI response
-        final dartBlockRegex = RegExp(
-          r'```\s*(?:dart)?\s*\n?(.*?)\n?```',
-          caseSensitive: false,
-          dotAll: true,
-        );
-        final dartMatches = dartBlockRegex.allMatches(rawResponse);
+    // Extract Dart code (lib/main.dart) from AI response
+    final dartBlockRegex = RegExp(
+      r'```\s*(?:dart)?\s*\n?(.*?)\n?```',
+      caseSensitive: false,
+      dotAll: true,
+    );
+    final dartMatches = dartBlockRegex.allMatches(rawResponse);
 
-        bool foundMainDart = false;
-        if (dartMatches.isNotEmpty) {
-          for (final match in dartMatches) {
-            final dartContent = match.group(1)?.trim();
-            if (dartContent != null &&
-                dartContent.isNotEmpty &&
-                (dartContent.contains('void main()') ||
-                    dartContent.contains(
-                      'import \'package:flutter/material.dart\'',
-                    ))) {
-              files['lib/main.dart'] = dartContent;
-              foundMainDart = true;
-              break; // Use the first valid Dart block
-            }
-          }
+    bool foundMainDart = false;
+    if (dartMatches.isNotEmpty) {
+      for (final match in dartMatches) {
+        final dartContent = match.group(1)?.trim();
+        if (dartContent != null &&
+            dartContent.isNotEmpty &&
+            (dartContent.contains('void main()') ||
+                dartContent.contains(
+                  'import \'package:flutter/material.dart\'',
+                ))) {
+          files['lib/main.dart'] = dartContent;
+          foundMainDart = true;
+          break; // Use the first valid Dart block
         }
+      }
+    }
 
-        // Fallback: if no code blocks found, try extracting the entire response
-        if (!foundMainDart) {
-          String dartContent = rawResponse.trim();
-          if (dartContent.contains(
-                'import \'package:flutter/material.dart\'',
-              ) ||
-              dartContent.contains('void main()')) {
-            files['lib/main.dart'] = dartContent;
-            foundMainDart = true;
-          }
-        }
+    // Fallback: if no code blocks found, try extracting the entire response
+    if (!foundMainDart) {
+      String dartContent = rawResponse.trim();
+      if (dartContent.contains('import \'package:flutter/material.dart\'') ||
+          dartContent.contains('void main()')) {
+        files['lib/main.dart'] = dartContent;
+        foundMainDart = true;
+      }
+    }
 
-        // Last fallback: if nothing worked, return a basic main.dart
-        if (!foundMainDart) {
-          files['lib/main.dart'] =
-              '''
+    // Last fallback: if nothing worked, return a basic main.dart
+    if (!foundMainDart) {
+      files['lib/main.dart'] =
+          '''
 import 'package:flutter/material.dart';
 
 void main() {
@@ -262,44 +284,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 ''';
-          foundMainDart = true;
-        }
-
-        // Validate we have the required files with content
-        if (files.containsKey('pubspec.yaml') &&
-            files.containsKey('lib/main.dart') &&
-            files['pubspec.yaml']!.isNotEmpty &&
-            files['lib/main.dart']!.isNotEmpty) {
-          return files;
-        } else {
-          // Debug: show what we found
-          print('🔍 Debug: Raw response length: ${rawResponse.length}');
-          print(
-            '🔍 Debug: Found pubspec.yaml: ${files['pubspec.yaml']?.length ?? 0} chars',
-          );
-          print(
-            '🔍 Debug: Found main.dart: ${files['lib/main.dart']?.length ?? 0} chars',
-          );
-          print(
-            '🔍 Debug: Response preview: ${rawResponse.substring(0, min(AppMetric.logPreviewChars, rawResponse.length))}',
-          );
-
-          return {
-            'error': 'Failed to extract project files from AI response. Expected valid pubspec.yaml and lib/main.dart code.',
-          };
-        }
-      } else {
-        return {
-          'error':
-              'Failed to get AI suggestion (${response.statusCode}). Make sure Ollama is running with the $_defaultModel model.',
-        };
-      }
-    } catch (e) {
-      return {
-        'error':
-            'Error: $e\n\nMake sure Ollama is installed and running on localhost:11434',
-      };
     }
+
+    return files;
   }
 
   /// Generates code for a requirement by delegating to the suggestion endpoint.

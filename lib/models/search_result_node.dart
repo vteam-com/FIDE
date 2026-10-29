@@ -1,4 +1,5 @@
-part of 'search_panel.dart';
+import 'package:fide/models/project_node.dart';
+import 'package:fide/models/search_result.dart';
 
 /// A folder or file in the search results tree.
 ///

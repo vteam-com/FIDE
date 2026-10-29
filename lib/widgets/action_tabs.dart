@@ -1,16 +1,20 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/action_status.dart';
+import 'package:fide/models/panel_action.dart';
+import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 
-enum BuildProcessStatus { idle, running, success, error }
-
-/// Represents `ActionTabsWithExecute`.
+/// Tabs of panel actions, each showing its details, an Execute (or Stop)
+/// button and its status.
 class ActionTabsWithExecute extends StatefulWidget {
+  /// Creates tabs for [actions].
   const ActionTabsWithExecute({super.key, required this.actions});
 
-  final List<Map<String, dynamic>> actions;
+  /// The actions, in tab order.
+  final List<PanelAction> actions;
 
   @override
   State<ActionTabsWithExecute> createState() => _ActionTabsWithExecuteState();
@@ -70,34 +74,26 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
               TabBar(
                 controller: _tabController,
                 tabs: widget.actions.map((action) {
-                  final status = action['status'] as BuildProcessStatus;
-                  final isRunning = status == BuildProcessStatus.running;
-                  final icon = action['icon'] as IconData;
+                  final status = action.status;
+                  final isRunning = action.isRunning;
+                  final icon = action.icon;
 
                   return Tab(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (isRunning)
-                          SizedBox(
-                            width: showLabels
+                          InlineSpinner(
+                            size: showLabels
                                 ? AppSize.regularProgressIndicator
                                 : AppSize.expandedProgressIndicator,
-                            height: showLabels
-                                ? AppSize.regularProgressIndicator
-                                : AppSize.expandedProgressIndicator,
-                            child: CircularProgressIndicator(
-                              strokeWidth: AppBorderWidth.medium,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.amber,
-                              ),
-                            ),
+                            color: Colors.amber,
                           )
                         else
                           Icon(
-                            status == BuildProcessStatus.success
+                            status == ActionStatus.success
                                 ? Icons.check_circle
-                                : status == BuildProcessStatus.error
+                                : status == ActionStatus.error
                                 ? Icons.error
                                 : icon,
                             size: showLabels
@@ -107,7 +103,7 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                         if (showLabels) ...[
                           const SizedBox(height: AppSpacing.tiny),
                           Text(
-                            action['title'] as String,
+                            action.title,
                             style: TextStyle(
                               fontSize: AppFontSize.badge,
                               fontWeight: FontWeight.w500,
@@ -140,9 +136,10 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                   controller: _tabController,
                   physics: const NeverScrollableScrollPhysics(),
                   children: widget.actions.map((action) {
-                    final status = action['status'] as BuildProcessStatus;
-                    final isRunning = status == BuildProcessStatus.running;
-                    final color = action['color'] as Color;
+                    final status = action.status;
+                    final isRunning = action.isRunning;
+                    final color = action.color;
+                    final canStop = isRunning && action.onStop != null;
 
                     return Padding(
                       padding: AppPadding.actionTabContent,
@@ -153,7 +150,7 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                           Row(
                             children: [
                               Icon(
-                                action['icon'] as IconData,
+                                action.icon,
                                 size: AppIconSize.xLarge,
                                 color: color,
                               ),
@@ -163,7 +160,7 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      action['title'] as String,
+                                      action.title,
                                       style: TextStyle(
                                         fontSize: AppFontSize.title,
                                         fontWeight: FontWeight.bold,
@@ -171,7 +168,7 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                                       ),
                                     ),
                                     Text(
-                                      action['description'] as String,
+                                      action.description,
                                       style: TextStyle(
                                         fontSize: AppFontSize.caption,
                                         color: colorScheme.onSurface.withValues(
@@ -201,7 +198,7 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                               child: SingleChildScrollView(
                                 // Keep only this for the details text
                                 child: Text(
-                                  action['details'] as String,
+                                  action.details,
                                   style: TextStyle(
                                     fontSize: AppFontSize.metadata,
                                     color: colorScheme.onSurface.withValues(
@@ -224,39 +221,40 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton.icon(
-                                  onPressed: isRunning
-                                      ? null // Disable when running
-                                      : () {
-                                          final onPressed =
-                                              action['action'] as VoidCallback?;
-                                          onPressed?.call();
-                                        },
-                                  icon: isRunning
-                                      ? SizedBox(
-                                          width:
-                                              AppSize.compactProgressIndicator,
-                                          height:
-                                              AppSize.compactProgressIndicator,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: AppBorderWidth.medium,
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                                  Colors.white,
-                                                ),
-                                          ),
+                                  onPressed: canStop
+                                      ? action.onStop
+                                      : isRunning
+                                      ? null
+                                      : action.onRun,
+                                  icon: canStop
+                                      ? const Icon(
+                                          Icons.stop,
+                                          size: AppIconSize.mediumLarge,
                                         )
-                                      : Icon(
+                                      : isRunning
+                                      ? const InlineSpinner(
+                                          size:
+                                              AppSize.compactProgressIndicator,
+                                          color: Colors.white,
+                                        )
+                                      : const Icon(
                                           Icons.play_arrow,
                                           size: AppIconSize.mediumLarge,
                                         ),
                                   label: Text(
-                                    isRunning ? 'Running...' : 'Execute',
+                                    canStop
+                                        ? 'Stop'
+                                        : isRunning
+                                        ? 'Running...'
+                                        : 'Execute',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: isRunning
+                                    backgroundColor: canStop
+                                        ? Colors.red
+                                        : isRunning
                                         ? Colors.grey
                                         : color,
                                     foregroundColor: Colors.white,
@@ -282,13 +280,13 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                                     alpha: AppOpacity.muted,
                                   ),
                                 )
-                              else if (status == BuildProcessStatus.success)
+                              else if (status == ActionStatus.success)
                                 StatusIndicator(
                                   icon: Icons.check_circle,
                                   label: 'Success',
                                   color: Colors.green,
                                 )
-                              else if (status == BuildProcessStatus.error)
+                              else if (status == ActionStatus.error)
                                 StatusIndicator(
                                   icon: Icons.error,
                                   label: 'Failed',

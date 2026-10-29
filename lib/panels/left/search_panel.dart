@@ -3,15 +3,14 @@ import 'dart:io';
 import 'package:fide/constants/constants.dart'
     show AppSpacing, AppIconSize, AppFontSize, AppOpacity, AppRadius;
 import 'package:fide/models/file_system_item.dart';
-import 'package:fide/models/project_node.dart';
+import 'package:fide/models/search_result.dart';
+import 'package:fide/models/search_result_node.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
 import 'package:fide/widgets/search_toggle_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
-
-part 'search_panel.search_result.dart';
-part 'search_panel.search_result_node.dart';
 
 /// Represents `SearchPanel`.
 class SearchPanel extends ConsumerStatefulWidget {
@@ -61,194 +60,24 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
 
     try {
       final libPath = path.join(widget.projectPath, 'lib');
-
-      /// Handles `_searchInDirectory`.
-      final results = await _searchInDirectory(
+      final search = ref.read(projectSearchServiceProvider);
+      final results = await search.search(
         libPath,
         query,
-        _matchCase,
-        _wholeWord,
+        caseSensitive: _matchCase,
+        wholeWord: _wholeWord,
       );
-
-      /// Handles `_buildResultsTree`.
-      final tree = _buildResultsTree(results, libPath);
+      if (!mounted) return;
       setState(() {
-        _resultsTree = tree;
+        _resultsTree = search.toTree(results, libPath);
         _isSearching = false;
       });
     } catch (_) {
+      if (!mounted) return;
       setState(() {
         _isSearching = false;
       });
       // Handle error - could show a snackbar
-    }
-  }
-
-  /// Handles `_searchInDirectory`.
-  Future<List<SearchResult>> _searchInDirectory(
-    String dirPath,
-    String query,
-    bool matchCase,
-    bool wholeWord,
-  ) async {
-    final results = <SearchResult>[];
-    final directory = Directory(dirPath);
-
-    if (!await directory.exists()) {
-      return results;
-    }
-
-    await for (final entity in directory.list(
-      recursive: true,
-      followLinks: false,
-    )) {
-      if (entity is File) {
-        /// Handles `_searchInFile`.
-        final fileResults = await _searchInFile(
-          entity.path,
-          query,
-          matchCase,
-          wholeWord,
-        );
-        results.addAll(fileResults);
-      }
-    }
-
-    return results;
-  }
-
-  /// Handles `_searchInFile`.
-  Future<List<SearchResult>> _searchInFile(
-    String filePath,
-    String query,
-    bool matchCase,
-    bool wholeWord,
-  ) async {
-    final results = <SearchResult>[];
-
-    try {
-      final file = File(filePath);
-      final content = await file.readAsString();
-      final lines = content.split('\n');
-
-      for (int i = 0; i < lines.length; i++) {
-        final line = lines[i];
-        final searchText = matchCase ? line : line.toLowerCase();
-        final searchQuery = matchCase ? query : query.toLowerCase();
-
-        int startIndex = 0;
-        while ((startIndex = searchText.indexOf(searchQuery, startIndex)) !=
-            -1) {
-          // Check whole word if required
-          if (wholeWord) {
-            final before =
-                startIndex == 0 ||
-                !RegExp(r'\w').hasMatch(searchText[startIndex - 1]);
-            final after =
-                startIndex + searchQuery.length == searchText.length ||
-                !RegExp(r'\w')
-                    .hasMatch(searchText[startIndex + searchQuery.length]);
-            if (!before || !after) {
-              startIndex += query.length;
-              continue;
-            }
-          }
-
-          results.add(
-            SearchResult(
-              filePath: filePath,
-              lineNumber: i + 1,
-              lineContent: line,
-              matchStart: startIndex,
-              matchEnd: startIndex + query.length,
-            ),
-          );
-          startIndex += query.length;
-        }
-      }
-    } catch (_) {
-      // Skip files that can't be read
-    }
-
-    return results;
-  }
-
-  /// Handles `_buildResultsTree`.
-  SearchResultNode? _buildResultsTree(
-    List<SearchResult> results,
-    String libPath,
-  ) {
-    if (results.isEmpty) return null;
-
-    // Group results by file path
-    final fileGroups = <String, List<SearchResult>>{};
-    for (final result in results) {
-      fileGroups.putIfAbsent(result.filePath, () => []).add(result);
-    }
-
-    // Create the lib directory node
-    final libNode = SearchResultNode.directory('lib', libPath);
-
-    // Build the tree structure
-    final pathNodes = <String, SearchResultNode>{};
-    pathNodes[libPath] = libNode;
-
-    for (final filePath in fileGroups.keys) {
-      final matches = fileGroups[filePath]!;
-      final relativePath = path.relative(filePath, from: libPath);
-      final pathParts = path.split(relativePath);
-
-      String currentPath = libPath;
-      SearchResultNode? currentNode = libNode;
-
-      // Create directory nodes
-      for (int i = 0; i < pathParts.length - 1; i++) {
-        final part = pathParts[i];
-        final partPath = path.join(currentPath, part);
-
-        if (!pathNodes.containsKey(partPath)) {
-          final dirNode = SearchResultNode.directory(part, partPath);
-          pathNodes[partPath] = dirNode;
-
-          if (currentNode != null) {
-            currentNode.children.add(dirNode);
-          }
-        }
-
-        currentNode = pathNodes[partPath];
-        currentPath = partPath;
-      }
-
-      // Create file node
-      final fileName = pathParts.last;
-      final fileNode = SearchResultNode.file(fileName, filePath, matches);
-
-      if (currentNode != null) {
-        currentNode.children.add(fileNode);
-      }
-    }
-
-    // Sort children alphabetically (directories first, then files)
-    /// Handles `_sortTreeNode`.
-    _sortTreeNode(libNode);
-
-    return libNode;
-  }
-
-  /// Handles `_sortTreeNode`.
-  void _sortTreeNode(SearchResultNode node) {
-    node.children.sort((a, b) {
-      // Directories before files
-      if (a.isDirectory && !b.isDirectory) return -1;
-      if (!a.isDirectory && b.isDirectory) return 1;
-
-      // Alphabetical by name
-      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-    });
-
-    // Recursively sort children
-    for (final child in node.children) {
-      _sortTreeNode(child);
     }
   }
 

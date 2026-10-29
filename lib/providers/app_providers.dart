@@ -55,9 +55,18 @@ final mruFoldersProvider =
       (ref) => MruFoldersNotifier(ref),
     );
 
+/// The recent project folders that exist, recomputed only when the list
+/// changes rather than on every build that shows them.
+final accessibleMruFoldersProvider = Provider<Set<String>>(
+  (ref) => {
+    for (final folder in ref.watch(mruFoldersProvider))
+      if (Directory(folder).existsSync()) folder,
+  },
+);
+
 /// The Execute panel's build target.
 final selectedPlatformProvider =
-    StateNotifierProvider<SelectedPlatformNotifier, String>(
+    StateNotifierProvider<SelectedPlatformNotifier, FlutterPlatform>(
       (ref) => SelectedPlatformNotifier(ref),
     );
 

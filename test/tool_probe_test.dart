@@ -95,10 +95,11 @@ void main() {
     addTearDown(() => repo.deleteSync(recursive: true));
     final file = File('${repo.path}/keep.dart')..writeAsStringSync('x');
 
-    final result = await const GitService(ScriptedRunner(missing: true))
-        .discardChanges(repo.path, ['keep.dart']);
-
-    expect(result, startsWith('Error'));
+    await expectLater(
+      const GitService(ScriptedRunner(missing: true))
+          .discardChanges(repo.path, ['keep.dart']),
+      throwsA(isA<GitException>()),
+    );
     expect(file.existsSync(), true);
   });
 }

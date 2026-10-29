@@ -7,12 +7,12 @@ import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/providers/file_entry_service.dart';
 import 'package:fide/providers/git_service.dart';
+import 'package:fide/providers/process_runner.dart';
 import 'package:fide/providers/project_tree_reader.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
@@ -31,8 +31,11 @@ class PanelStateManager {
   String _filterQuery = '';
   ProjectNode? projectRoot;
   final GitService _gitService;
+  final ProjectTreeReader _reader;
 
-  PanelStateManager(this._gitService);
+  /// Creates panel state that reads Git status with [_gitService] and
+  /// folders with [_reader].
+  PanelStateManager(this._gitService, this._reader);
 
   // Getters
   /// Returns `expandedState`.
@@ -92,7 +95,7 @@ class PanelStateManager {
     if (!node.isDirectory || node.children.isNotEmpty) {
       return LoadChildrenResult.success;
     }
-    return const ProjectTreeReader().loadChildren(node);
+    return _reader.loadChildren(node);
   }
 
   /// Handles `PanelStateManager.seedGitStatusForFile`.

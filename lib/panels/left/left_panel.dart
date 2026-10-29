@@ -17,7 +17,6 @@ class LeftPanel extends ConsumerStatefulWidget {
   final bool projectLoaded;
   final Function(FileSystemItem)? onFileSelected;
   final Function(String, int)? onJumpToLine;
-  final VoidCallback? onToggleGitPanel;
 
   const LeftPanel({
     super.key,
@@ -26,7 +25,6 @@ class LeftPanel extends ConsumerStatefulWidget {
     required this.projectLoaded,
     this.onFileSelected,
     this.onJumpToLine,
-    this.onToggleGitPanel,
   });
 
   @override
@@ -59,7 +57,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
     if (_tabController.indexIsChanging) {
       // Update the provider when tab changes
       ref.read(activeLeftPanelTabProvider.notifier).state =
-          _tabController.index;
+          LeftPanelTab.values[_tabController.index];
 
       // Trigger rebuild to update tab icons
       setState(() {});
@@ -76,9 +74,9 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
   @override
   Widget build(BuildContext context) {
     // Listen for changes to the active left panel tab provider
-    ref.listen<int>(activeLeftPanelTabProvider, (_, next) {
-      if (_tabController.index != next) {
-        _tabController.animateTo(next);
+    ref.listen<LeftPanelTab>(activeLeftPanelTabProvider, (_, next) {
+      if (_tabController.index != next.index) {
+        _tabController.animateTo(next.index);
       }
     });
 

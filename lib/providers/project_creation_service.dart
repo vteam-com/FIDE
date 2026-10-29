@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
@@ -164,13 +165,7 @@ class ProjectCreationService {
 
       final generated = await _ai
           .generateProject(request.name, description)
-          .timeout(
-            AppDuration.aiProjectCreateTimeout,
-            onTimeout: () => {'error': 'AI generation timed out'},
-          );
-      if (generated.containsKey('error')) {
-        return 'AI code generation failed: ${generated['error']}';
-      }
+          .timeout(AppDuration.aiProjectCreateTimeout);
       for (final relativePath in _generatedFiles) {
         final content = generated[relativePath];
         if (content != null) {
@@ -179,6 +174,10 @@ class ProjectCreationService {
         }
       }
       return 'AI-generated project files completed';
+    } on AiServiceException catch (e) {
+      return 'AI code generation failed: $e';
+    } on TimeoutException {
+      return 'AI generation timed out';
     } catch (_) {
       return 'AI code generation failed, using defaults';
     }

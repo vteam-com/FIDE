@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/step_header.dart';
 import 'package:flutter/material.dart';
 
 /// Represents `CreateProjectStep2`.
@@ -15,6 +16,9 @@ class CreateProjectStep2 extends StatelessWidget {
     required this.onDefaultLanguageChanged,
     required this.onValidationChanged,
   });
+
+  /// This step's place in the wizard.
+  static const int _stepNumber = 2;
 
   final String defaultLanguage;
 
@@ -55,37 +59,7 @@ class CreateProjectStep2 extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: AppIconSize.xLarge,
       children: [
-        // Step indicator
-        Row(
-          children: [
-            Container(
-              width: AppIconSize.xLarge,
-              height: AppIconSize.xLarge,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              child: const Center(
-                child: Text(
-                  '2',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.medium),
-            const Text('Localization Settings'),
-            const SizedBox(width: AppSpacing.xLarge),
-            Expanded(
-              child: Container(
-                height: AppBorderWidth.medium,
-                color: Theme.of(context).colorScheme.outlineVariant,
-              ),
-            ),
-          ],
-        ),
+        StepHeader(number: _stepNumber, title: 'Localization Settings'),
 
         const SizedBox(height: AppSpacing.xLarge),
 

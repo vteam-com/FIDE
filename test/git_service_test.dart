@@ -52,4 +52,35 @@ void main() {
 
     expect(await const GitService().getStagedContent(nestedFile), 'staged\n');
   });
+
+  test('getFileDiff is empty for an unchanged tracked file', () async {
+    expect(await const GitService().getFileDiff(repo.path, nestedFile), '');
+  });
+
+  test('getFileDiff shows staged and unstaged edits against HEAD', () async {
+    File(nestedFile).writeAsStringSync('staged\n');
+    _git(repo.path, ['add', 'lib/main.dart']);
+    File(nestedFile).writeAsStringSync('working\n');
+
+    final diff = await const GitService().getFileDiff(repo.path, nestedFile);
+
+    expect(diff, contains('-committed'));
+    expect(diff, contains('+working'));
+  });
+
+  test('getFileDiff shows an untracked file as added', () async {
+    final newFile = path.join(repo.path, 'lib', 'new.dart');
+    File(newFile).writeAsStringSync('new\n');
+
+    final diff = await const GitService().getFileDiff(repo.path, newFile);
+
+    expect(diff, contains('+new'));
+  });
+
+  test('a failing mutation throws GitException', () async {
+    expect(
+      const GitService().commit(repo.path, 'nothing to commit'),
+      throwsA(isA<GitException>()),
+    );
+  });
 }
