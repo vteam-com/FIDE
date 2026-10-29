@@ -1101,9 +1101,9 @@
 3. riverpod
 4. state_notifier</title></g><g class="packageNode">
 <rect x="346.0" y="724.0" width="200.0" height="68.0" rx="8.0" ry="8.0" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1"/>
-<g class="packageMetadataPill"><title>Flutter &gt;=3.35.0</title><rect x="407.2" y="779.0" width="77.6" height="9.0" rx="4.5" ry="4.5" class="packageMetadataPillShape"/><text x="446.0" y="784" class="packageLabelMetadata" text-anchor="middle" dominant-baseline="middle">Flutter &gt;=3.35.0</text></g>
+<g class="packageMetadataPill"><title>Flutter &gt;=3.41.0</title><rect x="407.2" y="779.0" width="77.6" height="9.0" rx="4.5" ry="4.5" class="packageMetadataPillShape"/><text x="446.0" y="784" class="packageLabelMetadata" text-anchor="middle" dominant-baseline="middle">Flutter &gt;=3.41.0</text></g>
 <text x="446.0" y="744.0" class="packageLabelNodeName packageLabelCaption" text-anchor="middle">flutter_svg</text>
-<text x="446.0" y="757.0" class="packageLabelNodeVersion" text-anchor="middle">v2.3.0</text>
+<text x="446.0" y="757.0" class="packageLabelNodeVersion" text-anchor="middle">v2.3.2</text>
 </g>
 <g class="badge outgoingBadge">
   <path d="M 340.0,758.0 L 352.0,751.0 Q 355.0,751.0 355.0,754.0 L 355.0,762.0 Q 355.0,765.0 352.0,765.0 Z" fill="#10b981"/>

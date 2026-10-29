@@ -3,6 +3,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_status.dart';
 import 'package:fide/models/panel_action.dart';
+import 'package:fide/widgets/icon_label_tab.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
@@ -75,51 +76,29 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                 controller: _tabController,
                 tabs: widget.actions.map((action) {
                   final status = action.status;
-                  final isRunning = action.isRunning;
-                  final icon = action.icon;
 
-                  return Tab(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isRunning)
-                          InlineSpinner(
+                  return IconLabelTab(
+                    showLabel: showLabels,
+                    label: action.title,
+                    icon: action.isRunning
+                        ? InlineSpinner(
                             size: showLabels
                                 ? AppSize.regularProgressIndicator
                                 : AppSize.expandedProgressIndicator,
                             color: Colors.amber,
                           )
-                        else
-                          Icon(
+                        : Icon(
                             status == ActionStatus.success
                                 ? Icons.check_circle
                                 : status == ActionStatus.error
                                 ? Icons.error
-                                : icon,
+                                : action.icon,
                             size: showLabels
                                 ? AppIconSize.large
                                 : AppIconSize.largeCompact,
                           ),
-                        if (showLabels) ...[
-                          const SizedBox(height: AppSpacing.tiny),
-                          Text(
-                            action.title,
-                            style: TextStyle(
-                              fontSize: AppFontSize.badge,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ],
-                    ),
                   );
                 }).toList(),
-                labelColor: colorScheme.primary,
-                unselectedLabelColor: colorScheme.onSurface.withValues(
-                  alpha: AppOpacity.muted,
-                ),
-                indicatorColor: colorScheme.primary,
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
                 labelPadding: showLabels

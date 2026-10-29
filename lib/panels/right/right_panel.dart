@@ -6,6 +6,7 @@ import 'package:fide/panels/right/info_panel.dart';
 import 'package:fide/panels/right/localization/localization_panel.dart';
 import 'package:fide/panels/right/outline_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/widgets/panel_tabs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -51,7 +52,7 @@ class _RightPanelState extends State<RightPanel>
   @override
   Widget build(BuildContext context) {
     return Consumer(
-      builder: (context, ref, _) {
+      builder: (_, ref, _) {
         final activeTab = ref.watch(activeRightPanelTabProvider);
 
         // Update TabController to match the provider
@@ -59,50 +60,17 @@ class _RightPanelState extends State<RightPanel>
           _tabController.animateTo(activeTab.index);
         }
 
-        return Container(
-          color: Theme.of(context).colorScheme.surfaceContainerLow,
-          child: Column(
-            children: [
-              // Tab bar
-              Container(
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                      width: AppSize.borderThin,
-                    ),
-                  ),
-                ),
-                child: TabBar(
-                  controller: _tabController,
-                  onTap: (index) {
-                    ref.read(activeRightPanelTabProvider.notifier).state =
-                        RightPanelTab.values[index];
-                  },
-                  tabs: [
-                    for (final tab in RightPanelTab.values)
-                      Tab(key: tab.key, icon: _buildTabIcon(tab)),
-                  ],
-                  labelColor: Theme.of(context).colorScheme.primary,
-                  unselectedLabelColor: Theme.of(context)
-                      .colorScheme
-                      .onSurfaceVariant,
-                  indicatorColor: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-
-              // Tab content
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  physics: const NeverScrollableScrollPhysics(), // Disable swipe gestures
-                  children: [
-                    for (final tab in RightPanelTab.values) _buildTab(tab),
-                  ],
-                ),
-              ),
-            ],
-          ),
+        return PanelTabs(
+          controller: _tabController,
+          onTap: (index) {
+            ref.read(activeRightPanelTabProvider.notifier).state =
+                RightPanelTab.values[index];
+          },
+          tabs: [
+            for (final tab in RightPanelTab.values)
+              Tab(key: tab.key, icon: _buildTabIcon(tab)),
+          ],
+          children: [for (final tab in RightPanelTab.values) _buildTab(tab)],
         );
       },
     );

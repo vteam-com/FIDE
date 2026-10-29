@@ -7,6 +7,7 @@ import 'package:fide/panels/left/organized_panel.dart';
 import 'package:fide/panels/left/search_panel.dart';
 import 'package:fide/panels/left/test_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/widgets/panel_tabs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -80,53 +81,19 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
       }
     });
 
-    return ColoredBox(
-      color: Theme.of(context).colorScheme.surfaceContainerLow,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (widget.projectLoaded)
-            Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: Theme.of(context).dividerColor,
-                    width: 1.0,
-                  ),
-                ),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                tabs: [
-                  for (final tab in LeftPanelTab.values)
-                    Tab(
-                      key: tab.key,
-                      icon: Icon(
-                        _tabController.index == tab.index
-                            ? tab.selectedIcon
-                            : tab.icon,
-                      ),
-                    ),
-                ],
-                labelColor: Theme.of(context).colorScheme.primary,
-                unselectedLabelColor: Theme.of(context)
-                    .colorScheme
-                    .onSurfaceVariant,
-                indicatorColor: Theme.of(context).colorScheme.primary,
-                labelPadding: EdgeInsets.zero,
-                indicatorSize: TabBarIndicatorSize.tab,
-                physics: const NeverScrollableScrollPhysics(), // Disable swipe gestures
-              ),
-            ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              physics: const NeverScrollableScrollPhysics(), // Disable swipe gestures
-              children: [for (final tab in LeftPanelTab.values) _buildTab(tab)],
+    return PanelTabs(
+      controller: _tabController,
+      showTabBar: widget.projectLoaded,
+      tabs: [
+        for (final tab in LeftPanelTab.values)
+          Tab(
+            key: tab.key,
+            icon: Icon(
+              _tabController.index == tab.index ? tab.selectedIcon : tab.icon,
             ),
           ),
-        ],
-      ),
+      ],
+      children: [for (final tab in LeftPanelTab.values) _buildTab(tab)],
     );
   }
 

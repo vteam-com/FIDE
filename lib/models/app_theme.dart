@@ -54,13 +54,29 @@ class AppTheme {
     required Brightness brightness,
     required Color popupBorderColor,
   }) {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: _seedColor,
+      brightness: brightness,
+    );
     return ThemeData.from(
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: _seedColor,
-        brightness: brightness,
-      ),
+      colorScheme: colorScheme,
       useMaterial3: true,
     ).copyWith(
+      // One look for every TabBar: full-width underline, primary when selected
+      tabBarTheme: TabBarThemeData(
+        labelColor: colorScheme.primary,
+        unselectedLabelColor: colorScheme.onSurfaceVariant,
+        indicatorColor: colorScheme.primary,
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelStyle: const TextStyle(
+          fontSize: AppFontSize.badge,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: AppFontSize.badge,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
       cardTheme: CardThemeData(
         elevation: 0,
         margin: EdgeInsets.zero,

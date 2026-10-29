@@ -2,6 +2,7 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/flutter_platform.dart';
+import 'package:fide/widgets/icon_label_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -69,83 +70,43 @@ class _PlatformSelectorState extends State<PlatformSelector>
             controller: _tabController,
             isScrollable: true,
             tabAlignment: TabAlignment.start,
-            labelColor: colorScheme.primary,
-            unselectedLabelColor: colorScheme.onSurface.withValues(
-              alpha: AppOpacity.muted,
-            ),
-            indicatorColor: colorScheme.primary,
-            indicatorSize: TabBarIndicatorSize.tab,
             dividerColor: Colors.transparent,
-            labelStyle: const TextStyle(
-              fontSize: AppFontSize.caption,
-              fontWeight: FontWeight.w600,
-            ),
-            unselectedLabelStyle: const TextStyle(
-              fontSize: AppFontSize.caption,
-            ),
             tabs: platforms.map((p) {
               final isSupported = widget.supportedPlatforms.contains(p);
               final isSelected = widget.selectedPlatform == p;
-              final needsTooltip = !showLabels;
+              final iconSize = showLabels
+                  ? AppIconSize.large
+                  : AppIconSize.mediumLarge;
 
-              final tab = Tab(
+              return IconLabelTab(
                 height: showLabels
                     ? AppIconSize.emptyState
                     : AppSize.titleBarHeight,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ColorFiltered(
-                      colorFilter: ColorFilter.mode(
-                        isSelected
-                            ? colorScheme.primary
-                            : isSupported
-                            ? colorScheme.onSurface.withValues(
-                                alpha: AppOpacity.emphasis,
-                              )
-                            : colorScheme.onSurface.withValues(
-                                alpha: AppOpacity.faint,
-                              ),
-                        BlendMode.srcIn,
-                      ),
-                      child: SvgPicture.asset(
-                        p.iconAsset,
-                        width: showLabels
-                            ? AppIconSize.large
-                            : AppIconSize.mediumLarge,
-                        height: showLabels
-                            ? AppIconSize.large
-                            : AppIconSize.mediumLarge,
-                      ),
-                    ),
-                    if (showLabels) ...[
-                      const SizedBox(height: AppSpacing.tiny),
-                      Text(
-                        p.displayName,
-                        style: TextStyle(
-                          fontSize: AppFontSize.badge,
-                          fontWeight: isSelected
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ],
+                showLabel: showLabels,
+                label: p.displayName,
+                tooltip: isSupported
+                    ? p.displayName
+                    : '${p.displayName} (not configured)',
+                icon: ColorFiltered(
+                  colorFilter: ColorFilter.mode(
+                    isSelected
+                        ? colorScheme.primary
+                        : isSupported
+                        ? colorScheme.onSurface.withValues(
+                            alpha: AppOpacity.emphasis,
+                          )
+                        : colorScheme.onSurface.withValues(
+                            alpha: AppOpacity.faint,
+                          ),
+                    BlendMode.srcIn,
+                  ),
+                  child: SvgPicture.asset(
+                    p.iconAsset,
+                    width: iconSize,
+                    height: iconSize,
+                  ),
                 ),
               );
-
-              // Only wrap with Tooltip when needed (when labels are not shown)
-              if (needsTooltip) {
-                return Tooltip(
-                  message: isSupported
-                      ? p.displayName
-                      : '${p.displayName} (not configured)',
-                  child: tab,
-                );
-              } else {
-                return tab;
-              }
             }).toList(),
           ),
         );
