@@ -9,96 +9,19 @@ part 'side_by_side_diff.diff_line.dart';
 // Side-by-side diff widget
 /// Represents `SideBySideDiff`.
 class SideBySideDiff extends StatelessWidget {
-  const SideBySideDiff({
+const SideBySideDiff({
     super.key,
     required this.oldText,
     required this.newText,
   });
-
-  final String newText;
-
-  final String oldText;
-
-  @override
+/// Character code of the first encoded line; 0 is skipped because some
+  /// tools treat the null character as a string terminator.
+  static const int _firstLineCode = 1;
+final String newText;
+final String oldText;
+@override
   Widget build(BuildContext context) {
-    final List<DiffLine> diffLines = [];
-
-    // Split texts into lines
-    final oldLines = oldText.isEmpty ? <String>[] : oldText.split('\n');
-    final newLines = newText.split('\n');
-
-    // If old text is empty (new file), show all new lines as additions
-    if (oldLines.isEmpty) {
-      for (int i = 0; i < newLines.length; i++) {
-        diffLines.add(
-          DiffLine(
-            oldLine: '',
-            oldContent: '',
-            newLine: '${i + 1}',
-            newContent: newLines[i],
-            type: DiffType.addition,
-          ),
-        );
-      }
-    } else {
-      // Use diff_match_patch for proper diffing
-      final dmp = DiffMatchPatch();
-      final diffs = dmp.diff(oldText, newText);
-
-      // Convert character-level diffs to line-level diffs
-      int oldLineNum = 1;
-      int newLineNum = 1;
-
-      for (final diff in diffs) {
-        final lines = diff.text.split('\n');
-
-        for (int i = 0; i < lines.length; i++) {
-          final line = lines[i];
-
-          if (diff.operation == DIFF_DELETE) {
-            if (line.isNotEmpty) {
-              diffLines.add(
-                DiffLine(
-                  oldLine: '$oldLineNum',
-                  oldContent: line,
-                  newLine: '',
-                  newContent: '',
-                  type: DiffType.deletion,
-                ),
-              );
-              oldLineNum++;
-            }
-          } else if (diff.operation == DIFF_INSERT) {
-            if (line.isNotEmpty) {
-              diffLines.add(
-                DiffLine(
-                  oldLine: '',
-                  oldContent: '',
-                  newLine: '$newLineNum',
-                  newContent: line,
-                  type: DiffType.addition,
-                ),
-              );
-              newLineNum++;
-            }
-          } else if (diff.operation == DIFF_EQUAL) {
-            if (line.isNotEmpty) {
-              diffLines.add(
-                DiffLine(
-                  oldLine: '$oldLineNum',
-                  oldContent: line,
-                  newLine: '$newLineNum',
-                  newContent: line,
-                  type: DiffType.equal,
-                ),
-              );
-              oldLineNum++;
-              newLineNum++;
-            }
-          }
-        }
-      }
-    }
+    final diffLines = computeLines(oldText, newText);
 
     return Container(
       decoration: BoxDecoration(
@@ -183,8 +106,66 @@ class SideBySideDiff extends StatelessWidget {
       ),
     );
   }
+/// Compares [oldText] and [newText] line by line and returns one row per
+  /// unchanged, deleted or added line, numbered on each side.
+  static List<DiffLine> computeLines(String oldText, String newText) {
+    final oldLines = oldText.isEmpty ? <String>[] : oldText.split('\n');
+    final newLines = newText.split('\n');
 
-  /// The bold title above one side of the diff.
+    // Encode each distinct line as one character so diff_match_patch
+    // compares whole lines instead of the characters inside them.
+    final codes = <String, int>{};
+    String encode(List<String> lines) => String.fromCharCodes(
+      lines.map(
+        (line) => codes.putIfAbsent(line, () => codes.length + _firstLineCode),
+      ),
+    );
+    final encodedOld = encode(oldLines);
+    final encodedNew = encode(newLines);
+    final linesByCode = {for (final e in codes.entries) e.value: e.key};
+
+    final diffLines = <DiffLine>[];
+    int oldLineNum = 1;
+    int newLineNum = 1;
+    for (final diff in DiffMatchPatch().diff(encodedOld, encodedNew)) {
+      for (final code in diff.text.codeUnits) {
+        final line = linesByCode[code]!;
+        if (diff.operation == DIFF_DELETE) {
+          diffLines.add(
+            DiffLine(
+              oldLine: '${oldLineNum++}',
+              oldContent: line,
+              newLine: '',
+              newContent: '',
+              type: DiffType.deletion,
+            ),
+          );
+        } else if (diff.operation == DIFF_INSERT) {
+          diffLines.add(
+            DiffLine(
+              oldLine: '',
+              oldContent: '',
+              newLine: '${newLineNum++}',
+              newContent: line,
+              type: DiffType.addition,
+            ),
+          );
+        } else {
+          diffLines.add(
+            DiffLine(
+              oldLine: '${oldLineNum++}',
+              oldContent: line,
+              newLine: '${newLineNum++}',
+              newContent: line,
+              type: DiffType.equal,
+            ),
+          );
+        }
+      }
+    }
+    return diffLines;
+  }
+/// The bold title above one side of the diff.
   Widget _buildHeaderLabel(BuildContext context, String label) {
     return Expanded(
       child: Text(
@@ -197,8 +178,7 @@ class SideBySideDiff extends StatelessWidget {
       ),
     );
   }
-
-  /// One side of a diff row: the dimmed [lineNumber], then [content] in
+/// One side of a diff row: the dimmed [lineNumber], then [content] in
   /// [contentColor], or the theme's text color when null.
   Widget _buildSide(
     BuildContext context,
