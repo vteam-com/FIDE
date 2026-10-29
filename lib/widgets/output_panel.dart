@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter/material.dart';
@@ -44,36 +45,21 @@ class _OutputPanelState extends State<OutputPanel> {
       rightWidget: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
+          CompactIconButton(
             onPressed: _copyToClipboard,
-            icon: const Icon(Icons.copy, size: AppIconSize.medium),
+            icon: Icons.copy,
             tooltip: 'Copy to clipboard',
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(
-              minWidth: AppSize.compactIconButton,
-              minHeight: AppSize.compactIconButton,
-            ),
           ),
-          IconButton(
-            onPressed: () {
-              setState(() => _wrapText = !_wrapText);
-            },
-            icon: Icon(
-              _wrapText ? Icons.wrap_text : Icons.text_fields,
-              size: AppIconSize.medium,
-            ),
+          CompactIconButton(
+            onPressed: () => setState(() => _wrapText = !_wrapText),
+            icon: _wrapText ? Icons.wrap_text : Icons.text_fields,
             tooltip: _wrapText
                 ? 'Disable text wrapping'
                 : 'Enable text wrapping',
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(
-              minWidth: AppSize.compactIconButton,
-              minHeight: AppSize.compactIconButton,
-            ),
           ),
           if (widget.onClear != null)
-            IconButton(
-              icon: const Icon(Icons.backspace, size: AppIconSize.medium),
+            CompactIconButton(
+              icon: Icons.backspace,
               onPressed: () => widget.onClear?.call(),
               tooltip: 'Clear output',
             ),

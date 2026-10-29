@@ -329,62 +329,54 @@ Validates test organization and naming conventions.
 
   /// Handles `_showActionDetails`.
   void _showActionDetails(PanelAction action) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(action.icon, color: action.color),
-            const SizedBox(width: AppSpacing.large),
-            Text(action.title),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                action.description,
-                style: const TextStyle(
-                  fontSize: AppFontSize.title,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xLarge),
-              const Text(
-                'Details:',
-                style: TextStyle(
-                  fontSize: AppFontSize.label,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.medium),
-              Text(
-                action.details,
-                style: TextStyle(
-                  fontSize: AppFontSize.caption,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  height: AppLineHeight.relaxed,
-                ),
-              ),
-            ],
+    MessageBox.showDetails(
+      context,
+      title: Row(
+        children: [
+          Icon(action.icon, color: action.color),
+          const SizedBox(width: AppSpacing.large),
+          Text(action.title),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            action.description,
+            style: const TextStyle(
+              fontSize: AppFontSize.title,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+          const SizedBox(height: AppSpacing.xLarge),
+          const Text(
+            'Details:',
+            style: TextStyle(
+              fontSize: AppFontSize.label,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              action.onRun();
-            },
-            child: const Text('Run'),
+          const SizedBox(height: AppSpacing.medium),
+          Text(
+            action.details,
+            style: TextStyle(
+              fontSize: AppFontSize.caption,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              height: AppLineHeight.relaxed,
+            ),
           ),
         ],
       ),
+      actions: [
+        ElevatedButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            action.onRun();
+          },
+          child: const Text('Run'),
+        ),
+      ],
     );
   }
 

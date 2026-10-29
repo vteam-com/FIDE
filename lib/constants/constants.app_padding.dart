@@ -2,6 +2,10 @@ part of 'constants.dart';
 
 /// Reusable `EdgeInsets` presets for consistent widget padding and margins.
 class AppPadding {
+  static const EdgeInsets wizardButton = EdgeInsets.symmetric(
+    horizontal: AppSpacing.huge,
+    vertical: AppSpacing.xLarge,
+  );
   static const EdgeInsets sectionContent = EdgeInsets.only(left: 16, bottom: 8);
   static const EdgeInsets sectionHeader = EdgeInsets.symmetric(
     horizontal: 8,
@@ -27,7 +31,6 @@ class AppPadding {
     horizontal: 8,
     vertical: 4,
   );
-  static const EdgeInsets nestedFolder = EdgeInsets.only(left: 16);
   static const EdgeInsets selectedBadgeMargin = EdgeInsets.only(left: 4);
   static const EdgeInsets messageMargin = EdgeInsets.symmetric(
     horizontal: 16,

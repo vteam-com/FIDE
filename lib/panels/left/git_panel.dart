@@ -6,6 +6,7 @@ import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/section_panel.dart';
@@ -175,21 +176,15 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     final newText = stagedText ?? await _readWorkingCopy(fullFilePath);
 
     if (mounted) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Git Diff: ${path.basename(filePath)}'),
-          content: SizedBox(
-            width: MediaQuery.of(context).size.width * AppOpacity.emphasis,
-            height: MediaQuery.of(context).size.height * AppOpacity.muted,
-            child: SideBySideDiff(oldText: oldText, newText: newText),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
+      MessageBox.showDetails(
+        context,
+        title: Text('Git Diff: ${path.basename(filePath)}'),
+        // The diff scrolls its own lines within a fixed share of the window
+        scrollable: false,
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * AppOpacity.emphasis,
+          height: MediaQuery.of(context).size.height * AppOpacity.muted,
+          child: SideBySideDiff(oldText: oldText, newText: newText),
         ),
       );
     }
@@ -436,30 +431,27 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                 onTap: () => widget.onFileSelected?.call(item),
               ),
             ),
-            IconButton(
-              iconSize: AppIconSize.medium,
-              icon: const Icon(Icons.difference),
+            CompactIconButton(
+              icon: Icons.difference,
               onPressed: () => _viewDiff(file),
               tooltip: 'View Diff',
             ),
             if (onStage != null)
-              IconButton(
-                iconSize: AppIconSize.medium,
-                icon: const Icon(Icons.add),
+              CompactIconButton(
+                icon: Icons.add,
                 onPressed: () => onStage([file]),
                 tooltip: 'Stage',
               ),
             if (onUnstage != null)
-              IconButton(
-                iconSize: AppIconSize.medium,
-                icon: const Icon(Icons.remove),
+              CompactIconButton(
+                icon: Icons.remove,
                 onPressed: () => onUnstage([file]),
                 tooltip: 'Unstage',
               ),
             if (canDiscard && onDiscard != null)
-              IconButton(
-                iconSize: AppIconSize.medium,
-                icon: const Icon(Icons.undo, color: Colors.red),
+              CompactIconButton(
+                icon: Icons.undo,
+                color: Colors.red,
                 onPressed: () => onDiscard([file]),
                 tooltip: 'Discard Changes',
               ),

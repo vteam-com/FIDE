@@ -10,8 +10,7 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/class_splitter.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
-import 'package:fide/widgets/empty_folder_label.dart';
-import 'package:fide/widgets/foldername_widget.dart';
+import 'package:fide/widgets/folder_node.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/section_panel.dart';
@@ -214,41 +213,25 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
 
     if (node.isDirectory) {
       final multiClassFileCount = _categories?.multiClassFolders[node.path];
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+      return FolderNode(
+        node: node,
+        isExpanded: item.isExpanded,
+        rootPath: projectRoot!.path,
+        trailing: multiClassFileCount == null
+            ? null
+            : WarningCount(
+                icon: Icons.description,
+                count: multiClassFileCount,
+                message:
+                    '$multiClassFileCount files in this folder define more '
+                    'than one public class; expected one public class '
+                    'per file',
+              ),
+        onTap: () => toggleOrOpenNode(node, item.isExpanded),
+        onShowContextMenu: (position) => showNodeContextMenu(node, position),
         children: [
-          FolderNameWidget(
-            node: node,
-            isExpanded: item.isExpanded,
-            rootPath: projectRoot!.path,
-            trailing: multiClassFileCount == null
-                ? null
-                : WarningCount(
-                    icon: Icons.description,
-                    count: multiClassFileCount,
-                    message:
-                        '$multiClassFileCount files in this folder define more '
-                        'than one public class; expected one public class '
-                        'per file',
-                  ),
-            onTap: () => toggleOrOpenNode(node, item.isExpanded),
-            onShowContextMenu: (position) =>
-                showNodeContextMenu(node, position),
-          ),
           if (item.isExpanded)
-            Padding(
-              padding: AppPadding.nestedFolder,
-              child: node.children.isEmpty
-                  ? const EmptyFolderLabel()
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        for (final child in node.children)
-                          _buildNode(child, category),
-                      ],
-                    ),
-            ),
+            for (final child in node.children) _buildNode(child, category),
         ],
       );
     } else {

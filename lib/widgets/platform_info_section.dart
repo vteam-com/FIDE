@@ -10,6 +10,7 @@ import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/section_panel.dart';
+import 'package:fide/widgets/outlined_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -97,14 +98,7 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
             // Status Row
             Row(
               children: [
-                Text(
-                  'Status:',
-                  style: TextStyle(
-                    fontSize: AppFontSize.caption,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
+                _buildHeading('Status:'),
                 const SizedBox(width: AppSpacing.medium),
                 Row(
                   spacing: AppSpacing.medium,
@@ -127,14 +121,7 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Build Info:',
-                  style: TextStyle(
-                    fontSize: AppFontSize.caption,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
+                _buildHeading('Build Info:'),
                 const SizedBox(height: AppSpacing.tiny),
                 _buildDetailRow('Last Build:', _artifacts.lastBuildTime),
                 const SizedBox(height: AppSpacing.micro),
@@ -150,16 +137,9 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
             // Enable instructions (if not supported)
             if (!widget.isSupported) ...[
               const SizedBox(height: AppSpacing.medium),
-              Container(
+              OutlinedSurface(
                 padding: AppPadding.infoCard,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(AppRadius.small),
-                  border: Border.all(
-                    color: Colors.blue.withValues(alpha: AppOpacity.divider),
-                    width: AppSize.borderThin,
-                  ),
-                ),
+                borderColor: Colors.blue.withValues(alpha: AppOpacity.divider),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -203,17 +183,8 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
 
             // Icon with Context Menu at Bottom
             const SizedBox(height: AppSpacing.medium),
-            Container(
+            OutlinedSurface(
               padding: AppPadding.infoCard,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(AppRadius.small),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outline
-                      .withValues(alpha: AppOpacity.divider),
-                  width: AppBorderWidth.medium,
-                ),
-              ),
               child: Row(
                 children: [
                   _buildIcon(),
@@ -307,6 +278,18 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// A bold caption introducing a group of details.
+  Widget _buildHeading(String label) {
+    return Text(
+      label,
+      style: TextStyle(
+        fontSize: AppFontSize.caption,
+        fontWeight: FontWeight.w600,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
     );
   }

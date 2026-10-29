@@ -8,9 +8,8 @@ import 'package:fide/models/project_node.dart';
 import 'package:fide/panels/left/shared_panel_utils.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
-import 'package:fide/widgets/empty_folder_label.dart';
+import 'package:fide/widgets/folder_node.dart';
 import 'package:fide/widgets/filter_field.dart';
-import 'package:fide/widgets/foldername_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
@@ -195,49 +194,20 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
   /// matches; filtered directories start expanded.
   Widget _buildFilteredDirectoryNode(ProjectNode node) {
     final isExpanded = expandedState[node.path] ?? true;
-    final hasError =
-        node.loadResult != null &&
-        node.loadResult != LoadChildrenResult.success;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        FolderNameWidget(
-          node: node,
-          isExpanded: isExpanded && !hasError,
-          isFiltered: panelState.matchesFilter(node),
-          hasError: hasError,
-          rootPath: projectRoot!.path,
-          onTap: () => toggleOrOpenNode(node, isExpanded),
-          onShowContextMenu: (position) => showNodeContextMenu(node, position),
-        ),
-        if (isExpanded)
-          Padding(
-            padding: EdgeInsets.only(
-              left: node.children.isEmpty
-                  ? AppSize.compactActionButton
-                  : AppSpacing.xLarge,
-            ),
-            child: node.children.isEmpty
-                ? const EmptyFolderLabel()
-                : _buildFilteredNodeChildren(node),
-          ),
-      ],
-    );
-  }
-
-  /// Handles `_buildFilteredNodeChildren`.
-  Widget _buildFilteredNodeChildren(ProjectNode node) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return FolderNode(
+      node: node,
+      isExpanded: isExpanded,
+      isFiltered: panelState.matchesFilter(node),
+      rootPath: projectRoot!.path,
+      onTap: () => toggleOrOpenNode(node, isExpanded),
+      onShowContextMenu: (position) => showNodeContextMenu(node, position),
       children: node.uniqueChildren
           .where(
             (child) =>
                 panelState.hasMatchingDescendant(child) ||
                 panelState.matchesFilter(child),
           )
-          .map((child) => _buildFilteredNode(child))
+          .map(_buildFilteredNode)
           .toList(),
     );
   }

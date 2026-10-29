@@ -34,34 +34,14 @@ class NodeBuilder extends StatelessWidget {
   /// Handles `_buildDirectoryNode`.
   Widget _buildDirectoryNode() {
     final isExpanded = expandedState[node.path] ?? false;
-    final hasError =
-        node.loadResult != null &&
-        node.loadResult != LoadChildrenResult.success;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        FolderNameWidget(
-          node: node,
-          onTap: () => onNodeTapped(node, isExpanded),
-          isExpanded: isExpanded && !hasError,
-          rootPath: rootPath,
-          onShowContextMenu: (offset) => onShowContextMenu(node, offset),
-          hasError: hasError,
-        ),
-        if (node.isDirectory && isExpanded)
-          Padding(
-            padding: EdgeInsets.only(
-              left: node.children.isEmpty
-                  ? AppSize.compactActionButton
-                  : AppSpacing.xLarge,
-            ),
-            child: node.children.isEmpty
-                ? const EmptyFolderLabel()
-                : _buildNodeChildren(),
-          ),
-      ],
+    return FolderNode(
+      node: node,
+      isExpanded: isExpanded,
+      rootPath: rootPath,
+      onTap: () => onNodeTapped(node, isExpanded),
+      onShowContextMenu: (offset) => onShowContextMenu(node, offset),
+      // Only built when open: a collapsed folder skips its whole subtree
+      children: isExpanded ? _buildNodeChildren() : const [],
     );
   }
 
@@ -86,25 +66,22 @@ class NodeBuilder extends StatelessWidget {
     );
   }
 
-  /// Handles `_buildNodeChildren`.
-  Widget _buildNodeChildren() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: node.uniqueChildren
-          .map(
-            (child) => NodeBuilder(
-              node: child,
-              selectedFile: selectedFile,
-              expandedState: expandedState,
-              rootPath: rootPath,
-              onNodeTapped: onNodeTapped,
-              onShowContextMenu: onShowContextMenu,
-              onFileSelected: onFileSelected,
-              isFilteredView: isFilteredView,
-            ),
-          )
-          .toList(),
-    );
+  /// One [NodeBuilder] per child, sharing this node's settings.
+  List<Widget> _buildNodeChildren() {
+    return node.uniqueChildren
+        .map(
+          (child) => NodeBuilder(
+            node: child,
+            selectedFile: selectedFile,
+            expandedState: expandedState,
+            rootPath: rootPath,
+            onNodeTapped: onNodeTapped,
+            onShowContextMenu: onShowContextMenu,
+            onFileSelected: onFileSelected,
+            isFilteredView: isFilteredView,
+          ),
+        )
+        .toList();
   }
 
   void _handleFileTap() {

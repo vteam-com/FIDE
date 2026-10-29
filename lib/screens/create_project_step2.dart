@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/step_header.dart';
+import 'package:fide/widgets/surface_card.dart';
 import 'package:flutter/material.dart';
 
 /// Represents `CreateProjectStep2`.
@@ -64,12 +65,7 @@ class CreateProjectStep2 extends StatelessWidget {
         const SizedBox(height: AppSpacing.xLarge),
 
         // Project summary
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.xLarge),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(AppRadius.medium),
-          ),
+        SurfaceCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: AppSpacing.medium,
@@ -156,12 +152,7 @@ class CreateProjectStep2 extends StatelessWidget {
             ),
           ),
         ] else ...[
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.xLarge),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(AppRadius.medium),
-            ),
+          SurfaceCard(
             child: Text(
               'Localization can be added later in your project settings.',
               style: TextStyle(

@@ -6,6 +6,7 @@ import 'package:fide/models/panel_action.dart';
 import 'package:fide/widgets/icon_label_tab.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/status_indicator.dart';
+import 'package:fide/widgets/outlined_surface.dart';
 import 'package:flutter/material.dart';
 
 /// Tabs of panel actions, each showing its details, an Execute (or Stop)
@@ -73,15 +74,8 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
             constraints.maxWidth >
             AppSize.tabLabelBreakpoint; // Show labels if wider than 240px
 
-        return Container(
+        return OutlinedSurface(
           padding: AppPadding.actionTabContainer,
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(AppRadius.medium),
-            border: Border.all(
-              color: colorScheme.outline.withValues(alpha: AppOpacity.divider),
-            ),
-          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

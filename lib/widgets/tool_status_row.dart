@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
 
 /// Whether a required tool (Flutter, Git...) was found, with its version,
@@ -69,18 +70,10 @@ class ToolStatusRow extends StatelessWidget {
 
   /// Shows [installInstructions] in a dialog.
   void _showInstructions(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Install $name'),
-        content: SingleChildScrollView(child: Text(installInstructions)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+    MessageBox.showDetails(
+      context,
+      title: Text('Install $name'),
+      content: Text(installInstructions),
     );
   }
 }

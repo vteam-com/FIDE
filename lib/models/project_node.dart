@@ -46,6 +46,10 @@ class ProjectNode {
   /// Returns `isFile`.
   bool get isFile => type == ProjectNodeType.file;
 
+  /// Whether reading this node's children was attempted and failed.
+  bool get hasLoadError =>
+      loadResult != null && loadResult != LoadChildrenResult.success;
+
   /// Replaces [children] with [nodes] and records a successful load.
   void replaceChildren(Iterable<ProjectNode> nodes) {
     children

@@ -14,6 +14,7 @@ import 'package:fide/widgets/action_tabs.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:fide/widgets/platform_info_section.dart';
 import 'package:fide/widgets/platform_selector.dart';
+import 'package:fide/widgets/outlined_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -170,15 +171,8 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel>
 
     if (!canBuild) {
       // Instructions for unsupported platforms
-      return Container(
+      return OutlinedSurface(
         padding: const EdgeInsets.all(AppSpacing.large),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(AppRadius.medium),
-          border: Border.all(
-            color: colorScheme.outline.withValues(alpha: AppOpacity.divider),
-          ),
-        ),
         child: Row(
           children: [
             Icon(

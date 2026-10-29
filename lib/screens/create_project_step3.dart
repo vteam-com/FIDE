@@ -3,6 +3,7 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/full_path_widget.dart';
 import 'package:fide/widgets/loading_actions_log.dart';
 import 'package:fide/widgets/loading_progress_bar.dart';
+import 'package:fide/widgets/surface_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -41,12 +42,7 @@ class _CreateProjectStep3State extends State<CreateProjectStep3> {
             spacing: AppSpacing.xLarge,
             children: [
               // Project info
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.xLarge),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(AppRadius.medium),
-                ),
+              SurfaceCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: AppSpacing.medium,

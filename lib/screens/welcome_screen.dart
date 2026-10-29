@@ -4,6 +4,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_theme.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
+import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -311,22 +312,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   /// Shows an alert dialog describing a project creation error.
   void _showErrorDialog(BuildContext context, String errorMessage) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Project Creation Error'),
-          content: SingleChildScrollView(child: Text(errorMessage)),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
+    MessageBox.showDetails(
+      context,
+      title: const Text('Project Creation Error'),
+      content: Text(errorMessage),
     );
   }
 }

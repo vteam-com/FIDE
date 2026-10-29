@@ -85,92 +85,82 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
   /// Handles `_showScoreDetails`.
   void _showScoreDetails(BuildContext context, HealthIndicators health) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Quality Score Breakdown'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Starting Score: 100 points',
-                style: TextStyle(
-                  fontSize: AppFontSize.caption,
-                  fontWeight: FontWeight.w500,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.large),
-              const Text(
-                'Deductions:',
-                style: TextStyle(
-                  fontSize: AppFontSize.caption,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.medium),
-
-              /// Handles `_buildDeductionItem`.
-              _buildDeductionItem(
-                'Missing pubspec.lock',
-                -AppMetric.missingLockDeduction,
-                !health.hasPubspecLock,
-                context,
-              ),
-              _buildDeductionItem(
-                'Build errors (max 50 points)',
-                -health.buildErrorDeduction,
-                health.buildErrors > 0,
-                context,
-              ),
-              _buildDeductionItem(
-                'Build warnings (max 20 points)',
-                -health.buildWarningDeduction,
-                health.buildWarnings > 0,
-                context,
-              ),
-              _buildDeductionItem(
-                'Large files (>3 files over 10MB)',
-                -AppMetric.largeFileThresholdMb,
-                health.hasTooManyLargeFiles,
-                context,
-              ),
-              const Divider(height: AppSpacing.xxLarge),
-              Text(
-                'Final Score: ${health.qualityScore}/${AppMetric.maxScore}',
-                style: TextStyle(
-                  fontSize: AppFontSize.label,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.medium),
-              const Text(
-                'Score ranges:',
-                style: TextStyle(
-                  fontSize: AppFontSize.caption,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.tiny),
-              Text(
-                '• Green (80-100): Good project health\n'
-                '• Orange (50-79): Needs attention\n'
-                '• Red (0-49): Critical issues',
-                style: TextStyle(
-                  fontSize: AppFontSize.metadata,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
+    MessageBox.showDetails(
+      context,
+      title: const Text('Quality Score Breakdown'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Starting Score: 100 points',
+            style: TextStyle(
+              fontSize: AppFontSize.caption,
+              fontWeight: FontWeight.w500,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+          const SizedBox(height: AppSpacing.large),
+          const Text(
+            'Deductions:',
+            style: TextStyle(
+              fontSize: AppFontSize.caption,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.medium),
+
+          /// Handles `_buildDeductionItem`.
+          _buildDeductionItem(
+            'Missing pubspec.lock',
+            -AppMetric.missingLockDeduction,
+            !health.hasPubspecLock,
+            context,
+          ),
+          _buildDeductionItem(
+            'Build errors (max 50 points)',
+            -health.buildErrorDeduction,
+            health.buildErrors > 0,
+            context,
+          ),
+          _buildDeductionItem(
+            'Build warnings (max 20 points)',
+            -health.buildWarningDeduction,
+            health.buildWarnings > 0,
+            context,
+          ),
+          _buildDeductionItem(
+            'Large files (>3 files over 10MB)',
+            -AppMetric.largeFileThresholdMb,
+            health.hasTooManyLargeFiles,
+            context,
+          ),
+          const Divider(height: AppSpacing.xxLarge),
+          Text(
+            'Final Score: ${health.qualityScore}/${AppMetric.maxScore}',
+            style: TextStyle(
+              fontSize: AppFontSize.label,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.medium),
+          const Text(
+            'Score ranges:',
+            style: TextStyle(
+              fontSize: AppFontSize.caption,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.tiny),
+          Text(
+            '• Green (80-100): Good project health\n'
+            '• Orange (50-79): Needs attention\n'
+            '• Red (0-49): Critical issues',
+            style: TextStyle(
+              fontSize: AppFontSize.metadata,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),

@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:flutter/material.dart';
 
 /// Renders the editor status bar with cursor, search, and formatting controls.
@@ -42,20 +43,12 @@ class EditorScreenStatusBar extends StatelessWidget {
               style: TextStyle(fontSize: AppFontSize.caption),
             )
           else ...[
-            IconButton(
-              icon: Icon(
-                regionsExpanded ? Icons.unfold_less : Icons.unfold_more,
-                size: AppIconSize.medium,
-              ),
+            CompactIconButton(
+              icon: regionsExpanded ? Icons.unfold_less : Icons.unfold_more,
               onPressed: onToggleAllRegions,
               tooltip: regionsExpanded
                   ? 'Collapse All Regions (Ctrl+Shift+[)'
                   : 'Expand All Regions (Ctrl+Shift+])',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                minWidth: AppSize.compactIconButton,
-                minHeight: AppSize.compactIconButton,
-              ),
             ),
             const SizedBox(width: AppSpacing.medium),
             Text(
@@ -77,18 +70,10 @@ class EditorScreenStatusBar extends StatelessWidget {
           ],
           const Spacer(),
           if (canFormat)
-            IconButton(
-              icon: const Icon(
-                Icons.format_indent_increase,
-                size: AppIconSize.medium,
-              ),
+            CompactIconButton(
+              icon: Icons.format_indent_increase,
               onPressed: onFormatFile,
               tooltip: 'Format File (Shift+Alt+F)',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                minWidth: AppSize.compactIconButton,
-                minHeight: AppSize.compactIconButton,
-              ),
             ),
           const SizedBox(width: AppSpacing.medium),
           Text(

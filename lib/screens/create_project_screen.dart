@@ -407,61 +407,42 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                   OutlinedButton(
                     onPressed: widget.onCancel,
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.huge,
-                        vertical: AppSpacing.xLarge,
-                      ),
+                      padding: AppPadding.wizardButton,
                     ),
                     child: const Text('Cancel'),
                   ),
                   const SizedBox(width: AppSpacing.xLarge),
-
-                  // Step 1: Next button
-                  if (_currentStep == CreateProjectStep.nameAndFolder)
-                    FilledButton(
-                      onPressed: _canGoToNextStep() ? _nextStep : null,
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.huge,
-                          vertical: AppSpacing.xLarge,
-                        ),
-                      ),
-                      child: const Text('Next'),
-                    ),
-
-                  // Step 2: Create button
-                  if (_currentStep == CreateProjectStep.localization)
-                    FilledButton(
-                      onPressed: _canGoToNextStep() ? _nextStep : null,
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.huge,
-                          vertical: AppSpacing.xLarge,
-                        ),
-                      ),
-                      child: const Text('Create'),
-                    ),
-
-                  // Step 3: Open button (when project creation is in progress)
-                  if (_currentStep == CreateProjectStep.creating)
-                    FilledButton(
-                      onPressed: _projectCreationComplete
-                          ? _onOpenProject
-                          : null,
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.huge,
-                          vertical: AppSpacing.xLarge,
-                        ),
-                      ),
-                      child: Text('Open'),
-                    ),
+                  _buildPrimaryButton(),
                 ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  /// The step's forward action: Next, Create, then Open once the project
+  /// has been created.
+  Widget _buildPrimaryButton() {
+    final (label, onPressed) = switch (_currentStep) {
+      CreateProjectStep.nameAndFolder => (
+        'Next',
+        _canGoToNextStep() ? _nextStep : null,
+      ),
+      CreateProjectStep.localization => (
+        'Create',
+        _canGoToNextStep() ? _nextStep : null,
+      ),
+      CreateProjectStep.creating => (
+        'Open',
+        _projectCreationComplete ? _onOpenProject : null,
+      ),
+    };
+    return FilledButton(
+      onPressed: onPressed,
+      style: FilledButton.styleFrom(padding: AppPadding.wizardButton),
+      child: Text(label),
     );
   }
 }

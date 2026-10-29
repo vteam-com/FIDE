@@ -109,34 +109,25 @@ class FileSystemItem {
   });
 
   factory FileSystemItem.fromFileSystemEntity(FileSystemEntity entity) {
+    FileStat? stat;
     try {
-      final stat = entity.statSync();
-      final isDirectory = FileSystemEntity.isDirectorySync(entity.path);
-      final isFile = FileSystemEntity.isFileSync(entity.path);
-
-      return FileSystemItem(
-        name: p.basename(entity.path),
-        path: entity.path,
-        type: isDirectory
-            ? FileSystemItemType.directory
-            : FileSystemItemType.file,
-        modified: stat.modified,
-        size: isFile ? stat.size : null,
-      );
-    } catch (e) {
-      // Handle cases where statSync fails (e.g., large files, permission issues)
-      final isDirectory = FileSystemEntity.isDirectorySync(entity.path);
-
-      return FileSystemItem(
-        name: p.basename(entity.path),
-        path: entity.path,
-        type: isDirectory
-            ? FileSystemItemType.directory
-            : FileSystemItemType.file,
-        modified: null,
-        size: null, // Don't load size for problematic files
-      );
+      stat = entity.statSync();
+    } catch (_) {
+      // statSync can fail (e.g., large files, permission issues): list the
+      // entry without its date and size
     }
+    final isDirectory = FileSystemEntity.isDirectorySync(entity.path);
+    final isFile = stat != null && FileSystemEntity.isFileSync(entity.path);
+
+    return FileSystemItem(
+      name: p.basename(entity.path),
+      path: entity.path,
+      type: isDirectory
+          ? FileSystemItemType.directory
+          : FileSystemItemType.file,
+      modified: stat?.modified,
+      size: isFile ? stat.size : null,
+    );
   }
 
   // Create a parent directory item (for navigation)

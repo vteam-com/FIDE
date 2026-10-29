@@ -36,6 +36,32 @@ class MessageBox {
     showSuccess(context, confirmation);
   }
 
+  /// Shows read-only [content] under [title] with a Close button before
+  /// any extra [actions]; [content] scrolls unless [scrollable] is false, for
+  /// content that sizes and scrolls itself.
+  static Future<void> showDetails(
+    BuildContext context, {
+    required Widget title,
+    required Widget content,
+    List<Widget> actions = const [],
+    bool scrollable = true,
+  }) {
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: title,
+        content: scrollable ? SingleChildScrollView(child: content) : content,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+          ...actions,
+        ],
+      ),
+    );
+  }
+
   /// Asks for a line of text, starting from [initialText]; resolves to the
   /// trimmed text when [confirmLabel] is pressed, null on Cancel or
   /// dismissal.
