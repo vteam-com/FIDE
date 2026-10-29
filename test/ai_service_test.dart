@@ -154,4 +154,15 @@ void main() {
     expect(await service.resolveModel(), 'codellama:latest');
     expect(service.supportsTools, isFalse);
   });
+
+  test('commit message keeps the first line without quotes', () async {
+    final service = serviceAnswering(
+      http.Response(
+        jsonEncode({'response': '\n"Add login screen"\nIt adds a screen.'}),
+        HttpStatus.ok,
+      ),
+    );
+
+    expect(await service.commitMessage('diff'), 'Add login screen');
+  });
 }

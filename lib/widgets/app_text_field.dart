@@ -17,6 +17,7 @@ class AppTextField extends StatelessWidget {
     this.onSubmitted,
     this.minLines,
     this.maxLines = 1,
+    this.trailing,
   });
 
   /// Whether a clear button shows while there is text.
@@ -48,6 +49,11 @@ class AppTextField extends StatelessWidget {
 
   /// Called when Enter submits a single-line box.
   final ValueChanged<String>? onSubmitted;
+
+  /// Widget shown after the text, such as an action button; the clear
+  /// button takes its place while it shows.
+  final Widget? trailing;
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
@@ -69,7 +75,7 @@ class AppTextField extends StatelessWidget {
                     onCleared?.call();
                   },
                 )
-              : null,
+              : trailing,
           isDense: true,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppRadius.small),

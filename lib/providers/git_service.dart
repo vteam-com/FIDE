@@ -264,6 +264,27 @@ class GitService {
     return null;
   }
 
+  /// Returns a summary of the staged changes followed by their unified
+  /// diff, so a cut diff still names every staged file; empty when nothing
+  /// is staged.
+  ///
+  /// Throws a [GitException] when git fails.
+  Future<String> getStagedDiff(String path) async {
+    const failure = 'Failed to get staged diff';
+    final output = StringBuffer();
+    for (final args in [
+      ['diff', '--cached', '--stat'],
+      ['diff', '--cached'],
+    ]) {
+      final result = await _runner.run('git', args, workingDirectory: path);
+      if (result.exitCode != 0) {
+        throw GitException(failure, '${result.stderr}');
+      }
+      output.writeln(result.stdout.toString().trim());
+    }
+    return output.toString().trim();
+  }
+
   /// Returns recent commits up to [count] in one-line format.
   Future<List<GitCommit>> getRecentCommits(
     String path, {

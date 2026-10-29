@@ -115,4 +115,16 @@ void main() {
     final commits = await const GitService().getRecentCommits(repo.path);
     expect(commits.map((c) => c.message), ['reworded']);
   });
+
+  test('staged diff names staged files and leaves out unstaged ones', () async {
+    File(nestedFile).writeAsStringSync('staged\n');
+    _git(repo.path, ['add', '.']);
+    File(path.join(repo.path, 'other.txt')).writeAsStringSync('unstaged\n');
+
+    final diff = await const GitService().getStagedDiff(repo.path);
+
+    expect(diff, contains('lib/main.dart'));
+    expect(diff, contains('+staged'));
+    expect(diff, isNot(contains('other.txt')));
+  });
 }

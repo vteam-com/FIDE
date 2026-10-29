@@ -40,6 +40,7 @@ class GitPanel extends ConsumerStatefulWidget {
 class _GitPanelState extends ConsumerState<GitPanel> {
   final TextEditingController _commitController = TextEditingController();
   bool _isCommitting = false;
+  bool _isWritingMessage = false;
 
   /// Whether the last commit is unpushed, so Amend is offered.
   bool _canAmend = false;
@@ -94,6 +95,23 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
   Future<void> _unstageFiles(List<String> files) =>
       _runGitAction((git) => git.unstageFiles(widget.projectPath, files));
+
+  /// Fills the commit message with one the AI writes from the staged
+  /// changes.
+  Future<void> _writeCommitMessage() async {
+    setState(() => _isWritingMessage = true);
+    try {
+      final diff = await ref
+          .read(gitServiceProvider)
+          .getStagedDiff(widget.projectPath);
+      final message = await ref.read(aiServiceProvider).commitMessage(diff);
+      if (mounted && message.isNotEmpty) _commitController.text = message;
+    } catch (e) {
+      if (mounted) MessageBox.showError(context, 'AI commit message: $e');
+    } finally {
+      if (mounted) setState(() => _isWritingMessage = false);
+    }
+  }
 
   /// Handles `_commit`.
   Future<void> _commit() async {
@@ -244,6 +262,18 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                           controller: _commitController,
                           hintText: 'Enter commit message...',
                           maxLines: AppMetric.aiInputMaxLines,
+                          trailing: IconButton(
+                            icon: _isWritingMessage
+                                ? const InlineSpinner()
+                                : const Icon(
+                                    Icons.auto_awesome,
+                                    size: AppIconSize.large,
+                                  ),
+                            onPressed: _isWritingMessage
+                                ? null
+                                : _writeCommitMessage,
+                            tooltip: 'Write commit message with AI',
+                          ),
                         ),
                         Row(
                           children: [

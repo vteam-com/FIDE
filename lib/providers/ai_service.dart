@@ -228,6 +228,26 @@ This Flutter/Dart build failed. Find the root cause of each error and show the c
 $notes''', errors);
   }
 
+  /// Writes a one-line commit message stating the intent of the changes
+  /// in [diff], cut to [AppMetric.aiCommitDiffChars].
+  ///
+  /// Throws an [AiServiceException] when the request fails.
+  Future<String> commitMessage(String diff) async {
+    final changes = diff.length > AppMetric.aiCommitDiffChars
+        ? diff.substring(0, AppMetric.aiCommitDiffChars)
+        : diff;
+    final response = await _generate('''
+Write a short, one-line git commit message stating the intent of these changes.
+Reply with the message only: no quotes, no prefix, no explanation.
+
+$changes''', AppDuration.aiGenerateTimeout);
+    final line = response
+        .split('\n')
+        .map((line) => line.trim())
+        .firstWhere((line) => line.isNotEmpty, orElse: () => '');
+    return line.replaceAll(RegExp(r'''^[`"']+|[`"']+$'''), '');
+  }
+
   /// Requests a plain-language explanation for the provided source code.
   Future<String> explainCode(String code) async {
     return await getCodeSuggestion(
