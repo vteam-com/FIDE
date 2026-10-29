@@ -47,12 +47,8 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   }
 
   /// Opens [filePath] in the editor and scrolls to 1-based [line].
-  Future<void> _jumpToLine(String filePath, int line) async {
-    ref.read(selectedFileProvider.notifier).state =
-        FileSystemItem.fromFileSystemEntity(File(filePath));
-    await Future.delayed(AppDuration.editorScroll);
-    ref.read(activeEditorProvider).navigateToLine(line);
-  }
+  Future<void> _jumpToLine(String filePath, int line) =>
+      openFileAtLine(ref, filePath, line);
 
   @override
   Widget build(BuildContext context) {
