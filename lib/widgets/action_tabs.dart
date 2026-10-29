@@ -12,10 +12,17 @@ import 'package:flutter/material.dart';
 /// button and its status.
 class ActionTabsWithExecute extends StatefulWidget {
   /// Creates tabs for [actions].
-  const ActionTabsWithExecute({super.key, required this.actions});
+  const ActionTabsWithExecute({
+    super.key,
+    required this.actions,
+    this.initialId,
+  });
 
   /// The actions, in tab order.
   final List<PanelAction> actions;
+
+  /// The id of the action selected first, or null for the first tab.
+  final String? initialId;
 
   @override
   State<ActionTabsWithExecute> createState() => _ActionTabsWithExecuteState();
@@ -28,7 +35,17 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: widget.actions.length, vsync: this);
+    _tabController = TabController(
+      length: widget.actions.length,
+      initialIndex: _indexOf(widget.initialId),
+      vsync: this,
+    );
+  }
+
+  /// The tab of action [id], or the first tab when there is none.
+  int _indexOf(String? id) {
+    final i = widget.actions.indexWhere((a) => a.id == id);
+    return i < 0 ? 0 : i;
   }
 
   @override
@@ -41,13 +58,23 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
   void didUpdateWidget(ActionTabsWithExecute oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.actions.length != widget.actions.length) {
+      // Keeps the selected ACTION, not its index: switching to Android adds a
+      // tab before Run Debug, which would otherwise land on Run Release.
+      final selected = oldWidget.actions[_tabController.index].id;
       _tabController.dispose();
       _tabController = TabController(
         length: widget.actions.length,
+        initialIndex: _indexOf(selected),
         vsync: this,
       );
     }
   }
+
+  /// Text colour readable on a button filled with [fill].
+  static Color _onColor(Color fill) =>
+      ThemeData.estimateBrightnessForColor(fill) == Brightness.dark
+      ? Colors.white
+      : Colors.black;
 
   @override
   Widget build(BuildContext context) {
@@ -232,11 +259,16 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                                   ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: canStop
-                                        ? Colors.red
+                                        ? colorScheme.error
                                         : isRunning
                                         ? Colors.grey
                                         : color,
-                                    foregroundColor: Colors.white,
+                                    // Contrasted with the fill rather than
+                                    // fixed white: the dark theme's primary
+                                    // and error are light tints.
+                                    foregroundColor: canStop
+                                        ? colorScheme.onError
+                                        : _onColor(color),
                                     padding: const EdgeInsets.symmetric(
                                       vertical: AppSpacing.regular,
                                     ),

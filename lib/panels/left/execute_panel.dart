@@ -248,7 +248,7 @@ Cleans the Flutter build cache and artifacts.
 • Removes platform-specific build outputs
 • Prepares for fresh build
       ''',
-        color: colorScheme.secondary,
+        color: colorScheme.primary,
         onRun: _cleanFlutterApp,
       ),
       if (platform == FlutterPlatform.android) ...[
@@ -281,7 +281,7 @@ Builds an Android App Bundle (AAB) for Google Play Store.
 • Smaller downloads through dynamic feature delivery
 • Required format for Play Store submissions
         ''',
-          color: colorScheme.tertiary,
+          color: colorScheme.primary,
           onRun: () => _buildFlutterApp('build_aab', 'aab'),
         ),
       ] else
@@ -314,7 +314,7 @@ Runs the Flutter application in release mode.
 • Hot reload disabled for performance
 • Designed for production deployment
       ''',
-        color: Colors.green,
+        color: colorScheme.primary,
         onRun: () => _runFlutterApp('run', isDebug: false),
       ),
       _action(
@@ -330,7 +330,7 @@ Runs the Flutter application in debug mode.
 • Allows real-time code modification
 • Development and testing mode
       ''',
-        color: Colors.orange,
+        color: colorScheme.primary,
         onRun: () => _runFlutterApp('debug', isDebug: true),
       ),
       if (platform.usesCocoaPods && Platform.isMacOS)
@@ -349,12 +349,13 @@ Updates ${platform.displayName} CocoaPods dependencies.
 • Ensures native ${platform.displayName} code compatibility
 • Required before ${platform.displayName} builds
         ''',
-          color: AppColor.nativeDependencyAccent,
+          color: colorScheme.primary,
           onRun: () => _updateCocoaPods('cocoapods'),
         ),
     ];
 
-    return ActionTabsWithExecute(actions: actions);
+    // Run Debug is what this tab is opened for nearly every time.
+    return ActionTabsWithExecute(actions: actions, initialId: 'debug');
   }
 
   /// Handles `_buildOutputSection`.
