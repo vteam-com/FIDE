@@ -120,6 +120,37 @@ class AppTheme {
         : AppColor.sidePanelDividerDark; // Dark gray divider
   }
 
+  /// Radial gradient the workspace panel islands float on.
+  ///
+  /// A shaded core, darker than every surface tone, opens out to a primary
+  /// glow at the window edges, so the gaps between islands read clearly in
+  /// both modes.
+  static BoxDecoration workspaceBackground(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final base = Theme.of(context).brightness == Brightness.light
+        ? colorScheme.surfaceDim
+        : colorScheme.surfaceContainerLowest;
+    return BoxDecoration(
+      gradient: RadialGradient(
+        radius: AppGradient.workspaceRadius,
+        colors: [
+          Color.alphaBlend(
+            colorScheme.shadow.withValues(alpha: AppOpacity.workspaceShade),
+            base,
+          ),
+          Color.alphaBlend(
+            colorScheme.primary.withValues(alpha: AppOpacity.workspaceGlow),
+            base,
+          ),
+        ],
+        stops: const [
+          AppGradient.workspaceCoreStop,
+          AppGradient.workspaceEdgeStop,
+        ],
+      ),
+    );
+  }
+
   /// Vertical surface gradient behind the full-screen welcome, loading and
   /// create-project views.
   static BoxDecoration screenBackground(BuildContext context) {

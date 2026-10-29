@@ -2,6 +2,7 @@ part of 'constants.dart';
 
 /// Common animation and timing durations used by UI interactions.
 class AppDuration {
+  static const Duration splitterHover = Duration(milliseconds: 150);
   static const Duration editorScroll = Duration(milliseconds: 100);
   static const Duration tooltipWait = Duration(seconds: 1);
   static const Duration messageAnimation = Duration(milliseconds: 300);

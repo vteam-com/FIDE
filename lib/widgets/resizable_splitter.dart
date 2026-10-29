@@ -1,16 +1,19 @@
 import 'package:fide/constants/constants.dart';
 import 'package:flutter/material.dart';
 
-/// Represents `ResizableSplitter`.
+/// A draggable gap between two panel islands that reports resize deltas.
 class ResizableSplitter extends StatefulWidget {
+  /// Creates a splitter that reports drags through [onResize].
   const ResizableSplitter({
     super.key,
     required this.onResize,
     this.isHorizontal = false,
   });
 
+  /// Whether the splitter separates stacked panels and drags vertically.
   final bool isHorizontal;
 
+  /// Called with the pointer delta, in logical pixels, on each drag update.
   final Function(double) onResize;
 
   @override
@@ -33,6 +36,8 @@ class _ResizableSplitterState extends State<ResizableSplitter> {
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
       child: GestureDetector(
+        // The gap is transparent, so claim the whole strip for hit testing
+        behavior: HitTestBehavior.opaque,
         onHorizontalDragStart: widget.isHorizontal
             ? null
             : (details) {
@@ -77,19 +82,19 @@ class _ResizableSplitterState extends State<ResizableSplitter> {
                 setState(() => _isDragging = false);
               }
             : null,
-        child: Container(
+        // The splitter is the gap between two panel islands: it stays
+        // transparent so the workspace gradient shows through, and only a
+        // pill grip fades in while the pointer is over it
+        child: SizedBox(
           width: widget.isHorizontal
               ? double.infinity
               : AppSize.splitterThickness,
           height: widget.isHorizontal
               ? AppSize.splitterThickness
               : double.infinity,
-          color: _isHovering || _isDragging
-              ? Theme.of(context).colorScheme.primary
-                    .withAlpha(AppAlpha.splitterHover)
-              : Colors.transparent,
           child: Center(
-            child: Container(
+            child: AnimatedContainer(
+              duration: AppDuration.splitterHover,
               width: widget.isHorizontal
                   ? AppSize.splitterGripLength
                   : AppSize.splitterGripThickness,
@@ -97,15 +102,24 @@ class _ResizableSplitterState extends State<ResizableSplitter> {
                   ? AppSize.splitterGripThickness
                   : AppSize.splitterGripLength,
               decoration: BoxDecoration(
-                color: _isHovering || _isDragging
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).dividerColor,
-                borderRadius: BorderRadius.circular(AppSpacing.micro),
+                color: _gripColor(Theme.of(context).colorScheme),
+                borderRadius: BorderRadius.circular(
+                  AppSize.splitterGripThickness,
+                ),
               ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  /// The grip tint: hidden at rest, soft on hover, solid while dragging.
+  Color _gripColor(ColorScheme colorScheme) {
+    if (_isDragging) return colorScheme.primary;
+    if (_isHovering) {
+      return colorScheme.primary.withValues(alpha: AppOpacity.muted);
+    }
+    return Colors.transparent;
   }
 }

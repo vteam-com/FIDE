@@ -4,6 +4,7 @@ import 'package:fide/models/file_system_item.dart';
 import 'package:fide/panels/center/editor/editor_screen.dart';
 import 'package:fide/panels/center/terminal_panel.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/widgets/panel_island.dart';
 import 'package:fide/widgets/resizable_splitter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -72,35 +73,27 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          right: BorderSide(
-            color: Theme.of(context).dividerColor,
-            width: AppSize.borderThin,
-          ),
-        ),
-      ),
-      child: Column(
-        children: [
-          // Main content takes remaining space
-          Expanded(child: mainContent),
-          // Terminal section (always shown if visible, independent of editor state)
-          if (widget.terminalVisible) ...[
-            // Resizable splitter
-            ResizableSplitter(onResize: _onTerminalResize, isHorizontal: true),
+    return Column(
+      children: [
+        // Main content takes remaining space
+        Expanded(child: PanelIsland(child: mainContent)),
+        // Terminal section (always shown if visible, independent of editor state)
+        if (widget.terminalVisible) ...[
+          // Resizable splitter
+          ResizableSplitter(onResize: _onTerminalResize, isHorizontal: true),
 
-            // Terminal at bottom
-            SizedBox(
-              height: _terminalHeight,
+          // Terminal at bottom
+          SizedBox(
+            height: _terminalHeight,
+            child: PanelIsland(
               child: ColoredBox(
                 color: Theme.of(context).colorScheme.surfaceContainerLow,
                 child: const TerminalPanel(),
               ),
             ),
-          ],
+          ),
         ],
-      ),
+      ],
     );
   }
 }

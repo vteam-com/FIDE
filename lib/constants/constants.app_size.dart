@@ -28,7 +28,10 @@ class AppSize {
   static const double diffRowDividerHeight = 20;
   static const double diffLineNumberColumnWidth = 60;
   static const double outlineFallbackHeight = 200;
-  static const double splitterThickness = 8;
+
+  /// Gap between workspace panel islands and around the workspace edge.
+  static const double islandGap = 6;
+  static const double splitterThickness = islandGap;
   static const double splitterGripLength = 40;
   static const double splitterGripThickness = 4;
   static const double heroLogoHeight = 100;

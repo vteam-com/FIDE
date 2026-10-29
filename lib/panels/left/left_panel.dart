@@ -80,13 +80,8 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
       }
     });
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
-        border: Border(
-          right: BorderSide(color: Theme.of(context).dividerColor, width: 1.0),
-        ),
-      ),
+    return ColoredBox(
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

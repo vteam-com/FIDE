@@ -216,116 +216,127 @@ class _FIDEState extends ConsumerState<FIDE> {
       themeMode: themeMode,
       navigatorKey: navigatorKey,
       home: Scaffold(
-        body: Column(
-          children: [
-            // Custom title bar widget - conditional based on screen
-            Consumer(
-              builder: (_, ref, _) {
-                // Show TitleBar for all cases - it handles the logic internally
-                return AppTitleBar(
-                  themeMode: themeMode,
-                  onThemeChanged: (themeMode) => _updateTheme(themeMode),
-                  onToggleLeftPanel: () => triggerTogglePanelLeft(ref),
-                  onToggleBottomPanel: () => triggerTogglePanelBottom(ref),
-                  onToggleRightPanel: () => triggerTogglePanelRight(ref),
-                  leftPanelVisible: ref.watch(leftPanelVisibleProvider),
-                  bottomPanelVisible: ref.watch(bottomPanelVisibleProvider),
-                  rightPanelVisible: ref.watch(rightPanelVisibleProvider),
-                  showPanelToggles:
-                      _currentViewState == AppViewState.mainLayout,
-                  onProjectSwitch: tryLoadProject,
-                  onOpenFolder: _pickAndOpenProject,
-                  onProjectCreateComplete: () {
-                    _clearCreatingState();
-                  },
-                  onShowCreateProjectScreen: () {
-                    setState(() {
-                      _currentViewState = AppViewState.createProject;
-                    });
-                  },
-                  onCloseProject: _closeCurrentProject,
-                );
-              },
-            ),
-            // Main content with menu bar
-            Expanded(
-              child: PlatformMenuBar(
-                menus: NativeMenuBuilder(
-                  context: context,
-                  ref: ref,
-                  onOpenFolder: _pickAndOpenProject,
-                  onSave: ref.read(activeEditorProvider).save,
-                  onCloseDocument: ref.read(activeEditorProvider).close,
-                  onFind: ref.read(activeEditorProvider).toggleSearch,
-                  onFindNext: ref.read(activeEditorProvider).findNext,
-                  onFindPrevious: ref.read(activeEditorProvider).findPrevious,
-                  onGoToLine: () => _showGotoLineDialog(
-                    navigatorKey.currentContext ?? context,
-                  ),
-                  onToggleLeftPanel: () => triggerTogglePanelLeft(ref),
-                  onToggleBottomPanel: () => triggerTogglePanelBottom(ref),
-                  onToggleRightPanel: () => triggerTogglePanelRight(ref),
-                  onSwitchPanel: (tab) => _switchToPanel(ref, tab),
-                  onProjectSwitch: (path) async => await tryLoadProject(path),
-                  onCloseProject: _closeCurrentProject,
-                  lastOpenedFileName: _lastOpenedFileName,
-                  onThemeChanged: (themeMode) => _updateTheme(themeMode),
-                  currentThemeMode: themeMode,
-                ).buildMenus(),
-                child: Consumer(
+        // Builder so the gradient resolves against the app theme, not the
+        // context above MaterialApp
+        body: Builder(
+          builder: (context) => DecoratedBox(
+            decoration: AppTheme.workspaceBackground(context),
+            child: Column(
+              children: [
+                // Custom title bar widget - conditional based on screen
+                Consumer(
                   builder: (_, ref, _) {
-                    final mruFolders = ref.watch(mruFoldersProvider);
-
-                    // Determine the widget to show based on current state
-                    final Widget content;
-                    switch (_currentViewState) {
-                      case AppViewState.createProject:
-                        content = CreateProjectScreen(
-                          onCancel: _handleCreateProjectCancel,
-                          onOpenProject: tryLoadProject,
-                        );
-                        break;
-                      case AppViewState.loadingProject:
-                        content = LoadingScreen(
-                          loadingProjectName: _loadingProjectName,
-                        );
-                        break;
-                      case AppViewState.welcome:
-                        content = WelcomeScreen(
-                          onOpenFolder: _pickAndOpenProject,
-                          onCreateProject: () {
-                            _logger.fine('onCreateProject called');
-                            setState(() {
-                              _currentViewState = AppViewState.createProject;
-                            });
-                          },
-                          mruFolders: mruFolders,
-                          accessibleFolders: ref.watch(
-                            accessibleMruFoldersProvider,
-                          ),
-                          onOpenMruProject: tryLoadProject,
-                          onRemoveMruEntry: ref
-                              .read(mruFoldersProvider.notifier)
-                              .remove,
-                        );
-                        break;
-                      case AppViewState.mainLayout:
-                        content = MainLayout(
-                          onOpenProject: tryLoadProject,
-                          onOpenFolder: _pickAndOpenProject,
-                          onFileOpened: (fileName) {
-                            setState(() => _lastOpenedFileName = fileName);
-                          },
-                        );
-                        break;
-                    }
-
-                    return content;
+                    // Show TitleBar for all cases - it handles the logic internally
+                    return AppTitleBar(
+                      themeMode: themeMode,
+                      onThemeChanged: (themeMode) => _updateTheme(themeMode),
+                      onToggleLeftPanel: () => triggerTogglePanelLeft(ref),
+                      onToggleBottomPanel: () => triggerTogglePanelBottom(ref),
+                      onToggleRightPanel: () => triggerTogglePanelRight(ref),
+                      leftPanelVisible: ref.watch(leftPanelVisibleProvider),
+                      bottomPanelVisible: ref.watch(bottomPanelVisibleProvider),
+                      rightPanelVisible: ref.watch(rightPanelVisibleProvider),
+                      showPanelToggles:
+                          _currentViewState == AppViewState.mainLayout,
+                      onProjectSwitch: tryLoadProject,
+                      onOpenFolder: _pickAndOpenProject,
+                      onProjectCreateComplete: () {
+                        _clearCreatingState();
+                      },
+                      onShowCreateProjectScreen: () {
+                        setState(() {
+                          _currentViewState = AppViewState.createProject;
+                        });
+                      },
+                      onCloseProject: _closeCurrentProject,
+                    );
                   },
                 ),
-              ),
+                // Main content with menu bar
+                Expanded(
+                  child: PlatformMenuBar(
+                    menus: NativeMenuBuilder(
+                      context: context,
+                      ref: ref,
+                      onOpenFolder: _pickAndOpenProject,
+                      onSave: ref.read(activeEditorProvider).save,
+                      onCloseDocument: ref.read(activeEditorProvider).close,
+                      onFind: ref.read(activeEditorProvider).toggleSearch,
+                      onFindNext: ref.read(activeEditorProvider).findNext,
+                      onFindPrevious: ref
+                          .read(activeEditorProvider)
+                          .findPrevious,
+                      onGoToLine: () => _showGotoLineDialog(
+                        navigatorKey.currentContext ?? context,
+                      ),
+                      onToggleLeftPanel: () => triggerTogglePanelLeft(ref),
+                      onToggleBottomPanel: () => triggerTogglePanelBottom(ref),
+                      onToggleRightPanel: () => triggerTogglePanelRight(ref),
+                      onSwitchPanel: (tab) => _switchToPanel(ref, tab),
+                      onProjectSwitch: (path) async =>
+                          await tryLoadProject(path),
+                      onCloseProject: _closeCurrentProject,
+                      lastOpenedFileName: _lastOpenedFileName,
+                      onThemeChanged: (themeMode) => _updateTheme(themeMode),
+                      currentThemeMode: themeMode,
+                    ).buildMenus(),
+                    child: Consumer(
+                      builder: (_, ref, _) {
+                        final mruFolders = ref.watch(mruFoldersProvider);
+
+                        // Determine the widget to show based on current state
+                        final Widget content;
+                        switch (_currentViewState) {
+                          case AppViewState.createProject:
+                            content = CreateProjectScreen(
+                              onCancel: _handleCreateProjectCancel,
+                              onOpenProject: tryLoadProject,
+                            );
+                            break;
+                          case AppViewState.loadingProject:
+                            content = LoadingScreen(
+                              loadingProjectName: _loadingProjectName,
+                            );
+                            break;
+                          case AppViewState.welcome:
+                            content = WelcomeScreen(
+                              onOpenFolder: _pickAndOpenProject,
+                              onCreateProject: () {
+                                _logger.fine('onCreateProject called');
+                                setState(() {
+                                  _currentViewState =
+                                      AppViewState.createProject;
+                                });
+                              },
+                              mruFolders: mruFolders,
+                              accessibleFolders: ref.watch(
+                                accessibleMruFoldersProvider,
+                              ),
+                              onOpenMruProject: tryLoadProject,
+                              onRemoveMruEntry: ref
+                                  .read(mruFoldersProvider.notifier)
+                                  .remove,
+                            );
+                            break;
+                          case AppViewState.mainLayout:
+                            content = MainLayout(
+                              onOpenProject: tryLoadProject,
+                              onOpenFolder: _pickAndOpenProject,
+                              onFileOpened: (fileName) {
+                                setState(() => _lastOpenedFileName = fileName);
+                              },
+                            );
+                            break;
+                        }
+
+                        return content;
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

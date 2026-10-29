@@ -61,67 +61,80 @@ class MainLayoutState extends ConsumerState<MainLayout> {
       }
     });
 
+    // Panels float as islands on the window-wide workspace gradient; the
+    // splitters between them double as the gaps
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surfaceDim,
-      body: Row(
-        children: [
-          if (projectLoaded && ref.watch(leftPanelVisibleProvider)) ...[
-            SizedBox(
-              width: _explorerWidth,
-              child: LeftPanel(
-                selectedFile: selectedFile,
-                currentProjectPath: currentProjectPath,
-                projectLoaded: projectLoaded,
-                onFileSelected: (file) {
-                  ref.read(selectedFileProvider.notifier).state = file;
-                },
-                onJumpToLine: (filePath, line) async {
-                  final file = File(filePath);
-                  final fileSystemItem = FileSystemItem.fromFileSystemEntity(
-                    file,
-                  );
-                  ref.read(selectedFileProvider.notifier).state =
-                      fileSystemItem;
+      backgroundColor: Colors.transparent,
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSize.islandGap,
+          0,
+          AppSize.islandGap,
+          AppSize.islandGap,
+        ),
+        child: Row(
+          children: [
+            if (projectLoaded && ref.watch(leftPanelVisibleProvider)) ...[
+              SizedBox(
+                width: _explorerWidth,
+                child: PanelIsland(
+                  child: LeftPanel(
+                    selectedFile: selectedFile,
+                    currentProjectPath: currentProjectPath,
+                    projectLoaded: projectLoaded,
+                    onFileSelected: (file) {
+                      ref.read(selectedFileProvider.notifier).state = file;
+                    },
+                    onJumpToLine: (filePath, line) async {
+                      final file = File(filePath);
+                      final fileSystemItem =
+                          FileSystemItem.fromFileSystemEntity(file);
+                      ref.read(selectedFileProvider.notifier).state =
+                          fileSystemItem;
 
-                  await Future.delayed(AppDuration.editorScroll);
-                  ref.read(activeEditorProvider).navigateToLine(line);
-                },
+                      await Future.delayed(AppDuration.editorScroll);
+                      ref.read(activeEditorProvider).navigateToLine(line);
+                    },
+                  ),
+                ),
               ),
-            ),
-            ResizableSplitter(onResize: _onResize),
-          ],
-          Expanded(
-            child: CenterPanel(
-              selectedFile: selectedFile,
-              projectLoaded: projectLoaded,
-              mruFolders: mruFolders,
-              terminalVisible: ref.watch(bottomPanelVisibleProvider),
-              onOpenFolder: widget.onOpenFolder,
-              onOpenMruProject: widget.onOpenProject,
-              onRemoveMruEntry: ref.read(mruFoldersProvider.notifier).remove,
-              onContentChanged: _refreshOutlineCallback,
-              onClose: () {
-                ref.read(selectedFileProvider.notifier).state = null;
-                ref.read(openDocumentsProvider.notifier).deactivate();
-              },
-            ),
-          ),
-          if (ref.watch(rightPanelVisibleProvider)) ...[
-            ResizableSplitter(onResize: _onOutlineResize),
-            SizedBox(
-              width: _outlineWidth,
-              child: RightPanel(
+              ResizableSplitter(onResize: _onResize),
+            ],
+            Expanded(
+              child: CenterPanel(
                 selectedFile: selectedFile,
-                onOutlineUpdate: _setOutlineRefreshCallback,
-                onOutlineNodeSelected: (int line, int column) {
-                  ref
-                      .read(activeEditorProvider)
-                      .navigateToLine(line, column: column);
+                projectLoaded: projectLoaded,
+                mruFolders: mruFolders,
+                terminalVisible: ref.watch(bottomPanelVisibleProvider),
+                onOpenFolder: widget.onOpenFolder,
+                onOpenMruProject: widget.onOpenProject,
+                onRemoveMruEntry: ref.read(mruFoldersProvider.notifier).remove,
+                onContentChanged: _refreshOutlineCallback,
+                onClose: () {
+                  ref.read(selectedFileProvider.notifier).state = null;
+                  ref.read(openDocumentsProvider.notifier).deactivate();
                 },
               ),
             ),
+            if (ref.watch(rightPanelVisibleProvider)) ...[
+              ResizableSplitter(onResize: _onOutlineResize),
+              SizedBox(
+                width: _outlineWidth,
+                child: PanelIsland(
+                  child: RightPanel(
+                    selectedFile: selectedFile,
+                    onOutlineUpdate: _setOutlineRefreshCallback,
+                    onOutlineNodeSelected: (int line, int column) {
+                      ref
+                          .read(activeEditorProvider)
+                          .navigateToLine(line, column: column);
+                    },
+                  ),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

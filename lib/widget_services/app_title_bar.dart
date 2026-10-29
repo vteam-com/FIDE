@@ -79,7 +79,8 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
       onDoubleTap: _toggleMaximize,
       child: Container(
         height: AppSize.titleBarHeight,
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        // Transparent so the window's workspace gradient runs behind it
+        color: Colors.transparent,
         child: Row(
           children: [
             // Platform-specific spacing for window controls

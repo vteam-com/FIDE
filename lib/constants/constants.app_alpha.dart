@@ -6,7 +6,6 @@ class AppAlpha {
   static const int badgeFill = 150;
   static const int badgeText = 160;
   static const int pathPrefix = 200;
-  static const int splitterHover = 50;
 
   const AppAlpha._();
 }

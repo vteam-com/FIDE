@@ -6,5 +6,8 @@ class AppRadius {
   static const double small = 6;
   static const double medium = 8;
 
+  /// Corner radius of the floating workspace panels.
+  static const double island = 10;
+
   const AppRadius._();
 }
