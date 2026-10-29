@@ -374,10 +374,17 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       _navigateToLine(lineNumber, column: column);
 
   @override
+  void openSearch() => _openSearch();
+
+  @override
   void save() => _saveFile();
 
   @override
-  void toggleSearch() => _toggleSearch();
+  String get searchSeed {
+    final selection = _codeController.selection;
+    if (!selection.isValid) return '';
+    return EditorSearch.seedFrom(selection.textInside(_codeController.text));
+  }
 
   /// Builds syntax highlight styles from a full highlight.js theme with the
   /// app's own colors layered on top.
@@ -733,8 +740,14 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
   /// Recomputes search matches for [query] and selects the first one.
   void _performSearch(String query) {
-    setState(() => _search.run(_codeController.text, query));
-    if (_search.hasMatches) _navigateToMatch(0);
+    setState(
+      () => _search.run(
+        _codeController.text,
+        query,
+        fromOffset: _codeController.selection.start,
+      ),
+    );
+    if (_search.hasMatches) _navigateToMatch(_search.currentIndex);
   }
 
   /// Navigates to the previous search match, wrapping at the start.
@@ -854,21 +867,29 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     }
   }
 
-  /// Toggles the search UI and restores query input state.
-  void _toggleSearch() {
+  /// Shows the search UI focused with its query selected, starting from the
+  /// selected text when there is a [searchSeed].
+  void _openSearch() {
     if (!mounted) return;
-    setState(() {
-      if (_showSearch) {
-        _closeSearch();
-      } else {
-        _showSearch = true;
-        _searchController.text = _search.query;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            _searchFocusNode.requestFocus();
-          }
-        });
+    final seed = searchSeed;
+    setState(() => _showSearch = true);
+    if (seed.isNotEmpty) {
+      _searchController.text = seed;
+      _performSearch(seed);
+    } else if (_searchController.text.isEmpty) {
+      _searchController.text = _search.query;
+    }
+    _searchController.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: _searchController.text.length,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _searchFocusNode.requestFocus();
       }
     });
   }
+
+  /// Toggles the search UI.
+  void _toggleSearch() => _showSearch ? _closeSearch() : _openSearch();
 }

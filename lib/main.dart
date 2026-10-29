@@ -261,7 +261,7 @@ class _FIDEState extends ConsumerState<FIDE> {
                       onOpenFolder: _pickAndOpenProject,
                       onSave: ref.read(activeEditorProvider).save,
                       onCloseDocument: ref.read(activeEditorProvider).close,
-                      onFind: ref.read(activeEditorProvider).toggleSearch,
+                      onFind: ref.read(activeEditorProvider).openSearch,
                       onFindNext: ref.read(activeEditorProvider).findNext,
                       onFindPrevious: ref
                           .read(activeEditorProvider)
@@ -349,6 +349,12 @@ class _FIDEState extends ConsumerState<FIDE> {
 
   /// Shows [tab] in the left panel.
   void _switchToPanel(WidgetRef ref, LeftPanelTab tab) {
+    if (tab == LeftPanelTab.search) {
+      ref.read(projectSearchRequestProvider.notifier).state = ref
+          .read(activeEditorProvider)
+          .searchSeed;
+      ref.read(leftPanelVisibleProvider.notifier).state = true;
+    }
     ref.read(activeLeftPanelTabProvider.notifier).state = tab;
   }
 }

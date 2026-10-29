@@ -34,3 +34,10 @@ final editorCursorLineProvider = StateProvider<int>((_ /*ref*/) => 1);
 final referenceSearchProvider = StateProvider<ReferenceSearch?>(
   (_ /*ref*/) => null,
 );
+
+/// Text the Search panel should search for, waiting to be picked up; the
+/// panel focuses its input and clears it once shown. Empty focuses the input
+/// without changing its text.
+final projectSearchRequestProvider = StateProvider<String?>(
+  (_ /*ref*/) => null,
+);

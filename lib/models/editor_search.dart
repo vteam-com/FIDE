@@ -39,8 +39,14 @@ class EditorSearch {
     currentIndex = noMatch;
   }
 
-  /// Searches [text] for [newQuery], selecting the first match.
-  void run(String text, String newQuery) {
+  /// The text a find should start with when [selected] is selected: the
+  /// selection itself, unless it spans lines.
+  static String seedFrom(String selected) =>
+      selected.contains('\n') ? '' : selected;
+
+  /// Searches [text] for [newQuery], selecting the first match at or after
+  /// [fromOffset], wrapping to the first match in [text].
+  void run(String text, String newQuery, {int fromOffset = 0}) {
     if (newQuery.isEmpty) {
       clear();
       return;
@@ -52,7 +58,8 @@ class EditorSearch {
       caseSensitive: caseSensitive,
       wholeWord: wholeWord,
     );
-    currentIndex = matches.isEmpty ? noMatch : 0;
+    final atOrAfter = matches.indexWhere((start) => start >= fromOffset);
+    currentIndex = atOrAfter == noMatch && hasMatches ? 0 : atOrAfter;
   }
 
   /// Start offsets of every occurrence of [query] in [text], overlapping

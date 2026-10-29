@@ -29,6 +29,19 @@ void main() {
       expect(search.hasMatches, false);
       expect(search.currentIndex, EditorSearch.noMatch);
     });
+
+    test('starts at the first match from the caret, wrapping', () {
+      final search = EditorSearch()..run('a a a', 'a', fromOffset: 1);
+      expect(search.currentIndex, 1);
+
+      search.run('a a a', 'a', fromOffset: 5);
+      expect(search.currentIndex, 0);
+    });
+
+    test('seeds from single-line selections only', () {
+      expect(EditorSearch.seedFrom('foo'), 'foo');
+      expect(EditorSearch.seedFrom('foo\nbar'), '');
+    });
   });
 
   group('CodeFormatter', () {

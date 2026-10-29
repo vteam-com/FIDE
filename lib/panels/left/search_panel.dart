@@ -39,6 +39,7 @@ class SearchPanel extends ConsumerStatefulWidget {
 
 class _SearchPanelState extends ConsumerState<SearchPanel> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   bool _matchCase = false;
   bool _wholeWord = false;
   SearchResultNode? _resultsTree;
@@ -48,16 +49,20 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
   @override
   void initState() {
     super.initState();
-    // Uses requested before this tab was built
+    // Searches requested before this tab was built
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final pending = ref.read(referenceSearchProvider);
-      if (mounted && pending != null) _showReferences(pending);
+      if (pending != null) _showReferences(pending);
+      final query = ref.read(projectSearchRequestProvider);
+      if (query != null) _startSearch(query);
     });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -75,6 +80,21 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
       _resultsTree = tree;
       if (tree != null) _expandFolders(tree);
     });
+  }
+
+  /// Focuses the input with its text selected, first searching for [query]
+  /// unless it is empty.
+  void _startSearch(String query) {
+    ref.read(projectSearchRequestProvider.notifier).state = null;
+    if (query.isNotEmpty) {
+      _searchController.text = query;
+      _performSearch();
+    }
+    _searchController.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: _searchController.text.length,
+    );
+    _searchFocusNode.requestFocus();
   }
 
   /// Marks every folder under [node] expanded.
@@ -127,6 +147,9 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     ref.listen<ReferenceSearch?>(referenceSearchProvider, (_, next) {
       if (next != null) _showReferences(next);
     });
+    ref.listen<String?>(projectSearchRequestProvider, (_, next) {
+      if (next != null) _startSearch(next);
+    });
     return Container(
       padding: const EdgeInsets.all(AppSpacing.medium),
       child: Column(
@@ -135,6 +158,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
           // Search input
           TextField(
             controller: _searchController,
+            focusNode: _searchFocusNode,
             decoration: InputDecoration(
               hintText: 'Search in lib/',
               prefixIcon: const Icon(Icons.search),

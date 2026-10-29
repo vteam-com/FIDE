@@ -28,6 +28,9 @@ class ActiveEditor implements EditorCommands {
   void findPrevious() => _editor?.findPrevious();
 
   @override
+  void openSearch() => _editor?.openSearch();
+
+  @override
   void navigateToLine(int lineNumber, {int column = 1}) =>
       _editor?.navigateToLine(lineNumber, column: column);
 
@@ -35,7 +38,7 @@ class ActiveEditor implements EditorCommands {
   void save() => _editor?.save();
 
   @override
-  void toggleSearch() => _editor?.toggleSearch();
+  String get searchSeed => _editor?.searchSeed ?? '';
 }
 
 /// Provides the [ActiveEditor] that menus, shortcuts and panels send
