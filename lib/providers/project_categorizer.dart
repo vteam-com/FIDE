@@ -69,14 +69,22 @@ class ProjectCategorizer {
       nodes[CodeCategory.dialogs]!.addAll(moved);
     }
 
+    final counts = {
+      for (final entry in nodes.entries)
+        entry.key: await _countElements(entry.key, entry.value),
+    };
+
     return ProjectCategories(
       nodes: {
         for (final entry in nodes.entries)
           entry.key: entry.value..sort(ProjectNode.compareInTree),
       },
       elementCounts: {
-        for (final entry in nodes.entries)
-          entry.key: await _countElements(entry.key, entry.value),
+        for (final entry in counts.entries) entry.key: entry.value.elements,
+      },
+      publicClassCounts: {
+        for (final entry in counts.entries)
+          entry.key: entry.value.publicClasses,
       },
       sourceFileCounts: {
         for (final entry in nodes.entries)
@@ -88,36 +96,46 @@ class ProjectCategorizer {
 
   /// Dart files count their top-level classes, at least one each; ARB
   /// files in [category] localization count their translations.
-  Future<int> _countElements(
+  ///
+  /// `publicClasses` counts only the Dart files' public classes, also at
+  /// least one per file, since private helpers may share a file.
+  Future<({int elements, int publicClasses})> _countElements(
     CodeCategory category,
     List<ProjectNode> nodes,
   ) async {
-    var count = 0;
+    var elements = 0;
+    var publicClasses = 0;
     for (final file in _files(nodes)) {
       if (_isDart(file)) {
-        final content = await _read(file);
-        count += max(_minElementsPerDartFile, _countClasses(content ?? ''));
+        final names = _classNames((await _read(file)) ?? '');
+        elements += max(_minElementsPerDartFile, names.length);
+        publicClasses += max(
+          _minElementsPerDartFile,
+          names.where((name) => !name.startsWith('_')).length,
+        );
       } else if (category == CodeCategory.localization &&
           file.path.endsWith('.arb')) {
         final content = await _read(file);
-        count += content == null ? 0 : ArbService.countEntries(content) ?? 0;
+        elements += content == null ? 0 : ArbService.countEntries(content) ?? 0;
       }
     }
-    return count;
+    return (elements: elements, publicClasses: publicClasses);
   }
 
   /// A Dart file counts as one element even when it declares no class.
   static const int _minElementsPerDartFile = 1;
 
-  /// Matches a top-level class declaration, with any class modifiers.
+  /// Matches a top-level class declaration, with any class modifiers,
+  /// capturing the class name.
   static final RegExp _classDeclaration = RegExp(
-    r'^(?:(?:abstract|base|final|interface|mixin|sealed)\s+)*class\s+\w+',
+    r'^(?:(?:abstract|base|final|interface|mixin|sealed)\s+)*class\s+(\w+)',
     multiLine: true,
   );
 
-  /// Number of top-level classes declared in [content].
-  static int _countClasses(String content) =>
-      _classDeclaration.allMatches(content).length;
+  /// Names of the top-level classes declared in [content].
+  static List<String> _classNames(String content) => [
+    for (final match in _classDeclaration.allMatches(content)) match.group(1)!,
+  ];
 
   /// Whether [content] declares a class extending a `...Widget` type.
   static bool _declaresWidget(String content) {

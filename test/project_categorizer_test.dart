@@ -78,6 +78,19 @@ void main() {
     expect(categories.elementCounts[CodeCategory.models], 4);
   });
 
+  test('counts only public classes toward one class per file', () async {
+    write('lib/models/chord.dart', 'class Chord {}\n\nclass _Note {}');
+    write('lib/models/scale.dart', 'class _Step {}');
+
+    final categories = await const ProjectCategorizer().categorize(
+      await loadedRoot(),
+    );
+
+    expect(categories.sourceFileCounts[CodeCategory.models], 2);
+    expect(categories.elementCounts[CodeCategory.models], 3);
+    expect(categories.publicClassCounts[CodeCategory.models], 2);
+  });
+
   test('counts translations in ARB files', () async {
     write('lib/l10n/app_en.arb', '{"@@locale": "en", "a": "A", "b": "B"}');
 

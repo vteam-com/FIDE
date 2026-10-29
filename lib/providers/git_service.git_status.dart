@@ -27,6 +27,10 @@ class GitStatus {
     return GitFileStatus.clean;
   }
 
+  /// Number of distinct files with staged, unstaged or untracked changes.
+  int get changedFileCount =>
+      {..._stagedSet, ..._unstagedSet, ..._untrackedSet}.length;
+
   /// Whether any tracked or untracked changes are present.
   bool get hasChanges =>
       staged.isNotEmpty || unstaged.isNotEmpty || untracked.isNotEmpty;

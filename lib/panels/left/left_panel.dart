@@ -6,7 +6,9 @@ import 'package:fide/panels/left/git_panel.dart';
 import 'package:fide/panels/left/organized_panel.dart';
 import 'package:fide/panels/left/search_panel.dart';
 import 'package:fide/panels/left/test_panel.dart';
+import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/widgets/count_badge.dart';
 import 'package:fide/widgets/panel_tabs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,6 +46,22 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
       vsync: this,
     );
     _tabController.addListener(_handleTabChange);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshGitStatus());
+  }
+
+  @override
+  void didUpdateWidget(LeftPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentProjectPath != widget.currentProjectPath) {
+      _refreshGitStatus();
+    }
+  }
+
+  /// Re-reads the project's Git status, which feeds the Git tab's badge.
+  void _refreshGitStatus() {
+    final projectPath = widget.currentProjectPath;
+    if (!mounted || projectPath == null) return;
+    ref.read(gitStatusProvider.notifier).refreshStatus(projectPath);
   }
 
   @override
@@ -81,6 +99,12 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
       }
     });
 
+    // Files on disk changed or were saved: the Git badge may be stale
+    ref.listen(projectTreeRevisionProvider, (_, _) => _refreshGitStatus());
+    ref.listen(savedFilesRevisionProvider, (_, _) => _refreshGitStatus());
+    final gitChangeCount =
+        ref.watch(gitStatusProvider).value?.changedFileCount ?? 0;
+
     return PanelTabs(
       controller: _tabController,
       showTabBar: widget.projectLoaded,
@@ -88,8 +112,11 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
         for (final tab in LeftPanelTab.values)
           Tab(
             key: tab.key,
-            icon: Icon(
-              _tabController.index == tab.index ? tab.selectedIcon : tab.icon,
+            icon: CountBadge(
+              count: tab == LeftPanelTab.git ? gitChangeCount : 0,
+              child: Icon(
+                _tabController.index == tab.index ? tab.selectedIcon : tab.icon,
+              ),
             ),
           ),
       ],

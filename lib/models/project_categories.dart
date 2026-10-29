@@ -9,8 +9,11 @@ class ProjectCategories {
   /// Classes or translations counted in each category.
   final Map<CodeCategory, int> elementCounts;
 
-  /// Dart files counted in each category; one class per file means it
-  /// matches the category's element count.
+  /// Public classes counted in each category's Dart files, at least one per
+  /// file; one public class per file means it matches [sourceFileCounts].
+  final Map<CodeCategory, int> publicClassCounts;
+
+  /// Dart files counted in each category.
   final Map<CodeCategory, int> sourceFileCounts;
 
   /// Paths of views that call `showDialog`, which get a warning.
@@ -20,6 +23,7 @@ class ProjectCategories {
   const ProjectCategories({
     required this.nodes,
     required this.elementCounts,
+    required this.publicClassCounts,
     required this.sourceFileCounts,
     required this.viewsWithDialogs,
   });

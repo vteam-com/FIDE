@@ -99,6 +99,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
             nodes,
             categories.sourceFileCounts[category] ?? 0,
             categories.elementCounts[category] ?? 0,
+            categories.publicClassCounts[category] ?? 0,
           ),
     ];
 
@@ -125,18 +126,20 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     List<ProjectNode> nodes,
     int sourceFileCount,
     int elementCount,
+    int publicClassCount,
   ) {
     final expansionKey = 'category_${category.name}';
     final isExpanded = expandedState[expansionKey] ?? false;
 
-    // Flutter's rule is one class per file: show the Dart file count, as a
-    // warning, only when it differs from the element count
-    final rightWidget = sourceFileCount == 0 || sourceFileCount == elementCount
+    // Flutter's rule is one public class per file (private helpers may share
+    // it): show the Dart file count, as a warning, only when they differ
+    final rightWidget =
+        sourceFileCount == 0 || sourceFileCount == publicClassCount
         ? null
         : Tooltip(
             message:
-                '$sourceFileCount files define $elementCount classes; '
-                'expected one class per file',
+                '$sourceFileCount files define $publicClassCount public '
+                'classes; expected one public class per file',
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [

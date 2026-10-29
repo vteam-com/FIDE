@@ -14,8 +14,8 @@ class AppTheme {
     0xFF1B5E20,
   ); // Dark green for success states
   static const Color warningColor = Color(
-    0xFFE65100,
-  ); // Dark orange for warning states
+    0xFFF57C00,
+  ); // Orange for warning states, kept clear of the error red
   static const Color errorColor = Color(
     0xFFD32F2F,
   ); // Dark red for error states
