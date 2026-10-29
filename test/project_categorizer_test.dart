@@ -89,6 +89,35 @@ void main() {
     expect(categories.sourceFileCounts[CodeCategory.models], 2);
     expect(categories.elementCounts[CodeCategory.models], 3);
     expect(categories.publicClassCounts[CodeCategory.models], 2);
+    expect(categories.multiClassFiles, isEmpty);
+  });
+
+  test('lists files declaring more than one public class', () async {
+    write('lib/models/chord.dart', 'class Chord {}\nclass Note {}');
+    write('lib/models/scale.dart', 'class Scale {}');
+
+    final categories = await const ProjectCategorizer().categorize(
+      await loadedRoot(),
+    );
+
+    expect(categories.multiClassFiles, {
+      p.join(project.path, 'lib', 'models', 'chord.dart'): 2,
+    });
+  });
+
+  test('a one-class-per-file ignore counts its file as one', () async {
+    write(
+      'lib/models/chord.dart',
+      '// ignore: fcheck_one_class_per_file\nclass Chord {}\nclass Note {}',
+    );
+
+    final categories = await const ProjectCategorizer().categorize(
+      await loadedRoot(),
+    );
+
+    expect(categories.elementCounts[CodeCategory.models], 2);
+    expect(categories.publicClassCounts[CodeCategory.models], 1);
+    expect(categories.multiClassFiles, isEmpty);
   });
 
   test('counts translations in ARB files', () async {

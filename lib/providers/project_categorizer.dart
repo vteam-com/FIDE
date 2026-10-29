@@ -91,6 +91,9 @@ class ProjectCategorizer {
           entry.key: _files(entry.value).where(_isDart).length,
       },
       viewsWithDialogs: viewsWithDialogs,
+      multiClassFiles: {
+        for (final entry in counts.values) ...entry.multiClassFiles,
+      },
     );
   }
 
@@ -98,29 +101,47 @@ class ProjectCategorizer {
   /// files in [category] localization count their translations.
   ///
   /// `publicClasses` counts only the Dart files' public classes, also at
-  /// least one per file, since private helpers may share a file.
-  Future<({int elements, int publicClasses})> _countElements(
-    CodeCategory category,
-    List<ProjectNode> nodes,
-  ) async {
+  /// least one per file, since private helpers may share a file; a file
+  /// opted out with [_oneClassPerFileIgnore] counts as exactly one.
+  /// `multiClassFiles` maps each file breaking that rule to its public
+  /// class count.
+  Future<({int elements, int publicClasses, Map<String, int> multiClassFiles})>
+  _countElements(CodeCategory category, List<ProjectNode> nodes) async {
     var elements = 0;
     var publicClasses = 0;
+    final multiClassFiles = <String, int>{};
     for (final file in _files(nodes)) {
       if (_isDart(file)) {
-        final names = _classNames((await _read(file)) ?? '');
+        final content = (await _read(file)) ?? '';
+        final names = _classNames(content);
         elements += max(_minElementsPerDartFile, names.length);
-        publicClasses += max(
-          _minElementsPerDartFile,
-          names.where((name) => !name.startsWith('_')).length,
-        );
+        final filePublicClasses = _oneClassPerFileIgnore.hasMatch(content)
+            ? _minElementsPerDartFile
+            : max(
+                _minElementsPerDartFile,
+                names.where((name) => !name.startsWith('_')).length,
+              );
+        publicClasses += filePublicClasses;
+        if (filePublicClasses > _minElementsPerDartFile) {
+          multiClassFiles[file.path] = filePublicClasses;
+        }
       } else if (category == CodeCategory.localization &&
           file.path.endsWith('.arb')) {
         final content = await _read(file);
         elements += content == null ? 0 : ArbService.countEntries(content) ?? 0;
       }
     }
-    return (elements: elements, publicClasses: publicClasses);
+    return (
+      elements: elements,
+      publicClasses: publicClasses,
+      multiClassFiles: multiClassFiles,
+    );
   }
+
+  /// The fcheck directive exempting a file from one class per file.
+  static final RegExp _oneClassPerFileIgnore = RegExp(
+    r'//\s*ignore:\s*fcheck_one_class_per_file\b',
+  );
 
   /// A Dart file counts as one element even when it declares no class.
   static const int _minElementsPerDartFile = 1;

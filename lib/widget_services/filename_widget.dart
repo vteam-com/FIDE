@@ -16,6 +16,7 @@ class FileNameWidget extends StatelessWidget {
     this.rootPath,
     this.onTap,
     this.onContextMenu,
+    this.trailing,
   });
 
   final FileSystemItem fileItem;
@@ -29,6 +30,9 @@ class FileNameWidget extends StatelessWidget {
   final String? rootPath;
 
   final bool showGitBadge;
+
+  /// Extra indicator shown after the name, before the Git badge.
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +103,7 @@ class FileNameWidget extends StatelessWidget {
                   ),
                 ),
               ),
+              ?trailing,
               if (badgeText.isNotEmpty)
                 Container(
                   margin: AppPadding.selectedBadgeMargin,

@@ -16,6 +16,10 @@ class ProjectCategories {
   /// Dart files counted in each category.
   final Map<CodeCategory, int> sourceFileCounts;
 
+  /// Paths of Dart files declaring more than one public class, mapped to
+  /// their public class count.
+  final Map<String, int> multiClassFiles;
+
   /// Paths of views that call `showDialog`, which get a warning.
   final Set<String> viewsWithDialogs;
 
@@ -26,5 +30,6 @@ class ProjectCategories {
     required this.publicClassCounts,
     required this.sourceFileCounts,
     required this.viewsWithDialogs,
+    required this.multiClassFiles,
   });
 }

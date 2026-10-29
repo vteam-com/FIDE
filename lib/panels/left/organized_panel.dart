@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/code_category.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_categories.dart';
@@ -14,6 +13,7 @@ import 'package:fide/widgets/empty_folder_label.dart';
 import 'package:fide/widgets/foldername_widget.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/section_panel.dart';
+import 'package:fide/widgets/warning_count.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -136,28 +136,12 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     final rightWidget =
         sourceFileCount == 0 || sourceFileCount == publicClassCount
         ? null
-        : Tooltip(
+        : WarningCount(
+            icon: Icons.description,
+            count: sourceFileCount,
             message:
                 '$sourceFileCount files define $publicClassCount public '
                 'classes; expected one public class per file',
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.description,
-                  size: AppIconSize.small,
-                  color: AppTheme.warningColor,
-                ),
-                const SizedBox(width: AppSpacing.micro),
-                Text(
-                  '$sourceFileCount',
-                  style: const TextStyle(
-                    fontSize: AppFontSize.metadata,
-                    color: AppTheme.warningColor,
-                  ),
-                ),
-              ],
-            ),
           );
 
     final contentWidget = Column(
@@ -249,12 +233,22 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
         ],
       );
     } else {
+      final classCount = _categories?.multiClassFiles[node.path];
       return FileNameWidget(
         fileItem: item,
         isSelected: isSelected,
         rootPath: projectRoot!.path,
         onTap: () => handleFileTap(node),
         onContextMenu: (position) => showNodeContextMenu(node, position),
+        trailing: classCount == null
+            ? null
+            : WarningCount(
+                icon: Icons.data_object,
+                count: classCount,
+                message:
+                    'Defines $classCount public classes; '
+                    'expected one public class per file',
+              ),
       );
     }
   }
