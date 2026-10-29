@@ -24,35 +24,128 @@ class AIService {
   /// Path of Ollama's one-shot generation endpoint.
   static const String _generatePath = '/api/generate';
 
-  static const String _defaultModel = OllamaInstaller.model;
+  /// Path of Ollama's chat endpoint, which supports tool calling.
+  static const String _chatPath = '/api/chat';
+
+  /// Path of Ollama's endpoint describing one model.
+  static const String _showPath = '/api/show';
+
+  /// Path of Ollama's endpoint listing downloaded models.
+  static const String _tagsPath = '/api/tags';
+
+  /// Capability Ollama reports for models that can call tools.
+  static const String _toolsCapability = 'tools';
 
   final FlutterSdk _sdk;
   final http.Client _client;
+
+  String _model = OllamaInstaller.model;
+  bool _isModelResolved = false;
+  bool _supportsTools = true;
 
   /// Creates an AI service that reads SDK versions from [_sdk] and sends
   /// requests through [client] (a fresh one by default).
   AIService([this._sdk = const FlutterSdk(), http.Client? client])
     : _client = client ?? http.Client();
 
-  /// Sends [prompt] to the model and returns its response text, which may
-  /// be empty.
+  /// Whether [model] stands in for [OllamaInstaller.model], which isn't
+  /// downloaded or can't call tools.
+  bool get isFallbackModel => !_isPreferred(_model);
+
+  /// The model requests go to; see [resolveModel].
+  String get model => _model;
+
+  /// Whether [model] can call tools, which Fix Build needs to edit files.
+  bool get supportsTools => _supportsTools;
+
+  /// Picks the model requests go to among the downloaded ones and returns
+  /// it, or null when none is downloaded: [OllamaInstaller.model] first,
+  /// then any model that can call tools, then any model.
+  ///
+  /// Throws an [AiServiceException] when Ollama can't be reached.
+  Future<String?> resolveModel() async {
+    final tags = await _send(_tagsPath, AppDuration.aiSuggestionTimeout);
+    final listed = tags?['models'];
+    final names = [
+      if (listed is List)
+        for (final entry in listed)
+          if (entry is Map && entry['name'] is String) entry['name'] as String,
+    ];
+    if (names.isEmpty) return null;
+    final candidates = [
+      ...names.where(_isPreferred),
+      ...names.where((name) => !_isPreferred(name)),
+    ];
+    var chosen = candidates.first;
+    var canCallTools = false;
+    for (final name in candidates) {
+      if (await _canCallTools(name)) {
+        chosen = name;
+        canCallTools = true;
+        break;
+      }
+    }
+    _model = chosen;
+    _supportsTools = canCallTools;
+    _isModelResolved = true;
+    return chosen;
+  }
+
+  /// Whether Ollama says [name] can call tools; true when it doesn't say,
+  /// as older Ollama versions report no capabilities.
+  Future<bool> _canCallTools(String name) async {
+    final details = await _send(_showPath, AppDuration.aiSuggestionTimeout, {
+      'model': name,
+    });
+    final capabilities = details?['capabilities'];
+    return capabilities is! List || capabilities.contains(_toolsCapability);
+  }
+
+  /// Whether [name] is [OllamaInstaller.model] under any tag.
+  bool _isPreferred(String name) =>
+      name == OllamaInstaller.model ||
+      name.startsWith('${OllamaInstaller.model}:');
+
+  /// Sends [body] (plus the model name) to Ollama's [path], resolving the
+  /// model first when [resolveModel] hasn't, and returns the reply like
+  /// [_send].
+  Future<Map<String, dynamic>?> _post(
+    String path,
+    Map<String, Object> body,
+    Duration timeout,
+  ) async {
+    if (!_isModelResolved) {
+      try {
+        await resolveModel();
+      } on AiServiceException {
+        // The request below reports the failure
+      }
+    }
+    return _send(path, timeout, {'model': _model, 'stream': false, ...body});
+  }
+
+  /// Posts [body] to Ollama's [path], or gets it when [body] is null, and
+  /// returns the decoded JSON reply, or null when it isn't a JSON object.
   ///
   /// Throws an [AiServiceException] when Ollama can't be reached within
   /// [timeout] or answers with an error status.
-  Future<String> _generate(String prompt, Duration timeout) async {
+  Future<Map<String, dynamic>?> _send(
+    String path,
+    Duration timeout, [
+    Map<String, Object>? body,
+  ]) async {
+    final uri = Uri.http(ollamaHost, path);
     final http.Response response;
     try {
-      response = await _client
-          .post(
-            Uri.http(ollamaHost, _generatePath),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'model': _defaultModel,
-              'prompt': prompt,
-              'stream': false,
-            }),
-          )
-          .timeout(timeout);
+      response =
+          await (body == null
+                  ? _client.get(uri)
+                  : _client.post(
+                      uri,
+                      headers: {'Content-Type': 'application/json'},
+                      body: jsonEncode(body),
+                    ))
+              .timeout(timeout);
     } catch (e) {
       throw AiServiceException(
         '$e\n\nMake sure Ollama is installed and running on $ollamaHost',
@@ -60,11 +153,38 @@ class AIService {
     }
     if (response.statusCode != HttpStatus.ok) {
       throw AiServiceException(
-        'Failed to get AI response (${response.statusCode}). Make sure Ollama is running with the $_defaultModel model.',
+        'Failed to get AI response (${response.statusCode}). Make sure Ollama is running with the $_model model.\n${response.body}',
       );
     }
-    final data = jsonDecode(response.body);
-    return data is Map ? data['response']?.toString() ?? '' : '';
+    final Object? data;
+    try {
+      data = jsonDecode(response.body);
+    } on FormatException {
+      return null;
+    }
+    return data is Map<String, dynamic> ? data : null;
+  }
+
+  /// Sends [prompt] to the model and returns its response text, which may
+  /// be empty. Throws like [_post].
+  Future<String> _generate(String prompt, Duration timeout) async {
+    final data = await _post(_generatePath, {'prompt': prompt}, timeout);
+    return data?['response']?.toString() ?? '';
+  }
+
+  /// Sends the conversation [messages] with the [tools] the model may call
+  /// and returns the model's reply message, whose `tool_calls` list the
+  /// calls it wants run. Throws like [_post].
+  Future<Map<String, dynamic>> chat(
+    List<Map<String, dynamic>> messages,
+    List<Map<String, dynamic>> tools,
+  ) async {
+    final data = await _post(_chatPath, {
+      'messages': messages,
+      'tools': tools,
+    }, AppDuration.aiToolStepTimeout);
+    final message = data?['message'];
+    return message is Map<String, dynamic> ? message : const {};
   }
 
   /// Requests a coding suggestion from Ollama using prompt and contextual
@@ -86,6 +206,8 @@ Please provide a helpful response focused on the coding request.''',
   /// Runs [action] on the user's [text]; [context] is the selected file's
   /// content for [AiAction.ask] and the last build errors for
   /// [AiAction.fixBuild], and is not sent for the other actions.
+  ///
+  /// Fix Build here only suggests changes; `BuildFixAgent` makes them.
   Future<String> respond(AiAction action, String text, String context) {
     return switch (action) {
       AiAction.ask => getCodeSuggestion(text, context),

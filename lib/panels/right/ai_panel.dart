@@ -3,8 +3,11 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/ai_action.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/output_log.dart';
 import 'package:fide/providers/ai_service.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/build_fix_agent.dart';
+import 'package:fide/providers/flutter_build_service.dart';
 import 'package:fide/providers/ollama_installer.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/app_text_field.dart';
@@ -113,7 +116,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
                     )
                   else if (!_hasModelInstalled)
                     _buildSetupStep(
-                      'Ollama is running but the ${OllamaInstaller.model} model is not downloaded.',
+                      'Ollama is running but no model is downloaded.',
                       'Download Model',
                       _downloadModel,
                     )
@@ -158,6 +161,21 @@ class _AIPanelState extends ConsumerState<AIPanel> {
                 children: [
                   Text(_selectedAction.label),
                   const Spacer(),
+                  if (_hasModelInstalled)
+                    Flexible(
+                      child: Tooltip(
+                        message: _modelLabel,
+                        child: Text(
+                          _modelLabel,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: AppFontSize.caption,
+                            color: Theme.of(context).colorScheme.onSurface
+                                .withValues(alpha: AppOpacity.disabled),
+                          ),
+                        ),
+                      ),
+                    ),
                   const Icon(Icons.arrow_drop_down),
                 ],
               ),
@@ -297,7 +315,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
         _isOllamaRunning = await _ollama.isRunning();
 
         if (_isOllamaRunning) {
-          _hasModelInstalled = await _ollama.isModelInstalled();
+          _hasModelInstalled = await _aiService.resolveModel() != null;
         }
       } else {
         _isOllamaRunning = false;
@@ -316,8 +334,10 @@ class _AIPanelState extends ConsumerState<AIPanel> {
   /// Handles `_downloadModel`.
   Future<void> _downloadModel() async {
     await _runInstallAction(
-      action: _ollama.downloadModel,
-      onSuccess: () => _hasModelInstalled = true,
+      action: () async {
+        await _ollama.downloadModel();
+        await _checkStatus();
+      },
       successMessage: '${OllamaInstaller.model} model downloaded.',
       errorPrefix: 'Error downloading model',
     );
@@ -342,11 +362,9 @@ class _AIPanelState extends ConsumerState<AIPanel> {
   /// Installs Ollama, downloads the model and starts the service.
   Future<void> _installOllama() async {
     await _runInstallAction(
-      action: _ollama.install,
-      onSuccess: () {
-        _hasOllamaInstalled = true;
-        _isOllamaRunning = true;
-        _hasModelInstalled = true;
+      action: () async {
+        await _ollama.install();
+        await _checkStatus();
       },
       successMessage:
           'Ollama installed, ${OllamaInstaller.model} model downloaded, and service started.',
@@ -359,12 +377,10 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     required Future<void> Function() action,
     String? successMessage,
     required String errorPrefix,
-    void Function()? onSuccess,
   }) async {
     setState(() => _isInstalling = true);
     try {
       await action();
-      onSuccess?.call();
       if (mounted && successMessage != null) {
         MessageBox.showInfo(context, successMessage);
       }
@@ -391,6 +407,11 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     );
   }
 
+  /// The model in use, noting when it stands in for the preferred one.
+  String get _modelLabel => _aiService.isFallbackModel
+      ? '${_aiService.model} (${OllamaInstaller.model} not available)'
+      : _aiService.model;
+
   /// Content of the selected file for the model, empty when none is
   /// selected.
   Future<String> _selectedFileContext() async {
@@ -415,11 +436,71 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     if (!_isLoading) _sendMessage();
   }
 
-  /// Handles `_sendMessage`.
+  /// Adds a model message showing [content] and scrolls to it.
+  void _addReply(String content) {
+    if (!mounted) return;
+    setState(() {
+      _messages.add(
+        ChatMessage(content: content, isUser: false, timestamp: DateTime.now()),
+      );
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: AppDuration.messageAnimation,
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  /// Lets the model fix the build that failed with [errors] by editing
+  /// the project at [projectPath]; returns its summary.
+  ///
+  /// Rebuilds for the platform selected in the Execute panel. Providers are
+  /// read up front because the fix can outlive this panel.
+  Future<String> _fixBuild(String projectPath, String errors, String notes) {
+    final buildService = ref.read(flutterBuildServiceProvider);
+    final target = ref.read(selectedPlatformProvider).name;
+    final lastBuildErrors = ref.read(lastBuildErrorsProvider.notifier);
+    final openDocuments = ref.read(openDocumentsProvider.notifier);
+    final agent = BuildFixAgent(
+      _aiService,
+      projectPath: projectPath,
+      hooks: BuildFixHooks(
+        onStep: (step) => _addReply('🔧 $step'),
+        onFileWritten: (path) => openDocuments.reloadWritten([path]),
+        checkBuild: () async {
+          final log = OutputLog();
+          final exitCode = await buildService.build(
+            projectPath,
+            target,
+            BuildOutput(
+              onOutput: log.addOutput,
+              onError: log.addError,
+              onResetErrors: log.clearErrors,
+            ),
+          );
+          final buildErrors = exitCode == 0
+              ? ''
+              : (log.hasErrors ? log.errors : log.output);
+          lastBuildErrors.state = buildErrors;
+          return buildErrors;
+        },
+      ),
+    );
+    return agent.run(errors, notes);
+  }
+
+  /// Sends the prompt for the selected action and shows the reply.
+  ///
+  /// Fix Build edits the open project's files itself; with no project open,
+  /// or a model that can't call tools, it only suggests changes.
   Future<void> _sendMessage() async {
     final text = _promptController.text.trim();
     final action = _selectedAction;
     final buildErrors = ref.read(lastBuildErrorsProvider);
+    final projectPath = ref.read(currentProjectPathProvider);
     // Fix Build needs no prompt when the last build left errors to send
     final canSendEmpty = action == AiAction.fixBuild && buildErrors.isNotEmpty;
     if (text.isEmpty && !canSendEmpty) return;
@@ -437,49 +518,30 @@ class _AIPanelState extends ConsumerState<AIPanel> {
 
     _promptController.clear();
 
+    // Models without tool calling can only suggest the fix
+    final canEditFiles = projectPath != null && _aiService.supportsTools;
+    if (action == AiAction.fixBuild && projectPath != null && !canEditFiles) {
+      _addReply(
+        "${_aiService.model} can't call tools, so it can only suggest "
+        'changes. Download ${OllamaInstaller.model} to let it edit files.',
+      );
+    }
+
     try {
-      final context = action == AiAction.fixBuild
-          ? _truncateContext(buildErrors)
-          : await _selectedFileContext();
-
-      final response = await _aiService.respond(action, text, context);
-
-      if (!mounted) return;
-      setState(() {
-        _messages.add(
-          ChatMessage(
-            content: response.trim().isEmpty
-                ? 'No suggestion available'
-                : response,
-            isUser: false,
-            timestamp: DateTime.now(),
-          ),
-        );
-      });
+      final response = action == AiAction.fixBuild && canEditFiles
+          ? await _fixBuild(projectPath, buildErrors, text)
+          : await _aiService.respond(
+              action,
+              text,
+              action == AiAction.fixBuild
+                  ? _truncateContext(buildErrors)
+                  : await _selectedFileContext(),
+            );
+      _addReply(response.trim().isEmpty ? 'No suggestion available' : response);
     } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _messages.add(
-          ChatMessage(
-            content: 'Error: $e',
-            isUser: false,
-            timestamp: DateTime.now(),
-          ),
-        );
-      });
+      _addReply('Error: $e');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        // Scroll to bottom
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted || !_scrollController.hasClients) return;
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: AppDuration.messageAnimation,
-            curve: Curves.easeOut,
-          );
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 }

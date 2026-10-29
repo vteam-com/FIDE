@@ -357,8 +357,7 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
       for (final MapEntry(key: path, value: content) in files.entries) {
         await File(path).writeAsString(content);
       }
-      await ref.read(openDocumentsProvider.notifier).reload(files.keys);
-      ref.read(savedFilesRevisionProvider.notifier).state++;
+      await ref.read(openDocumentsProvider.notifier).reloadWritten(files.keys);
       if (!mounted) return;
       MessageBox.showSuccess(
         context,

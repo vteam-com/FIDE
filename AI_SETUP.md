@@ -26,8 +26,9 @@ Download the installer from the Ollama website.
 Pull a model optimized for coding tasks:
 
 ```bash
-# Recommended for coding assistance
-ollama pull codellama
+# Recommended: a coding model that supports tool calling, which
+# Fix Build needs to edit files
+ollama pull qwen2.5-coder
 
 # Alternative models
 ollama pull llama2          # General purpose
@@ -55,16 +56,23 @@ The service will be available at `http://localhost:11434`
    - **Explain Code**: Get explanations for code snippets
    - **Generate Code**: Create new code based on descriptions
    - **Refactor Code**: Improve existing code
+   - **Fix Build**: Fixes the last failed build. With a project open, the
+     model reads and edits project files itself (list, read, replace and
+     write files, then rebuild for the platform selected in the Execute
+     panel) until the build passes; open editor tabs reload as files
+     change. The model can only touch files inside the project.
 
 ## 🔧 Configuration
 
 ### Changing the Model
 
-To use a different model, edit `lib/services/ai_service.dart`:
+To use a different model, edit `lib/providers/ollama_installer.dart`:
 
 ```dart
-static const String _defaultModel = 'your-preferred-model';
+static const String model = 'your-preferred-model';
 ```
+
+Fix Build needs a model that supports Ollama tool calling.
 
 Available models depend on what you've pulled with Ollama.
 
@@ -84,7 +92,8 @@ Available models depend on what you've pulled with Ollama.
 
 | Model | Size | Best For | Command |
 |-------|------|----------|---------|
-| codellama | 7B/13B | Code generation, refactoring | `ollama pull codellama` |
+| qwen2.5-coder | 7B | Default; code tasks and Fix Build tool calling | `ollama pull qwen2.5-coder` |
+| codellama | 7B/13B | Code generation, refactoring (no tool calling, so no Fix Build edits) | `ollama pull codellama` |
 | llama2 | 7B/13B | General coding assistance | `ollama pull llama2` |
 | mistral | 7B | Fast responses, general tasks | `ollama pull mistral` |
 | deepseek-coder | 6B | Code-specific tasks | `ollama pull deepseek-coder` |

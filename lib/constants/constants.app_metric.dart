@@ -7,6 +7,9 @@ class AppMetric {
   static const int fileSizeDivisor = 1024;
   static const int mruFolderLimit = 5;
   static const int aiContextPreviewChars = 2000;
+  static const int aiMaxToolRounds = 25;
+  static const int aiMaxListedFiles = 500;
+  static const int aiMaxReadChars = 40000;
   static const int translationPreviewLines = 5;
   static const int doubleLineLimit = 2;
   static const int largeFileThresholdMb = 10;

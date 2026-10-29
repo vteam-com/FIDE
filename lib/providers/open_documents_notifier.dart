@@ -39,6 +39,13 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
     }
   }
 
+  /// [reload]s [filePaths] after something other than the editor wrote
+  /// them, then calls [onSaved] so views derived from them refresh.
+  Future<void> reloadWritten(Iterable<String> filePaths) async {
+    await reload(filePaths);
+    onSaved?.call();
+  }
+
   /// Hides the editor while keeping the tabs open.
   void deactivate() => activate(OpenDocuments.noActiveDocument);
 
