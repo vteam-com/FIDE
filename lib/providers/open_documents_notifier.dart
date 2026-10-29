@@ -2,8 +2,11 @@ part of 'app_providers.dart';
 
 /// The only writer of the editor's open documents and active tab.
 class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
-  /// Starts with no documents open.
-  OpenDocumentsNotifier() : super(OpenDocuments.empty);
+  /// Starts with no documents open; calls [onSaved] after each [save].
+  OpenDocumentsNotifier({this.onSaved}) : super(OpenDocuments.empty);
+
+  /// Called after each [save] writes its file.
+  final VoidCallback? onSaved;
 
   /// Shows the tab at [index].
   void activate(int index) {
@@ -43,6 +46,7 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
   Future<void> save(String filePath, String content) async {
     await File(filePath).writeAsString(content);
     update(filePath, content: content, isDirty: false);
+    onSaved?.call();
   }
 
   /// Writes [content] to [filePath] immediately without changing state,

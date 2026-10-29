@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="2217.0" height="7562.0" viewBox="0 0 2217.0 7562.0" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
+<svg width="2220.0" height="7562.0" viewBox="0 0 2220.0 7562.0" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
 <defs>
   <filter id="whiteShadow" x="-20%" y="-20%" width="140%" height="140%">
     <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
@@ -2100,403 +2100,407 @@
   <title>widgets/panel_island.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 3476.0 H 1286.0 Q 1292.0 3476.0 1292.0 3482.0 V 7377.0 Q 1292.0 7383.0 1286.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 1968.0 H 1286.0 Q 1292.0 1968.0 1292.0 1974.0 V 5847.0 Q 1292.0 5853.0 1286.0 5853.0 H 768.0" class="edgeVertical"/>
+  <title>panels/left/organized_panel.dart ▶ models/app_theme.dart</title>
+</g>
+<g>
+  <path d="M 772.0 3476.0 H 1289.0 Q 1295.0 3476.0 1295.0 3482.0 V 7377.0 Q 1295.0 7383.0 1289.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/icon_menu_row.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 748.0 1968.0 H 1289.0 Q 1295.0 1968.0 1295.0 1974.0 V 5879.0 Q 1295.0 5885.0 1289.0 5885.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 1968.0 H 1292.0 Q 1298.0 1968.0 1298.0 1974.0 V 5879.0 Q 1298.0 5885.0 1292.0 5885.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/organized_panel.dart ▶ models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 772.0 658.0 H 1292.0 Q 1298.0 658.0 1298.0 664.0 V 4573.0 Q 1298.0 4579.0 1292.0 4579.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 658.0 H 1295.0 Q 1301.0 658.0 1301.0 664.0 V 4573.0 Q 1301.0 4579.0 1295.0 4579.0 H 768.0" class="edgeVertical"/>
   <title>controllers/app_controller.dart ▶ providers/ui_state_providers.dart</title>
 </g>
 <g>
-  <path d="M 772.0 2618.0 H 1295.0 Q 1301.0 2618.0 1301.0 2624.0 V 6551.0 Q 1301.0 6557.0 1295.0 6557.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 2618.0 H 1298.0 Q 1304.0 2618.0 1304.0 2624.0 V 6551.0 Q 1304.0 6557.0 1298.0 6557.0 H 768.0" class="edgeVertical"/>
   <title>widget_services/native_menu_builder.dart ▶ models/left_panel_tab.dart</title>
 </g>
 <g>
-  <path d="M 772.0 3444.0 H 1298.0 Q 1304.0 3444.0 1304.0 3450.0 V 7377.0 Q 1304.0 7383.0 1298.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 3444.0 H 1301.0 Q 1307.0 3444.0 1307.0 3450.0 V 7377.0 Q 1307.0 7383.0 1301.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/icon_label_tab.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 748.0 1936.0 H 1301.0 Q 1307.0 1936.0 1307.0 1942.0 V 5879.0 Q 1307.0 5885.0 1301.0 5885.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 1936.0 H 1304.0 Q 1310.0 1936.0 1310.0 1942.0 V 5879.0 Q 1310.0 5885.0 1304.0 5885.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/left_panel.dart ▶ models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 772.0 3412.0 H 1304.0 Q 1310.0 3412.0 1310.0 3418.0 V 7377.0 Q 1310.0 7383.0 1304.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 3412.0 H 1307.0 Q 1313.0 3412.0 1313.0 3418.0 V 7377.0 Q 1313.0 7383.0 1307.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/filter_field.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 3380.0 H 1307.0 Q 1313.0 3380.0 1313.0 3386.0 V 7377.0 Q 1313.0 7383.0 1307.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 3380.0 H 1310.0 Q 1316.0 3380.0 1316.0 3386.0 V 7377.0 Q 1316.0 7383.0 1310.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/empty_folder_label.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 3348.0 H 1310.0 Q 1316.0 3348.0 1316.0 3354.0 V 7377.0 Q 1316.0 7383.0 1310.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 3348.0 H 1313.0 Q 1319.0 3348.0 1319.0 3354.0 V 7377.0 Q 1319.0 7383.0 1313.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/container_counter.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 3316.0 H 1313.0 Q 1319.0 3316.0 1319.0 3322.0 V 7377.0 Q 1319.0 7383.0 1313.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 3316.0 H 1316.0 Q 1322.0 3316.0 1322.0 3322.0 V 7377.0 Q 1322.0 7383.0 1316.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/check_mark.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 3284.0 H 1316.0 Q 1322.0 3284.0 1322.0 3290.0 V 7377.0 Q 1322.0 7383.0 1316.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 3284.0 H 1319.0 Q 1325.0 3284.0 1325.0 3290.0 V 7377.0 Q 1325.0 7383.0 1319.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/tool_status_row.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 3252.0 H 1319.0 Q 1325.0 3252.0 1325.0 3258.0 V 7377.0 Q 1325.0 7383.0 1319.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 3252.0 H 1322.0 Q 1328.0 3252.0 1328.0 3258.0 V 7377.0 Q 1328.0 7383.0 1322.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/toggle_experience_mode.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 3220.0 H 1322.0 Q 1328.0 3220.0 1328.0 3226.0 V 7377.0 Q 1328.0 7383.0 1322.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 3220.0 H 1325.0 Q 1331.0 3220.0 1331.0 3226.0 V 7377.0 Q 1331.0 7383.0 1325.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/badge_status.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 3188.0 H 1325.0 Q 1331.0 3188.0 1331.0 3194.0 V 7377.0 Q 1331.0 7383.0 1325.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 3188.0 H 1328.0 Q 1334.0 3188.0 1334.0 3194.0 V 7377.0 Q 1334.0 7383.0 1328.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/message_widget.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 3156.0 H 1328.0 Q 1334.0 3156.0 1334.0 3162.0 V 7377.0 Q 1334.0 7383.0 1328.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 3156.0 H 1331.0 Q 1337.0 3156.0 1337.0 3162.0 V 7377.0 Q 1337.0 7383.0 1331.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/message_box.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 344.0 H 1331.0 Q 1337.0 344.0 1337.0 350.0 V 4573.0 Q 1337.0 4579.0 1331.0 4579.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 344.0 H 1334.0 Q 1340.0 344.0 1340.0 350.0 V 4573.0 Q 1340.0 4579.0 1334.0 4579.0 H 768.0" class="edgeVertical"/>
   <title>screens/main_layout.dart ▶ providers/ui_state_providers.dart</title>
 </g>
 <g>
-  <path d="M 748.0 2192.0 H 1334.0 Q 1340.0 2192.0 1340.0 2198.0 V 6423.0 Q 1340.0 6429.0 1334.0 6429.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 2192.0 H 1337.0 Q 1343.0 2192.0 1343.0 2198.0 V 6423.0 Q 1343.0 6429.0 1337.0 6429.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/command_actions.dart ▶ models/output_log.dart</title>
 </g>
 <g>
-  <path d="M 772.0 3124.0 H 1337.0 Q 1343.0 3124.0 1343.0 3130.0 V 7377.0 Q 1343.0 7383.0 1337.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 3124.0 H 1340.0 Q 1346.0 3124.0 1346.0 3130.0 V 7377.0 Q 1346.0 7383.0 1340.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/section_panel.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 3092.0 H 1340.0 Q 1346.0 3092.0 1346.0 3098.0 V 7377.0 Q 1346.0 7383.0 1340.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 3092.0 H 1343.0 Q 1349.0 3092.0 1349.0 3098.0 V 7377.0 Q 1349.0 7383.0 1343.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/loading_progress_bar.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 3060.0 H 1343.0 Q 1349.0 3060.0 1349.0 3066.0 V 7377.0 Q 1349.0 7383.0 1343.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 3060.0 H 1346.0 Q 1352.0 3060.0 1352.0 3066.0 V 7377.0 Q 1352.0 7383.0 1346.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/loading_actions_log.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 344.0 H 1346.0 Q 1352.0 344.0 1352.0 350.0 V 4669.0 Q 1352.0 4675.0 1346.0 4675.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 344.0 H 1349.0 Q 1355.0 344.0 1355.0 350.0 V 4669.0 Q 1355.0 4675.0 1349.0 4675.0 H 768.0" class="edgeVertical"/>
   <title>screens/main_layout.dart ▶ providers/active_editor.dart</title>
 </g>
 <g>
-  <path d="M 748.0 2192.0 H 1349.0 Q 1355.0 2192.0 1355.0 2198.0 V 6519.0 Q 1355.0 6525.0 1349.0 6525.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 2192.0 H 1352.0 Q 1358.0 2192.0 1358.0 2198.0 V 6519.0 Q 1358.0 6525.0 1352.0 6525.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/command_actions.dart ▶ models/action_status.dart</title>
 </g>
 <g>
-  <path d="M 748.0 2160.0 H 1352.0 Q 1358.0 2160.0 1358.0 2166.0 V 6487.0 Q 1358.0 6493.0 1352.0 6493.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 2160.0 H 1355.0 Q 1361.0 2160.0 1361.0 2166.0 V 6487.0 Q 1361.0 6493.0 1355.0 6493.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/search_panel.dart ▶ models/search_result.dart</title>
 </g>
 <g>
-  <path d="M 748.0 2064.0 H 1355.0 Q 1361.0 2064.0 1361.0 2070.0 V 6423.0 Q 1361.0 6429.0 1355.0 6429.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 2064.0 H 1358.0 Q 1364.0 2064.0 1364.0 2070.0 V 6423.0 Q 1364.0 6429.0 1358.0 6429.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/test_panel.dart ▶ models/output_log.dart</title>
 </g>
 <g>
-  <path d="M 772.0 2996.0 H 1358.0 Q 1364.0 2996.0 1364.0 3002.0 V 7377.0 Q 1364.0 7383.0 1358.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 2996.0 H 1361.0 Q 1367.0 2996.0 1367.0 3002.0 V 7377.0 Q 1367.0 7383.0 1361.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/busy_icon_button.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 190.0 H 1361.0 Q 1367.0 190.0 1367.0 196.0 V 4573.0 Q 1367.0 4579.0 1361.0 4579.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 190.0 H 1364.0 Q 1370.0 190.0 1370.0 196.0 V 4573.0 Q 1370.0 4579.0 1364.0 4579.0 H 768.0" class="edgeVertical"/>
   <title>main.dart ▶ providers/ui_state_providers.dart</title>
 </g>
 <g>
-  <path d="M 772.0 2964.0 H 1364.0 Q 1370.0 2964.0 1370.0 2970.0 V 7377.0 Q 1370.0 7383.0 1364.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 2964.0 H 1367.0 Q 1373.0 2964.0 1373.0 2970.0 V 7377.0 Q 1373.0 7383.0 1367.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/output_panel.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 748.0 2000.0 H 1367.0 Q 1373.0 2000.0 1373.0 2006.0 V 6423.0 Q 1373.0 6429.0 1367.0 6429.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 2000.0 H 1370.0 Q 1376.0 2000.0 1376.0 2006.0 V 6423.0 Q 1376.0 6429.0 1370.0 6429.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/execute_panel.dart ▶ models/output_log.dart</title>
 </g>
 <g>
-  <path d="M 748.0 1968.0 H 1370.0 Q 1376.0 1968.0 1376.0 1974.0 V 6391.0 Q 1376.0 6397.0 1370.0 6397.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 1968.0 H 1373.0 Q 1379.0 1968.0 1379.0 1974.0 V 6391.0 Q 1379.0 6397.0 1373.0 6397.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/organized_panel.dart ▶ models/code_category.dart</title>
 </g>
 <g>
-  <path d="M 772.0 2932.0 H 1373.0 Q 1379.0 2932.0 1379.0 2938.0 V 7377.0 Q 1379.0 7383.0 1373.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 2932.0 H 1376.0 Q 1382.0 2932.0 1382.0 2938.0 V 7377.0 Q 1382.0 7383.0 1376.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/platform_selector.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 748.0 2064.0 H 1376.0 Q 1382.0 2064.0 1382.0 2070.0 V 6519.0 Q 1382.0 6525.0 1376.0 6525.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 2064.0 H 1379.0 Q 1385.0 2064.0 1385.0 2070.0 V 6519.0 Q 1385.0 6525.0 1379.0 6525.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/test_panel.dart ▶ models/action_status.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1420.0 H 1379.0 Q 1385.0 1420.0 1385.0 1426.0 V 5879.0 Q 1385.0 5885.0 1379.0 5885.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1420.0 H 1382.0 Q 1388.0 1420.0 1388.0 1426.0 V 5879.0 Q 1388.0 5885.0 1382.0 5885.0 H 768.0" class="edgeVertical"/>
   <title>panels/center/center_panel.dart ▶ models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 772.0 2900.0 H 1382.0 Q 1388.0 2900.0 1388.0 2906.0 V 7377.0 Q 1388.0 7383.0 1382.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 2900.0 H 1385.0 Q 1391.0 2900.0 1391.0 2906.0 V 7377.0 Q 1391.0 7383.0 1385.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/foldername_widget.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 190.0 H 1385.0 Q 1391.0 190.0 1391.0 196.0 V 4669.0 Q 1391.0 4675.0 1385.0 4675.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 190.0 H 1388.0 Q 1394.0 190.0 1394.0 196.0 V 4669.0 Q 1394.0 4675.0 1388.0 4675.0 H 768.0" class="edgeVertical"/>
   <title>main.dart ▶ providers/active_editor.dart</title>
 </g>
 <g>
-  <path d="M 772.0 2868.0 H 1388.0 Q 1394.0 2868.0 1394.0 2874.0 V 7377.0 Q 1394.0 7383.0 1388.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 2868.0 H 1391.0 Q 1397.0 2868.0 1397.0 2874.0 V 7377.0 Q 1397.0 7383.0 1391.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/action_tabs.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 2836.0 H 1391.0 Q 1397.0 2836.0 1397.0 2842.0 V 7377.0 Q 1397.0 7383.0 1391.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 2836.0 H 1394.0 Q 1400.0 2836.0 1400.0 2842.0 V 7377.0 Q 1400.0 7383.0 1394.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widgets/platform_info_section.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1574.0 H 1394.0 Q 1400.0 1574.0 1400.0 1580.0 V 6135.0 Q 1400.0 6141.0 1394.0 6141.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1574.0 H 1397.0 Q 1403.0 1574.0 1403.0 1580.0 V 6135.0 Q 1403.0 6141.0 1397.0 6141.0 H 768.0" class="edgeVertical"/>
   <title>panels/center/editor/editor_screen.dart ▶ models/editor_search.dart</title>
 </g>
 <g>
-  <path d="M 748.0 1936.0 H 1397.0 Q 1403.0 1936.0 1403.0 1942.0 V 6551.0 Q 1403.0 6557.0 1397.0 6557.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 1936.0 H 1400.0 Q 1406.0 1936.0 1406.0 1942.0 V 6551.0 Q 1406.0 6557.0 1400.0 6557.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/left_panel.dart ▶ models/left_panel_tab.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1166.0 H 1400.0 Q 1406.0 1166.0 1406.0 1172.0 V 5783.0 Q 1406.0 5789.0 1400.0 5789.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1166.0 H 1403.0 Q 1409.0 1166.0 1409.0 1172.0 V 5783.0 Q 1409.0 5789.0 1403.0 5789.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/localization/localization_entry_widget.dart ▶ models/localization_data.dart</title>
 </g>
 <g>
-  <path d="M 748.0 2000.0 H 1403.0 Q 1409.0 2000.0 1409.0 2006.0 V 6647.0 Q 1409.0 6653.0 1403.0 6653.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 2000.0 H 1406.0 Q 1412.0 2000.0 1412.0 2006.0 V 6647.0 Q 1412.0 6653.0 1406.0 6653.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/execute_panel.dart ▶ models/flutter_platform.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1134.0 H 1406.0 Q 1412.0 1134.0 1412.0 1140.0 V 5783.0 Q 1412.0 5789.0 1406.0 5789.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1134.0 H 1409.0 Q 1415.0 1134.0 1415.0 1140.0 V 5783.0 Q 1415.0 5789.0 1409.0 5789.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/localization/localization_panel.dart ▶ models/localization_data.dart</title>
 </g>
 <g>
-  <path d="M 772.0 2682.0 H 1409.0 Q 1415.0 2682.0 1415.0 2688.0 V 7377.0 Q 1415.0 7383.0 1409.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 2682.0 H 1412.0 Q 1418.0 2682.0 1418.0 2688.0 V 7377.0 Q 1418.0 7383.0 1412.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widget_services/filename_widget.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 2650.0 H 1412.0 Q 1418.0 2650.0 1418.0 2656.0 V 7377.0 Q 1418.0 7383.0 1412.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 2650.0 H 1415.0 Q 1421.0 2650.0 1421.0 2656.0 V 7377.0 Q 1421.0 7383.0 1415.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>widget_services/app_title_bar.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 724.0 916.0 H 1415.0 Q 1421.0 916.0 1421.0 922.0 V 5655.0 Q 1421.0 5661.0 1415.0 5661.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 916.0 H 1418.0 Q 1424.0 916.0 1424.0 922.0 V 5655.0 Q 1424.0 5661.0 1418.0 5661.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/info_panel.dart ▶ models/project_metrics.dart</title>
 </g>
 <g>
-  <path d="M 724.0 980.0 H 1418.0 Q 1424.0 980.0 1424.0 986.0 V 5719.0 Q 1424.0 5725.0 1418.0 5725.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 980.0 H 1421.0 Q 1427.0 980.0 1427.0 986.0 V 5719.0 Q 1427.0 5725.0 1421.0 5725.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/outline_panel.dart ▶ models/open_documents.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1134.0 H 1421.0 Q 1427.0 1134.0 1427.0 1140.0 V 5879.0 Q 1427.0 5885.0 1421.0 5885.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1134.0 H 1424.0 Q 1430.0 1134.0 1430.0 1140.0 V 5879.0 Q 1430.0 5885.0 1424.0 5885.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/localization/localization_panel.dart ▶ models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1574.0 H 1424.0 Q 1430.0 1574.0 1430.0 1580.0 V 6327.0 Q 1430.0 6333.0 1424.0 6333.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1574.0 H 1427.0 Q 1433.0 1574.0 1433.0 1580.0 V 6327.0 Q 1433.0 6333.0 1427.0 6333.0 H 768.0" class="edgeVertical"/>
   <title>panels/center/editor/editor_screen.dart ▶ models/text_offsets.dart</title>
 </g>
 <g>
-  <path d="M 724.0 916.0 H 1427.0 Q 1433.0 916.0 1433.0 922.0 V 5751.0 Q 1433.0 5757.0 1427.0 5757.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 916.0 H 1430.0 Q 1436.0 916.0 1436.0 922.0 V 5751.0 Q 1436.0 5757.0 1430.0 5757.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/info_panel.dart ▶ models/health_indicators.dart</title>
 </g>
 <g>
-  <path d="M 724.0 980.0 H 1430.0 Q 1436.0 980.0 1436.0 986.0 V 5879.0 Q 1436.0 5885.0 1430.0 5885.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 980.0 H 1433.0 Q 1439.0 980.0 1439.0 986.0 V 5879.0 Q 1439.0 5885.0 1433.0 5885.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/outline_panel.dart ▶ models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 724.0 948.0 H 1433.0 Q 1439.0 948.0 1439.0 954.0 V 5879.0 Q 1439.0 5885.0 1433.0 5885.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 948.0 H 1436.0 Q 1442.0 948.0 1442.0 954.0 V 5879.0 Q 1442.0 5885.0 1436.0 5885.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/ai_panel.dart ▶ models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1606.0 H 1436.0 Q 1442.0 1606.0 1442.0 1612.0 V 6583.0 Q 1442.0 6589.0 1436.0 6589.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1606.0 H 1439.0 Q 1445.0 1606.0 1445.0 1612.0 V 6583.0 Q 1445.0 6589.0 1439.0 6589.0 H 768.0" class="edgeVertical"/>
   <title>panels/center/editor/editor_screen_header.dart ▶ models/document_state.dart</title>
 </g>
 <g>
-  <path d="M 724.0 884.0 H 1439.0 Q 1445.0 884.0 1445.0 890.0 V 5879.0 Q 1445.0 5885.0 1439.0 5885.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 884.0 H 1442.0 Q 1448.0 884.0 1448.0 890.0 V 5879.0 Q 1448.0 5885.0 1442.0 5885.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/right_panel.dart ▶ models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1574.0 H 1442.0 Q 1448.0 1574.0 1448.0 1580.0 V 6583.0 Q 1448.0 6589.0 1442.0 6589.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1574.0 H 1445.0 Q 1451.0 1574.0 1451.0 1580.0 V 6583.0 Q 1451.0 6589.0 1445.0 6589.0 H 768.0" class="edgeVertical"/>
   <title>panels/center/editor/editor_screen.dart ▶ models/document_state.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1134.0 H 1445.0 Q 1451.0 1134.0 1451.0 1140.0 V 6167.0 Q 1451.0 6173.0 1445.0 6173.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1134.0 H 1448.0 Q 1454.0 1134.0 1454.0 1140.0 V 6167.0 Q 1454.0 6173.0 1448.0 6173.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/localization/localization_panel.dart ▶ models/localization_checks.dart</title>
 </g>
 <g>
-  <path d="M 724.0 948.0 H 1448.0 Q 1454.0 948.0 1454.0 954.0 V 6071.0 Q 1454.0 6077.0 1448.0 6077.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 948.0 H 1451.0 Q 1457.0 948.0 1457.0 954.0 V 6071.0 Q 1457.0 6077.0 1451.0 6077.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/ai_panel.dart ▶ models/ai_action.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1420.0 H 1451.0 Q 1457.0 1420.0 1457.0 1426.0 V 6583.0 Q 1457.0 6589.0 1451.0 6589.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1420.0 H 1454.0 Q 1460.0 1420.0 1460.0 1426.0 V 6583.0 Q 1460.0 6589.0 1454.0 6589.0 H 768.0" class="edgeVertical"/>
   <title>panels/center/center_panel.dart ▶ models/document_state.dart</title>
 </g>
 <g>
-  <path d="M 748.0 2192.0 H 1454.0 Q 1460.0 2192.0 1460.0 2198.0 V 7377.0 Q 1460.0 7383.0 1454.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 2192.0 H 1457.0 Q 1463.0 2192.0 1463.0 2198.0 V 7377.0 Q 1463.0 7383.0 1457.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/command_actions.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 748.0 2160.0 H 1457.0 Q 1463.0 2160.0 1463.0 2166.0 V 7377.0 Q 1463.0 7383.0 1457.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 2160.0 H 1460.0 Q 1466.0 2160.0 1466.0 2166.0 V 7377.0 Q 1466.0 7383.0 1460.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/search_panel.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 748.0 2128.0 H 1460.0 Q 1466.0 2128.0 1466.0 2134.0 V 7377.0 Q 1466.0 7383.0 1460.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 2128.0 H 1463.0 Q 1469.0 2128.0 1469.0 2134.0 V 7377.0 Q 1469.0 7383.0 1463.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/shared_panel_utils.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 724.0 980.0 H 1463.0 Q 1469.0 980.0 1469.0 986.0 V 6231.0 Q 1469.0 6237.0 1463.0 6237.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 980.0 H 1466.0 Q 1472.0 980.0 1472.0 986.0 V 6231.0 Q 1472.0 6237.0 1466.0 6237.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/outline_panel.dart ▶ models/outline_node.dart</title>
 </g>
 <g>
-  <path d="M 748.0 2096.0 H 1466.0 Q 1472.0 2096.0 1472.0 2102.0 V 7377.0 Q 1472.0 7383.0 1466.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 2096.0 H 1469.0 Q 1475.0 2096.0 1475.0 2102.0 V 7377.0 Q 1475.0 7383.0 1469.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/folder_panel.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 748.0 2064.0 H 1469.0 Q 1475.0 2064.0 1475.0 2070.0 V 7377.0 Q 1475.0 7383.0 1469.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 2064.0 H 1472.0 Q 1478.0 2064.0 1478.0 2070.0 V 7377.0 Q 1478.0 7383.0 1472.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/test_panel.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 748.0 2032.0 H 1472.0 Q 1478.0 2032.0 1478.0 2038.0 V 7377.0 Q 1478.0 7383.0 1472.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 2032.0 H 1475.0 Q 1481.0 2032.0 1481.0 2038.0 V 7377.0 Q 1481.0 7383.0 1475.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/git_panel.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 472.0 H 1475.0 Q 1481.0 472.0 1481.0 478.0 V 5847.0 Q 1481.0 5853.0 1475.0 5853.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 472.0 H 1478.0 Q 1484.0 472.0 1484.0 478.0 V 5847.0 Q 1484.0 5853.0 1478.0 5853.0 H 768.0" class="edgeVertical"/>
   <title>screens/welcome_screen.dart ▶ models/app_theme.dart</title>
 </g>
 <g>
-  <path d="M 748.0 2000.0 H 1478.0 Q 1484.0 2000.0 1484.0 2006.0 V 7377.0 Q 1484.0 7383.0 1478.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 2000.0 H 1481.0 Q 1487.0 2000.0 1487.0 2006.0 V 7377.0 Q 1487.0 7383.0 1481.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/execute_panel.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 748.0 1968.0 H 1481.0 Q 1487.0 1968.0 1487.0 1974.0 V 7377.0 Q 1487.0 7383.0 1481.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 748.0 1968.0 H 1484.0 Q 1490.0 1968.0 1490.0 1974.0 V 7377.0 Q 1490.0 7383.0 1484.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/left/organized_panel.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 724.0 884.0 H 1484.0 Q 1490.0 884.0 1490.0 890.0 V 6295.0 Q 1490.0 6301.0 1484.0 6301.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 884.0 H 1487.0 Q 1493.0 884.0 1493.0 890.0 V 6295.0 Q 1493.0 6301.0 1487.0 6301.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/right_panel.dart ▶ models/right_panel_tab.dart</title>
 </g>
 <g>
-  <path d="M 772.0 376.0 H 1487.0 Q 1493.0 376.0 1493.0 382.0 V 5847.0 Q 1493.0 5853.0 1487.0 5853.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 376.0 H 1490.0 Q 1496.0 376.0 1496.0 382.0 V 5847.0 Q 1496.0 5853.0 1490.0 5853.0 H 768.0" class="edgeVertical"/>
   <title>screens/loading_screen.dart ▶ models/app_theme.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1134.0 H 1490.0 Q 1496.0 1134.0 1496.0 1140.0 V 6615.0 Q 1496.0 6621.0 1490.0 6621.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1134.0 H 1493.0 Q 1499.0 1134.0 1499.0 1140.0 V 6615.0 Q 1499.0 6621.0 1493.0 6621.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/localization/localization_panel.dart ▶ models/project_paths.dart</title>
 </g>
 <g>
-  <path d="M 772.0 312.0 H 1493.0 Q 1499.0 312.0 1499.0 318.0 V 5847.0 Q 1499.0 5853.0 1493.0 5853.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 312.0 H 1496.0 Q 1502.0 312.0 1502.0 318.0 V 5847.0 Q 1502.0 5853.0 1496.0 5853.0 H 768.0" class="edgeVertical"/>
   <title>screens/create_project_screen.dart ▶ models/app_theme.dart</title>
 </g>
 <g>
-  <path d="M 772.0 344.0 H 1496.0 Q 1502.0 344.0 1502.0 350.0 V 5879.0 Q 1502.0 5885.0 1496.0 5885.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 344.0 H 1499.0 Q 1505.0 344.0 1505.0 350.0 V 5879.0 Q 1505.0 5885.0 1499.0 5885.0 H 768.0" class="edgeVertical"/>
   <title>screens/main_layout.dart ▶ models/file_system_item.dart</title>
 </g>
 <g>
-  <path d="M 772.0 440.0 H 1499.0 Q 1505.0 440.0 1505.0 446.0 V 6039.0 Q 1505.0 6045.0 1499.0 6045.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 440.0 H 1502.0 Q 1508.0 440.0 1508.0 446.0 V 6039.0 Q 1508.0 6045.0 1502.0 6045.0 H 768.0" class="edgeVertical"/>
   <title>screens/create_project_step1.dart ▶ models/project_name.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1766.0 H 1502.0 Q 1508.0 1766.0 1508.0 1772.0 V 7377.0 Q 1508.0 7383.0 1502.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1766.0 H 1505.0 Q 1511.0 1766.0 1511.0 1772.0 V 7377.0 Q 1511.0 7383.0 1505.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/center/editor/large_file_message.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1734.0 H 1505.0 Q 1511.0 1734.0 1511.0 1740.0 V 7377.0 Q 1511.0 7383.0 1505.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1734.0 H 1508.0 Q 1514.0 1734.0 1514.0 1740.0 V 7377.0 Q 1514.0 7383.0 1508.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/center/editor/editor_screen_status_bar.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 190.0 H 1508.0 Q 1514.0 190.0 1514.0 196.0 V 5847.0 Q 1514.0 5853.0 1508.0 5853.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 190.0 H 1511.0 Q 1517.0 190.0 1517.0 196.0 V 5847.0 Q 1517.0 5853.0 1511.0 5853.0 H 768.0" class="edgeVertical"/>
   <title>main.dart ▶ models/app_theme.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1702.0 H 1511.0 Q 1517.0 1702.0 1517.0 1708.0 V 7377.0 Q 1517.0 7383.0 1511.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1702.0 H 1514.0 Q 1520.0 1702.0 1520.0 1708.0 V 7377.0 Q 1520.0 7383.0 1514.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/center/editor/editor_screen_image_view.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 724.0 916.0 H 1514.0 Q 1520.0 916.0 1520.0 922.0 V 6615.0 Q 1520.0 6621.0 1514.0 6621.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 916.0 H 1517.0 Q 1523.0 916.0 1523.0 922.0 V 6615.0 Q 1523.0 6621.0 1517.0 6621.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/info_panel.dart ▶ models/project_paths.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1670.0 H 1517.0 Q 1523.0 1670.0 1523.0 1676.0 V 7377.0 Q 1523.0 7383.0 1517.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1670.0 H 1520.0 Q 1526.0 1670.0 1526.0 1676.0 V 7377.0 Q 1526.0 7383.0 1520.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/center/editor/editor_screen_search_bar.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1638.0 H 1520.0 Q 1526.0 1638.0 1526.0 1644.0 V 7377.0 Q 1526.0 7383.0 1520.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1638.0 H 1523.0 Q 1529.0 1638.0 1529.0 1644.0 V 7377.0 Q 1529.0 7383.0 1523.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/center/editor/editor_screen_unsupported_file_view.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1606.0 H 1523.0 Q 1529.0 1606.0 1529.0 1612.0 V 7377.0 Q 1529.0 7383.0 1523.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1606.0 H 1526.0 Q 1532.0 1606.0 1532.0 1612.0 V 7377.0 Q 1532.0 7383.0 1526.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/center/editor/editor_screen_header.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1574.0 H 1526.0 Q 1532.0 1574.0 1532.0 1580.0 V 7377.0 Q 1532.0 7383.0 1526.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1574.0 H 1529.0 Q 1535.0 1574.0 1535.0 1580.0 V 7377.0 Q 1535.0 7383.0 1529.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/center/editor/editor_screen.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1452.0 H 1529.0 Q 1535.0 1452.0 1535.0 1458.0 V 7377.0 Q 1535.0 7383.0 1529.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1452.0 H 1532.0 Q 1538.0 1452.0 1538.0 1458.0 V 7377.0 Q 1538.0 7383.0 1532.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/center/terminal_panel.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 312.0 H 1532.0 Q 1538.0 312.0 1538.0 318.0 V 6263.0 Q 1538.0 6269.0 1532.0 6269.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 312.0 H 1535.0 Q 1541.0 312.0 1541.0 318.0 V 6263.0 Q 1541.0 6269.0 1535.0 6269.0 H 768.0" class="edgeVertical"/>
   <title>screens/create_project_screen.dart ▶ models/project_creation_request.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1420.0 H 1535.0 Q 1541.0 1420.0 1541.0 1426.0 V 7377.0 Q 1541.0 7383.0 1535.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1420.0 H 1538.0 Q 1544.0 1420.0 1544.0 1426.0 V 7377.0 Q 1544.0 7383.0 1538.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/center/center_panel.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1198.0 H 1538.0 Q 1544.0 1198.0 1544.0 1204.0 V 7377.0 Q 1544.0 7383.0 1538.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1198.0 H 1541.0 Q 1547.0 1198.0 1547.0 1204.0 V 7377.0 Q 1547.0 7383.0 1541.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/localization/localization_setup_widget.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1166.0 H 1541.0 Q 1547.0 1166.0 1547.0 1172.0 V 7377.0 Q 1547.0 7383.0 1541.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1166.0 H 1544.0 Q 1550.0 1166.0 1550.0 1172.0 V 7377.0 Q 1550.0 7383.0 1544.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/localization/localization_entry_widget.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 724.0 1134.0 H 1544.0 Q 1550.0 1134.0 1550.0 1140.0 V 7377.0 Q 1550.0 7383.0 1544.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 1134.0 H 1547.0 Q 1553.0 1134.0 1553.0 1140.0 V 7377.0 Q 1553.0 7383.0 1547.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/localization/localization_panel.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 190.0 H 1547.0 Q 1553.0 190.0 1553.0 196.0 V 6551.0 Q 1553.0 6557.0 1547.0 6557.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 190.0 H 1550.0 Q 1556.0 190.0 1556.0 196.0 V 6551.0 Q 1556.0 6557.0 1550.0 6557.0 H 768.0" class="edgeVertical"/>
   <title>main.dart ▶ models/left_panel_tab.dart</title>
 </g>
 <g>
-  <path d="M 724.0 980.0 H 1550.0 Q 1556.0 980.0 1556.0 986.0 V 7377.0 Q 1556.0 7383.0 1550.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 980.0 H 1553.0 Q 1559.0 980.0 1559.0 986.0 V 7377.0 Q 1559.0 7383.0 1553.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/outline_panel.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 724.0 948.0 H 1553.0 Q 1559.0 948.0 1559.0 954.0 V 7377.0 Q 1559.0 7383.0 1553.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 948.0 H 1556.0 Q 1562.0 948.0 1562.0 954.0 V 7377.0 Q 1562.0 7383.0 1556.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/ai_panel.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 724.0 916.0 H 1556.0 Q 1562.0 916.0 1562.0 922.0 V 7377.0 Q 1562.0 7383.0 1556.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 916.0 H 1559.0 Q 1565.0 916.0 1565.0 922.0 V 7377.0 Q 1565.0 7383.0 1559.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/info_panel.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 724.0 884.0 H 1559.0 Q 1565.0 884.0 1565.0 890.0 V 7377.0 Q 1565.0 7383.0 1559.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 724.0 884.0 H 1562.0 Q 1568.0 884.0 1568.0 890.0 V 7377.0 Q 1568.0 7383.0 1562.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>panels/right/right_panel.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 658.0 H 1562.0 Q 1568.0 658.0 1568.0 664.0 V 7377.0 Q 1568.0 7383.0 1562.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 658.0 H 1565.0 Q 1571.0 658.0 1571.0 664.0 V 7377.0 Q 1571.0 7383.0 1565.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>controllers/app_controller.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 504.0 H 1565.0 Q 1571.0 504.0 1571.0 510.0 V 7377.0 Q 1571.0 7383.0 1565.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 504.0 H 1568.0 Q 1574.0 504.0 1574.0 510.0 V 7377.0 Q 1574.0 7383.0 1568.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>screens/create_project_step2.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 472.0 H 1568.0 Q 1574.0 472.0 1574.0 478.0 V 7377.0 Q 1574.0 7383.0 1568.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 472.0 H 1571.0 Q 1577.0 472.0 1577.0 478.0 V 7377.0 Q 1577.0 7383.0 1571.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>screens/welcome_screen.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 440.0 H 1571.0 Q 1577.0 440.0 1577.0 446.0 V 7377.0 Q 1577.0 7383.0 1571.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 440.0 H 1574.0 Q 1580.0 440.0 1580.0 446.0 V 7377.0 Q 1580.0 7383.0 1574.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>screens/create_project_step1.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 408.0 H 1574.0 Q 1580.0 408.0 1580.0 414.0 V 7377.0 Q 1580.0 7383.0 1574.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 408.0 H 1577.0 Q 1583.0 408.0 1583.0 414.0 V 7377.0 Q 1583.0 7383.0 1577.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>screens/create_project_step3.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 376.0 H 1577.0 Q 1583.0 376.0 1583.0 382.0 V 7377.0 Q 1583.0 7383.0 1577.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 376.0 H 1580.0 Q 1586.0 376.0 1586.0 382.0 V 7377.0 Q 1586.0 7383.0 1580.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>screens/loading_screen.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 344.0 H 1580.0 Q 1586.0 344.0 1586.0 350.0 V 7377.0 Q 1586.0 7383.0 1580.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 344.0 H 1583.0 Q 1589.0 344.0 1589.0 350.0 V 7377.0 Q 1589.0 7383.0 1583.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>screens/main_layout.dart ▶ constants/constants.dart</title>
 </g>
 <g>
-  <path d="M 772.0 312.0 H 1583.0 Q 1589.0 312.0 1589.0 318.0 V 7377.0 Q 1589.0 7383.0 1583.0 7383.0 H 768.0" class="edgeVertical"/>
+  <path d="M 772.0 312.0 H 1586.0 Q 1592.0 312.0 1592.0 318.0 V 7377.0 Q 1592.0 7383.0 1586.0 7383.0 H 768.0" class="edgeVertical"/>
   <title>screens/create_project_screen.dart ▶ constants/constants.dart</title>
 </g>
 <g class="badge outgoingBadge">
@@ -2997,11 +3001,12 @@
   <text x="767.68" y="5833.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. models/action_status.dart</title></g><text x="501.0" y="5826.0" text-anchor="middle" dominant-baseline="middle" class="textNormal">panel_action.dart</text>
 <g class="badge incomingBadge">
   <path d="M 762.0,5853.0 L 774.0,5846.0 Q 777.0,5846.0 777.0,5849.0 L 777.0,5857.0 Q 777.0,5860.0 774.0,5860.0 Z" fill="#3b82f6"/>
-  <text x="772.32" y="5854.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">5</text><title>1. main.dart
-2. screens/create_project_screen.dart
-3. screens/loading_screen.dart
-4. screens/welcome_screen.dart
-5. widgets/badge_status.dart</title></g><g class="badge outgoingBadge">
+  <text x="772.32" y="5854.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">6</text><title>1. main.dart
+2. panels/left/organized_panel.dart
+3. screens/create_project_screen.dart
+4. screens/loading_screen.dart
+5. screens/welcome_screen.dart
+6. widgets/badge_status.dart</title></g><g class="badge outgoingBadge">
   <path d="M 778.0,5864.0 L 766.0,5857.0 Q 763.0,5857.0 763.0,5860.0 L 763.0,5868.0 Q 763.0,5871.0 766.0,5871.0 Z" fill="#10b981"/>
   <text x="767.68" y="5865.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. constants/constants.dart</title></g><text x="501.0" y="5858.0" text-anchor="middle" dominant-baseline="middle" class="textNormal">app_theme.dart</text>
 <g class="badge incomingBadge">
@@ -3325,19 +3330,20 @@
   <path d="M 738.0,1957.0 L 750.0,1950.0 Q 753.0,1950.0 753.0,1953.0 L 753.0,1961.0 Q 753.0,1964.0 750.0,1964.0 Z" fill="#3b82f6"/>
   <text x="748.32" y="1958.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. panels/left/left_panel.dart</title></g><g class="badge outgoingBadge">
   <path d="M 756.0,1968.0 L 740.0,1960.4 Q 737.0,1960.4 737.0,1963.4 L 737.0,1972.6 Q 737.0,1975.6 740.0,1975.6 Z" fill="#10b981"/>
-  <text x="742.72" y="1969.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold" textLength="10.120000000000001" lengthAdjust="spacingAndGlyphs">13</text><title>1. constants/constants.dart
-2. models/code_category.dart
-3. models/file_system_item.dart
-4. models/project_categories.dart
-5. models/project_node.dart
-6. panels/left/shared_panel_utils.dart
-7. providers/app_providers.dart
-8. providers/service_providers.dart
-9. widget_services/filename_widget.dart
-10. widgets/empty_folder_label.dart
-11. widgets/foldername_widget.dart
-12. widgets/inline_spinner.dart
-13. widgets/section_panel.dart</title></g><text x="521.0" y="1962.0" text-anchor="middle" dominant-baseline="middle" class="textNormal">organized_panel.dart</text>
+  <text x="742.72" y="1969.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold" textLength="10.120000000000001" lengthAdjust="spacingAndGlyphs">14</text><title>1. constants/constants.dart
+2. models/app_theme.dart
+3. models/code_category.dart
+4. models/file_system_item.dart
+5. models/project_categories.dart
+6. models/project_node.dart
+7. panels/left/shared_panel_utils.dart
+8. providers/app_providers.dart
+9. providers/service_providers.dart
+10. widget_services/filename_widget.dart
+11. widgets/empty_folder_label.dart
+12. widgets/foldername_widget.dart
+13. widgets/inline_spinner.dart
+14. widgets/section_panel.dart</title></g><text x="521.0" y="1962.0" text-anchor="middle" dominant-baseline="middle" class="textNormal">organized_panel.dart</text>
 <g class="badge incomingBadge">
   <path d="M 738.0,1989.0 L 750.0,1982.0 Q 753.0,1982.0 753.0,1985.0 L 753.0,1993.0 Q 753.0,1996.0 750.0,1996.0 Z" fill="#3b82f6"/>
   <text x="748.32" y="1990.0" text-anchor="middle" fill="white" font-size="8.0" font-weight="bold">1</text><title>1. panels/left/left_panel.dart</title></g><g class="badge outgoingBadge">

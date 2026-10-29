@@ -98,8 +98,14 @@ final loadingActionsProvider = StateProvider<List<LoadingAction>>(
 /// The editor's open documents and active tab.
 final openDocumentsProvider =
     StateNotifierProvider<OpenDocumentsNotifier, OpenDocuments>(
-      (_) => OpenDocumentsNotifier(),
+      (ref) => OpenDocumentsNotifier(
+        onSaved: () => ref.read(savedFilesRevisionProvider.notifier).state++,
+      ),
     );
+
+/// Bumped each time the editor saves a file, so views derived from file
+/// contents can refresh.
+final savedFilesRevisionProvider = StateProvider<int>((_) => 0);
 
 /// The document showing in the editor, or null.
 final activeDocumentProvider = Provider<DocumentState?>(

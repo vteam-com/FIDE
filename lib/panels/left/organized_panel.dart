@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/code_category.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_categories.dart';
@@ -65,6 +66,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     final isProjectLoaded = ref.watch(projectLoadedProvider);
 
     syncProjectRoot(currentProjectRoot);
+    ref.listen(savedFilesRevisionProvider, (_, _) => _categorize());
 
     return !isProjectLoaded ? buildNotLoadedView() : buildPanelContent();
   }
@@ -93,7 +95,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
           _buildCategorySection(
             category,
             nodes,
-            nodes.fold(0, (count, node) => count + _countFiles(node)),
+            categories.sourceFileCounts[category] ?? 0,
             categories.elementCounts[category] ?? 0,
           ),
     ];
@@ -115,41 +117,43 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     );
   }
 
-  /// Number of files in [node]'s loaded subtree (1 for a file).
-  int _countFiles(ProjectNode node) {
-    if (!node.isDirectory) return 1;
-    return node.children.fold(0, (count, child) => count + _countFiles(child));
-  }
-
   /// Handles `_buildCategorySection`.
   Widget _buildCategorySection(
     CodeCategory category,
     List<ProjectNode> nodes,
-    int fileCount,
+    int sourceFileCount,
     int elementCount,
   ) {
     final expansionKey = 'category_${category.name}';
     final isExpanded = expandedState[expansionKey] ?? false;
 
-    // Build the right widget with file count and element counter
-    final rightWidget = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          Icons.description,
-          size: AppIconSize.small,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-        const SizedBox(width: AppSpacing.micro),
-        Text(
-          '$fileCount',
-          style: TextStyle(
-            fontSize: AppFontSize.metadata,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
+    // Flutter's rule is one class per file: show the Dart file count, as a
+    // warning, only when it differs from the element count
+    final rightWidget = sourceFileCount == 0 || sourceFileCount == elementCount
+        ? null
+        : Tooltip(
+            message:
+                '$sourceFileCount files define $elementCount classes; '
+                'expected one class per file',
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.description,
+                  size: AppIconSize.small,
+                  color: AppTheme.warningColor,
+                ),
+                const SizedBox(width: AppSpacing.micro),
+                Text(
+                  '$sourceFileCount',
+                  style: const TextStyle(
+                    fontSize: AppFontSize.metadata,
+                    color: AppTheme.warningColor,
+                  ),
+                ),
+              ],
+            ),
+          );
 
     final contentWidget = Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/code_category.dart';
@@ -77,12 +78,16 @@ class ProjectCategorizer {
         for (final entry in nodes.entries)
           entry.key: await _countElements(entry.key, entry.value),
       },
+      sourceFileCounts: {
+        for (final entry in nodes.entries)
+          entry.key: _files(entry.value).where(_isDart).length,
+      },
       viewsWithDialogs: viewsWithDialogs,
     );
   }
 
-  /// Dart files count one element each; ARB files in [category]
-  /// localization count their translations.
+  /// Dart files count their top-level classes, at least one each; ARB
+  /// files in [category] localization count their translations.
   Future<int> _countElements(
     CodeCategory category,
     List<ProjectNode> nodes,
@@ -90,7 +95,8 @@ class ProjectCategorizer {
     var count = 0;
     for (final file in _files(nodes)) {
       if (_isDart(file)) {
-        count++;
+        final content = await _read(file);
+        count += max(_minElementsPerDartFile, _countClasses(content ?? ''));
       } else if (category == CodeCategory.localization &&
           file.path.endsWith('.arb')) {
         final content = await _read(file);
@@ -99,6 +105,19 @@ class ProjectCategorizer {
     }
     return count;
   }
+
+  /// A Dart file counts as one element even when it declares no class.
+  static const int _minElementsPerDartFile = 1;
+
+  /// Matches a top-level class declaration, with any class modifiers.
+  static final RegExp _classDeclaration = RegExp(
+    r'^(?:(?:abstract|base|final|interface|mixin|sealed)\s+)*class\s+\w+',
+    multiLine: true,
+  );
+
+  /// Number of top-level classes declared in [content].
+  static int _countClasses(String content) =>
+      _classDeclaration.allMatches(content).length;
 
   /// Whether [content] declares a class extending a `...Widget` type.
   static bool _declaresWidget(String content) {

@@ -65,6 +65,19 @@ void main() {
     });
   });
 
+  test('counts classes per Dart file, at least one each', () async {
+    write('lib/models/chord.dart', 'class Chord {}\n\nclass  FooBar{}');
+    write('lib/models/base.dart', 'abstract class Base {}');
+    write('lib/models/helpers.dart', 'int add(int a, int b) => a + b;');
+
+    final categories = await const ProjectCategorizer().categorize(
+      await loadedRoot(),
+    );
+
+    expect(categories.sourceFileCounts[CodeCategory.models], 3);
+    expect(categories.elementCounts[CodeCategory.models], 4);
+  });
+
   test('counts translations in ARB files', () async {
     write('lib/l10n/app_en.arb', '{"@@locale": "en", "a": "A", "b": "B"}');
 
