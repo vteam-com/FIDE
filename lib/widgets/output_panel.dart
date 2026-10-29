@@ -84,25 +84,35 @@ class _OutputPanelState extends State<OutputPanel> {
         constraints: const BoxConstraints(maxHeight: AppSize.terminalMaxHeight),
         padding: const EdgeInsets.all(AppSpacing.large),
         child: SingleChildScrollView(
-          child: SelectableText(
-            widget.text,
-            style: TextStyle(
-              fontSize: AppFontSize.metadata,
-              fontFamily: _wrapText ? null : 'monospace',
-              color: Theme.of(context).colorScheme.onSurface,
-              height: _wrapText ? AppLineHeight.tight : 1.0,
-            ),
-            textAlign: TextAlign.left,
-            textDirection: TextDirection.ltr,
-            showCursor: true,
-            contextMenuBuilder: (_, editableTextState) {
-              return AdaptiveTextSelectionToolbar.editableText(
-                editableTextState: editableTextState,
-              );
-            },
-          ),
+          child: _wrapText
+              ? _buildText()
+              : SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: _buildText(),
+                ),
         ),
       ),
+    );
+  }
+
+  /// The output in monospace so columns line up; long lines wrap only
+  /// when the panel gives it a bounded width.
+  Widget _buildText() {
+    return SelectableText(
+      widget.text,
+      style: AppTextStyle.monospace.copyWith(
+        fontSize: AppFontSize.metadata,
+        color: Theme.of(context).colorScheme.onSurface,
+        height: AppLineHeight.tight,
+      ),
+      textAlign: TextAlign.left,
+      textDirection: TextDirection.ltr,
+      showCursor: true,
+      contextMenuBuilder: (_, editableTextState) {
+        return AdaptiveTextSelectionToolbar.editableText(
+          editableTextState: editableTextState,
+        );
+      },
     );
   }
 

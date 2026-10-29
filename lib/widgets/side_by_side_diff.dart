@@ -123,32 +123,14 @@ class SideBySideDiff extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Expanded(
-                  child: Text(
-                    'Original',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface
-                          .withValues(alpha: AppOpacity.secondaryText),
-                    ),
-                  ),
-                ),
+                _buildHeaderLabel(context, 'Original'),
                 Container(
                   width: AppSize.borderThin,
                   height: AppSize.diffHeaderDividerHeight,
                   color: Theme.of(context).colorScheme.outline
                       .withValues(alpha: AppOpacity.divider),
                 ),
-                Expanded(
-                  child: Text(
-                    'Modified',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface
-                          .withValues(alpha: AppOpacity.secondaryText),
-                    ),
-                  ),
-                ),
+                _buildHeaderLabel(context, 'Modified'),
               ],
             ),
           ),
@@ -168,45 +150,13 @@ class SideBySideDiff extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      // Old side
-                      Expanded(
-                        child: Container(
-                          padding: AppPadding.diffRow,
-                          child: Row(
-                            children: [
-                              SizedBox(
-                                width: AppSize.diffLineNumberWidth,
-                                child: Text(
-                                  line.oldLine,
-                                  style: TextStyle(
-                                    fontFamily: 'monospace',
-                                    fontSize: AppFontSize.caption,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: AppOpacity.disabled),
-                                  ),
-                                  textAlign: TextAlign.right,
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.medium),
-                              Expanded(
-                                child: Text(
-                                  line.oldContent,
-                                  style: TextStyle(
-                                    fontFamily: 'monospace',
-                                    fontSize: AppFontSize.caption,
-                                    color: line.type == DiffType.deletion
-                                        ? Colors.red[AppShade.strong]
-                                        : Theme.of(context)
-                                              .colorScheme
-                                              .onSurface,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      _buildSide(
+                        context,
+                        line.oldLine,
+                        line.oldContent,
+                        line.type == DiffType.deletion
+                            ? Colors.red[AppShade.strong]
+                            : null,
                       ),
                       // Divider
                       Container(
@@ -215,45 +165,13 @@ class SideBySideDiff extends StatelessWidget {
                         color: Theme.of(context).colorScheme.outline
                             .withValues(alpha: AppOpacity.divider),
                       ),
-                      // New side
-                      Expanded(
-                        child: Container(
-                          padding: AppPadding.diffRow,
-                          child: Row(
-                            children: [
-                              SizedBox(
-                                width: AppSize.diffLineNumberWidth,
-                                child: Text(
-                                  line.newLine,
-                                  style: TextStyle(
-                                    fontFamily: 'monospace',
-                                    fontSize: AppFontSize.caption,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: AppOpacity.disabled),
-                                  ),
-                                  textAlign: TextAlign.right,
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.medium),
-                              Expanded(
-                                child: Text(
-                                  line.newContent,
-                                  style: TextStyle(
-                                    fontFamily: 'monospace',
-                                    fontSize: AppFontSize.caption,
-                                    color: line.type == DiffType.addition
-                                        ? Colors.green[AppShade.strong]
-                                        : Theme.of(context)
-                                              .colorScheme
-                                              .onSurface,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      _buildSide(
+                        context,
+                        line.newLine,
+                        line.newContent,
+                        line.type == DiffType.addition
+                            ? Colors.green[AppShade.strong]
+                            : null,
                       ),
                     ],
                   ),
@@ -262,6 +180,60 @@ class SideBySideDiff extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// The bold title above one side of the diff.
+  Widget _buildHeaderLabel(BuildContext context, String label) {
+    return Expanded(
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.onSurface
+              .withValues(alpha: AppOpacity.secondaryText),
+        ),
+      ),
+    );
+  }
+
+  /// One side of a diff row: the dimmed [lineNumber], then [content] in
+  /// [contentColor], or the theme's text color when null.
+  Widget _buildSide(
+    BuildContext context,
+    String lineNumber,
+    String content,
+    Color? contentColor,
+  ) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final style = AppTextStyle.monospace.copyWith(
+      fontSize: AppFontSize.caption,
+    );
+    return Expanded(
+      child: Container(
+        padding: AppPadding.diffRow,
+        child: Row(
+          children: [
+            SizedBox(
+              width: AppSize.diffLineNumberWidth,
+              child: Text(
+                lineNumber,
+                style: style.copyWith(
+                  color: onSurface.withValues(alpha: AppOpacity.disabled),
+                ),
+                textAlign: TextAlign.right,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.medium),
+            Expanded(
+              child: Text(
+                content,
+                style: style.copyWith(color: contentColor ?? onSurface),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

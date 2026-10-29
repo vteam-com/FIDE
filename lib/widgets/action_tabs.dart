@@ -31,7 +31,6 @@ class ActionTabsWithExecute extends StatefulWidget {
 class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
     with TickerProviderStateMixin {
   late TabController _tabController;
-
   @override
   void initState() {
     super.initState();
@@ -40,12 +39,6 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
       initialIndex: _indexOf(widget.initialId),
       vsync: this,
     );
-  }
-
-  /// The tab of action [id], or the first tab when there is none.
-  int _indexOf(String? id) {
-    final i = widget.actions.indexWhere((a) => a.id == id);
-    return i < 0 ? 0 : i;
   }
 
   @override
@@ -69,12 +62,6 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
       );
     }
   }
-
-  /// Text colour readable on a button filled with [fill].
-  static Color _onColor(Color fill) =>
-      ThemeData.estimateBrightnessForColor(fill) == Brightness.dark
-      ? Colors.white
-      : Colors.black;
 
   @override
   Widget build(BuildContext context) {
@@ -205,13 +192,12 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                                 // Keep only this for the details text
                                 child: Text(
                                   action.details,
-                                  style: TextStyle(
+                                  style: AppTextStyle.monospace.copyWith(
                                     fontSize: AppFontSize.metadata,
                                     color: colorScheme.onSurface.withValues(
                                       alpha: AppOpacity.emphasis,
                                     ),
                                     height: AppLineHeight.compact,
-                                    fontFamily: 'monospace',
                                   ),
                                 ),
                               ),
@@ -317,4 +303,16 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
       },
     );
   }
+
+  /// The tab of action [id], or the first tab when there is none.
+  int _indexOf(String? id) {
+    final i = widget.actions.indexWhere((a) => a.id == id);
+    return i < 0 ? 0 : i;
+  }
+
+  /// Text colour readable on a button filled with [fill].
+  static Color _onColor(Color fill) =>
+      ThemeData.estimateBrightnessForColor(fill) == Brightness.dark
+      ? Colors.white
+      : Colors.black;
 }

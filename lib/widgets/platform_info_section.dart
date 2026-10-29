@@ -136,89 +136,13 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.tiny),
-                Row(
-                  children: [
-                    SizedBox(
-                      width: AppSize.platformDetailLabelWidth,
-                      child: Text(
-                        'Last Build:',
-                        style: TextStyle(
-                          fontSize: AppFontSize.metadata,
-                          color: Theme.of(context).colorScheme.onSurface
-                              .withValues(alpha: AppOpacity.emphasis),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        _artifacts.lastBuildTime,
-                        style: TextStyle(
-                          fontSize: AppFontSize.metadata,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontFamily: 'monospace',
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
+                _buildDetailRow('Last Build:', _artifacts.lastBuildTime),
                 const SizedBox(height: AppSpacing.micro),
-                Row(
-                  children: [
-                    SizedBox(
-                      width: AppSize.platformDetailLabelWidth,
-                      child: Text(
-                        'Size:',
-                        style: TextStyle(
-                          fontSize: AppFontSize.metadata,
-                          color: Theme.of(context).colorScheme.onSurface
-                              .withValues(alpha: AppOpacity.emphasis),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        _artifacts.size,
-                        style: TextStyle(
-                          fontSize: AppFontSize.metadata,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontFamily: 'monospace',
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
+                _buildDetailRow('Size:', _artifacts.size),
                 const SizedBox(height: AppSpacing.micro),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: AppSize.platformDetailLabelWidth,
-                      child: Text(
-                        'Location:',
-                        style: TextStyle(
-                          fontSize: AppFontSize.metadata,
-                          color: Theme.of(context).colorScheme.onSurface
-                              .withValues(alpha: AppOpacity.emphasis),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        _artifacts.location.split('/').last,
-                        style: TextStyle(
-                          fontSize: AppFontSize.metadata,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontFamily: 'monospace',
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                _buildDetailRow(
+                  'Location:',
+                  _artifacts.location.split('/').last,
                 ),
               ],
             ),
@@ -310,13 +234,12 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
                         ),
                         Text(
                           _iconPath,
-                          style: TextStyle(
+                          style: AppTextStyle.monospace.copyWith(
                             fontSize: AppFontSize.badge,
                             color: Theme.of(context)
                                 .colorScheme
                                 .onSurfaceVariant
                                 .withValues(alpha: AppOpacity.secondaryText),
-                            fontFamily: 'monospace',
                           ),
                           maxLines: AppMetric.doubleLineLimit,
                           overflow: TextOverflow.ellipsis,
@@ -385,6 +308,39 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
           ],
         ),
       ),
+    );
+  }
+
+  /// A build-info line: a fixed-width [label] column, then [value] in
+  /// monospace, truncated to one line.
+  Widget _buildDetailRow(String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        SizedBox(
+          width: AppSize.platformDetailLabelWidth,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: AppFontSize.metadata,
+              color: colorScheme.onSurface.withValues(
+                alpha: AppOpacity.emphasis,
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: AppTextStyle.monospace.copyWith(
+              fontSize: AppFontSize.metadata,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 

@@ -1,7 +1,13 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart'
-    show AppSpacing, AppIconSize, AppFontSize, AppOpacity, AppRadius;
+    show
+        AppSpacing,
+        AppIconSize,
+        AppFontSize,
+        AppOpacity,
+        AppRadius,
+        AppTextStyle;
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/reference_search.dart';
 import 'package:fide/models/search_result.dart';
@@ -323,8 +329,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
                   result.matchStart,
                   result.matchEnd,
                 ),
-                style: TextStyle(
-                  fontFamily: 'monospace',
+                style: AppTextStyle.monospace.copyWith(
                   fontSize: AppFontSize.caption,
                   color: Theme.of(context).colorScheme.onSurface,
                 ),

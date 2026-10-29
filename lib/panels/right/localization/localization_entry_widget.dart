@@ -131,10 +131,8 @@ class LocalizationEntryWidget extends StatelessWidget {
               softWrap: true,
               maxLines: AppMetric.translationPreviewLines,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: AppTextStyle.monospace.copyWith(
                 fontSize: AppFontSize.caption,
-                fontFamily: 'monospace',
-                fontFamilyFallback: ['Courier', 'Courier New'],
               ),
             ),
           ),
