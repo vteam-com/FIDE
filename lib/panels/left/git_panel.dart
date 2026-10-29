@@ -45,11 +45,17 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   /// Whether the last commit is unpushed, so Amend is offered.
   bool _canAmend = false;
 
+  /// Local commits the upstream lacks; Push stands out while any exist.
+  int _ahead = 0;
+
+  /// Upstream commits not yet pulled; Pull stands out while any exist.
+  int _behind = 0;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadGitData();
+      _refresh();
     });
   }
 
@@ -57,20 +63,34 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   void didUpdateWidget(GitPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.projectPath != widget.projectPath) {
-      _loadGitData();
+      _refresh();
     }
   }
 
-  /// Reloads status, recent commits and whether the last commit can be
-  /// amended.
+  /// Reloads status, recent commits, whether the last commit can be
+  /// amended, and what there is to push or pull.
   Future<void> _loadGitData() async {
     await ref.read(gitStatusProvider.notifier).loadStatus(widget.projectPath);
     await ref.read(gitCommitsProvider.notifier).loadCommits(widget.projectPath);
-    final canAmend = await ref
-        .read(gitServiceProvider)
-        .canAmend(widget.projectPath);
+    final git = ref.read(gitServiceProvider);
+    final canAmend = await git.canAmend(widget.projectPath);
+    final counts = await git.syncCounts(widget.projectPath);
     if (mounted) {
-      setState(() => _canAmend = canAmend);
+      setState(() {
+        _canAmend = canAmend;
+        _ahead = counts.ahead;
+        _behind = counts.behind;
+      });
+    }
+  }
+
+  /// Reloads the panel, then fetches from the remote and reloads again so
+  /// Pull shows commits that arrived there; the fetch needs the network,
+  /// so only opening the panel and Refresh run it.
+  Future<void> _refresh() async {
+    await _loadGitData();
+    if (await ref.read(gitServiceProvider).fetch(widget.projectPath)) {
+      await _loadGitData();
     }
   }
 
@@ -95,6 +115,29 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
   Future<void> _unstageFiles(List<String> files) =>
       _runGitAction((git) => git.unstageFiles(widget.projectPath, files));
+
+  /// Push or Pull: an outline [idleIcon] while there is nothing to move,
+  /// a solid [pendingIcon] in the primary color while [pending] commits
+  /// wait, with the count in the tooltip.
+  Widget _buildSyncButton({
+    required String label,
+    required int pending,
+    required IconData idleIcon,
+    required IconData pendingIcon,
+    required VoidCallback onPressed,
+  }) {
+    final hasPending = pending > 0;
+    return IconButton(
+      icon: Icon(
+        hasPending ? pendingIcon : idleIcon,
+        color: hasPending ? Theme.of(context).colorScheme.primary : null,
+      ),
+      onPressed: onPressed,
+      tooltip: hasPending
+          ? '$label $pending commit${pending == 1 ? '' : 's'}'
+          : label,
+    );
+  }
 
   /// Fills the commit message with one the AI writes from the staged
   /// changes.
@@ -234,19 +277,23 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.refresh),
-                      onPressed: _loadGitData,
+                      onPressed: _refresh,
                       tooltip: 'Refresh',
                     ),
 
-                    IconButton(
-                      icon: const Icon(Icons.cloud_upload),
+                    _buildSyncButton(
+                      label: 'Push',
+                      pending: _ahead,
+                      idleIcon: Icons.cloud_upload_outlined,
+                      pendingIcon: Icons.cloud_upload,
                       onPressed: _push,
-                      tooltip: 'Push',
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.cloud_download),
+                    _buildSyncButton(
+                      label: 'Pull',
+                      pending: _behind,
+                      idleIcon: Icons.cloud_download_outlined,
+                      pendingIcon: Icons.cloud_download,
                       onPressed: _pull,
-                      tooltip: 'Pull',
                     ),
                   ],
                 ),

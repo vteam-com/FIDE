@@ -127,4 +127,38 @@ void main() {
     expect(diff, contains('+staged'));
     expect(diff, isNot(contains('other.txt')));
   });
+
+  test(
+    'syncCounts reports commits to push and, after a fetch, to pull',
+    () async {
+      const git = GitService();
+      expect(await git.syncCounts(repo.path), (ahead: 0, behind: 0));
+
+      final remote = Directory.systemTemp.createTempSync('fide_git_remote_');
+      final other = Directory.systemTemp.createTempSync('fide_git_other_');
+      addTearDown(() {
+        remote.deleteSync(recursive: true);
+        other.deleteSync(recursive: true);
+      });
+      _git(remote.path, ['init', '-q', '--bare']);
+      _git(repo.path, ['remote', 'add', 'origin', remote.path]);
+      _git(repo.path, ['push', '-q', '-u', 'origin', 'HEAD']);
+
+      File(nestedFile).writeAsStringSync('local\n');
+      _git(repo.path, ['commit', '-qam', 'local']);
+      expect(await git.syncCounts(repo.path), (ahead: 1, behind: 0));
+
+      // Another clone pushes a commit this repo hasn't fetched yet
+      _git(other.path, ['clone', '-q', remote.path, '.']);
+      _git(other.path, ['config', 'user.email', 'test@example.com']);
+      _git(other.path, ['config', 'user.name', 'Test']);
+      File(path.join(other.path, 'remote.txt')).writeAsStringSync('remote\n');
+      _git(other.path, ['add', '.']);
+      _git(other.path, ['commit', '-qm', 'remote']);
+      _git(other.path, ['push', '-q']);
+
+      expect(await git.fetch(repo.path), isTrue);
+      expect(await git.syncCounts(repo.path), (ahead: 1, behind: 1));
+    },
+  );
 }

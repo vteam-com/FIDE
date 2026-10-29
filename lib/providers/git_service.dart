@@ -18,6 +18,9 @@ class GitService {
   /// Creates a Git service that launches commands through [_runner].
   const GitService([this._runner = const ProcessRunner()]);
 
+  /// Fields of `git rev-list --left-right --count`: ahead, then behind.
+  static const int _syncCountFields = 2;
+
   /// `git diff --no-index` exit code meaning "the files differ".
   static const int _noIndexDiffFoundExitCode = 1;
 
@@ -226,6 +229,35 @@ class GitService {
       'HEAD',
     ], workingDirectory: path);
     return remoteBranches != null && remoteBranches.trim().isEmpty;
+  }
+
+  /// Updates the remote-tracking branches so [syncCounts] sees new remote
+  /// commits; true when the fetch succeeds.
+  Future<bool> fetch(String path) {
+    return _runner.succeeds('git', [
+      'fetch',
+      '--quiet',
+    ], workingDirectory: path);
+  }
+
+  /// Commits the current branch has that its upstream lacks ([ahead], to
+  /// push) and the reverse ([behind], to pull), as of the last [fetch].
+  /// Both are zero when the branch has no upstream.
+  Future<({int ahead, int behind})> syncCounts(String path) async {
+    final output = await _runner.outputOf('git', [
+      'rev-list',
+      '--left-right',
+      '--count',
+      'HEAD...@{upstream}',
+    ], workingDirectory: path);
+    final counts = output?.trim().split(RegExp(r'\s+'));
+    if (counts == null || counts.length != _syncCountFields) {
+      return (ahead: 0, behind: 0);
+    }
+    return (
+      ahead: int.tryParse(counts.first) ?? 0,
+      behind: int.tryParse(counts.last) ?? 0,
+    );
   }
 
   /// Pushes local commits to the configured remote.
