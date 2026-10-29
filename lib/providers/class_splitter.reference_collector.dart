@@ -14,17 +14,20 @@ typedef _Reference = ({
 });
 
 /// Collects every resolved [_Reference] under a node, skipping doc comments
-/// and, optionally, one declaration.
+/// and, optionally, some declarations.
 class _ReferenceCollector extends GeneralizingAstVisitor<void> {
   _ReferenceCollector._(this._skip);
 
-  /// The declaration whose references are left out, if any.
-  final AstNode? _skip;
+  /// The declarations whose references are left out.
+  final Set<AstNode> _skip;
 
   final List<_Reference> _references = [];
 
   /// References made under [node], except under [skip].
-  static List<_Reference> collect(AstNode node, {AstNode? skip}) {
+  static List<_Reference> collect(
+    AstNode node, {
+    Set<AstNode> skip = const {},
+  }) {
     final collector = _ReferenceCollector._(skip);
     node.accept(collector);
     return collector._references;
@@ -104,7 +107,7 @@ class _ReferenceCollector extends GeneralizingAstVisitor<void> {
 
   @override
   void visitNode(AstNode node) {
-    if (identical(node, _skip)) return;
+    if (_skip.contains(node)) return;
     super.visitNode(node);
   }
 

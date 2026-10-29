@@ -92,9 +92,37 @@ void main() => B();
     },
   );
 
+  test('moves a class with the private helpers only it uses', () async {
+    write('lib/stage.dart', '''
+class Foo {
+  _Bar bar = _Bar();
+}
+
+class _Bar {
+  int get size => _size;
+}
+
+const _size = 3;
+
+class Stage {}
+''');
+
+    final files = await split('lib/stage.dart');
+
+    expect(files.keys, unorderedEquals(['lib/stage.dart', 'lib/foo.dart']));
+    expect(files['lib/foo.dart'], contains('class _Bar'));
+    expect(files['lib/foo.dart'], contains('const _size = 3;'));
+    expect(files['lib/foo.dart'], isNot(contains('part of')));
+    expect(files['lib/stage.dart'], isNot(contains('_Bar')));
+    expect(files['lib/stage.dart'], isNot(contains('_size')));
+    expect(files['lib/stage.dart'], contains('class Stage {}'));
+  });
+
   test('moves a class tangled with private code to a part file', () async {
     write('lib/card.dart', '''
-class Card {}
+class Card {
+  int get size => _size;
+}
 
 class Badge {
   int get size => _size;

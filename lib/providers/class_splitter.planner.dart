@@ -70,7 +70,11 @@ class _Planner {
         (c) => _fileStemFor(c) == stem,
         orElse: () => classes.first,
       );
-      await _move(library, unit, classes.firstWhere((c) => c != keep));
+      final moving = classes.firstWhere((c) => c != keep);
+      await _move(library, unit, [
+        moving,
+        ..._privateHelpersOf(library, unit, moving),
+      ]);
     }
     if (_changed.isEmpty) {
       throw const ClassSplitException('The file already has one public class');
@@ -83,32 +87,98 @@ class _Planner {
   static String _fileStemFor(ClassDeclaration declaration) =>
       ProjectName.normalize(declaration.namePart.typeName.lexeme)!;
 
-  /// Moves [declaration] out of [unit], a unit of [library].
-  Future<void> _move(
+  /// Private declarations of [unit] that only [declaration] uses, directly
+  /// or through each other, in source order, so they can leave the library
+  /// with it; empty when the rest of the library uses any of them too.
+  static List<CompilationUnitMember> _privateHelpersOf(
     ResolvedLibraryResult library,
     ResolvedUnitResult unit,
     ClassDeclaration declaration,
+  ) {
+    final group = <CompilationUnitMember>{declaration};
+    final pending = <CompilationUnitMember>[declaration];
+    while (pending.isNotEmpty) {
+      for (final reference in _ReferenceCollector.collect(
+        pending.removeLast(),
+      )) {
+        if (reference.top.library != library.element ||
+            !reference.top.isPrivate) {
+          continue;
+        }
+        final helper = _declarationOf(unit, reference.top);
+        // Declared in another part of the library: it has to stay
+        if (helper == null) return const [];
+        if (group.add(helper)) pending.add(helper);
+      }
+    }
+    final usedOutside =
+        [
+          for (final libraryUnit in library.units)
+            ..._ReferenceCollector.collect(libraryUnit.unit, skip: group),
+        ].any(
+          (r) => r.top.isPrivate && group.contains(_declarationOf(unit, r.top)),
+        );
+    if (usedOutside) return const [];
+    return group.skip(1).toList()..sort((a, b) => a.offset.compareTo(b.offset));
+  }
+
+  /// The top-level declaration of [unit] declaring [element], or null when
+  /// another unit declares it or it has no name to locate it by.
+  static CompilationUnitMember? _declarationOf(
+    ResolvedUnitResult unit,
+    Element element,
+  ) {
+    final declared = switch (element) {
+      PropertyAccessorElement(isOriginVariable: true, :final variable) =>
+        variable,
+      _ => element,
+    };
+    final fragment = declared.firstFragment;
+    final offset = fragment.nameOffset;
+    if (offset == null ||
+        fragment.libraryFragment?.source.fullName != unit.path) {
+      return null;
+    }
+    return unit.unit.declarations
+        .where((d) => d.offset <= offset && offset < d.end)
+        .firstOrNull;
+  }
+
+  /// Moves [group], a class followed by the private declarations only it
+  /// uses, out of [unit], a unit of [library].
+  Future<void> _move(
+    ResolvedLibraryResult library,
+    ResolvedUnitResult unit,
+    List<CompilationUnitMember> group,
   ) async {
+    final declaration = group.first as ClassDeclaration;
     final moved = declaration.declaredFragment!.element;
     final libraryElement = library.element;
     final rootPath = libraryElement.firstFragment.source.fullName;
     final directory = p.dirname(unit.path);
-    final inner = _ReferenceCollector.collect(declaration);
+    final inner = [
+      for (final member in group) ..._ReferenceCollector.collect(member),
+    ];
     final outer = [
       for (final libraryUnit in library.units)
-        ..._ReferenceCollector.collect(libraryUnit.unit, skip: declaration),
+        ..._ReferenceCollector.collect(libraryUnit.unit, skip: group.toSet()),
     ];
+
+    bool isMoving(Element top) =>
+        top == moved ||
+        (top.library == libraryElement &&
+            group.contains(_declarationOf(unit, top)));
 
     bool isOwnPrivate(_Reference r) =>
         r.top.library == libraryElement &&
-        r.top != moved &&
+        !isMoving(r.top) &&
         (r.top.isPrivate || r.element.isPrivate);
 
     // Imports the moved class resolves names through, by unit
     final needed = <(ResolvedUnitResult, ImportDirective)>[];
     var tangled =
         inner.any(isOwnPrivate) ||
-        outer.any((r) => r.top == moved && r.element.isPrivate);
+        outer.any((r) => isMoving(r.top) && r.element.isPrivate);
     for (final reference in inner) {
       if (!reference.needsImport ||
           reference.top.library == libraryElement ||
@@ -137,11 +207,13 @@ class _Planner {
       );
     }
 
-    final range = _declarationRange(unit, declaration);
-    final classText = unit.content.substring(range.offset, range.end).trim();
-    final removals = <String, List<_Removal>>{
-      unit.path: [range],
-    };
+    final ranges = [for (final member in group) _declarationRange(unit, member)]
+      ..sort((a, b) => a.offset.compareTo(b.offset));
+    final classText = [
+      for (final range in ranges)
+        unit.content.substring(range.offset, range.end).trim(),
+    ].join('\n\n');
+    final removals = <String, List<_Removal>>{unit.path: ranges};
     final insertions = <String, List<_Insertion>>{};
     void insert(String path, String line, {bool isPart = false}) => insertions
         .putIfAbsent(path, () => [])
@@ -165,7 +237,7 @@ class _Planner {
               (r) =>
                   r.needsImport &&
                   r.top.library == libraryElement &&
-                  r.top != moved,
+                  !isMoving(r.top),
             ))
               "import '${_relativeUri(rootPath, newPath)}';",
           ]..sort(
@@ -440,7 +512,7 @@ class _Planner {
   /// previous declaration or directive through the end of its last line.
   static _Removal _declarationRange(
     ResolvedUnitResult unit,
-    ClassDeclaration declaration,
+    CompilationUnitMember declaration,
   ) {
     final content = unit.content;
     final members = [...unit.unit.directives, ...unit.unit.declarations];

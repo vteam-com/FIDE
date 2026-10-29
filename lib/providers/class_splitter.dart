@@ -24,9 +24,11 @@ part 'class_splitter.reference_collector.dart';
 ///
 /// Every public class but one leaves the file for `<class_name>.dart` next
 /// to it, importing only what it uses; the original file and every library
-/// using the class through it get their imports updated. A class tangled
-/// with the file's private declarations can't leave the library, so it
-/// moves to a `part` file (`<file>.<class_name>.dart`) instead.
+/// using the class through it get their imports updated. Private
+/// declarations only that class uses go with it. A class tangled with
+/// private declarations the rest of the library also uses can't leave the
+/// library, so it moves to a `part` file (`<file>.<class_name>.dart`)
+/// instead.
 ///
 /// The analysis is resolved against the project's packages, and a plan that
 /// would add compile errors is rejected.
