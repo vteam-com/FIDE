@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fide/models/ai_action.dart';
 import 'package:fide/providers/ai_service.dart';
 import 'package:fide/providers/flutter_sdk.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,6 +49,26 @@ void main() {
       service.explainCode('void main() {}'),
       throwsA(isA<AiServiceException>()),
     );
+  });
+
+  test('fix build sends the build errors to the model', () async {
+    late String prompt;
+    final service = AIService(
+      const _NoSdk(),
+      MockClient((request) async {
+        prompt = jsonDecode(request.body)['prompt'] as String;
+        return http.Response(jsonEncode({'response': 'fixed'}), HttpStatus.ok);
+      }),
+    );
+
+    final response = await service.respond(
+      AiAction.fixBuild,
+      '',
+      "lib/main.dart:3:1: Error: Expected ';'",
+    );
+
+    expect(response, 'fixed');
+    expect(prompt, contains("Expected ';'"));
   });
 
   test('generateProject falls back to a basic main.dart', () async {

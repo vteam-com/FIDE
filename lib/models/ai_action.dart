@@ -10,7 +10,13 @@ enum AiAction {
   generate('Generate Code', 'Describe what code you want to generate...'),
 
   /// Refactor the pasted code.
-  refactor('Refactor Code', 'Paste code and describe how to refactor it...');
+  refactor('Refactor Code', 'Paste code and describe how to refactor it...'),
+
+  /// Fix the errors of the last failed build, or the pasted ones.
+  fixBuild(
+    'Fix Build',
+    'Send to fix the last failed build, or paste build errors...',
+  );
 
   /// Menu label.
   final String label;

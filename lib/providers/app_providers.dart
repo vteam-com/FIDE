@@ -44,6 +44,10 @@ final projectLoadedProvider = StateProvider<bool>((_) => false);
 // State management for current project path
 final currentProjectPathProvider = StateProvider<String?>((_) => null);
 
+/// Error output of the last failed Execute panel action; empty once an
+/// action succeeds. The AI panel's Fix Build sends it to the model.
+final lastBuildErrorsProvider = StateProvider<String>((_) => '');
+
 // State management for current project root
 final currentProjectRootProvider = StateProvider<ProjectNode?>((_) => null);
 

@@ -104,7 +104,11 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel>
   }) async {
     final projectPath = ref.read(currentProjectPathProvider);
     if (projectPath == null) return;
-    await runCommandAction(
+    // Read now: builds often finish after this panel is disposed, and the
+    // AI panel's Fix Build reads the errors from the provider
+    final log = _log;
+    final lastBuildErrors = ref.read(lastBuildErrorsProvider.notifier);
+    final succeeded = await runCommandAction(
       id,
       startMessages: startMessages,
       command: () => command(projectPath),
@@ -113,6 +117,7 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel>
       errorPrefix: errorPrefix,
       resetWhenDone: resetWhenDone,
     );
+    lastBuildErrors.state = succeeded ? '' : log.errors;
   }
 
   /// Why the selected platform can't be built here, or how to add it.

@@ -4,12 +4,14 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/ai_action.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/providers/ai_service.dart';
+import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/ollama_installer.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/check_mark.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 part 'ai_panel.chat_message.dart';
@@ -181,19 +183,25 @@ class _AIPanelState extends ConsumerState<AIPanel> {
             spacing: AppSpacing.medium,
             children: [
               Expanded(
-                child: TextField(
-                  controller: _promptController,
-                  decoration: InputDecoration(
-                    hintText: _selectedAction.hint,
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.large,
-                      vertical: AppSpacing.medium,
+                // Enter sends; Shift+Enter, left unbound, starts a new line
+                child: CallbackShortcuts(
+                  bindings: {
+                    const SingleActivator(LogicalKeyboardKey.enter):
+                        _sendUnlessLoading,
+                  },
+                  child: TextField(
+                    controller: _promptController,
+                    decoration: InputDecoration(
+                      hintText: _selectedAction.hint,
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.large,
+                        vertical: AppSpacing.medium,
+                      ),
                     ),
+                    maxLines: AppMetric.aiInputMaxLines,
+                    minLines: 1,
                   ),
-                  maxLines: AppMetric.aiInputMaxLines,
-                  minLines: 1,
-                  onSubmitted: (_) => _sendMessage(),
                 ),
               ),
 
@@ -386,14 +394,46 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     );
   }
 
+  /// Content of the selected file for the model, empty when none is
+  /// selected.
+  Future<String> _selectedFileContext() async {
+    final file = widget.selectedFile;
+    if (file == null) return '';
+    try {
+      return _truncateContext(await file.readAsString());
+    } catch (_) {
+      return 'Could not read file content';
+    }
+  }
+
+  /// [text] cut to the context size sent to the model.
+  String _truncateContext(String text) =>
+      text.length > AppMetric.aiContextPreviewChars
+      ? '${text.substring(0, AppMetric.aiContextPreviewChars)}...'
+      : text;
+
+  /// Sends the prompt from the keyboard, ignored while a reply is pending
+  /// like the disabled Send button.
+  void _sendUnlessLoading() {
+    if (!_isLoading) _sendMessage();
+  }
+
   /// Handles `_sendMessage`.
   Future<void> _sendMessage() async {
     final text = _promptController.text.trim();
-    if (text.isEmpty) return;
+    final action = _selectedAction;
+    final buildErrors = ref.read(lastBuildErrorsProvider);
+    // Fix Build needs no prompt when the last build left errors to send
+    final canSendEmpty = action == AiAction.fixBuild && buildErrors.isNotEmpty;
+    if (text.isEmpty && !canSendEmpty) return;
 
     setState(() {
       _messages.add(
-        ChatMessage(content: text, isUser: true, timestamp: DateTime.now()),
+        ChatMessage(
+          content: text.isEmpty ? action.label : text,
+          isUser: true,
+          timestamp: DateTime.now(),
+        ),
       );
       _isLoading = true;
     });
@@ -401,22 +441,11 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     _promptController.clear();
 
     try {
-      String context = '';
+      final context = action == AiAction.fixBuild
+          ? _truncateContext(buildErrors)
+          : await _selectedFileContext();
 
-      // Get context from selected file if available
-      if (widget.selectedFile != null) {
-        try {
-          context = await widget.selectedFile!.readAsString();
-          if (context.length > AppMetric.aiContextPreviewChars) {
-            context =
-                '${context.substring(0, AppMetric.aiContextPreviewChars)}...';
-          }
-        } catch (_) {
-          context = 'Could not read file content';
-        }
-      }
-
-      final response = await _aiService.respond(_selectedAction, text, context);
+      final response = await _aiService.respond(action, text, context);
 
       if (!mounted) return;
       setState(() {

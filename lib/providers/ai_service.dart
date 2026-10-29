@@ -83,15 +83,27 @@ Please provide a helpful response focused on the coding request.''',
     );
   }
 
-  /// Runs [action] on the user's [text]; [context] (the selected file's
-  /// content) is only sent for [AiAction.ask].
+  /// Runs [action] on the user's [text]; [context] is the selected file's
+  /// content for [AiAction.ask] and the last build errors for
+  /// [AiAction.fixBuild], and is not sent for the other actions.
   Future<String> respond(AiAction action, String text, String context) {
     return switch (action) {
       AiAction.ask => getCodeSuggestion(text, context),
       AiAction.explain => explainCode(text),
       AiAction.generate => generateCode(text),
       AiAction.refactor => refactorCode(text, 'Please refactor this code'),
+      AiAction.fixBuild => fixBuild(text, context),
     };
+  }
+
+  /// Explains the cause of failed build output and the code changes that
+  /// fix it; [errors] is the build's error output and [notes] any errors
+  /// or details the user added.
+  Future<String> fixBuild(String notes, String errors) {
+    return getCodeSuggestion('''
+This Flutter/Dart build failed. Find the root cause of each error and show the code changes that fix it, naming the file each change belongs to.
+
+$notes''', errors);
   }
 
   /// Requests a plain-language explanation for the provided source code.
