@@ -91,12 +91,6 @@ class ProjectService {
       _updateLoadingActionStatus(step - 1, LoadingStatus.success);
       await Future.delayed(duration);
 
-      // Load Git status for the project
-      _addLoadingAction(step++, 'Loading Git status');
-      await _loadGitStatus();
-      _updateLoadingActionStatus(step - 1, LoadingStatus.success);
-      await Future.delayed(duration);
-
       // Initialize file system watcher for incremental updates
       _addLoadingAction(step++, 'Setting up file system watcher');
       _logger.info('Setting up file system watcher...');
@@ -124,8 +118,10 @@ class ProjectService {
       _stateSink.setProjectLoaded(true);
       _updateLoadingActionStatus(step - 1, LoadingStatus.success);
       await Future.delayed(duration);
-      await Future.delayed(duration);
-      await Future.delayed(duration);
+
+      // Git status decorates the tree once the IDE is open, so a slow or
+      // large repository never holds up the loading screen
+      unawaited(_refreshGitStatus());
 
       _logger.info('Project loaded successfully: $directoryPath');
       _logger.info(
@@ -164,28 +160,30 @@ class ProjectService {
     _logger.info('Project unloaded');
   }
 
-  /// Load Git status for the current project
-  Future<void> _loadGitStatus() async {
-    if (_currentProjectRoot == null) return;
+  /// Tags the current tree with Git status in the background, then refreshes
+  /// the UI; skipped when another project was loaded in the meantime.
+  Future<void> _refreshGitStatus() async {
+    final root = _currentProjectRoot;
+    if (root == null) return;
 
     try {
       // Check if current directory is a Git repository
-      final isGitRepo = await _gitService.isGitRepository(
-        _currentProjectRoot!.path,
-      );
+      final isGitRepo = await _gitService.isGitRepository(root.path);
       if (!isGitRepo) {
-        _logger.info('Not a Git repository: ${_currentProjectRoot!.path}');
+        _logger.info('Not a Git repository: ${root.path}');
         return;
       }
 
       // Get Git status
-      final gitStatus = await _gitService.getStatus(_currentProjectRoot!.path);
+      final gitStatus = await _gitService.getStatus(root.path);
+      if (!identical(root, _currentProjectRoot)) return;
       _logger.info(
         'Git status loaded: ${gitStatus.staged.length} staged, ${gitStatus.unstaged.length} unstaged, ${gitStatus.untracked.length} untracked',
       );
 
       // Update all nodes with Git status recursively
-      _updateNodeGitStatus(_currentProjectRoot!, gitStatus);
+      _updateNodeGitStatus(root, gitStatus);
+      _notifyProjectUpdated();
     } catch (e) {
       // Silently handle Git status errors
       _logger.severe('Error loading Git status: $e');
@@ -211,11 +209,11 @@ class ProjectService {
 
   /// Notify that the project has been updated (for UI refresh)
   void _notifyProjectUpdated() {
-    // Force a refresh of the current project root provider
+    // Bump the tree revision so tree views rebuild over the same root
     // Check if container is still available (not disposed in tests)
     try {
       if (_currentProjectRoot != null) {
-        _stateSink.setCurrentProjectRoot(_currentProjectRoot);
+        _stateSink.bumpProjectTreeRevision();
       }
     } catch (_) {
       // Container might be disposed in test environments, ignore

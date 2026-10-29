@@ -12,12 +12,18 @@ class GitStatus {
     required this.untracked,
   });
 
+  // Hash lookups for [statusOf], built on first use so tagging every node of
+  // a large tree stays linear instead of scanning the lists per file
+  late final Set<String> _stagedSet = staged.toSet();
+  late final Set<String> _unstagedSet = unstaged.toSet();
+  late final Set<String> _untrackedSet = untracked.toSet();
+
   /// Status of the file at [relativePath] (relative to the repository root);
   /// staged changes take precedence over unstaged ones.
   GitFileStatus statusOf(String relativePath) {
-    if (staged.contains(relativePath)) return GitFileStatus.added;
-    if (unstaged.contains(relativePath)) return GitFileStatus.modified;
-    if (untracked.contains(relativePath)) return GitFileStatus.untracked;
+    if (_stagedSet.contains(relativePath)) return GitFileStatus.added;
+    if (_unstagedSet.contains(relativePath)) return GitFileStatus.modified;
+    if (_untrackedSet.contains(relativePath)) return GitFileStatus.untracked;
     return GitFileStatus.clean;
   }
 

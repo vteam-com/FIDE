@@ -46,6 +46,11 @@ final currentProjectPathProvider = StateProvider<String?>((_) => null);
 // State management for current project root
 final currentProjectRootProvider = StateProvider<ProjectNode?>((_) => null);
 
+/// Bumped each time the current project tree changes in place (Git status,
+/// file system events), so tree views rebuild even though the root object is
+/// the same.
+final projectTreeRevisionProvider = StateProvider<int>((_) => 0);
+
 // State management for project loading state
 final projectLoadingProvider = StateProvider<bool>((_) => false);
 

@@ -15,6 +15,9 @@ abstract class ProjectStateSink {
   /// Sets the current project root.
   void setCurrentProjectRoot(ProjectNode? root);
 
+  /// Signals that the current project tree was updated in place.
+  void bumpProjectTreeRevision();
+
   /// Sets whether a project is currently loaded.
   void setProjectLoaded(bool isLoaded);
 

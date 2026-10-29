@@ -64,6 +64,8 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     // Watch for project data from ProjectService
     final currentProjectRoot = ref.watch(currentProjectRootProvider);
     final isProjectLoaded = ref.watch(projectLoadedProvider);
+    // Rebuild when the tree changes in place, e.g. Git status arriving
+    ref.watch(projectTreeRevisionProvider);
 
     syncProjectRoot(currentProjectRoot);
     ref.listen(savedFilesRevisionProvider, (_, _) => _categorize());

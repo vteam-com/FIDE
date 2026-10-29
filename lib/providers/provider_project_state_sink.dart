@@ -9,6 +9,11 @@ class _ProviderProjectStateSink implements ProjectStateSink {
   List<LoadingAction> get loadingActions => _ref.read(loadingActionsProvider);
 
   @override
+  void bumpProjectTreeRevision() {
+    _ref.read(projectTreeRevisionProvider.notifier).state++;
+  }
+
+  @override
   void clearSelectedFile() {
     _ref.read(selectedFileProvider.notifier).state = null;
   }

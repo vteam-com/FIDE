@@ -1,7 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/app_theme.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/full_path_widget.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
@@ -9,11 +8,16 @@ import 'package:fide/widgets/loading_actions_log.dart';
 import 'package:fide/widgets/loading_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 
-/// Represents `LoadingScreen`.
+/// Full-screen progress view shown while a project loads.
+///
+/// Transparent, so the workspace gradient shows through behind it.
 class LoadingScreen extends StatefulWidget {
+  /// Creates the loading view for the project at [loadingProjectName].
   const LoadingScreen({super.key, required this.loadingProjectName});
 
+  /// Full path of the project being loaded.
   final String? loadingProjectName;
 
   @override
@@ -23,15 +27,15 @@ class LoadingScreen extends StatefulWidget {
 class _LoadingScreenState extends State<LoadingScreen> {
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final projectPath = widget.loadingProjectName!;
+    return Padding(
       padding: const EdgeInsets.all(AppSize.compactActionButton),
-      decoration: AppTheme.screenBackground(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           HeroTitleWidget(
-            title: 'Loading project',
-            subWidget: FullPathWidget(path: widget.loadingProjectName!),
+            title: 'Loading ${p.basename(projectPath)}',
+            subWidget: FullPathWidget(path: projectPath),
           ),
 
           Center(
