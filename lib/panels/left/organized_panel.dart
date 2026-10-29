@@ -213,6 +213,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     final isSelected = widget.selectedFile?.path == item.path;
 
     if (node.isDirectory) {
+      final multiClassFileCount = _categories?.multiClassFolders[node.path];
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -221,6 +222,16 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
             node: node,
             isExpanded: item.isExpanded,
             rootPath: projectRoot!.path,
+            trailing: multiClassFileCount == null
+                ? null
+                : WarningCount(
+                    icon: Icons.description,
+                    count: multiClassFileCount,
+                    message:
+                        '$multiClassFileCount files in this folder define more '
+                        'than one public class; expected one public class '
+                        'per file',
+                  ),
             onTap: () => toggleOrOpenNode(node, item.isExpanded),
             onShowContextMenu: (position) =>
                 showNodeContextMenu(node, position),

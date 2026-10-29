@@ -105,6 +105,22 @@ void main() {
     });
   });
 
+  test('rolls multi-class files up to their folders', () async {
+    write('lib/models/music/chord.dart', 'class Chord {}\nclass Note {}');
+    write('lib/models/music/key.dart', 'class Key {}\nclass Mode {}');
+    write('lib/models/scale.dart', 'class Scale {}\nclass Step {}');
+
+    final categories = await const ProjectCategorizer().categorize(
+      await loadedRoot(),
+    );
+
+    expect(categories.multiClassFolders, {
+      p.join(project.path, 'lib'): 3,
+      p.join(project.path, 'lib', 'models'): 3,
+      p.join(project.path, 'lib', 'models', 'music'): 2,
+    });
+  });
+
   test('a one-class-per-file ignore counts its file as one', () async {
     write(
       'lib/models/chord.dart',

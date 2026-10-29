@@ -7,6 +7,7 @@ import 'package:fide/models/project_categories.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/providers/localization_service.dart';
 import 'package:fide/providers/project_tree_reader.dart';
+import 'package:path/path.dart' as p;
 
 /// Groups a project's files into [CodeCategory] sections.
 ///
@@ -74,6 +75,10 @@ class ProjectCategorizer {
         entry.key: await _countElements(entry.key, entry.value),
     };
 
+    final multiClassFiles = {
+      for (final entry in counts.values) ...entry.multiClassFiles,
+    };
+
     return ProjectCategories(
       nodes: {
         for (final entry in nodes.entries)
@@ -91,10 +96,28 @@ class ProjectCategorizer {
           entry.key: _files(entry.value).where(_isDart).length,
       },
       viewsWithDialogs: viewsWithDialogs,
-      multiClassFiles: {
-        for (final entry in counts.values) ...entry.multiClassFiles,
-      },
+      multiClassFiles: multiClassFiles,
+      multiClassFolders: _foldersHolding(root.path, multiClassFiles.keys),
     );
+  }
+
+  /// Each folder under [rootPath] holding any of [filePaths], at any depth,
+  /// mapped to how many of them it holds.
+  static Map<String, int> _foldersHolding(
+    String rootPath,
+    Iterable<String> filePaths,
+  ) {
+    final folders = <String, int>{};
+    for (final filePath in filePaths) {
+      for (
+        var folder = p.dirname(filePath);
+        p.isWithin(rootPath, folder);
+        folder = p.dirname(folder)
+      ) {
+        folders.update(folder, (count) => count + 1, ifAbsent: () => 1);
+      }
+    }
+    return folders;
   }
 
   /// Dart files count their top-level classes, at least one each; ARB

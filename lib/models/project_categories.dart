@@ -20,6 +20,10 @@ class ProjectCategories {
   /// their public class count.
   final Map<String, int> multiClassFiles;
 
+  /// Paths of folders holding, at any depth, files of [multiClassFiles],
+  /// mapped to how many such files they hold.
+  final Map<String, int> multiClassFolders;
+
   /// Paths of views that call `showDialog`, which get a warning.
   final Set<String> viewsWithDialogs;
 
@@ -31,5 +35,6 @@ class ProjectCategories {
     required this.sourceFileCounts,
     required this.viewsWithDialogs,
     required this.multiClassFiles,
+    required this.multiClassFolders,
   });
 }

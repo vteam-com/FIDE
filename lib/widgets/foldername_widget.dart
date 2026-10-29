@@ -20,6 +20,7 @@ class FolderNameWidget extends StatelessWidget {
     this.onTap,
     this.onShowContextMenu,
     this.onFileSelected,
+    this.trailing,
   });
 
   final bool hasError;
@@ -37,6 +38,9 @@ class FolderNameWidget extends StatelessWidget {
   final VoidCallback? onTap;
 
   final String? rootPath;
+
+  /// Shown after the name, before the child counter, e.g. a warning.
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +103,8 @@ class FolderNameWidget extends StatelessWidget {
                 ),
               ),
             ),
+
+            ?trailing,
 
             if (node.children.isNotEmpty)
               ContainerCounter(
