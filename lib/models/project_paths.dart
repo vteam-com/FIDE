@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:path/path.dart' as p;
 
 /// Well-known file and folder locations inside a Flutter project.
@@ -10,6 +12,15 @@ class ProjectPaths {
 
   /// The `build/` output directory.
   String get buildDir => p.join(root, 'build');
+
+  /// Throws when [executable], by default this app's, was built into
+  /// [buildDir]: cleaning would delete the running app's own assets.
+  void ensureCleanable({String? executable}) {
+    if (p.isWithin(buildDir, executable ?? Platform.resolvedExecutable)) {
+      throw 'This project is the running app; cleaning it would delete the '
+          "app's own files. Quit the app and clean from a terminal instead.";
+    }
+  }
 
   /// Generated localizations class written by `flutter gen-l10n`.
   String get generatedLocalizations =>

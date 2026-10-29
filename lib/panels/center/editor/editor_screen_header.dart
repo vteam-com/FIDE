@@ -39,53 +39,61 @@ class EditorScreenHeader extends StatelessWidget {
     return Row(
       children: [
         const SizedBox(width: AppSpacing.medium),
+        // Flexible so a long name or a narrow editor shortens the name
+        // instead of overflowing the action buttons
         if (openDocuments.isNotEmpty)
-          PopupMenuButton<int>(
-            key: const Key('keyMruForFiles'),
-            itemBuilder: (_ /*context*/) {
-              return openDocuments.asMap().entries.map((entry) {
-                final index = entry.key;
-                final doc = entry.value;
-                final gitStats = allGitDiffStats[doc.filePath];
+          Flexible(
+            child: PopupMenuButton<int>(
+              key: const Key('keyMruForFiles'),
+              itemBuilder: (_ /*context*/) {
+                return openDocuments.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final doc = entry.value;
+                  final gitStats = allGitDiffStats[doc.filePath];
 
-                return PopupMenuItem<int>(
-                  value: index,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CheckMark(checked: index == activeIndex),
-                      const SizedBox(width: AppSpacing.medium),
-                      Text(doc.fileName),
-                      const SizedBox(width: AppSpacing.medium),
-                      DiffCounter(gitStats: gitStats),
-                    ],
-                  ),
-                );
-              }).toList();
-            },
-            onSelected: onDocumentSelected,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (activeIndex < openDocuments.length) ...[
-                  Text(
-                    openDocuments[activeIndex].fileName,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: AppFontSize.label,
+                  return PopupMenuItem<int>(
+                    value: index,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CheckMark(checked: index == activeIndex),
+                        const SizedBox(width: AppSpacing.medium),
+                        Text(doc.fileName),
+                        const SizedBox(width: AppSpacing.medium),
+                        DiffCounter(gitStats: gitStats),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.medium),
-                  DiffCounter(
-                    gitStats:
-                        allGitDiffStats[openDocuments[activeIndex].filePath],
+                  );
+                }).toList();
+              },
+              onSelected: onDocumentSelected,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (activeIndex < openDocuments.length) ...[
+                    Flexible(
+                      child: Text(
+                        openDocuments[activeIndex].fileName,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: AppFontSize.label,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.medium),
+                    DiffCounter(
+                      gitStats:
+                          allGitDiffStats[openDocuments[activeIndex].filePath],
+                    ),
+                  ],
+                  Icon(
+                    Icons.arrow_drop_down,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ],
-                Icon(
-                  Icons.arrow_drop_down,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ],
+              ),
             ),
           ),
         const Spacer(),
@@ -100,14 +108,16 @@ class EditorScreenHeader extends StatelessWidget {
           ),
         const Spacer(),
         if (isDirty)
-          const Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.xLarge,
-              vertical: AppSpacing.medium,
-            ),
-            child: Center(
+          const Flexible(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.xLarge,
+                vertical: AppSpacing.medium,
+              ),
               child: Text(
                 'Unsaved Changes',
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
                 style: TextStyle(
                   color: Colors.orange,
                   fontStyle: FontStyle.italic,

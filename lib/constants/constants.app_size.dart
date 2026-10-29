@@ -8,6 +8,13 @@ class AppSize {
   static const double terminalDefaultHeight = 200;
   static const double terminalMinHeight = 100;
   static const double terminalMaxHeight = 400;
+
+  /// Tallest the bottom panel can be dragged.
+  static const double bottomPanelMaxHeight = 800;
+
+  /// Height the bottom panel always leaves the editor above it, enough for
+  /// its header, find bar, status bar and a few lines.
+  static const double editorMinHeight = 240;
   static const double folderPanelFallbackHeight = 400;
   static const double largePreviewIcon = 64;
   static const double compactIconButton = 24;
@@ -40,6 +47,12 @@ class AppSize {
   static const double actionButtonHeight = 36;
   static const double compactButtonHeight = 30;
   static const double initialSidePanelWidth = 250;
+
+  /// Narrowest the left and right panels can be dragged.
+  static const double minSidePanelWidth = 150;
+
+  /// Widest the left and right panels can be dragged.
+  static const double maxSidePanelWidth = 900;
   static const double statusLogMaxHeight = 300;
   static const double statusIconTall = 25;
   static const double wizardMaxWidth = 600;

@@ -4,10 +4,6 @@ part of 'main_layout.dart';
 class MainLayoutState extends ConsumerState<MainLayout> {
   double _explorerWidth = AppSize.initialSidePanelWidth;
   double _outlineWidth = AppSize.initialSidePanelWidth;
-  final double _minExplorerWidth = 150.0;
-  final double _maxExplorerWidth = 500.0;
-  final double _minOutlineWidth = 150.0;
-  final double _maxOutlineWidth = 500.0;
 
   VoidCallback? _refreshOutlineCallback;
 
@@ -31,8 +27,8 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   void _onResize(double delta) {
     setState(() {
       _explorerWidth = (_explorerWidth + delta).clamp(
-        _minExplorerWidth,
-        _maxExplorerWidth,
+        AppSize.minSidePanelWidth,
+        AppSize.maxSidePanelWidth,
       );
     });
   }
@@ -40,8 +36,8 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   void _onOutlineResize(double delta) {
     setState(() {
       _outlineWidth = (_outlineWidth - delta).clamp(
-        _minOutlineWidth,
-        _maxOutlineWidth,
+        AppSize.minSidePanelWidth,
+        AppSize.maxSidePanelWidth,
       );
     });
   }

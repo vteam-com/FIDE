@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fide/models/project_paths.dart';
 import 'package:fide/providers/process_runner.dart';
 
 part 'flutter_build_service.build_output.dart';
@@ -42,8 +43,10 @@ class FlutterBuildService {
 
   /// Runs `flutter clean`, repairing a stale CocoaPods repo once if needed.
   ///
-  /// Throws a message describing the failure when the clean does not succeed.
+  /// Throws a message describing the failure when the clean does not succeed,
+  /// or when the project is the running app ([ProjectPaths.ensureCleanable]).
   Future<void> clean(String projectPath, BuildOutput output) async {
+    ProjectPaths(projectPath).ensureCleanable();
     final exitCode = await _runRepairingPods(
       'flutter',
       ['clean'],
@@ -57,10 +60,12 @@ class FlutterBuildService {
   }
 
   /// Refreshes CocoaPods, then cleans, fetches packages and rebuilds macOS.
+  /// Refuses the running app's own project ([ProjectPaths.ensureCleanable]).
   ///
   /// CocoaPods failures are reported but tolerated; Flutter step failures
   /// throw a message naming the failed step.
   Future<void> deepCleanMacOS(String projectPath, BuildOutput output) async {
+    ProjectPaths(projectPath).ensureCleanable();
     final macOSPath = '$projectPath/macos';
 
     output.onOutput('📦 Updating CocoaPods repository...');

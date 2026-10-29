@@ -40,16 +40,28 @@ class CenterPanel extends ConsumerStatefulWidget {
 
 class _CenterPanelState extends ConsumerState<CenterPanel> {
   double _terminalHeight = AppSize.terminalDefaultHeight;
-  final double _minTerminalHeight = AppSize.terminalMinHeight;
-  final double _maxTerminalHeight = AppSize.terminalMaxHeight;
+
+  /// Tallest the terminal may be in the last layout, leaving the editor
+  /// [AppSize.editorMinHeight].
+  double _maxTerminalHeight = AppSize.bottomPanelMaxHeight;
 
   void _onTerminalResize(double delta) {
     setState(() {
       _terminalHeight = (_terminalHeight - delta).clamp(
-        _minTerminalHeight,
+        AppSize.terminalMinHeight,
         _maxTerminalHeight,
       );
     });
+  }
+
+  /// The terminal's height in a center panel [availableHeight] tall: the
+  /// dragged height, shrunk so the editor keeps [AppSize.editorMinHeight].
+  double _fitTerminalHeight(double availableHeight) {
+    _maxTerminalHeight = (availableHeight - AppSize.editorMinHeight).clamp(
+      AppSize.terminalMinHeight,
+      AppSize.bottomPanelMaxHeight,
+    );
+    return _terminalHeight.clamp(AppSize.terminalMinHeight, _maxTerminalHeight);
   }
 
   @override
@@ -73,27 +85,29 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
       );
     }
 
-    return Column(
-      children: [
-        // Main content takes remaining space
-        Expanded(child: PanelIsland(child: mainContent)),
-        // Terminal section (always shown if visible, independent of editor state)
-        if (widget.terminalVisible) ...[
-          // Resizable splitter
-          ResizableSplitter(onResize: _onTerminalResize, isHorizontal: true),
+    return LayoutBuilder(
+      builder: (_ /*context*/, constraints) => Column(
+        children: [
+          // Main content takes remaining space
+          Expanded(child: PanelIsland(child: mainContent)),
+          // Terminal section (always shown if visible, independent of editor state)
+          if (widget.terminalVisible) ...[
+            // Resizable splitter
+            ResizableSplitter(onResize: _onTerminalResize, isHorizontal: true),
 
-          // Terminal at bottom
-          SizedBox(
-            height: _terminalHeight,
-            child: PanelIsland(
-              child: ColoredBox(
-                color: Theme.of(context).colorScheme.surfaceContainerLow,
-                child: const TerminalPanel(),
+            // Terminal at bottom
+            SizedBox(
+              height: _fitTerminalHeight(constraints.maxHeight),
+              child: PanelIsland(
+                child: ColoredBox(
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
+                  child: const TerminalPanel(),
+                ),
               ),
             ),
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

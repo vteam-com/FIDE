@@ -72,8 +72,10 @@ class ProjectMaintenanceService {
   }
 
   /// Cleans Flutter, removes build artifacts, repairs the pub cache, and
-  /// refreshes Gradle and CocoaPods where those platforms exist.
+  /// refreshes Gradle and CocoaPods where those platforms exist. Refuses the
+  /// running app's own project ([ProjectPaths.ensureCleanable]).
   Future<void> fullCleanup(String projectPath) async {
+    ProjectPaths(projectPath).ensureCleanable();
     await _runChecked('flutter', ['clean'], workingDirectory: projectPath);
 
     final buildDir = Directory(ProjectPaths(projectPath).buildDir);
