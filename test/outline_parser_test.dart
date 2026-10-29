@@ -25,6 +25,14 @@ void main() {
     expect(nodes.last.column, 3);
   });
 
+  test('Dart outlines mark @override methods', () {
+    final nodes = const DartOutlineParser().parse(
+      'class A {\n  @override\n  String toString() => "";\n  void run() {}\n}\n',
+    );
+
+    expect([for (final n in nodes) n.isOverride], [false, true, false]);
+  });
+
   test('Markdown outlines headings by level', () {
     final nodes = const MarkdownOutlineParser().parse('# Title\ntext\n## Sub');
 

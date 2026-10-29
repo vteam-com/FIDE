@@ -18,7 +18,11 @@ class RightPanel extends StatefulWidget {
     this.selectedFile,
     this.onOutlineUpdate,
     this.onOutlineNodeSelected,
+    this.onJumpToLine,
   });
+
+  /// Opens a file at a 1-based line, e.g. a caller listed by the outline.
+  final Function(String, int)? onJumpToLine;
 
   final Function(int, int)? onOutlineNodeSelected;
 
@@ -85,6 +89,7 @@ class _RightPanelState extends State<RightPanel>
                 file: widget.selectedFile!,
                 onOutlineUpdate: widget.onOutlineUpdate,
                 onNodeSelected: widget.onOutlineNodeSelected,
+                onJumpToLine: widget.onJumpToLine,
               )
             : const Center(
                 child: Text(

@@ -11,6 +11,7 @@ import 'package:fide/providers/process_runner.dart';
 import 'package:fide/providers/project_tree_reader.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/more_menu_button.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

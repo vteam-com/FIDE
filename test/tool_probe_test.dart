@@ -4,6 +4,7 @@ import 'package:fide/providers/flutter_sdk.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/process_runner.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 
 // Answers every command with [stdout] and [exitCode], or throws as if the
 // executable were missing when [missing] is set
@@ -69,6 +70,19 @@ void main() {
     expect(versions?.dart, '3.5.0');
     expect(
       await const FlutterSdk(ScriptedRunner(missing: true)).versions(),
+      isNull,
+    );
+  });
+
+  test('FlutterSdk finds the bundled Dart SDK', () async {
+    const output = '{"flutterRoot": "/sdk/flutter", "frameworkVersion": "3"}';
+
+    expect(
+      await const FlutterSdk(ScriptedRunner(stdout: output)).dartSdkPath(),
+      p.join('/sdk/flutter', 'bin', 'cache', 'dart-sdk'),
+    );
+    expect(
+      await const FlutterSdk(ScriptedRunner(stdout: 'oops')).dartSdkPath(),
       isNull,
     );
   });

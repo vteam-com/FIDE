@@ -12,6 +12,7 @@ import 'package:fide/models/project_node.dart';
 import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/providers/project_service.dart';
 import 'package:fide/providers/project_state_sink.dart';
+import 'package:fide/providers/reference_finder.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,6 +46,19 @@ final currentProjectPathProvider = StateProvider<String?>((_) => null);
 
 // State management for current project root
 final currentProjectRootProvider = StateProvider<ProjectNode?>((_) => null);
+
+/// Finds where the open project uses a declaration; null while no project
+/// is open. Its background analysis stops when the project closes.
+final referenceFinderProvider = Provider<ReferenceFinder?>((ref) {
+  final projectPath = ref.watch(currentProjectPathProvider);
+  if (projectPath == null) return null;
+  final finder = ReferenceFinder(
+    projectPath: projectPath,
+    flutterSdk: ref.read(flutterSdkProvider),
+  );
+  ref.onDispose(finder.dispose);
+  return finder;
+});
 
 /// Bumped each time the current project tree changes in place (Git status,
 /// file system events), so tree views rebuild even though the root object is

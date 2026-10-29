@@ -7,15 +7,18 @@ import 'package:fide/models/project_categories.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/panels/left/shared_panel_utils.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/class_splitter.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/empty_folder_label.dart';
 import 'package:fide/widgets/foldername_widget.dart';
 import 'package:fide/widgets/inline_spinner.dart';
+import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/warning_count.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 
 /// OrganizedPanel provides a categorized view of the project
 class OrganizedPanel extends ProjectTreePanel {
@@ -39,6 +42,9 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
 
   /// Bumped per categorization so a stale result is dropped.
   int _categorizeGeneration = 0;
+
+  /// The file whose classes are being split into their own files, if any.
+  String? _splittingPath;
 
   @override
   void onProjectTreeChanged() {
@@ -69,6 +75,8 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
 
     syncProjectRoot(currentProjectRoot);
     ref.listen(savedFilesRevisionProvider, (_, _) => _categorize());
+    // Files were added or removed, e.g. by a class split
+    ref.listen(projectTreeRevisionProvider, (_, _) => _categorize());
 
     return !isProjectLoaded ? buildNotLoadedView() : buildPanelContent();
   }
@@ -240,16 +248,66 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
         rootPath: projectRoot!.path,
         onTap: () => handleFileTap(node),
         onContextMenu: (position) => showNodeContextMenu(node, position),
-        trailing: classCount == null
+        trailing: _splittingPath == node.path
+            ? const InlineSpinner(size: AppSize.compactProgressIndicator)
+            : classCount == null
             ? null
             : WarningCount(
                 icon: Icons.data_object,
                 count: classCount,
                 message:
                     'Defines $classCount public classes; '
-                    'expected one public class per file',
+                    'expected one public class per file.\n'
+                    'Click to move the others into their own files.',
+                onTap: _splittingPath == null
+                    ? () => _splitClasses(node, classCount)
+                    : null,
               ),
       );
+    }
+  }
+
+  /// After confirmation, moves every public class of [node] but one into
+  /// its own file, updating imports across the project.
+  Future<void> _splitClasses(ProjectNode node, int classCount) async {
+    final openDocuments = ref.read(openDocumentsProvider);
+    if (openDocuments.documents.any((d) => d.isDirty)) {
+      MessageBox.showError(context, 'Save your open files before splitting');
+      return;
+    }
+    final confirmed = await MessageBox.confirm(
+      context,
+      title: 'Split ${node.name}?',
+      message:
+          'Move ${classCount - 1} of its $classCount public classes into '
+          'their own files and update imports across the project?',
+      confirmLabel: 'Split',
+    );
+    if (!confirmed || !mounted) return;
+
+    setState(() => _splittingPath = node.path);
+    try {
+      final sdkPath = await ref.read(flutterSdkProvider).dartSdkPath();
+      if (sdkPath == null) {
+        throw const ClassSplitException('Flutter SDK not found');
+      }
+      final splitter = ClassSplitter(dartSdkPath: sdkPath);
+      final result = await splitter.plan(
+        projectPath: projectRoot!.path,
+        filePath: node.path,
+      );
+      await splitter.apply(result, ref.read(codeFormatterProvider));
+      await ref.read(openDocumentsProvider.notifier).reload(result.files.keys);
+      if (!mounted) return;
+      MessageBox.showSuccess(
+        context,
+        'Moved into ${result.createdFiles.map(p.basename).join(', ')}',
+      );
+    } catch (e) {
+      if (mounted) MessageBox.showError(context, 'Split failed: $e');
+    } finally {
+      if (mounted) setState(() => _splittingPath = null);
+      _categorize();
     }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:fide/models/left_panel_tab.dart';
+import 'package:fide/models/reference_search.dart';
 import 'package:fide/models/right_panel_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -27,3 +28,9 @@ final activeRightPanelTabProvider = StateProvider<RightPanelTab>(
 
 /// 1-based line of the caret in the active editor, for panels that track it.
 final editorCursorLineProvider = StateProvider<int>((_ /*ref*/) => 1);
+
+/// Uses of a declaration waiting to be listed by the Search panel, which
+/// clears it once shown.
+final referenceSearchProvider = StateProvider<ReferenceSearch?>(
+  (_ /*ref*/) => null,
+);

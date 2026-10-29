@@ -1,10 +1,20 @@
+import 'dart:io';
+
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/left_panel_tab.dart';
 import 'package:fide/models/open_documents.dart';
 import 'package:fide/models/outline_node.dart';
+import 'package:fide/models/reference_search.dart';
+import 'package:fide/models/search_result.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/outline_parser.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/widgets/container_counter.dart';
+import 'package:fide/widgets/icon_menu_row.dart';
+import 'package:fide/widgets/inline_spinner.dart';
+import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/more_menu_button.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,11 +26,15 @@ class OutlinePanel extends ConsumerStatefulWidget {
     required this.file,
     this.onOutlineUpdate,
     this.onNodeSelected,
+    this.onJumpToLine,
   });
 
   final FileSystemItem file;
 
   final Function(int, int)? onNodeSelected;
+
+  /// Opens a file at a 1-based line, for jumping to a caller.
+  final Function(String, int)? onJumpToLine;
 
   final Function(VoidCallback)? onOutlineUpdate;
 
@@ -34,6 +48,26 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
   _cachedOutlines = {};
 
   int _currentHighlightedLine = -1;
+
+  /// Outline kinds that are Dart declarations, whose consumers are counted.
+  static const Set<String> _countableTypes = {
+    'class',
+    'function',
+    'method',
+    'variable',
+  };
+
+  /// The selected entry whose consumers are shown, if any.
+  OutlineNode? _countedNode;
+
+  /// Uses of [_countedNode]; null while they are being found.
+  List<SearchResult>? _consumers;
+
+  /// Bumped per lookup so a stale answer is dropped.
+  int _consumersGeneration = 0;
+
+  /// Whether [_countedNode] is being renamed.
+  bool _isRenaming = false;
 
   static const Duration _debounceDuration = Duration(milliseconds: 150);
 
@@ -63,6 +97,8 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
   void didUpdateWidget(OutlinePanel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.file.path != widget.file.path) {
+      _countedNode = null;
+      _consumersGeneration++;
       _debouncedParseFile();
     }
   }
@@ -217,11 +253,181 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
                   maxLines: 1,
                 ),
               ),
+              if (_isSameNode(node, _countedNode)) ...[
+                _buildConsumerCount(node),
+                if (!_isRenaming)
+                  MoreMenuButton(
+                    onPressed: (position) => _showNodeMenu(node, position),
+                  ),
+              ],
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// [node]'s consumer count, clickable to list them in the Search panel,
+  /// or a spinner while they are found.
+  Widget _buildConsumerCount(OutlineNode node) {
+    final consumers = _consumers;
+    if (consumers == null || _isRenaming) {
+      return const InlineSpinner(size: AppSize.compactProgressIndicator);
+    }
+    return ContainerCounter(
+      count: consumers.length,
+      tooltip: consumers.length == 1
+          ? '1 consumer; click to list it in Search'
+          : '${consumers.length} consumers; click to list them in Search',
+      onTap: () => _showConsumers(node, consumers),
+    );
+  }
+
+  /// [node]'s actions: Rename, and once its consumers are known, Jump to
+  /// caller (when there is exactly one) and Show all callers.
+  void _showNodeMenu(OutlineNode node, Offset position) {
+    final consumers = _consumers;
+    showMenu<VoidCallback>(
+      context: context,
+      position: MoreMenuButton.menuPosition(position),
+      items: [
+        PopupMenuItem(
+          value: () => _rename(node),
+          child: const IconMenuRow(
+            icon: Icons.drive_file_rename_outline,
+            label: 'Rename…',
+          ),
+        ),
+        if (consumers != null && consumers.length == 1)
+          PopupMenuItem(
+            value: () => widget.onJumpToLine?.call(
+              consumers.single.filePath,
+              consumers.single.lineNumber,
+            ),
+            child: const IconMenuRow(
+              icon: Icons.call_made,
+              label: 'Jump to caller',
+            ),
+          ),
+        if (consumers != null && consumers.isNotEmpty)
+          PopupMenuItem(
+            value: () => _showConsumers(node, consumers),
+            child: const IconMenuRow(
+              icon: Icons.manage_search,
+              label: 'Show all callers',
+            ),
+          ),
+      ],
+    ).then((action) => action?.call());
+  }
+
+  /// The name [node] is used by: `Foo<T>` is used as `Foo`.
+  static String _usedName(OutlineNode node) => node.name.split('<').first;
+
+  /// Asks for a new name and renames [node] and its uses across the
+  /// project, writing the files only when the result still compiles.
+  Future<void> _rename(OutlineNode node) async {
+    final finder = ref.read(referenceFinderProvider);
+    if (finder == null) return;
+    if (ref.read(openDocumentsProvider).documents.any((d) => d.isDirty)) {
+      MessageBox.showError(context, 'Save your open files before renaming');
+      return;
+    }
+    final name = _usedName(node);
+    final newName = await MessageBox.promptForText(
+      context,
+      title: 'Rename $name',
+      labelText: 'New name',
+      hintText: 'Enter the new name',
+      confirmLabel: 'Rename',
+      initialText: name,
+    );
+    if (!mounted || newName == null || newName.isEmpty || newName == name) {
+      return;
+    }
+
+    setState(() => _isRenaming = true);
+    try {
+      final files = await finder.rename(
+        filePath: widget.file.path,
+        line: node.line,
+        column: node.column,
+        newName: newName,
+      );
+      for (final MapEntry(key: path, value: content) in files.entries) {
+        await File(path).writeAsString(content);
+      }
+      await ref.read(openDocumentsProvider.notifier).reload(files.keys);
+      ref.read(savedFilesRevisionProvider.notifier).state++;
+      if (!mounted) return;
+      MessageBox.showSuccess(
+        context,
+        files.length == 1
+            ? 'Renamed $name to $newName'
+            : 'Renamed $name to $newName in ${files.length} files',
+      );
+    } catch (e) {
+      if (mounted) MessageBox.showError(context, 'Rename failed: $e');
+    } finally {
+      if (mounted) setState(() => _isRenaming = false);
+      refreshOutline();
+    }
+  }
+
+  /// Lists [consumers], the uses of [node], in the left panel's Search tab.
+  void _showConsumers(OutlineNode node, List<SearchResult> consumers) {
+    ref.read(referenceSearchProvider.notifier).state = ReferenceSearch(
+      name: _usedName(node),
+      results: consumers,
+    );
+    ref.read(leftPanelVisibleProvider.notifier).state = true;
+    ref.read(activeLeftPanelTabProvider.notifier).state = LeftPanelTab.search;
+  }
+
+  /// Whether [a] and [b] are the same outline entry, even across re-parses.
+  static bool _isSameNode(OutlineNode? a, OutlineNode? b) =>
+      a != null &&
+      b != null &&
+      a.name == b.name &&
+      a.type == b.type &&
+      a.line == b.line &&
+      a.column == b.column;
+
+  /// Finds the consumers of the innermost entry under the cursor, unless
+  /// they are already shown.
+  void _updateConsumers() {
+    final selected = _outlineNodes.where(_isNodeHighlighted).lastOrNull;
+    if (_isSameNode(selected, _countedNode)) return;
+    final finder = ref.read(referenceFinderProvider);
+    final countable =
+        selected != null &&
+        finder != null &&
+        widget.file.path.endsWith('.dart') &&
+        _countableTypes.contains(selected.type) &&
+        // Overrides are reached through the overridden member
+        !selected.isOverride;
+    final generation = ++_consumersGeneration;
+    setState(() {
+      _countedNode = countable ? selected : null;
+      _consumers = null;
+    });
+    if (!countable) return;
+
+    finder
+        .find(
+          filePath: widget.file.path,
+          line: selected.line,
+          column: selected.column,
+        )
+        .then((uses) {
+          if (!mounted || generation != _consumersGeneration) return;
+          setState(() => _consumers = uses);
+        })
+        .catchError((Object _) {
+          // No count when the code can't be analyzed
+          if (!mounted || generation != _consumersGeneration) return;
+          setState(() => _countedNode = null);
+        });
   }
 
   /// Triggers a debounced parse, cancelling any in-flight parse before scheduling a new one.
@@ -282,6 +488,7 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
       setState(() {
         _currentHighlightedLine = lineNumber;
       });
+      _updateConsumers();
     }
   }
 
@@ -326,6 +533,7 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
       _cachedOutlines[file.path] = (content: content, nodes: nodes);
       if (mounted && file.path == widget.file.path) {
         setState(() => _outlineNodes = nodes);
+        _updateConsumers();
       }
     } catch (e) {
       if (mounted) {

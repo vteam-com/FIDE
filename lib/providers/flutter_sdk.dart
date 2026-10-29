@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:fide/providers/process_runner.dart';
+import 'package:path/path.dart' as p;
 
 /// Versions of the installed Flutter SDK, read from `flutter --version`.
 class FlutterSdk {
@@ -6,6 +9,24 @@ class FlutterSdk {
 
   /// Creates an SDK probe that launches `flutter` through [_runner].
   const FlutterSdk([this._runner = const ProcessRunner()]);
+
+  /// Root of the Dart SDK bundled with Flutter, from
+  /// `flutter --version --machine`; null when Flutter isn't available or
+  /// doesn't report its root.
+  Future<String?> dartSdkPath() async {
+    final output = await _runner.outputOf('flutter', [
+      '--version',
+      '--machine',
+    ], runInShell: true);
+    if (output == null) return null;
+    try {
+      final flutterRoot = (jsonDecode(output) as Map)['flutterRoot'];
+      if (flutterRoot is! String) return null;
+      return p.join(flutterRoot, 'bin', 'cache', 'dart-sdk');
+    } on FormatException {
+      return null;
+    }
+  }
 
   /// Flutter and Dart versions (e.g. `3.24.0`), or null when Flutter isn't
   /// available. Either version is null when the output doesn't show it.

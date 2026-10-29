@@ -3,6 +3,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/providers/file_type_utils.dart';
+import 'package:fide/widgets/more_menu_button.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
@@ -123,20 +124,7 @@ class FileNameWidget extends StatelessWidget {
                 ),
               // Context menu button
               if (isSelected && onContextMenu != null)
-                GestureDetector(
-                  onTapDown: (details) =>
-                      onContextMenu?.call(details.globalPosition),
-                  child: Container(
-                    width: AppSize.compactContextButton,
-                    height: AppSize.compactContextButton,
-                    alignment: Alignment.center,
-                    child: Icon(
-                      Icons.more_vert,
-                      size: AppIconSize.small,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ),
+                MoreMenuButton(onPressed: onContextMenu!),
             ],
           ),
         ),

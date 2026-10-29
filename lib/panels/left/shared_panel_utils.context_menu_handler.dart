@@ -13,12 +13,7 @@ class ContextMenuHandler {
     final colorScheme = Theme.of(context).colorScheme;
     showMenu<NodeAction>(
       context: context,
-      position: RelativeRect.fromLTRB(
-        position.dx,
-        position.dy,
-        position.dx + 1,
-        position.dy + 1,
-      ),
+      position: MoreMenuButton.menuPosition(position),
       items: [
         for (final action in NodeAction.values)
           if (action.appliesTo(node))

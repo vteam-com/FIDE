@@ -4,6 +4,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/widgets/container_counter.dart';
+import 'package:fide/widgets/more_menu_button.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
@@ -122,16 +123,8 @@ class FolderNameWidget extends StatelessWidget {
             ],
 
             // Context menu indicator (3-dot icon) when selected
-            if (isExpanded)
-              InkWell(
-                onTapDown: (detail) =>
-                    onShowContextMenu?.call(detail.globalPosition),
-                child: Icon(
-                  Icons.more_vert,
-                  color: colorScheme.primary,
-                  size: AppIconSize.small,
-                ),
-              ),
+            if (isExpanded && onShowContextMenu != null)
+              MoreMenuButton(onPressed: onShowContextMenu!),
           ],
         ),
       ),

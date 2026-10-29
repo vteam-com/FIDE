@@ -36,6 +36,44 @@ class MessageBox {
     showSuccess(context, confirmation);
   }
 
+  /// Asks for a line of text, starting from [initialText]; resolves to the
+  /// trimmed text when [confirmLabel] is pressed, null on Cancel or
+  /// dismissal.
+  static Future<String?> promptForText(
+    BuildContext context, {
+    required String title,
+    required String labelText,
+    required String hintText,
+    required String confirmLabel,
+    String initialText = '',
+  }) async {
+    // Not disposed here: the dialog's field still uses it while the route
+    // animates out after showDialog returns
+    final controller = TextEditingController(text: initialText);
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(labelText: labelText, hintText: hintText),
+          autofocus: true,
+          onSubmitted: (text) => Navigator.of(context).pop(text.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: Text(confirmLabel),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Asks the user to confirm a destructive action; resolves true only when
   /// [confirmLabel] is pressed, false on Cancel or dismissal.
   static Future<bool> confirm(

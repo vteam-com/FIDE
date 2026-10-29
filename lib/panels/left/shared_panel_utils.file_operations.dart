@@ -54,7 +54,7 @@ class FileOperations {
     ProjectNode node,
     VoidCallback onRefresh,
   ) async {
-    final result = await _promptForName(
+    final result = await MessageBox.promptForText(
       context,
       title: 'Rename',
       labelText: 'New name',
@@ -98,7 +98,7 @@ class FileOperations {
     if (!parent.isDirectory) return;
 
     final kind = isDirectory ? 'folder' : 'file';
-    final result = await _promptForName(
+    final result = await MessageBox.promptForText(
       context,
       title: isDirectory ? 'New Folder' : 'New File',
       labelText: isDirectory ? 'Folder name' : 'File name',
@@ -122,42 +122,6 @@ class FileOperations {
       () => _files.create(targetPath, isDirectory: isDirectory),
       successMessage: 'Created $kind "$result"',
       failurePrefix: 'Failed to create $kind',
-    );
-  }
-
-  /// Shows a one-field name dialog and returns the trimmed entry, or null
-  /// when cancelled.
-  Future<String?> _promptForName(
-    BuildContext context, {
-    required String title,
-    required String labelText,
-    required String hintText,
-    required String confirmLabel,
-    String initialText = '',
-  }) async {
-    // Not disposed here: the dialog's field still uses it while the route
-    // animates out after showDialog returns
-    final controller = TextEditingController(text: initialText);
-    return showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(labelText: labelText, hintText: hintText),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: Text(confirmLabel),
-          ),
-        ],
-      ),
     );
   }
 

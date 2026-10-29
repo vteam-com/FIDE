@@ -16,6 +16,10 @@ class OutlineNode {
   /// Nesting depth, 0 for top level.
   final int level;
 
+  /// Whether it is a method marked `@override`, which callers reach through
+  /// the overridden member (or the framework) rather than by name.
+  final bool isOverride;
+
   /// Creates an outline entry.
   const OutlineNode({
     required this.name,
@@ -23,5 +27,6 @@ class OutlineNode {
     required this.line,
     this.column = 1,
     this.level = 0,
+    this.isOverride = false,
   });
 }

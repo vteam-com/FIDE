@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/clickable.dart';
 import 'package:flutter/material.dart';
 
 /// A specialized widget for displaying container/item counters using Chip
@@ -10,6 +11,7 @@ class ContainerCounter extends StatelessWidget {
     required this.count,
     this.fontSize = AppFontSize.badge,
     this.tooltip,
+    this.onTap,
   });
 
   /// The count value to display
@@ -17,6 +19,9 @@ class ContainerCounter extends StatelessWidget {
 
   /// The font size for the count text
   final double fontSize;
+
+  /// Called when the counter is clicked; null when it isn't clickable.
+  final VoidCallback? onTap;
 
   /// Optional tooltip for accessibility
   final String? tooltip;
@@ -29,10 +34,12 @@ class ContainerCounter extends StatelessWidget {
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
 
+    final counter = Clickable(onTap: onTap, child: chip);
+
     if (tooltip != null) {
-      return Tooltip(message: tooltip!, child: chip);
+      return Tooltip(message: tooltip!, child: counter);
     }
 
-    return chip;
+    return counter;
   }
 }

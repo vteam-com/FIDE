@@ -46,6 +46,14 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     });
   }
 
+  /// Opens [filePath] in the editor and scrolls to 1-based [line].
+  Future<void> _jumpToLine(String filePath, int line) async {
+    ref.read(selectedFileProvider.notifier).state =
+        FileSystemItem.fromFileSystemEntity(File(filePath));
+    await Future.delayed(AppDuration.editorScroll);
+    ref.read(activeEditorProvider).navigateToLine(line);
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedFile = ref.watch(selectedFileProvider);
@@ -85,16 +93,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                     onFileSelected: (file) {
                       ref.read(selectedFileProvider.notifier).state = file;
                     },
-                    onJumpToLine: (filePath, line) async {
-                      final file = File(filePath);
-                      final fileSystemItem =
-                          FileSystemItem.fromFileSystemEntity(file);
-                      ref.read(selectedFileProvider.notifier).state =
-                          fileSystemItem;
-
-                      await Future.delayed(AppDuration.editorScroll);
-                      ref.read(activeEditorProvider).navigateToLine(line);
-                    },
+                    onJumpToLine: _jumpToLine,
                   ),
                 ),
               ),
@@ -124,6 +123,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                   child: RightPanel(
                     selectedFile: selectedFile,
                     onOutlineUpdate: _setOutlineRefreshCallback,
+                    onJumpToLine: _jumpToLine,
                     onOutlineNodeSelected: (int line, int column) {
                       ref
                           .read(activeEditorProvider)

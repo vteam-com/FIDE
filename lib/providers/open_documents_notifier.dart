@@ -18,6 +18,27 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
     state = OpenDocuments.empty;
   }
 
+  /// Closes the tabs of [filePaths] that are open, then reopens the one
+  /// that was showing, so it shows the files' current content.
+  Future<void> reload(Iterable<String> filePaths) async {
+    final paths = filePaths.toSet();
+    final activePath = state.active?.filePath;
+    final kept = [
+      for (final document in state.documents)
+        if (!paths.contains(document.filePath)) document,
+    ];
+    if (kept.length == state.documents.length) return;
+    state = OpenDocuments(
+      documents: kept,
+      activeIndex: activePath == null
+          ? OpenDocuments.noActiveDocument
+          : kept.indexWhere((d) => d.filePath == activePath),
+    );
+    if (activePath != null && paths.contains(activePath)) {
+      await open(activePath);
+    }
+  }
+
   /// Hides the editor while keeping the tabs open.
   void deactivate() => activate(OpenDocuments.noActiveDocument);
 

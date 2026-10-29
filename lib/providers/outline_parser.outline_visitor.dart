@@ -27,7 +27,12 @@ class _OutlineVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitMethodDeclaration(MethodDeclaration node) {
-    _addNode(node.name.toString(), 'method', node.offset);
+    _addNode(
+      node.name.toString(),
+      'method',
+      node.offset,
+      isOverride: node.metadata.any((a) => a.name.name == 'override'),
+    );
     _currentLevel++;
     super.visitMethodDeclaration(node);
     _currentLevel--;
@@ -42,7 +47,12 @@ class _OutlineVisitor extends RecursiveAstVisitor<void> {
   }
 
   /// Appends a [type] node named [name] starting at source [offset].
-  void _addNode(String name, String type, int offset) {
+  void _addNode(
+    String name,
+    String type,
+    int offset, {
+    bool isOverride = false,
+  }) {
     final position = TextOffsets.positionOf(fileContent, offset);
     nodes.add(
       OutlineNode(
@@ -51,6 +61,7 @@ class _OutlineVisitor extends RecursiveAstVisitor<void> {
         line: position.line,
         column: position.column,
         level: _currentLevel,
+        isOverride: isOverride,
       ),
     );
   }

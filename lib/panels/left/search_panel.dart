@@ -3,9 +3,11 @@ import 'dart:io';
 import 'package:fide/constants/constants.dart'
     show AppSpacing, AppIconSize, AppFontSize, AppOpacity, AppRadius;
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/reference_search.dart';
 import 'package:fide/models/search_result.dart';
 import 'package:fide/models/search_result_node.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
 import 'package:fide/widgets/search_toggle_icons.dart';
 import 'package:flutter/material.dart';
@@ -38,9 +40,42 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
   final Map<String, bool> _expandedState = {};
 
   @override
+  void initState() {
+    super.initState();
+    // Uses requested before this tab was built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final pending = ref.read(referenceSearchProvider);
+      if (mounted && pending != null) _showReferences(pending);
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// Shows [search]'s uses as the results, with every folder expanded.
+  void _showReferences(ReferenceSearch search) {
+    ref.read(referenceSearchProvider.notifier).state = null;
+    _searchController.text = search.name;
+    final tree = ref
+        .read(projectSearchServiceProvider)
+        .toTree(search.results, widget.projectPath);
+    setState(() {
+      _matchCase = true;
+      _wholeWord = true;
+      _isSearching = false;
+      _resultsTree = tree;
+      if (tree != null) _expandFolders(tree);
+    });
+  }
+
+  /// Marks every folder under [node] expanded.
+  void _expandFolders(SearchResultNode node) {
+    if (!node.isDirectory) return;
+    _expandedState[node.path] = true;
+    node.children.forEach(_expandFolders);
   }
 
   /// Handles `_performSearch`.
@@ -83,6 +118,9 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<ReferenceSearch?>(referenceSearchProvider, (_, next) {
+      if (next != null) _showReferences(next);
+    });
     return Container(
       padding: const EdgeInsets.all(AppSpacing.medium),
       child: Column(
