@@ -5,6 +5,7 @@ import 'package:fide/models/file_system_item.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
+import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/inline_spinner.dart';
@@ -233,30 +234,34 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                 ),
 
                 if (status.staged.isNotEmpty)
-                  TextField(
-                    controller: _commitController,
-                    maxLines: AppMetric.aiInputMaxLines,
-                    style: const TextStyle(fontSize: AppFontSize.body),
-                    decoration: const InputDecoration(
-                      hintText: 'Enter commit message...',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                if (status.staged.isNotEmpty)
-                  Row(
-                    children: [
-                      ElevatedButton(
-                        onPressed: _isCommitting ? null : _commit,
-                        child: _isCommitting
-                            ? const InlineSpinner()
-                            : const Text('Commit'),
-                      ),
-                      if (_canAmend)
-                        TextButton(
-                          onPressed: _isCommitting ? null : _amend,
-                          child: const Text('Amend'),
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.medium),
+                    child: Column(
+                      spacing: AppSpacing.medium,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppTextField(
+                          controller: _commitController,
+                          hintText: 'Enter commit message...',
+                          maxLines: AppMetric.aiInputMaxLines,
                         ),
-                    ],
+                        Row(
+                          children: [
+                            ElevatedButton(
+                              onPressed: _isCommitting ? null : _commit,
+                              child: _isCommitting
+                                  ? const InlineSpinner()
+                                  : const Text('Commit'),
+                            ),
+                            if (_canAmend)
+                              TextButton(
+                                onPressed: _isCommitting ? null : _amend,
+                                child: const Text('Amend'),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
               ],
             ),

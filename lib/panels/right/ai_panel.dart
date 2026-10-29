@@ -7,6 +7,7 @@ import 'package:fide/providers/ai_service.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/ollama_installer.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/check_mark.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/message_box.dart';
@@ -179,40 +180,36 @@ class _AIPanelState extends ConsumerState<AIPanel> {
             },
           ),
           // Input area
-          Row(
-            spacing: AppSpacing.medium,
-            children: [
-              Expanded(
-                // Enter sends; Shift+Enter, left unbound, starts a new line
-                child: CallbackShortcuts(
-                  bindings: {
-                    const SingleActivator(LogicalKeyboardKey.enter):
-                        _sendUnlessLoading,
-                  },
-                  child: TextField(
-                    controller: _promptController,
-                    decoration: InputDecoration(
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.medium),
+            child: Row(
+              spacing: AppSpacing.medium,
+              children: [
+                Expanded(
+                  // Enter sends; Shift+Enter, left unbound, starts a new line
+                  child: CallbackShortcuts(
+                    bindings: {
+                      const SingleActivator(LogicalKeyboardKey.enter):
+                          _sendUnlessLoading,
+                    },
+                    child: AppTextField(
+                      controller: _promptController,
                       hintText: _selectedAction.hint,
-                      border: const OutlineInputBorder(),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.large,
-                        vertical: AppSpacing.medium,
-                      ),
+                      maxLines: AppMetric.aiInputMaxLines,
+                      minLines: 1,
                     ),
-                    maxLines: AppMetric.aiInputMaxLines,
-                    minLines: 1,
                   ),
                 ),
-              ),
 
-              IconButton(
-                onPressed: _isLoading ? null : _sendMessage,
-                icon: _isLoading
-                    ? const InlineSpinner()
-                    : const Icon(Icons.send),
-                tooltip: 'Send',
-              ),
-            ],
+                IconButton(
+                  onPressed: _isLoading ? null : _sendMessage,
+                  icon: _isLoading
+                      ? const InlineSpinner()
+                      : const Icon(Icons.send),
+                  tooltip: 'Send',
+                ),
+              ],
+            ),
           ),
         ],
       ),

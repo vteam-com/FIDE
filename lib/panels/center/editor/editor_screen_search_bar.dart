@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
 import 'package:flutter/material.dart';
 
@@ -53,22 +54,11 @@ class EditorScreenSearchBar extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: TextField(
+                child: AppTextField(
                   controller: searchController,
                   focusNode: searchFocusNode,
-                  decoration: InputDecoration(
-                    hintText: 'Find in file...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.tiny),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.large,
-                      vertical: AppSpacing.medium,
-                    ),
-                    isDense: true,
-                    filled: true,
-                    fillColor: Theme.of(context).colorScheme.surface,
-                  ),
+                  hintText: 'Find in file...',
+                  icon: Icons.search,
                   onChanged: onSearchChanged,
                   onSubmitted: (_ /* value */) => onNextMatch(),
                 ),

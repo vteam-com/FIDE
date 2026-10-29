@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
 
 /// The filter box under the tree and list panels: a filter icon, the
@@ -26,32 +27,11 @@ class FilterField extends StatelessWidget {
         AppSpacing.medium,
         AppSpacing.medium,
       ),
-      child: ValueListenableBuilder(
-        valueListenable: controller,
-        builder: (context, value, _) => TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            hintText: hintText,
-            prefixIcon: const Icon(Icons.filter_list, size: AppIconSize.large),
-            suffixIcon: value.text.isEmpty
-                ? null
-                : IconButton(
-                    icon: const Icon(Icons.clear, size: AppIconSize.large),
-                    onPressed: controller.clear,
-                  ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadius.medium),
-              borderSide: BorderSide.none,
-            ),
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.large,
-              vertical: AppSpacing.medium,
-            ),
-          ),
-          style: const TextStyle(fontSize: AppFontSize.body),
-        ),
+      child: AppTextField(
+        controller: controller,
+        hintText: hintText,
+        icon: Icons.filter_list,
+        clearable: true,
       ),
     );
   }

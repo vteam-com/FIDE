@@ -14,6 +14,7 @@ import 'package:fide/models/search_result.dart';
 import 'package:fide/models/search_result_node.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
 import 'package:fide/widgets/search_toggle_icons.dart';
 import 'package:flutter/material.dart';
@@ -156,25 +157,13 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Search input
-          TextField(
+          AppTextField(
             controller: _searchController,
             focusNode: _searchFocusNode,
-            decoration: InputDecoration(
-              hintText: 'Search in lib/',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() {
-                          _resultsTree = null;
-                        });
-                      },
-                    )
-                  : null,
-              border: const OutlineInputBorder(),
-            ),
+            hintText: 'Search in lib/',
+            icon: Icons.search,
+            clearable: true,
+            onCleared: () => setState(() => _resultsTree = null),
             onSubmitted: (_) => _performSearch(),
           ),
           const SizedBox(height: AppSpacing.medium),
