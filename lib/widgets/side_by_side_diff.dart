@@ -9,17 +9,18 @@ part 'side_by_side_diff.diff_line.dart';
 // Side-by-side diff widget
 /// Represents `SideBySideDiff`.
 class SideBySideDiff extends StatelessWidget {
-const SideBySideDiff({
+  const SideBySideDiff({
     super.key,
     required this.oldText,
     required this.newText,
   });
-/// Character code of the first encoded line; 0 is skipped because some
+
+  /// Character code of the first encoded line; 0 is skipped because some
   /// tools treat the null character as a string terminator.
   static const int _firstLineCode = 1;
-final String newText;
-final String oldText;
-@override
+  final String newText;
+  final String oldText;
+  @override
   Widget build(BuildContext context) {
     final diffLines = computeLines(oldText, newText);
 
@@ -106,7 +107,8 @@ final String oldText;
       ),
     );
   }
-/// Compares [oldText] and [newText] line by line and returns one row per
+
+  /// Compares [oldText] and [newText] line by line and returns one row per
   /// unchanged, deleted or added line, numbered on each side.
   static List<DiffLine> computeLines(String oldText, String newText) {
     final oldLines = oldText.isEmpty ? <String>[] : oldText.split('\n');
@@ -165,7 +167,8 @@ final String oldText;
     }
     return diffLines;
   }
-/// The bold title above one side of the diff.
+
+  /// The bold title above one side of the diff.
   Widget _buildHeaderLabel(BuildContext context, String label) {
     return Expanded(
       child: Text(
@@ -178,7 +181,8 @@ final String oldText;
       ),
     );
   }
-/// One side of a diff row: the dimmed [lineNumber], then [content] in
+
+  /// One side of a diff row: the dimmed [lineNumber], then [content] in
   /// [contentColor], or the theme's text color when null.
   Widget _buildSide(
     BuildContext context,

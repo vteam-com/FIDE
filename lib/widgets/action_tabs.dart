@@ -5,8 +5,8 @@ import 'package:fide/models/action_status.dart';
 import 'package:fide/models/panel_action.dart';
 import 'package:fide/widgets/icon_label_tab.dart';
 import 'package:fide/widgets/inline_spinner.dart';
-import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 
 /// Tabs of panel actions, each showing its details, an Execute (or Stop)

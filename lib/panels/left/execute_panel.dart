@@ -11,10 +11,10 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/flutter_build_service.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/action_tabs.dart';
+import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:fide/widgets/platform_info_section.dart';
 import 'package:fide/widgets/platform_selector.dart';
-import 'package:fide/widgets/outlined_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
