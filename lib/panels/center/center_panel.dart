@@ -2,6 +2,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/panels/center/editor/editor_screen.dart';
+import 'package:fide/panels/center/project_overview_panel.dart';
 import 'package:fide/panels/center/terminal_panel.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/panel_island.dart';
@@ -77,12 +78,7 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
         onClose: widget.onClose,
       );
     } else {
-      mainContent = const Center(
-        child: Text(
-          'Select a file to start editing',
-          style: TextStyle(fontSize: AppFontSize.title, color: Colors.grey),
-        ),
-      );
+      mainContent = const ProjectOverviewPanel();
     }
 
     return LayoutBuilder(

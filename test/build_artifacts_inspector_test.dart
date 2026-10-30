@@ -37,4 +37,17 @@ void main() {
     expect(artifacts.appIconPath, '${project.path}/web/favicon.png');
     expect(artifacts.lastBuildTime, isNot(anyOf('Never', 'Unknown')));
   });
+
+  test('picks the sharpest platform icon for the whole project', () async {
+    const inspector = BuildArtifactsInspector();
+    expect(await inspector.projectIconPath(project.path), isNull);
+
+    File('${project.path}/web/favicon.png').createSync(recursive: true);
+    final macIcon = File(
+      '${project.path}/macos/Runner/Assets.xcassets/AppIcon.appiconset/'
+      'app_icon_512.png',
+    )..createSync(recursive: true);
+
+    expect(await inspector.projectIconPath(project.path), macIcon.path);
+  });
 }

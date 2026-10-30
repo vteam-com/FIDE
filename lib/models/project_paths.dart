@@ -13,6 +13,9 @@ class ProjectPaths {
   /// The `build/` output directory.
   String get buildDir => p.join(root, 'build');
 
+  /// Line coverage report written by `flutter test --coverage`.
+  String get coverageLcov => p.join(root, 'coverage', 'lcov.info');
+
   /// Throws when [executable], by default this app's, was built into
   /// [buildDir]: cleaning would delete the running app's own assets.
   void ensureCleanable({String? executable}) {

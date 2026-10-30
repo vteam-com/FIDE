@@ -67,6 +67,20 @@ class BadgeStatus extends StatelessWidget {
     );
   }
 
+  /// Creates a `score%` badge: error below
+  /// [AppMetric.criticalScoreThreshold], warning below
+  /// [AppMetric.warningScoreThreshold], success otherwise.
+  factory BadgeStatus.score(int score, {double fontSize = AppFontSize.badge}) {
+    final text = '$score%';
+    if (score < AppMetric.criticalScoreThreshold) {
+      return BadgeStatus.error(text: text, fontSize: fontSize);
+    }
+    if (score < AppMetric.warningScoreThreshold) {
+      return BadgeStatus.warning(text: text, fontSize: fontSize);
+    }
+    return BadgeStatus.success(text: text, fontSize: fontSize);
+  }
+
   /// Creates a pre-configured info badge.
   factory BadgeStatus.info({
     required String text,

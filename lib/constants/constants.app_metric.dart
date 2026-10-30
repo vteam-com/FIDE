@@ -25,6 +25,9 @@ class AppMetric {
   static const int maxScore = 100;
   static const int warningScoreThreshold = 80;
   static const int criticalScoreThreshold = 50;
+
+  /// Weakest fCheck analyzers the project overview lists.
+  static const int overviewWeakestAnalyzers = 3;
   static const int missingLockDeduction = 20;
   static const int buildErrorDeductionPer = 10;
   static const int buildErrorDeductionMax = 50;

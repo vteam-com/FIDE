@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/text_truncation.dart';
 import 'package:fide/models/ai_action.dart';
+import 'package:fide/models/text_truncation.dart';
 import 'package:fide/providers/flutter_sdk.dart';
 import 'package:fide/providers/ollama_installer.dart';
 import 'package:http/http.dart' as http;

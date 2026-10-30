@@ -42,6 +42,7 @@ class AppSize {
   static const double splitterGripLength = 40;
   static const double splitterGripThickness = 4;
   static const double heroLogoHeight = 100;
+  static const double statCardWidth = 260;
   static const double compactTextButtonMinWidth = 50;
   static const double compactTextButtonHeight = 28;
   static const double actionButtonHeight = 36;

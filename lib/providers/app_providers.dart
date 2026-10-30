@@ -9,6 +9,7 @@ import 'package:fide/models/loading_action.dart';
 import 'package:fide/models/open_documents.dart';
 import 'package:fide/models/project_metrics.dart';
 import 'package:fide/models/project_node.dart';
+import 'package:fide/models/project_overview.dart';
 import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/providers/project_service.dart';
 import 'package:fide/providers/project_state_sink.dart';
@@ -129,6 +130,15 @@ final openDocumentsProvider =
 /// Bumped each time the editor saves a file, so views derived from file
 /// contents can refresh.
 final savedFilesRevisionProvider = StateProvider<int>((_) => 0);
+
+/// The center panel's overview of the current project, or null without
+/// one; re-analyzed after a save the next time it is shown.
+final projectOverviewProvider = FutureProvider<ProjectOverview?>((ref) {
+  final projectPath = ref.watch(currentProjectPathProvider);
+  ref.watch(savedFilesRevisionProvider);
+  if (projectPath == null) return null;
+  return ref.read(projectOverviewServiceProvider).load(projectPath);
+});
 
 /// The document showing in the editor, or null.
 final activeDocumentProvider = Provider<DocumentState?>(

@@ -6,7 +6,8 @@ import 'package:fide/models/build_artifacts.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:path/path.dart' as path;
 
-/// Reads a project's build output and app icon for the Execute panel.
+/// Reads a project's build output and app icon for the Execute panel and
+/// the project overview.
 class BuildArtifactsInspector {
   /// Size units, smallest first.
   static const List<String> _sizeUnits = ['B', 'KB', 'MB', 'GB'];
@@ -42,8 +43,26 @@ class BuildArtifactsInspector {
     ],
   };
 
+  /// Platforms whose icon best represents the whole app, sharpest first.
+  static const List<FlutterPlatform> _projectIconPlatforms = [
+    FlutterPlatform.ios,
+    FlutterPlatform.macos,
+    FlutterPlatform.android,
+    FlutterPlatform.web,
+    FlutterPlatform.windows,
+  ];
+
   /// Creates an inspector.
   const BuildArtifactsInspector();
+
+  /// The project's app icon from whichever platform has one, or null.
+  Future<String?> projectIconPath(String projectPath) async {
+    for (final platform in _projectIconPlatforms) {
+      final iconPath = await _appIconPath(projectPath, platform);
+      if (iconPath != null) return iconPath;
+    }
+    return null;
+  }
 
   /// Describes [platform]'s build output and app icon in [projectPath].
   Future<BuildArtifacts> inspect(

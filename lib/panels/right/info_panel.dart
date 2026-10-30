@@ -71,18 +71,6 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
-  /// Builds a BadgeStatus widget based on the quality score
-  BadgeStatus _buildScoreBadge(int score) {
-    final text = '$score%';
-    if (score < AppMetric.criticalScoreThreshold) {
-      return BadgeStatus.error(text: text);
-    }
-    if (score < AppMetric.warningScoreThreshold) {
-      return BadgeStatus.warning(text: text);
-    }
-    return BadgeStatus.success(text: text);
-  }
-
   /// Handles `_showScoreDetails`.
   void _showScoreDetails(BuildContext context, HealthIndicators health) {
     MessageBox.showDetails(
@@ -553,7 +541,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       title: 'Score',
       rightWidget: GestureDetector(
         onTap: () => _showScoreDetails(context, health),
-        child: _buildScoreBadge(health.qualityScore),
+        child: BadgeStatus.score(health.qualityScore),
       ),
 
       child: Padding(

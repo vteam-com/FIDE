@@ -8,7 +8,11 @@ class HeroTitleWidget extends StatelessWidget {
     required this.title,
     this.subTitle,
     this.subWidget,
+    this.logo,
   });
+
+  /// Shown left of [title]; FIDE's own logo when null.
+  final Widget? logo;
 
   final String? subTitle;
 
@@ -26,7 +30,7 @@ class HeroTitleWidget extends StatelessWidget {
         // App Logo
         SizedBox(
           height: AppSize.heroLogoHeight,
-          child: Image.asset('assets/app.png'),
+          child: logo ?? Image.asset('assets/app.png'),
         ),
 
         Flexible(

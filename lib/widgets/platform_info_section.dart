@@ -6,6 +6,7 @@ import 'package:fide/models/build_artifacts.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/providers/process_runner.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/message_box.dart';
@@ -329,31 +330,15 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
 
   /// Returns the platform icon widget — either an SVG asset or a Material icon fallback.
   Widget _buildIcon() {
-    final iconPath = _iconPath;
-    if (iconPath.startsWith('assets/')) {
-      // Use SVG asset
-      return SvgPicture.asset(
-        iconPath,
+    return AppIconImage(
+      path: _artifacts.appIconPath,
+      size: AppIconSize.xLarge,
+      fallback: SvgPicture.asset(
+        _genericIconPath,
         width: AppIconSize.xLarge,
         height: AppIconSize.xLarge,
-      );
-    } else {
-      // Use actual app icon file
-      return Image.file(
-        File(iconPath),
-        width: AppIconSize.xLarge,
-        height: AppIconSize.xLarge,
-        fit: BoxFit.contain,
-        errorBuilder: (_, _, _) {
-          // Fallback to generic SVG if image loading fails
-          return SvgPicture.asset(
-            _genericIconPath,
-            width: AppIconSize.xLarge,
-            height: AppIconSize.xLarge,
-          );
-        },
-      );
-    }
+      ),
+    );
   }
 
   /// Bundled icon for the selected platform.

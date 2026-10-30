@@ -14,6 +14,7 @@ import 'package:fide/providers/project_analyzer.dart';
 import 'package:fide/providers/project_categorizer.dart';
 import 'package:fide/providers/project_creation_service.dart';
 import 'package:fide/providers/project_maintenance_service.dart';
+import 'package:fide/providers/project_overview_service.dart';
 import 'package:fide/providers/project_search_service.dart';
 import 'package:fide/providers/project_service.dart';
 import 'package:fide/providers/project_tree_reader.dart';
@@ -107,6 +108,16 @@ final flutterSdkProvider = Provider<FlutterSdk>(
 
 /// Provides the shared [ArbService] for reading and writing ARB files.
 final arbServiceProvider = Provider<ArbService>((_) => ArbService());
+
+/// Provides the [ProjectOverviewService] behind the center panel's project
+/// overview.
+final projectOverviewServiceProvider = Provider<ProjectOverviewService>(
+  (ref) => ProjectOverviewService(
+    ref.read(codeReviewProvider),
+    ref.read(arbServiceProvider),
+    ref.read(buildArtifactsInspectorProvider),
+  ),
+);
 
 /// Provides how `ProjectService` loads a project's file tree; tests override
 /// it with [loadProjectTreeInline].
