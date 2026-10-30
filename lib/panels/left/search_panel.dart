@@ -2,10 +2,13 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart'
     show AppPadding, AppSpacing, AppIconSize, AppTextStyle;
+import 'package:fide/models/editor_search.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/reference_search.dart';
 import 'package:fide/models/search_result.dart';
 import 'package:fide/models/search_result_node.dart';
+import 'package:fide/providers/active_editor.dart';
+import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
@@ -14,6 +17,8 @@ import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
 import 'package:fide/widgets/loading_indicator.dart';
+import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/search_replace_field.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
 import 'package:fide/widgets/surface_card.dart';
 import 'package:fide/widgets/surface_padding.dart';
@@ -42,6 +47,12 @@ class SearchPanel extends ConsumerStatefulWidget {
 class _SearchPanelState extends ConsumerState<SearchPanel> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+
+  /// Replacement text for every match in the results.
+  final TextEditingController _replaceController = TextEditingController();
+
+  /// The text the shown results matched.
+  String _resultsQuery = '';
   bool _matchCase = false;
   bool _wholeWord = false;
   SearchResultNode? _resultsTree;
@@ -65,6 +76,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _replaceController.dispose();
     super.dispose();
   }
 
@@ -79,6 +91,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
       _matchCase = true;
       _wholeWord = true;
       _isSearching = false;
+      _resultsQuery = search.name;
       _resultsTree = tree;
       if (tree != null) _expandFolders(tree);
     });
@@ -132,6 +145,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
       );
       if (!mounted) return;
       setState(() {
+        _resultsQuery = query;
         _resultsTree = search.toTree(results, libPath);
         _isSearching = false;
       });
@@ -158,40 +172,42 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Search input
-          AppTextField(
-            controller: _searchController,
-            focusNode: _searchFocusNode,
-            hintText: 'Search in lib/',
-            icon: Icons.search,
-            clearable: true,
-            onCleared: () => setState(() => _resultsTree = null),
-            onSubmitted: (_) => _performSearch(),
+          SearchReplaceField(
+            searchField: AppTextField(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              hintText: 'Search in lib/',
+              icon: Icons.search,
+              clearable: true,
+              onCleared: () => setState(() => _resultsTree = null),
+              onSubmitted: (_) => _performSearch(),
+            ),
+            searchActions: [
+              SearchToggleIcons(
+                caseSensitive: _matchCase,
+                wholeWord: _wholeWord,
+                showWholeWord: true,
+                onCaseSensitiveChanged: (value) {
+                  setState(() {
+                    _matchCase = value;
+                  });
+                  if (_searchController.text.isNotEmpty) {
+                    _performSearch();
+                  }
+                },
+                onWholeWordChanged: (value) {
+                  setState(() {
+                    _wholeWord = value;
+                  });
+                  if (_searchController.text.isNotEmpty) {
+                    _performSearch();
+                  }
+                },
+              ),
+            ],
+            replaceController: _replaceController,
+            onReplaceAll: _resultsTree == null ? null : _replaceAll,
           ),
-          const SizedBox(height: AppSpacing.medium),
-
-          // Options
-          SearchToggleIcons(
-            caseSensitive: _matchCase,
-            wholeWord: _wholeWord,
-            showWholeWord: true,
-            onCaseSensitiveChanged: (value) {
-              setState(() {
-                _matchCase = value;
-              });
-              if (_searchController.text.isNotEmpty) {
-                _performSearch();
-              }
-            },
-            onWholeWordChanged: (value) {
-              setState(() {
-                _wholeWord = value;
-              });
-              if (_searchController.text.isNotEmpty) {
-                _performSearch();
-              }
-            },
-          ),
-
           Divider(),
 
           // Results
@@ -212,6 +228,74 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
       ),
     );
   }
+
+  /// Replaces every match in the results, after confirming, then searches
+  /// again. Unsaved edits of open files are kept and saved with the
+  /// replacement.
+  Future<void> _replaceAll() async {
+    final tree = _resultsTree;
+    if (tree == null) return;
+    final query = _resultsQuery;
+    final replacement = _replaceController.text;
+    final filePaths = _filePaths(tree);
+    final confirmed = await MessageBox.confirm(
+      context,
+      title: 'Replace All',
+      message:
+          'Replace every "$query" with "$replacement" in '
+          '${filePaths.length} file${filePaths.length == 1 ? '' : 's'}?',
+      confirmLabel: 'Replace',
+    );
+    if (!confirmed || !mounted) return;
+
+    try {
+      // Reloading closes the active editor, which would write its unsaved
+      // buffer over the replacement
+      final active = ref.read(activeDocumentProvider);
+      if (active != null &&
+          active.isDirty &&
+          filePaths.contains(active.filePath)) {
+        await ref.read(activeEditorProvider).save();
+      }
+      final replaced = await ref
+          .read(projectSearchServiceProvider)
+          .replaceAll(
+            filePaths,
+            query,
+            replacement,
+            caseSensitive: _matchCase,
+            wholeWord: _wholeWord,
+            contents: {
+              for (final document in ref.read(openDocumentsProvider).documents)
+                if (document.isDirty) document.filePath: document.content,
+            },
+          );
+      for (final MapEntry(key: path, value: content)
+          in replaced.files.entries) {
+        await File(path).writeAsString(content);
+      }
+      await ref
+          .read(openDocumentsProvider.notifier)
+          .reloadWritten(replaced.files.keys);
+      if (!mounted) return;
+      MessageBox.showSuccess(
+        context,
+        EditorSearch.replacedMessage(
+          replaced.count,
+          fileCount: replaced.files.length,
+        ),
+      );
+      _searchController.text = query;
+      await _performSearch();
+    } catch (e) {
+      if (mounted) MessageBox.showError(context, 'Replace failed: $e');
+    }
+  }
+
+  /// Paths of the files under results [node].
+  static List<String> _filePaths(SearchResultNode node) => node.isDirectory
+      ? [for (final child in node.children) ..._filePaths(child)]
+      : [node.path];
 
   /// Builds the row for a results folder or file.
   Widget _buildSearchResultNode(SearchResultNode node) {

@@ -19,8 +19,8 @@ abstract interface class EditorCommands {
   /// Moves the caret to [lineNumber] (1-based) and [column], and focuses it.
   void navigateToLine(int lineNumber, {int column = 1});
 
-  /// Saves the active document to disk.
-  void save();
+  /// Saves the active document to disk; completes once written.
+  Future<void> save();
 
   /// The selected text a search should start with, or empty when nothing
   /// usable is selected.

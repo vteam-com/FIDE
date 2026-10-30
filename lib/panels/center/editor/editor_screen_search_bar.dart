@@ -2,15 +2,18 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/header_bar.dart';
+import 'package:fide/widgets/search_replace_field.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
 import 'package:flutter/material.dart';
 
-/// Renders the inline editor search controls and match navigation actions.
+/// Renders the inline editor search and replace controls and match
+/// navigation actions.
 class EditorScreenSearchBar extends StatelessWidget {
   /// Creates the editor search bar.
   const EditorScreenSearchBar({
     super.key,
     required this.searchController,
+    required this.replaceController,
     required this.searchFocusNode,
     required this.caseSensitive,
     required this.wholeWord,
@@ -22,6 +25,8 @@ class EditorScreenSearchBar extends StatelessWidget {
     required this.onNextMatch,
     required this.onCaseSensitiveChanged,
     required this.onWholeWordChanged,
+    required this.onReplace,
+    required this.onReplaceAll,
   });
   final bool caseSensitive;
   final int currentMatchIndex;
@@ -30,8 +35,17 @@ class EditorScreenSearchBar extends StatelessWidget {
   final VoidCallback onClose;
   final VoidCallback onNextMatch;
   final VoidCallback onPreviousMatch;
+
+  /// Replaces the current match and moves to the next one.
+  final VoidCallback onReplace;
+
+  /// Replaces every match.
+  final VoidCallback onReplaceAll;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<bool> onWholeWordChanged;
+
+  /// Holds the replacement text.
+  final TextEditingController replaceController;
   final TextEditingController searchController;
   final FocusNode searchFocusNode;
   final bool wholeWord;
@@ -43,35 +57,35 @@ class EditorScreenSearchBar extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: AppTextField(
-                    controller: searchController,
-                    focusNode: searchFocusNode,
-                    hintText: 'Find in file...',
-                    icon: Icons.search,
-                    onChanged: onSearchChanged,
-                    onSubmitted: (_ /* value */) => onNextMatch(),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.medium),
-                CompactIconButton(
-                  icon: Icons.close,
-                  onPressed: onClose,
-                  tooltip: 'Close (Esc)',
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.tiny),
-            Row(
-              children: [
+            SearchReplaceField(
+              searchField: AppTextField(
+                controller: searchController,
+                focusNode: searchFocusNode,
+                hintText: 'Find in file...',
+                icon: Icons.search,
+                onChanged: onSearchChanged,
+                onSubmitted: (_ /* value */) => onNextMatch(),
+              ),
+              searchActions: [
                 SearchToggleIcons(
                   caseSensitive: caseSensitive,
                   wholeWord: wholeWord,
                   onCaseSensitiveChanged: onCaseSensitiveChanged,
                   onWholeWordChanged: onWholeWordChanged,
                 ),
+                CompactIconButton(
+                  icon: Icons.close,
+                  onPressed: onClose,
+                  tooltip: 'Close (Esc)',
+                ),
+              ],
+              replaceController: replaceController,
+              onReplace: onReplace,
+              onReplaceAll: onReplaceAll,
+            ),
+            const SizedBox(height: AppSpacing.tiny),
+            Row(
+              children: [
                 const Spacer(),
                 if (matchCount > 0) ...[
                   CompactIconButton(

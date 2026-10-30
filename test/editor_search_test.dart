@@ -30,6 +30,27 @@ void main() {
       expect(search.currentIndex, EditorSearch.noMatch);
     });
 
+    test('replaces every match, skipping overlapping ones', () {
+      expect(EditorSearch.replaceAll('Foo foo food', 'foo', 'bar'), (
+        text: 'bar bar bard',
+        count: 3,
+      ));
+      expect(
+        EditorSearch.replaceAll('Foo foo food', 'foo', 'x', wholeWord: true),
+        (text: 'x x food', count: 2),
+      );
+      expect(EditorSearch.replaceAll('aaa', 'aa', 'b'), (text: 'ba', count: 1));
+      expect(EditorSearch.replaceAll('abc', '', 'x'), (text: 'abc', count: 0));
+    });
+
+    test('names the files only when more than one', () {
+      expect(EditorSearch.replacedMessage(1), 'Replaced 1 occurrence');
+      expect(
+        EditorSearch.replacedMessage(3, fileCount: 2),
+        'Replaced 3 occurrences in 2 files',
+      );
+    });
+
     test('starts at the first match from the caret, wrapping', () {
       final search = EditorSearch()..run('a a a', 'a', fromOffset: 1);
       expect(search.currentIndex, 1);

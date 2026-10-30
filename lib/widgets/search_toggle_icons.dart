@@ -28,7 +28,8 @@ class SearchToggleIcons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      spacing: AppSpacing.xLarge,
+      mainAxisSize: MainAxisSize.min,
+      spacing: AppSpacing.medium,
       children: [
         _toggle(
           context,

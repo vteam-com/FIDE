@@ -100,6 +100,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
   final TextEditingController _searchController = TextEditingController();
 
+  /// Replacement text of find-in-file.
+  final TextEditingController _replaceController = TextEditingController();
+
   late FocusNode _searchFocusNode;
 
   /// Find-in-file query, options and matches.
@@ -166,6 +169,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     // Dispose controller
     _codeController.dispose();
     _searchFocusNode.dispose();
+    _replaceController.dispose();
     super.dispose();
   }
 
@@ -281,6 +285,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
                           if (_showSearch)
                             EditorScreenSearchBar(
                               searchController: _searchController,
+                              replaceController: _replaceController,
                               searchFocusNode: _searchFocusNode,
                               caseSensitive: _search.caseSensitive,
                               wholeWord: _search.wholeWord,
@@ -298,6 +303,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
                                 _search.wholeWord = value;
                                 _performSearch(_search.query);
                               },
+                              onReplace: _replaceMatch,
+                              onReplaceAll: _replaceAllMatches,
                             ),
                           // Editor content
                           Expanded(
@@ -373,7 +380,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   void openSearch() => _openSearch();
 
   @override
-  void save() => _saveFile();
+  Future<void> save() => _saveFile();
 
   @override
   String get searchSeed {
@@ -717,6 +724,48 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
         _focusEditor();
       }
     });
+  }
+
+  /// Replaces the current search match, then selects the next one after
+  /// the replacement.
+  void _replaceMatch() {
+    // Matches go stale once the text is edited by hand
+    _search.run(
+      _codeController.text,
+      _search.query,
+      fromOffset: _codeController.selection.start,
+    );
+    if (!_search.hasMatches) return;
+    final start = _search.matches[_search.currentIndex];
+    final replacement = _replaceController.text;
+    _codeController.replaceRange(
+      start,
+      start + _search.query.length,
+      replacement,
+    );
+    _codeController.selection = TextSelection.collapsed(
+      offset: start + replacement.length,
+    );
+    _performSearch(_search.query);
+  }
+
+  /// Replaces every search match in one undoable edit.
+  void _replaceAllMatches() {
+    final text = _codeController.text;
+    final replaced = EditorSearch.replaceAll(
+      text,
+      _search.query,
+      _replaceController.text,
+      caseSensitive: _search.caseSensitive,
+      wholeWord: _search.wholeWord,
+    );
+    if (replaced.count == 0) return;
+    _codeController.replaceRange(0, text.length, replaced.text);
+    _performSearch(_search.query);
+    MessageBox.showSuccess(
+      context,
+      EditorSearch.replacedMessage(replaced.count),
+    );
   }
 
   /// Persists current editor content to disk and clears dirty state.

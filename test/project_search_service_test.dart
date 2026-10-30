@@ -46,6 +46,23 @@ void main() {
     expect(tree.children.first.children.single.name, 'b.dart');
   });
 
+  test('replaces in the given files, preferring given contents', () async {
+    final a = p.join(lib.path, 'a.dart');
+    final b = p.join(lib.path, 'src', 'b.dart');
+
+    final replaced = await service.replaceAll(
+      [a, b],
+      'foo',
+      'bar',
+      wholeWord: true,
+      contents: {b: 'unsaved foo'},
+    );
+
+    expect(replaced.files, {a: 'bar\nfood bar\n', b: 'unsaved bar'});
+    expect(replaced.count, 3);
+    expect(File(a).readAsStringSync(), 'foo\nfood Foo\n');
+  });
+
   test('no results give no tree', () {
     expect(service.toTree(const [], lib.path), isNull);
   });

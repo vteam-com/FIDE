@@ -35,7 +35,7 @@ class ActiveEditor implements EditorCommands {
       _editor?.navigateToLine(lineNumber, column: column);
 
   @override
-  void save() => _editor?.save();
+  Future<void> save() async => _editor?.save();
 
   @override
   String get searchSeed => _editor?.searchSeed ?? '';

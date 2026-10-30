@@ -57,6 +57,41 @@ class ProjectSearchService {
     return results;
   }
 
+  /// The new content of each of [filePaths] with every match of [query]
+  /// replaced by [replacement], and how many were replaced; files without
+  /// a match are left out. [contents] overrides the text on disk, such as
+  /// unsaved editor edits; unreadable files are skipped.
+  Future<({Map<String, String> files, int count})> replaceAll(
+    Iterable<String> filePaths,
+    String query,
+    String replacement, {
+    bool caseSensitive = false,
+    bool wholeWord = false,
+    Map<String, String> contents = const {},
+  }) async {
+    final files = <String, String>{};
+    var count = 0;
+    for (final filePath in filePaths) {
+      final String content;
+      try {
+        content = contents[filePath] ?? await File(filePath).readAsString();
+      } on FileSystemException {
+        continue;
+      }
+      final replaced = EditorSearch.replaceAll(
+        content,
+        query,
+        replacement,
+        caseSensitive: caseSensitive,
+        wholeWord: wholeWord,
+      );
+      if (replaced.count == 0) continue;
+      files[filePath] = replaced.text;
+      count += replaced.count;
+    }
+    return (files: files, count: count);
+  }
+
   /// Groups [results] into a folder tree rooted at [rootPath], in tree
   /// order; null when there are no results.
   SearchResultNode? toTree(List<SearchResult> results, String rootPath) {

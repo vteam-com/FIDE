@@ -62,6 +62,46 @@ class EditorSearch {
     currentIndex = atOrAfter == noMatch && hasMatches ? 0 : atOrAfter;
   }
 
+  /// [text] with every occurrence of [query] replaced by [replacement],
+  /// and how many were replaced; an occurrence overlapping the one before
+  /// it is left as is.
+  static ({String text, int count}) replaceAll(
+    String text,
+    String query,
+    String replacement, {
+    bool caseSensitive = false,
+    bool wholeWord = false,
+  }) {
+    if (query.isEmpty) return (text: text, count: 0);
+    final buffer = StringBuffer();
+    var copiedTo = 0;
+    var count = 0;
+    for (final start in findMatches(
+      text,
+      query,
+      caseSensitive: caseSensitive,
+      wholeWord: wholeWord,
+    )) {
+      if (start < copiedTo) continue;
+      buffer
+        ..write(text.substring(copiedTo, start))
+        ..write(replacement);
+      copiedTo = start + query.length;
+      count++;
+    }
+    buffer.write(text.substring(copiedTo));
+    return (text: buffer.toString(), count: count);
+  }
+
+  /// Confirmation that [count] occurrences were replaced, naming the
+  /// [fileCount] files when more than one.
+  static String replacedMessage(int count, {int fileCount = 1}) {
+    final occurrences = '$count occurrence${count == 1 ? '' : 's'}';
+    return fileCount == 1
+        ? 'Replaced $occurrences'
+        : 'Replaced $occurrences in $fileCount files';
+  }
+
   /// Start offsets of every occurrence of [query] in [text], overlapping
   /// occurrences included.
   static List<int> findMatches(
