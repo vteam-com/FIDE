@@ -1,17 +1,19 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/text_truncation.dart';
 import 'package:fide/providers/ai_service.dart';
 import 'package:path/path.dart' as p;
 
-part 'build_fix_agent.ai_skill.dart';
-part 'build_fix_agent.build_fix_hooks.dart';
+part 'code_edit_agent.ai_skill.dart';
+part 'code_edit_agent.code_edit_hooks.dart';
 
-/// Fixes a broken build by letting the model read and edit the project's
-/// files through [skills], rebuilding until the build passes or it gives up.
+/// Changes a project's code by letting the model read and edit its files
+/// through [skills]: fixing a broken build ([fixBuild]) or carrying out a
+/// request from the chat ([edit]), rebuilding to check its work.
 ///
 /// Every path a skill touches must lie inside [projectPath].
-class BuildFixAgent {
+class CodeEditAgent {
   /// Folders [listFiles] skips: tool output and hidden folders.
   static const Set<String> _skippedFolders = {'build', '.dart_tool', '.git'};
 
@@ -21,10 +23,10 @@ class BuildFixAgent {
   final String projectPath;
 
   /// What the agent calls as it works.
-  final BuildFixHooks hooks;
+  final CodeEditHooks hooks;
 
   /// Creates an agent that talks to the model through [_ai].
-  BuildFixAgent(this._ai, {required this.projectPath, required this.hooks});
+  CodeEditAgent(this._ai, {required this.projectPath, required this.hooks});
 
   /// The tools the model may call.
   late final List<AiSkill> skills = [
@@ -38,8 +40,9 @@ class BuildFixAgent {
       name: 'read_file',
       description: 'Returns the content of a project file.',
       parameters: {'path': 'File relative to the project root'},
-      run: (args) async =>
-          _truncate(await _resolve(_argument(args, 'path')).readAsString()),
+      run: (args) async => (await _resolve(
+        _argument(args, 'path'),
+      ).readAsString()).truncated(AppMetric.aiMaxReadChars),
     ),
     AiSkill(
       name: 'replace_in_file',
@@ -75,7 +78,9 @@ class BuildFixAgent {
       parameters: const {},
       run: (_) async {
         final errors = await hooks.checkBuild();
-        return errors.isEmpty ? 'Build succeeded.' : _truncate(errors);
+        return errors.isEmpty
+            ? 'Build succeeded.'
+            : errors.truncated(AppMetric.aiMaxReadChars);
       },
     ),
   ];
@@ -121,24 +126,63 @@ class BuildFixAgent {
     );
   }
 
+  /// Carries out the user's [request] on the project, with the earlier
+  /// chat [history] (Ollama `role`/`content` messages) for context, and
+  /// returns the model's summary of what it changed, or its answer when
+  /// the request needs no change.
+  ///
+  /// Throws an [AiServiceException] when the model can't be reached.
+  Future<String> edit(
+    String request,
+    List<Map<String, String>> history,
+  ) => _converse(
+    'You are a Flutter/Dart developer working on this project with the '
+        'tools you are given. When the user asks to fix, change, refactor '
+        'or add code, make the change in the files yourself: never reply '
+        'with code for the user to apply. Read each file before you change '
+        'it, prefer replace_in_file, keep to the code style around it, then '
+        'call check_build and fix any errors you caused. Reply with a short '
+        'summary naming each file you changed. When the user only asks a '
+        'question, answer it without editing. Paths are relative to the '
+        'project root.',
+    [
+      ...history,
+      {'role': 'user', 'content': request},
+    ],
+    'Stopped after ${AppMetric.aiMaxToolRounds} steps; the change may '
+        'be incomplete.',
+  );
+
   /// Asks the model to fix the build that failed with [errors], with the
   /// user's [notes], and returns its closing summary.
   ///
   /// Throws an [AiServiceException] when the model can't be reached.
-  Future<String> run(String errors, String notes) async {
+  Future<String> fixBuild(String errors, String notes) => _converse(
+    'You fix broken Flutter/Dart builds by editing the project with '
+        'the tools you are given. Read each file before you change it, '
+        'make the smallest change that fixes the root cause, then call '
+        'check_build. Repeat until the build succeeds, then reply with '
+        'a short summary of what you changed. Paths are relative to the '
+        'project root.',
+    [
+      {'role': 'user', 'content': 'Build errors:\n$errors\n\n$notes'},
+    ],
+    'Stopped after ${AppMetric.aiMaxToolRounds} steps without a '
+        'passing build.',
+  );
+
+  /// Runs the tool loop: sends [system] and [conversation] to the model,
+  /// runs the skills it calls, and returns its first reply that calls
+  /// none, or [stoppedMessage] after [AppMetric.aiMaxToolRounds] rounds.
+  Future<String> _converse(
+    String system,
+    List<Map<String, String>> conversation,
+    String stoppedMessage,
+  ) async {
     final tools = [for (final skill in skills) skill.toTool()];
     final messages = <Map<String, dynamic>>[
-      {
-        'role': 'system',
-        'content':
-            'You fix broken Flutter/Dart builds by editing the project with '
-            'the tools you are given. Read each file before you change it, '
-            'make the smallest change that fixes the root cause, then call '
-            'check_build. Repeat until the build succeeds, then reply with '
-            'a short summary of what you changed. Paths are relative to the '
-            'project root.',
-      },
-      {'role': 'user', 'content': 'Build errors:\n$errors\n\n$notes'},
+      {'role': 'system', 'content': system},
+      ...conversation,
     ];
     for (var round = 0; round < AppMetric.aiMaxToolRounds; round++) {
       final reply = await _ai.chat(messages, tools);
@@ -162,8 +206,7 @@ class BuildFixAgent {
         });
       }
     }
-    return 'Stopped after ${AppMetric.aiMaxToolRounds} steps without a '
-        'passing build.';
+    return stoppedMessage;
   }
 
   /// The string argument [name] of a skill call.
@@ -191,7 +234,7 @@ class BuildFixAgent {
     return File(resolved);
   }
 
-  /// Runs the skill called [name], reporting it to [BuildFixHooks.onStep];
+  /// Runs the skill called [name], reporting it to [CodeEditHooks.onStep];
   /// failures come back as text so the model can correct itself.
   Future<String> _runSkill(String name, Map<String, dynamic> arguments) async {
     final path = arguments['path'];
@@ -207,13 +250,8 @@ class BuildFixAgent {
     }
   }
 
-  /// [text] cut to [AppMetric.aiMaxReadChars].
-  String _truncate(String text) => text.length > AppMetric.aiMaxReadChars
-      ? '${text.substring(0, AppMetric.aiMaxReadChars)}...'
-      : text;
-
   /// Writes [content] to [file], creating its folders, and runs
-  /// [BuildFixHooks.onFileWritten].
+  /// [CodeEditHooks.onFileWritten].
   Future<String> _write(File file, String content) async {
     await file.parent.create(recursive: true);
     await file.writeAsString(content);

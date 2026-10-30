@@ -1,8 +1,8 @@
-part of 'build_fix_agent.dart';
+part of 'code_edit_agent.dart';
 
-/// Callbacks a [BuildFixAgent] runs as it works, so the caller can show
+/// Callbacks a [CodeEditAgent] runs as it works, so the caller can show
 /// progress, refresh what the edits touch and rebuild the project.
-class BuildFixHooks {
+class CodeEditHooks {
   /// Receives a one-line description of each skill the model runs.
   final void Function(String step) onStep;
 
@@ -14,7 +14,7 @@ class BuildFixHooks {
   final Future<String> Function() checkBuild;
 
   /// Creates hooks from the caller's callbacks.
-  const BuildFixHooks({
+  const CodeEditHooks({
     required this.onStep,
     required this.onFileWritten,
     required this.checkBuild,

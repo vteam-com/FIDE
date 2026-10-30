@@ -8,9 +8,16 @@ class AppMetric {
   static const int mruFolderLimit = 5;
   static const int aiContextPreviewChars = 2000;
   static const int aiMaxToolRounds = 25;
+  static const int aiChatHistoryMessages = 6;
   static const int aiMaxListedFiles = 500;
   static const int aiMaxReadChars = 40000;
   static const int aiCommitDiffChars = 12000;
+  static const int aiReviewContextChars = 40000;
+  static const int aiReviewContextTokens = 16384;
+  static const int aiReviewMaxItems = 15;
+  static const int aiReviewMinLiteralChars = 3;
+  static const int aiReviewDuplicateMinLines = 6;
+  static const double aiReviewDuplicateSimilarity = 0.75;
   static const int translationPreviewLines = 5;
   static const int doubleLineLimit = 2;
   static const int largeFileThresholdMb = 10;

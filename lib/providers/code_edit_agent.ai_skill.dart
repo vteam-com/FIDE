@@ -1,4 +1,4 @@
-part of 'build_fix_agent.dart';
+part of 'code_edit_agent.dart';
 
 /// One tool the model may call: its name, what it does, the JSON schema
 /// of its arguments and the code that runs it.

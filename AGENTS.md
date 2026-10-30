@@ -8,6 +8,11 @@
   - when reviewing for DRY, compare across files and folders, not just within one file or diff: list every place a widget is built and compare the calls
   - UI elements that should look alike but render differently are a sign of duplicated code that has drifted
 - `fcheck --fix` can reformat unrelated files; revert changes it makes outside the task
+- fCheck (package `fcheck`, repo `../fcheck`) is the brain for analyzing Flutter/Dart projects; FIDE consumes its public API (`package:fcheck/fcheck.dart`) and never reimplements analysis
+  - when FIDE needs a new finding or metric, add it to fCheck first (it has its own users, so keep it general), then use it from FIDE
+  - never import `package:fcheck/src/...`; export what FIDE needs from fCheck instead
+  - `AnalyzeFolder.analyze()` is synchronous: run it with `Isolate.run`
+- AI panel: when the user asks to fix or change code, the AI edits the project files (through `CodeEditAgent`); it never replies with code for the user to paste
 
 # Workflow
 

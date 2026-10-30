@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fide/providers/ai_service.dart';
-import 'package:fide/providers/build_fix_agent.dart';
+import 'package:fide/providers/code_edit_agent.dart';
 import 'package:fide/providers/flutter_sdk.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -46,9 +46,10 @@ void main() {
   late Directory project;
   late List<String> written;
   late List<Map<String, dynamic>> toolResults;
+  late List<dynamic> sentMessages;
 
   setUp(() {
-    project = Directory.systemTemp.createTempSync('build_fix_agent');
+    project = Directory.systemTemp.createTempSync('code_edit_agent');
     File(p.join(project.path, 'lib', 'main.dart'))
       ..createSync(recursive: true)
       ..writeAsStringSync('void main() { print(1) }');
@@ -59,23 +60,24 @@ void main() {
   tearDown(() => project.deleteSync(recursive: true));
 
   /// An agent whose model sends [replies] in order and whose build passes.
-  BuildFixAgent agentReplying(List<http.Response> replies) {
+  CodeEditAgent agentReplying(List<http.Response> replies) {
     final client = MockClient((request) async {
       // Model lookups: no model listed, so requests keep the default
       if (request.method == 'GET') {
         return http.Response(jsonEncode({'models': []}), HttpStatus.ok);
       }
       final messages = jsonDecode(request.body)['messages'] as List;
+      sentMessages = messages;
       toolResults = [
         for (final message in messages)
           if (message['role'] == 'tool') message as Map<String, dynamic>,
       ];
       return replies.removeAt(0);
     });
-    return BuildFixAgent(
+    return CodeEditAgent(
       AIService(const _NoSdk(), client),
       projectPath: project.path,
-      hooks: BuildFixHooks(
+      hooks: CodeEditHooks(
         onStep: (_) {},
         onFileWritten: (path) async => written.add(path),
         checkBuild: () async => '',
@@ -94,7 +96,7 @@ void main() {
       _answer('Added the missing semicolon.'),
     ]);
 
-    final summary = await agent.run("Expected ';'", '');
+    final summary = await agent.fixBuild("Expected ';'", '');
 
     expect(summary, 'Added the missing semicolon.');
     expect(
@@ -105,13 +107,43 @@ void main() {
     expect(toolResults.last['content'], 'Build succeeded.');
   });
 
+  test(
+    'makes a requested change in the files, with the chat as context',
+    () async {
+      final agent = agentReplying([
+        _toolCall('replace_in_file', {
+          'path': 'lib/main.dart',
+          'old_text': 'print(1)',
+          'new_text': 'print(2);',
+        }),
+        _answer('Changed lib/main.dart.'),
+      ]);
+
+      final summary = await agent.edit('fix 1', [
+        {'role': 'user', 'content': 'D.R.Y. review'},
+        {'role': 'assistant', 'content': '1. main prints the wrong value'},
+      ]);
+
+      expect(summary, 'Changed lib/main.dart.');
+      expect(
+        File(p.join(project.path, 'lib', 'main.dart')).readAsStringSync(),
+        'void main() { print(2); }',
+      );
+      expect(
+        [for (final m in sentMessages) m['role']],
+        ['system', 'user', 'assistant', 'user', 'assistant', 'tool'],
+      );
+      expect(sentMessages[3]['content'], 'fix 1');
+    },
+  );
+
   test('refuses paths outside the project', () async {
     final agent = agentReplying([
       _toolCall('write_file', {'path': '../escape.dart', 'content': ''}),
       _answer('done'),
     ]);
 
-    await agent.run('error', '');
+    await agent.fixBuild('error', '');
 
     expect(toolResults.single['content'], contains('outside the project'));
     expect(written, isEmpty);

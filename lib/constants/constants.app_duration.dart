@@ -17,6 +17,7 @@ class AppDuration {
   static const Duration aiSuggestionTimeout = Duration(seconds: 30);
   static const Duration aiGenerateTimeout = Duration(seconds: 60);
   static const Duration aiToolStepTimeout = Duration(seconds: 180);
+  static const Duration aiReviewTimeout = Duration(seconds: 300);
   static const Duration ollamaStartupDelay = Duration(seconds: 3);
   static const Duration projectCreateTimeout = Duration(seconds: 60);
   static const Duration aiProjectCreateTimeout = Duration(seconds: 120);

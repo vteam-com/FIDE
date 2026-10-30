@@ -1,6 +1,7 @@
 import 'package:fide/providers/ai_service.dart';
 import 'package:fide/providers/build_artifacts_inspector.dart';
 import 'package:fide/providers/code_formatter.dart';
+import 'package:fide/providers/code_review.dart';
 import 'package:fide/providers/file_entry_service.dart';
 import 'package:fide/providers/file_system_watcher.dart';
 import 'package:fide/providers/flutter_build_service.dart';
@@ -43,6 +44,9 @@ final aiServiceProvider = Provider<AIService>(
   (ref) =>
       AIService(ref.read(flutterSdkProvider), ref.read(httpClientProvider)),
 );
+
+/// Provides the [CodeReview] that runs fcheck for the AI reviews.
+final codeReviewProvider = Provider<CodeReview>((_) => const CodeReview());
 
 /// Provides the [OllamaInstaller] that installs and starts the local model.
 final ollamaInstallerProvider = Provider<OllamaInstaller>(

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/text_truncation.dart';
 import 'package:fide/models/ai_action.dart';
 import 'package:fide/providers/flutter_sdk.dart';
 import 'package:fide/providers/ollama_installer.dart';
@@ -166,9 +167,17 @@ class AIService {
   }
 
   /// Sends [prompt] to the model and returns its response text, which may
-  /// be empty. Throws like [_post].
-  Future<String> _generate(String prompt, Duration timeout) async {
-    final data = await _post(_generatePath, {'prompt': prompt}, timeout);
+  /// be empty; [contextTokens] widens the model's context window for long
+  /// prompts. Throws like [_post].
+  Future<String> _generate(
+    String prompt,
+    Duration timeout, {
+    int? contextTokens,
+  }) async {
+    final data = await _post(_generatePath, {
+      'prompt': prompt,
+      if (contextTokens != null) 'options': {'num_ctx': contextTokens},
+    }, timeout);
     return data?['response']?.toString() ?? '';
   }
 
@@ -204,10 +213,11 @@ Please provide a helpful response focused on the coding request.''',
   }
 
   /// Runs [action] on the user's [text]; [context] is the selected file's
-  /// content for [AiAction.ask] and the last build errors for
-  /// [AiAction.fixBuild], and is not sent for the other actions.
+  /// content for [AiAction.ask], the last build errors for
+  /// [AiAction.fixBuild] and fcheck's findings with their code for the
+  /// reviews, and is not sent for the other actions.
   ///
-  /// Fix Build here only suggests changes; `BuildFixAgent` makes them.
+  /// Fix Build here only suggests changes; `CodeEditAgent` makes them.
   Future<String> respond(AiAction action, String text, String context) {
     return switch (action) {
       AiAction.ask => getCodeSuggestion(text, context),
@@ -215,7 +225,49 @@ Please provide a helpful response focused on the coding request.''',
       AiAction.generate => generateCode(text),
       AiAction.refactor => refactorCode(text, 'Please refactor this code'),
       AiAction.fixBuild => fixBuild(text, context),
+      AiAction.dryReview => reviewCode(
+        'Below are the duplicate code pairs and repeated string literals '
+        'fcheck found. Decide which are real duplication worth removing; '
+        'for each, name the files involved and the shared helper, widget '
+        'or constant to extract.',
+        text,
+        context,
+      ),
+      AiAction.solidReview => reviewCode(
+        'Below are the largest classes, the most coupled files and the '
+        'layer violations fcheck found, with the source of the largest '
+        'classes. Check them against the SOLID principles: single '
+        'responsibility, open/closed, Liskov substitution, interface '
+        'segregation and dependency inversion. For each violation, name '
+        'the principle, the file and class, and the change that fixes it.',
+        text,
+        context,
+      ),
     };
+  }
+
+  /// Reviews the project [findings] (fcheck's results and the code they
+  /// point to) as [instructions] say, with the user's [notes] on what to
+  /// focus on, and returns the review in Markdown.
+  Future<String> reviewCode(
+    String instructions,
+    String notes,
+    String findings,
+  ) {
+    return _generate(
+      '''
+You are a senior Flutter/Dart reviewer.
+
+$instructions
+
+List the most important findings first, as Markdown. Only report problems you can point to in the code.
+
+$notes
+
+$findings''',
+      AppDuration.aiReviewTimeout,
+      contextTokens: AppMetric.aiReviewContextTokens,
+    );
   }
 
   /// Explains the cause of failed build output and the code changes that
@@ -233,9 +285,7 @@ $notes''', errors);
   ///
   /// Throws an [AiServiceException] when the request fails.
   Future<String> commitMessage(String diff) async {
-    final changes = diff.length > AppMetric.aiCommitDiffChars
-        ? diff.substring(0, AppMetric.aiCommitDiffChars)
-        : diff;
+    final changes = diff.truncated(AppMetric.aiCommitDiffChars);
     final response = await _generate('''
 Write a short, one-line git commit message stating the intent of these changes.
 Reply with the message only: no quotes, no prefix, no explanation.

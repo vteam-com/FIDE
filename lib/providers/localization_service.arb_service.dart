@@ -67,7 +67,7 @@ class ArbService {
     final json = decode(content);
     if (json == null) {
       _logger.severe(
-        'ARB file $path is not a JSON object. Raw content (first ${AppMetric.logPreviewChars} chars): ${content.substring(0, content.length > AppMetric.logPreviewChars ? AppMetric.logPreviewChars : content.length)}',
+        'ARB file $path is not a JSON object. Raw content (first ${AppMetric.logPreviewChars} chars): ${content.truncated(AppMetric.logPreviewChars)}',
       );
       return null;
     }
