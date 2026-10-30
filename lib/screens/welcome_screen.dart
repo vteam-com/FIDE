@@ -3,11 +3,14 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_theme.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/outlined_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path/path.dart' as p;
 
 /// Represents `WelcomeScreen`.
 class WelcomeScreen extends StatefulWidget {
@@ -227,68 +230,60 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         .toList();
 
     return validMruFolders.map((path) {
-      final projectName = path.split('/').last;
+      final projectName = p.basename(path);
       final hasAccess = widget.accessibleFolders.contains(path);
 
-      return Container(
-        margin: const EdgeInsets.only(bottom: AppSpacing.medium),
-        decoration: BoxDecoration(
+      return Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.medium),
+        child: OutlinedSurface(
+          padding: EdgeInsets.zero,
           color: Theme.of(context).colorScheme.surfaceContainerHighest
               .withValues(alpha: AppOpacity.disabled),
-          borderRadius: BorderRadius.circular(AppRadius.medium),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outline
-                .withValues(alpha: AppOpacity.divider),
-          ),
-        ),
-        // Transparent Material so the ListTile's ink effects paint above the
-        // Container's background color.
-        child: Material(
-          type: MaterialType.transparency,
-          child: ListTile(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.medium),
-            ),
-            leading: Icon(
-              hasAccess ? Icons.folder : Icons.folder_off,
-              color: hasAccess
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.error,
-              size: AppIconSize.large,
-            ),
-            title: Text(
-              projectName,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          // Transparent Material so the ListTile's ink effects paint above
+          // the surface's background color.
+          child: Material(
+            type: MaterialType.transparency,
+            child: ListTile(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.medium),
+              ),
+              leading: Icon(
+                hasAccess ? Icons.folder : Icons.folder_off,
                 color: hasAccess
-                    ? Theme.of(context).colorScheme.onSurface
+                    ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).colorScheme.error,
+                size: AppIconSize.large,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Text(
-              path,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              title: Text(
+                projectName,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: hasAccess
+                      ? Theme.of(context).colorScheme.onSurface
+                      : Theme.of(context).colorScheme.error,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Text(
+                path,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: CompactIconButton(
+                icon: Icons.close,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
+                tooltip: 'Remove from recent projects',
+                onPressed: () => widget.onRemoveMruEntry(path),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: IconButton(
-              icon: Icon(
-                Icons.close,
-                size: AppIconSize.medium,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              onTap: hasAccess ? () => widget.onOpenMruProject(path) : null,
+              dense: true,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xLarge,
+                vertical: AppSpacing.tiny,
               ),
-              onPressed: () => widget.onRemoveMruEntry(path),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-            onTap: hasAccess ? () => widget.onOpenMruProject(path) : null,
-            dense: true,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.xLarge,
-              vertical: AppSpacing.tiny,
             ),
           ),
         ),

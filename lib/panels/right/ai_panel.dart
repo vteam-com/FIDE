@@ -12,9 +12,12 @@ import 'package:fide/providers/code_edit_agent.dart';
 import 'package:fide/providers/flutter_build_service.dart';
 import 'package:fide/providers/ollama_installer.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/check_mark.dart';
+import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/inline_spinner.dart';
+import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/markdown_text.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
@@ -80,74 +83,20 @@ class _AIPanelState extends ConsumerState<AIPanel> {
           // Setup instructions if no messages and not all ready
           if (_messages.isEmpty &&
               !(_hasOllamaInstalled && _isOllamaRunning && _hasModelInstalled))
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.xLarge),
-              margin: const EdgeInsets.all(AppSpacing.medium),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(AppRadius.medium),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outline
-                      .withValues(alpha: AppOpacity.divider),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: AppSpacing.medium),
-                      Text(
-                        'Setup',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.medium),
-                  if (_isCheckingStatus)
-                    const Center(child: CircularProgressIndicator())
-                  else if (!_hasOllamaInstalled)
-                    _buildSetupStep(
-                      'Ollama is not installed.',
-                      'Install Ollama',
-                      _installOllama,
-                    )
-                  else if (!_isOllamaRunning)
-                    _buildSetupStep(
-                      'Ollama is installed but not running.',
-                      'Run Ollama',
-                      _runOllama,
-                    )
-                  else if (!_hasModelInstalled)
-                    _buildSetupStep(
-                      'Ollama is running but no model is downloaded.',
-                      'Download Model',
-                      _downloadModel,
-                    )
-                  else
-                    const Text(
-                      'Ollama is ready to use!',
-                      style: TextStyle(fontSize: AppFontSize.caption),
-                    ),
-                ],
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.medium),
+              child: ActionCard(
+                title: 'Setup',
+                icon: Icons.info_outline,
+                child: _buildSetupState(),
               ),
             ),
 
           // Chat area
           Expanded(
             child: _messages.isEmpty
-                ? const Center(
-                    child: Text(
-                      'Start a conversation with the AI assistant',
-                      style: TextStyle(color: Colors.grey),
-                    ),
+                ? const EmptyState(
+                    message: 'Start a conversation with the AI assistant',
                   )
                 : ListView.builder(
                     controller: _scrollController,
@@ -252,6 +201,36 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     );
   }
 
+  /// The first missing piece of the Ollama setup, or that it is ready.
+  Widget _buildSetupState() {
+    if (_isCheckingStatus) return const LoadingIndicator();
+    if (!_hasOllamaInstalled) {
+      return _buildSetupStep(
+        'Ollama is not installed.',
+        'Install Ollama',
+        _installOllama,
+      );
+    }
+    if (!_isOllamaRunning) {
+      return _buildSetupStep(
+        'Ollama is installed but not running.',
+        'Run Ollama',
+        _runOllama,
+      );
+    }
+    if (!_hasModelInstalled) {
+      return _buildSetupStep(
+        'Ollama is running but no model is downloaded.',
+        'Download Model',
+        _downloadModel,
+      );
+    }
+    return const Text(
+      'Ollama is ready to use!',
+      style: TextStyle(fontSize: AppFontSize.caption),
+    );
+  }
+
   /// One setup stage: what's missing and the button that fixes it, or a
   /// spinner while an install action runs.
   Widget _buildSetupStep(
@@ -265,7 +244,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
         Text(message, style: const TextStyle(fontSize: AppFontSize.caption)),
         const SizedBox(height: AppSpacing.medium),
         if (_isInstalling)
-          const CircularProgressIndicator()
+          const InlineSpinner()
         else
           ElevatedButton(onPressed: onPressed, child: Text(buttonLabel)),
       ],

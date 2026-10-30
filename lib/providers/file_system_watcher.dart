@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/providers/project_tree_reader.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 
 /// Service for monitoring file system changes and applying incremental updates
 class FileSystemWatcher {
@@ -219,7 +219,7 @@ class FileSystemWatcher {
 
     // Cancel watchers for all subdirectories
     final subDirsToRemove = _watchers.keys
-        .where((watchedPath) => path.isWithin(directoryPath, watchedPath))
+        .where((watchedPath) => p.isWithin(directoryPath, watchedPath))
         .toList();
 
     for (final subDir in subDirsToRemove) {

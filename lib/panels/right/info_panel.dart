@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/health_indicators.dart';
 import 'package:fide/models/project_metrics.dart';
 import 'package:fide/models/project_paths.dart';
@@ -11,6 +12,7 @@ import 'package:fide/providers/project_maintenance_service.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/busy_icon_button.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/output_panel.dart';
@@ -167,7 +169,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         Icon(
           active ? Icons.remove : Icons.check,
           size: AppFontSize.label,
-          color: active ? Colors.red.shade600 : Colors.green.shade600,
+          color: active ? AppTheme.errorColor : AppTheme.successColor,
         ),
         const SizedBox(width: AppSpacing.medium),
         Expanded(
@@ -189,7 +191,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           style: TextStyle(
             fontSize: AppFontSize.metadata,
             fontWeight: FontWeight.w500,
-            color: active ? Colors.red.shade600 : Colors.green.shade600,
+            color: active ? AppTheme.errorColor : AppTheme.successColor,
           ),
         ),
       ],
@@ -350,19 +352,23 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             style: TextStyle(
               fontSize: AppFontSize.badge,
               color: isProblematic || hasIncompatibleVersion
-                  ? Colors.red
-                  : (isOutdated ? Colors.orange.shade700 : null),
+                  ? AppTheme.errorColor
+                  : (isOutdated ? AppTheme.warningColor : null),
             ),
           ),
           if (isProblematic || hasIncompatibleVersion) ...[
             const SizedBox(width: AppSpacing.tiny),
-            Icon(Icons.warning, size: AppIconSize.tiny, color: Colors.red),
+            Icon(
+              Icons.warning,
+              size: AppIconSize.tiny,
+              color: AppTheme.errorColor,
+            ),
           ],
         ],
       ),
       onPressed: onChipPressed,
       backgroundColor: isProblematic || hasIncompatibleVersion
-          ? Colors.red.shade50
+          ? AppTheme.errorBackground
           : null,
       labelPadding: AppPadding.chipLabel,
       visualDensity: VisualDensity.compact,
@@ -453,12 +459,10 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    IconButton(
+                    CompactIconButton(
+                      icon: Icons.edit_note,
+                      tooltip: 'Edit pubspec.yaml',
                       onPressed: _openPubspecYaml,
-                      icon: const Icon(
-                        Icons.edit_note,
-                        size: AppIconSize.medium,
-                      ),
                     ),
                   ],
                 ),
@@ -554,7 +558,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                 '✅ No issues detected',
                 style: TextStyle(
                   fontSize: AppFontSize.caption,
-                  color: Colors.green.shade700,
+                  color: AppTheme.successColor,
                 ),
               )
             else
@@ -588,11 +592,11 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   Color _getIssueColor(String type) {
     switch (type) {
       case 'error':
-        return Colors.red.shade700;
+        return AppTheme.errorColor;
       case 'warning':
-        return Colors.orange.shade700;
+        return AppTheme.warningColor;
       case 'info':
-        return Colors.blue.shade700;
+        return AppTheme.infoColor;
       default:
         return Theme.of(context).colorScheme.onSurfaceVariant;
     }

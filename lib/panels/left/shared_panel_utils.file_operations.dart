@@ -70,7 +70,7 @@ class FileOperations {
       return;
     }
 
-    final newPath = path.join(path.dirname(node.path), result);
+    final newPath = p.join(p.dirname(node.path), result);
     if (_files.exists(newPath)) {
       MessageBox.showError(
         context,
@@ -110,7 +110,7 @@ class FileOperations {
 
     if (!context.mounted || result == null || result.isEmpty) return;
 
-    final targetPath = path.join(parent.path, result);
+    final targetPath = p.join(parent.path, result);
     if (_files.exists(targetPath)) {
       MessageBox.showError(context, 'A $kind with this name already exists');
       return;

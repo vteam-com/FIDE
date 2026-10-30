@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/relative_time.dart';
 import 'package:fide/providers/git_service.dart';
@@ -10,13 +11,14 @@ import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/inline_spinner.dart';
+import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 
 part 'git_panel.git_status_notifier.dart';
 part 'git_panel.git_commits_notifier.dart';
@@ -233,7 +235,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   /// Handles `_viewDiff`.
   Future<void> _viewDiff(String filePath) async {
     final gitService = ref.read(gitServiceProvider);
-    final fullFilePath = path.join(widget.projectPath, filePath);
+    final fullFilePath = p.join(widget.projectPath, filePath);
 
     // Determine file status to get correct content
     final status = await gitService.getStatus(widget.projectPath);
@@ -253,7 +255,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     if (mounted) {
       MessageBox.showDetails(
         context,
-        title: Text('Git Diff: ${path.basename(filePath)}'),
+        title: Text('Git Diff: ${p.basename(filePath)}'),
         // The diff scrolls its own lines within a fixed share of the window
         scrollable: false,
         content: SizedBox(
@@ -271,7 +273,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     final gitCommits = ref.watch(gitCommitsProvider);
 
     return gitStatus.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const LoadingIndicator(),
       error: (error, _) => Center(child: Text('Error: $error')),
       data: (status) => Column(
         children: [
@@ -419,7 +421,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                     ),
 
                     child: gitCommits.when(
-                      loading: () => const CircularProgressIndicator(),
+                      loading: () => const LoadingIndicator(),
                       error: (error, _) => Text('Error: $error'),
                       data: (commits) => commits.isEmpty
                           ? const Text('No commits yet')
@@ -513,7 +515,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     final contentWidget = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: files.map((file) {
-        final filePath = path.join(widget.projectPath, file);
+        final filePath = p.join(widget.projectPath, file);
         final item = FileSystemItem.fromFileSystemEntity(File(filePath));
 
         // Create display name with parent folder context if not a root file
@@ -559,7 +561,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
             if (canDiscard && onDiscard != null)
               CompactIconButton(
                 icon: Icons.undo,
-                color: Colors.red,
+                color: AppTheme.errorColor,
                 onPressed: () => onDiscard([file]),
                 tooltip: 'Discard Changes',
               ),
@@ -581,24 +583,24 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   /// Handles `_getContextualFileName`.
   String _getContextualFileName(String filePath) {
     // Split the path into parts
-    final parts = path.split(filePath);
+    final parts = p.split(filePath);
 
     // If it's a root-level file (only one part), just return the filename
     if (parts.length <= 1) {
-      return path.basename(filePath);
+      return p.basename(filePath);
     }
 
     // For files deeper in the hierarchy, show the immediate parent directory + filename
     // e.g., "lib/utils/file_type_utils.dart" becomes "utils/file_type_utils.dart"
     if (parts.length >= AppMetric.minDirPathDepth) {
-      return path.join(
+      return p.join(
         parts[parts.length - AppMetric.minDirPathDepth],
         parts[parts.length - 1],
       );
     }
 
     // Fallback
-    return path.basename(filePath);
+    return p.basename(filePath);
   }
 
   @override

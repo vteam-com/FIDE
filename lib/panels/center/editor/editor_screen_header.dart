@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/widget_services/diff_counter.dart';
@@ -119,7 +120,7 @@ class EditorScreenHeader extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
                 style: TextStyle(
-                  color: Colors.orange,
+                  color: AppTheme.warningColor,
                   fontStyle: FontStyle.italic,
                 ),
               ),

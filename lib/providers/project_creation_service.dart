@@ -8,7 +8,7 @@ import 'package:fide/providers/ai_service.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/localization_service.dart';
 import 'package:fide/providers/process_runner.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 
 /// Receives each creation step's progress as it changes.
 typedef CreationProgress = void Function(int, String, LoadingStatus);
@@ -169,7 +169,7 @@ class ProjectCreationService {
       for (final relativePath in _generatedFiles) {
         final content = generated[relativePath];
         if (content != null) {
-          await File(path.join(request.projectPath, relativePath))
+          await File(p.join(request.projectPath, relativePath))
               .writeAsString(content);
         }
       }
@@ -202,10 +202,10 @@ class ProjectCreationService {
   /// Whether the files and folders every Flutter project has are present.
   Future<bool> _isComplete(String projectPath) async {
     for (final file in _requiredFiles) {
-      if (!await File(path.join(projectPath, file)).exists()) return false;
+      if (!await File(p.join(projectPath, file)).exists()) return false;
     }
     for (final directory in _requiredDirectories) {
-      if (!await Directory(path.join(projectPath, directory)).exists()) {
+      if (!await Directory(p.join(projectPath, directory)).exists()) {
         return false;
       }
     }
@@ -224,7 +224,7 @@ class ProjectCreationService {
     for (final language in languages) {
       if (language == _templateLanguage) continue;
       final arb = File(
-        path.join(request.projectPath, 'lib', 'l10n', 'app_$language.arb'),
+        p.join(request.projectPath, 'lib', 'l10n', 'app_$language.arb'),
       );
       if (!await arb.exists()) await arb.writeAsString('{}\n');
     }

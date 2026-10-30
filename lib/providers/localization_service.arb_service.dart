@@ -97,7 +97,7 @@ class ArbService {
       }
     }
 
-    final filename = path.split(Platform.pathSeparator).last;
+    final filename = p.basename(path);
     final languageCode = ArbFile.extractLanguageCode(filename);
 
     return ArbFile(path: path, languageCode: languageCode, entries: entries);

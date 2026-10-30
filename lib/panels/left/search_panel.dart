@@ -16,11 +16,13 @@ import 'package:fide/models/search_result_node.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/app_text_field.dart';
+import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
+import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 
 /// Represents `SearchPanel`.
 class SearchPanel extends ConsumerStatefulWidget {
@@ -122,7 +124,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     });
 
     try {
-      final libPath = path.join(widget.projectPath, 'lib');
+      final libPath = p.join(widget.projectPath, 'lib');
       final search = ref.read(projectSearchServiceProvider);
       final results = await search.search(
         libPath,
@@ -197,7 +199,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
           // Results
           Expanded(
             child: _resultsTree == null && !_isSearching
-                ? const Center(child: Text('No results found'))
+                ? const EmptyState(message: 'No results found')
                 : _resultsTree != null
                 ? SingleChildScrollView(
                     child: Column(
@@ -206,7 +208,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
                           .toList(),
                     ),
                   )
-                : const Center(child: CircularProgressIndicator()),
+                : const LoadingIndicator(),
           ),
         ],
       ),
@@ -256,7 +258,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
 
   /// Handles `_buildFileResultNode`.
   Widget _buildFileResultNode(SearchResultNode node) {
-    final relativePath = path.relative(node.path, from: widget.projectPath);
+    final relativePath = p.relative(node.path, from: widget.projectPath);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

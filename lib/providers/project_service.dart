@@ -12,7 +12,7 @@ import 'package:fide/providers/project_state_sink.dart';
 import 'package:fide/providers/project_tree_reader.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 
 /// Service for managing project operations independently of UI
 class ProjectService {
@@ -193,7 +193,7 @@ class ProjectService {
   /// Update Git status for all nodes recursively
   void _updateNodeGitStatus(ProjectNode node, GitStatus gitStatus) {
     if (node.isFile) {
-      final relativePath = path.relative(
+      final relativePath = p.relative(
         node.path,
         from: _currentProjectRoot!.path,
       );

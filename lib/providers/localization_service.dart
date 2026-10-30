@@ -14,6 +14,7 @@ import 'package:fide/models/pubspec.dart';
 import 'package:fide/models/text_truncation.dart';
 import 'package:fide/providers/process_runner.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 

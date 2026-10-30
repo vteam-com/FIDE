@@ -2,6 +2,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/build_artifacts.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/providers/process_runner.dart';
@@ -15,6 +16,7 @@ import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:path/path.dart' as p;
 
 /// Represents `PlatformInfoSection`.
 class PlatformInfoSection extends ConsumerStatefulWidget {
@@ -81,7 +83,7 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
             color: widget.isSupported
                 ? widget.canBuild
                       ? Theme.of(context).colorScheme.primary
-                      : Colors.orange
+                      : AppTheme.warningColor
                 : Theme.of(context).colorScheme.error,
           ),
         ],
@@ -128,10 +130,7 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
                 const SizedBox(height: AppSpacing.micro),
                 _buildDetailRow('Size:', _artifacts.size),
                 const SizedBox(height: AppSpacing.micro),
-                _buildDetailRow(
-                  'Location:',
-                  _artifacts.location.split('/').last,
-                ),
+                _buildDetailRow('Location:', p.basename(_artifacts.location)),
               ],
             ),
 
@@ -195,7 +194,7 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _iconPath.split('/').last,
+                          p.basename(_iconPath),
                           style: TextStyle(
                             fontSize: AppFontSize.metadata,
                             fontWeight: FontWeight.w500,
@@ -263,12 +262,9 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
                           break;
                         case 'select_in_fide':
                           // Show a message for now since we don't have access to the explorer
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Select in FIDE-Explorer: $_iconPath',
-                              ),
-                            ),
+                          MessageBox.showInfo(
+                            context,
+                            'Select in FIDE-Explorer: $_iconPath',
                           );
                           break;
                       }

@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/message_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -64,7 +65,7 @@ class MessageBox {
 
   /// Asks for a line of text, starting from [initialText]; resolves to the
   /// trimmed text when [confirmLabel] is pressed, null on Cancel or
-  /// dismissal.
+  /// dismissal; [keyboardType] picks the on-screen keyboard.
   static Future<String?> promptForText(
     BuildContext context, {
     required String title,
@@ -72,6 +73,7 @@ class MessageBox {
     required String hintText,
     required String confirmLabel,
     String initialText = '',
+    TextInputType? keyboardType,
   }) async {
     // Not disposed here: the dialog's field still uses it while the route
     // animates out after showDialog returns
@@ -80,9 +82,11 @@ class MessageBox {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(title),
-        content: TextField(
+        content: AppTextField(
           controller: controller,
-          decoration: InputDecoration(labelText: labelText, hintText: hintText),
+          labelText: labelText,
+          hintText: hintText,
+          keyboardType: keyboardType,
           autofocus: true,
           onSubmitted: (text) => Navigator.of(context).pop(text.trim()),
         ),

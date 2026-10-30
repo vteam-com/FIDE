@@ -1,5 +1,9 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/action_status.dart';
 import 'package:fide/models/loading_action.dart';
+import 'package:fide/widgets/inline_spinner.dart';
+import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 
 /// Scrollable list of load steps, each with a pending, success or failure
@@ -21,18 +25,8 @@ class LoadingActionsLog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Container(
+    final log = ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: AppSize.statusLogMaxHeight),
-      decoration: framed
-          ? BoxDecoration(
-              border: Border.all(
-                color: colorScheme.outline.withValues(
-                  alpha: AppOpacity.divider,
-                ),
-              ),
-              borderRadius: BorderRadius.circular(AppRadius.medium),
-            )
-          : null,
       child: ListView.builder(
         shrinkWrap: true,
         itemCount: actions.length,
@@ -46,7 +40,7 @@ class LoadingActionsLog extends StatelessWidget {
             child: Row(
               spacing: AppSpacing.medium,
               children: [
-                _buildStatusIcon(action.status, colorScheme),
+                _buildStatusIcon(action.status),
                 Expanded(
                   child: Text(
                     action.text,
@@ -63,32 +57,23 @@ class LoadingActionsLog extends StatelessWidget {
         },
       ),
     );
+    return framed ? OutlinedSurface(padding: EdgeInsets.zero, child: log) : log;
   }
 
-  /// Returns a spinner, check or error icon for [status].
-  Widget _buildStatusIcon(LoadingStatus status, ColorScheme colorScheme) {
-    switch (status) {
-      case LoadingStatus.pending:
-        return SizedBox(
-          width: AppIconSize.large,
-          height: AppIconSize.large,
-          child: CircularProgressIndicator(
-            strokeWidth: AppSize.borderThin,
-            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-          ),
-        );
-      case LoadingStatus.success:
-        return const Icon(
-          Icons.check_circle,
-          color: Colors.green,
-          size: AppIconSize.large,
-        );
-      case LoadingStatus.failed:
-        return Icon(
-          Icons.error,
-          color: colorScheme.error,
-          size: AppIconSize.large,
-        );
-    }
+  /// Returns a spinner while [status] is pending, else the shared result
+  /// mark.
+  Widget _buildStatusIcon(LoadingStatus status) {
+    final result = switch (status) {
+      LoadingStatus.pending => null,
+      LoadingStatus.success => ActionStatus.success,
+      LoadingStatus.failed => ActionStatus.error,
+    };
+    if (result == null) return const InlineSpinner();
+    return StatusIndicator.forResult(
+          result,
+          showLabel: false,
+          iconSize: AppIconSize.large,
+        ) ??
+        const SizedBox.shrink();
   }
 }

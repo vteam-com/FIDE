@@ -2,8 +2,10 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_status.dart';
+import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/panel_action.dart';
 import 'package:fide/widgets/icon_label_tab.dart';
+import 'package:fide/widgets/icon_tab_bar.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/status_indicator.dart';
@@ -68,233 +70,201 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return LayoutBuilder(
-      builder: (_, constraints) {
-        final showLabels =
-            constraints.maxWidth >
-            AppSize.tabLabelBreakpoint; // Show labels if wider than 240px
+    return OutlinedSurface(
+      padding: AppPadding.actionTabContainer,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // TabBar with action tabs
+          IconTabBar(
+            controller: _tabController,
+            tabsBuilder: (showLabels) => widget.actions.map((action) {
+              return IconLabelTab(
+                showLabel: showLabels,
+                label: action.title,
+                icon: action.isRunning
+                    ? InlineSpinner(
+                        size: showLabels
+                            ? AppSize.regularProgressIndicator
+                            : AppSize.expandedProgressIndicator,
+                        color: AppTheme.warningColor,
+                      )
+                    : Icon(
+                        action.status.resultIcon ?? action.icon,
+                        size: showLabels
+                            ? AppIconSize.large
+                            : AppIconSize.largeCompact,
+                      ),
+              );
+            }).toList(),
+          ),
 
-        return OutlinedSurface(
-          padding: AppPadding.actionTabContainer,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // TabBar with action tabs
-              TabBar(
-                controller: _tabController,
-                tabs: widget.actions.map((action) {
-                  final status = action.status;
+          const SizedBox(height: AppSpacing.xLarge),
 
-                  return IconLabelTab(
-                    showLabel: showLabels,
-                    label: action.title,
-                    icon: action.isRunning
-                        ? InlineSpinner(
-                            size: showLabels
-                                ? AppSize.regularProgressIndicator
-                                : AppSize.expandedProgressIndicator,
-                            color: Colors.amber,
-                          )
-                        : Icon(
-                            status == ActionStatus.success
-                                ? Icons.check_circle
-                                : status == ActionStatus.error
-                                ? Icons.error
-                                : action.icon,
-                            size: showLabels
-                                ? AppIconSize.large
-                                : AppIconSize.largeCompact,
-                          ),
-                  );
-                }).toList(),
-                isScrollable: true,
-                tabAlignment: TabAlignment.start,
-                labelPadding: showLabels
-                    ? AppPadding.actionTabLabelExpanded
-                    : AppPadding.actionTabLabelCompact,
-              ),
+          // Content area showing selected action details
+          SizedBox(
+            height: AppSize.actionTabContentHeight,
+            child: TabBarView(
+              controller: _tabController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: widget.actions.map((action) {
+                final status = action.status;
+                final isRunning = action.isRunning;
+                final color = action.color;
+                final canStop = isRunning && action.onStop != null;
 
-              const SizedBox(height: AppSpacing.xLarge),
-
-              // Content area showing selected action details
-              SizedBox(
-                height: AppSize.actionTabContentHeight,
-                child: TabBarView(
-                  controller: _tabController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: widget.actions.map((action) {
-                    final status = action.status;
-                    final isRunning = action.isRunning;
-                    final color = action.color;
-                    final canStop = isRunning && action.onStop != null;
-
-                    return Padding(
-                      padding: AppPadding.actionTabContent,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                return Padding(
+                  padding: AppPadding.actionTabContent,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Action title and description
+                      Row(
                         children: [
-                          // Action title and description
-                          Row(
-                            children: [
-                              Icon(
-                                action.icon,
-                                size: AppIconSize.xLarge,
-                                color: color,
-                              ),
-                              const SizedBox(width: AppSpacing.large),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      action.title,
-                                      style: TextStyle(
-                                        fontSize: AppFontSize.title,
-                                        fontWeight: FontWeight.bold,
-                                        color: colorScheme.onSurface,
-                                      ),
-                                    ),
-                                    Text(
-                                      action.description,
-                                      style: TextStyle(
-                                        fontSize: AppFontSize.caption,
-                                        color: colorScheme.onSurface.withValues(
-                                          alpha: AppOpacity.secondaryText,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                          Icon(
+                            action.icon,
+                            size: AppIconSize.xLarge,
+                            color: color,
                           ),
-
-                          const SizedBox(height: AppSpacing.large),
-
-                          // Action details - reduced size and made expandable
+                          const SizedBox(width: AppSpacing.large),
                           Expanded(
-                            child: Container(
-                              padding: AppPadding.actionTabDetails,
-                              decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest
-                                    .withValues(alpha: AppOpacity.divider),
-                                borderRadius: BorderRadius.circular(
-                                  AppRadius.small,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  action.title,
+                                  style: TextStyle(
+                                    fontSize: AppFontSize.title,
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.onSurface,
+                                  ),
                                 ),
-                              ),
-                              child: SingleChildScrollView(
-                                // Keep only this for the details text
-                                child: Text(
-                                  action.details,
-                                  style: AppTextStyle.monospace.copyWith(
-                                    fontSize: AppFontSize.metadata,
+                                Text(
+                                  action.description,
+                                  style: TextStyle(
+                                    fontSize: AppFontSize.caption,
                                     color: colorScheme.onSurface.withValues(
-                                      alpha: AppOpacity.emphasis,
+                                      alpha: AppOpacity.secondaryText,
                                     ),
-                                    height: AppLineHeight.compact,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: AppSpacing.large),
+
+                      // Action details - reduced size and made expandable
+                      Expanded(
+                        child: Container(
+                          padding: AppPadding.actionTabDetails,
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest
+                                .withValues(alpha: AppOpacity.divider),
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.small,
+                            ),
+                          ),
+                          child: SingleChildScrollView(
+                            // Keep only this for the details text
+                            child: Text(
+                              action.details,
+                              style: AppTextStyle.monospace.copyWith(
+                                fontSize: AppFontSize.metadata,
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: AppOpacity.emphasis,
+                                ),
+                                height: AppLineHeight.compact,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: AppSpacing.large),
+
+                      // Execute button and status in a compact footer
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: canStop
+                                  ? action.onStop
+                                  : isRunning
+                                  ? null
+                                  : action.onRun,
+                              icon: canStop
+                                  ? const Icon(
+                                      Icons.stop,
+                                      size: AppIconSize.mediumLarge,
+                                    )
+                                  : isRunning
+                                  ? const InlineSpinner(
+                                      size: AppSize.compactProgressIndicator,
+                                      color: Colors.white,
+                                    )
+                                  : const Icon(
+                                      Icons.play_arrow,
+                                      size: AppIconSize.mediumLarge,
+                                    ),
+                              label: Text(
+                                canStop
+                                    ? 'Stop'
+                                    : isRunning
+                                    ? 'Running...'
+                                    : 'Execute',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: canStop
+                                    ? colorScheme.error
+                                    : isRunning
+                                    ? Colors.grey
+                                    : color,
+                                // Contrasted with the fill rather than
+                                // fixed white: the dark theme's primary
+                                // and error are light tints.
+                                foregroundColor: canStop
+                                    ? colorScheme.onError
+                                    : _onColor(color),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: AppSpacing.regular,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.medium,
                                   ),
                                 ),
                               ),
                             ),
                           ),
 
-                          const SizedBox(height: AppSpacing.large),
-
-                          // Execute button and status in a compact footer
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton.icon(
-                                  onPressed: canStop
-                                      ? action.onStop
-                                      : isRunning
-                                      ? null
-                                      : action.onRun,
-                                  icon: canStop
-                                      ? const Icon(
-                                          Icons.stop,
-                                          size: AppIconSize.mediumLarge,
-                                        )
-                                      : isRunning
-                                      ? const InlineSpinner(
-                                          size:
-                                              AppSize.compactProgressIndicator,
-                                          color: Colors.white,
-                                        )
-                                      : const Icon(
-                                          Icons.play_arrow,
-                                          size: AppIconSize.mediumLarge,
-                                        ),
-                                  label: Text(
-                                    canStop
-                                        ? 'Stop'
-                                        : isRunning
-                                        ? 'Running...'
-                                        : 'Execute',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: canStop
-                                        ? colorScheme.error
-                                        : isRunning
-                                        ? Colors.grey
-                                        : color,
-                                    // Contrasted with the fill rather than
-                                    // fixed white: the dark theme's primary
-                                    // and error are light tints.
-                                    foregroundColor: canStop
-                                        ? colorScheme.onError
-                                        : _onColor(color),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: AppSpacing.regular,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                        AppRadius.medium,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                          // Status message - compact
+                          const SizedBox(height: AppSpacing.small),
+                          if (isRunning)
+                            StatusIndicator(
+                              icon: Icons.hourglass_top,
+                              label: 'In progress...',
+                              color: colorScheme.onSurface.withValues(
+                                alpha: AppOpacity.muted,
                               ),
-
-                              // Status message - compact
-                              const SizedBox(height: AppSpacing.small),
-                              if (isRunning)
-                                StatusIndicator(
-                                  icon: Icons.hourglass_top,
-                                  label: 'In progress...',
-                                  color: colorScheme.onSurface.withValues(
-                                    alpha: AppOpacity.muted,
-                                  ),
-                                )
-                              else if (status == ActionStatus.success)
-                                StatusIndicator(
-                                  icon: Icons.check_circle,
-                                  label: 'Success',
-                                  color: Colors.green,
-                                )
-                              else if (status == ActionStatus.error)
-                                StatusIndicator(
-                                  icon: Icons.error,
-                                  label: 'Failed',
-                                  color: Colors.red,
-                                ),
-                            ],
-                          ),
+                            )
+                          else
+                            ?StatusIndicator.forResult(status),
                         ],
                       ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ],
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 

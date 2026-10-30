@@ -10,6 +10,7 @@ class OutlinedSurface extends StatelessWidget {
     required this.padding,
     required this.child,
     this.borderColor,
+    this.color,
   });
 
   /// Outline color; the theme's faint outline when null.
@@ -17,6 +18,9 @@ class OutlinedSurface extends StatelessWidget {
 
   /// The content.
   final Widget child;
+
+  /// Fill color; the theme's surface when null.
+  final Color? color;
 
   /// Space between the outline and [child].
   final EdgeInsetsGeometry padding;
@@ -27,7 +31,7 @@ class OutlinedSurface extends StatelessWidget {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: color ?? colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.medium),
         border: Border.all(
           color:

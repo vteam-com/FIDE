@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/widgets/more_menu_button.dart';
@@ -49,7 +50,7 @@ class FileNameWidget extends StatelessWidget {
     // Determine text color based on selection, hidden status, Git status, and warning
     Color textColor;
     if (fileItem.warning != null) {
-      textColor = Colors.orange;
+      textColor = AppTheme.warningColor;
     } else if (isSelected) {
       textColor = Theme.of(context).colorScheme.primary;
     } else if (fileItem.hasGitChanges) {

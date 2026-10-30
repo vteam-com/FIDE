@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 
 /// Renders the editor image preview for supported image files.
 class EditorScreenImageView extends StatelessWidget {
@@ -87,7 +87,7 @@ class EditorScreenImageView extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.tiny),
                   Text(
-                    'Size: ${(documentContentLength / AppMetric.fileSizeDivisor).round()}KB • ${path.extension(filePath).toUpperCase().substring(1)}',
+                    'Size: ${(documentContentLength / AppMetric.fileSizeDivisor).round()}KB • ${p.extension(filePath).toUpperCase().substring(1)}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurface
                           .withValues(alpha: AppOpacity.secondaryText),

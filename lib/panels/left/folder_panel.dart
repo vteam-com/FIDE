@@ -12,7 +12,7 @@ import 'package:fide/widgets/filter_field.dart';
 import 'package:fide/widgets/folder_node.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 
 part 'folder_panel.node_builder.dart';
 
@@ -74,7 +74,7 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
     if (panelState.projectRoot == null || !mounted) return;
 
     // For filesystem view, expand the directory containing the file
-    final fileDir = path.dirname(filePath);
+    final fileDir = p.dirname(filePath);
     if (fileDir != panelState.projectRoot!.path) {
       /// Handles `_findNodeByPath`.
       final directoryNode = _findNodeByPath(fileDir);

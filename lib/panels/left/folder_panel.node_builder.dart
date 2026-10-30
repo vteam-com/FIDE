@@ -53,9 +53,8 @@ class NodeBuilder extends StatelessWidget {
     final isSelected =
         selectedFile != null &&
         (selectedFile!.path == node.path ||
-            path.normalize(selectedFile!.path) == path.normalize(node.path) ||
-            path.canonicalize(selectedFile!.path) ==
-                path.canonicalize(node.path));
+            p.normalize(selectedFile!.path) == p.normalize(node.path) ||
+            p.canonicalize(selectedFile!.path) == p.canonicalize(node.path));
 
     return FileNameWidget(
       fileItem: item,

@@ -3,7 +3,6 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/action_status.dart';
 import 'package:fide/models/output_log.dart';
 import 'package:fide/models/panel_action.dart';
 import 'package:fide/panels/left/command_actions.dart';
@@ -279,17 +278,10 @@ Validates test organization and naming conventions.
                       // Status indicator
                       if (action.isRunning)
                         const InlineSpinner()
-                      else if (action.status == ActionStatus.success)
-                        StatusIndicator(
-                          icon: Icons.check_circle,
-                          label: '',
-                          color: Colors.green,
-                        )
-                      else if (action.status == ActionStatus.error)
-                        StatusIndicator(
-                          icon: Icons.error,
-                          label: '',
-                          color: Colors.red,
+                      else
+                        ?StatusIndicator.forResult(
+                          action.status,
+                          showLabel: false,
                         ),
                       // Tooltip with details
                       IconButton(

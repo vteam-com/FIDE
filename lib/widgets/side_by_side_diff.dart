@@ -2,6 +2,7 @@
 
 import 'package:diff_match_patch/diff_match_patch.dart';
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/outlined_surface.dart';
 import 'package:flutter/material.dart';
 
 part 'side_by_side_diff.diff_line.dart';
@@ -24,14 +25,8 @@ class SideBySideDiff extends StatelessWidget {
   Widget build(BuildContext context) {
     final diffLines = computeLines(oldText, newText);
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline
-              .withValues(alpha: AppOpacity.divider),
-        ),
-        borderRadius: BorderRadius.circular(AppRadius.tiny),
-      ),
+    return OutlinedSurface(
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           // Header
@@ -40,9 +35,8 @@ class SideBySideDiff extends StatelessWidget {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surfaceContainerHighest
                   .withValues(alpha: AppOpacity.disabled),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(AppRadius.tiny),
-                topRight: Radius.circular(AppRadius.tiny),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadius.medium),
               ),
             ),
             child: Row(

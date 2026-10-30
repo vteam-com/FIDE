@@ -12,13 +12,17 @@ import 'package:fide/providers/ai_service.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/localization_service.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/filter_field.dart';
+import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 
 enum LocalizationStatus {
   checking,
@@ -297,7 +301,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     }
 
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const LoadingIndicator();
     }
 
     if (_errorMessage != null) {
@@ -319,7 +323,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     // Show status-based UI
     switch (_localizationStatus) {
       case LocalizationStatus.checking:
-        return const Center(child: CircularProgressIndicator());
+        return const LoadingIndicator();
       case LocalizationStatus.noProject:
 
         /// Handles `_buildStatusView`.
@@ -573,7 +577,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           ),
         Expanded(
           child: _arbFiles.isEmpty
-              ? const Center(child: Text('No ARB files found'))
+              ? const EmptyState(message: 'No ARB files found')
               : ListView.separated(
                   itemCount: filteredComparisons.length,
                   itemBuilder: (_ /*context*/, index) {
@@ -656,7 +660,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                 ),
                 const SizedBox(height: AppSpacing.tiny),
                 ...malformedFiles.map((filePath) {
-                  final fileName = filePath.split(Platform.pathSeparator).last;
+                  final fileName = p.basename(filePath);
                   return Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.micro),
                     child: Row(
@@ -717,38 +721,14 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
   ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.large),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xLarge),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(icon, color: Theme.of(context).colorScheme.primary),
-                  const SizedBox(width: AppSpacing.large),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.medium),
-              Text(description, style: Theme.of(context).textTheme.bodyMedium),
-              const SizedBox(height: AppSpacing.large),
-              Align(
-                alignment: Alignment.centerRight,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.arrow_forward),
-                  label: const Text('Execute'),
-                  onPressed: onPressed,
-                ),
-              ),
-            ],
-          ),
+      child: ActionCard(
+        title: title,
+        icon: icon,
+        description: description,
+        action: ElevatedButton.icon(
+          icon: const Icon(Icons.arrow_forward),
+          label: const Text('Execute'),
+          onPressed: onPressed,
         ),
       ),
     );

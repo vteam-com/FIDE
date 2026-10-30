@@ -16,7 +16,7 @@ import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 
 part 'shared_panel_utils.file_operations.dart';
 part 'shared_panel_utils.context_menu_handler.dart';
@@ -110,7 +110,7 @@ class PanelStateManager {
 
       // Get Git status for this specific file
       final gitStatus = await _gitService.getStatus(projectRoot!.path);
-      final relativePath = path.relative(node.path, from: projectRoot!.path);
+      final relativePath = p.relative(node.path, from: projectRoot!.path);
 
       node.gitStatus = gitStatus.statusOf(relativePath);
     } catch (e) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 
 /// An open document in the editor: its path, content, cursor and dirty flag.
 ///
@@ -38,6 +39,6 @@ class DocumentState {
 
   /// The file name without its directory.
   String get fileName {
-    return filePath.split('/').last;
+    return p.basename(filePath);
   }
 }

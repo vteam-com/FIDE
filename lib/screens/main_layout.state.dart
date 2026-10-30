@@ -135,7 +135,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     await ref.read(projectManagerProvider).saveLastOpenedFile(file.path);
     await ref.read(openDocumentsProvider.notifier).open(file.path);
 
-    final fileName = path.basename(file.path);
+    final fileName = p.basename(file.path);
     widget.onFileOpened?.call(fileName);
 
     ref.read(rightPanelVisibleProvider.notifier).state = true;

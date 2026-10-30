@@ -6,6 +6,7 @@ import 'package:fide/panels/right/info_panel.dart';
 import 'package:fide/panels/right/localization/localization_panel.dart';
 import 'package:fide/panels/right/outline_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/panel_tabs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -91,15 +92,7 @@ class _RightPanelState extends State<RightPanel>
                 onNodeSelected: widget.onOutlineNodeSelected,
                 onJumpToLine: widget.onJumpToLine,
               )
-            : const Center(
-                child: Text(
-                  'Select a file to view outline',
-                  style: TextStyle(
-                    fontSize: AppFontSize.label,
-                    color: Colors.grey,
-                  ),
-                ),
-              ),
+            : const EmptyState(message: 'Select a file to view outline'),
       RightPanelTab.localize => LocalizationPanel(
         selectedFile: widget.selectedFile,
       ),

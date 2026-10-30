@@ -1,5 +1,7 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/project_name.dart';
+import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/step_header.dart';
 import 'package:fide/widgets/tool_status_row.dart';
 import 'package:file_picker/file_picker.dart';
@@ -132,35 +134,26 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
 
         const SizedBox(height: AppSpacing.xLarge),
 
-        TextField(
+        AppTextField(
           controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'Project Name',
-            hintText: 'Enter project name',
-            border: OutlineInputBorder(),
-          ),
+          labelText: 'Project Name',
+          hintText: 'Enter project name',
         ),
 
         Row(
           children: [
             Expanded(
-              child: TextField(
+              child: AppTextField(
                 controller: directoryController,
-                decoration: const InputDecoration(
-                  labelText: 'Parent Directory',
-                  hintText: 'Select parent directory',
-                  border: OutlineInputBorder(),
-                ),
+                labelText: 'Parent Directory',
+                hintText: 'Select parent directory',
                 readOnly: true,
               ),
             ),
             const SizedBox(width: AppSpacing.xLarge),
             ElevatedButton(
               onPressed: _handleBrowseDirectory,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: AppSpacing.xLarge),
-                child: Text('Browse'),
-              ),
+              child: const Text('Browse'),
             ),
           ],
         ),
@@ -178,13 +171,13 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
               children: [
                 Icon(
                   Icons.info_outline,
-                  color: Colors.orange,
+                  color: AppTheme.warningColor,
                   size: AppIconSize.medium,
                 ),
                 Text(
                   'Project name will be: "$_finalProjectName"',
                   style: TextStyle(
-                    color: Colors.orange,
+                    color: AppTheme.warningColor,
                     fontSize: AppFontSize.caption,
                     fontWeight: FontWeight.w500,
                   ),
@@ -229,13 +222,10 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
 
         // Description field only if AI is enabled AND Ollama is available
         if (_useAI && widget.ollamaStatusChecked && widget.ollamaAvailable)
-          TextField(
+          AppTextField(
             controller: descriptionController,
-            decoration: const InputDecoration(
-              labelText: 'App Description (AI-powered generation)',
-              hintText: 'Describe what kind of app you want to create...',
-              border: OutlineInputBorder(),
-            ),
+            labelText: 'App Description (AI-powered generation)',
+            hintText: 'Describe what kind of app you want to create...',
             maxLines: AppMetric.aiInputMaxLines,
             minLines: AppMetric.doubleLineLimit,
           ),

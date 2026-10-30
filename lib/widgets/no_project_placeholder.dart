@@ -1,4 +1,4 @@
-import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 
 /// Centered "No project loaded" message for panels that need an open project.
@@ -11,20 +11,9 @@ class NoProjectPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        spacing: AppSpacing.xLarge,
-        children: [
-          if (showIcon)
-            const Icon(
-              Icons.folder_open,
-              size: AppIconSize.emptyState,
-              color: Colors.grey,
-            ),
-          const Text('No project loaded', style: TextStyle(color: Colors.grey)),
-        ],
-      ),
+    return EmptyState(
+      message: 'No project loaded',
+      icon: showIcon ? Icons.folder_open : null,
     );
   }
 }

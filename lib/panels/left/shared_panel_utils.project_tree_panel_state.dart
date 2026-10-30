@@ -100,7 +100,7 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
       case NodeAction.copyRelativePath:
         if (projectRoot != null) {
           _copyPath(
-            path.relative(node.path, from: projectRoot!.path),
+            p.relative(node.path, from: projectRoot!.path),
             'Relative path copied to clipboard',
           );
         }
@@ -141,7 +141,7 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
       await ref
           .read(processRunnerProvider)
           .revealInFileManager(
-            node.isDirectory ? node.path : path.dirname(node.path),
+            node.isDirectory ? node.path : p.dirname(node.path),
           );
     } catch (e) {
       showError('Failed to reveal ${node.name}: $e');

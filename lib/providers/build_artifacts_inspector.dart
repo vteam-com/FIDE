@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/build_artifacts.dart';
 import 'package:fide/models/flutter_platform.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 
 /// Reads a project's build output and app icon for the Execute panel and
 /// the project overview.
@@ -69,7 +69,7 @@ class BuildArtifactsInspector {
     String projectPath,
     FlutterPlatform platform,
   ) async {
-    final buildDir = Directory(path.join(projectPath, 'build'));
+    final buildDir = Directory(p.join(projectPath, 'build'));
     final location = await _buildLocation(buildDir, platform.name);
     return BuildArtifacts(
       appIconPath: await _appIconPath(projectPath, platform),
@@ -86,7 +86,7 @@ class BuildArtifactsInspector {
   ) async {
     final candidates = _iconCandidates[platform];
     for (final relativePath in candidates ?? const <String>[]) {
-      final iconPath = path.join(projectPath, relativePath);
+      final iconPath = p.join(projectPath, relativePath);
       if (await File(iconPath).exists()) return iconPath;
     }
     return null;
@@ -97,11 +97,11 @@ class BuildArtifactsInspector {
   Future<String?> _buildLocation(Directory buildDir, String platform) async {
     if (!await buildDir.exists()) return null;
 
-    final platformDir = Directory(path.join(buildDir.path, platform));
+    final platformDir = Directory(p.join(buildDir.path, platform));
     if (await platformDir.exists()) return platformDir.path;
 
     await for (final entry in buildDir.list(followLinks: false)) {
-      final name = path.basename(entry.path).toLowerCase();
+      final name = p.basename(entry.path).toLowerCase();
       if (name.contains(platform) || platform.contains(name)) {
         return entry.path;
       }

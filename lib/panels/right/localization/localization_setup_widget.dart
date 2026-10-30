@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/action_card.dart';
 import 'package:flutter/material.dart';
 
 /// Represents `LocalizationSetupWidget`.
@@ -38,17 +39,16 @@ class LocalizationSetupWidget extends StatelessWidget {
           const SizedBox(height: AppSpacing.xxLarge),
 
           // One-click setup card
-          /// Handles `_buildActionCard`.
-          _buildActionCard(
-            context,
-            '🚀 Initialize Localization',
-            'Automatically configure everything needed for localization',
-            [
-              '• Add flutter_localizations & intl packages',
-              '• Create l10n directory and ARB files',
-              '• Generate AppLocalizations class',
+          ActionCard(
+            title: '🚀 Initialize Localization',
+            description:
+                'Automatically configure everything needed for localization',
+            steps: const [
+              'Add flutter_localizations & intl packages',
+              'Create l10n directory and ARB files',
+              'Generate AppLocalizations class',
             ],
-            ElevatedButton.icon(
+            action: ElevatedButton.icon(
               icon: const Icon(Icons.auto_fix_high),
               label: const Text('Initialize'),
               onPressed: onInitializeLocalization,
@@ -60,16 +60,15 @@ class LocalizationSetupWidget extends StatelessWidget {
             const SizedBox(height: AppSpacing.xLarge),
 
             // Main.dart update card
-            _buildActionCard(
-              context,
-              '🔧 Update main.dart',
-              'Configure your app to use AppLocalizations',
-              [
-                '• Wrap app with MaterialApp.router',
-                '• Add localizations delegates',
-                '• Set supported locales',
+            ActionCard(
+              title: '🔧 Update main.dart',
+              description: 'Configure your app to use AppLocalizations',
+              steps: const [
+                'Wrap app with MaterialApp.router',
+                'Add localizations delegates',
+                'Set supported locales',
               ],
-              ElevatedButton.icon(
+              action: ElevatedButton.icon(
                 icon: const Icon(Icons.code),
                 label: const Text('Update main.dart'),
                 onPressed: onUpdateMainDart,
@@ -89,60 +88,6 @@ class LocalizationSetupWidget extends StatelessWidget {
             'After setup, use AppLocalizations.of(context) to display localized strings in your widgets.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
-        ],
-      ),
-    );
-  }
-
-  /// Handles `_buildActionCard`.
-  Widget _buildActionCard(
-    BuildContext context,
-    String title,
-    String description,
-    List<String> steps,
-    Widget button,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(AppIconSize.large),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppSpacing.large),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline
-              .withValues(alpha: AppOpacity.selected),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: AppSpacing.medium),
-          Text(description, style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: AppSpacing.xLarge),
-          ...steps.map(
-            (step) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.tiny),
-              child: Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      step,
-                      softWrap: true,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: AppIconSize.large),
-          button,
         ],
       ),
     );

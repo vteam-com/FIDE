@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/widgets/icon_label_tab.dart';
+import 'package:fide/widgets/icon_tab_bar.dart';
 import 'package:fide/widgets/platform_icon.dart';
 import 'package:flutter/material.dart';
 
@@ -55,45 +56,26 @@ class _PlatformSelectorState extends State<PlatformSelector>
   Widget build(BuildContext context) {
     const platforms = FlutterPlatform.values;
 
-    return LayoutBuilder(
-      builder: (_, constraints) {
-        final showLabels =
-            constraints.maxWidth > AppSize.platformSelectorLabelBreakpoint; // Show labels if wider than 240px
-
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            dividerColor: Colors.transparent,
-            tabs: platforms.map((p) {
-              final isSupported = widget.supportedPlatforms.contains(p);
-              final isSelected = widget.selectedPlatform == p;
-              final iconSize = showLabels
-                  ? AppIconSize.large
-                  : AppIconSize.mediumLarge;
-
-              return IconLabelTab(
-                height: showLabels
-                    ? AppIconSize.emptyState
-                    : AppSize.titleBarHeight,
-                showLabel: showLabels,
-                label: p.displayName,
-                tooltip: isSupported
-                    ? p.displayName
-                    : '${p.displayName} (not configured)',
-                icon: PlatformIcon(
-                  platform: p,
-                  size: iconSize,
-                  isSupported: isSupported,
-                  isSelected: isSelected,
-                ),
-              );
-            }).toList(),
+    return IconTabBar(
+      controller: _tabController,
+      labelBreakpoint: AppSize.platformSelectorLabelBreakpoint,
+      tabsBuilder: (showLabels) => platforms.map((p) {
+        final isSupported = widget.supportedPlatforms.contains(p);
+        return IconLabelTab(
+          height: showLabels ? AppIconSize.emptyState : AppSize.titleBarHeight,
+          showLabel: showLabels,
+          label: p.displayName,
+          tooltip: isSupported
+              ? p.displayName
+              : '${p.displayName} (not configured)',
+          icon: PlatformIcon(
+            platform: p,
+            size: showLabels ? AppIconSize.large : AppIconSize.mediumLarge,
+            isSupported: isSupported,
+            isSelected: widget.selectedPlatform == p,
           ),
         );
-      },
+      }).toList(),
     );
   }
 

@@ -13,6 +13,7 @@ import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/inline_spinner.dart';
+import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/more_menu_button.dart';
 import 'package:fide/widgets/output_panel.dart';
@@ -123,7 +124,7 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (_isLoading)
-              const Center(child: CircularProgressIndicator())
+              const LoadingIndicator()
             else if (_error.isNotEmpty)
               OutputPanel(
                 title: 'Parse Error',

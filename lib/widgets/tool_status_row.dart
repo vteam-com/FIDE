@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/app_theme.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
 
@@ -28,7 +29,7 @@ class ToolStatusRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = available ? Colors.green : Colors.red;
+    final color = available ? AppTheme.successColor : AppTheme.errorColor;
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.medium),
       child: Row(

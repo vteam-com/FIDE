@@ -10,6 +10,7 @@ import 'package:fide/screens/create_project_step2.dart';
 import 'package:fide/screens/create_project_step3.dart';
 import 'package:fide/widgets/full_path_widget.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
+import 'package:fide/widgets/loading_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
@@ -375,7 +376,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   Widget build(BuildContext context) {
     // Show loading if directory controller is not initialized yet
     if (directoryController == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: LoadingIndicator());
     }
 
     return Scaffold(

@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/providers/process_runner.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 
 part 'git_service.git_status.dart';
 part 'git_service.git_commit.dart';
@@ -95,7 +95,7 @@ class GitService {
       )) {
         if (entity is File) {
           // Get relative path from project root
-          final relativePath = path.relative(entity.path, from: projectPath);
+          final relativePath = p.relative(entity.path, from: projectPath);
           files.add(relativePath);
         }
       }
@@ -457,8 +457,8 @@ class GitService {
     try {
       final result = await _runner.run('git', [
         'show',
-        '$revision:./${path.basename(filePath)}',
-      ], workingDirectory: path.dirname(filePath));
+        '$revision:./${p.basename(filePath)}',
+      ], workingDirectory: p.dirname(filePath));
       return result.exitCode == 0 ? result.stdout.toString() : null;
     } catch (_) {
       return null;
@@ -528,7 +528,7 @@ class GitService {
     final staged = await _numstat(projectPath, cached: true);
     final unstaged = await _numstat(projectPath, cached: false);
     for (final file in status.untracked) {
-      unstaged[file] = await _newFileStats(File(path.join(projectPath, file)));
+      unstaged[file] = await _newFileStats(File(p.join(projectPath, file)));
     }
     return (staged: staged, unstaged: unstaged);
   }

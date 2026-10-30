@@ -2,6 +2,7 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -159,13 +160,10 @@ class _MessageWidgetState extends State<MessageWidget>
                               child: BadgeStatus.success(text: 'Copied'),
                             ),
                           )
-                        : IconButton(
-                            icon: Icon(
-                              Icons.copy,
-                              color: foregroundColor.withValues(
-                                alpha: AppOpacity.secondaryText,
-                              ),
-                              size: AppIconSize.mediumLarge,
+                        : CompactIconButton(
+                            icon: Icons.copy,
+                            color: foregroundColor.withValues(
+                              alpha: AppOpacity.secondaryText,
                             ),
                             onPressed: () async {
                               await Clipboard.setData(
@@ -186,28 +184,18 @@ class _MessageWidgetState extends State<MessageWidget>
                               }
                             },
                             tooltip: 'Copy message',
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
                           ),
                   ),
                 ],
                 if (widget.showCloseButton) ...[
                   const SizedBox(width: AppSpacing.tiny),
-                  IconButton(
-                    icon: Icon(
-                      Icons.close,
-                      color: foregroundColor.withValues(
-                        alpha: AppOpacity.secondaryText,
-                      ),
-                      size: AppIconSize.mediumLarge,
+                  CompactIconButton(
+                    icon: Icons.close,
+                    color: foregroundColor.withValues(
+                      alpha: AppOpacity.secondaryText,
                     ),
                     onPressed: _dismiss,
                     tooltip: 'Close message',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: AppSize.compactActionButton,
-                      minHeight: AppSize.compactActionButton,
-                    ),
                   ),
                 ],
               ],

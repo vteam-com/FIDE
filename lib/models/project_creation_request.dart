@@ -1,4 +1,4 @@
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 
 /// The choices the new-project wizard collects before creation starts.
 class ProjectCreationRequest {
@@ -31,5 +31,5 @@ class ProjectCreationRequest {
   });
 
   /// Full path of the project folder to create.
-  String get projectPath => path.join(parentDirectory, name);
+  String get projectPath => p.join(parentDirectory, name);
 }

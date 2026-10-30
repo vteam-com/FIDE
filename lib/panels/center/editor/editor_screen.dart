@@ -19,13 +19,15 @@ import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/widgets/empty_state.dart';
+import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 import 'package:re_highlight/styles/atom-one-dark.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
 
@@ -217,7 +219,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     // Check if file is too large to load
     if (_isLargeFile) {
       return LargeFileMessage(
-        fileName: path.basename(_currentFile),
+        fileName: p.basename(_currentFile),
         fileSizeMB: _fileSizeMB,
       );
     }
@@ -256,9 +258,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const LoadingIndicator()
                   : _currentFile.isEmpty
-                  ? const Center(child: Text('No file selected'))
+                  ? const EmptyState(message: 'No file selected')
                   : !FileTypeUtils.isFileSupportedInEditor(_currentFile)
                   ? EditorScreenUnsupportedFileView(filePath: _currentFile)
                   : _isImageFile(_currentFile)
@@ -435,7 +437,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
   Widget _buildDiffView() {
     if (_diffOldText == null || _diffNewText == null) {
-      return const Center(child: Text('No diff data available'));
+      return const EmptyState(message: 'No diff data available');
     }
 
     return SideBySideDiff(oldText: _diffOldText!, newText: _diffNewText!);
@@ -614,16 +616,14 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
     try {
       final gitService = ref.read(gitServiceProvider);
-      final isGitRepo = await gitService.isGitRepository(
-        path.dirname(filePath),
-      );
+      final isGitRepo = await gitService.isGitRepository(p.dirname(filePath));
       if (!isGitRepo) {
         _allGitDiffStats[filePath] = null;
         return;
       }
 
       final stats = await gitService.getFileDiffStats(
-        path.dirname(filePath),
+        p.dirname(filePath),
         filePath,
       );
       _allGitDiffStats[filePath] = stats;
@@ -827,7 +827,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     try {
       final gitService = ref.read(gitServiceProvider);
       final isGitRepo = await gitService.isGitRepository(
-        path.dirname(_currentFile),
+        p.dirname(_currentFile),
       );
       if (!mounted) return;
 
@@ -837,7 +837,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       }
 
       final diff = await gitService.getFileDiff(
-        path.dirname(_currentFile),
+        p.dirname(_currentFile),
         _currentFile,
       );
 

@@ -5,7 +5,9 @@ import 'package:fide/models/project_overview.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
+import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/platform_icon.dart';
 import 'package:fide/widgets/stat_card.dart';
 import 'package:flutter/material.dart';
@@ -24,20 +26,12 @@ class ProjectOverviewPanel extends ConsumerWidget {
         .watch(projectOverviewProvider)
         .when(
           data: (overview) => overview == null
-              ? _message('Select a file to start editing')
+              ? const EmptyState(message: 'Select a file to start editing')
               : _overview(context, ref, overview),
-          loading: () => const Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              spacing: AppSpacing.large,
-              children: [
-                CircularProgressIndicator(),
-                Text('Analyzing project with fCheck…'),
-              ],
-            ),
-          ),
+          loading: () =>
+              const LoadingIndicator(message: 'Analyzing project with fCheck…'),
           error: (error, _) =>
-              _message('Could not analyze the project: $error'),
+              EmptyState(message: 'Could not analyze the project: $error'),
         );
   }
 
@@ -110,16 +104,6 @@ class ProjectOverviewPanel extends ConsumerWidget {
         if (missing.isNotEmpty)
           'Not configured: ${missing.map((p) => p.displayName).join(', ')}',
       ],
-    );
-  }
-
-  /// Centered grey [text].
-  Widget _message(String text) {
-    return Center(
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: AppFontSize.title, color: Colors.grey),
-      ),
     );
   }
 

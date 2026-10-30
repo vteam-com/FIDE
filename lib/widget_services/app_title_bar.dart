@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 import 'package:window_manager/window_manager.dart';
 
 // Widgets
@@ -146,7 +146,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
         children: [
           Flexible(
             child: Text(
-              path.basename(currentProjectPath),
+              p.basename(currentProjectPath),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
               style: TextStyle(
@@ -334,7 +334,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
           const SizedBox(width: AppSpacing.medium),
           Expanded(
             child: Text(
-              path.basename(folderPath),
+              p.basename(folderPath),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
