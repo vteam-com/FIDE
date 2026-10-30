@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/project_overview.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/app_icon_image.dart';
@@ -48,17 +49,19 @@ class ProjectOverviewPanel extends ConsumerWidget {
       title: 'Localization',
       value: StatCard.text(
         context,
-        languages.isEmpty ? 'Off' : '${languages.length} languages',
+        languages.isEmpty ? 'Off' : '${languages.length.localized} languages',
       ),
       details: [
         if (languages.isEmpty)
           'No ARB files in lib/l10n'
         else ...[
           languages.join(', '),
-          '${overview.translations.length} strings',
-          missing == 0 ? 'All translated' : '$missing missing translations',
+          '${overview.translations.length.localized} strings',
+          missing == 0
+              ? 'All translated'
+              : '${missing.localized} missing translations',
         ],
-        '$hardcoded hardcoded strings',
+        '${hardcoded.localized} hardcoded strings',
       ],
     );
   }
@@ -148,31 +151,46 @@ class ProjectOverviewPanel extends ConsumerWidget {
                       AppMetric.overviewWeakestAnalyzers,
                     ))
                       '${analyzer.label}: ${analyzer.scorePercent}% '
-                          '(${analyzer.issueCount} issues)',
+                          '(${analyzer.issueCount.localized} issues)',
                 ],
               ),
               StatCard(
                 icon: Icons.code,
-                title: 'Lines of code',
-                value: StatCard.text(context, '${code.totalLinesOfCode}'),
+                title: 'Sources',
+                value: StatCard.text(
+                  context,
+                  '${code.totalLinesOfCode.localized} lines',
+                ),
                 details: [
-                  '${code.totalDartFiles} Dart files',
-                  '${code.totalCommentLines} comment lines '
+                  '${code.totalFolders.localized} folders, ${code.totalFiles.localized} files',
+                  '${code.totalDartFiles.localized} Dart files',
+                  '${code.codeSizeClassArtifacts.length.localized} classes, '
+                      '${code.totalFunctionCount.localized} functions',
+                  '${code.totalCommentLines.localized} comment lines '
                       '(${(code.commentRatio * AppMetric.maxScore).round()}%)',
-                  '${code.codeSizeClassArtifacts.length} classes, '
-                      '${code.totalFunctionCount} functions',
-                  '${code.totalFiles} files in ${code.totalFolders} folders',
+                ],
+              ),
+              StatCard(
+                icon: Icons.inventory_2_outlined,
+                title: 'Packages',
+                value: StatCard.text(
+                  context,
+                  (code.dependencyCount + code.devDependencyCount).localized,
+                ),
+                details: [
+                  '${code.dependencyCount.localized} dependencies',
+                  '${code.devDependencyCount.localized} dev dependencies',
                 ],
               ),
               StatCard(
                 icon: Icons.science_outlined,
                 title: 'Tests',
-                value: StatCard.text(context, '${code.testCaseCount}'),
+                value: StatCard.text(context, code.testCaseCount.localized),
                 details: code.hasTests
                     ? [
-                        '${code.testDartFilesCount} test files',
-                        '${code.testConsumedFilesCount} of '
-                            '${code.totalDartFiles} files reached',
+                        '${code.testDartFilesCount.localized} test files',
+                        '${code.testConsumedFilesCount.localized} of '
+                            '${code.totalDartFiles.localized} files reached',
                       ]
                     : ['No tests yet'],
               ),
@@ -189,7 +207,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
                   if (coverage == null)
                     'Run tests with coverage in the Test panel'
                   else
-                    '${coverage.linesHit} of ${coverage.linesFound} lines hit',
+                    '${coverage.linesHit.localized} of ${coverage.linesFound.localized} lines hit',
                   'Reachable from tests: ${overview.testReachPercent}%',
                 ],
               ),
