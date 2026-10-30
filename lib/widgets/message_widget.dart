@@ -1,19 +1,18 @@
 // ignore_for_file:  use_build_context_synchronously
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-enum MessageType { success, warning, error, info }
 
 /// Represents `MessageWidget`.
 class MessageWidget extends StatefulWidget {
   const MessageWidget({
     super.key,
     required this.message,
-    this.type = MessageType.info,
+    this.type = StatusTone.info,
     this.duration,
     this.showCloseButton = true,
     this.showCopyButton = false,
@@ -33,7 +32,7 @@ class MessageWidget extends StatefulWidget {
 
   final bool showCopyButton;
 
-  final MessageType type;
+  final StatusTone type;
 
   @override
   State<MessageWidget> createState() => _MessageWidgetState();
@@ -81,32 +80,28 @@ class _MessageWidgetState extends State<MessageWidget>
 
     Color backgroundColor;
     Color foregroundColor;
-    IconData icon;
     String semanticLabel;
 
     switch (widget.type) {
-      case MessageType.success:
+      case StatusTone.success:
         backgroundColor = colorScheme.primaryContainer;
         foregroundColor = colorScheme.onPrimaryContainer;
-        icon = Icons.check_circle;
         semanticLabel = 'Success message';
         break;
-      case MessageType.warning:
+      case StatusTone.warning:
         backgroundColor = colorScheme.tertiaryContainer;
         foregroundColor = colorScheme.onTertiaryContainer;
-        icon = Icons.warning;
         semanticLabel = 'Warning message';
         break;
-      case MessageType.error:
+      case StatusTone.error:
         backgroundColor = colorScheme.errorContainer;
         foregroundColor = colorScheme.onErrorContainer;
-        icon = Icons.error;
         semanticLabel = 'Error message';
         break;
-      case MessageType.info:
+      case StatusTone.info:
+      case StatusTone.neutral:
         backgroundColor = colorScheme.secondaryContainer;
         foregroundColor = colorScheme.onSecondaryContainer;
-        icon = Icons.info;
         semanticLabel = 'Information message';
         break;
     }
@@ -137,7 +132,11 @@ class _MessageWidgetState extends State<MessageWidget>
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(icon, color: foregroundColor, size: AppIconSize.large),
+                Icon(
+                  widget.type.icon,
+                  color: foregroundColor,
+                  size: AppIconSize.large,
+                ),
                 const SizedBox(width: AppSpacing.large),
                 Expanded(
                   child: Text(

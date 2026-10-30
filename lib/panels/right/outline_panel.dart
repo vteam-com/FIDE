@@ -11,6 +11,7 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/outline_parser.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/container_counter.dart';
+import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
@@ -140,7 +141,7 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
             else if (_outlineNodes.isEmpty)
               const Padding(
                 padding: AppPadding.panelContent,
-                child: Text('No outline available'),
+                child: EmptyState(message: 'No outline available'),
               )
             else if (isConstrained)
               Expanded(child: list)

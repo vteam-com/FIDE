@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/action_card.dart';
+import 'package:fide/widgets/section_title.dart';
 import 'package:flutter/material.dart';
 
 /// Represents `LocalizationSetupWidget`.
@@ -78,11 +79,7 @@ class LocalizationSetupWidget extends StatelessWidget {
 
           // Simple next steps
           const SizedBox(height: AppSpacing.xxLarge),
-          Text(
-            'Next Steps',
-            style: Theme.of(context).textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
+          const SectionTitle('Next Steps'),
           const SizedBox(height: AppSpacing.medium),
           Text(
             'After setup, use AppLocalizations.of(context) to display localized strings in your widgets.',

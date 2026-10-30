@@ -19,6 +19,8 @@ import 'package:fide/widgets/filter_field.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
+import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/section_title.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
@@ -469,11 +471,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           const SizedBox(height: AppSpacing.xxLarge),
 
           // Next Steps section
-          Text(
-            'Next Steps:',
-            style: Theme.of(context).textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
+          const SectionTitle('Next Steps'),
           const SizedBox(height: AppSpacing.large),
 
           // Show specific actions based on what's missing
@@ -517,11 +515,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
 
           // Show ARB file management if files are loaded
           if (_arbFiles.isNotEmpty) ...[
-            Text(
-              'ARB File Management:',
-              style: Theme.of(context).textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold),
-            ),
+            const SectionTitle('ARB File Management'),
             const SizedBox(height: AppSpacing.large),
             ListView.builder(
               shrinkWrap: true,
@@ -736,13 +730,10 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
 
   /// Handles `_buildComparisonTile`.
   Widget _buildComparisonTile(ArbComparison comparison) {
-    return Card(
-      margin: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.medium,
-        vertical: AppSpacing.tiny,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.large),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.medium),
+      child: OutlinedSurface(
+        padding: const EdgeInsets.all(AppSpacing.xLarge),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

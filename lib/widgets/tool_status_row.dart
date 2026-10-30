@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/app_theme.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 
 /// Whether a required tool (Flutter, Git...) was found, with its version,
@@ -29,24 +30,14 @@ class ToolStatusRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = available ? AppTheme.successColor : AppTheme.errorColor;
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.medium),
       child: Row(
         spacing: AppSpacing.medium,
         children: [
-          Icon(
-            available ? Icons.check_circle : Icons.error,
-            color: color,
-            size: AppIconSize.medium,
-          ),
-          Text(
-            '$name: ${available ? version ?? 'Unknown' : 'Not Found'}',
-            style: TextStyle(
-              color: color,
-              fontSize: AppFontSize.caption,
-              fontWeight: FontWeight.w500,
-            ),
+          StatusIndicator.tone(
+            available ? StatusTone.success : StatusTone.error,
+            label: '$name: ${available ? version ?? 'Unknown' : 'Not Found'}',
           ),
           if (!available)
             TextButton(

@@ -1,4 +1,4 @@
-import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/header_bar.dart';
 import 'package:flutter/material.dart';
 
 /// The tabbed shell shared by the side panels: an icon [TabBar] above a
@@ -38,15 +38,7 @@ class PanelTabs extends StatelessWidget {
       child: Column(
         children: [
           if (showTabBar)
-            DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: theme.dividerColor,
-                    width: AppSize.borderThin,
-                  ),
-                ),
-              ),
+            HeaderBar(
               child: TabBar(
                 controller: controller,
                 onTap: onTap,

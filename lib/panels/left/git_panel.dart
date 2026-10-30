@@ -10,6 +10,8 @@ import 'package:fide/widget_services/diff_counter.dart';
 import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/empty_state.dart';
+import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
@@ -274,16 +276,11 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
     return gitStatus.when(
       loading: () => const LoadingIndicator(),
-      error: (error, _) => Center(child: Text('Error: $error')),
+      error: (error, _) => EmptyState(message: 'Error: $error'),
       data: (status) => Column(
         children: [
           // Header
-          Container(
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Theme.of(context).dividerColor),
-              ),
-            ),
+          HeaderBar(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -422,9 +419,9 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
                     child: gitCommits.when(
                       loading: () => const LoadingIndicator(),
-                      error: (error, _) => Text('Error: $error'),
+                      error: (error, _) => EmptyState(message: 'Error: $error'),
                       data: (commits) => commits.isEmpty
-                          ? const Text('No commits yet')
+                          ? const EmptyState(message: 'No commits yet')
                           : Column(
                               children: commits.map(_buildCommitTile).toList(),
                             ),

@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/section_title.dart';
 import 'package:flutter/material.dart';
 
 /// An outlined card offering one task: a [title], what it does, the steps
@@ -42,7 +43,6 @@ class ActionCard extends StatelessWidget {
     final action = this.action;
     return OutlinedSurface(
       padding: const EdgeInsets.all(AppSpacing.xLarge),
-      color: theme.colorScheme.surfaceContainerHighest,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: AppSpacing.medium,
@@ -51,14 +51,7 @@ class ActionCard extends StatelessWidget {
             spacing: AppSpacing.medium,
             children: [
               if (icon != null) Icon(icon, color: theme.colorScheme.primary),
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              Expanded(child: SectionTitle(title)),
             ],
           ),
           if (description != null)

@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_theme.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:flutter/material.dart';
 
 /// A reusable badge widget that displays status or feedback information.
@@ -20,6 +21,7 @@ class BadgeStatus extends StatelessWidget {
     ),
     this.borderRadius = AppRadius.tiny,
     this.showIcon = false,
+    this.tone,
   });
 
   /// Creates a pre-configured success badge.
@@ -32,6 +34,7 @@ class BadgeStatus extends StatelessWidget {
       text: text,
       backgroundColor: AppTheme.successColor,
       textColor: AppTheme.successText.withAlpha(AppAlpha.badgeText),
+      tone: StatusTone.success,
       fontSize: fontSize,
       showIcon: showIcon,
     );
@@ -47,6 +50,7 @@ class BadgeStatus extends StatelessWidget {
       text: text,
       backgroundColor: AppTheme.warningColor,
       textColor: AppTheme.warningText.withAlpha(AppAlpha.badgeText),
+      tone: StatusTone.warning,
       fontSize: fontSize,
       showIcon: showIcon,
     );
@@ -62,6 +66,7 @@ class BadgeStatus extends StatelessWidget {
       text: text,
       backgroundColor: AppTheme.errorColor,
       textColor: AppTheme.errorText.withAlpha(AppAlpha.badgeText),
+      tone: StatusTone.error,
       fontSize: fontSize,
       showIcon: showIcon,
     );
@@ -91,6 +96,7 @@ class BadgeStatus extends StatelessWidget {
       text: text,
       backgroundColor: AppTheme.infoColor,
       textColor: AppTheme.infoText.withAlpha(AppAlpha.badgeText),
+      tone: StatusTone.info,
       fontSize: fontSize,
       showIcon: showIcon,
     );
@@ -104,6 +110,7 @@ class BadgeStatus extends StatelessWidget {
       text: text,
       backgroundColor: AppTheme.neutralColor,
       textColor: AppTheme.neutralText.withAlpha(AppAlpha.badgeText),
+      tone: StatusTone.neutral,
       fontSize: fontSize,
       showIcon: showIcon,
     );
@@ -160,6 +167,9 @@ class BadgeStatus extends StatelessWidget {
 
   /// The text color of the badge.
   final Color textColor;
+
+  /// The meaning of the badge, which picks its icon; no icon when null.
+  final StatusTone? tone;
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -229,16 +239,6 @@ class BadgeStatus extends StatelessWidget {
     );
   }
 
-  /// Gets the appropriate icon for the badge type based on background color.
-  IconData? get _icon {
-    if (!showIcon) return null;
-
-    if (backgroundColor == AppTheme.successColor) return Icons.check_circle;
-    if (backgroundColor == AppTheme.warningColor) return Icons.warning;
-    if (backgroundColor == AppTheme.errorColor) return Icons.error;
-    if (backgroundColor == AppTheme.infoColor) return Icons.info;
-    if (backgroundColor == AppTheme.neutralColor) return Icons.help;
-
-    return null;
-  }
+  /// The icon of [tone] when [showIcon] is set.
+  IconData? get _icon => showIcon ? tone?.icon : null;
 }

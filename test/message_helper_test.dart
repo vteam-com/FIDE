@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/message_widget.dart';
 
@@ -25,7 +26,7 @@ void main() {
           home: Scaffold(
             body: MessageWidget(
               message: 'Test message',
-              type: MessageType.info,
+              type: StatusTone.info,
               duration: Duration(seconds: 4),
               showCloseButton: true,
               showCopyButton: false,
@@ -49,7 +50,7 @@ void main() {
               children: [
                 MessageWidget(
                   message: 'Success',
-                  type: MessageType.success,
+                  type: StatusTone.success,
                   duration: Duration(seconds: 1),
                   showCloseButton: false,
                   showCopyButton: false,
@@ -57,7 +58,7 @@ void main() {
                 ),
                 MessageWidget(
                   message: 'Warning',
-                  type: MessageType.warning,
+                  type: StatusTone.warning,
                   duration: Duration(seconds: 1),
                   showCloseButton: false,
                   showCopyButton: false,
@@ -65,7 +66,7 @@ void main() {
                 ),
                 MessageWidget(
                   message: 'Error',
-                  type: MessageType.error,
+                  type: StatusTone.error,
                   duration: Duration(seconds: 1),
                   showCloseButton: false,
                   showCopyButton: false,
@@ -73,7 +74,7 @@ void main() {
                 ),
                 MessageWidget(
                   message: 'Info',
-                  type: MessageType.info,
+                  type: StatusTone.info,
                   duration: Duration(seconds: 1),
                   showCloseButton: false,
                   showCopyButton: false,
@@ -100,7 +101,7 @@ void main() {
           home: Scaffold(
             body: MessageWidget(
               message: 'Test message',
-              type: MessageType.info,
+              type: StatusTone.info,
               duration: Duration(seconds: 4),
               showCloseButton: true,
               showCopyButton: false,
@@ -121,7 +122,7 @@ void main() {
           home: Scaffold(
             body: MessageWidget(
               message: 'Test message',
-              type: MessageType.error,
+              type: StatusTone.error,
               duration: Duration(seconds: 4),
               showCloseButton: false,
               showCopyButton: true,
@@ -142,7 +143,7 @@ void main() {
           home: Scaffold(
             body: MessageWidget(
               message: 'Test message',
-              type: MessageType.info,
+              type: StatusTone.info,
               duration: Duration(seconds: 4),
               showCloseButton: true,
               showCopyButton: false,
@@ -170,7 +171,7 @@ void main() {
           home: Scaffold(
             body: MessageWidget(
               message: 'Styled message',
-              type: MessageType.success,
+              type: StatusTone.success,
               duration: Duration(seconds: 4),
               showCloseButton: true,
               showCopyButton: false,

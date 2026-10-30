@@ -7,9 +7,11 @@ import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/health_indicators.dart';
 import 'package:fide/models/project_metrics.dart';
 import 'package:fide/models/project_paths.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/project_maintenance_service.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/busy_icon_button.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
@@ -504,42 +506,15 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
   /// Handles `_buildHealthCard`.
   Widget _buildHealthCard(HealthIndicators health) {
-    final issues = <Map<String, dynamic>>[];
-
-    if (!health.hasPubspecLock) {
-      issues.add({
-        'type': 'warning',
-        'message': 'Missing pubspec.lock',
-        'icon': Icons.warning,
-      });
-    }
-
-    final buildErrors = health.buildErrors;
-    if (buildErrors > 0) {
-      issues.add({
-        'type': 'error',
-        'message': '$buildErrors build errors',
-        'icon': Icons.error,
-      });
-    }
-
-    final buildWarnings = health.buildWarnings;
-    if (buildWarnings > 0) {
-      issues.add({
-        'type': 'warning',
-        'message': '$buildWarnings build warnings',
-        'icon': Icons.warning,
-      });
-    }
-
-    final largeFiles = health.largeFiles;
-    if (largeFiles.isNotEmpty) {
-      issues.add({
-        'type': 'info',
-        'message': '${largeFiles.length} large files',
-        'icon': Icons.file_present,
-      });
-    }
+    final issues = <(StatusTone, String)>[
+      if (!health.hasPubspecLock) (StatusTone.warning, 'Missing pubspec.lock'),
+      if (health.buildErrors > 0)
+        (StatusTone.error, '${health.buildErrors} build errors'),
+      if (health.buildWarnings > 0)
+        (StatusTone.warning, '${health.buildWarnings} build warnings'),
+      if (health.largeFiles.isNotEmpty)
+        (StatusTone.info, '${health.largeFiles.length} large files'),
+    ];
 
     return SectionPanel(
       title: 'Score',
@@ -554,52 +529,23 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (issues.isEmpty)
-              Text(
-                '✅ No issues detected',
-                style: TextStyle(
-                  fontSize: AppFontSize.caption,
-                  color: AppTheme.successColor,
-                ),
+              StatusIndicator.tone(
+                StatusTone.success,
+                label: 'No issues detected',
               )
             else
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: issues
-                    .map(
-                      (issue) => Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.tiny),
-                        child: StatusIndicator(
-                          icon: issue['icon'] as IconData,
-                          label: issue['message'] as String,
-
-                          /// Handles `_getIssueColor`.
-                          color: _getIssueColor(issue['type'] as String),
-                          iconSize: AppFontSize.label,
-                          textSize: AppFontSize.caption,
-                          spacing: AppSpacing.medium,
-                        ),
-                      ),
-                    )
-                    .toList(),
+                spacing: AppSpacing.tiny,
+                children: [
+                  for (final (tone, message) in issues)
+                    StatusIndicator.tone(tone, label: message),
+                ],
               ),
           ],
         ),
       ),
     );
-  }
-
-  /// Handles `_getIssueColor`.
-  Color _getIssueColor(String type) {
-    switch (type) {
-      case 'error':
-        return AppTheme.errorColor;
-      case 'warning':
-        return AppTheme.warningColor;
-      case 'info':
-        return AppTheme.infoColor;
-      default:
-        return Theme.of(context).colorScheme.onSurfaceVariant;
-    }
   }
 
   /// Handles `_buildDependenciesCard`.
@@ -722,48 +668,36 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
   /// Handles `_buildActionsCard`.
   Widget _buildActionsCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.large),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Actions',
-              style: TextStyle(
-                fontSize: AppFontSize.label,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
+    return ActionCard(
+      title: 'Actions',
+      child: Column(
+        children: [
+          BusyIconButton(
+            busy: _isRefreshing,
+            icon: Icons.cleaning_services,
+            label: 'Full Project Cleanup',
+            onPressed: _performFullCleanup,
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(
+                double.infinity,
+                AppSize.actionButtonHeight,
               ),
             ),
-            const SizedBox(height: AppSpacing.large),
-            BusyIconButton(
-              busy: _isRefreshing,
-              icon: Icons.cleaning_services,
-              label: 'Full Project Cleanup',
-              onPressed: _performFullCleanup,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(
-                  double.infinity,
-                  AppSize.actionButtonHeight,
-                ),
+          ),
+          const SizedBox(height: AppSpacing.medium),
+          BusyIconButton(
+            busy: _isRefreshing,
+            icon: Icons.refresh,
+            label: 'Refresh Analysis',
+            onPressed: _analyzeProject,
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(
+                double.infinity,
+                AppSize.actionButtonHeight,
               ),
             ),
-            const SizedBox(height: AppSpacing.medium),
-            BusyIconButton(
-              busy: _isRefreshing,
-              icon: Icons.refresh,
-              label: 'Refresh Analysis',
-              onPressed: _analyzeProject,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(
-                  double.infinity,
-                  AppSize.actionButtonHeight,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

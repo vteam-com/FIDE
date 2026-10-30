@@ -21,7 +21,6 @@ class AppPadding {
   );
   static const EdgeInsets actionTabContainer = EdgeInsets.all(12);
   static const EdgeInsets actionTabContent = EdgeInsets.all(16);
-  static const EdgeInsets actionTabDetails = EdgeInsets.all(10);
   static const EdgeInsets actionTabLabel = EdgeInsets.symmetric(horizontal: 8);
   static const EdgeInsets actionTabLabelCompact = EdgeInsets.symmetric(
     horizontal: 8,

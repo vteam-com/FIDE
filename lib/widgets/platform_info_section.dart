@@ -13,6 +13,7 @@ import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/section_panel.dart';
+import 'package:fide/widgets/surface_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -88,13 +89,8 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
           ),
         ],
       ),
-      child: Container(
-        padding: AppPadding.actionTabDetails,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant
-              .withValues(alpha: AppOpacity.divider),
-          borderRadius: BorderRadius.circular(AppRadius.medium),
-        ),
+      child: SurfaceCard(
+        dense: true,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

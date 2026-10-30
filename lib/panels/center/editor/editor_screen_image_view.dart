@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/section_title.dart';
+import 'package:fide/widgets/surface_card.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
@@ -66,25 +68,10 @@ class EditorScreenImageView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.xLarge),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.xLarge,
-                vertical: AppSpacing.medium,
-              ),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest
-                    .withValues(alpha: AppOpacity.divider),
-                borderRadius: BorderRadius.circular(AppRadius.medium),
-              ),
+            SurfaceCard(
               child: Column(
                 children: [
-                  Text(
-                    'Image Preview',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  const SectionTitle('Image Preview'),
                   const SizedBox(height: AppSpacing.tiny),
                   Text(
                     'Size: ${(documentContentLength / AppMetric.fileSizeDivisor).round()}KB • ${p.extension(filePath).toUpperCase().substring(1)}',

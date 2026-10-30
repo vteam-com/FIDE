@@ -1,9 +1,10 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_status.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:flutter/material.dart';
 
-/// A reusable status indicator widget that displays an icon with text
-/// Used for showing various status states like success, error, warning, etc.
+/// An icon followed by an optional label, both in one color, marking a
+/// status such as success, warning or error.
 class StatusIndicator extends StatelessWidget {
   /// Creates an indicator drawing [icon], then [label] when given, in
   /// [color].
@@ -12,54 +13,41 @@ class StatusIndicator extends StatelessWidget {
     required this.icon,
     this.label,
     required this.color,
-    this.iconSize = AppIconSize.small,
-    this.textSize = AppFontSize.metadata,
-    this.spacing = AppSpacing.small,
-    this.fontWeight = FontWeight.w500,
-    this.mainAxisSize = MainAxisSize.min,
   });
+
+  /// Creates an indicator with the icon and color of [tone].
+  StatusIndicator.tone(StatusTone tone, {super.key, this.label})
+    : icon = tone.icon,
+      color = tone.color;
 
   /// The color of the icon and text
   final Color color;
 
-  /// The font weight for the text (defaults to FontWeight.w500)
-  final FontWeight fontWeight;
-
   /// The icon to display
   final IconData icon;
-
-  /// The size of the icon (defaults to 14)
-  final double iconSize;
 
   /// The text label to display next to the icon; icon only when null
   final String? label;
 
-  /// Uses MainAxisSize.min to keep the Row compact
-  final MainAxisSize mainAxisSize;
-
-  /// The horizontal spacing between icon and text (defaults to 6)
-  final double spacing;
-
-  /// The size of the text (defaults to 11)
-  final double textSize;
   @override
   Widget build(BuildContext context) {
     final text = label;
     return Row(
-      mainAxisSize: mainAxisSize,
+      mainAxisSize: MainAxisSize.min,
+      spacing: AppSpacing.medium,
       children: [
-        Icon(icon, size: iconSize, color: color),
-        if (text != null) ...[
-          SizedBox(width: spacing),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: textSize,
-              color: color,
-              fontWeight: fontWeight,
+        Icon(icon, size: AppIconSize.medium, color: color),
+        if (text != null)
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: AppFontSize.caption,
+                color: color,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-        ],
       ],
     );
   }
@@ -69,16 +57,12 @@ class StatusIndicator extends StatelessWidget {
   static StatusIndicator? forResult(
     ActionStatus status, {
     bool showLabel = true,
-    double iconSize = AppIconSize.small,
   }) {
-    final icon = status.resultIcon;
-    final color = status.resultColor;
-    if (icon == null || color == null) return null;
-    return StatusIndicator(
-      icon: icon,
+    final tone = status.resultTone;
+    if (tone == null) return null;
+    return StatusIndicator.tone(
+      tone,
       label: showLabel ? status.resultLabel : null,
-      color: color,
-      iconSize: iconSize,
     );
   }
 }

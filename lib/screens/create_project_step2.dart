@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/step_header.dart';
 import 'package:fide/widgets/surface_card.dart';
 import 'package:flutter/material.dart';
@@ -84,10 +85,7 @@ class CreateProjectStep2 extends StatelessWidget {
 
         const SizedBox(height: AppSpacing.xLarge),
 
-        Text(
-          'Do you want to localize your app?',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
+        const SectionTitle('Do you want to localize your app?'),
 
         RadioGroup<bool>(
           groupValue: wantsLocalization,

@@ -4,9 +4,8 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/providers/file_type_utils.dart';
-import 'package:fide/widgets/more_menu_button.dart';
+import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as p;
 
 /// Widget for rendering FileSystemItem with icon, text, Git status, and interactions
 class FileNameWidget extends StatelessWidget {
@@ -25,7 +24,7 @@ class FileNameWidget extends StatelessWidget {
 
   final bool isSelected;
 
-  final Function(Offset)? onContextMenu;
+  final ValueChanged<Offset>? onContextMenu;
 
   final VoidCallback? onTap;
 
@@ -38,98 +37,52 @@ class FileNameWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get Git status styling
     final gitStatus = fileItem.gitStatus;
     final gitColor = gitStatus.color(context);
-    final gitTextStyle = gitStatus.textStyle(
-      context,
-      Theme.of(context).textTheme.bodyMedium ?? const TextStyle(),
-    );
     final badgeText = showGitBadge ? gitStatus.badgeSymbol() : '';
+    final warning = fileItem.warning;
 
-    // Determine text color based on selection, hidden status, Git status, and warning
-    Color textColor;
-    if (fileItem.warning != null) {
-      textColor = AppTheme.warningColor;
-    } else if (isSelected) {
-      textColor = Theme.of(context).colorScheme.primary;
-    } else if (fileItem.hasGitChanges) {
-      textColor = gitTextStyle.color ?? Theme.of(context).colorScheme.onSurface;
-    } else {
-      textColor = Theme.of(context).colorScheme.onSurface;
-    }
-
-    // Determine background color for selection
-    Color? backgroundColor;
-    if (isSelected) {
-      backgroundColor = Theme.of(context).colorScheme.primaryContainer
-          .withValues(alpha: AppOpacity.divider);
-    }
-
-    final String relativePath = p.join(
-      '~',
-      p.relative(fileItem.path, from: rootPath!),
-    );
-    final String message = fileItem.warning == null
-        ? relativePath
-        : '$relativePath\n\n${fileItem.warning}';
-
-    return InkWell(
-      onTap: onTap,
-      onSecondaryTapDown: (details) =>
-          onContextMenu?.call(details.globalPosition),
-      child: Container(
-        color: backgroundColor,
-        child: Padding(
-          padding: AppPadding.listItem,
-          child: Row(
-            spacing: AppSpacing.tiny,
-            children: [
-              _getIcon(context),
-
-              // File/directory name
-              Expanded(
-                child: Tooltip(
-                  message: message,
-                  waitDuration: AppDuration.tooltipWait,
-                  child: Text(
-                    fileItem.name,
-                    style: gitTextStyle.copyWith(
-                      fontSize: AppFontSize.body,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w400,
-                      color: textColor,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-              ?trailing,
-              if (badgeText.isNotEmpty)
-                Container(
-                  margin: AppPadding.selectedBadgeMargin,
-                  padding: AppPadding.badge,
-                  decoration: BoxDecoration(
-                    color: gitColor.withValues(alpha: AppOpacity.subtle),
-                    borderRadius: BorderRadius.circular(AppRadius.medium),
-                  ),
-                  child: Text(
-                    badgeText,
-                    style: TextStyle(
-                      fontSize: AppFontSize.badge,
-                      fontWeight: FontWeight.bold,
-                      color: gitColor,
-                    ),
-                  ),
-                ),
-              // Context menu button
-              if (isSelected && onContextMenu != null)
-                MoreMenuButton(onPressed: onContextMenu!),
-            ],
+    return TreeRow(
+      icon: _getIcon(context),
+      name: fileItem.name,
+      path: fileItem.path,
+      rootPath: rootPath,
+      note: warning,
+      // Git styling (strike-through, italic, color), recolored when the
+      // file has a warning or is selected
+      nameStyle: gitStatus
+          .textStyle(context, const TextStyle())
+          .copyWith(
+            color: warning != null
+                ? AppTheme.warningColor
+                : isSelected
+                ? Theme.of(context).colorScheme.primary
+                : null,
           ),
-        ),
-      ),
+      highlighted: isSelected,
+      showMenuButton: isSelected,
+      onTap: onTap,
+      onContextMenu: onContextMenu,
+      trailing: [
+        ?trailing,
+        if (badgeText.isNotEmpty)
+          Container(
+            margin: AppPadding.selectedBadgeMargin,
+            padding: AppPadding.badge,
+            decoration: BoxDecoration(
+              color: gitColor.withValues(alpha: AppOpacity.subtle),
+              borderRadius: BorderRadius.circular(AppRadius.medium),
+            ),
+            child: Text(
+              badgeText,
+              style: TextStyle(
+                fontSize: AppFontSize.badge,
+                fontWeight: FontWeight.bold,
+                color: gitColor,
+              ),
+            ),
+          ),
+      ],
     );
   }
 

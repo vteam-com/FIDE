@@ -1,14 +1,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart'
-    show
-        AppPadding,
-        AppSpacing,
-        AppIconSize,
-        AppFontSize,
-        AppOpacity,
-        AppRadius,
-        AppTextStyle;
+    show AppPadding, AppSpacing, AppIconSize, AppFontSize, AppTextStyle;
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/reference_search.dart';
 import 'package:fide/models/search_result.dart';
@@ -20,6 +13,7 @@ import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
+import 'package:fide/widgets/surface_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -302,6 +296,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
           padding: const EdgeInsets.only(left: AppIconSize.xLarge),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: AppSpacing.tiny,
             children: node.matches
                 .map((match) => _buildMatchResult(match))
                 .toList(),
@@ -317,14 +312,8 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
       onTap: () {
         widget.onJumpToLine?.call(result.filePath, result.lineNumber);
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: AppSpacing.tiny),
-        padding: const EdgeInsets.all(AppSpacing.medium),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest
-              .withValues(alpha: AppOpacity.divider),
-          borderRadius: BorderRadius.circular(AppRadius.tiny),
-        ),
+      child: SurfaceCard(
+        dense: true,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

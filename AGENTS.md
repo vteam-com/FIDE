@@ -7,6 +7,8 @@
   - DRY covers widget configuration too: the same Flutter widget (`TabBar`, bordered `Container`, `TabBarView`, …) set up the same way in more than one file belongs in one shared widget under `lib/widgets/`
   - when reviewing for DRY, compare across files and folders, not just within one file or diff: list every place a widget is built and compare the calls
   - UI elements that should look alike but render differently are a sign of duplicated code that has drifted
+  - DRY aims at consistent code and consistent rendering: when UI code is almost the same and differs only by a few attributes (color, radius, padding, icon size, divider color, …), remove the differences rather than adding parameters to keep them
+  - keep the base building blocks simple and few; avoid snowflake UI elements and one-off variants
 - `fcheck --fix` can reformat unrelated files; revert changes it makes outside the task
 - fCheck (package `fcheck`, repo `../fcheck`) is the brain for analyzing Flutter/Dart projects; FIDE consumes its public API (`package:fcheck/fcheck.dart`) and never reimplements analysis
   - when FIDE needs a new finding or metric, add it to fCheck first (it has its own users, so keep it general), then use it from FIDE

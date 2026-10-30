@@ -7,8 +7,10 @@ import 'package:fide/models/output_log.dart';
 import 'package:fide/models/panel_action.dart';
 import 'package:fide/panels/left/command_actions.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/outlined_list_tile.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
@@ -236,66 +238,39 @@ Validates test organization and naming conventions.
 
   /// Handles `_buildTestActions`.
   Widget _buildTestActions() {
-    final colorScheme = Theme.of(context).colorScheme;
-
     final testActions = _testActions;
 
     return Column(
       children: [
         Expanded(
           child: ListView.builder(
+            padding: AppPadding.panelContent,
             itemCount: testActions.length,
             itemBuilder: (_, index) {
               final action = testActions[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.medium,
-                  vertical: AppSpacing.tiny,
-                ),
-                child: ListTile(
-                  leading: Icon(
-                    action.icon,
-                    color: action.color,
-                    size: AppIconSize.xLarge,
-                  ),
-                  title: Text(
-                    action.title,
-                    style: TextStyle(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  subtitle: Text(
-                    action.description,
-                    style: TextStyle(
-                      color: colorScheme.onSurfaceVariant,
-                      fontSize: AppFontSize.caption,
-                    ),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Status indicator
-                      if (action.isRunning)
-                        const InlineSpinner()
-                      else
-                        ?StatusIndicator.forResult(
-                          action.status,
-                          showLabel: false,
-                        ),
-                      // Tooltip with details
-                      IconButton(
-                        icon: const Icon(
-                          Icons.info_outline,
-                          size: AppIconSize.mediumLarge,
-                        ),
-                        onPressed: () => _showActionDetails(action),
-                        tooltip: 'Details',
+              return OutlinedListTile(
+                icon: action.icon,
+                iconColor: action.color,
+                title: action.title,
+                subtitle: action.description,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (action.isRunning)
+                      const InlineSpinner()
+                    else
+                      ?StatusIndicator.forResult(
+                        action.status,
+                        showLabel: false,
                       ),
-                    ],
-                  ),
-                  onTap: action.isRunning ? null : action.onRun,
+                    CompactIconButton(
+                      icon: Icons.info_outline,
+                      tooltip: 'Details',
+                      onPressed: () => _showActionDetails(action),
+                    ),
+                  ],
                 ),
+                onTap: action.isRunning ? null : action.onRun,
               );
             },
           ),

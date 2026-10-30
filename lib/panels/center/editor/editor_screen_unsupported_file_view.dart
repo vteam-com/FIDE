@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/surface_card.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -49,13 +50,7 @@ class EditorScreenUnsupportedFileView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xLarge),
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.xLarge),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer
-                  .withValues(alpha: AppOpacity.divider),
-              borderRadius: BorderRadius.circular(AppRadius.medium),
-            ),
+          SurfaceCard(
             child: Column(
               children: [
                 Text(

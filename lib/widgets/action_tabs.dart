@@ -9,6 +9,7 @@ import 'package:fide/widgets/icon_tab_bar.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/status_indicator.dart';
+import 'package:fide/widgets/surface_card.dart';
 import 'package:flutter/material.dart';
 
 /// Tabs of panel actions, each showing its details, an Execute (or Stop)
@@ -90,7 +91,7 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                         color: AppTheme.warningColor,
                       )
                     : Icon(
-                        action.status.resultIcon ?? action.icon,
+                        action.status.resultTone?.icon ?? action.icon,
                         size: showLabels
                             ? AppIconSize.large
                             : AppIconSize.largeCompact,
@@ -158,15 +159,8 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
 
                       // Action details - reduced size and made expandable
                       Expanded(
-                        child: Container(
-                          padding: AppPadding.actionTabDetails,
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest
-                                .withValues(alpha: AppOpacity.divider),
-                            borderRadius: BorderRadius.circular(
-                              AppRadius.small,
-                            ),
-                          ),
+                        child: SurfaceCard(
+                          dense: true,
                           child: SingleChildScrollView(
                             // Keep only this for the details text
                             child: Text(
@@ -205,7 +199,6 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                                   : isRunning
                                   ? const InlineSpinner(
                                       size: AppSize.compactProgressIndicator,
-                                      color: Colors.white,
                                     )
                                   : const Icon(
                                       Icons.play_arrow,
@@ -222,8 +215,6 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: canStop
                                     ? colorScheme.error
-                                    : isRunning
-                                    ? Colors.grey
                                     : color,
                                 // Contrasted with the fill rather than
                                 // fixed white: the dark theme's primary

@@ -6,7 +6,7 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/widgets/message_box.dart';
-import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/outlined_list_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -233,60 +233,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       final projectName = p.basename(path);
       final hasAccess = widget.accessibleFolders.contains(path);
 
-      return Padding(
-        padding: const EdgeInsets.only(bottom: AppSpacing.medium),
-        child: OutlinedSurface(
-          padding: EdgeInsets.zero,
-          color: Theme.of(context).colorScheme.surfaceContainerHighest
-              .withValues(alpha: AppOpacity.disabled),
-          // Transparent Material so the ListTile's ink effects paint above
-          // the surface's background color.
-          child: Material(
-            type: MaterialType.transparency,
-            child: ListTile(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.medium),
-              ),
-              leading: Icon(
-                hasAccess ? Icons.folder : Icons.folder_off,
-                color: hasAccess
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.error,
-                size: AppIconSize.large,
-              ),
-              title: Text(
-                projectName,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: hasAccess
-                      ? Theme.of(context).colorScheme.onSurface
-                      : Theme.of(context).colorScheme.error,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              subtitle: Text(
-                path,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              trailing: CompactIconButton(
-                icon: Icons.close,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                tooltip: 'Remove from recent projects',
-                onPressed: () => widget.onRemoveMruEntry(path),
-              ),
-              onTap: hasAccess ? () => widget.onOpenMruProject(path) : null,
-              dense: true,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.xLarge,
-                vertical: AppSpacing.tiny,
-              ),
-            ),
-          ),
+      return OutlinedListTile(
+        icon: hasAccess ? Icons.folder : Icons.folder_off,
+        iconColor: hasAccess ? null : Theme.of(context).colorScheme.error,
+        title: projectName,
+        subtitle: path,
+        trailing: CompactIconButton(
+          icon: Icons.close,
+          tooltip: 'Remove from recent projects',
+          onPressed: () => widget.onRemoveMruEntry(path),
         ),
+        onTap: hasAccess ? () => widget.onOpenMruProject(path) : null,
       );
     }).toList();
   }

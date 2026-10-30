@@ -1,5 +1,4 @@
-import 'package:fide/models/app_theme.dart';
-import 'package:flutter/material.dart';
+import 'package:fide/models/status_tone.dart';
 
 /// Progress of a panel action (build, run, test...).
 enum ActionStatus {
@@ -16,21 +15,14 @@ enum ActionStatus {
   error,
 }
 
-/// How a finished [ActionStatus] is drawn, shared by every action list so
+/// How a finished [ActionStatus] is shown, shared by every action list so
 /// success and failure look the same everywhere.
 extension ActionStatusResult on ActionStatus {
-  /// A check for [ActionStatus.success], an error mark for
-  /// [ActionStatus.error]; null while idle or running.
-  IconData? get resultIcon => switch (this) {
-    ActionStatus.success => Icons.check_circle,
-    ActionStatus.error => Icons.error,
-    _ => null,
-  };
-
-  /// The semantic color of [resultIcon]; null while idle or running.
-  Color? get resultColor => switch (this) {
-    ActionStatus.success => AppTheme.successColor,
-    ActionStatus.error => AppTheme.errorColor,
+  /// [StatusTone.success] or [StatusTone.error] once finished; null while
+  /// idle or running.
+  StatusTone? get resultTone => switch (this) {
+    ActionStatus.success => StatusTone.success,
+    ActionStatus.error => StatusTone.error,
     _ => null,
   };
 

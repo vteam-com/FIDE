@@ -1,6 +1,6 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/action_status.dart';
 import 'package:fide/models/loading_action.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/status_indicator.dart';
@@ -60,20 +60,11 @@ class LoadingActionsLog extends StatelessWidget {
     return framed ? OutlinedSurface(padding: EdgeInsets.zero, child: log) : log;
   }
 
-  /// Returns a spinner while [status] is pending, else the shared result
-  /// mark.
-  Widget _buildStatusIcon(LoadingStatus status) {
-    final result = switch (status) {
-      LoadingStatus.pending => null,
-      LoadingStatus.success => ActionStatus.success,
-      LoadingStatus.failed => ActionStatus.error,
-    };
-    if (result == null) return const InlineSpinner();
-    return StatusIndicator.forResult(
-          result,
-          showLabel: false,
-          iconSize: AppIconSize.large,
-        ) ??
-        const SizedBox.shrink();
-  }
+  /// Returns a spinner while [status] is pending, else a success or
+  /// error mark.
+  Widget _buildStatusIcon(LoadingStatus status) => switch (status) {
+    LoadingStatus.pending => const InlineSpinner(size: AppIconSize.medium),
+    LoadingStatus.success => StatusIndicator.tone(StatusTone.success),
+    LoadingStatus.failed => StatusIndicator.tone(StatusTone.error),
+  };
 }

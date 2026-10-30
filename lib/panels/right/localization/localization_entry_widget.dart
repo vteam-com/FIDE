@@ -3,6 +3,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/surface_card.dart';
 import 'package:flutter/material.dart';
 
 /// Represents `LocalizationEntryWidget`.
@@ -116,16 +117,8 @@ class LocalizationEntryWidget extends StatelessWidget {
         ),
         // Translation value
         Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.medium,
-              vertical: AppSpacing.tiny,
-            ),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant
-                  .withValues(alpha: AppOpacity.divider),
-              borderRadius: BorderRadius.circular(AppRadius.tiny),
-            ),
+          child: SurfaceCard(
+            dense: true,
             child: Text(
               translation,
               softWrap: true,

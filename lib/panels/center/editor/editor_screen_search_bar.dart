@@ -1,5 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/app_text_field.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
 import 'package:flutter/material.dart';
 
@@ -35,81 +37,63 @@ class EditorScreenSearchBar extends StatelessWidget {
   final bool wholeWord;
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.medium),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest
-            .withValues(alpha: AppOpacity.disabled),
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outline
-                .withValues(alpha: AppOpacity.divider),
-            width: AppSize.borderThin,
-          ),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: AppTextField(
-                  controller: searchController,
-                  focusNode: searchFocusNode,
-                  hintText: 'Find in file...',
-                  icon: Icons.search,
-                  onChanged: onSearchChanged,
-                  onSubmitted: (_ /* value */) => onNextMatch(),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.medium),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: onClose,
-                tooltip: 'Close (Esc)',
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.tiny),
-          Row(
-            children: [
-              SearchToggleIcons(
-                caseSensitive: caseSensitive,
-                wholeWord: wholeWord,
-                onCaseSensitiveChanged: onCaseSensitiveChanged,
-                onWholeWordChanged: onWholeWordChanged,
-              ),
-              const Spacer(),
-              if (matchCount > 0) ...[
-                IconButton(
-                  icon: const Icon(
-                    Icons.keyboard_arrow_up,
-                    size: AppIconSize.mediumLarge,
+    return HeaderBar(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.medium),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: AppTextField(
+                    controller: searchController,
+                    focusNode: searchFocusNode,
+                    hintText: 'Find in file...',
+                    icon: Icons.search,
+                    onChanged: onSearchChanged,
+                    onSubmitted: (_ /* value */) => onNextMatch(),
                   ),
-                  onPressed: onPreviousMatch,
-                  tooltip: 'Previous (Shift+F3)',
-                  visualDensity: VisualDensity.compact,
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.keyboard_arrow_down,
-                    size: AppIconSize.mediumLarge,
-                  ),
-                  onPressed: onNextMatch,
-                  tooltip: 'Next (F3)',
-                  visualDensity: VisualDensity.compact,
                 ),
                 const SizedBox(width: AppSpacing.medium),
-                Text(
-                  '${currentMatchIndex + 1} of $matchCount',
-                  style: const TextStyle(fontSize: AppFontSize.caption),
+                CompactIconButton(
+                  icon: Icons.close,
+                  onPressed: onClose,
+                  tooltip: 'Close (Esc)',
                 ),
               ],
-            ],
-          ),
-        ],
+            ),
+            const SizedBox(height: AppSpacing.tiny),
+            Row(
+              children: [
+                SearchToggleIcons(
+                  caseSensitive: caseSensitive,
+                  wholeWord: wholeWord,
+                  onCaseSensitiveChanged: onCaseSensitiveChanged,
+                  onWholeWordChanged: onWholeWordChanged,
+                ),
+                const Spacer(),
+                if (matchCount > 0) ...[
+                  CompactIconButton(
+                    icon: Icons.keyboard_arrow_up,
+                    onPressed: onPreviousMatch,
+                    tooltip: 'Previous (Shift+F3)',
+                  ),
+                  CompactIconButton(
+                    icon: Icons.keyboard_arrow_down,
+                    onPressed: onNextMatch,
+                    tooltip: 'Next (F3)',
+                  ),
+                  const SizedBox(width: AppSpacing.medium),
+                  Text(
+                    '${currentMatchIndex + 1} of $matchCount',
+                    style: const TextStyle(fontSize: AppFontSize.caption),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
