@@ -31,6 +31,12 @@ class AppTitleBar extends ConsumerStatefulWidget {
   final bool showPanelToggles;
   final Future<bool> Function(String directoryPath) onProjectSwitch;
   final VoidCallback onOpenFolder;
+
+  /// Go to File: the palette over the project's files.
+  final VoidCallback onQuickOpen;
+
+  /// Open File: the platform's file dialog.
+  final VoidCallback onOpenFile;
   final VoidCallback? onProjectCreateComplete;
   final VoidCallback? onShowCreateProjectScreen;
   final VoidCallback? onCloseProject;
@@ -48,6 +54,8 @@ class AppTitleBar extends ConsumerStatefulWidget {
     this.showPanelToggles = true,
     required this.onProjectSwitch,
     required this.onOpenFolder,
+    required this.onQuickOpen,
+    required this.onOpenFile,
     this.onProjectCreateComplete,
     this.onShowCreateProjectScreen,
     this.onCloseProject,
@@ -255,6 +263,10 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     WidgetRef ref,
   ) async {
     switch (action) {
+      case ProjectMenuAction.quickOpen:
+        widget.onQuickOpen();
+      case ProjectMenuAction.openFile:
+        widget.onOpenFile();
       case ProjectMenuAction.openFolder:
         widget.onOpenFolder();
       case ProjectMenuAction.createProject:
@@ -267,8 +279,8 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     }
   }
 
-  /// The project menu: recent projects ([accessible] ones openable), then
-  /// the open, create and close actions.
+  /// The project menu: recent projects ([accessible] ones openable), the
+  /// open-file actions, then the open, create and close actions.
   List<PopupMenuEntry<(ProjectMenuAction, String?)>> _buildDropdownMenuItems(
     List<String> mruFolders,
     Set<String> accessible,
@@ -288,6 +300,13 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
       for (final folderPath in mruFolders)
         _buildRecentProjectItem(folderPath, accessible.contains(folderPath)),
       if (mruFolders.isNotEmpty) const PopupMenuDivider(),
+      action(ProjectMenuAction.quickOpen, Icons.search, 'Go to File...'),
+      action(
+        ProjectMenuAction.openFile,
+        Icons.file_open_outlined,
+        'Open File...',
+      ),
+      const PopupMenuDivider(),
       action(
         ProjectMenuAction.openFolder,
         Icons.create_new_folder_outlined,

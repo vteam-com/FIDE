@@ -1,3 +1,4 @@
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/left_panel_tab.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/git_service.dart';
@@ -13,6 +14,12 @@ class NativeMenuBuilder {
   final BuildContext context;
   final WidgetRef ref;
   final Function() onOpenFolder;
+
+  /// Go to File: the palette over the project's files.
+  final VoidCallback onQuickOpen;
+
+  /// Open File: the platform's file dialog.
+  final VoidCallback onOpenFile;
   final Function() onSave;
   final Function() onCloseDocument;
   final Function() onFind;
@@ -33,6 +40,8 @@ class NativeMenuBuilder {
     required this.context,
     required this.ref,
     required this.onOpenFolder,
+    required this.onQuickOpen,
+    required this.onOpenFile,
     required this.onSave,
     required this.onCloseDocument,
     required this.onFind,
@@ -92,11 +101,26 @@ class NativeMenuBuilder {
     );
   }
 
-  /// Builds the File menu with open-folder, save, and close-project items.
+  /// Builds the File menu with open-file, open-folder, save, and
+  /// close-project items.
   PlatformMenu _buildFileMenu() {
     return PlatformMenu(
       label: 'File',
       menus: [
+        PlatformMenuItemGroup(
+          members: [
+            PlatformMenuItem(
+              label: 'Go to File...',
+              shortcut: AppShortcut.quickOpen,
+              onSelected: onQuickOpen,
+            ),
+            PlatformMenuItem(
+              label: 'Open File...',
+              shortcut: AppShortcut.openFile,
+              onSelected: onOpenFile,
+            ),
+          ],
+        ),
         PlatformMenuItem(
           label: 'Open folder',
           onSelected: () async {
@@ -273,7 +297,7 @@ class NativeMenuBuilder {
             PlatformMenuItem(
               label: 'Organized',
               shortcut: const SingleActivator(
-                LogicalKeyboardKey.keyO,
+                LogicalKeyboardKey.keyJ,
                 meta: true,
                 shift: true,
               ),

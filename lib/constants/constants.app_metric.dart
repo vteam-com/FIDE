@@ -56,5 +56,8 @@ class AppMetric {
   /// Steps a loading progress bar spans: the longest flow, project creation.
   static const int loadingProgressSteps = projectCreateStepVerification;
 
+  /// Most files the Go to File palette lists.
+  static const int quickOpenMaxResults = 50;
+
   const AppMetric._();
 }

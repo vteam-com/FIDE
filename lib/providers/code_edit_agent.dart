@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/project_files.dart';
 import 'package:fide/models/text_truncation.dart';
 import 'package:fide/providers/ai_service.dart';
 import 'package:path/path.dart' as p;
@@ -14,9 +15,6 @@ part 'code_edit_agent.code_edit_hooks.dart';
 ///
 /// Every path a skill touches must lie inside [projectPath].
 class CodeEditAgent {
-  /// Folders [listFiles] skips: tool output and hidden folders.
-  static const Set<String> _skippedFolders = {'build', '.dart_tool', '.git'};
-
   final AIService _ai;
 
   /// Root of the project the model may read and edit.
@@ -103,7 +101,7 @@ class CodeEditAgent {
       _resolve(folder).path,
     ).list(recursive: true)) {
       final relative = p.relative(entity.path, from: projectPath);
-      if (entity is! File || p.split(relative).any(_isSkipped)) continue;
+      if (entity is! File || ProjectFiles.isSkippedPath(relative)) continue;
       files.add(relative);
       if (files.length >= AppMetric.aiMaxListedFiles) break;
     }
@@ -236,10 +234,6 @@ class CodeEditAgent {
   void _throwIfCancelled() {
     if (_isCancelled) throw const AiCancelledException();
   }
-
-  /// Whether [segment] of a relative path is a folder [listFiles] skips.
-  bool _isSkipped(String segment) =>
-      _skippedFolders.contains(segment) || segment.startsWith('.');
 
   /// The file at [path], relative to [projectPath] or absolute inside it.
   ///

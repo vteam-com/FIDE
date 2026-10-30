@@ -3,6 +3,12 @@ enum ProjectMenuAction {
   /// Switch to a recently opened project.
   switchProject,
 
+  /// Fuzzy-find a project file by name and open it.
+  quickOpen,
+
+  /// Pick any file with the platform's file dialog and open it.
+  openFile,
+
   /// Pick an existing project folder to open.
   openFolder,
 

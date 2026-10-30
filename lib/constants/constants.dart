@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 part 'constants.app_size.dart';
 part 'constants.app_padding.dart';
@@ -19,3 +20,4 @@ part 'constants.app_color.dart';
 part 'constants.app_gradient.dart';
 part 'constants.app_shade.dart';
 part 'constants.pref_keys.dart';
+part 'constants.app_shortcut.dart';

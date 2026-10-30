@@ -57,5 +57,11 @@ class AppSize {
   static const double welcomeContentWidth = 700;
   static const double largeActionButtonHeight = 56;
 
+  /// Width of the Go to File palette.
+  static const double quickOpenWidth = 600;
+
+  /// Tallest the Go to File palette's result list grows.
+  static const double quickOpenMaxListHeight = 400;
+
   const AppSize._();
 }
