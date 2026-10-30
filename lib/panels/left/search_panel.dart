@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart'
     show
+        AppPadding,
         AppSpacing,
         AppIconSize,
         AppFontSize,
@@ -152,7 +153,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
       if (next != null) _startSearch(next);
     });
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.medium),
+      padding: AppPadding.panelContent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

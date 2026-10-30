@@ -412,7 +412,7 @@ Updates ${platform.displayName} CocoaPods dependencies.
         children: [
           // Main Content Area with Platform Selector as Top Section
           Padding(
-            padding: const EdgeInsets.all(AppSpacing.medium),
+            padding: AppPadding.panelContent,
             child: _buildExecutePanelContent(currentProjectPath),
           ),
         ],

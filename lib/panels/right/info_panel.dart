@@ -429,7 +429,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
 
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.medium),
+      padding: AppPadding.panelContent,
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -45,6 +45,9 @@ class AppPadding {
     vertical: 2,
   );
   static const EdgeInsets infoCard = EdgeInsets.all(8);
+
+  /// Inset of every side panel's content from the panel's top-left edge.
+  static const EdgeInsets panelContent = EdgeInsets.all(AppSpacing.medium);
   static const EdgeInsets chipLabel = EdgeInsets.symmetric(horizontal: 6);
 
   const AppPadding._();

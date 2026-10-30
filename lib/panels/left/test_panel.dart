@@ -392,7 +392,7 @@ Validates test organization and naming conventions.
         children: [
           // Header
           Padding(
-            padding: const EdgeInsets.all(AppSpacing.xLarge),
+            padding: AppPadding.panelContent,
             child: Row(
               children: [
                 Column(

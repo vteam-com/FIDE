@@ -110,6 +110,7 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
       (_, line) => _onCursorPositionChanged(line),
     );
     final list = ListView.builder(
+      padding: AppPadding.panelContent,
       itemCount: _outlineNodes.length,
       itemBuilder: (_, index) => _buildOutlineNode(_outlineNodes[index]),
     );
@@ -137,7 +138,7 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
               )
             else if (_outlineNodes.isEmpty)
               const Padding(
-                padding: EdgeInsets.all(AppSpacing.medium),
+                padding: AppPadding.panelContent,
                 child: Text('No outline available'),
               )
             else if (isConstrained)

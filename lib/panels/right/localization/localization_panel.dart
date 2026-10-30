@@ -401,7 +401,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     final hasFlutterGenerateFlag = _checks.hasGenerateFlag;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.xLarge),
+      padding: AppPadding.panelContent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -563,10 +563,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
         // Duplicate warning banner
         if (duplicatedValues.isNotEmpty)
           Container(
-            margin: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.xLarge,
-              vertical: AppSpacing.tiny,
-            ),
+            margin: AppPadding.panelContent,
             child: BadgeStatus.warning(
               text:
                   '${duplicatedValues.length} English ${duplicatedValues.length == 1 ? 'string is' : 'strings are'} duplicated',
