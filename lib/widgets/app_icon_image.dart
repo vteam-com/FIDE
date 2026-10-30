@@ -26,10 +26,14 @@ class AppIconImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final iconPath = path;
     if (iconPath == null) return fallback;
+    // Decode at display size: app icons are often 1024px.
+    final decodedSize = (size * MediaQuery.devicePixelRatioOf(context)).round();
     return Image.file(
       File(iconPath),
       width: size,
       height: size,
+      cacheWidth: decodedSize,
+      cacheHeight: decodedSize,
       fit: BoxFit.contain,
       errorBuilder: (_, _, _) => fallback,
     );

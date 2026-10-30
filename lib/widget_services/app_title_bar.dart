@@ -7,6 +7,7 @@ import 'package:fide/models/project_menu_action.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
+import 'package:fide/widgets/project_icon.dart';
 import 'package:fide/widgets/theme_settings_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -96,6 +97,10 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
                   currentProjectPathProvider,
                 );
                 final mruFolders = ref.watch(mruFoldersProvider);
+                // Look up the recent projects' icons ahead of the menu.
+                for (final folder in ref.watch(accessibleMruFoldersProvider)) {
+                  ref.read(projectIconPathProvider(folder));
+                }
 
                 if (currentProjectPath != null) {
                   // Show project dropdown
@@ -144,7 +149,9 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
       onTap: () => _showProjectMenu(context, mruFolders, ref),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        spacing: AppSpacing.medium,
         children: [
+          ProjectIcon(projectPath: currentProjectPath),
           Flexible(
             child: Text(
               p.basename(currentProjectPath),
@@ -309,7 +316,8 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     return PopupMenuItem(
       value: (ProjectMenuAction.switchProject, folderPath),
       child: IconMenuRow(
-        icon: hasAccess ? Icons.folder : Icons.folder_off,
+        icon: Icons.folder_off,
+        leading: hasAccess ? ProjectIcon(projectPath: folderPath) : null,
         label: p.basename(folderPath),
         isError: !hasAccess,
         trailing: hasAccess

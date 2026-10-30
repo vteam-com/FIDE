@@ -344,17 +344,18 @@ Validates test organization and naming conventions.
             padding: AppPadding.panelContent,
             child: Row(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionTitle('Test Suite'),
-                    Text(
-                      'Run and manage Flutter tests',
-                      style: AppTextStyle.secondary(context),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SectionTitle('Test Suite'),
+                      Text(
+                        'Run and manage Flutter tests',
+                        style: AppTextStyle.secondary(context),
+                      ),
+                    ],
+                  ),
                 ),
-                const Spacer(),
                 if (isAnyActionRunning) const InlineSpinner(),
               ],
             ),

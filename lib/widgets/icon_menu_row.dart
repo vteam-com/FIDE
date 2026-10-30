@@ -13,6 +13,7 @@ class IconMenuRow extends StatelessWidget {
     required this.icon,
     required this.label,
     this.isError = false,
+    this.leading,
     this.trailing,
   });
 
@@ -25,6 +26,10 @@ class IconMenuRow extends StatelessWidget {
 
   /// Entry text.
   final String label;
+
+  /// Widget shown instead of [icon], such as a project's app icon; sized to
+  /// the same square.
+  final Widget? leading;
 
   /// Widget after the label, such as a count or a lock.
   final Widget? trailing;
@@ -39,13 +44,15 @@ class IconMenuRow extends StatelessWidget {
       children: [
         SizedBox.square(
           dimension: AppIconSize.medium,
-          child: icon == null
-              ? null
-              : Icon(
-                  icon,
-                  size: AppIconSize.medium,
-                  color: color ?? colorScheme.primary,
-                ),
+          child:
+              leading ??
+              (icon == null
+                  ? null
+                  : Icon(
+                      icon,
+                      size: AppIconSize.medium,
+                      color: color ?? colorScheme.primary,
+                    )),
         ),
         Flexible(
           child: Text(

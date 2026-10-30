@@ -88,6 +88,14 @@ final accessibleMruFoldersProvider = Provider<Set<String>>(
   },
 );
 
+/// The app icon of the project at the given folder, or null without one;
+/// looked up once per folder and kept, so the title bar and the recent
+/// projects menu show it without touching the disk again.
+final projectIconPathProvider = FutureProvider.family<String?, String>(
+  (ref, projectPath) =>
+      ref.read(buildArtifactsInspectorProvider).projectIconPath(projectPath),
+);
+
 /// The Execute panel's build target.
 final selectedPlatformProvider =
     StateNotifierProvider<SelectedPlatformNotifier, FlutterPlatform>(
