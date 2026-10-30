@@ -150,11 +150,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
               p.basename(currentProjectPath),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
-              style: TextStyle(
-                color: onSurface.withValues(alpha: AppOpacity.prominent),
-                fontWeight: FontWeight.w500,
-                fontSize: AppFontSize.label,
-              ),
+              style: AppTextStyle.label,
             ),
           ),
           Icon(
@@ -169,15 +165,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
 
   /// Builds the centred app title text widget.
   Widget _buildAppTitle() {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    return Text(
-      'The Flutter IDE',
-      style: TextStyle(
-        color: onSurface.withValues(alpha: AppOpacity.prominent),
-        fontWeight: FontWeight.w500,
-        fontSize: AppFontSize.label,
-      ),
-    );
+    return Text('The Flutter IDE', style: AppTextStyle.label);
   }
 
   /// Builds the row of icon buttons for toggling left, center, and right panels.

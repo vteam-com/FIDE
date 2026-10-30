@@ -108,96 +108,101 @@ class _MessageWidgetState extends State<MessageWidget>
 
     return FadeTransition(
       opacity: _fadeAnimation,
-      child: Tooltip(
-        message: semanticLabel,
-        child: Container(
-          margin: AppPadding.messageMargin,
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(AppRadius.medium),
-            border: Border.all(
-              color: foregroundColor.withValues(alpha: AppOpacity.selected),
-              width: AppSize.borderThin,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: AppOpacity.subtle),
-                blurRadius: AppSpacing.tiny,
-                offset: const Offset(0, AppSpacing.micro),
+      // Shown in an overlay, outside any Material: this one gives the text
+      // the theme's default style (no debug underline) and the buttons
+      // their ink
+      child: Material(
+        type: MaterialType.transparency,
+        child: Tooltip(
+          message: semanticLabel,
+          child: Container(
+            margin: AppPadding.messageMargin,
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(AppRadius.medium),
+              border: Border.all(
+                color: foregroundColor.withValues(alpha: AppOpacity.selected),
+                width: AppSize.borderThin,
               ),
-            ],
-          ),
-          child: Padding(
-            padding: AppPadding.actionTabContent,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  widget.type.icon,
-                  color: foregroundColor,
-                  size: AppIconSize.large,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: AppOpacity.subtle),
+                  blurRadius: AppSpacing.tiny,
+                  offset: const Offset(0, AppSpacing.micro),
                 ),
-                const SizedBox(width: AppSpacing.large),
-                Expanded(
-                  child: Text(
-                    widget.message,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: foregroundColor,
-                      height: AppLineHeight.relaxed,
-                    ),
-                  ),
-                ),
-                if (widget.showCopyButton) ...[
-                  const SizedBox(width: AppSpacing.medium),
-                  SizedBox(
-                    height: AppSize.compactActionButton,
-                    child: _showCopiedText
-                        ? Center(
-                            child: AnimatedOpacity(
-                              opacity: _showCopiedText ? 1.0 : 0.0,
-                              duration: AppDuration.copiedBadgeFade,
-                              child: BadgeStatus.success(text: 'Copied'),
-                            ),
-                          )
-                        : CompactIconButton(
-                            icon: Icons.copy,
-                            color: foregroundColor.withValues(
-                              alpha: AppOpacity.secondaryText,
-                            ),
-                            onPressed: () async {
-                              await Clipboard.setData(
-                                ClipboardData(text: widget.message),
-                              );
-                              // Show "Copied" in place of the button
-                              if (mounted) {
-                                setState(() => _showCopiedText = true);
-                                // Hide "Copied" after 1.5 seconds
-                                Future.delayed(
-                                  AppDuration.copiedBadgeVisible,
-                                  () {
-                                    if (mounted) {
-                                      setState(() => _showCopiedText = false);
-                                    }
-                                  },
-                                );
-                              }
-                            },
-                            tooltip: 'Copy message',
-                          ),
-                  ),
-                ],
-                if (widget.showCloseButton) ...[
-                  const SizedBox(width: AppSpacing.tiny),
-                  CompactIconButton(
-                    icon: Icons.close,
-                    color: foregroundColor.withValues(
-                      alpha: AppOpacity.secondaryText,
-                    ),
-                    onPressed: _dismiss,
-                    tooltip: 'Close message',
-                  ),
-                ],
               ],
+            ),
+            child: Padding(
+              padding: AppPadding.actionTabContent,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    widget.type.icon,
+                    color: foregroundColor,
+                    size: AppIconSize.large,
+                  ),
+                  const SizedBox(width: AppSpacing.large),
+                  Expanded(
+                    child: Text(
+                      widget.message,
+                      style: AppTextStyle.label.copyWith(
+                        color: foregroundColor,
+                      ),
+                    ),
+                  ),
+                  if (widget.showCopyButton) ...[
+                    const SizedBox(width: AppSpacing.medium),
+                    SizedBox(
+                      height: AppSize.compactActionButton,
+                      child: _showCopiedText
+                          ? Center(
+                              child: AnimatedOpacity(
+                                opacity: _showCopiedText ? 1.0 : 0.0,
+                                duration: AppDuration.copiedBadgeFade,
+                                child: BadgeStatus.success(text: 'Copied'),
+                              ),
+                            )
+                          : CompactIconButton(
+                              icon: Icons.copy,
+                              color: foregroundColor.withValues(
+                                alpha: AppOpacity.secondaryText,
+                              ),
+                              onPressed: () async {
+                                await Clipboard.setData(
+                                  ClipboardData(text: widget.message),
+                                );
+                                // Show "Copied" in place of the button
+                                if (mounted) {
+                                  setState(() => _showCopiedText = true);
+                                  // Hide "Copied" after 1.5 seconds
+                                  Future.delayed(
+                                    AppDuration.copiedBadgeVisible,
+                                    () {
+                                      if (mounted) {
+                                        setState(() => _showCopiedText = false);
+                                      }
+                                    },
+                                  );
+                                }
+                              },
+                              tooltip: 'Copy message',
+                            ),
+                    ),
+                  ],
+                  if (widget.showCloseButton) ...[
+                    const SizedBox(width: AppSpacing.tiny),
+                    CompactIconButton(
+                      icon: Icons.close,
+                      color: foregroundColor.withValues(
+                        alpha: AppOpacity.secondaryText,
+                      ),
+                      onPressed: _dismiss,
+                      tooltip: 'Close message',
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
         ),

@@ -79,12 +79,7 @@ class _SectionPanelState extends State<SectionPanel> {
         theme.colorScheme.surfaceContainerHighest;
     final titleStyle =
         widget.titleStyle ??
-        TextStyle(
-          fontSize: AppFontSize.caption,
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary,
-          letterSpacing: -1.0,
-        );
+        AppTextStyle.captionStrong.copyWith(color: theme.colorScheme.primary);
     final iconColor = widget.iconColor ?? theme.colorScheme.primary;
 
     return Column(

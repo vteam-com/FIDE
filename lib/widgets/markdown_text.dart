@@ -21,10 +21,9 @@ class MarkdownText extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final codeBackground = theme.colorScheme.surface;
-    final baseStyle = theme.textTheme.bodyMedium!.copyWith(color: color);
-    final codeStyle = AppTextStyle.monospace.copyWith(
+    final baseStyle = AppTextStyle.label.copyWith(color: color);
+    final codeStyle = AppTextStyle.code.copyWith(
       color: color,
-      fontSize: AppFontSize.caption,
       backgroundColor: codeBackground,
     );
     return MarkdownBody(
@@ -37,11 +36,11 @@ class MarkdownText extends StatelessWidget {
         p: baseStyle,
         listBullet: baseStyle,
         tableBody: baseStyle,
-        tableHead: baseStyle.copyWith(fontWeight: FontWeight.bold),
-        h1: theme.textTheme.titleLarge!.copyWith(color: color),
-        h2: theme.textTheme.titleMedium!.copyWith(color: color),
-        h3: theme.textTheme.titleSmall!.copyWith(color: color),
-        strong: const TextStyle(fontWeight: FontWeight.bold),
+        tableHead: baseStyle.merge(AppTextStyle.strong),
+        h1: AppTextStyle.headline.copyWith(color: color),
+        h2: AppTextStyle.title.copyWith(color: color),
+        h3: AppTextStyle.title.copyWith(color: color),
+        strong: AppTextStyle.strong,
         code: codeStyle,
         codeblockPadding: const EdgeInsets.all(AppSpacing.medium),
         codeblockDecoration: BoxDecoration(

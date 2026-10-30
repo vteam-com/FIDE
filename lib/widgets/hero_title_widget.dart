@@ -36,7 +36,7 @@ class HeroTitleWidget extends StatelessWidget {
         Flexible(
           child: Text(
             title,
-            style: Theme.of(context).textTheme.headlineLarge,
+            style: AppTextStyle.display,
             overflow: TextOverflow.ellipsis,
           ),
         ),

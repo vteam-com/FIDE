@@ -53,10 +53,7 @@ class EditorScreenImageView extends StatelessWidget {
                   const SizedBox(height: AppSpacing.tiny),
                   Text(
                     'Size: ${(documentContentLength / AppMetric.fileSizeDivisor).round()}KB • ${p.extension(filePath).toUpperCase().substring(1)}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface
-                          .withValues(alpha: AppOpacity.secondaryText),
-                    ),
+                    style: AppTextStyle.secondary(context),
                   ),
                 ],
               ),

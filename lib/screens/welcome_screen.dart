@@ -86,10 +86,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       // Version Info
                       Text(
                         'Version\n$_appVersion',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface
-                              .withValues(alpha: AppOpacity.disabled),
-                        ),
+                        style: AppTextStyle.secondary(context),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -134,15 +131,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   ),
                                   label: Text(
                                     'Open Flutter Project',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                    style: AppTextStyle.title.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
+                                    ),
                                   ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Theme.of(context)
@@ -177,15 +170,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   ),
                                   label: Text(
                                     'Create New Project',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                    style: AppTextStyle.title.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary,
+                                    ),
                                   ),
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(

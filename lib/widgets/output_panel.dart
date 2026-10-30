@@ -115,12 +115,8 @@ class _OutputPanelState extends ConsumerState<OutputPanel> {
   Widget _buildText() {
     final colorScheme = Theme.of(context).colorScheme;
     return SelectableText.rich(
-      _buildSpans(colorScheme),
-      style: AppTextStyle.monospace.copyWith(
-        fontSize: AppFontSize.metadata,
-        color: colorScheme.onSurface,
-        height: AppLineHeight.tight,
-      ),
+      _buildSpans(),
+      style: AppTextStyle.code.copyWith(color: colorScheme.onSurface),
       textAlign: TextAlign.left,
       textDirection: TextDirection.ltr,
       showCursor: true,
@@ -133,13 +129,9 @@ class _OutputPanelState extends ConsumerState<OutputPanel> {
   }
 
   /// The text with each file reference as an underlined link.
-  TextSpan _buildSpans(ColorScheme colorScheme) {
+  TextSpan _buildSpans() {
     final text = widget.text;
-    final linkStyle = TextStyle(
-      color: colorScheme.primary,
-      decoration: TextDecoration.underline,
-      decorationColor: colorScheme.primary,
-    );
+    final linkStyle = AppTextStyle.link(context);
     final spans = <TextSpan>[];
     var offset = 0;
     for (final (location, recognizer) in _links) {

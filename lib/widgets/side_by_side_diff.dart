@@ -42,14 +42,14 @@ class SideBySideDiff extends StatelessWidget {
             ),
             child: Row(
               children: [
-                _buildHeaderLabel(context, 'Original'),
+                _buildHeaderLabel('Original'),
                 Container(
                   width: AppSize.borderThin,
                   height: AppSize.diffHeaderDividerHeight,
                   color: Theme.of(context).colorScheme.outline
                       .withValues(alpha: AppOpacity.divider),
                 ),
-                _buildHeaderLabel(context, 'Modified'),
+                _buildHeaderLabel('Modified'),
               ],
             ),
           ),
@@ -164,17 +164,8 @@ class SideBySideDiff extends StatelessWidget {
   }
 
   /// The bold title above one side of the diff.
-  Widget _buildHeaderLabel(BuildContext context, String label) {
-    return Expanded(
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.onSurface
-              .withValues(alpha: AppOpacity.secondaryText),
-        ),
-      ),
-    );
+  Widget _buildHeaderLabel(String label) {
+    return Expanded(child: Text(label, style: AppTextStyle.captionStrong));
   }
 
   /// One side of a diff row: the dimmed [lineNumber], then [content] in
@@ -186,9 +177,7 @@ class SideBySideDiff extends StatelessWidget {
     Color? contentColor,
   ) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
-    final style = AppTextStyle.monospace.copyWith(
-      fontSize: AppFontSize.caption,
-    );
+    final style = AppTextStyle.code;
     return Expanded(
       child: Container(
         padding: AppPadding.diffRow,

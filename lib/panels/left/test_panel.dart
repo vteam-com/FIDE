@@ -3,7 +3,6 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/output_log.dart';
 import 'package:fide/models/panel_action.dart';
 import 'package:fide/panels/left/command_actions.dart';
@@ -311,21 +310,11 @@ Validates test organization and naming conventions.
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            action.description,
-            style: const TextStyle(
-              fontSize: AppFontSize.title,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          Text(action.description, style: AppTextStyle.title),
           const SizedBox(height: AppSpacing.xLarge),
           const SectionTitle('Details'),
           const SizedBox(height: AppSpacing.medium),
-          Text(
-            action.details,
-            style: AppTheme.secondaryText(context)
-                .copyWith(height: AppLineHeight.relaxed),
-          ),
+          Text(action.details, style: AppTextStyle.secondary(context)),
         ],
       ),
       actions: [
@@ -358,17 +347,10 @@ Validates test organization and naming conventions.
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Test Suite',
-                      style: TextStyle(
-                        fontSize: AppIconSize.mediumLarge,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
+                    const SectionTitle('Test Suite'),
                     Text(
                       'Run and manage Flutter tests',
-                      style: AppTheme.secondaryText(context),
+                      style: AppTextStyle.secondary(context),
                     ),
                   ],
                 ),

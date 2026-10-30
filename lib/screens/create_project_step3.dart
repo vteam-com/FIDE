@@ -70,8 +70,9 @@ class _CreateProjectStep3State extends State<CreateProjectStep3> {
               if (hasFailed)
                 Text(
                   'Project creation failed. Please check the errors above.',
-                  style: Theme.of(context).textTheme.bodyLarge
-                      ?.copyWith(color: Theme.of(context).colorScheme.error),
+                  style: AppTextStyle.label.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                   textAlign: TextAlign.center,
                 ),
             ],

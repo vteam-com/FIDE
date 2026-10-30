@@ -32,7 +32,7 @@ class LocalizationSetupWidget extends StatelessWidget {
           const SizedBox(height: AppSpacing.medium),
           Text(
             'Your Flutter project needs localization setup.',
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: AppTextStyle.label,
           ),
           const SizedBox(height: AppSpacing.xxLarge),
 
@@ -80,7 +80,7 @@ class LocalizationSetupWidget extends StatelessWidget {
           const SizedBox(height: AppSpacing.medium),
           Text(
             'After setup, use AppLocalizations.of(context) to display localized strings in your widgets.',
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: AppTextStyle.label,
           ),
         ],
       ),

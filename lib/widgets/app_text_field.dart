@@ -83,7 +83,7 @@ class AppTextField extends StatelessWidget {
         keyboardType: keyboardType,
         minLines: minLines,
         maxLines: maxLines,
-        style: const TextStyle(fontSize: AppFontSize.body),
+        style: AppTextStyle.body,
         decoration: InputDecoration(
           labelText: labelText,
           hintText: hintText,

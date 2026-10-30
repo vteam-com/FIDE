@@ -41,11 +41,7 @@ class StatusIndicator extends StatelessWidget {
           Flexible(
             child: Text(
               text,
-              style: TextStyle(
-                fontSize: AppFontSize.caption,
-                color: color,
-                fontWeight: FontWeight.w500,
-              ),
+              style: AppTextStyle.captionStrong.copyWith(color: color),
             ),
           ),
       ],

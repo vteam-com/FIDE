@@ -142,11 +142,8 @@ class BadgeStatus extends StatelessWidget {
           Text(
             text,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              decoration: TextDecoration.none,
+            style: (large ? AppTextStyle.title : AppTextStyle.badge).copyWith(
               color: textColor,
-              fontSize: fontSize,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],

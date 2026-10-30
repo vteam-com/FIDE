@@ -404,20 +404,15 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           const SizedBox(height: AppSpacing.xLarge),
           Text(
             'Your Flutter project has some localization components set up, but others are missing. Localization requires three main components:',
-            style: Theme.of(context).textTheme.bodyLarge,
+            style: AppTextStyle.label,
           ),
           const SizedBox(height: AppSpacing.medium),
           Text(
             '• ARB files (translation files in lib/l10n/)\n• Generated AppLocalizations class\n• Integration in main.dart',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+            style: AppTextStyle.secondary(context),
           ),
           const SizedBox(height: AppSpacing.xLarge),
-          Text(
-            'Here\'s the current status:',
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
+          Text('Here\'s the current status:', style: AppTextStyle.label),
           const SizedBox(height: AppSpacing.xLarge),
 
           // Status checks
@@ -604,8 +599,9 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
               children: [
                 Text(
                   'The following ARB files contain invalid JSON:',
-                  style: Theme.of(context).textTheme.bodySmall
-                      ?.copyWith(color: Theme.of(context).colorScheme.error),
+                  style: AppTextStyle.caption.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.tiny),
                 ...malformedFiles.map((filePath) {
@@ -617,10 +613,9 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                         Expanded(
                           child: Text(
                             fileName,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
+                            style: AppTextStyle.caption.copyWith(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
                           ),
                         ),
                         CompactTextButton(
@@ -670,19 +665,12 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              comparison.key,
-              style: Theme.of(context).textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.bold),
-            ),
+            Text(comparison.key, style: AppTextStyle.title),
             const SizedBox(height: AppSpacing.tiny),
             if (comparison.englishValue != null)
               Text(
                 'EN: ${comparison.englishValue}',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontStyle: FontStyle.italic,
-                ),
+                style: AppTextStyle.secondary(context),
               ),
             const SizedBox(height: AppSpacing.medium),
             Wrap(

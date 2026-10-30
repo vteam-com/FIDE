@@ -27,7 +27,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
         .when(
           data: (overview) => overview == null
               ? const EmptyState(message: 'Select a file to start editing')
-              : _overview(context, ref, overview),
+              : _overview(ref, overview),
           loading: () =>
               const LoadingIndicator(message: 'Analyzing project with fCheck…'),
           error: (error, _) =>
@@ -36,7 +36,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
   }
 
   /// The project's translations, or how to start them.
-  Widget _localizationCard(BuildContext context, ProjectOverview overview) {
+  Widget _localizationCard(ProjectOverview overview) {
     final languages = overview.languages;
     final missing = overview.missingTranslations;
     final hardcoded = overview.code.hardcodedStringIssues.length;
@@ -44,7 +44,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
       icon: Icons.translate,
       title: 'Localization',
       value: languages.isEmpty
-          ? StatCard.text(context, 'Off')
+          ? StatCard.text('Off')
           : Wrap(
               spacing: AppSpacing.medium,
               runSpacing: AppSpacing.medium,
@@ -105,11 +105,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
   }
 
   /// The header and one card per measure.
-  Widget _overview(
-    BuildContext context,
-    WidgetRef ref,
-    ProjectOverview overview,
-  ) {
+  Widget _overview(WidgetRef ref, ProjectOverview overview) {
     final code = overview.code;
     final coverage = overview.coverage;
     final deductions = code.analyzerDeductionPercents;
@@ -146,10 +142,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    Text(
-                      'Version ${code.version}',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
+                    Text('Version ${code.version}', style: AppTextStyle.title),
                   ],
                 ),
               ),
@@ -183,7 +176,6 @@ class ProjectOverviewPanel extends ConsumerWidget {
                 icon: Icons.code,
                 title: 'Sources',
                 value: StatCard.text(
-                  context,
                   '${code.totalLinesOfCode.localized} lines',
                 ),
                 details: [
@@ -199,7 +191,6 @@ class ProjectOverviewPanel extends ConsumerWidget {
                 icon: Icons.inventory_2_outlined,
                 title: 'Packages',
                 value: StatCard.text(
-                  context,
                   (code.dependencyCount + code.devDependencyCount).localized,
                 ),
                 details: [
@@ -211,7 +202,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
               StatCard(
                 icon: Icons.science_outlined,
                 title: 'Tests',
-                value: StatCard.text(context, code.testCaseCount.localized),
+                value: StatCard.text(code.testCaseCount.localized),
                 details: code.hasTests
                     ? [
                         '${code.testDartFilesCount.localized} test files',
@@ -224,7 +215,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
                 icon: Icons.track_changes,
                 title: 'Code coverage',
                 value: coverage == null
-                    ? StatCard.text(context, 'No report')
+                    ? StatCard.text('No report')
                     : BadgeStatus.score(coverage.percent, large: true),
                 details: [
                   if (coverage == null)
@@ -234,7 +225,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
                   'Reachable from tests: ${overview.testReachPercent}%',
                 ],
               ),
-              _localizationCard(context, overview),
+              _localizationCard(overview),
             ],
           ),
         ],

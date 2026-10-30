@@ -30,7 +30,7 @@ class CompactTextButton extends StatelessWidget {
         AppSize.compactTextButtonHeight,
       ),
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      textStyle: const TextStyle(fontSize: AppFontSize.caption),
+      textStyle: AppTextStyle.caption,
     );
     final icon = this.icon;
     if (icon == null) {

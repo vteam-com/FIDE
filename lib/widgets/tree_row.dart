@@ -71,11 +71,9 @@ class TreeRow extends StatelessWidget {
     final tooltip = note == null ? shownPath : '${shownPath ?? ''}\n\n$note';
     final text = Text(
       name,
-      style: TextStyle(
-        fontSize: AppFontSize.body,
-        color: colorScheme.onSurface,
-        fontWeight: highlighted ? FontWeight.w600 : FontWeight.w400,
-      ).merge(nameStyle),
+      style: (highlighted ? AppTextStyle.bodyStrong : AppTextStyle.body).merge(
+        nameStyle,
+      ),
       overflow: TextOverflow.ellipsis,
       maxLines: 1,
     );

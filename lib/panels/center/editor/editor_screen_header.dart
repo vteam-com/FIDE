@@ -72,10 +72,7 @@ class EditorScreenHeader extends StatelessWidget {
                         openDocuments[activeIndex].fileName,
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: AppFontSize.label,
-                        ),
+                        style: AppTextStyle.label,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.medium),
@@ -104,7 +101,7 @@ class EditorScreenHeader extends StatelessWidget {
           ),
         const Spacer(),
         if (isDirty)
-          const Flexible(
+          Flexible(
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: AppSpacing.xLarge,
@@ -114,9 +111,8 @@ class EditorScreenHeader extends StatelessWidget {
                 'Unsaved Changes',
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
-                style: TextStyle(
+                style: AppTextStyle.caption.copyWith(
                   color: AppTheme.warningColor,
-                  fontStyle: FontStyle.italic,
                 ),
               ),
             ),

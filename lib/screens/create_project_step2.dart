@@ -72,10 +72,7 @@ class CreateProjectStep2 extends StatelessWidget {
             spacing: AppSpacing.medium,
             children: [
               SectionTitle('Project: $projectName'),
-              Text(
-                'Location: $projectLocation',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              Text('Location: $projectLocation', style: AppTextStyle.caption),
             ],
           ),
         ),
@@ -144,9 +141,7 @@ class CreateProjectStep2 extends StatelessWidget {
           SurfaceCard(
             child: Text(
               'Localization can be added later in your project settings.',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+              style: AppTextStyle.secondary(context),
             ),
           ),
         ],

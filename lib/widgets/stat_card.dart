@@ -1,5 +1,4 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/status_indicator.dart';
@@ -48,7 +47,7 @@ class StatCard extends StatelessWidget {
             for (final warning in warnings)
               StatusIndicator.tone(StatusTone.warning, label: warning),
             for (final detail in details)
-              Text(detail, style: AppTheme.secondaryText(context)),
+              Text(detail, style: AppTextStyle.secondary(context)),
           ],
         ),
       ),
@@ -56,6 +55,5 @@ class StatCard extends StatelessWidget {
   }
 
   /// [value] as headline text.
-  static Widget text(BuildContext context, String value) =>
-      Text(value, style: Theme.of(context).textTheme.headlineMedium);
+  static Widget text(String value) => Text(value, style: AppTextStyle.headline);
 }

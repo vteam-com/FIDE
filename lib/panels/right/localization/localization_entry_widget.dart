@@ -51,13 +51,7 @@ class LocalizationEntryWidget extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    comparison.key,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
+                  child: Text(comparison.key, style: AppTextStyle.title),
                 ),
                 if (showWarning) ...[
                   const SizedBox(width: AppSpacing.medium),
@@ -71,7 +65,7 @@ class LocalizationEntryWidget extends StatelessWidget {
               spacing: AppSpacing.medium,
               children: translations.entries.map((entry) {
                 /// Handles `_buildLocString`.
-                return _buildLocString(context, entry.key, entry.value);
+                return _buildLocString(entry.key, entry.value);
               }).toList(),
             ),
 
@@ -85,9 +79,8 @@ class LocalizationEntryWidget extends StatelessWidget {
                 padding: const EdgeInsets.only(top: AppSpacing.medium),
                 child: Text(
                   'Missing in: ${comparison.isMissingInEnglish ? 'EN, ' : ''}${comparison.missingInLanguages.join(', ')}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: AppTextStyle.caption.copyWith(
                     color: Theme.of(context).colorScheme.error,
-                    fontStyle: FontStyle.italic,
                   ),
                 ),
               ),
@@ -99,23 +92,13 @@ class LocalizationEntryWidget extends StatelessWidget {
   }
 
   /// Handles `_buildLocString`.
-  Widget _buildLocString(
-    BuildContext context,
-    String languageCode,
-    String translation,
-  ) {
+  Widget _buildLocString(String languageCode, String translation) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: AppSpacing.tiny,
       children: [
         // Language label
-        Text(
-          languageCode,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.secondary,
-          ),
-        ),
+        Text(languageCode, style: AppTextStyle.badgeStrong),
         // Translation value
         Expanded(
           child: SurfaceCard(
@@ -125,9 +108,7 @@ class LocalizationEntryWidget extends StatelessWidget {
               softWrap: true,
               maxLines: AppMetric.translationPreviewLines,
               overflow: TextOverflow.ellipsis,
-              style: AppTextStyle.monospace.copyWith(
-                fontSize: AppFontSize.caption,
-              ),
+              style: AppTextStyle.code,
             ),
           ),
         ),

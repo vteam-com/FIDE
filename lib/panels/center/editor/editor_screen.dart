@@ -320,14 +320,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
                                         _currentFile,
                                       ),
                                   gutterStyle: GutterStyle(
-                                    lineNumberStyle: TextStyle(
-                                      letterSpacing: -1,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(
-                                            alpha: AppOpacity.disabled,
-                                          ),
+                                    lineNumberStyle: AppTextStyle.lineNumber(
+                                      context,
                                     ),
                                   ),
                                   editorTheme: _getCodeTheme(),
@@ -390,50 +384,12 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
   /// Builds syntax highlight styles from a full highlight.js theme with the
   /// app's own colors layered on top.
-  Map<String, TextStyle> _buildCodeTheme(ThemeData theme) {
-    final isDark = theme.brightness == Brightness.dark;
-    final baseTextColor = theme.colorScheme.onPrimary;
-
-    return {
-      ...(isDark ? atomOneDarkTheme : atomOneLightTheme),
-      'root': TextStyle(
-        backgroundColor: theme.colorScheme.surface,
-        color: theme.colorScheme.onSurface,
-      ),
-      'comment': TextStyle(
-        color: isDark
-            ? Colors.green[AppShade.soft]
-            : Colors.green[AppShade.deep],
-      ),
-      'keyword': TextStyle(
-        color: isDark
-            ? Colors.purple[AppShade.soft]
-            : Colors.purple[AppShade.strong],
-        fontWeight: FontWeight.bold,
-      ),
-      'string': TextStyle(
-        color: isDark ? Colors.red[AppShade.soft] : Colors.red[AppShade.strong],
-      ),
-      'number': TextStyle(
-        color: isDark
-            ? Colors.blue[AppShade.soft]
-            : Colors.blue[AppShade.strong],
-      ),
-      'variable': TextStyle(color: isDark ? Colors.white70 : Colors.black87),
-      'title.class_': TextStyle(
-        color: isDark
-            ? Colors.blue[AppShade.soft]
-            : Colors.blue[AppShade.strong],
-        fontWeight: FontWeight.bold,
-      ),
-      'title.function_': TextStyle(
-        color: isDark
-            ? Colors.blue[AppShade.muted]
-            : Colors.blue[AppShade.strong],
-      ),
-      'operator': TextStyle(color: baseTextColor, fontWeight: FontWeight.bold),
-    };
-  }
+  Map<String, TextStyle> _buildCodeTheme(ThemeData theme) => {
+    ...(theme.brightness == Brightness.dark
+        ? atomOneDarkTheme
+        : atomOneLightTheme),
+    ...AppTextStyle.codeTokens(theme),
+  };
 
   Widget _buildDiffView() {
     if (_diffOldText == null || _diffNewText == null) {

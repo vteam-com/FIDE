@@ -38,10 +38,7 @@ class EditorScreenStatusBar extends StatelessWidget {
       child: Row(
         children: [
           if (showDiffView)
-            const Text(
-              'Diff View',
-              style: TextStyle(fontSize: AppFontSize.caption),
-            )
+            const Text('Diff View', style: AppTextStyle.caption)
           else ...[
             CompactIconButton(
               icon: regionsExpanded ? Icons.unfold_less : Icons.unfold_more,
@@ -51,20 +48,14 @@ class EditorScreenStatusBar extends StatelessWidget {
                   : 'Expand All Regions (Ctrl+Shift+])',
             ),
             const SizedBox(width: AppSpacing.medium),
-            Text(
-              'Ln $currentLineNumber',
-              style: const TextStyle(fontSize: AppFontSize.caption),
-            ),
+            Text('Ln $currentLineNumber', style: AppTextStyle.caption),
             const SizedBox(width: AppSpacing.xLarge),
-            Text(
-              'Col $currentColumnNumber',
-              style: const TextStyle(fontSize: AppFontSize.caption),
-            ),
+            Text('Col $currentColumnNumber', style: AppTextStyle.caption),
             if (matchCount > 0) ...[
               const SizedBox(width: AppSpacing.xLarge),
               Text(
                 '${currentMatchIndex + 1} of $matchCount',
-                style: const TextStyle(fontSize: AppFontSize.caption),
+                style: AppTextStyle.caption,
               ),
             ],
           ],
@@ -76,10 +67,7 @@ class EditorScreenStatusBar extends StatelessWidget {
               tooltip: 'Format File (Shift+Alt+F)',
             ),
           const SizedBox(width: AppSpacing.medium),
-          Text(
-            fileLanguage,
-            style: const TextStyle(fontSize: AppFontSize.caption),
-          ),
+          Text(fileLanguage, style: AppTextStyle.caption),
         ],
       ),
     );

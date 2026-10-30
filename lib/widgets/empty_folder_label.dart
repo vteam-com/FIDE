@@ -1,4 +1,4 @@
-import 'package:fide/models/app_theme.dart';
+import 'package:fide/constants/constants.dart';
 import 'package:flutter/material.dart';
 
 /// Placeholder shown under an expanded folder that has no entries.
@@ -8,10 +8,6 @@ class EmptyFolderLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      'empty folder',
-      style: AppTheme.secondaryText(context)
-          .copyWith(fontStyle: FontStyle.italic),
-    );
+    return Text('empty folder', style: AppTextStyle.secondary(context));
   }
 }

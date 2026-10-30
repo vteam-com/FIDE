@@ -51,12 +51,12 @@ class EmptyState extends StatelessWidget {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: theme.textTheme.headlineSmall?.copyWith(color: accent),
+                style: AppTextStyle.headline.copyWith(color: accent),
               ),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: AppFontSize.label, color: muted),
+              style: AppTextStyle.label.copyWith(color: muted),
             ),
             ?child,
           ],

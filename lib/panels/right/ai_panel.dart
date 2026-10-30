@@ -128,11 +128,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
                         child: Text(
                           _modelLabel,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: AppFontSize.caption,
-                            color: Theme.of(context).colorScheme.onSurface
-                                .withValues(alpha: AppOpacity.disabled),
-                          ),
+                          style: AppTextStyle.secondary(context),
                         ),
                       ),
                     ),
@@ -222,10 +218,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
         _downloadModel,
       );
     }
-    return const Text(
-      'Ollama is ready to use!',
-      style: TextStyle(fontSize: AppFontSize.caption),
-    );
+    return const Text('Ollama is ready to use!', style: AppTextStyle.caption);
   }
 
   /// One setup stage: what's missing and the button that fixes it, or a
@@ -238,7 +231,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(message, style: const TextStyle(fontSize: AppFontSize.caption)),
+        Text(message, style: AppTextStyle.caption),
         const SizedBox(height: AppSpacing.medium),
         if (_isInstalling)
           const InlineSpinner()
@@ -271,7 +264,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
             if (isUser)
               Text(
                 message.content,
-                style: TextStyle(
+                style: AppTextStyle.label.copyWith(
                   color: Theme.of(context).colorScheme.onPrimary,
                 ),
               )
@@ -285,8 +278,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
                 padding: const EdgeInsets.only(top: AppSpacing.tiny),
                 child: Text(
                   message.timestamp!.timeAgo(),
-                  style: TextStyle(
-                    fontSize: AppFontSize.badge,
+                  style: AppTextStyle.badge.copyWith(
                     color: isUser
                         ? Theme.of(context).colorScheme.onPrimary
                               .withValues(alpha: AppOpacity.secondaryText)

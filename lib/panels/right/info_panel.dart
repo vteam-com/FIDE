@@ -86,14 +86,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Starting Score: 100 points',
-            style: TextStyle(
-              fontSize: AppFontSize.caption,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
+          Text('Starting Score: 100 points', style: AppTextStyle.captionStrong),
           const SizedBox(height: AppSpacing.large),
           const SectionTitle('Deductions'),
           const SizedBox(height: AppSpacing.medium),
@@ -124,19 +117,13 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             'Final Score: ${health.qualityScore}/${AppMetric.maxScore}',
           ),
           const SizedBox(height: AppSpacing.medium),
-          const Text(
-            'Score ranges:',
-            style: TextStyle(
-              fontSize: AppFontSize.caption,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          const Text('Score ranges:', style: AppTextStyle.captionStrong),
           const SizedBox(height: AppSpacing.tiny),
           Text(
             '• Green (80-100): Good project health\n'
             '• Orange (50-79): Needs attention\n'
             '• Red (0-49): Critical issues',
-            style: AppTheme.secondaryText(context),
+            style: AppTextStyle.secondary(context),
           ),
         ],
       ),
@@ -294,8 +281,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontSize: AppFontSize.badge,
+            style: AppTextStyle.badge.copyWith(
               color: isProblematic || hasIncompatibleVersion
                   ? AppTheme.errorColor
                   : (isOutdated ? AppTheme.warningColor : null),
@@ -395,11 +381,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                     Expanded(
                       child: Text(
                         projectMetrics.name ?? 'Unknown Project',
-                        style: TextStyle(
-                          fontSize: AppFontSize.title,
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                        style: AppTextStyle.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -414,14 +396,14 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                 if (projectMetrics.version != null)
                   Text(
                     'v${projectMetrics.version}',
-                    style: AppTheme.secondaryText(context),
+                    style: AppTextStyle.secondary(context),
                   ),
               ],
             ),
 
             Text(
               projectMetrics.description ?? '< no description >',
-              style: AppTheme.secondaryText(context),
+              style: AppTextStyle.secondary(context),
               overflow: TextOverflow.visible,
             ),
 
@@ -550,7 +532,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
         if (depsDirect.isEmpty && depsDev.isEmpty) ...[
           const SizedBox(height: AppSpacing.medium),
-          Text('No dependencies', style: AppTheme.secondaryText(context)),
+          Text('No dependencies', style: AppTextStyle.secondary(context)),
         ],
       ],
     );

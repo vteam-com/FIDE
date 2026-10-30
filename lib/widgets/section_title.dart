@@ -1,3 +1,4 @@
+import 'package:fide/constants/constants.dart';
 import 'package:flutter/material.dart';
 
 /// The heading of a section of a panel, card or form step.
@@ -10,10 +11,6 @@ class SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: Theme.of(context).textTheme.titleMedium
-          ?.copyWith(fontWeight: FontWeight.bold),
-    );
+    return Text(text, style: AppTextStyle.title);
   }
 }

@@ -31,7 +31,7 @@ class LoadingActionsLog extends StatelessWidget {
       child: ListView.builder(
         shrinkWrap: true,
         itemCount: actions.length,
-        itemBuilder: (context, index) {
+        itemBuilder: (_, index) {
           final action = actions[index];
           return Padding(
             padding: EdgeInsets.symmetric(
@@ -45,7 +45,7 @@ class LoadingActionsLog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     action.text,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    style: AppTextStyle.label.copyWith(
                       color: action.status == LoadingStatus.failed
                           ? colorScheme.error
                           : null,

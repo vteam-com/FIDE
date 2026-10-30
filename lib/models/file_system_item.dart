@@ -64,18 +64,15 @@ extension GitFileStatusDisplay on GitFileStatus {
     _ => null,
   };
 
-  /// [base] styled for this status: colored, struck through when deleted,
-  /// italic when ignored.
+  /// [base] styled for this status: colored, and struck through when
+  /// deleted.
   TextStyle textStyle(BuildContext context, TextStyle base) {
     return switch (this) {
       GitFileStatus.deleted => base.copyWith(
         decoration: TextDecoration.lineThrough,
         color: color(context),
       ),
-      GitFileStatus.ignored => base.copyWith(
-        fontStyle: FontStyle.italic,
-        color: color(context),
-      ),
+      GitFileStatus.ignored ||
       GitFileStatus.untracked ||
       GitFileStatus.added ||
       GitFileStatus.modified => base.copyWith(color: color(context)),

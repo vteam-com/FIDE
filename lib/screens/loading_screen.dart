@@ -69,12 +69,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
                             children: [
                               Text(
                                 'Project loading failed. Please check the errors above.',
-                                style: Theme.of(context).textTheme.bodyLarge
-                                    ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .error,
-                                    ),
+                                style: AppTextStyle.label.copyWith(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
                                 textAlign: TextAlign.center,
                               ),
                               ElevatedButton(

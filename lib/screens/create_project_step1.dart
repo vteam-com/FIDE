@@ -189,7 +189,7 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
             Expanded(
               child: Text(
                 'Use AI-powered app generation (requires Ollama)',
-                style: Theme.of(context).textTheme.bodyLarge,
+                style: AppTextStyle.label,
               ),
             ),
             Switch(

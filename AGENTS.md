@@ -9,6 +9,7 @@
   - UI elements that should look alike but render differently are a sign of duplicated code that has drifted
   - DRY aims at consistent code and consistent rendering: when UI code is almost the same and differs only by a few attributes (color, radius, padding, icon size, divider color, …), remove the differences rather than adding parameters to keep them
   - keep the base building blocks simple and few; avoid snowflake UI elements and one-off variants
+- every text style lives in `AppTextStyle` (`lib/constants/constants.app_text_style.dart`), built on the `AppFontSize` scale; never write `TextStyle(...)`, `textTheme.*`, `fontSize:`, `fontWeight:` or line heights elsewhere — pick a style there and only add a state color with `copyWith(color: …)`; a missing style is added to that file
 - `fcheck --fix` can reformat unrelated files; revert changes it makes outside the task
 - fCheck (package `fcheck`, repo `../fcheck`) is the brain for analyzing Flutter/Dart projects; FIDE consumes its public API (`package:fcheck/fcheck.dart`) and never reimplements analysis
   - when FIDE needs a new finding or metric, add it to fCheck first (it has its own users, so keep it general), then use it from FIDE

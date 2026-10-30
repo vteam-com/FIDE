@@ -46,14 +46,8 @@ class AppTheme {
         unselectedLabelColor: colorScheme.onSurfaceVariant,
         indicatorColor: colorScheme.primary,
         indicatorSize: TabBarIndicatorSize.tab,
-        labelStyle: const TextStyle(
-          fontSize: AppFontSize.badge,
-          fontWeight: FontWeight.w700,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: AppFontSize.badge,
-          fontWeight: FontWeight.w500,
-        ),
+        labelStyle: AppTextStyle.badgeStrong,
+        unselectedLabelStyle: AppTextStyle.badge,
       ),
       cardTheme: CardThemeData(
         elevation: 0,
@@ -65,10 +59,7 @@ class AppTheme {
       appBarTheme: const AppBarTheme(
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: TextStyle(
-          fontSize: AppIconSize.mediumLarge,
-          fontWeight: FontWeight.w600,
-        ),
+        titleTextStyle: AppTextStyle.title,
       ),
       popupMenuTheme: PopupMenuThemeData(
         shape: RoundedRectangleBorder(
@@ -104,12 +95,6 @@ class AppTheme {
               .sidePanelSurfaceLight // Pure white for light mode
         : AppColor.sidePanelSurfaceDark; // Slightly lighter than background for dark mode
   }
-
-  /// The style of every secondary line: descriptions, captions, metadata.
-  static TextStyle secondaryText(BuildContext context) => TextStyle(
-    fontSize: AppFontSize.caption,
-    color: Theme.of(context).colorScheme.onSurfaceVariant,
-  );
 
   /// Returns the side-panel divider color for the active brightness.
   static Color sidePanelDivider(BuildContext context) {

@@ -457,7 +457,9 @@ class _GitPanelState extends ConsumerState<GitPanel> {
         commit.message,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: commit.isUnpushed ? TextStyle(color: primary) : null,
+        style: commit.isUnpushed
+            ? AppTextStyle.label.copyWith(color: primary)
+            : null,
       ),
       subtitle: Tooltip(
         message: '${commit.date}',

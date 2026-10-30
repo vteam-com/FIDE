@@ -52,7 +52,7 @@ class FileNameWidget extends StatelessWidget {
       // Git styling (strike-through, italic, color), recolored when the
       // file has a warning or is selected
       nameStyle: gitStatus
-          .textStyle(context, const TextStyle())
+          .textStyle(context, AppTextStyle.body)
           .copyWith(
             color: warning != null
                 ? AppTheme.warningColor

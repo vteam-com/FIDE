@@ -132,22 +132,10 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  action.title,
-                                  style: TextStyle(
-                                    fontSize: AppFontSize.title,
-                                    fontWeight: FontWeight.bold,
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
+                                Text(action.title, style: AppTextStyle.title),
                                 Text(
                                   action.description,
-                                  style: TextStyle(
-                                    fontSize: AppFontSize.caption,
-                                    color: colorScheme.onSurface.withValues(
-                                      alpha: AppOpacity.secondaryText,
-                                    ),
-                                  ),
+                                  style: AppTextStyle.secondary(context),
                                 ),
                               ],
                             ),
@@ -165,13 +153,7 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                             // Keep only this for the details text
                             child: Text(
                               action.details,
-                              style: AppTextStyle.monospace.copyWith(
-                                fontSize: AppFontSize.metadata,
-                                color: colorScheme.onSurface.withValues(
-                                  alpha: AppOpacity.emphasis,
-                                ),
-                                height: AppLineHeight.compact,
-                              ),
+                              style: AppTextStyle.code,
                             ),
                           ),
                         ),
@@ -210,7 +192,7 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                                     : isRunning
                                     ? 'Running...'
                                     : 'Execute',
-                                style: TextStyle(fontWeight: FontWeight.w600),
+                                style: AppTextStyle.strong,
                               ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: canStop

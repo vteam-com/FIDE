@@ -87,7 +87,7 @@ class EditorScreenSearchBar extends StatelessWidget {
                   const SizedBox(width: AppSpacing.medium),
                   Text(
                     '${currentMatchIndex + 1} of $matchCount',
-                    style: const TextStyle(fontSize: AppFontSize.caption),
+                    style: AppTextStyle.caption,
                   ),
                 ],
               ],

@@ -68,7 +68,7 @@ class FolderNameWidget extends StatelessWidget {
       name: node.name,
       path: node.path,
       rootPath: rootPath,
-      nameStyle: TextStyle(color: nameColor),
+      nameStyle: AppTextStyle.body.copyWith(color: nameColor),
       highlighted: isFiltered,
       showMenuButton: isExpanded,
       onTap: onTap,

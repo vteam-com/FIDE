@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart'
-    show AppPadding, AppSpacing, AppIconSize, AppFontSize, AppTextStyle;
+    show AppPadding, AppSpacing, AppIconSize, AppTextStyle;
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/reference_search.dart';
 import 'package:fide/models/search_result.dart';
@@ -297,11 +297,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
           children: [
             Text(
               'Line ${result.lineNumber}',
-              style: TextStyle(
-                fontSize: AppFontSize.badge,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
+              style: AppTextStyle.secondary(context),
             ),
             const SizedBox(height: AppSpacing.micro),
             RichText(
@@ -312,10 +308,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
                   result.matchStart,
                   result.matchEnd,
                 ),
-                style: AppTextStyle.monospace.copyWith(
-                  fontSize: AppFontSize.caption,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+                style: AppTextStyle.code,
               ),
             ),
           ],
@@ -339,10 +332,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     spans.add(
       TextSpan(
         text: text.substring(matchStart, matchEnd),
-        style: TextStyle(
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-          color: Theme.of(context).colorScheme.onPrimaryContainer,
-        ),
+        style: AppTextStyle.match(context),
       ),
     );
 

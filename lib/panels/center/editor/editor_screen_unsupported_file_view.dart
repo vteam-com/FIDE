@@ -1,7 +1,8 @@
+import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/widgets/clickable.dart';
-import 'package:fide/widgets/open_url.dart';
 import 'package:fide/widgets/empty_state.dart';
+import 'package:fide/widgets/open_url.dart';
 import 'package:flutter/material.dart';
 
 /// Renders the placeholder shown for unsupported file types.
@@ -29,10 +30,7 @@ class EditorScreenUnsupportedFileView extends StatelessWidget {
         child: Text(
           'Request this feature at $_issuesUrl',
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.primary,
-            decoration: TextDecoration.underline,
-          ),
+          style: AppTextStyle.link(context),
         ),
       ),
     );

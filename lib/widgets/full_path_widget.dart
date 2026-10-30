@@ -13,7 +13,6 @@ class FullPathWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textColor = colorScheme.onSurface;
-    final bodyLarge = Theme.of(context).textTheme.bodyLarge!;
 
     final filename = p.basename(path);
     final directory = p.dirname(path);
@@ -25,17 +24,15 @@ class FullPathWidget extends StatelessWidget {
           if (prefix.isNotEmpty)
             TextSpan(
               text: prefix,
-              style: bodyLarge.copyWith(
+              style: AppTextStyle.label.copyWith(
                 color: textColor.withAlpha(AppAlpha.pathPrefix),
-                fontWeight: FontWeight.normal,
               ),
             ),
           TextSpan(
             text: filename,
-            style: bodyLarge.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppTextStyle.label
+                .merge(AppTextStyle.strong)
+                .copyWith(color: textColor),
           ),
         ],
       ),

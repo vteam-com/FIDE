@@ -52,7 +52,7 @@ class IconMenuRow extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: color),
+            style: AppTextStyle.label.copyWith(color: color),
           ),
         ),
         ?trailing,

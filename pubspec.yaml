@@ -55,7 +55,7 @@ dependencies:
   yaml_edit: 2.2.4
 
 dev_dependencies:
-  flutter_launcher_icons: 0.14.4
+  
   flutter_test:
     sdk: flutter
   integration_test:
@@ -69,14 +69,6 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: 6.0.0
 
-# flutter_launcher_icons 0.14.4 pins cli_util ^0.4.1 but only uses
-# cli_logging, which is unchanged in 0.6.x (required by coverage 1.16.0).
-dependency_overrides:
-  cli_util: ^0.6.0
-  # fcheck 1.6.0 (public result models, AnalyzeFolder.fromConfig) is not on
-  # pub.dev yet; remove once it is published.
-  fcheck:
-    path: ../fcheck
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -1,5 +1,4 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/app_theme.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:flutter/material.dart';
@@ -65,13 +64,13 @@ class OutlinedListTile extends StatelessWidget {
             ),
             title: Text(
               title,
-              style: theme.textTheme.bodyMedium,
+              style: AppTextStyle.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             subtitle: Text(
               subtitle,
-              style: AppTheme.secondaryText(context),
+              style: AppTextStyle.secondary(context),
               maxLines: AppMetric.doubleLineLimit,
               overflow: TextOverflow.ellipsis,
             ),

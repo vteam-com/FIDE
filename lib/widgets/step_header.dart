@@ -28,10 +28,7 @@ class StepHeader extends StatelessWidget {
           child: Center(
             child: Text(
               '$number',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppTextStyle.bodyStrong.copyWith(color: Colors.white),
             ),
           ),
         ),

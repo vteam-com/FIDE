@@ -154,8 +154,7 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
                     const SizedBox(height: AppSpacing.small),
                     Text(
                       _getEnableInstructions(),
-                      style: AppTheme.secondaryText(context)
-                          .copyWith(height: AppLineHeight.relaxed),
+                      style: AppTextStyle.secondary(context),
                     ),
                   ],
                 ),
@@ -176,22 +175,16 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
                       children: [
                         Text(
                           p.basename(_iconPath),
-                          style: TextStyle(
-                            fontSize: AppFontSize.metadata,
-                            fontWeight: FontWeight.w500,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
+                          style: AppTextStyle.captionStrong,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           _iconPath,
-                          style: AppTextStyle.monospace.copyWith(
-                            fontSize: AppFontSize.badge,
+                          style: AppTextStyle.code.copyWith(
                             color: Theme.of(context)
                                 .colorScheme
-                                .onSurfaceVariant
-                                .withValues(alpha: AppOpacity.secondaryText),
+                                .onSurfaceVariant,
                           ),
                           maxLines: AppMetric.doubleLineLimit,
                           overflow: TextOverflow.ellipsis,
@@ -262,14 +255,7 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
 
   /// A bold caption introducing a group of details.
   Widget _buildHeading(String label) {
-    return Text(
-      label,
-      style: TextStyle(
-        fontSize: AppFontSize.caption,
-        fontWeight: FontWeight.w600,
-        color: Theme.of(context).colorScheme.onSurface,
-      ),
-    );
+    return Text(label, style: AppTextStyle.captionStrong);
   }
 
   /// A build-info line: a fixed-width [label] column, then [value] in
@@ -280,21 +266,12 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
       children: [
         SizedBox(
           width: AppSize.platformDetailLabelWidth,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: AppFontSize.metadata,
-              color: colorScheme.onSurface.withValues(
-                alpha: AppOpacity.emphasis,
-              ),
-            ),
-          ),
+          child: Text(label, style: AppTextStyle.secondary(context)),
         ),
         Expanded(
           child: Text(
             value,
-            style: AppTextStyle.monospace.copyWith(
-              fontSize: AppFontSize.metadata,
+            style: AppTextStyle.code.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
             maxLines: 1,

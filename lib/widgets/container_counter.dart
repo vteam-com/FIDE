@@ -25,10 +25,7 @@ class ContainerCounter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chip = Chip(
-      label: Text(
-        count.toString(),
-        style: const TextStyle(fontSize: AppFontSize.badge),
-      ),
+      label: Text(count.toString(), style: AppTextStyle.badge),
       padding: EdgeInsets.zero,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
