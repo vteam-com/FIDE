@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/project_menu_action.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/theme_settings_dialog.dart';
 import 'package:flutter/material.dart';
@@ -139,7 +140,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
   ) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
 
-    return GestureDetector(
+    return Clickable(
       onTap: () => _showProjectMenu(context, mruFolders, ref),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -277,7 +278,6 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     List<String> mruFolders,
     Set<String> accessible,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
     PopupMenuItem<(ProjectMenuAction, String?)> action(
       ProjectMenuAction value,
       IconData icon,
@@ -285,11 +285,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     ) {
       return PopupMenuItem(
         value: (value, null),
-        child: IconMenuRow(
-          icon: icon,
-          label: label,
-          iconColor: colorScheme.primary,
-        ),
+        child: IconMenuRow(icon: icon, label: label),
       );
     }
 
@@ -324,29 +320,17 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     final colorScheme = Theme.of(context).colorScheme;
     return PopupMenuItem(
       value: (ProjectMenuAction.switchProject, folderPath),
-      child: Row(
-        children: [
-          Icon(
-            hasAccess ? Icons.folder : Icons.folder_off,
-            color: hasAccess ? colorScheme.primary : colorScheme.error,
-            size: AppIconSize.medium,
-          ),
-          const SizedBox(width: AppSpacing.medium),
-          Expanded(
-            child: Text(
-              p.basename(folderPath),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: hasAccess ? colorScheme.onSurface : colorScheme.error,
+      child: IconMenuRow(
+        icon: hasAccess ? Icons.folder : Icons.folder_off,
+        label: p.basename(folderPath),
+        isError: !hasAccess,
+        trailing: hasAccess
+            ? null
+            : Icon(
+                Icons.lock,
+                color: colorScheme.error,
+                size: AppIconSize.small,
               ),
-            ),
-          ),
-          if (!hasAccess) ...[
-            const SizedBox(width: AppSpacing.tiny),
-            Icon(Icons.lock, color: colorScheme.error, size: AppIconSize.small),
-          ],
-        ],
       ),
     );
   }

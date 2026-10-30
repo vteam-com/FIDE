@@ -14,15 +14,16 @@ import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/busy_icon_button.dart';
+import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
+import 'package:fide/widgets/open_url.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// Represents `InfoPanel`.
 class InfoPanel extends ConsumerStatefulWidget {
@@ -149,10 +150,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             '• Green (80-100): Good project health\n'
             '• Orange (50-79): Needs attention\n'
             '• Red (0-49): Critical issues',
-            style: TextStyle(
-              fontSize: AppFontSize.metadata,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+            style: AppTheme.secondaryText(context),
           ),
         ],
       ),
@@ -291,17 +289,9 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
-  /// Handles `_openPubDev`.
-  Future<void> _openPubDev(String packageName) async {
-    final uri = Uri.parse('https://pub.dev/packages/$packageName');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      if (mounted) {
-        MessageBox.showError(context, 'Could not open pub.dev page');
-      }
-    }
-  }
+  /// Opens [packageName]'s page on pub.dev.
+  Future<void> _openPubDev(String packageName) =>
+      openUrl(context, 'https://pub.dev/packages/$packageName');
 
   /// Shows pub's version-solving [error] and flags the package it blames.
   void _showDependencyConflict(String error) {
@@ -471,20 +461,14 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                 if (projectMetrics.version != null)
                   Text(
                     'v${projectMetrics.version}',
-                    style: TextStyle(
-                      fontSize: AppFontSize.metadata,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                    style: AppTheme.secondaryText(context),
                   ),
               ],
             ),
 
             Text(
               projectMetrics.description ?? '< no description >',
-              style: TextStyle(
-                fontSize: AppFontSize.metadata,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+              style: AppTheme.secondaryText(context),
               overflow: TextOverflow.visible,
             ),
 
@@ -518,7 +502,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
     return SectionPanel(
       title: 'Score',
-      rightWidget: GestureDetector(
+      rightWidget: Clickable(
         onTap: () => _showScoreDetails(context, health),
         child: BadgeStatus.score(health.qualityScore),
       ),
@@ -559,28 +543,20 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Wrap(
+          spacing: AppSpacing.medium,
+          runSpacing: AppSpacing.medium,
           children: [
             BusyIconButton(
               busy: _checkingOutdated,
               icon: Icons.update,
               label: 'Outdated',
               onPressed: _checkOutdated,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.medium,
-                ),
-              ),
             ),
             BusyIconButton(
               busy: _upgrading,
               icon: Icons.arrow_upward,
               label: 'Upgrade',
               onPressed: _upgradePackages,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.medium,
-                ),
-              ),
             ),
           ],
         ),
@@ -621,13 +597,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
         if (depsDirect.isEmpty && depsDev.isEmpty) ...[
           const SizedBox(height: AppSpacing.medium),
-          Text(
-            'No dependencies',
-            style: TextStyle(
-              fontSize: AppFontSize.caption,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
+          Text('No dependencies', style: AppTheme.secondaryText(context)),
         ],
       ],
     );
@@ -671,31 +641,20 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     return ActionCard(
       title: 'Actions',
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: AppSpacing.medium,
         children: [
           BusyIconButton(
             busy: _isRefreshing,
             icon: Icons.cleaning_services,
             label: 'Full Project Cleanup',
             onPressed: _performFullCleanup,
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(
-                double.infinity,
-                AppSize.actionButtonHeight,
-              ),
-            ),
           ),
-          const SizedBox(height: AppSpacing.medium),
           BusyIconButton(
             busy: _isRefreshing,
             icon: Icons.refresh,
             label: 'Refresh Analysis',
             onPressed: _analyzeProject,
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(
-                double.infinity,
-                AppSize.actionButtonHeight,
-              ),
-            ),
           ),
         ],
       ),

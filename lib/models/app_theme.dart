@@ -127,6 +127,12 @@ class AppTheme {
         : AppColor.sidePanelSurfaceDark; // Slightly lighter than background for dark mode
   }
 
+  /// The style of every secondary line: descriptions, captions, metadata.
+  static TextStyle secondaryText(BuildContext context) => TextStyle(
+    fontSize: AppFontSize.caption,
+    color: Theme.of(context).colorScheme.onSurfaceVariant,
+  );
+
   /// Returns the side-panel divider color for the active brightness.
   static Color sidePanelDivider(BuildContext context) {
     final brightness = Theme.of(context).brightness;

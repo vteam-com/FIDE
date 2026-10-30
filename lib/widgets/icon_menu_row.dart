@@ -1,32 +1,61 @@
 import 'package:fide/constants/constants.dart';
 import 'package:flutter/material.dart';
 
-/// A popup menu entry's content: an icon followed by its label.
+/// The content of every popup menu entry: an icon, its label, then an
+/// optional [trailing] widget.
+///
+/// Entries without an icon keep its space, so labels line up; a check
+/// menu passes [Icons.check] for the selected entry only.
 class IconMenuRow extends StatelessWidget {
   /// Creates a row showing [icon] then [label].
   const IconMenuRow({
     super.key,
     required this.icon,
     required this.label,
-    this.iconColor,
+    this.isError = false,
+    this.trailing,
   });
 
-  /// Leading icon.
-  final IconData icon;
+  /// Leading icon; a same-sized gap when null.
+  final IconData? icon;
 
-  /// Icon color; the theme's when null.
-  final Color? iconColor;
+  /// Whether the entry is destructive or unavailable, shown in the error
+  /// color.
+  final bool isError;
 
   /// Entry text.
   final String label;
 
+  /// Widget after the label, such as a count or a lock.
+  final Widget? trailing;
+
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = isError ? colorScheme.error : null;
     return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: AppSpacing.medium,
       children: [
-        Icon(icon, size: AppIconSize.medium, color: iconColor),
-        const SizedBox(width: AppSpacing.medium),
-        Text(label),
+        SizedBox.square(
+          dimension: AppIconSize.medium,
+          child: icon == null
+              ? null
+              : Icon(
+                  icon,
+                  size: AppIconSize.medium,
+                  color: color ?? colorScheme.primary,
+                ),
+        ),
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: color),
+          ),
+        ),
+        ?trailing,
       ],
     );
   }

@@ -18,6 +18,7 @@ import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/more_menu_button.dart';
 import 'package:fide/widgets/output_panel.dart';
+import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -222,51 +223,22 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
         iconColor = Theme.of(context).colorScheme.onSurfaceVariant;
     }
 
-    return Container(
-      color: isHighlighted
-          ? Theme.of(context).colorScheme.primaryContainer
-          : null,
-      child: InkWell(
-        onTap: () {
-          // Navigate to the corresponding line and column in the editor
-          widget.onNodeSelected?.call(node.line, node.column);
-          // Ensure focus is transferred to the editor
-          // The editor will handle focus internally
-        },
-        hoverColor: Colors.blue,
-        child: Padding(
-          padding: EdgeInsets.only(
-            left: AppSpacing.xLarge * node.level,
-            top: AppSpacing.micro,
-            bottom: AppSpacing.micro,
-          ),
-          child: Row(
-            children: [
-              Icon(iconData, color: iconColor, size: AppIconSize.medium),
-              const SizedBox(width: AppSpacing.small),
-              Expanded(
-                child: Text(
-                  node.name,
-                  style: TextStyle(
-                    fontSize: AppFontSize.body,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: isHighlighted ? FontWeight.w600 : null,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-              ),
-              if (_isSameNode(node, _countedNode)) ...[
-                _buildConsumerCount(node),
-                if (!_isRenaming)
-                  MoreMenuButton(
-                    onPressed: (position) => _showNodeMenu(node, position),
-                  ),
-              ],
-            ],
-          ),
-        ),
-      ),
+    return TreeRow(
+      icon: Icon(iconData, color: iconColor, size: AppIconSize.medium),
+      name: node.name,
+      depth: node.level,
+      highlighted: isHighlighted,
+      // Navigate to the corresponding line and column in the editor
+      onTap: () => widget.onNodeSelected?.call(node.line, node.column),
+      trailing: [
+        if (_isSameNode(node, _countedNode)) ...[
+          _buildConsumerCount(node),
+          if (!_isRenaming)
+            MoreMenuButton(
+              onPressed: (position) => _showNodeMenu(node, position),
+            ),
+        ],
+      ],
     );
   }
 

@@ -3,7 +3,7 @@ import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/widget_services/diff_counter.dart';
-import 'package:fide/widgets/check_mark.dart';
+import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/toggle_experience_mode.dart';
 import 'package:flutter/material.dart';
 
@@ -54,15 +54,10 @@ class EditorScreenHeader extends StatelessWidget {
 
                   return PopupMenuItem<int>(
                     value: index,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CheckMark(checked: index == activeIndex),
-                        const SizedBox(width: AppSpacing.medium),
-                        Text(doc.fileName),
-                        const SizedBox(width: AppSpacing.medium),
-                        DiffCounter(gitStats: gitStats),
-                      ],
+                    child: IconMenuRow(
+                      icon: index == activeIndex ? Icons.check : null,
+                      label: doc.fileName,
+                      trailing: DiffCounter(gitStats: gitStats),
                     ),
                   );
                 }).toList();

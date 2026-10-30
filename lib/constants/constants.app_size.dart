@@ -45,8 +45,6 @@ class AppSize {
   static const double statCardWidth = 260;
   static const double compactTextButtonMinWidth = 50;
   static const double compactTextButtonHeight = 28;
-  static const double actionButtonHeight = 36;
-  static const double compactButtonHeight = 30;
   static const double initialSidePanelWidth = 250;
 
   /// Narrowest the left and right panels can be dragged.

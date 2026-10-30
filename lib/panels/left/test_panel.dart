@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/output_log.dart';
 import 'package:fide/models/panel_action.dart';
 import 'package:fide/panels/left/command_actions.dart';
@@ -327,11 +328,8 @@ Validates test organization and naming conventions.
           const SizedBox(height: AppSpacing.medium),
           Text(
             action.details,
-            style: TextStyle(
-              fontSize: AppFontSize.caption,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              height: AppLineHeight.relaxed,
-            ),
+            style: AppTheme.secondaryText(context)
+                .copyWith(height: AppLineHeight.relaxed),
           ),
         ],
       ),
@@ -375,10 +373,7 @@ Validates test organization and naming conventions.
                     ),
                     Text(
                       'Run and manage Flutter tests',
-                      style: TextStyle(
-                        fontSize: AppFontSize.caption,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                      style: AppTheme.secondaryText(context),
                     ),
                   ],
                 ),

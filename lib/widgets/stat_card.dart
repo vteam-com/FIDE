@@ -66,13 +66,7 @@ class StatCard extends StatelessWidget {
                 ),
               ),
             for (final detail in details)
-              Text(
-                detail,
-                style: TextStyle(
-                  fontSize: AppFontSize.caption,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
+              Text(detail, style: AppTheme.secondaryText(context)),
           ],
         ),
       ),

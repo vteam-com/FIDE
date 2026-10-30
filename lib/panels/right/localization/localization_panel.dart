@@ -1,5 +1,4 @@
 // ignore_for_file: deprecated_member_use
-import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
@@ -10,10 +9,12 @@ import 'package:fide/panels/right/localization/localization_entry_widget.dart';
 import 'package:fide/panels/right/localization/localization_setup_widget.dart';
 import 'package:fide/providers/ai_service.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/localization_service.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/filter_field.dart';
 import 'package:fide/widgets/loading_indicator.dart';
@@ -668,31 +669,10 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                                 ),
                           ),
                         ),
-                        TextButton.icon(
-                          icon: const Icon(Icons.edit, size: AppIconSize.small),
-                          label: const Text(
-                            'Edit',
-                            style: TextStyle(fontSize: AppFontSize.caption),
-                          ),
-                          onPressed: () {
-                            // Open the file in FIDE's editor
-                            final fileSystemItem =
-                                FileSystemItem.fromFileSystemEntity(
-                                  File(filePath),
-                                );
-                            ref.read(selectedFileProvider.notifier).state =
-                                fileSystemItem;
-                          },
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.tiny,
-                            ),
-                            minimumSize: const Size(
-                              AppSize.compactTextButtonMinWidth,
-                              AppSize.compactTextButtonHeight,
-                            ),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
+                        CompactTextButton(
+                          icon: Icons.edit,
+                          label: 'Edit',
+                          onPressed: () => openFile(ref, filePath),
                         ),
                       ],
                     ),
@@ -770,12 +750,6 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                           targetFile.path,
                         )
                       : null,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.large,
-                      vertical: AppSpacing.small,
-                    ),
-                  ),
                 );
               }).toList(),
             ),

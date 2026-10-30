@@ -3,15 +3,16 @@ import 'package:fide/widgets/more_menu_button.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
-/// One file or folder row of a project tree: [icon], [name] with its path
-/// as a tooltip, then [trailing] indicators.
+/// One row of a tree (files, folders, outline symbols, search results):
+/// [icon], [name] with its path as a tooltip, then [trailing] indicators.
 class TreeRow extends StatelessWidget {
-  /// Creates the row for the entry at [path].
+  /// Creates the row for [name].
   const TreeRow({
     super.key,
     required this.icon,
     required this.name,
-    required this.path,
+    this.path,
+    this.depth = 0,
     this.rootPath,
     this.note,
     this.nameStyle,
@@ -21,6 +22,9 @@ class TreeRow extends StatelessWidget {
     this.onTap,
     this.onContextMenu,
   });
+
+  /// Nesting level; each level indents the row by one step.
+  final int depth;
 
   /// Whether the row is filled and its name bold, marking the current or
   /// matching entry.
@@ -44,8 +48,8 @@ class TreeRow extends StatelessWidget {
   /// Called when the row is tapped.
   final VoidCallback? onTap;
 
-  /// Full path of the entry.
-  final String path;
+  /// Full path of the entry, shown as the tooltip; no tooltip when null.
+  final String? path;
 
   /// Project root; the tooltip shows [path] relative to it when given.
   final String? rootPath;
@@ -59,10 +63,22 @@ class TreeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final path = this.path;
     final root = rootPath;
-    final shownPath = root == null
+    final shownPath = path == null || root == null
         ? path
         : p.join('~', p.relative(path, from: root));
+    final tooltip = note == null ? shownPath : '${shownPath ?? ''}\n\n$note';
+    final text = Text(
+      name,
+      style: TextStyle(
+        fontSize: AppFontSize.body,
+        color: colorScheme.onSurface,
+        fontWeight: highlighted ? FontWeight.w600 : FontWeight.w400,
+      ).merge(nameStyle),
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
+    );
     final onContextMenu = this.onContextMenu;
     return InkWell(
       onTap: onTap,
@@ -72,25 +88,21 @@ class TreeRow extends StatelessWidget {
         color: highlighted
             ? colorScheme.primaryContainer.withValues(alpha: AppOpacity.divider)
             : null,
-        padding: AppPadding.listItem,
+        padding: AppPadding.listItem.add(
+          EdgeInsets.only(left: AppSpacing.xLarge * depth),
+        ),
         child: Row(
           spacing: AppSpacing.tiny,
           children: [
             icon,
             Expanded(
-              child: Tooltip(
-                message: note == null ? shownPath : '$shownPath\n\n$note',
-                waitDuration: AppDuration.tooltipWait,
-                child: Text(
-                  name,
-                  style: TextStyle(
-                    fontSize: AppFontSize.body,
-                    color: colorScheme.onSurface,
-                    fontWeight: highlighted ? FontWeight.w600 : FontWeight.w400,
-                  ).merge(nameStyle),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
+              child: tooltip == null
+                  ? text
+                  : Tooltip(
+                      message: tooltip,
+                      waitDuration: AppDuration.tooltipWait,
+                      child: text,
+                    ),
             ),
             ...trailing,
             if (showMenuButton && onContextMenu != null)

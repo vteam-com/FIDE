@@ -10,7 +10,6 @@ class ContextMenuHandler {
     Offset position,
     void Function(NodeAction, ProjectNode) onAction,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
     showMenu<NodeAction>(
       context: context,
       position: MoreMenuButton.menuPosition(position),
@@ -19,23 +18,10 @@ class ContextMenuHandler {
           if (action.appliesTo(node))
             PopupMenuItem(
               value: action,
-              child: Row(
-                spacing: AppSpacing.medium,
-                children: [
-                  Icon(
-                    action.icon,
-                    size: AppIconSize.medium,
-                    color: action.isDestructive
-                        ? colorScheme.error
-                        : colorScheme.primary,
-                  ),
-                  Text(
-                    action.label,
-                    style: action.isDestructive
-                        ? TextStyle(color: colorScheme.error)
-                        : null,
-                  ),
-                ],
+              child: IconMenuRow(
+                icon: action.icon,
+                label: action.label,
+                isError: action.isDestructive,
               ),
             ),
       ],

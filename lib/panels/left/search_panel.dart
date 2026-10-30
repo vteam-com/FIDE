@@ -6,14 +6,17 @@ import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/reference_search.dart';
 import 'package:fide/models/search_result.dart';
 import 'package:fide/models/search_result_node.dart';
+import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/app_text_field.dart';
+import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
 import 'package:fide/widgets/surface_card.dart';
+import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -253,43 +256,18 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
   /// Handles `_buildFileResultNode`.
   Widget _buildFileResultNode(SearchResultNode node) {
     final relativePath = p.relative(node.path, from: widget.projectPath);
+    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // File header
-        GestureDetector(
-          onTap: () {
-            final file = File(node.path);
-            final fileSystemItem = FileSystemItem.fromFileSystemEntity(file);
-            widget.onFileSelected?.call(fileSystemItem);
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.medium,
-              vertical: AppSpacing.tiny,
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.insert_drive_file,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: AppIconSize.medium,
-                ),
-                const SizedBox(width: AppSpacing.small),
-                Expanded(
-                  child: Text(
-                    relativePath,
-                    style: TextStyle(
-                      fontSize: AppFontSize.caption,
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        TreeRow(
+          icon: FileIconUtils.getFileIcon(item),
+          name: relativePath,
+          path: node.path,
+          rootPath: widget.projectPath,
+          onTap: () => widget.onFileSelected?.call(item),
         ),
         // Match results
         Padding(
@@ -308,10 +286,9 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
 
   /// Handles `_buildMatchResult`.
   Widget _buildMatchResult(SearchResult result) {
-    return GestureDetector(
-      onTap: () {
-        widget.onJumpToLine?.call(result.filePath, result.lineNumber);
-      },
+    return Clickable(
+      onTap: () =>
+          widget.onJumpToLine?.call(result.filePath, result.lineNumber),
       child: SurfaceCard(
         dense: true,
         child: Column(

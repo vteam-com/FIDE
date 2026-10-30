@@ -14,8 +14,8 @@ import 'package:fide/providers/ollama_installer.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_text_field.dart';
-import 'package:fide/widgets/check_mark.dart';
 import 'package:fide/widgets/empty_state.dart';
+import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/markdown_text.dart';
@@ -144,12 +144,9 @@ class _AIPanelState extends ConsumerState<AIPanel> {
               for (final action in AiAction.values)
                 PopupMenuItem(
                   value: action,
-                  child: Row(
-                    children: [
-                      CheckMark(checked: action == _selectedAction),
-                      const SizedBox(width: AppSpacing.medium),
-                      Text(action.label),
-                    ],
+                  child: IconMenuRow(
+                    icon: action == _selectedAction ? Icons.check : null,
+                    label: action.label,
                   ),
                 ),
             ],

@@ -12,7 +12,6 @@ class BusyIconButton extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onPressed,
-    this.style,
   });
 
   /// Whether the button's work is in progress.
@@ -27,9 +26,6 @@ class BusyIconButton extends StatelessWidget {
   /// Called on press while idle.
   final VoidCallback onPressed;
 
-  /// Button style.
-  final ButtonStyle? style;
-
   @override
   Widget build(BuildContext context) {
     return ElevatedButton.icon(
@@ -38,7 +34,6 @@ class BusyIconButton extends StatelessWidget {
           ? const InlineSpinner(size: AppIconSize.medium)
           : Icon(icon, size: AppIconSize.medium),
       label: Text(label),
-      style: style,
     );
   }
 }

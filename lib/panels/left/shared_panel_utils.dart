@@ -2,7 +2,6 @@
 
 import 'dart:io';
 
-import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/providers/file_entry_service.dart';
@@ -10,6 +9,7 @@ import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/process_runner.dart';
 import 'package:fide/providers/project_tree_reader.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/more_menu_button.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';

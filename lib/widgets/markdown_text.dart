@@ -1,7 +1,7 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/open_url.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// Renders Markdown [data] as selectable rich text in [color].
 ///
@@ -30,7 +30,9 @@ class MarkdownText extends StatelessWidget {
     return MarkdownBody(
       data: data,
       selectable: true,
-      onTapLink: (_, href, _) => _openLink(href),
+      onTapLink: (_, href, _) {
+        if (href != null) openUrl(context, href);
+      },
       styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
         p: baseStyle,
         listBullet: baseStyle,
@@ -56,11 +58,5 @@ class MarkdownText extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  /// Opens [href] in the system browser when it parses as a URI.
-  Future<void> _openLink(String? href) async {
-    final uri = href == null ? null : Uri.tryParse(href);
-    if (uri != null) await launchUrl(uri);
   }
 }

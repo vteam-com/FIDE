@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
@@ -40,20 +41,9 @@ class ToolStatusRow extends StatelessWidget {
             label: '$name: ${available ? version ?? 'Unknown' : 'Not Found'}',
           ),
           if (!available)
-            TextButton(
+            CompactTextButton(
+              label: 'Install',
               onPressed: () => _showInstructions(context),
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(
-                  AppSize.compactTextButtonMinWidth,
-                  AppSize.compactButtonHeight,
-                ),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Text(
-                'Install',
-                style: TextStyle(fontSize: AppFontSize.caption),
-              ),
             ),
         ],
       ),

@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/app_theme.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:flutter/material.dart';
@@ -57,12 +58,7 @@ class ActionCard extends StatelessWidget {
           if (description != null)
             Text(description, style: theme.textTheme.bodyMedium),
           for (final step in steps)
-            Text(
-              '• $step',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
+            Text('• $step', style: AppTheme.secondaryText(context)),
           ?child,
           if (action != null)
             Align(alignment: Alignment.centerRight, child: action),

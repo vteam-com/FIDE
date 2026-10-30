@@ -166,11 +166,8 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
                     const SizedBox(height: AppSpacing.small),
                     Text(
                       _getEnableInstructions(),
-                      style: TextStyle(
-                        fontSize: AppFontSize.metadata,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        height: AppLineHeight.relaxed,
-                      ),
+                      style: AppTheme.secondaryText(context)
+                          .copyWith(height: AppLineHeight.relaxed),
                     ),
                   ],
                 ),
