@@ -1,10 +1,8 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/widgets/icon_label_tab.dart';
+import 'package:fide/widgets/platform_icon.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 /// Represents `PlatformSelector`.
 class PlatformSelector extends StatefulWidget {
@@ -55,8 +53,6 @@ class _PlatformSelectorState extends State<PlatformSelector>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     const platforms = FlutterPlatform.values;
 
     return LayoutBuilder(
@@ -87,24 +83,11 @@ class _PlatformSelectorState extends State<PlatformSelector>
                 tooltip: isSupported
                     ? p.displayName
                     : '${p.displayName} (not configured)',
-                icon: ColorFiltered(
-                  colorFilter: ColorFilter.mode(
-                    isSelected
-                        ? colorScheme.primary
-                        : isSupported
-                        ? colorScheme.onSurface.withValues(
-                            alpha: AppOpacity.emphasis,
-                          )
-                        : colorScheme.onSurface.withValues(
-                            alpha: AppOpacity.faint,
-                          ),
-                    BlendMode.srcIn,
-                  ),
-                  child: SvgPicture.asset(
-                    p.iconAsset,
-                    width: iconSize,
-                    height: iconSize,
-                  ),
+                icon: PlatformIcon(
+                  platform: p,
+                  size: iconSize,
+                  isSupported: isSupported,
+                  isSelected: isSelected,
                 ),
               );
             }).toList(),

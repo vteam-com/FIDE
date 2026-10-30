@@ -25,8 +25,18 @@ class CodeEditAgent {
   /// What the agent calls as it works.
   final CodeEditHooks hooks;
 
+  bool _isCancelled = false;
+
   /// Creates an agent that talks to the model through [_ai].
   CodeEditAgent(this._ai, {required this.projectPath, required this.hooks});
+
+  /// Stops the agent: aborts the model request in flight and runs no
+  /// further skill or request, so [edit] or [fixBuild] throws an
+  /// [AiCancelledException]. A skill already running finishes first.
+  void cancel() {
+    _isCancelled = true;
+    _ai.cancel();
+  }
 
   /// The tools the model may call.
   late final List<AiSkill> skills = [
@@ -131,7 +141,8 @@ class CodeEditAgent {
   /// returns the model's summary of what it changed, or its answer when
   /// the request needs no change.
   ///
-  /// Throws an [AiServiceException] when the model can't be reached.
+  /// Throws an [AiServiceException] when the model can't be reached, and
+  /// an [AiCancelledException] after [cancel].
   Future<String> edit(
     String request,
     List<Map<String, String>> history,
@@ -156,7 +167,8 @@ class CodeEditAgent {
   /// Asks the model to fix the build that failed with [errors], with the
   /// user's [notes], and returns its closing summary.
   ///
-  /// Throws an [AiServiceException] when the model can't be reached.
+  /// Throws an [AiServiceException] when the model can't be reached, and
+  /// an [AiCancelledException] after [cancel].
   Future<String> fixBuild(String errors, String notes) => _converse(
     'You fix broken Flutter/Dart builds by editing the project with '
         'the tools you are given. Read each file before you change it, '
@@ -185,6 +197,7 @@ class CodeEditAgent {
       ...conversation,
     ];
     for (var round = 0; round < AppMetric.aiMaxToolRounds; round++) {
+      _throwIfCancelled();
       final reply = await _ai.chat(messages, tools);
       messages.add(reply);
       final calls = reply['tool_calls'];
@@ -192,6 +205,7 @@ class CodeEditAgent {
         return reply['content']?.toString() ?? '';
       }
       for (final call in calls) {
+        _throwIfCancelled();
         final function = call is Map ? call['function'] : null;
         if (function is! Map) continue;
         final name = function['name']?.toString() ?? '';
@@ -216,6 +230,11 @@ class CodeEditAgent {
     final value = arguments[name];
     if (value == null) throw FormatException('Missing argument "$name"');
     return value.toString();
+  }
+
+  /// Throws an [AiCancelledException] once [cancel] was called.
+  void _throwIfCancelled() {
+    if (_isCancelled) throw const AiCancelledException();
   }
 
   /// Whether [segment] of a relative path is a folder [listFiles] skips.

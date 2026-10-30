@@ -52,6 +52,31 @@ void main() {
     );
   });
 
+  test('cancel aborts the request in flight, not later ones', () async {
+    var isFirst = true;
+    final service = AIService(
+      const _NoSdk(),
+      MockClient.streaming((request, _) async {
+        if (isFirst) {
+          await (request as http.Abortable).abortTrigger;
+          isFirst = false;
+          throw http.RequestAbortedException(request.url);
+        }
+        return http.StreamedResponse(
+          Stream.value(utf8.encode(jsonEncode({'response': 'ok'}))),
+          HttpStatus.ok,
+        );
+      }),
+    );
+
+    final pending = service.getCodeSuggestion('tip?', '');
+    await pumpEventQueue();
+    service.cancel();
+
+    await expectLater(pending, throwsA(isA<AiCancelledException>()));
+    expect(await service.getCodeSuggestion('tip?', ''), 'ok');
+  });
+
   test('fix build sends the build errors to the model', () async {
     late String prompt;
     final service = AIService(

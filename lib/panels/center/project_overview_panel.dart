@@ -1,17 +1,19 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/project_overview.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
+import 'package:fide/widgets/platform_icon.dart';
 import 'package:fide/widgets/stat_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Shown in the center panel when no file is open: the current project's
-/// icon, version, fCheck quality score, code size, tests, coverage and
-/// translations.
+/// icon, version, fCheck quality score, code size, supported platforms,
+/// tests, coverage and translations.
 class ProjectOverviewPanel extends ConsumerWidget {
   /// Creates the overview of the current project.
   const ProjectOverviewPanel({super.key});
@@ -71,6 +73,42 @@ class ProjectOverviewPanel extends ConsumerWidget {
               : '${missing.localized} missing translations',
         ],
         '${hardcoded.localized} hardcoded strings',
+      ],
+    );
+  }
+
+  /// Every platform's icon, the project's own ones highlighted.
+  Widget _platformsCard(ProjectOverview overview) {
+    final platforms = overview.platforms;
+    final missing = FlutterPlatform.values.where(
+      (platform) => !platforms.contains(platform),
+    );
+    return StatCard(
+      icon: Icons.devices_outlined,
+      title: 'Supported platforms',
+      value: Wrap(
+        spacing: AppSpacing.large,
+        runSpacing: AppSpacing.medium,
+        children: [
+          for (final platform in FlutterPlatform.values)
+            Tooltip(
+              message: platforms.contains(platform)
+                  ? platform.displayName
+                  : '${platform.displayName} (not configured)',
+              child: PlatformIcon(
+                platform: platform,
+                size: AppIconSize.xLarge,
+                isSupported: platforms.contains(platform),
+                isSelected: platforms.contains(platform),
+              ),
+            ),
+        ],
+      ),
+      details: [
+        '${platforms.length.localized} of '
+            '${FlutterPlatform.values.length.localized} platforms',
+        if (missing.isNotEmpty)
+          'Not configured: ${missing.map((p) => p.displayName).join(', ')}',
       ],
     );
   }
@@ -191,6 +229,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
                   '${code.devDependencyCount.localized} dev dependencies',
                 ],
               ),
+              _platformsCard(overview),
               StatCard(
                 icon: Icons.science_outlined,
                 title: 'Tests',

@@ -36,6 +36,9 @@ class AIPanel extends ConsumerStatefulWidget {
 
 class _AIPanelState extends ConsumerState<AIPanel> {
   late final AIService _aiService = ref.read(aiServiceProvider);
+
+  /// The agent editing files for the pending request, if any.
+  CodeEditAgent? _agent;
   late final OllamaInstaller _ollama = ref.read(ollamaInstallerProvider);
   bool _hasModelInstalled = false;
   bool _hasOllamaInstalled = false;
@@ -46,6 +49,10 @@ class _AIPanelState extends ConsumerState<AIPanel> {
   final List<ChatMessage> _messages = [];
   final TextEditingController _promptController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+
+  /// Bumped per request and by [_cancel], so a stopped request's late
+  /// reply is dropped.
+  int _requestId = 0;
   AiAction _selectedAction = AiAction.ask;
   @override
   void initState() {
@@ -208,11 +215,13 @@ class _AIPanelState extends ConsumerState<AIPanel> {
               spacing: AppSpacing.medium,
               children: [
                 Expanded(
-                  // Enter sends; Shift+Enter, left unbound, starts a new line
+                  // Enter sends; Shift+Enter, left unbound, starts a new
+                  // line; Escape stops the pending reply
                   child: CallbackShortcuts(
                     bindings: {
                       const SingleActivator(LogicalKeyboardKey.enter):
                           _sendUnlessLoading,
+                      const SingleActivator(LogicalKeyboardKey.escape): _cancel,
                     },
                     child: AppTextField(
                       controller: _promptController,
@@ -223,13 +232,18 @@ class _AIPanelState extends ConsumerState<AIPanel> {
                   ),
                 ),
 
-                IconButton(
-                  onPressed: _isLoading ? null : _sendMessage,
-                  icon: _isLoading
-                      ? const InlineSpinner()
-                      : const Icon(Icons.send),
-                  tooltip: 'Send',
-                ),
+                if (_isLoading) const InlineSpinner(),
+                _isLoading
+                    ? IconButton(
+                        onPressed: _cancel,
+                        icon: const Icon(Icons.stop_circle_outlined),
+                        tooltip: 'Stop (Esc)',
+                      )
+                    : IconButton(
+                        onPressed: _sendMessage,
+                        icon: const Icon(Icons.send),
+                        tooltip: 'Send',
+                      ),
               ],
             ),
           ),
@@ -427,6 +441,17 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     return isDry ? review.duplicates(metrics) : review.design(metrics);
   }
 
+  /// Stops the pending reply: aborts the model request and the agent's
+  /// edits, and frees the input for the next prompt.
+  void _cancel() {
+    if (!_isLoading) return;
+    (_agent?.cancel ?? _aiService.cancel)();
+    _agent = null;
+    _requestId++;
+    setState(() => _isLoading = false);
+    _addReply('⏹ Stopped.', isProgress: true);
+  }
+
   /// Sends the prompt from the keyboard, ignored while a reply is pending
   /// like the disabled Send button.
   void _sendUnlessLoading() {
@@ -490,7 +515,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
 
   /// An agent that edits the project at [projectPath], reporting its steps
   /// in the chat and rebuilding for the platform selected in the Execute
-  /// panel.
+  /// panel; kept in [_agent] so [_cancel] can stop it.
   ///
   /// Providers are read up front because the edit can outlive this panel.
   CodeEditAgent _editAgent(String projectPath) {
@@ -498,7 +523,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     final target = ref.read(selectedPlatformProvider).name;
     final lastBuildErrors = ref.read(lastBuildErrorsProvider.notifier);
     final openDocuments = ref.read(openDocumentsProvider.notifier);
-    return CodeEditAgent(
+    return _agent = CodeEditAgent(
       _aiService,
       projectPath: projectPath,
       hooks: CodeEditHooks(
@@ -544,6 +569,8 @@ class _AIPanelState extends ConsumerState<AIPanel> {
         action.isReview;
     if (text.isEmpty && !canSendEmpty) return;
 
+    final requestId = ++_requestId;
+    bool isStopped() => requestId != _requestId;
     setState(() {
       _messages.add(
         ChatMessage(
@@ -587,6 +614,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
           _ => await _selectedFileContext(),
         }),
       };
+      if (isStopped()) return;
       _addReply(response.trim().isEmpty ? 'No suggestion available' : response);
       if (action.isReview && mounted) {
         setState(() => _selectedAction = AiAction.ask);
@@ -597,9 +625,12 @@ class _AIPanelState extends ConsumerState<AIPanel> {
         );
       }
     } catch (e) {
-      _addReply('Error: $e');
+      if (!isStopped()) _addReply('Error: $e');
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (!isStopped()) {
+        _agent = null;
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 }

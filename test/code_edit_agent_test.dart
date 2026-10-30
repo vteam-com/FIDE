@@ -107,6 +107,38 @@ void main() {
     expect(toolResults.last['content'], 'Build succeeded.');
   });
 
+  test('cancel stops the agent before its next model request', () async {
+    var requests = 0;
+    late CodeEditAgent agent;
+    agent = CodeEditAgent(
+      AIService(
+        const _NoSdk(),
+        MockClient((request) async {
+          if (request.method == 'GET') {
+            return http.Response(jsonEncode({'models': []}), HttpStatus.ok);
+          }
+          requests++;
+          return _toolCall('check_build', {});
+        }),
+      ),
+      projectPath: project.path,
+      hooks: CodeEditHooks(
+        onStep: (_) {},
+        onFileWritten: (_) async {},
+        checkBuild: () async {
+          agent.cancel();
+          return '';
+        },
+      ),
+    );
+
+    await expectLater(
+      agent.fixBuild("Expected ';'", ''),
+      throwsA(isA<AiCancelledException>()),
+    );
+    expect(requests, 1);
+  });
+
   test(
     'makes a requested change in the files, with the chat as context',
     () async {

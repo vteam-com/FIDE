@@ -1,10 +1,11 @@
 import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/code_coverage.dart';
+import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/localization_data.dart';
 
 /// What the center panel shows about the project when no file is open:
-/// its icon, fCheck's analysis, translations and test coverage.
+/// its icon, fCheck's analysis, platforms, translations and test coverage.
 class ProjectOverview {
   /// The project's own app icon, or null when it has none.
   final String? appIconPath;
@@ -14,6 +15,9 @@ class ProjectOverview {
 
   /// Language codes of the project's ARB files.
   final List<String> languages;
+
+  /// Platforms the project has a folder for.
+  final Set<FlutterPlatform> platforms;
 
   /// Every translation key compared across [languages].
   final List<ArbComparison> translations;
@@ -27,6 +31,7 @@ class ProjectOverview {
     required this.appIconPath,
     required this.code,
     required this.languages,
+    required this.platforms,
     required this.translations,
     required this.coverage,
   });

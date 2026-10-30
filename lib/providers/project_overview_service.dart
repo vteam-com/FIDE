@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fide/models/code_coverage.dart';
+import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/project_overview.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/providers/build_artifacts_inspector.dart';
@@ -36,6 +37,7 @@ class ProjectOverviewService {
       appIconPath: appIconPath,
       code: code,
       languages: [for (final file in arbFiles.valid) file.languageCode]..sort(),
+      platforms: FlutterPlatform.configuredIn(projectPath),
       translations: _arbService.compareArbFiles(arbFiles.valid),
       coverage: coverage,
     );

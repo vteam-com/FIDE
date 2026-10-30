@@ -1,4 +1,5 @@
 // ignore: fcheck_dead_code
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -9,12 +10,14 @@ import 'package:fide/providers/flutter_sdk.dart';
 import 'package:fide/providers/ollama_installer.dart';
 import 'package:http/http.dart' as http;
 
+part 'ai_service.ai_cancelled_exception.dart';
 part 'ai_service.ai_service_exception.dart';
 
 /// Talks to the local Ollama model: code suggestions, explanations,
 /// refactoring, and generating starter project files.
 ///
-/// Failed requests throw an [AiServiceException].
+/// Failed requests throw an [AiServiceException]; requests stopped by
+/// [cancel] throw an [AiCancelledException].
 class AIService {
   /// Constraint used when the installed Dart version can't be detected.
   static const String _fallbackDartConstraint = '^3.0.0';
@@ -44,10 +47,21 @@ class AIService {
   bool _isModelResolved = false;
   bool _supportsTools = true;
 
+  /// Completed by [cancel] to abort the requests in flight.
+  Completer<void> _cancellation = Completer<void>();
+
   /// Creates an AI service that reads SDK versions from [_sdk] and sends
   /// requests through [client] (a fresh one by default).
   AIService([this._sdk = const FlutterSdk(), http.Client? client])
     : _client = client ?? http.Client();
+
+  /// Aborts every request in flight, which then throws an
+  /// [AiCancelledException]; Ollama stops generating when the connection
+  /// closes. Later requests are unaffected.
+  void cancel() {
+    _cancellation.complete();
+    _cancellation = Completer<void>();
+  }
 
   /// Whether [model] stands in for [OllamaInstaller.model], which isn't
   /// downloaded or can't call tools.
@@ -118,6 +132,8 @@ class AIService {
     if (!_isModelResolved) {
       try {
         await resolveModel();
+      } on AiCancelledException {
+        rethrow;
       } on AiServiceException {
         // The request below reports the failure
       }
@@ -129,24 +145,28 @@ class AIService {
   /// returns the decoded JSON reply, or null when it isn't a JSON object.
   ///
   /// Throws an [AiServiceException] when Ollama can't be reached within
-  /// [timeout] or answers with an error status.
+  /// [timeout] or answers with an error status, and an
+  /// [AiCancelledException] when [cancel] aborts it.
   Future<Map<String, dynamic>?> _send(
     String path,
     Duration timeout, [
     Map<String, Object>? body,
   ]) async {
-    final uri = Uri.http(ollamaHost, path);
+    final request = http.AbortableRequest(
+      body == null ? 'GET' : 'POST',
+      Uri.http(ollamaHost, path),
+      abortTrigger: _cancellation.future,
+    );
+    if (body != null) {
+      request.headers['Content-Type'] = 'application/json';
+      request.body = jsonEncode(body);
+    }
     final http.Response response;
     try {
-      response =
-          await (body == null
-                  ? _client.get(uri)
-                  : _client.post(
-                      uri,
-                      headers: {'Content-Type': 'application/json'},
-                      body: jsonEncode(body),
-                    ))
-              .timeout(timeout);
+      response = await http.Response.fromStream(await _client.send(request))
+          .timeout(timeout);
+    } on http.RequestAbortedException {
+      throw const AiCancelledException();
     } catch (e) {
       throw AiServiceException(
         '$e\n\nMake sure Ollama is installed and running on $ollamaHost',
