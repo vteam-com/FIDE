@@ -24,30 +24,8 @@ class AppTheme {
     0xFF616161,
   ); // Dark grey for neutral states
 
-  /// Light backgrounds for semantic color themes (with alpha for theme adaptation)
-  static Color get successBackground =>
-      successColor.withAlpha(AppAlpha.badgeFill);
-
-  /// Returns the warning background color used by semantic status UI.
-  static Color get warningBackground =>
-      warningColor.withAlpha(AppAlpha.badgeFill);
-
-  /// Returns the error background color used by semantic status UI.
+  /// Fill behind content marked as an error, such as a broken dependency.
   static Color get errorBackground => errorColor.withAlpha(AppAlpha.badgeFill);
-
-  /// Returns the info background color used by semantic status UI.
-  static Color get infoBackground => infoColor.withAlpha(AppAlpha.badgeFill);
-
-  /// Returns the neutral background color used by semantic status UI.
-  static Color get neutralBackground =>
-      neutralColor.withAlpha(AppAlpha.badgeFill);
-
-  /// Text colors for semantic themes
-  static const Color successText = Colors.white;
-  static const Color warningText = Colors.white;
-  static const Color errorText = Colors.white;
-  static const Color infoText = Colors.white;
-  static const Color neutralText = Colors.white;
 
   /// Builds the shared theme configuration used by both theme modes.
   static ThemeData _buildTheme({

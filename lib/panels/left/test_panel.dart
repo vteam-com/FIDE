@@ -13,6 +13,7 @@ import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/outlined_list_tile.dart';
 import 'package:fide/widgets/output_panel.dart';
+import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -318,13 +319,7 @@ Validates test organization and naming conventions.
             ),
           ),
           const SizedBox(height: AppSpacing.xLarge),
-          const Text(
-            'Details:',
-            style: TextStyle(
-              fontSize: AppFontSize.label,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          const SectionTitle('Details'),
           const SizedBox(height: AppSpacing.medium),
           Text(
             action.details,

@@ -1,6 +1,6 @@
-import 'package:fide/constants/constants.dart';
-import 'package:fide/models/app_theme.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/clickable.dart';
+import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 
 /// A small orange [icon] and [count] flagging a rule breach, explained by
@@ -33,19 +33,10 @@ class WarningCount extends StatelessWidget {
       onTap: onTap,
       child: Tooltip(
         message: message,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: AppIconSize.small, color: AppTheme.warningColor),
-            const SizedBox(width: AppSpacing.micro),
-            Text(
-              '$count',
-              style: const TextStyle(
-                fontSize: AppFontSize.metadata,
-                color: AppTheme.warningColor,
-              ),
-            ),
-          ],
+        child: StatusIndicator(
+          icon: icon,
+          label: '$count',
+          color: StatusTone.warning.color,
         ),
       ),
     );

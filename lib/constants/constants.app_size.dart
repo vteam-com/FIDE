@@ -16,7 +16,6 @@ class AppSize {
   /// its header, find bar, status bar and a few lines.
   static const double editorMinHeight = 240;
   static const double folderPanelFallbackHeight = 400;
-  static const double largePreviewIcon = 64;
   static const double compactIconButton = 24;
   static const double platformDetailLabelWidth = 70;
   static const double diffLineNumberWidth = 40;

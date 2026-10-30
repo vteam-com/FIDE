@@ -43,7 +43,6 @@ class ActionCard extends StatelessWidget {
     final child = this.child;
     final action = this.action;
     return OutlinedSurface(
-      padding: const EdgeInsets.all(AppSpacing.xLarge),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: AppSpacing.medium,

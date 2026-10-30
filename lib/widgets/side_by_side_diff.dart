@@ -3,6 +3,7 @@
 import 'package:diff_match_patch/diff_match_patch.dart';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/surface_padding.dart';
 import 'package:flutter/material.dart';
 
 part 'side_by_side_diff.diff_line.dart';
@@ -26,7 +27,7 @@ class SideBySideDiff extends StatelessWidget {
     final diffLines = computeLines(oldText, newText);
 
     return OutlinedSurface(
-      padding: EdgeInsets.zero,
+      padding: SurfacePadding.none,
       child: Column(
         children: [
           // Header

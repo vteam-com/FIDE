@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/loading_action.dart';
 import 'package:fide/models/project_creation_request.dart';
+import 'package:fide/models/project_paths.dart';
 import 'package:fide/providers/ai_service.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/localization_service.dart';
@@ -224,7 +225,7 @@ class ProjectCreationService {
     for (final language in languages) {
       if (language == _templateLanguage) continue;
       final arb = File(
-        p.join(request.projectPath, 'lib', 'l10n', 'app_$language.arb'),
+        p.join(ProjectPaths(request.projectPath).l10nDir, 'app_$language.arb'),
       );
       if (!await arb.exists()) await arb.writeAsString('{}\n');
     }

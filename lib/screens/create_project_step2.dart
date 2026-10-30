@@ -71,10 +71,7 @@ class CreateProjectStep2 extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: AppSpacing.medium,
             children: [
-              Text(
-                'Project: $projectName',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
+              SectionTitle('Project: $projectName'),
               Text(
                 'Location: $projectLocation',
                 style: Theme.of(context).textTheme.bodySmall,
@@ -109,10 +106,7 @@ class CreateProjectStep2 extends StatelessWidget {
         if (wantsLocalization) ...[
           const SizedBox(height: AppSpacing.xLarge),
 
-          Text(
-            'Select languages to support:',
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
+          const SectionTitle('Select languages to support'),
 
           Column(
             children: languages.entries
@@ -130,10 +124,7 @@ class CreateProjectStep2 extends StatelessWidget {
 
           const SizedBox(height: AppSpacing.xLarge),
 
-          Text(
-            'Select default language:',
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
+          const SectionTitle('Select default language'),
 
           RadioGroup<String>(
             groupValue: defaultLanguage,

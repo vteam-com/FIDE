@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/build_artifacts.dart';
 import 'package:fide/models/flutter_platform.dart';
+import 'package:fide/models/project_paths.dart';
 import 'package:path/path.dart' as p;
 
 /// Reads a project's build output and app icon for the Execute panel and
@@ -69,7 +70,7 @@ class BuildArtifactsInspector {
     String projectPath,
     FlutterPlatform platform,
   ) async {
-    final buildDir = Directory(p.join(projectPath, 'build'));
+    final buildDir = Directory(ProjectPaths(projectPath).buildDir);
     final location = await _buildLocation(buildDir, platform.name);
     return BuildArtifacts(
       appIconPath: await _appIconPath(projectPath, platform),

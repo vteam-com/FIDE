@@ -10,6 +10,7 @@ import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/surface_card.dart';
+import 'package:fide/widgets/surface_padding.dart';
 import 'package:flutter/material.dart';
 
 /// Tabs of panel actions, each showing its details, an Execute (or Stop)
@@ -72,7 +73,6 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
     final colorScheme = Theme.of(context).colorScheme;
 
     return OutlinedSurface(
-      padding: AppPadding.actionTabContainer,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -160,7 +160,7 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                       // Action details - reduced size and made expandable
                       Expanded(
                         child: SurfaceCard(
-                          dense: true,
+                          padding: SurfacePadding.dense,
                           child: SingleChildScrollView(
                             // Keep only this for the details text
                             child: Text(

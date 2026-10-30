@@ -5,6 +5,7 @@ import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/localization_checks.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/project_paths.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/panels/right/localization/localization_entry_widget.dart';
 import 'package:fide/panels/right/localization/localization_setup_widget.dart';
 import 'package:fide/providers/ai_service.dart';
@@ -22,6 +23,7 @@ import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/section_title.dart';
+import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
@@ -376,25 +378,11 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     IconData icon, {
     Widget? action,
   }) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: AppSize.largePreviewIcon,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(height: AppSpacing.xLarge),
-          Text(title, style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: AppSpacing.medium),
-          Text(message, textAlign: TextAlign.center),
-          if (action != null) ...[
-            const SizedBox(height: AppSpacing.xLarge),
-            action,
-          ],
-        ],
-      ),
+    return EmptyState(
+      icon: icon,
+      title: title,
+      message: message,
+      child: action,
     );
   }
 
@@ -412,21 +400,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.warning,
-                color: Theme.of(context).colorScheme.tertiary,
-              ),
-              const SizedBox(width: AppSpacing.medium),
-              Expanded(
-                child: Text(
-                  'Localization Partially Set Up',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-              ),
-            ],
-          ),
+          const SectionTitle('Localization Partially Set Up'),
           const SizedBox(height: AppSpacing.xLarge),
           Text(
             'Your Flutter project has some localization components set up, but others are missing. Localization requires three main components:',
@@ -566,7 +540,6 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
             child: BadgeStatus.warning(
               text:
                   '${duplicatedValues.length} English ${duplicatedValues.length == 1 ? 'string is' : 'strings are'} duplicated',
-              fontSize: AppFontSize.metadata,
               showIcon: true,
             ),
           ),
@@ -605,18 +578,9 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
   Widget _buildStatusCheck(String label, bool isComplete) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.medium),
-      child: Row(
-        children: [
-          Icon(
-            isComplete ? Icons.check_circle : Icons.radio_button_unchecked,
-            size: AppIconSize.large,
-            color: isComplete
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.outline,
-          ),
-          const SizedBox(width: AppSpacing.large),
-          Expanded(child: Text(label)),
-        ],
+      child: StatusIndicator.tone(
+        isComplete ? StatusTone.success : StatusTone.warning,
+        label: label,
       ),
     );
   }
@@ -631,17 +595,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.radio_button_unchecked,
-                size: AppIconSize.large,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              const SizedBox(width: AppSpacing.large),
-              Expanded(child: Text(label)),
-            ],
-          ),
+          StatusIndicator.tone(StatusTone.error, label: label),
           const SizedBox(height: AppSpacing.tiny),
           Padding(
             padding: const EdgeInsets.only(left: AppSpacing.huge),
@@ -713,7 +667,6 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.medium),
       child: OutlinedSurface(
-        padding: const EdgeInsets.all(AppSpacing.xLarge),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

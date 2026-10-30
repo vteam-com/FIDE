@@ -1,244 +1,156 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:flutter/material.dart';
 
-/// A reusable badge widget that displays status or feedback information.
+/// A small tinted label marking a status, a count or a short code.
 ///
-/// This widget can be used for status indicators, feedback messages, and other
-/// small informational badges throughout the application.
+/// Every badge of the app looks the same: a fill and outline in [color]
+/// with light text; only [large] badges, used as the headline value of a
+/// stat card, are bigger.
 class BadgeStatus extends StatelessWidget {
+  /// Creates a badge showing [text] in [color].
   const BadgeStatus({
     super.key,
     required this.text,
-    required this.backgroundColor,
-    this.textColor = Colors.white,
-    this.fontSize = AppFontSize.badge,
-    this.fontWeight = FontWeight.w500,
-    this.padding = const EdgeInsets.symmetric(
-      horizontal: AppSpacing.small,
-      vertical: AppSpacing.micro,
-    ),
-    this.borderRadius = AppRadius.tiny,
-    this.showIcon = false,
-    this.tone,
+    required this.color,
+    this.icon,
+    this.large = false,
   });
 
-  /// Creates a pre-configured success badge.
-  factory BadgeStatus.success({
-    required String text,
-    double fontSize = AppFontSize.badge,
+  /// Creates a badge with the color, and optionally the icon, of [tone].
+  BadgeStatus.tone(
+    StatusTone tone, {
+    super.key,
+    required this.text,
     bool showIcon = false,
-  }) {
-    return BadgeStatus(
-      text: text,
-      backgroundColor: AppTheme.successColor,
-      textColor: AppTheme.successText.withAlpha(AppAlpha.badgeText),
-      tone: StatusTone.success,
-      fontSize: fontSize,
-      showIcon: showIcon,
-    );
-  }
+    this.large = false,
+  }) : color = tone.color,
+       icon = showIcon ? tone.icon : null;
 
-  /// Creates a pre-configured warning badge.
-  factory BadgeStatus.warning({
+  /// Creates a success badge.
+  BadgeStatus.success({
+    Key? key,
     required String text,
-    double fontSize = AppFontSize.badge,
     bool showIcon = false,
-  }) {
-    return BadgeStatus(
-      text: text,
-      backgroundColor: AppTheme.warningColor,
-      textColor: AppTheme.warningText.withAlpha(AppAlpha.badgeText),
-      tone: StatusTone.warning,
-      fontSize: fontSize,
-      showIcon: showIcon,
-    );
-  }
+    bool large = false,
+  }) : this.tone(
+         StatusTone.success,
+         key: key,
+         text: text,
+         showIcon: showIcon,
+         large: large,
+       );
 
-  /// Creates a pre-configured error badge.
-  factory BadgeStatus.error({
+  /// Creates a warning badge.
+  BadgeStatus.warning({
+    Key? key,
     required String text,
-    double fontSize = AppFontSize.badge,
     bool showIcon = false,
-  }) {
-    return BadgeStatus(
-      text: text,
-      backgroundColor: AppTheme.errorColor,
-      textColor: AppTheme.errorText.withAlpha(AppAlpha.badgeText),
-      tone: StatusTone.error,
-      fontSize: fontSize,
-      showIcon: showIcon,
-    );
-  }
+    bool large = false,
+  }) : this.tone(
+         StatusTone.warning,
+         key: key,
+         text: text,
+         showIcon: showIcon,
+         large: large,
+       );
+
+  /// Creates an error badge.
+  BadgeStatus.error({
+    Key? key,
+    required String text,
+    bool showIcon = false,
+    bool large = false,
+  }) : this.tone(
+         StatusTone.error,
+         key: key,
+         text: text,
+         showIcon: showIcon,
+         large: large,
+       );
+
+  /// Creates an info badge.
+  BadgeStatus.info({
+    Key? key,
+    required String text,
+    bool showIcon = false,
+    bool large = false,
+  }) : this.tone(
+         StatusTone.info,
+         key: key,
+         text: text,
+         showIcon: showIcon,
+         large: large,
+       );
+
+  /// Creates a `+count` badge for lines added in a Git diff.
+  BadgeStatus.addition({Key? key, required int count})
+    : this.tone(StatusTone.success, key: key, text: '+$count');
+
+  /// Creates a `-count` badge for lines removed in a Git diff.
+  BadgeStatus.deletion({Key? key, required int count})
+    : this.tone(StatusTone.error, key: key, text: '-$count');
 
   /// Creates a `score%` badge: error below
   /// [AppMetric.criticalScoreThreshold], warning below
   /// [AppMetric.warningScoreThreshold], success otherwise.
-  factory BadgeStatus.score(int score, {double fontSize = AppFontSize.badge}) {
-    final text = '$score%';
-    if (score < AppMetric.criticalScoreThreshold) {
-      return BadgeStatus.error(text: text, fontSize: fontSize);
-    }
-    if (score < AppMetric.warningScoreThreshold) {
-      return BadgeStatus.warning(text: text, fontSize: fontSize);
-    }
-    return BadgeStatus.success(text: text, fontSize: fontSize);
-  }
+  BadgeStatus.score(int score, {Key? key, bool large = false})
+    : this.tone(
+        score < AppMetric.criticalScoreThreshold
+            ? StatusTone.error
+            : score < AppMetric.warningScoreThreshold
+            ? StatusTone.warning
+            : StatusTone.success,
+        key: key,
+        text: '$score%',
+        large: large,
+      );
 
-  /// Creates a pre-configured info badge.
-  factory BadgeStatus.info({
-    required String text,
-    double fontSize = AppFontSize.badge,
-    bool showIcon = false,
-  }) {
-    return BadgeStatus(
-      text: text,
-      backgroundColor: AppTheme.infoColor,
-      textColor: AppTheme.infoText.withAlpha(AppAlpha.badgeText),
-      tone: StatusTone.info,
-      fontSize: fontSize,
-      showIcon: showIcon,
-    );
-  }
-  factory BadgeStatus.neutral({
-    required String text,
-    double fontSize = AppFontSize.badge,
-    bool showIcon = false,
-  }) {
-    return BadgeStatus(
-      text: text,
-      backgroundColor: AppTheme.neutralColor,
-      textColor: AppTheme.neutralText.withAlpha(AppAlpha.badgeText),
-      tone: StatusTone.neutral,
-      fontSize: fontSize,
-      showIcon: showIcon,
-    );
-  }
+  /// The fill and outline color.
+  final Color color;
 
-  /// Creates a pre-configured addition badge (for Git diff stats).
-  factory BadgeStatus.addition({
-    required int count,
-    double fontSize = AppFontSize.caption,
-  }) {
-    return _fromDiffCount(
-      count: count,
-      prefix: '+',
-      backgroundColor: AppTheme.successColor,
-      textColor: AppTheme.successText,
-      fontSize: fontSize,
-    );
-  }
+  /// Glyph before [text]; none when null.
+  final IconData? icon;
 
-  /// Creates a pre-configured deletion badge (for Git diff stats).
-  factory BadgeStatus.deletion({
-    required int count,
-    double fontSize = AppFontSize.caption,
-  }) {
-    return _fromDiffCount(
-      count: count,
-      prefix: '-',
-      backgroundColor: AppTheme.errorColor,
-      textColor: AppTheme.errorText,
-      fontSize: fontSize,
-    );
-  }
-
-  /// The background color of the badge.
-  final Color backgroundColor;
-
-  /// The border radius of the badge.
-  final double borderRadius;
-
-  /// The font size of the text.
-  final double fontSize;
-
-  /// The font weight of the text.
-  final FontWeight fontWeight;
-
-  /// The padding around the text inside the badge.
-  final EdgeInsetsGeometry padding;
-
-  /// Whether to show an appropriate icon for the badge type.
-  final bool showIcon;
+  /// Whether the badge is the headline value of a card.
+  final bool large;
 
   /// The text to display in the badge.
   final String text;
 
-  /// The text color of the badge.
-  final Color textColor;
-
-  /// The meaning of the badge, which picks its icon; no icon when null.
-  final StatusTone? tone;
   @override
   Widget build(BuildContext context) {
+    final fontSize = large ? AppFontSize.title : AppFontSize.badge;
+    final textColor = Colors.white.withAlpha(AppAlpha.badgeText);
+    final icon = this.icon;
     return Container(
-      padding: padding,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.small,
+        vertical: AppSpacing.micro,
+      ),
       decoration: BoxDecoration(
-        color: backgroundColor.withAlpha(AppAlpha.badgeFill),
-        borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
-        border: Border.all(
-          color: _borderColor,
-          width: AppBorderWidth.emphasized,
-        ),
+        color: color.withAlpha(AppAlpha.badgeFill),
+        borderRadius: BorderRadius.circular(AppRadius.tiny),
+        border: Border.all(color: color, width: AppBorderWidth.emphasized),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        spacing: AppSpacing.narrow,
         children: [
-          if (_icon != null) ...[
-            Icon(
-              _icon,
-              size: fontSize * AppOpacity.prominent,
-              color: textColor,
-            ),
-            const SizedBox(width: AppSpacing.narrow),
-          ],
+          if (icon != null)
+            Icon(icon, size: fontSize * AppOpacity.prominent, color: textColor),
           Text(
             text,
+            textAlign: TextAlign.center,
             style: TextStyle(
               decoration: TextDecoration.none,
               color: textColor,
               fontSize: fontSize,
-              fontWeight: fontWeight,
+              fontWeight: FontWeight.w500,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
-
-  /// Creates a solid border color from the background color by removing opacity
-  Color get _borderColor {
-    return Color.fromRGBO(
-      (backgroundColor.r * AppMetric.colorChannelMax).round(),
-      (backgroundColor.g * AppMetric.colorChannelMax).round(),
-      (backgroundColor.b * AppMetric.colorChannelMax).round(),
-      1.0, // Full opacity
-    );
-  }
-
-  /// Builds a compact badge for Git diff addition or deletion counts.
-  static BadgeStatus _fromDiffCount({
-    required int count,
-    required String prefix,
-    required Color backgroundColor,
-    required Color textColor,
-    required double fontSize,
-  }) {
-    return BadgeStatus(
-      text: '$prefix$count',
-      backgroundColor: backgroundColor,
-      textColor: textColor.withAlpha(AppAlpha.badgeText),
-      fontSize: fontSize,
-      fontWeight: FontWeight.w600,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.tiny,
-        vertical: AppSize.borderThin,
-      ),
-    );
-  }
-
-  /// The icon of [tone] when [showIcon] is set.
-  IconData? get _icon => showIcon ? tone?.icon : null;
 }

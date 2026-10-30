@@ -50,10 +50,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
               runSpacing: AppSpacing.medium,
               children: [
                 for (final language in languages)
-                  BadgeStatus.info(
-                    text: language.toUpperCase(),
-                    fontSize: AppFontSize.title,
-                  ),
+                  BadgeStatus.info(text: language.toUpperCase(), large: true),
               ],
             ),
       details: [
@@ -170,10 +167,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
               StatCard(
                 icon: Icons.verified_outlined,
                 title: 'Quality',
-                value: BadgeStatus.score(
-                  code.complianceScore,
-                  fontSize: AppFontSize.title,
-                ),
+                value: BadgeStatus.score(code.complianceScore, large: true),
                 warnings: [
                   for (final analyzer in failing)
                     '${analyzer.label}: '
@@ -231,10 +225,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
                 title: 'Code coverage',
                 value: coverage == null
                     ? StatCard.text(context, 'No report')
-                    : BadgeStatus.score(
-                        coverage.percent,
-                        fontSize: AppFontSize.title,
-                      ),
+                    : BadgeStatus.score(coverage.percent, large: true),
                 details: [
                   if (coverage == null)
                     'Run tests with coverage in the Test panel'

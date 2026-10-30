@@ -4,6 +4,7 @@ import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/status_indicator.dart';
+import 'package:fide/widgets/surface_padding.dart';
 import 'package:flutter/material.dart';
 
 /// Scrollable list of load steps, each with a pending, success or failure
@@ -57,7 +58,9 @@ class LoadingActionsLog extends StatelessWidget {
         },
       ),
     );
-    return framed ? OutlinedSurface(padding: EdgeInsets.zero, child: log) : log;
+    return framed
+        ? OutlinedSurface(padding: SurfacePadding.none, child: log)
+        : log;
   }
 
   /// Returns a spinner while [status] is pending, else a success or

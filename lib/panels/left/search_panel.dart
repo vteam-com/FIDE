@@ -16,6 +16,7 @@ import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
 import 'package:fide/widgets/surface_card.dart';
+import 'package:fide/widgets/surface_padding.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -290,7 +291,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
       onTap: () =>
           widget.onJumpToLine?.call(result.filePath, result.lineNumber),
       child: SurfaceCard(
-        dense: true,
+        padding: SurfacePadding.dense,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

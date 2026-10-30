@@ -18,7 +18,7 @@ class CountBadge extends StatelessWidget {
       count: count,
       isLabelVisible: count > 0,
       backgroundColor: AppTheme.warningColor,
-      textColor: AppTheme.warningText,
+      textColor: Colors.white,
       child: child,
     );
   }

@@ -4,6 +4,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/surface_card.dart';
+import 'package:fide/widgets/surface_padding.dart';
 import 'package:flutter/material.dart';
 
 /// Represents `LocalizationEntryWidget`.
@@ -60,7 +61,7 @@ class LocalizationEntryWidget extends StatelessWidget {
                 ),
                 if (showWarning) ...[
                   const SizedBox(width: AppSpacing.medium),
-                  BadgeStatus.warning(text: 'D', fontSize: AppFontSize.micro),
+                  BadgeStatus.warning(text: 'D'),
                 ],
               ],
             ),
@@ -118,7 +119,7 @@ class LocalizationEntryWidget extends StatelessWidget {
         // Translation value
         Expanded(
           child: SurfaceCard(
-            dense: true,
+            padding: SurfacePadding.dense,
             child: Text(
               translation,
               softWrap: true,

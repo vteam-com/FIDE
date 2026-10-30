@@ -13,7 +13,9 @@ import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/section_panel.dart';
+import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/surface_card.dart';
+import 'package:fide/widgets/surface_padding.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -90,7 +92,7 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
         ],
       ),
       child: SurfaceCard(
-        dense: true,
+        padding: SurfacePadding.dense,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -134,31 +136,17 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
             if (!widget.isSupported) ...[
               const SizedBox(height: AppSpacing.medium),
               OutlinedSurface(
-                padding: AppPadding.infoCard,
-                borderColor: Colors.blue.withValues(alpha: AppOpacity.divider),
+                padding: SurfacePadding.dense,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        BadgeStatus(
-                          text: 'ENABLE',
-                          backgroundColor: Colors.blue.withValues(
-                            alpha: AppOpacity.subtle,
-                          ),
-                          textColor: Colors.blue.shade700,
-                          fontSize: AppFontSize.badge,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        BadgeStatus.info(text: 'ENABLE'),
                         const SizedBox(width: AppSpacing.medium),
                         Expanded(
-                          child: Text(
+                          child: SectionTitle(
                             'Instructions for ${widget.selectedPlatform.displayName}',
-                            style: TextStyle(
-                              fontSize: AppFontSize.caption,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue.shade700,
-                            ),
                           ),
                         ),
                       ],
@@ -177,7 +165,7 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
             // Icon with Context Menu at Bottom
             const SizedBox(height: AppSpacing.medium),
             OutlinedSurface(
-              padding: AppPadding.infoCard,
+              padding: SurfacePadding.dense,
               child: Row(
                 children: [
                   _buildIcon(),

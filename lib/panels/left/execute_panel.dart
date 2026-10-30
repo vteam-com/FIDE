@@ -6,15 +6,18 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/output_log.dart';
 import 'package:fide/models/panel_action.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/panels/left/command_actions.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/flutter_build_service.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/action_tabs.dart';
+import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:fide/widgets/platform_info_section.dart';
 import 'package:fide/widgets/platform_selector.dart';
+import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -169,7 +172,6 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel>
 
   /// Handles `_buildActionsSection`.
   Widget _buildActionsSection() {
-    final colorScheme = Theme.of(context).colorScheme;
     final canBuild =
         _supportedPlatforms.contains(_selectedPlatform) &&
         _selectedPlatform.canBuildOnHost;
@@ -177,26 +179,9 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel>
     if (!canBuild) {
       // Instructions for unsupported platforms
       return OutlinedSurface(
-        padding: const EdgeInsets.all(AppSpacing.large),
-        child: Row(
-          children: [
-            Icon(
-              Icons.info_outline,
-              size: AppIconSize.large,
-              color: colorScheme.secondary,
-            ),
-            const SizedBox(width: AppSpacing.large),
-            Expanded(
-              child: Text(
-                _getPlatformInstructions(_selectedPlatform),
-                style: TextStyle(
-                  fontSize: AppFontSize.caption,
-                  color: colorScheme.onSurface,
-                  height: AppLineHeight.relaxed,
-                ),
-              ),
-            ),
-          ],
+        child: StatusIndicator.tone(
+          StatusTone.info,
+          label: _getPlatformInstructions(_selectedPlatform),
         ),
       );
     }
@@ -378,30 +363,7 @@ Updates ${platform.displayName} CocoaPods dependencies.
     ref.watch(selectedPlatformProvider);
 
     if (currentProjectPath == null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.build_circle_outlined,
-              size: AppIconSize.emptyState,
-              color: Theme.of(context).colorScheme.onSurface
-                  .withValues(alpha: AppOpacity.divider),
-            ),
-            const SizedBox(height: AppSpacing.xLarge),
-            Text(
-              'Load a project to use\nBuild/Run/Debug features',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface
-                    .withValues(alpha: AppOpacity.secondaryText),
-                fontSize: AppFontSize.label,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      );
+      return const NoProjectPlaceholder(showIcon: true);
     }
 
     _supportedPlatforms = FlutterPlatform.configuredIn(currentProjectPath);

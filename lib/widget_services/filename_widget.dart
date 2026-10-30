@@ -4,6 +4,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/providers/file_type_utils.dart';
+import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter/material.dart';
 
@@ -66,21 +67,9 @@ class FileNameWidget extends StatelessWidget {
       trailing: [
         ?trailing,
         if (badgeText.isNotEmpty)
-          Container(
-            margin: AppPadding.selectedBadgeMargin,
-            padding: AppPadding.badge,
-            decoration: BoxDecoration(
-              color: gitColor.withValues(alpha: AppOpacity.subtle),
-              borderRadius: BorderRadius.circular(AppRadius.medium),
-            ),
-            child: Text(
-              badgeText,
-              style: TextStyle(
-                fontSize: AppFontSize.badge,
-                fontWeight: FontWeight.bold,
-                color: gitColor,
-              ),
-            ),
+          Padding(
+            padding: AppPadding.selectedBadgeMargin,
+            child: BadgeStatus(text: badgeText, color: gitColor),
           ),
       ],
     );

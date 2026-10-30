@@ -9,16 +9,12 @@ class ContainerCounter extends StatelessWidget {
   const ContainerCounter({
     super.key,
     required this.count,
-    this.fontSize = AppFontSize.badge,
     this.tooltip,
     this.onTap,
   });
 
   /// The count value to display
   final int count;
-
-  /// The font size for the count text
-  final double fontSize;
 
   /// Called when the counter is clicked; null when it isn't clickable.
   final VoidCallback? onTap;
@@ -29,7 +25,10 @@ class ContainerCounter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chip = Chip(
-      label: Text(count.toString(), style: TextStyle(fontSize: fontSize)),
+      label: Text(
+        count.toString(),
+        style: const TextStyle(fontSize: AppFontSize.badge),
+      ),
       padding: EdgeInsets.zero,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );

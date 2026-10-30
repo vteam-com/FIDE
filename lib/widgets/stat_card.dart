@@ -1,10 +1,12 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_theme.dart';
-import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/models/status_tone.dart';
+import 'package:fide/widgets/action_card.dart';
+import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 
-/// A fixed-width outlined card headed by [icon] and [title], showing one
-/// headline [value] over [warnings] in the warning color, then [details].
+/// A fixed-width [ActionCard] headed by [icon] and [title], showing one
+/// headline [value] over [warnings], then [details].
 class StatCard extends StatelessWidget {
   /// Creates the card.
   const StatCard({
@@ -28,43 +30,23 @@ class StatCard extends StatelessWidget {
   /// The headline figure; see [StatCard.text] for plain text.
   final Widget value;
 
-  /// Problems behind [value], shown in [AppTheme.warningColor].
+  /// Problems behind [value], shown as warnings.
   final List<String> warnings;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
       width: AppSize.statCardWidth,
-      child: OutlinedSurface(
-        padding: const EdgeInsets.all(AppSpacing.xLarge),
+      child: ActionCard(
+        title: title,
+        icon: icon,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: AppSpacing.medium,
           children: [
-            Row(
-              spacing: AppSpacing.medium,
-              children: [
-                Icon(icon, size: AppIconSize.large, color: colorScheme.primary),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: AppFontSize.label,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
             value,
             for (final warning in warnings)
-              Text(
-                warning,
-                style: const TextStyle(
-                  fontSize: AppFontSize.caption,
-                  color: AppTheme.warningColor,
-                ),
-              ),
+              StatusIndicator.tone(StatusTone.warning, label: warning),
             for (final detail in details)
               Text(detail, style: AppTheme.secondaryText(context)),
           ],

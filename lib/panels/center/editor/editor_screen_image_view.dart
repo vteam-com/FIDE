@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/surface_card.dart';
 import 'package:flutter/material.dart';
@@ -35,36 +36,13 @@ class EditorScreenImageView extends StatelessWidget {
               child: Image.file(
                 File(filePath),
                 fit: BoxFit.contain,
-                errorBuilder: (context, _ /* error */, _ /* stackTrace */) {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.broken_image,
-                        size: AppSize.largePreviewIcon,
-                        color: Theme.of(context).colorScheme.error
-                            .withValues(alpha: AppOpacity.disabled),
-                      ),
-                      const SizedBox(height: AppSpacing.xLarge),
-                      Text(
-                        'Failed to load image',
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                      ),
-                      const SizedBox(height: AppSpacing.medium),
-                      Text(
-                        'The image file may be corrupted or unsupported',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface
-                              .withValues(alpha: AppOpacity.muted),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  );
-                },
+                errorBuilder: (_, _ /* error */, _ /* stackTrace */) =>
+                    const EmptyState(
+                      icon: Icons.broken_image,
+                      isError: true,
+                      title: 'Failed to load image',
+                      message: 'The image file may be corrupted or unsupported',
+                    ),
               ),
             ),
             const SizedBox(height: AppSpacing.xLarge),

@@ -21,6 +21,7 @@ import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/open_url.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:fide/widgets/section_panel.dart';
+import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -94,13 +95,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             ),
           ),
           const SizedBox(height: AppSpacing.large),
-          const Text(
-            'Deductions:',
-            style: TextStyle(
-              fontSize: AppFontSize.caption,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          const SectionTitle('Deductions'),
           const SizedBox(height: AppSpacing.medium),
 
           /// Handles `_buildDeductionItem`.
@@ -108,34 +103,25 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             'Missing pubspec.lock',
             -AppMetric.missingLockDeduction,
             !health.hasPubspecLock,
-            context,
           ),
           _buildDeductionItem(
             'Build errors (max 50 points)',
             -health.buildErrorDeduction,
             health.buildErrors > 0,
-            context,
           ),
           _buildDeductionItem(
             'Build warnings (max 20 points)',
             -health.buildWarningDeduction,
             health.buildWarnings > 0,
-            context,
           ),
           _buildDeductionItem(
             'Large files (>3 files over 10MB)',
             -AppMetric.largeFileThresholdMb,
             health.hasTooManyLargeFiles,
-            context,
           ),
           const Divider(height: AppSpacing.xxLarge),
-          Text(
+          SectionTitle(
             'Final Score: ${health.qualityScore}/${AppMetric.maxScore}',
-            style: TextStyle(
-              fontSize: AppFontSize.label,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.primary,
-            ),
           ),
           const SizedBox(height: AppSpacing.medium),
           const Text(
@@ -158,43 +144,10 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   }
 
   /// Handles `_buildDeductionItem`.
-  Widget _buildDeductionItem(
-    String label,
-    int points,
-    bool active,
-    BuildContext context,
-  ) {
-    return Row(
-      children: [
-        Icon(
-          active ? Icons.remove : Icons.check,
-          size: AppFontSize.label,
-          color: active ? AppTheme.errorColor : AppTheme.successColor,
-        ),
-        const SizedBox(width: AppSpacing.medium),
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: AppFontSize.metadata,
-              color: active
-                  ? Theme.of(context).colorScheme.onSurface
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
-              decoration: active
-                  ? TextDecoration.none
-                  : TextDecoration.lineThrough,
-            ),
-          ),
-        ),
-        Text(
-          active ? '$points pts' : 'No deduction',
-          style: TextStyle(
-            fontSize: AppFontSize.metadata,
-            fontWeight: FontWeight.w500,
-            color: active ? AppTheme.errorColor : AppTheme.successColor,
-          ),
-        ),
-      ],
+  Widget _buildDeductionItem(String label, int points, bool active) {
+    return StatusIndicator.tone(
+      active ? StatusTone.error : StatusTone.success,
+      label: active ? '$label: $points pts' : '$label: no deduction',
     );
   }
 

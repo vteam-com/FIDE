@@ -28,10 +28,7 @@ class LocalizationSetupWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Setup Localization',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
+          const SectionTitle('Setup Localization'),
           const SizedBox(height: AppSpacing.medium),
           Text(
             'Your Flutter project needs localization setup.',

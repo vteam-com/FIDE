@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_theme.dart';
 import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/surface_padding.dart';
 import 'package:flutter/material.dart';
 
 /// A list entry in an outlined box: [icon], [title] over [subtitle], an
@@ -42,7 +43,7 @@ class OutlinedListTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.medium),
       child: OutlinedSurface(
-        padding: EdgeInsets.zero,
+        padding: SurfacePadding.none,
         // Transparent Material so the ListTile's ink effects paint above
         // the surface's background color.
         child: Material(

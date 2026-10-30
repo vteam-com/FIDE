@@ -19,7 +19,6 @@ class AppPadding {
     horizontal: 4,
     vertical: 1,
   );
-  static const EdgeInsets actionTabContainer = EdgeInsets.all(12);
   static const EdgeInsets actionTabContent = EdgeInsets.all(16);
   static const EdgeInsets actionTabLabel = EdgeInsets.symmetric(horizontal: 8);
   static const EdgeInsets actionTabLabelCompact = EdgeInsets.symmetric(
@@ -43,7 +42,6 @@ class AppPadding {
     horizontal: 8,
     vertical: 2,
   );
-  static const EdgeInsets infoCard = EdgeInsets.all(8);
 
   /// Inset of every side panel's content from the panel's top-left edge.
   static const EdgeInsets panelContent = EdgeInsets.all(AppSpacing.medium);

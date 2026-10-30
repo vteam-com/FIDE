@@ -1,7 +1,8 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/project_name.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/app_text_field.dart';
+import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/step_header.dart';
 import 'package:fide/widgets/tool_status_row.dart';
 import 'package:file_picker/file_picker.dart';
@@ -161,29 +162,9 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
         // Show final project name if it's different from input
         if (_finalProjectName != null &&
             _finalProjectName != nameController.text)
-          Container(
-            padding: const EdgeInsets.only(
-              top: AppSpacing.tiny,
-              bottom: AppSpacing.xLarge,
-            ),
-            child: Row(
-              spacing: AppSpacing.medium,
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  color: AppTheme.warningColor,
-                  size: AppIconSize.medium,
-                ),
-                Text(
-                  'Project name will be: "$_finalProjectName"',
-                  style: TextStyle(
-                    color: AppTheme.warningColor,
-                    fontSize: AppFontSize.caption,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
+          StatusIndicator.tone(
+            StatusTone.warning,
+            label: 'Project name will be: "$_finalProjectName"',
           ),
 
         if (widget.flutterStatusChecked)
