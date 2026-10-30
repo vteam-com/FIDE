@@ -1,9 +1,10 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/app_theme.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:flutter/material.dart';
 
 /// A fixed-width outlined card headed by [icon] and [title], showing one
-/// headline [value] over a few [details] lines.
+/// headline [value] over [warnings] in the warning color, then [details].
 class StatCard extends StatelessWidget {
   /// Creates the card.
   const StatCard({
@@ -11,6 +12,7 @@ class StatCard extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.value,
+    this.warnings = const [],
     this.details = const [],
   });
 
@@ -25,6 +27,10 @@ class StatCard extends StatelessWidget {
 
   /// The headline figure; see [StatCard.text] for plain text.
   final Widget value;
+
+  /// Problems behind [value], shown in [AppTheme.warningColor].
+  final List<String> warnings;
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -51,6 +57,14 @@ class StatCard extends StatelessWidget {
               ],
             ),
             value,
+            for (final warning in warnings)
+              Text(
+                warning,
+                style: const TextStyle(
+                  fontSize: AppFontSize.caption,
+                  color: AppTheme.warningColor,
+                ),
+              ),
             for (final detail in details)
               Text(
                 detail,

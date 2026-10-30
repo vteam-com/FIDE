@@ -35,7 +35,7 @@ class ProjectOverviewService {
     return ProjectOverview(
       appIconPath: appIconPath,
       code: code,
-      languages: [for (final file in arbFiles.valid) file.languageCode],
+      languages: [for (final file in arbFiles.valid) file.languageCode]..sort(),
       translations: _arbService.compareArbFiles(arbFiles.valid),
       coverage: coverage,
     );

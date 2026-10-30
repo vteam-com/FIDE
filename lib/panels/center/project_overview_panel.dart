@@ -47,15 +47,24 @@ class ProjectOverviewPanel extends ConsumerWidget {
     return StatCard(
       icon: Icons.translate,
       title: 'Localization',
-      value: StatCard.text(
-        context,
-        languages.isEmpty ? 'Off' : '${languages.length.localized} languages',
-      ),
+      value: languages.isEmpty
+          ? StatCard.text(context, 'Off')
+          : Wrap(
+              spacing: AppSpacing.medium,
+              runSpacing: AppSpacing.medium,
+              children: [
+                for (final language in languages)
+                  BadgeStatus.info(
+                    text: language.toUpperCase(),
+                    fontSize: AppFontSize.title,
+                  ),
+              ],
+            ),
       details: [
         if (languages.isEmpty)
           'No ARB files in lib/l10n'
         else ...[
-          languages.join(', '),
+          '${languages.length.localized} languages',
           '${overview.translations.length.localized} strings',
           missing == 0
               ? 'All translated'
@@ -84,15 +93,15 @@ class ProjectOverviewPanel extends ConsumerWidget {
   ) {
     final code = overview.code;
     final coverage = overview.coverage;
-    final weakest =
+    final deductions = code.analyzerDeductionPercents;
+    final failing =
         code.analyzerScores
             .where(
               (analyzer) =>
-                  analyzer.enabled &&
-                  analyzer.scorePercent < AppMetric.maxScore,
+                  analyzer.issueCount > 0 && deductions[analyzer.key]! > 0,
             )
             .toList()
-          ..sort((a, b) => a.score.compareTo(b.score));
+          ..sort((a, b) => deductions[b.key]!.compareTo(deductions[a.key]!));
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.huge),
@@ -143,16 +152,16 @@ class ProjectOverviewPanel extends ConsumerWidget {
                   code.complianceScore,
                   fontSize: AppFontSize.title,
                 ),
-                details: [
-                  if (weakest.isEmpty)
-                    'Every fCheck analyzer at 100%'
-                  else
-                    for (final analyzer in weakest.take(
-                      AppMetric.overviewWeakestAnalyzers,
-                    ))
-                      '${analyzer.label}: ${analyzer.scorePercent}% '
-                          '(${analyzer.issueCount.localized} issues)',
+                warnings: [
+                  for (final analyzer in failing)
+                    '${analyzer.label}: '
+                        '-${deductions[analyzer.key]!.localized}% '
+                        '(${analyzer.issueCount.localized} issues)',
+                  if (code.suppressionPenaltyPoints > 0)
+                    'Checks bypassed: '
+                        '-${code.suppressionPenaltyPoints.localized}%',
                 ],
+                details: [if (failing.isEmpty) 'Every fCheck analyzer at 100%'],
               ),
               StatCard(
                 icon: Icons.code,
