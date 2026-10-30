@@ -1,11 +1,11 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/status_tone.dart';
+import 'package:fide/models/quality_issue.dart';
 import 'package:fide/widgets/action_card.dart';
-import 'package:fide/widgets/status_indicator.dart';
+import 'package:fide/widgets/issue_row.dart';
 import 'package:flutter/material.dart';
 
 /// A fixed-width [ActionCard] headed by [icon] and [title], showing one
-/// headline [value] over [warnings], then [details].
+/// headline [value] over [issues], then [details].
 class StatCard extends StatelessWidget {
   /// Creates the card.
   const StatCard({
@@ -13,7 +13,7 @@ class StatCard extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.value,
-    this.warnings = const [],
+    this.issues = const [],
     this.details = const [],
   });
 
@@ -23,14 +23,14 @@ class StatCard extends StatelessWidget {
   /// Shown before [title].
   final IconData icon;
 
+  /// Problems behind [value], each with how to fix it.
+  final List<QualityIssue> issues;
+
   /// What the card measures.
   final String title;
 
   /// The headline figure; see [StatCard.text] for plain text.
   final Widget value;
-
-  /// Problems behind [value], shown as warnings.
-  final List<String> warnings;
 
   @override
   Widget build(BuildContext context) {
@@ -44,8 +44,7 @@ class StatCard extends StatelessWidget {
           spacing: AppSpacing.medium,
           children: [
             value,
-            for (final warning in warnings)
-              StatusIndicator.tone(StatusTone.warning, label: warning),
+            for (final issue in issues) IssueRow(issue),
             for (final detail in details)
               Text(detail, style: AppTextStyle.secondary(context)),
           ],

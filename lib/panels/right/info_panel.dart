@@ -7,6 +7,8 @@ import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/health_indicators.dart';
 import 'package:fide/models/project_metrics.dart';
 import 'package:fide/models/project_paths.dart';
+import 'package:fide/models/quality_issue.dart';
+import 'package:fide/models/quality_issue.quality_finding.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/project_maintenance_service.dart';
@@ -16,6 +18,7 @@ import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/busy_icon_button.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/issue_row.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/open_url.dart';
@@ -25,6 +28,7 @@ import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 
 /// Represents `InfoPanel`.
 class InfoPanel extends ConsumerStatefulWidget {
@@ -35,6 +39,12 @@ class InfoPanel extends ConsumerStatefulWidget {
 }
 
 class _InfoPanelState extends ConsumerState<InfoPanel> {
+  /// How to clear build errors and warnings.
+  static const String _fixBuildGuidance =
+      'Build for the platform selected in the Execute panel, then pick '
+      '**Fix Build** in the AI panel to have the errors of the last build '
+      'fixed in the files.';
+
   bool _isRefreshing = false;
   bool _checkingOutdated = false;
   bool _upgrading = false;
@@ -423,16 +433,48 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     );
   }
 
-  /// Handles `_buildHealthCard`.
+  /// The project's score with each health issue and how to fix it.
   Widget _buildHealthCard(HealthIndicators health) {
-    final issues = <(StatusTone, String)>[
-      if (!health.hasPubspecLock) (StatusTone.warning, 'Missing pubspec.lock'),
+    final projectPath = ref.read(currentProjectPathProvider);
+    final issues = [
+      if (!health.hasPubspecLock)
+        const QualityIssue(
+          label: 'Missing pubspec.lock',
+          guidance:
+              'Run `flutter pub get` to resolve the dependencies and write '
+              '`pubspec.lock`; commit it so every build uses the same '
+              'package versions.',
+        ),
       if (health.buildErrors > 0)
-        (StatusTone.error, '${health.buildErrors} build errors'),
+        QualityIssue(
+          tone: StatusTone.error,
+          label: '${health.buildErrors} build errors',
+          guidance: _fixBuildGuidance,
+        ),
       if (health.buildWarnings > 0)
-        (StatusTone.warning, '${health.buildWarnings} build warnings'),
+        QualityIssue(
+          label: '${health.buildWarnings} build warnings',
+          guidance: _fixBuildGuidance,
+        ),
       if (health.largeFiles.isNotEmpty)
-        (StatusTone.info, '${health.largeFiles.length} large files'),
+        QualityIssue(
+          tone: StatusTone.info,
+          label: '${health.largeFiles.length} large files',
+          guidance:
+              'Files over ${AppMetric.largeFileThresholdMb} MB slow down '
+              'clones and builds: compress images and media, download '
+              'large data at runtime, or track them with Git LFS.',
+          rootPath: projectPath,
+          findings: [
+            if (projectPath != null)
+              for (final file in health.largeFiles)
+                QualityFinding(
+                  path: p.join(projectPath, file),
+                  line: 1,
+                  text: p.basename(file),
+                ),
+          ],
+        ),
     ];
 
     return SectionPanel(
@@ -446,21 +488,14 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         padding: const EdgeInsets.all(AppSpacing.large),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: AppSpacing.tiny,
           children: [
             if (issues.isEmpty)
               StatusIndicator.tone(
                 StatusTone.success,
                 label: 'No issues detected',
-              )
-            else
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: AppSpacing.tiny,
-                children: [
-                  for (final (tone, message) in issues)
-                    StatusIndicator.tone(tone, label: message),
-                ],
               ),
+            for (final issue in issues) IssueRow(issue),
           ],
         ),
       ),

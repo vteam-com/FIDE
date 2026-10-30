@@ -63,5 +63,8 @@ class AppSize {
   /// Tallest the Go to File palette's result list grows.
   static const double quickOpenMaxListHeight = 400;
 
+  /// Width of an issue's best practice and findings dialog.
+  static const double issueDetailsWidth = 600;
+
   const AppSize._();
 }

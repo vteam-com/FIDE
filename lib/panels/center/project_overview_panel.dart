@@ -1,7 +1,9 @@
+import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/project_overview.dart';
+import 'package:fide/models/quality_issues.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
@@ -39,7 +41,6 @@ class ProjectOverviewPanel extends ConsumerWidget {
   Widget _localizationCard(ProjectOverview overview) {
     final languages = overview.languages;
     final missing = overview.missingTranslations;
-    final hardcoded = overview.code.hardcodedStringIssues.length;
     return StatCard(
       icon: Icons.translate,
       title: 'Localization',
@@ -63,7 +64,10 @@ class ProjectOverviewPanel extends ConsumerWidget {
               ? 'All translated'
               : '${missing.localized} missing translations',
         ],
-        '${hardcoded.localized} hardcoded strings',
+      ],
+      issues: [
+        ?overview.code.issueFor(fcheck.AnalyzerDomain.hardcodedStrings),
+        ?overview.code.issueFor(fcheck.AnalyzerDomain.localization),
       ],
     );
   }
@@ -108,15 +112,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
   Widget _overview(WidgetRef ref, ProjectOverview overview) {
     final code = overview.code;
     final coverage = overview.coverage;
-    final deductions = code.analyzerDeductionPercents;
-    final failing =
-        code.analyzerScores
-            .where(
-              (analyzer) =>
-                  analyzer.issueCount > 0 && deductions[analyzer.key]! > 0,
-            )
-            .toList()
-          ..sort((a, b) => deductions[b.key]!.compareTo(deductions[a.key]!));
+    final issues = code.qualityIssues;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.huge),
@@ -161,16 +157,8 @@ class ProjectOverviewPanel extends ConsumerWidget {
                 icon: Icons.verified_outlined,
                 title: 'Quality',
                 value: BadgeStatus.score(code.complianceScore, large: true),
-                warnings: [
-                  for (final analyzer in failing)
-                    '${analyzer.label}: '
-                        '-${deductions[analyzer.key]!.localized}% '
-                        '(${analyzer.issueCount.localized} issues)',
-                  if (code.suppressionPenaltyPoints > 0)
-                    'Checks bypassed: '
-                        '-${code.suppressionPenaltyPoints.localized}%',
-                ],
-                details: [if (failing.isEmpty) 'Every fCheck analyzer at 100%'],
+                issues: issues,
+                details: [if (issues.isEmpty) 'Every fCheck analyzer at 100%'],
               ),
               StatCard(
                 icon: Icons.code,

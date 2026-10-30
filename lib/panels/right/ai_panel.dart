@@ -12,6 +12,7 @@ import 'package:fide/providers/code_edit_agent.dart';
 import 'package:fide/providers/flutter_build_service.dart';
 import 'package:fide/providers/ollama_installer.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/empty_state.dart';
@@ -63,6 +64,11 @@ class _AIPanelState extends ConsumerState<AIPanel> {
 
     /// Handles `_checkStatus`.
     _checkStatus();
+
+    // A request made before this panel was shown
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _sendRequest(ref.read(aiRequestProvider)),
+    );
   }
 
   @override
@@ -74,6 +80,10 @@ class _AIPanelState extends ConsumerState<AIPanel> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<String?>(
+      aiRequestProvider,
+      (_, request) => _sendRequest(request),
+    );
     return Container(
       color: Theme.of(context).colorScheme.surfaceContainerLow,
       child: Column(
@@ -418,6 +428,17 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     _requestId++;
     setState(() => _isLoading = false);
     _addReply('⏹ Stopped.', isProgress: true);
+  }
+
+  /// Sends [request] from another panel, such as an issue's Fix, as an
+  /// Ask AI prompt so the agent edits the files; left waiting while a reply
+  /// is pending.
+  void _sendRequest(String? request) {
+    if (request == null || _isLoading || !mounted) return;
+    ref.read(aiRequestProvider.notifier).state = null;
+    setState(() => _selectedAction = AiAction.ask);
+    _promptController.text = request;
+    _sendMessage();
   }
 
   /// Sends the prompt from the keyboard, ignored while a reply is pending
