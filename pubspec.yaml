@@ -33,6 +33,7 @@ dependencies:
   diff_match_patch: 0.4.1
   flutter:
     sdk: flutter
+  flutter_markdown_plus: 1.0.12
   flutter_riverpod: 3.4.3
   flutter_svg: 2.3.2
   flutter_pty2: ^3.0.0

@@ -13,6 +13,7 @@ import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/check_mark.dart';
 import 'package:fide/widgets/inline_spinner.dart';
+import 'package:fide/widgets/markdown_text.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -274,14 +275,18 @@ class _AIPanelState extends ConsumerState<AIPanel> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              message.content,
-              style: TextStyle(
-                color: isUser
-                    ? Theme.of(context).colorScheme.onPrimary
-                    : Theme.of(context).colorScheme.onSurface,
+            if (isUser)
+              Text(
+                message.content,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+              )
+            else
+              MarkdownText(
+                data: message.content,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
-            ),
             if (message.timestamp != null)
               Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.tiny),
