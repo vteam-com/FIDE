@@ -406,14 +406,11 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     return SideBySideDiff(oldText: _diffOldText!, newText: _diffNewText!);
   }
 
-  /// Closes the search UI and resets all in-memory search state.
+  /// Closes the search UI; the query stays, so Find Next and Find Previous
+  /// keep working and reopening shows it again.
   void _closeSearch() {
     if (!mounted) return;
-    setState(() {
-      _showSearch = false;
-      _searchController.clear();
-      _search.clear();
-    });
+    setState(() => _showSearch = false);
     _searchFocusNode.unfocus();
   }
 
@@ -660,10 +657,39 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     });
   }
 
-  /// Navigates to the next search match, wrapping at the end.
-  void _nextMatch() {
-    if (!_search.hasMatches) return;
-    _navigateToMatch(_search.nextIndex);
+  /// Navigates to the next search match after the caret, wrapping at the
+  /// end.
+  void _nextMatch() => _stepMatch(backward: false);
+
+  /// Navigates to the previous search match before the caret, wrapping at
+  /// the start.
+  void _previousMatch() => _stepMatch(backward: true);
+
+  /// Selects the match of the last query after the caret, or before it when
+  /// [backward], even with the find bar closed or the text edited since.
+  /// Without a query yet, searches for the selected text; without a
+  /// selection either, opens the find bar.
+  void _stepMatch({required bool backward}) {
+    if (_search.query.isEmpty) {
+      final seed = searchSeed;
+      if (seed.isEmpty) {
+        _openSearch();
+        return;
+      }
+      _search.query = seed;
+      _searchController.text = seed;
+    }
+    final selection = _codeController.selection;
+    _search.step(
+      _codeController.text,
+      selection.isValid ? selection.start : 0,
+      backward: backward,
+    );
+    if (!_search.hasMatches) {
+      setState(() {});
+      return;
+    }
+    _navigateToMatch(_search.currentIndex);
 
     // Request focus on editor when navigating with keyboard shortcuts
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -711,19 +737,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       ),
     );
     if (_search.hasMatches) _navigateToMatch(_search.currentIndex);
-  }
-
-  /// Navigates to the previous search match, wrapping at the start.
-  void _previousMatch() {
-    if (!_search.hasMatches) return;
-    _navigateToMatch(_search.previousIndex);
-
-    // Request focus on editor when navigating with keyboard shortcuts
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _focusEditor();
-      }
-    });
   }
 
   /// Replaces the current search match, then selects the next one after
@@ -873,16 +886,25 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   }
 
   /// Shows the search UI focused with its query selected, starting from the
-  /// selected text when there is a [searchSeed].
+  /// selected text when there is a [searchSeed], else from the last query
+  /// with its matches counted again in the current text.
   void _openSearch() {
     if (!mounted) return;
     final seed = searchSeed;
-    setState(() => _showSearch = true);
+    setState(() {
+      _showSearch = true;
+      if (seed.isEmpty) {
+        _searchController.text = _search.query;
+        _search.run(
+          _codeController.text,
+          _search.query,
+          fromOffset: _codeController.selection.start,
+        );
+      }
+    });
     if (seed.isNotEmpty) {
       _searchController.text = seed;
       _performSearch(seed);
-    } else if (_searchController.text.isEmpty) {
-      _searchController.text = _search.query;
     }
     _searchController.selection = TextSelection(
       baseOffset: 0,

@@ -9,6 +9,7 @@ import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/screens/create_project_screen.dart';
 import 'package:fide/screens/loading_screen.dart';
 import 'package:fide/screens/main_layout.dart';
+import 'package:fide/screens/settings_screen.dart';
 import 'package:fide/screens/welcome_screen.dart';
 import 'package:fide/widget_services/app_title_bar.dart';
 import 'package:fide/widget_services/file_open_actions.dart';
@@ -68,6 +69,9 @@ class _FIDEState extends ConsumerState<FIDE> {
   final Logger _logger = Logger('_FIDEState');
 
   String? _lastOpenedFileName;
+
+  /// Whether the settings screen covers the current view.
+  bool _settingsVisible = false;
 
   // Unified view state management
   AppViewState _currentViewState = AppViewState.welcome;
@@ -184,10 +188,6 @@ class _FIDEState extends ConsumerState<FIDE> {
     }
   }
 
-  void _updateTheme(ThemeMode themeMode) {
-    ref.read(appControllerProvider).setThemeMode(themeMode);
-  }
-
   // Helper functions for create project callbacks
   void _handleCreateProjectCancel() {
     setState(() {
@@ -236,9 +236,9 @@ class _FIDEState extends ConsumerState<FIDE> {
                       builder: (_, ref, _) {
                         // Show TitleBar for all cases - it handles the logic internally
                         return AppTitleBar(
-                          themeMode: themeMode,
-                          onThemeChanged: (themeMode) =>
-                              _updateTheme(themeMode),
+                          onToggleSettings: () => setState(
+                            () => _settingsVisible = !_settingsVisible,
+                          ),
                           onToggleLeftPanel: () => triggerTogglePanelLeft(ref),
                           onToggleBottomPanel: () =>
                               triggerTogglePanelBottom(ref),
@@ -272,36 +272,7 @@ class _FIDEState extends ConsumerState<FIDE> {
                     // Main content with menu bar
                     Expanded(
                       child: PlatformMenuBar(
-                        menus: NativeMenuBuilder(
-                          context: context,
-                          ref: ref,
-                          onOpenFolder: _pickAndOpenProject,
-                          onQuickOpen: _quickOpenFile,
-                          onOpenFile: () => pickAndOpenFile(ref),
-                          onSave: ref.read(activeEditorProvider).save,
-                          onCloseDocument: ref.read(activeEditorProvider).close,
-                          onFind: ref.read(activeEditorProvider).openSearch,
-                          onFindNext: ref.read(activeEditorProvider).findNext,
-                          onFindPrevious: ref
-                              .read(activeEditorProvider)
-                              .findPrevious,
-                          onGoToLine: () => _showGotoLineDialog(
-                            navigatorKey.currentContext ?? context,
-                          ),
-                          onToggleLeftPanel: () => triggerTogglePanelLeft(ref),
-                          onToggleBottomPanel: () =>
-                              triggerTogglePanelBottom(ref),
-                          onToggleRightPanel: () =>
-                              triggerTogglePanelRight(ref),
-                          onSwitchPanel: (tab) => _switchToPanel(ref, tab),
-                          onProjectSwitch: (path) async =>
-                              await tryLoadProject(path),
-                          onCloseProject: _closeCurrentProject,
-                          lastOpenedFileName: _lastOpenedFileName,
-                          onThemeChanged: (themeMode) =>
-                              _updateTheme(themeMode),
-                          currentThemeMode: themeMode,
-                        ).buildMenus(),
+                        menus: _buildMenus(context),
                         child: Consumer(
                           builder: (_, ref, _) {
                             final mruFolders = ref.watch(mruFoldersProvider);
@@ -353,7 +324,22 @@ class _FIDEState extends ConsumerState<FIDE> {
                                 break;
                             }
 
-                            return content;
+                            // Settings cover the view, which stays mounted
+                            // so closing them returns to it unchanged
+                            return Stack(
+                              children: [
+                                Positioned.fill(child: content),
+                                if (_settingsVisible)
+                                  Positioned.fill(
+                                    child: SettingsScreen(
+                                      menus: _buildMenus(context),
+                                      onClose: () => setState(
+                                        () => _settingsVisible = false,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            );
                           },
                         ),
                       ),
@@ -366,6 +352,32 @@ class _FIDEState extends ConsumerState<FIDE> {
         ),
       ),
     );
+  }
+
+  /// The native menus; [context] must be under the app's navigator.
+  List<PlatformMenuItem> _buildMenus(BuildContext context) {
+    return NativeMenuBuilder(
+      context: context,
+      ref: ref,
+      onOpenFolder: _pickAndOpenProject,
+      onQuickOpen: _quickOpenFile,
+      onOpenFile: () => pickAndOpenFile(ref),
+      onSave: ref.read(activeEditorProvider).save,
+      onCloseDocument: ref.read(activeEditorProvider).close,
+      onFind: ref.read(activeEditorProvider).openSearch,
+      onFindNext: ref.read(activeEditorProvider).findNext,
+      onFindPrevious: ref.read(activeEditorProvider).findPrevious,
+      onGoToLine: () =>
+          _showGotoLineDialog(navigatorKey.currentContext ?? context),
+      onToggleLeftPanel: () => triggerTogglePanelLeft(ref),
+      onToggleBottomPanel: () => triggerTogglePanelBottom(ref),
+      onToggleRightPanel: () => triggerTogglePanelRight(ref),
+      onSwitchPanel: (tab) => _switchToPanel(ref, tab),
+      onProjectSwitch: (path) async => await tryLoadProject(path),
+      onCloseProject: _closeCurrentProject,
+      lastOpenedFileName: _lastOpenedFileName,
+      onShowSettings: () => setState(() => _settingsVisible = true),
+    ).buildMenus();
   }
 
   /// Shows the Go to File palette over the loaded project's files.

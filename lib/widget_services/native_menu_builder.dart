@@ -4,7 +4,6 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/message_box.dart';
-import 'package:fide/widgets/theme_settings_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,8 +32,9 @@ class NativeMenuBuilder {
   final Function(String) onProjectSwitch;
   final Function()? onCloseProject;
   final String? lastOpenedFileName;
-  final Function(ThemeMode) onThemeChanged;
-  final ThemeMode currentThemeMode;
+
+  /// Shows the settings screen.
+  final VoidCallback onShowSettings;
 
   NativeMenuBuilder({
     required this.context,
@@ -55,8 +55,7 @@ class NativeMenuBuilder {
     required this.onProjectSwitch,
     this.onCloseProject,
     this.lastOpenedFileName,
-    required this.onThemeChanged,
-    required this.currentThemeMode,
+    required this.onShowSettings,
   });
 
   /// Builds the native platform menu structure for the app shell.
@@ -88,7 +87,7 @@ class NativeMenuBuilder {
         PlatformMenuItem(
           label: 'Settings',
           shortcut: const SingleActivator(LogicalKeyboardKey.comma, meta: true),
-          onSelected: () => _showSettingsDialog(),
+          onSelected: onShowSettings,
         ),
         PlatformMenuItem(
           label: 'Quit FIDE',
@@ -309,7 +308,7 @@ class NativeMenuBuilder {
               label: 'Git',
               shortcut: const SingleActivator(
                 LogicalKeyboardKey.keyG,
-                meta: true,
+                control: true,
                 shift: true,
               ),
               onSelected: () {
@@ -331,11 +330,6 @@ class NativeMenuBuilder {
         ),
       ],
     );
-  }
-
-  /// Shows the app-level settings dialog from the native menu bar.
-  void _showSettingsDialog() {
-    showThemeSettingsDialog(context, onThemeChanged);
   }
 
   String _getLastOpenedFileLabel() {

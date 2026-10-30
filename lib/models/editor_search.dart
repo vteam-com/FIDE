@@ -25,13 +25,6 @@ class EditorSearch {
   /// Whether anything matched.
   bool get hasMatches => matches.isNotEmpty;
 
-  /// Index of the match after the current one, wrapping to the first.
-  int get nextIndex => (currentIndex + 1) % matches.length;
-
-  /// Index of the match before the current one, wrapping to the last.
-  int get previousIndex =>
-      currentIndex <= 0 ? matches.length - 1 : currentIndex - 1;
-
   /// Forgets the query and its matches; options are kept.
   void clear() {
     query = '';
@@ -60,6 +53,22 @@ class EditorSearch {
     );
     final atOrAfter = matches.indexWhere((start) => start >= fromOffset);
     currentIndex = atOrAfter == noMatch && hasMatches ? 0 : atOrAfter;
+  }
+
+  /// Searches [text] again for [query], since it may have been edited,
+  /// and selects the first match starting after [offset], wrapping to the
+  /// first; [backward] selects the last match starting before [offset],
+  /// wrapping to the last.
+  void step(String text, int offset, {bool backward = false}) {
+    run(text, query);
+    if (!hasMatches) return;
+    if (backward) {
+      final before = matches.lastIndexWhere((start) => start < offset);
+      currentIndex = before == noMatch ? matches.length - 1 : before;
+    } else {
+      final after = matches.indexWhere((start) => start > offset);
+      currentIndex = after == noMatch ? 0 : after;
+    }
   }
 
   /// [text] with every occurrence of [query] replaced by [replacement],

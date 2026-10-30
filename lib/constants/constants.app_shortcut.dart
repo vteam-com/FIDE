@@ -22,5 +22,10 @@ class AppShortcut {
     shift: true,
   );
 
+  /// Second keys of menu shortcuts, by the menu item's own shortcut.
+  static const Map<SingleActivator, SingleActivator> aliases = {
+    quickOpen: quickOpenAlias,
+  };
+
   const AppShortcut._();
 }

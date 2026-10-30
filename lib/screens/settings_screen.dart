@@ -1,0 +1,176 @@
+import 'package:fide/constants/constants.dart';
+import 'package:fide/controllers/app_controller.dart';
+import 'package:fide/models/app_theme.dart';
+import 'package:fide/models/shortcut_help_entry.dart';
+import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/section_title.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// The full-screen settings: the display mode, then the keyboard shortcuts
+/// of the app's menus. Escape or the close button leaves it.
+class SettingsScreen extends ConsumerStatefulWidget {
+  /// Creates the settings listing the shortcuts of [menus].
+  const SettingsScreen({super.key, required this.menus, required this.onClose});
+
+  /// The native menus whose shortcuts the help lists.
+  final List<PlatformMenuItem> menus;
+
+  /// Closes the screen.
+  final VoidCallback onClose;
+
+  @override
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  /// Takes focus from the view underneath, so Escape reaches this screen.
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.requestFocus();
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final byMenu = <String, List<ShortcutHelpEntry>>{};
+    for (final entry in ShortcutHelpEntry.fromMenus(
+      widget.menus,
+      aliases: AppShortcut.aliases,
+    )) {
+      byMenu.putIfAbsent(entry.menu, () => []).add(entry);
+    }
+
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): widget.onClose,
+      },
+      child: Focus(
+        focusNode: _focusNode,
+        child: DecoratedBox(
+          decoration: AppTheme.workspaceBackground(context),
+          // Padding inside the scroll view, so content scrolls to the edges
+          child: SingleChildScrollView(
+            padding: AppPadding.actionTabContent,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: AppSize.welcomeContentWidth,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: AppSpacing.xLarge,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text('Settings', style: AppTextStyle.headline),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          tooltip: 'Close (Esc)',
+                          onPressed: widget.onClose,
+                        ),
+                      ],
+                    ),
+                    const SectionTitle('Appearance'),
+                    OutlinedSurface(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Display mode',
+                              style: AppTextStyle.body,
+                            ),
+                          ),
+                          _buildDisplayModeButtons(),
+                        ],
+                      ),
+                    ),
+                    const SectionTitle('Keyboard Shortcuts'),
+                    for (final MapEntry(key: menu, value: entries)
+                        in byMenu.entries)
+                      _buildShortcutGroup(menu, entries),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The System / Light / Dark choice, applied as soon as it is picked.
+  Widget _buildDisplayModeButtons() {
+    return SegmentedButton<ThemeMode>(
+      showSelectedIcon: false,
+      segments: const [
+        ButtonSegment(
+          value: ThemeMode.system,
+          icon: Icon(Icons.brightness_auto),
+          label: Text('System'),
+        ),
+        ButtonSegment(
+          value: ThemeMode.light,
+          icon: Icon(Icons.light_mode),
+          label: Text('Light'),
+        ),
+        ButtonSegment(
+          value: ThemeMode.dark,
+          icon: Icon(Icons.dark_mode),
+          label: Text('Dark'),
+        ),
+      ],
+      selected: {ref.watch(themeModeProvider)},
+      onSelectionChanged: (selection) =>
+          ref.read(appControllerProvider).setThemeMode(selection.first),
+    );
+  }
+
+  /// The box listing the [entries] of [menu], each command beside its keys.
+  Widget _buildShortcutGroup(String menu, List<ShortcutHelpEntry> entries) {
+    final keysStyle = AppTextStyle.bodyStrong.copyWith(
+      color: Theme.of(context).colorScheme.primary,
+    );
+    return OutlinedSurface(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: AppSpacing.small,
+        children: [
+          Text(menu, style: AppTextStyle.bodyStrong),
+          for (final entry in entries)
+            Row(
+              children: [
+                Expanded(child: Text(entry.label, style: AppTextStyle.body)),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      for (final (index, keys) in entry.keys.indexed) ...[
+                        if (index > 0)
+                          TextSpan(
+                            text: ' or ',
+                            style: AppTextStyle.secondary(context),
+                          ),
+                        TextSpan(text: keys, style: keysStyle),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}

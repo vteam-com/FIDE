@@ -8,7 +8,6 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/project_icon.dart';
-import 'package:fide/widgets/theme_settings_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -20,8 +19,8 @@ import 'package:window_manager/window_manager.dart';
 
 /// Represents `AppTitleBar`.
 class AppTitleBar extends ConsumerStatefulWidget {
-  final ThemeMode themeMode;
-  final Function(ThemeMode)? onThemeChanged;
+  /// Shows or hides the settings screen.
+  final VoidCallback onToggleSettings;
   final VoidCallback? onToggleLeftPanel;
   final VoidCallback? onToggleBottomPanel;
   final VoidCallback? onToggleRightPanel;
@@ -43,8 +42,7 @@ class AppTitleBar extends ConsumerStatefulWidget {
 
   const AppTitleBar({
     super.key,
-    required this.themeMode,
-    this.onThemeChanged,
+    required this.onToggleSettings,
     this.onToggleLeftPanel,
     this.onToggleBottomPanel,
     this.onToggleRightPanel,
@@ -245,9 +243,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     return IconButton(
       icon: const Icon(Icons.settings, size: AppIconSize.mediumLarge),
-      onPressed: () {
-        _showSettingsDialog();
-      },
+      onPressed: widget.onToggleSettings,
       tooltip: 'Settings',
       style: IconButton.styleFrom(
         foregroundColor: onSurface.withValues(alpha: AppOpacity.prominent),
@@ -376,13 +372,5 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
         await _handleDropdownSelection(choice.$1, choice.$2, ref);
       }
     });
-  }
-
-  /// Opens the settings dialog for configuring app-level preferences.
-  void _showSettingsDialog() {
-    showThemeSettingsDialog(
-      context,
-      (themeMode) => widget.onThemeChanged?.call(themeMode),
-    );
   }
 }

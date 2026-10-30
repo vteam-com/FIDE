@@ -17,13 +17,23 @@ void main() {
       expect(EditorSearch.findMatches(text, 'foo', wholeWord: true), [0, 4]);
     });
 
-    test('wraps next and previous around the matches', () {
+    test('steps from the caret, wrapping around the matches', () {
       final search = EditorSearch()..run('a a a', 'a');
-
       expect(search.currentIndex, 0);
-      expect(search.previousIndex, 2);
-      search.currentIndex = 2;
-      expect(search.nextIndex, 0);
+
+      search.step('a a a', 0);
+      expect(search.currentIndex, 1);
+      search.step('a a a', 4);
+      expect(search.currentIndex, 0);
+      search.step('a a a', 0, backward: true);
+      expect(search.currentIndex, 2);
+      search.step('a a a', 3, backward: true);
+      expect(search.currentIndex, 1);
+
+      // Stepping searches the edited text, not the stale matches
+      search.step('xx a', 0);
+      expect(search.matches, [3]);
+      expect(search.currentIndex, 0);
 
       search.run('a a a', '');
       expect(search.hasMatches, false);
