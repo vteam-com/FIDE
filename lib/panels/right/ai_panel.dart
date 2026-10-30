@@ -4,6 +4,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/ai_action.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/output_log.dart';
+import 'package:fide/models/relative_time.dart';
 import 'package:fide/models/text_truncation.dart';
 import 'package:fide/providers/ai_service.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -293,8 +294,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
               Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.tiny),
                 child: Text(
-                  /// Handles `_formatTimestamp`.
-                  _formatTimestamp(message.timestamp!),
+                  message.timestamp!.timeAgo(),
                   style: TextStyle(
                     fontSize: AppFontSize.badge,
                     color: isUser
@@ -348,22 +348,6 @@ class _AIPanelState extends ConsumerState<AIPanel> {
       successMessage: '${OllamaInstaller.model} model downloaded.',
       errorPrefix: 'Error downloading model',
     );
-  }
-
-  /// Handles `_formatTimestamp`.
-  String _formatTimestamp(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
   }
 
   /// Installs Ollama, downloads the model and starts the service.

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fide/models/file_system_item.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as path;
@@ -161,4 +162,62 @@ void main() {
       expect(await git.syncCounts(repo.path), (ahead: 1, behind: 1));
     },
   );
+
+  test('getStatus tells added, modified and deleted files apart', () async {
+    File(path.join(repo.path, 'added.txt')).writeAsStringSync('a\n');
+    File(path.join(repo.path, 'gone.txt')).writeAsStringSync('g\n');
+    _git(repo.path, ['add', '.']);
+    _git(repo.path, ['commit', '-q', '-m', 'more']);
+    File(path.join(repo.path, 'new.txt')).writeAsStringSync('n\n');
+    _git(repo.path, ['add', 'new.txt']);
+    File(path.join(repo.path, 'gone.txt')).deleteSync();
+    File(nestedFile).writeAsStringSync('edited\n');
+
+    final status = await const GitService().getStatus(repo.path);
+
+    expect(status.stagedKinds, {'new.txt': GitFileStatus.added});
+    expect(status.unstagedKinds, {
+      'gone.txt': GitFileStatus.deleted,
+      'lib/main.dart': GitFileStatus.modified,
+    });
+    expect(status.statusOf('new.txt'), GitFileStatus.added);
+    expect(status.statusOf('lib/main.dart'), GitFileStatus.modified);
+  });
+
+  test('getChangeStats counts lines per staged and unstaged file', () async {
+    File(nestedFile).writeAsStringSync('one\ntwo\n');
+    _git(repo.path, ['add', '.']);
+    File(path.join(repo.path, 'new.txt')).writeAsStringSync('x\ny\nz');
+    const git = GitService();
+
+    final stats = await git.getChangeStats(
+      repo.path,
+      await git.getStatus(repo.path),
+    );
+
+    final staged = stats.staged['lib/main.dart']!;
+    expect((staged.added, staged.removed), (2, 1));
+    expect(stats.unstaged['new.txt']!.added, 3);
+  });
+
+  test('getRecentCommits dates commits and flags unpushed ones', () async {
+    final remote = Directory.systemTemp.createTempSync('fide_git_remote_');
+    addTearDown(() => remote.deleteSync(recursive: true));
+    _git(remote.path, ['init', '-q', '--bare']);
+    _git(repo.path, ['remote', 'add', 'origin', remote.path]);
+    _git(repo.path, ['push', '-q', '-u', 'origin', 'HEAD']);
+    File(nestedFile).writeAsStringSync('local\n');
+    _git(repo.path, ['commit', '-q', '-am', 'local only']);
+
+    final commits = await const GitService().getRecentCommits(repo.path);
+
+    expect(commits.map((c) => (c.message, c.isUnpushed)), [
+      ('local only', true),
+      ('init', false),
+    ]);
+    expect(
+      DateTime.now().difference(commits.first.date),
+      lessThan(const Duration(minutes: 1)),
+    );
+  });
 }

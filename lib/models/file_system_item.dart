@@ -45,7 +45,7 @@ extension GitFileStatusDisplay on GitFileStatus {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return switch (this) {
       GitFileStatus.added => Colors.green,
-      GitFileStatus.modified => Colors.blue,
+      GitFileStatus.modified => Colors.orange,
       GitFileStatus.deleted => Colors.red,
       GitFileStatus.untracked =>
         Colors.grey[isDark ? AppShade.medium : AppShade.mild]!,

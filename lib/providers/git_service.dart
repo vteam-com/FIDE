@@ -21,6 +21,15 @@ class GitService {
   /// Fields of `git rev-list --left-right --count`: ahead, then behind.
   static const int _syncCountFields = 2;
 
+  /// Tab-separated fields of `git diff --numstat`: added, removed, path.
+  static const int _numstatFields = 3;
+
+  /// Tab-separated fields of a [getRecentCommits] line: hash, time, subject.
+  static const int _commitFields = 3;
+
+  /// Porcelain separator between the old and new path of a rename or copy.
+  static const String _renameArrow = ' -> ';
+
   /// `git diff --no-index` exit code meaning "the files differ".
   static const int _noIndexDiffFoundExitCode = 1;
 
@@ -49,17 +58,27 @@ class GitService {
   /// Files the porcelain entry for [file] with two-letter [status] into the
   /// staged, unstaged and untracked lists of [into].
   static void _classify(String status, String file, GitStatus into) {
+    if (status[0] == '?') {
+      into.untracked.add(file);
+      return;
+    }
     if (status[0] != ' ') {
       into.staged.add(file);
+      into.stagedKinds[file] = _kindOf(status[0]);
     }
     if (status[1] != ' ') {
-      if (status[0] == ' ' && status[1] == '?') {
-        into.untracked.add(file);
-      } else {
-        into.unstaged.add(file);
-      }
+      into.unstaged.add(file);
+      into.unstagedKinds[file] = _kindOf(status[1]);
     }
   }
+
+  /// The change a porcelain status letter stands for: added, deleted, or
+  /// modified for everything else (edits, renames, type changes, conflicts).
+  static GitFileStatus _kindOf(String letter) => switch (letter) {
+    'A' => GitFileStatus.added,
+    'D' => GitFileStatus.deleted,
+    _ => GitFileStatus.modified,
+  };
 
   // Expand directory to all contained files
   Future<List<String>> _expandDirectoryToFiles(
@@ -158,7 +177,11 @@ class GitService {
     for (final line in lines) {
       if (line.length < AppMetric.gitStatusFieldOffset) continue;
       final code = line.substring(0, AppMetric.doubleLineLimit);
-      final file = line.substring(AppMetric.gitStatusFieldOffset);
+      // A rename or copy lists `old -> new`; the change lives at the new path
+      final entryPath = line.substring(AppMetric.gitStatusFieldOffset);
+      final file = entryPath.contains(_renameArrow)
+          ? entryPath.split(_renameArrow).last
+          : entryPath;
 
       // Porcelain reports a wholly new directory as `dir/`; list its files
       final files = file.endsWith('/')
@@ -317,7 +340,8 @@ class GitService {
     return output.toString().trim();
   }
 
-  /// Returns recent commits up to [count] in one-line format.
+  /// Returns up to [count] recent commits, newest first, each with its date
+  /// and whether it still waits to be pushed.
   Future<List<GitCommit>> getRecentCommits(
     String path, {
     int count = AppMetric.gitCommitDefaultCount,
@@ -325,30 +349,51 @@ class GitService {
     try {
       final result = await _runner.run('git', [
         'log',
-        '--oneline',
+        '--format=%H%x09%ct%x09%s',
         '-n',
         count.toString(),
       ], workingDirectory: path);
       if (result.exitCode == 0) {
+        final unpushed = await _unpushedHashes(path);
         final lines = result.stdout
             .toString()
             .split('\n')
             .where((line) => line.isNotEmpty);
-        return lines.map((line) {
-          final firstSpaceIndex = line.indexOf(' ');
-          final hash = firstSpaceIndex > 0
-              ? line.substring(0, firstSpaceIndex)
-              : line;
-          final message = firstSpaceIndex > 0
-              ? line.substring(firstSpaceIndex + 1)
-              : '';
-          return GitCommit(hash: hash, message: message);
-        }).toList();
+        return [for (final line in lines) ?_parseCommit(line, unpushed)];
       }
     } catch (e) {
       // Ignore errors
     }
     return [];
+  }
+
+  /// Parses a `hash<TAB>unix time<TAB>subject` log [line]; null when it
+  /// doesn't have that shape.
+  static GitCommit? _parseCommit(String line, Set<String> unpushed) {
+    final fields = line.split('\t');
+    if (fields.length < _commitFields) return null;
+    final seconds = int.tryParse(fields[1]);
+    if (seconds == null) return null;
+    final hash = fields.first;
+    return GitCommit(
+      hash: hash,
+      // A subject may itself hold tabs
+      message: fields.skip(_commitFields - 1).join('\t'),
+      date: DateTime.fromMillisecondsSinceEpoch(
+        seconds * Duration.millisecondsPerSecond,
+      ),
+      isUnpushed: unpushed.contains(hash),
+    );
+  }
+
+  /// Full hashes of the commits the upstream branch lacks; empty when the
+  /// branch has no upstream.
+  Future<Set<String>> _unpushedHashes(String path) async {
+    final output = await _runner.outputOf('git', [
+      'rev-list',
+      '@{upstream}..HEAD',
+    ], workingDirectory: path);
+    return (output ?? '').split('\n').where((h) => h.isNotEmpty).toSet();
   }
 
   /// Returns the unified diff of [filePath] against HEAD (staged and
@@ -472,25 +517,72 @@ class GitService {
     }
   }
 
+  /// Added/removed line counts of every changed file in [status], keyed by
+  /// repository-relative path: [staged] compares the index to HEAD,
+  /// [unstaged] the working copy to the index, with untracked files counted
+  /// as wholly added.
+  Future<
+    ({Map<String, GitDiffStats> staged, Map<String, GitDiffStats> unstaged})
+  >
+  getChangeStats(String projectPath, GitStatus status) async {
+    final staged = await _numstat(projectPath, cached: true);
+    final unstaged = await _numstat(projectPath, cached: false);
+    for (final file in status.untracked) {
+      unstaged[file] = await _newFileStats(File(path.join(projectPath, file)));
+    }
+    return (staged: staged, unstaged: unstaged);
+  }
+
+  /// Parses `git diff --numstat` of the index ([cached]) or the working
+  /// copy into line counts per file; empty when git fails. Binary files
+  /// count as zero lines.
+  Future<Map<String, GitDiffStats>> _numstat(
+    String path, {
+    required bool cached,
+  }) async {
+    final output = await _runner.outputOf('git', [
+      'diff',
+      if (cached) '--cached',
+      '--numstat',
+      '--no-renames',
+    ], workingDirectory: path);
+    final stats = <String, GitDiffStats>{};
+    for (final line in (output ?? '').split('\n')) {
+      final fields = line.split('\t');
+      if (fields.length < _numstatFields) continue;
+      stats[fields.skip(_numstatFields - 1).join('\t')] = GitDiffStats(
+        added: int.tryParse(fields[0]) ?? 0,
+        removed: int.tryParse(fields[1]) ?? 0,
+        isNewFile: false,
+      );
+    }
+    return stats;
+  }
+
+  /// Counts every line of the untracked [file] as added; zero lines when it
+  /// is missing or too big to load.
+  static Future<GitDiffStats> _newFileStats(File file) async {
+    if (!await file.exists()) {
+      return GitDiffStats(added: 0, removed: 0, isNewFile: true);
+    }
+    final content = await FileSystemItem.fileToStringMaxSizeCheck(file);
+    if (content == FileSystemItem.fileTooBigMessage) {
+      return GitDiffStats(added: 0, removed: 0, isNewFile: true);
+    }
+    return GitDiffStats(
+      added: content.split('\n').length,
+      removed: 0,
+      isNewFile: true,
+    );
+  }
+
   /// Returns added/removed line counts for a file.
   Future<GitDiffStats> getFileDiffStats(String path, String filePath) async {
     try {
       // First check if file is tracked
       final isTracked = await _isTracked(path, filePath);
 
-      if (!isTracked) {
-        // For untracked files, count all lines as additions
-        final file = File(filePath);
-        if (await file.exists()) {
-          final content = await FileSystemItem.fileToStringMaxSizeCheck(file);
-          if (content == FileSystemItem.fileTooBigMessage) {
-            return GitDiffStats(added: 0, removed: 0, isNewFile: true);
-          }
-          final lines = content.split('\n');
-          return GitDiffStats(added: lines.length, removed: 0, isNewFile: true);
-        }
-        return GitDiffStats(added: 0, removed: 0, isNewFile: true);
-      }
+      if (!isTracked) return await _newFileStats(File(filePath));
 
       // For tracked files, get diff stats
       final result = await _runner.run('git', [

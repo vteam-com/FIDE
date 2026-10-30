@@ -18,11 +18,21 @@ class GitStatus {
   late final Set<String> _unstagedSet = unstaged.toSet();
   late final Set<String> _untrackedSet = untracked.toSet();
 
+  /// What each staged file's change is (added, modified or deleted).
+  final Map<String, GitFileStatus> stagedKinds = {};
+
+  /// What each unstaged file's change is (modified or deleted).
+  final Map<String, GitFileStatus> unstagedKinds = {};
+
   /// Status of the file at [relativePath] (relative to the repository root);
   /// staged changes take precedence over unstaged ones.
   GitFileStatus statusOf(String relativePath) {
-    if (_stagedSet.contains(relativePath)) return GitFileStatus.added;
-    if (_unstagedSet.contains(relativePath)) return GitFileStatus.modified;
+    if (_stagedSet.contains(relativePath)) {
+      return stagedKinds[relativePath] ?? GitFileStatus.added;
+    }
+    if (_unstagedSet.contains(relativePath)) {
+      return unstagedKinds[relativePath] ?? GitFileStatus.modified;
+    }
     if (_untrackedSet.contains(relativePath)) return GitFileStatus.untracked;
     return GitFileStatus.clean;
   }

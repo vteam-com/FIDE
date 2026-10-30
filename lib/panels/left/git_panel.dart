@@ -2,11 +2,12 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/relative_time.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/widget_services/diff_counter.dart';
 import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/app_text_field.dart';
-import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/message_box.dart';
@@ -51,6 +52,12 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   /// Upstream commits not yet pulled; Pull stands out while any exist.
   int _behind = 0;
 
+  /// Added/removed line counts of staged files, by repository path.
+  Map<String, GitDiffStats> _stagedStats = {};
+
+  /// Added/removed line counts of unstaged and untracked files.
+  Map<String, GitDiffStats> _unstagedStats = {};
+
   @override
   void initState() {
     super.initState();
@@ -75,8 +82,14 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     final git = ref.read(gitServiceProvider);
     final canAmend = await git.canAmend(widget.projectPath);
     final counts = await git.syncCounts(widget.projectPath);
+    final status = ref.read(gitStatusProvider).value;
+    final stats = status == null
+        ? null
+        : await git.getChangeStats(widget.projectPath, status);
     if (mounted) {
       setState(() {
+        _stagedStats = stats?.staged ?? {};
+        _unstagedStats = stats?.unstaged ?? {};
         _canAmend = canAmend;
         _ahead = counts.ahead;
         _behind = counts.behind;
@@ -254,7 +267,6 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme colorScheme = Theme.of(context).colorScheme;
     final gitStatus = ref.watch(gitStatusProvider);
     final gitCommits = ref.watch(gitCommitsProvider);
 
@@ -352,11 +364,12 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                 children: [
                   // Staged files
                   if (status.staged.isNotEmpty) ...[
-                    /// Handles `_buildFileSection`.
                     _buildFileSection(
-                      colorScheme,
-                      BadgeStatus.success(text: 'STAGED CHANGES'),
+                      'STAGED CHANGES',
                       status.staged,
+                      kindOf: (file) =>
+                          status.stagedKinds[file] ?? GitFileStatus.added,
+                      stats: _stagedStats,
                       onStage: null,
                       onUnstage: _unstageFiles,
                       canDiscard: false,
@@ -367,9 +380,11 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   // Unstaged files
                   if (status.unstaged.isNotEmpty) ...[
                     _buildFileSection(
-                      colorScheme,
-                      BadgeStatus.warning(text: 'CHANGES'),
+                      'CHANGES',
                       status.unstaged,
+                      kindOf: (file) =>
+                          status.unstagedKinds[file] ?? GitFileStatus.modified,
+                      stats: _unstagedStats,
                       onStage: _stageFiles,
                       onUnstage: null,
                       canDiscard: true,
@@ -379,10 +394,12 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
                   // Untracked files
                   if (status.untracked.isNotEmpty) ...[
+                    // Untracked files are new, so they read as added
                     _buildFileSection(
-                      colorScheme,
-                      BadgeStatus.neutral(text: 'UNTRACKED'),
+                      'UNTRACKED',
                       status.untracked,
+                      kindOf: (_) => GitFileStatus.added,
+                      stats: _unstagedStats,
                       onStage: _stageFiles,
                       onUnstage: null,
                       canDiscard: true,
@@ -407,28 +424,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                       data: (commits) => commits.isEmpty
                           ? const Text('No commits yet')
                           : Column(
-                              children: commits
-                                  .map(
-                                    (commit) => ListTile(
-                                      dense: true,
-                                      leading: const Icon(
-                                        Icons.commit,
-                                        size: AppIconSize.medium,
-                                      ),
-                                      title: Text(
-                                        commit.message,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      subtitle: Text(
-                                        commit.hash.substring(
-                                          0,
-                                          AppMetric.gitHashShortLength,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
+                              children: commits.map(_buildCommitTile).toList(),
                             ),
                     ),
                   ),
@@ -441,21 +437,53 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     );
   }
 
-  /// Handles `_buildFileSection`.
+  /// One recent commit: a solid primary-colored upload glyph marks a
+  /// commit still waiting to be pushed; the subtitle gives its short hash
+  /// and age, with the exact date on hover.
+  Widget _buildCommitTile(GitCommit commit) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return ListTile(
+      dense: true,
+      leading: commit.isUnpushed
+          ? Tooltip(
+              message: 'Not pushed yet',
+              child: Icon(
+                Icons.arrow_circle_up,
+                size: AppIconSize.medium,
+                color: primary,
+              ),
+            )
+          : const Icon(Icons.commit, size: AppIconSize.medium),
+      title: Text(
+        commit.message,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: commit.isUnpushed ? TextStyle(color: primary) : null,
+      ),
+      subtitle: Tooltip(
+        message: '${commit.date}',
+        waitDuration: AppDuration.tooltipWait,
+        child: Text(
+          '${commit.hash.substring(0, AppMetric.gitHashShortLength)}'
+          ' · ${commit.date.timeAgo()}',
+        ),
+      ),
+    );
+  }
+
+  /// A collapsible list of [files] titled [titleText]: each file is colored
+  /// by the change [kindOf] reports and shows its +/- line counts from
+  /// [stats], with the stage, unstage and discard actions that apply.
   Widget _buildFileSection(
-    ColorScheme _ /* colorScheme */,
-    Widget titleWidget,
+    String titleText,
     List<String> files, {
+    required GitFileStatus Function(String) kindOf,
+    required Map<String, GitDiffStats> stats,
     Function(List<String>)? onStage,
     Function(List<String>)? onUnstage,
     bool canDiscard = false,
     Function(List<String>)? onDiscard,
   }) {
-    // Extract title text from BadgeStatus widget
-    final String titleText = titleWidget is BadgeStatus
-        ? titleWidget.text
-        : 'FILES';
-
     // Build right widget with action buttons
     final rightWidget = Row(
       mainAxisSize: MainAxisSize.min,
@@ -492,12 +520,9 @@ class _GitPanelState extends ConsumerState<GitPanel> {
         final displayItem = FileSystemItem(
           path: item.path,
 
-          /// Handles `_getContextualFileName`.
           name: _getContextualFileName(file),
           type: item.type,
-
-          /// Handles `_determineGitStatus`.
-          gitStatus: _determineGitStatus(titleWidget, files),
+          gitStatus: kindOf(file),
         );
 
         final isSelected = widget.selectedFile?.path == item.path;
@@ -510,6 +535,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                 isSelected: isSelected,
                 showGitBadge: false,
                 rootPath: widget.projectPath,
+                trailing: DiffCounter(gitStats: stats[file]),
                 onTap: () => widget.onFileSelected?.call(item),
               ),
             ),
@@ -550,26 +576,6 @@ class _GitPanelState extends ConsumerState<GitPanel> {
       contentPadding: const EdgeInsets.only(bottom: AppSpacing.medium),
       child: contentWidget,
     );
-  }
-
-  /// Handles `_determineGitStatus`.
-  GitFileStatus _determineGitStatus(
-    Widget titleWidget,
-    List<String> _ /* files */,
-  ) {
-    // Extract status from BadgeStatus widget text
-    if (titleWidget is BadgeStatus) {
-      final text = titleWidget.text.toUpperCase();
-      if (text.contains('STAGED')) {
-        return GitFileStatus.added;
-      } else if (text.contains('CHANGES')) {
-        return GitFileStatus.modified;
-      } else if (text.contains('UNTRACKED')) {
-        return GitFileStatus.untracked;
-      }
-    }
-    // Fallback: determine from file lists but this shouldn't happen
-    return GitFileStatus.untracked;
   }
 
   /// Handles `_getContextualFileName`.
