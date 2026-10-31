@@ -16,7 +16,7 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.35.3'  # Use the latest stable version
+        flutter-version: '3.47.9'  # keep in step with the local SDK; pubspec needs Dart ^3.13.7
 
     - name: Get dependencies
       run: flutter pub get
