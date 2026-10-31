@@ -1,4 +1,7 @@
 import 'package:fide/providers/ai_service.dart';
+import 'package:fide/providers/arb_key_remover.dart';
+import 'package:fide/providers/arb_migrator.dart';
+import 'package:fide/providers/arb_translator.dart';
 import 'package:fide/providers/build_artifacts_inspector.dart';
 import 'package:fide/providers/code_formatter.dart';
 import 'package:fide/providers/code_review.dart';
@@ -18,6 +21,8 @@ import 'package:fide/providers/project_overview_service.dart';
 import 'package:fide/providers/project_search_service.dart';
 import 'package:fide/providers/project_service.dart';
 import 'package:fide/providers/project_tree_reader.dart';
+import 'package:fide/providers/string_constants_extractor.dart';
+import 'package:fide/providers/string_localizer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
@@ -57,6 +62,43 @@ final ollamaInstallerProvider = Provider<OllamaInstaller>(
 /// Provides the shared [LocalizationService] for project l10n setup.
 final localizationServiceProvider = Provider<LocalizationService>(
   (ref) => LocalizationService(ref.read(processRunnerProvider)),
+);
+
+/// Provides the [StringLocalizer] behind the Localize strings quick fix.
+final stringLocalizerProvider = Provider<StringLocalizer>(
+  (ref) => StringLocalizer(
+    ref.read(localizationServiceProvider),
+    ref.read(codeFormatterProvider),
+  ),
+);
+
+/// Provides the [ArbMigrator] behind the Migrate to ARB quick fix.
+final arbMigratorProvider = Provider<ArbMigrator>(
+  (ref) => ArbMigrator(
+    ref.read(processRunnerProvider),
+    ref.read(localizationServiceProvider),
+    ref.read(codeFormatterProvider),
+  ),
+);
+
+/// Provides the [ArbKeyRemover] behind the Remove unused keys quick fix.
+final arbKeyRemoverProvider = Provider<ArbKeyRemover>(
+  (ref) => ArbKeyRemover(ref.read(localizationServiceProvider)),
+);
+
+/// Provides the [ArbTranslator] behind Translate with AI and the
+/// Localization panel's per-key translation.
+final arbTranslatorProvider = Provider<ArbTranslator>(
+  (ref) => ArbTranslator(
+    ref.read(aiServiceProvider),
+    ref.read(localizationServiceProvider),
+  ),
+);
+
+/// Provides the [StringConstantsExtractor] behind the Make string
+/// constants quick fix.
+final stringConstantsExtractorProvider = Provider<StringConstantsExtractor>(
+  (ref) => StringConstantsExtractor(ref.read(codeFormatterProvider)),
 );
 
 /// Provides the [FlutterBuildService] that runs build, clean and pod commands.

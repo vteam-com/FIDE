@@ -26,6 +26,21 @@ void main() {
     );
   });
 
+  test('names its AI action and request with its verb', () {
+    const issue = QualityIssue(
+      label: 'Hardcoded strings',
+      findings: [finding],
+      aiVerb: 'Localize',
+    );
+
+    expect(issue.aiActionLabel, 'Localize with AI');
+    expect(issue.fixRequest, startsWith('Localize these "Hardcoded strings"'));
+    expect(
+      const QualityIssue(label: 'Magic numbers').aiActionLabel,
+      'Fix with AI',
+    );
+  });
+
   test('has no fix request without findings', () {
     const issue = QualityIssue(label: 'Missing pubspec.lock', guidance: 'x');
 

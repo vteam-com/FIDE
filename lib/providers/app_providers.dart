@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
@@ -10,11 +11,15 @@ import 'package:fide/models/open_documents.dart';
 import 'package:fide/models/project_metrics.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/project_overview.dart';
+import 'package:fide/models/quality_issue.dart';
+import 'package:fide/models/quality_issues.dart';
 import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/providers/project_service.dart';
 import 'package:fide/providers/project_state_sink.dart';
+import 'package:fide/providers/quick_fix_runner.dart';
 import 'package:fide/providers/reference_finder.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/providers/string_lookup_passer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -64,6 +69,30 @@ final referenceFinderProvider = Provider<ReferenceFinder?>((ref) {
   ref.onDispose(finder.dispose);
   return finder;
 });
+
+/// Provides the [StringLookupPasser] behind the Pass a lookup quick fix,
+/// resolving the open project.
+final stringLookupPasserProvider = Provider<StringLookupPasser>(
+  (ref) => StringLookupPasser(
+    ref.watch(referenceFinderProvider),
+    ref.read(localizationServiceProvider),
+    ref.read(codeFormatterProvider),
+  ),
+);
+
+/// Provides the [QuickFixRunner] behind the issue dialogs' quick fixes and
+/// the AI's `run_quick_fix` hook.
+final quickFixRunnerProvider = Provider<QuickFixRunner>(
+  (ref) => QuickFixRunner(
+    review: ref.read(codeReviewProvider),
+    localizer: ref.read(stringLocalizerProvider),
+    lookups: ref.watch(stringLookupPasserProvider),
+    extractor: ref.read(stringConstantsExtractorProvider),
+    translator: ref.read(arbTranslatorProvider),
+    migrator: ref.read(arbMigratorProvider),
+    keyRemover: ref.read(arbKeyRemoverProvider),
+  ),
+);
 
 /// Bumped each time the current project tree changes in place (Git status,
 /// file system events), so tree views rebuild even though the root object is
@@ -147,6 +176,21 @@ final projectOverviewProvider = FutureProvider<ProjectOverview?>((ref) {
   if (projectPath == null) return null;
   return ref.read(projectOverviewServiceProvider).load(projectPath);
 });
+
+/// The open project's hardcoded-string and localization issues, or null
+/// until the overview is analyzed.
+final stringIssuesProvider = Provider<List<QualityIssue>?>(
+  (ref) => ref.watch(projectOverviewProvider).value?.code.stringIssues,
+);
+
+/// The open project's string findings, flagged on the Localize tab; an
+/// issue without listed findings counts once.
+final stringIssueCountProvider = Provider<int>(
+  (ref) => (ref.watch(stringIssuesProvider) ?? const []).fold(
+    0,
+    (sum, issue) => sum + math.max(issue.findings.length, 1),
+  ),
+);
 
 /// The document showing in the editor, or null.
 final activeDocumentProvider = Provider<DocumentState?>(

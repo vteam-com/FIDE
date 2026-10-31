@@ -1047,7 +1047,7 @@
 <g class="packageMetadataPill"><title>Dart &gt;=3.13.0 &lt;4.0.0</title><rect x="420.0" y="427.0" width="94.0" height="9.0" rx="4.5" ry="4.5" class="packageMetadataPillShape"/><text x="467.0" y="432" class="packageLabelMetadata" text-anchor="middle" dominant-baseline="middle">Dart &gt;=3.13.0 &lt;4.0.0</text></g>
 <g class="platformBadge platformBadge--dart"><title>Dart SDK &gt;=3.13.0 &lt;4.0.0</title><rect x="453.0" y="411.0" width="28.0" height="13.0" rx="6.5" ry="6.5" fill="#0175c2" stroke="#0369a1" stroke-width="0.6"/><text x="467.0" y="417.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">Dart</text></g>
 <text x="467.0" y="392.0" class="packageLabelNodeName packageLabelCaption" text-anchor="middle">fcheck</text>
-<text x="467.0" y="405.0" class="packageLabelNodeVersion" text-anchor="middle">v1.6.0</text>
+<text x="467.0" y="405.0" class="packageLabelNodeVersion" text-anchor="middle">v1.6.1</text>
 </g>
 <g class="badge outgoingBadge">
   <path d="M 361.0,406.0 L 373.0,399.0 Q 376.0,399.0 376.0,402.0 L 376.0,410.0 Q 376.0,413.0 373.0,413.0 Z" fill="#10b981"/>

@@ -12,10 +12,12 @@
 - every text style lives in `AppTextStyle` (`lib/constants/constants.app_text_style.dart`), built on the `AppFontSize` scale; never write `TextStyle(...)`, `textTheme.*`, `fontSize:`, `fontWeight:` or line heights elsewhere — pick a style there and only add a state color with `copyWith(color: …)`; a missing style is added to that file
 - `fcheck --fix` can reformat unrelated files; revert changes it makes outside the task
 - fCheck (package `fcheck`, repo `../fcheck`) is the brain for analyzing Flutter/Dart projects; FIDE consumes its public API (`package:fcheck/fcheck.dart`) and never reimplements analysis
-  - when FIDE needs a new finding or metric, add it to fCheck first (it has its own users, so keep it general), then use it from FIDE
+  - never change fCheck's source (code, tests, docs) without the user's authorization: the user reviews every fCheck change
+  - when FIDE needs a new finding or metric, propose the fCheck change to the user first (it has its own users, so keep it general); only after they authorize it, add it to fCheck and use it from FIDE
   - never import `package:fcheck/src/...`; export what FIDE needs from fCheck instead
   - `AnalyzeFolder.analyze()` is synchronous: run it with `Isolate.run`
 - AI panel: when the user asks to fix or change code, the AI edits the project files (through `CodeEditAgent`); it never replies with code for the user to paste
+- prefer deterministic code refactorings (quick fixes) over sending work to the AI: the local model is too slow for mechanical changes; leave the AI only what code cannot decide or rewrite
 
 # Workflow
 

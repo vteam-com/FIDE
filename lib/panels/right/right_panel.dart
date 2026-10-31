@@ -5,7 +5,9 @@ import 'package:fide/panels/right/ai_panel.dart';
 import 'package:fide/panels/right/info_panel.dart';
 import 'package:fide/panels/right/localization/localization_panel.dart';
 import 'package:fide/panels/right/outline_panel.dart';
+import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/widgets/count_badge.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/panel_tabs.dart';
 import 'package:flutter/material.dart';
@@ -59,6 +61,7 @@ class _RightPanelState extends State<RightPanel>
     return Consumer(
       builder: (_, ref, _) {
         final activeTab = ref.watch(activeRightPanelTabProvider);
+        final stringIssueCount = ref.watch(stringIssueCountProvider);
 
         // Update TabController to match the provider
         if (_tabController.index != activeTab.index) {
@@ -73,7 +76,13 @@ class _RightPanelState extends State<RightPanel>
           },
           tabs: [
             for (final tab in RightPanelTab.values)
-              Tab(key: tab.key, icon: _buildTabIcon(tab)),
+              Tab(
+                key: tab.key,
+                icon: CountBadge(
+                  count: tab == RightPanelTab.localize ? stringIssueCount : 0,
+                  child: _buildTabIcon(tab),
+                ),
+              ),
           ],
           children: [for (final tab in RightPanelTab.values) _buildTab(tab)],
         );
@@ -96,7 +105,7 @@ class _RightPanelState extends State<RightPanel>
       RightPanelTab.localize => LocalizationPanel(
         selectedFile: widget.selectedFile,
       ),
-      RightPanelTab.ai => AIPanel(selectedFile: widget.selectedFile),
+      RightPanelTab.ai => const AIPanel(),
       RightPanelTab.info => const InfoPanel(),
     };
   }

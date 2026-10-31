@@ -2,17 +2,12 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/ai_action.dart';
-import 'package:fide/models/file_system_item.dart';
-import 'package:fide/models/output_log.dart';
+import 'package:fide/models/chat_message.dart';
 import 'package:fide/models/relative_time.dart';
-import 'package:fide/models/text_truncation.dart';
+import 'package:fide/providers/ai_chat_notifier.dart';
 import 'package:fide/providers/ai_service.dart';
-import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/code_edit_agent.dart';
-import 'package:fide/providers/flutter_build_service.dart';
 import 'package:fide/providers/ollama_installer.dart';
 import 'package:fide/providers/service_providers.dart';
-import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/empty_state.dart';
@@ -24,15 +19,12 @@ import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart' as p;
 
-part 'ai_panel.chat_message.dart';
-
-/// Represents `AIPanel`.
+/// The AI assistant: the Ollama setup, the chat of [aiChatProvider],
+/// which outlives this panel, and the prompt input.
 class AIPanel extends ConsumerStatefulWidget {
-  const AIPanel({super.key, this.selectedFile});
-
-  final FileSystemItem? selectedFile;
+  /// Creates the panel.
+  const AIPanel({super.key});
 
   @override
   ConsumerState<AIPanel> createState() => _AIPanelState();
@@ -40,24 +32,15 @@ class AIPanel extends ConsumerStatefulWidget {
 
 class _AIPanelState extends ConsumerState<AIPanel> {
   late final AIService _aiService = ref.read(aiServiceProvider);
-
-  /// The agent editing files for the pending request, if any.
-  CodeEditAgent? _agent;
   late final OllamaInstaller _ollama = ref.read(ollamaInstallerProvider);
   bool _hasModelInstalled = false;
   bool _hasOllamaInstalled = false;
   bool _isCheckingStatus = true;
   bool _isInstalling = false;
-  bool _isLoading = false;
   bool _isOllamaRunning = false;
-  final List<ChatMessage> _messages = [];
   final TextEditingController _promptController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  /// Bumped per request and by [_cancel], so a stopped request's late
-  /// reply is dropped.
-  int _requestId = 0;
-  AiAction _selectedAction = AiAction.ask;
   @override
   void initState() {
     super.initState();
@@ -65,10 +48,8 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     /// Handles `_checkStatus`.
     _checkStatus();
 
-    // A request made before this panel was shown
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _sendRequest(ref.read(aiRequestProvider)),
-    );
+    // Back to the latest message of a chat kept while the panel was hidden
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToEnd());
   }
 
   @override
@@ -80,9 +61,13 @@ class _AIPanelState extends ConsumerState<AIPanel> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<String?>(
-      aiRequestProvider,
-      (_, request) => _sendRequest(request),
+    final chat = ref.watch(aiChatProvider);
+    final messages = chat.messages;
+    final notifier = ref.read(aiChatProvider.notifier);
+    ref.listen(
+      aiChatProvider.select((chat) => chat.messages.length),
+      (_, _) =>
+          WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToEnd()),
     );
     return Container(
       color: Theme.of(context).colorScheme.surfaceContainerLow,
@@ -91,7 +76,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
           // Header with action selector
 
           // Setup instructions if no messages and not all ready
-          if (_messages.isEmpty &&
+          if (messages.isEmpty &&
               !(_hasOllamaInstalled && _isOllamaRunning && _hasModelInstalled))
             Padding(
               padding: const EdgeInsets.all(AppSpacing.medium),
@@ -104,16 +89,16 @@ class _AIPanelState extends ConsumerState<AIPanel> {
 
           // Chat area
           Expanded(
-            child: _messages.isEmpty
+            child: messages.isEmpty
                 ? const EmptyState(
                     message: 'Start a conversation with the AI assistant',
                   )
                 : ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.all(AppSpacing.medium),
-                    itemCount: _messages.length,
+                    itemCount: messages.length,
                     itemBuilder: (_ /*context*/, index) {
-                      final message = _messages[index];
+                      final message = messages[index];
 
                       /// Handles `_buildMessageBubble`.
                       return _buildMessageBubble(message);
@@ -122,6 +107,17 @@ class _AIPanelState extends ConsumerState<AIPanel> {
           ),
           Divider(),
           PopupMenuButton<AiAction>(
+            itemBuilder: (_) => [
+              for (final action in AiAction.values)
+                PopupMenuItem(
+                  value: action,
+                  child: IconMenuRow(
+                    icon: action == chat.action ? Icons.check : null,
+                    label: action.label,
+                  ),
+                ),
+            ],
+            onSelected: notifier.selectAction,
             child: Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.xLarge,
@@ -129,7 +125,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
               ),
               child: Row(
                 children: [
-                  Text(_selectedAction.label),
+                  Text(chat.action.label),
                   const Spacer(),
                   if (_hasModelInstalled)
                     Flexible(
@@ -146,19 +142,6 @@ class _AIPanelState extends ConsumerState<AIPanel> {
                 ],
               ),
             ),
-            itemBuilder: (_) => [
-              for (final action in AiAction.values)
-                PopupMenuItem(
-                  value: action,
-                  child: IconMenuRow(
-                    icon: action == _selectedAction ? Icons.check : null,
-                    label: action.label,
-                  ),
-                ),
-            ],
-            onSelected: (value) {
-              setState(() => _selectedAction = value);
-            },
           ),
           // Input area
           Padding(
@@ -171,28 +154,28 @@ class _AIPanelState extends ConsumerState<AIPanel> {
                   // line; Escape stops the pending reply
                   child: CallbackShortcuts(
                     bindings: {
-                      const SingleActivator(LogicalKeyboardKey.enter):
-                          _sendUnlessLoading,
-                      const SingleActivator(LogicalKeyboardKey.escape): _cancel,
+                      const SingleActivator(LogicalKeyboardKey.enter): _send,
+                      const SingleActivator(LogicalKeyboardKey.escape):
+                          notifier.cancel,
                     },
                     child: AppTextField(
                       controller: _promptController,
-                      hintText: _selectedAction.hint,
+                      hintText: chat.action.hint,
                       maxLines: AppMetric.aiInputMaxLines,
                       minLines: 1,
                     ),
                   ),
                 ),
 
-                if (_isLoading) const InlineSpinner(),
-                _isLoading
+                if (chat.isBusy) const InlineSpinner(),
+                chat.isBusy
                     ? IconButton(
-                        onPressed: _cancel,
+                        onPressed: notifier.cancel,
                         icon: const Icon(Icons.stop_circle_outlined),
                         tooltip: 'Stop (Esc)',
                       )
                     : IconButton(
-                        onPressed: _sendMessage,
+                        onPressed: _send,
                         icon: const Icon(Icons.send),
                         tooltip: 'Send',
                       ),
@@ -395,231 +378,23 @@ class _AIPanelState extends ConsumerState<AIPanel> {
       ? '${_aiService.model} (${OllamaInstaller.model} not available)'
       : _aiService.model;
 
-  /// Content of the selected file for the model, empty when none is
-  /// selected.
-  Future<String> _selectedFileContext() async {
-    final file = widget.selectedFile;
-    if (file == null) return '';
-    try {
-      return (await file.readAsString()).truncated(
-        AppMetric.aiContextPreviewChars,
-      );
-    } catch (_) {
-      return 'Could not read file content';
-    }
-  }
-
-  /// fcheck's findings for the project at [projectPath] that the review
-  /// [action] needs, with the code they point to.
-  Future<String> _reviewFindings(AiAction action, String projectPath) async {
-    final review = ref.read(codeReviewProvider);
-    _addReply('🔍 Analyzing the project with fcheck...', isProgress: true);
-    final isDry = action == AiAction.dryReview;
-    final metrics = await review.analyze(projectPath, nearDuplicates: isDry);
-    return isDry ? review.duplicates(metrics) : review.design(metrics);
-  }
-
-  /// Stops the pending reply: aborts the model request and the agent's
-  /// edits, and frees the input for the next prompt.
-  void _cancel() {
-    if (!_isLoading) return;
-    (_agent?.cancel ?? _aiService.cancel)();
-    _agent = null;
-    _requestId++;
-    setState(() => _isLoading = false);
-    _addReply('⏹ Stopped.', isProgress: true);
-  }
-
-  /// Sends [request] from another panel, such as an issue's Fix, as an
-  /// Ask AI prompt so the agent edits the files; left waiting while a reply
-  /// is pending.
-  void _sendRequest(String? request) {
-    if (request == null || _isLoading || !mounted) return;
-    ref.read(aiRequestProvider.notifier).state = null;
-    setState(() => _selectedAction = AiAction.ask);
-    _promptController.text = request;
-    _sendMessage();
-  }
-
-  /// Sends the prompt from the keyboard, ignored while a reply is pending
-  /// like the disabled Send button.
-  void _sendUnlessLoading() {
-    if (!_isLoading) _sendMessage();
-  }
-
-  /// Adds a model message showing [content] and scrolls to it;
-  /// [isProgress] keeps it out of the history sent to the model.
-  void _addReply(String content, {bool isProgress = false}) {
-    if (!mounted) return;
-    setState(() {
-      _messages.add(
-        ChatMessage(
-          content: content,
-          isUser: false,
-          isProgress: isProgress,
-          timestamp: DateTime.now(),
-        ),
-      );
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: AppDuration.messageAnimation,
-        curve: Curves.easeOut,
-      );
-    });
-  }
-
-  /// The chat before the latest user message, without progress lines, as
-  /// Ollama messages: the last [AppMetric.aiChatHistoryMessages], each cut
-  /// to [AppMetric.aiMaxReadChars].
-  List<Map<String, String>> _chatHistory() {
-    final earlier = _messages
-        .take(_messages.length - 1)
-        .where((message) => !message.isProgress)
-        .toList();
-    return [
-      for (final message in earlier.skip(
-        (earlier.length - AppMetric.aiChatHistoryMessages).clamp(
-          0,
-          earlier.length,
-        ),
-      ))
-        {
-          'role': message.isUser ? 'user' : 'assistant',
-          'content': message.content.truncated(AppMetric.aiMaxReadChars),
-        },
-    ];
-  }
-
-  /// [text] with the path of the file open in the editor, relative to
-  /// [projectPath], so "this file" in the request can be resolved.
-  String _withSelectedFile(String text, String projectPath) {
-    final file = widget.selectedFile;
-    if (file == null) return text;
-    return '$text\n\n(The file open in the editor is '
-        '${p.relative(file.path, from: projectPath)}.)';
-  }
-
-  /// An agent that edits the project at [projectPath], reporting its steps
-  /// in the chat and rebuilding for the platform selected in the Execute
-  /// panel; kept in [_agent] so [_cancel] can stop it.
-  ///
-  /// Providers are read up front because the edit can outlive this panel.
-  CodeEditAgent _editAgent(String projectPath) {
-    final buildService = ref.read(flutterBuildServiceProvider);
-    final target = ref.read(selectedPlatformProvider).name;
-    final lastBuildErrors = ref.read(lastBuildErrorsProvider.notifier);
-    final openDocuments = ref.read(openDocumentsProvider.notifier);
-    return _agent = CodeEditAgent(
-      _aiService,
-      projectPath: projectPath,
-      hooks: CodeEditHooks(
-        onStep: (step) => _addReply('🔧 $step', isProgress: true),
-        onFileWritten: (path) => openDocuments.reloadWritten([path]),
-        checkBuild: () async {
-          final log = OutputLog();
-          final exitCode = await buildService.build(
-            projectPath,
-            target,
-            BuildOutput(
-              onOutput: log.addOutput,
-              onError: log.addError,
-              onResetErrors: log.clearErrors,
-            ),
-          );
-          final buildErrors = exitCode == 0
-              ? ''
-              : (log.hasErrors ? log.errors : log.output);
-          lastBuildErrors.state = buildErrors;
-          return buildErrors;
-        },
-      ),
+  /// Scrolls the chat to its latest message.
+  void _scrollToEnd() {
+    if (!mounted || !_scrollController.hasClients) return;
+    _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: AppDuration.messageAnimation,
+      curve: Curves.easeOut,
     );
   }
 
-  /// Sends the prompt for the selected action and shows the reply.
-  ///
-  /// Actions that [AiAction.editsFiles] change the open project's files
-  /// themselves, with the earlier chat as context; with no project open, or
-  /// a model that can't call tools, they only suggest changes. After a
-  /// review the panel switches to Ask AI, so the next message, like "fix
-  /// 1", acts on the review.
-  Future<void> _sendMessage() async {
+  /// Sends the prompt, ignored while a reply is pending like the disabled
+  /// Send button.
+  void _send() {
+    final chat = ref.read(aiChatProvider.notifier);
+    if (ref.read(aiChatProvider).isBusy) return;
     final text = _promptController.text.trim();
-    final action = _selectedAction;
-    final buildErrors = ref.read(lastBuildErrorsProvider);
-    final projectPath = ref.read(currentProjectPathProvider);
-    // Fix Build needs no prompt when the last build left errors to send;
-    // reviews send fcheck's findings
-    final canSendEmpty =
-        (action == AiAction.fixBuild && buildErrors.isNotEmpty) ||
-        action.isReview;
-    if (text.isEmpty && !canSendEmpty) return;
-
-    final requestId = ++_requestId;
-    bool isStopped() => requestId != _requestId;
-    setState(() {
-      _messages.add(
-        ChatMessage(
-          content: text.isEmpty ? action.label : text,
-          isUser: true,
-          timestamp: DateTime.now(),
-        ),
-      );
-      _isLoading = true;
-    });
-
     _promptController.clear();
-
-    // Models without tool calling can only suggest changes
-    final canEditFiles = projectPath != null && _aiService.supportsTools;
-    if (action.editsFiles && projectPath != null && !canEditFiles) {
-      _addReply(
-        "${_aiService.model} can't call tools, so it can only suggest "
-        'changes. Download ${OllamaInstaller.model} to let it edit files.',
-        isProgress: true,
-      );
-    }
-
-    try {
-      if (action.isReview && projectPath == null) {
-        _addReply('Open a project to review it.');
-        return;
-      }
-      final response = switch (action) {
-        AiAction.fixBuild when canEditFiles => await _editAgent(
-          projectPath,
-        ).fixBuild(buildErrors, text),
-        _ when action.editsFiles && canEditFiles => await _editAgent(
-          projectPath,
-        ).edit(_withSelectedFile(text, projectPath), _chatHistory()),
-        _ => await _aiService.respond(action, text, switch (action) {
-          AiAction.fixBuild => buildErrors.truncated(
-            AppMetric.aiContextPreviewChars,
-          ),
-          _ when action.isReview => await _reviewFindings(action, projectPath!),
-          _ => await _selectedFileContext(),
-        }),
-      };
-      if (isStopped()) return;
-      _addReply(response.trim().isEmpty ? 'No suggestion available' : response);
-      if (action.isReview && mounted) {
-        setState(() => _selectedAction = AiAction.ask);
-        _addReply(
-          'Switched to ${AiAction.ask.label}: say what to fix, e.g. '
-          '"fix 1 and 3", and the changes are made in the files.',
-          isProgress: true,
-        );
-      }
-    } catch (e) {
-      if (!isStopped()) _addReply('Error: $e');
-    } finally {
-      if (!isStopped()) {
-        _agent = null;
-        if (mounted) setState(() => _isLoading = false);
-      }
-    }
+    chat.send(text);
   }
 }

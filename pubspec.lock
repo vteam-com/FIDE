@@ -173,10 +173,10 @@ packages:
     dependency: "direct main"
     description:
       name: fcheck
-      sha256: "3e9550cc01c17888495aff2543ab8b06133d2e656d795c099639a333d7676620"
+      sha256: "7fa9d398118338fccc58b9adb59c2c67841433a12add7ba3235db35226f4d7ca"
       url: "https://pub.dev"
     source: hosted
-    version: "1.6.0"
+    version: "1.6.1"
   ffi:
     dependency: transitive
     description:

@@ -18,7 +18,7 @@ import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/busy_icon_button.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
-import 'package:fide/widgets/issue_row.dart';
+import 'package:fide/widgets/issue_section.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/open_url.dart';
@@ -477,27 +477,13 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         ),
     ];
 
-    return SectionPanel(
+    return IssueSection(
       title: 'Score',
+      issues: issues,
+      emptyLabel: 'No issues detected',
       rightWidget: Clickable(
         onTap: () => _showScoreDetails(context, health),
         child: BadgeStatus.score(health.qualityScore),
-      ),
-
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.large),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: AppSpacing.tiny,
-          children: [
-            if (issues.isEmpty)
-              StatusIndicator.tone(
-                StatusTone.success,
-                label: 'No issues detected',
-              ),
-            for (final issue in issues) IssueRow(issue),
-          ],
-        ),
       ),
     );
   }

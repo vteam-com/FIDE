@@ -315,8 +315,42 @@ $changes''', AppDuration.aiGenerateTimeout);
         .split('\n')
         .map((line) => line.trim())
         .firstWhere((line) => line.isNotEmpty, orElse: () => '');
-    return line.replaceAll(RegExp(r'''^[`"']+|[`"']+$'''), '');
+    return _unquoted(line);
   }
+
+  /// [texts], app interface texts in English, translated into [language]
+  /// by the model in one request, keeping every `{placeholder}`; the same
+  /// number of items, empty for each text without a usable reply.
+  ///
+  /// The model only sees the texts, never the files, so a short list stays
+  /// fast on a local model. Throws an [AiServiceException] when the
+  /// request fails.
+  Future<List<String>> translateAll(List<String> texts, String language) async {
+    final response = await _generate('''
+Translate each string of this JSON array of app interface texts from English to $language.
+Keep every {placeholder} exactly as written. Reply with only a JSON array of the translations, in the same order and with the same number of items.
+
+${jsonEncode(texts)}''', AppDuration.aiGenerateTimeout);
+    final reply = response.replaceAll(RegExp(r'<think>[\s\S]*?</think>'), '');
+    final start = reply.indexOf('[');
+    final end = reply.lastIndexOf(']');
+    final none = List.filled(texts.length, '');
+    if (start < 0 || end < start) return none;
+    try {
+      final Object? decoded = jsonDecode(reply.substring(start, end + 1));
+      if (decoded is! List || decoded.length != texts.length) return none;
+      return [
+        for (final item in decoded)
+          item is String ? _unquoted(item.trim()) : '',
+      ];
+    } on FormatException {
+      return none;
+    }
+  }
+
+  /// [text] without the quotes or backticks a model wraps replies in.
+  static String _unquoted(String text) =>
+      text.replaceAll(RegExp(r'''^[`"']+|[`"']+$'''), '');
 
   /// Requests a plain-language explanation for the provided source code.
   Future<String> explainCode(String code) async {

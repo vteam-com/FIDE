@@ -40,26 +40,42 @@ class _ReferenceWorker {
   int _modificationStamp = 0;
 
   /// Isolate entry: sends a request port through `args.$1`, then answers
-  /// each `(filePath, line, column, newName, replyPort)` request: with the
-  /// `List<SearchResult>` uses when `newName` is null, else with the
-  /// renamed files' `Map<String, String>` contents; or an error message.
+  /// each `(request, replyPort)`: a `(filePath, line, column, newName)`
+  /// request with the `List<SearchResult>` uses when `newName` is null,
+  /// else with the renamed files' `Map<String, String>` contents; a
+  /// `(filePath, offset)` one with its [LookupField]; a `(contents,
+  /// action)` one with null when they compile; or with an error message.
   static void main((SendPort, String, String) args) {
     final (ready, projectPath, sdkPath) = args;
     final worker = _ReferenceWorker(projectPath, sdkPath);
     final requests = ReceivePort();
     ready.send(requests.sendPort);
     requests.listen((message) {
-      final (filePath, line, column, newName, reply) =
-          message as (String, int, int, String?, SendPort);
+      final (request, reply) = message as (Object, SendPort);
       worker._queue = worker._queue.then((_) async {
         try {
           await worker._refresh();
-          final target = await worker._targetAt(filePath, line, column);
-          reply.send(
-            newName == null
-                ? await worker._find(target)
-                : await worker._rename(target, newName),
-          );
+          reply.send(switch (request) {
+            (final String filePath, final int line, final int column, null) =>
+              await worker._find(
+                await worker._targetAt(filePath, line, column),
+              ),
+            (
+              final String filePath,
+              final int line,
+              final int column,
+              final String newName,
+            ) =>
+              await worker._rename(
+                await worker._targetAt(filePath, line, column),
+                newName,
+              ),
+            (final String filePath, final int offset) =>
+              await worker._lookupField(filePath, offset),
+            (final Map<String, String> contents, final String action) =>
+              await worker._checkCompiles(contents, action).then((_) => null),
+            _ => throw ArgumentError.value(request, 'request'),
+          });
         } catch (e) {
           reply.send('$e');
         }
@@ -116,7 +132,7 @@ class _ReferenceWorker {
           newName,
         ),
     };
-    await _checkCompiles(renamed);
+    await _checkCompiles(renamed, 'Renaming');
     return renamed;
   }
 
@@ -145,8 +161,12 @@ class _ReferenceWorker {
   };
 
   /// Throws, leaving the analysis as it was, when [contents] would give any
-  /// of their files more compile errors than it has now.
-  Future<void> _checkCompiles(Map<String, String> contents) async {
+  /// of their files more compile errors than it has now; [action] names
+  /// the change in the message.
+  Future<void> _checkCompiles(
+    Map<String, String> contents,
+    String action,
+  ) async {
     final before = {
       for (final path in contents.keys) path: (await _errorsIn(path)).length,
     };
@@ -167,7 +187,7 @@ class _ReferenceWorker {
     }
     if (problems.isNotEmpty) {
       throw StateError(
-        'Renaming would break the build, so nothing was changed:\n'
+        '$action would break the build, so nothing was changed:\n'
         '${problems.join('\n')}',
       );
     }
@@ -214,18 +234,9 @@ class _ReferenceWorker {
     required bool renaming,
   }) async {
     final element = target.element;
-    // Private names can only be used inside their library
-    final candidates = element.isPrivate
-        ? [
-            for (final fragment in element.library!.fragments)
-              fragment.source.fullName,
-          ]
-        : _modified.keys.where(
-            (path) => File(path).readAsStringSync().contains(target.name),
-          );
     final declaration = target.declaration;
     final uses = <String, ({String content, List<_Use> uses})>{};
-    for (final path in candidates) {
+    for (final path in _candidatePaths(element, target.name)) {
       final unit = await _resolvedUnit(path);
       if (unit == null) continue;
       final fileUses = _UsageVisitor.usesOf(
@@ -242,6 +253,18 @@ class _ReferenceWorker {
     }
     return uses;
   }
+
+  /// The files that may use [element], named [name]: its library's for a
+  /// private name, else every analyzed file mentioning [name].
+  Iterable<String> _candidatePaths(Element element, String name) =>
+      element.isPrivate
+      ? [
+          for (final fragment in element.library!.fragments)
+            fragment.source.fullName,
+        ]
+      : _modified.keys.where(
+          (path) => File(path).readAsStringSync().contains(name),
+        );
 
   /// Tells the analysis about Dart files added, changed or deleted since
   /// the last request.

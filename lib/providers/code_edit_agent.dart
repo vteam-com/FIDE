@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/project_files.dart';
+import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/text_truncation.dart';
 import 'package:fide/providers/ai_service.dart';
 import 'package:path/path.dart' as p;
@@ -91,6 +92,25 @@ class CodeEditAgent {
             : errors.truncated(AppMetric.aiMaxReadChars);
       },
     ),
+    if (hooks.runQuickFix case final runQuickFix?)
+      AiSkill(
+        name: 'run_quick_fix',
+        description:
+            'Has FIDE do a whole-project fix itself, faster and safer than '
+            'editing files: ${[for (final fix in QuickFix.values) '${fix.name} ${fix.purpose}'].join('; ')}. '
+            'Returns what it changed and what it left for you.',
+        parameters: {
+          'name': 'One of ${QuickFix.values.map((fix) => fix.name).join(', ')}',
+        },
+        run: (args) {
+          final name = _argument(args, 'name');
+          final fix = QuickFix.values
+              .where((fix) => fix.name == name)
+              .firstOrNull;
+          if (fix == null) throw FormatException('Unknown quick fix "$name"');
+          return runQuickFix(fix);
+        },
+      ),
   ];
 
   /// Files under [folder] (relative to [projectPath]), one relative path
@@ -153,7 +173,8 @@ class CodeEditAgent {
         'call check_build and fix any errors you caused. Reply with a short '
         'summary naming each file you changed. When the user only asks a '
         'question, answer it without editing. Paths are relative to the '
-        'project root.',
+        'project root.'
+        '${hooks.runQuickFix == null ? '' : ' For hardcoded strings, localization, translations or string constants, call run_quick_fix first, then edit by hand only what it left.'}',
     [
       ...history,
       {'role': 'user', 'content': request},

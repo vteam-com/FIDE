@@ -7,12 +7,16 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/file_system/overlay_file_system.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
+import 'package:fide/models/lookup_field.dart';
 import 'package:fide/models/search_result.dart';
 import 'package:fide/providers/compile_errors.dart';
 import 'package:fide/providers/flutter_sdk.dart';
+import 'package:path/path.dart' as p;
 
+part 'reference_finder.lookup_fields.dart';
 part 'reference_finder.reference_worker.dart';
 part 'reference_finder.usage_visitor.dart';
 
@@ -52,6 +56,26 @@ class ReferenceFinder {
     return response as List<SearchResult>;
   }
 
+  /// The `String` field the argument starting at [offset] of [filePath]
+  /// fills through a `this.` parameter, with every value passed to it and
+  /// every read of it in the project, for it to become a lookup function.
+  ///
+  /// Throws, saying why, when the argument fills no such field, or the
+  /// field is read where no `BuildContext` is or is assigned.
+  Future<LookupField> lookupField({
+    required String filePath,
+    required int offset,
+  }) async {
+    final response = await _request((filePath, offset));
+    return response as LookupField;
+  }
+
+  /// Throws, saying what breaks, when [contents] would give any of their
+  /// files more compile errors than it has now; [action] names the change,
+  /// such as `Renaming`. Nothing is written.
+  Future<void> checkCompiles(Map<String, String> contents, String action) =>
+      _request((contents, action));
+
   /// New contents of every file that renaming the declaration at [line]
   /// and [column] of [filePath] to [newName] changes: the declaration and
   /// each use (for a field, also its `this.` parameters and their named
@@ -71,11 +95,10 @@ class ReferenceFinder {
 
   /// Sends [request] to the worker and returns its answer, throwing the
   /// error message it answers with instead.
-  Future<Object?> _request((String, int, int, String?) request) async {
+  Future<Object?> _request(Object request) async {
     final worker = await (_worker ??= _spawn());
     final reply = ReceivePort();
-    final (filePath, line, column, newName) = request;
-    worker.send((filePath, line, column, newName, reply.sendPort));
+    worker.send((request, reply.sendPort));
     final response = await reply.first;
     reply.close();
     if (response is String) throw Exception(response);

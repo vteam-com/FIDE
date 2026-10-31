@@ -10,7 +10,7 @@ import 'package:fide/providers/process_runner.dart';
 /// edits are formatted along with everything else.
 class CodeFormatter {
   /// Indentation used for JSON and ARB files.
-  static const String _jsonIndent = '  ';
+  static const String jsonIndent = '  ';
 
   /// The file types [format] handles, for messages.
   static const String supportedDescription = 'Dart, JSON, and ARB';
@@ -36,7 +36,7 @@ class CodeFormatter {
   /// so the project's language version still applies.
   Future<String> format(String filePath, String content) async {
     if (_jsonExtensions.contains(FileTypeUtils.extensionOf(filePath))) {
-      return JsonEncoder.withIndent(_jsonIndent).convert(jsonDecode(content));
+      return JsonEncoder.withIndent(jsonIndent).convert(jsonDecode(content));
     }
     final result = await _runner.runWithInput('dart', [
       'format',
@@ -46,5 +46,15 @@ class CodeFormatter {
       throw Exception(result.stderr.toString().trim());
     }
     return result.stdout as String;
+  }
+
+  /// [content] formatted like [format], or unchanged when it cannot be,
+  /// so generated edits are still saved.
+  Future<String> formatOrKeep(String filePath, String content) async {
+    try {
+      return await format(filePath, content);
+    } on Exception {
+      return content;
+    }
   }
 }

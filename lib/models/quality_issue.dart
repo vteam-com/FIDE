@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/quality_issue.quality_finding.dart';
+import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/models/text_truncation.dart';
 import 'package:path/path.dart' as p;
@@ -15,7 +16,14 @@ class QualityIssue {
     this.guidance,
     this.findings = const [],
     this.rootPath,
+    this.quickFixes = const [],
+    this.aiVerb = 'Fix',
   });
+
+  /// What the AI agent does to the findings, such as `Localize`; it starts
+  /// the AI action's label ([aiActionLabel]) and its request
+  /// ([fixRequest]); null when the issue offers no agent request.
+  final String? aiVerb;
 
   /// Where the issue was found, in order.
   final List<QualityFinding> findings;
@@ -25,6 +33,9 @@ class QualityIssue {
 
   /// What is wrong, with its count or score impact.
   final String label;
+
+  /// The fixes FIDE applies itself, without AI.
+  final List<QuickFix> quickFixes;
 
   /// The project folder [findings] are listed relative to.
   final String? rootPath;
@@ -36,9 +47,9 @@ class QualityIssue {
   /// project files, following [guidance]; null when there is nothing in
   /// the code to fix.
   String? get fixRequest {
-    if (findings.isEmpty) return null;
+    if (findings.isEmpty || aiVerb == null) return null;
     final request = StringBuffer(
-      'Fix these "$label" findings by editing the project files.\n',
+      '$aiVerb these "$label" findings by editing the project files.\n',
     );
     if (guidance case final guidance?) {
       request.writeln('Follow this best practice:\n$guidance');
@@ -52,8 +63,14 @@ class QualityIssue {
     return request.toString().truncated(AppMetric.aiReviewContextChars);
   }
 
-  /// Whether there is more to show than [label]: guidance or findings.
-  bool get hasDetails => guidance != null || findings.isNotEmpty;
+  /// The label of the action sending [fixRequest], such as
+  /// `Localize with AI`.
+  String? get aiActionLabel => aiVerb == null ? null : '$aiVerb with AI';
+
+  /// Whether there is more to show than [label]: guidance, findings or
+  /// quick fixes.
+  bool get hasDetails =>
+      guidance != null || findings.isNotEmpty || quickFixes.isNotEmpty;
 
   /// The path of [finding], relative to [rootPath] when given.
   String shownPath(QualityFinding finding) {

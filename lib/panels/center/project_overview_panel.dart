@@ -1,4 +1,3 @@
-import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/locale_number.dart';
@@ -65,10 +64,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
               : '${missing.localized} missing translations',
         ],
       ],
-      issues: [
-        ?overview.code.issueFor(fcheck.AnalyzerDomain.hardcodedStrings),
-        ?overview.code.issueFor(fcheck.AnalyzerDomain.localization),
-      ],
+      issues: overview.code.stringIssues,
     );
   }
 

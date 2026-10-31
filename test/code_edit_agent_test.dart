@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fide/models/quick_fix.dart';
 import 'package:fide/providers/ai_service.dart';
 import 'package:fide/providers/code_edit_agent.dart';
 import 'package:fide/providers/flutter_sdk.dart';
@@ -189,5 +190,36 @@ void main() {
     final agent = agentReplying([]);
 
     expect(await agent.listFiles('.'), p.join('lib', 'main.dart'));
+  });
+
+  test('runs FIDE quick fixes through run_quick_fix', () async {
+    final ran = <QuickFix>[];
+    final agent = CodeEditAgent(
+      AIService(const _NoSdk(), MockClient((_) async => _answer(''))),
+      projectPath: project.path,
+      hooks: CodeEditHooks(
+        onStep: (_) {},
+        onFileWritten: (_) async {},
+        checkBuild: () async => '',
+        runQuickFix: (fix) async {
+          ran.add(fix);
+          return 'Made constants of 3 strings in 1 files';
+        },
+      ),
+    );
+    final skill = agent.skills.singleWhere(
+      (skill) => skill.name == 'run_quick_fix',
+    );
+
+    expect(
+      await skill.run({'name': 'makeConstants'}),
+      'Made constants of 3 strings in 1 files',
+    );
+    expect(ran, [QuickFix.makeConstants]);
+    expect(() => skill.run({'name': 'rewriteAll'}), throwsFormatException);
+    expect(
+      agentReplying([]).skills.map((skill) => skill.name),
+      isNot(contains('run_quick_fix')),
+    );
   });
 }

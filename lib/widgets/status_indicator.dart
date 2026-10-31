@@ -37,13 +37,7 @@ class StatusIndicator extends StatelessWidget {
       spacing: AppSpacing.medium,
       children: [
         Icon(icon, size: AppIconSize.medium, color: color),
-        if (text != null)
-          Flexible(
-            child: Text(
-              text,
-              style: AppTextStyle.captionStrong.copyWith(color: color),
-            ),
-          ),
+        if (text != null) Flexible(child: Text(text, style: labelStyle(color))),
       ],
     );
   }
@@ -61,4 +55,8 @@ class StatusIndicator extends StatelessWidget {
       label: showLabel ? status.resultLabel : null,
     );
   }
+
+  /// The style of a status label drawn in [color].
+  static TextStyle labelStyle(Color color) =>
+      AppTextStyle.captionStrong.copyWith(color: color);
 }

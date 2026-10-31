@@ -41,7 +41,3 @@ final referenceSearchProvider = StateProvider<ReferenceSearch?>(
 final projectSearchRequestProvider = StateProvider<String?>(
   (_ /*ref*/) => null,
 );
-
-/// A prompt waiting to be sent by the AI panel, such as an issue's Fix
-/// request; the panel clears it once sent.
-final aiRequestProvider = StateProvider<String?>((_ /*ref*/) => null);

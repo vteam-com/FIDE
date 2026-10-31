@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/arb_translation.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/localization_checks.dart';
 import 'package:fide/models/localization_data.dart';
@@ -8,7 +9,6 @@ import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/panels/right/localization/localization_entry_widget.dart';
 import 'package:fide/panels/right/localization/localization_setup_widget.dart';
-import 'package:fide/providers/ai_service.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/localization_service.dart';
@@ -18,6 +18,7 @@ import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/filter_field.dart';
+import 'package:fide/widgets/issue_section.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
@@ -55,7 +56,6 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
   late final LocalizationService _localizationService = ref.read(
     localizationServiceProvider,
   );
-  late final AIService _aiService = ref.read(aiServiceProvider);
   final TextEditingController _filterController = TextEditingController();
   String _filterQuery = '';
 
@@ -325,7 +325,32 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       );
     }
 
-    // Show status-based UI
+    // The ARB files may have changed, e.g. after Localize strings
+    ref.listen(stringIssuesProvider, (previous, next) {
+      if (previous != null && next != null) _loadArbFiles();
+    });
+
+    final statusView = _buildStatusContent();
+    final issues = ref.watch(stringIssuesProvider);
+    if (issues == null) return statusView;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: AppPadding.panelContent,
+          child: IssueSection(
+            title: 'Strings',
+            issues: issues,
+            emptyLabel: 'Every string is localized',
+          ),
+        ),
+        Expanded(child: statusView),
+      ],
+    );
+  }
+
+  /// The view for the current [_localizationStatus].
+  Widget _buildStatusContent() {
     switch (_localizationStatus) {
       case LocalizationStatus.checking:
         return const LoadingIndicator();
@@ -344,11 +369,13 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           Icons.flutter_dash,
         );
       case LocalizationStatus.notStarted:
-        return LocalizationSetupWidget(
-          onInitializeLocalization: _initializeLocalization,
-          showUpdateMainDart: false, // Not needed for initial setup
-          onUpdateMainDart: _updateMainDart,
-          isInitializing: _isLoading,
+        return SingleChildScrollView(
+          child: LocalizationSetupWidget(
+            onInitializeLocalization: _initializeLocalization,
+            showUpdateMainDart: false, // Not needed for initial setup
+            onUpdateMainDart: _updateMainDart,
+            isInitializing: _isLoading,
+          ),
         );
       case LocalizationStatus.partial:
 
@@ -700,49 +727,34 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     );
   }
 
-  /// Handles `_translateMissingKey`.
+  /// Translates [key] from [englishValue] into [targetLanguage] with the
+  /// shared [ArbTranslator], writing it to [targetFilePath].
   Future<void> _translateMissingKey(
     String key,
     String englishValue,
     String targetLanguage,
     String targetFilePath,
   ) async {
+    final projectPath = ref.read(currentProjectPathProvider);
+    if (projectPath == null) return;
     try {
-      final prompt =
-          '''
-Translate the following English text to $targetLanguage:
-
-"$englishValue"
-
-Provide only the translated text, no additional explanation or quotes.''';
-
-      final translation = await _aiService.getCodeSuggestion(prompt, '');
-
-      if (translation.trim().isNotEmpty) {
-        await _arbService.updateArbFile(
-          targetFilePath,
-          key,
-          translation.trim(),
-          metadata: {'description': 'Translated using AI'},
-        );
-
-        await _loadArbFiles();
-
-        if (mounted) {
-          MessageBox.showSuccess(
-            context,
-            'Translated "$key" to $targetLanguage',
-          );
-        }
+      final result = await ref.read(arbTranslatorProvider).apply(projectPath, [
+        ArbTranslation(
+          key: key,
+          source: englishValue,
+          language: targetLanguage,
+          arbPath: targetFilePath,
+        ),
+      ]);
+      await _loadArbFiles();
+      if (!mounted) return;
+      if (result.rewritten > 0) {
+        MessageBox.showSuccess(context, 'Translated "$key" to $targetLanguage');
       } else {
-        if (mounted) {
-          MessageBox.showError(context, 'Translation failed');
-        }
+        MessageBox.showError(context, 'Translation failed: ${result.summary}');
       }
     } catch (e) {
-      if (mounted) {
-        MessageBox.showError(context, 'Error translating: $e');
-      }
+      if (mounted) MessageBox.showError(context, 'Error translating: $e');
     }
   }
 }

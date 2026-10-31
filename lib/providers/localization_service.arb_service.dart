@@ -21,6 +21,10 @@ class ArbService {
     }
   }
 
+  /// [json] as ARB file content, indented like the editor's Format.
+  static String encode(Map<String, dynamic> json) =>
+      '${const JsonEncoder.withIndent(CodeFormatter.jsonIndent).convert(json)}\n';
+
   /// Number of translatable entries (keys not starting with `@`) in ARB
   /// [content], or null when it isn't valid.
   static int? countEntries(String content) {
@@ -148,27 +152,5 @@ class ArbService {
     }
 
     return comparisons;
-  }
-
-  /// Updates or inserts a key (and optional metadata) in an ARB file.
-  Future<void> updateArbFile(
-    String path,
-    String key,
-    String value, {
-    Map<String, dynamic>? metadata,
-  }) async {
-    final file = File(path);
-    final json = decode(await file.readAsString());
-    if (json == null) {
-      throw Exception('ARB file $path does not contain a valid JSON object');
-    }
-
-    json[key] = value;
-    if (metadata != null) {
-      json['@$key'] = metadata;
-    }
-
-    final updatedContent = jsonEncode(json);
-    await file.writeAsString(updatedContent);
   }
 }

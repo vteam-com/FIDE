@@ -12,6 +12,7 @@ import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/pubspec.dart';
 import 'package:fide/models/text_truncation.dart';
+import 'package:fide/providers/code_formatter.dart';
 import 'package:fide/providers/process_runner.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;

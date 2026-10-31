@@ -15,6 +15,10 @@ class AppMetric {
   static const int aiReviewContextChars = 40000;
   static const int aiReviewContextTokens = 16384;
   static const int aiReviewMaxItems = 15;
+
+  /// Texts translated per model request: small enough to stay fast on a
+  /// local model, large enough to save round trips.
+  static const int aiTranslateBatch = 20;
   static const int aiReviewMinLiteralChars = 3;
   static const int aiReviewDuplicateMinLines = 6;
   static const double aiReviewDuplicateSimilarity = 0.75;
