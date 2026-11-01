@@ -83,7 +83,7 @@ class NativeMenuBuilder {
         ),
         PlatformMenuItem(
           label: 'Settings',
-          shortcut: const SingleActivator(LogicalKeyboardKey.comma, meta: true),
+          shortcut: AppShortcut.settings,
           onSelected: onShowSettings,
         ),
         PlatformMenuItem(
@@ -174,20 +174,14 @@ class NativeMenuBuilder {
           members: [
             PlatformMenuItem(
               label: 'Save',
-              shortcut: const SingleActivator(
-                LogicalKeyboardKey.keyS,
-                meta: true,
-              ),
+              shortcut: AppShortcut.save,
               onSelected: () {
                 onSave();
               },
             ),
             PlatformMenuItem(
               label: 'Close Document',
-              shortcut: const SingleActivator(
-                LogicalKeyboardKey.keyW,
-                meta: true,
-              ),
+              shortcut: AppShortcut.closeDocument,
               onSelected: () {
                 onCloseDocument();
               },
@@ -205,7 +199,7 @@ class NativeMenuBuilder {
       menus: [
         PlatformMenuItem(
           label: 'Find',
-          shortcut: const SingleActivator(LogicalKeyboardKey.keyF, meta: true),
+          shortcut: AppShortcut.find,
           onSelected: () {
             onFind();
           },
@@ -248,47 +242,41 @@ class NativeMenuBuilder {
     return PlatformMenu(
       label: 'View',
       menus: [
-        for (final (label, digit, visible, expanded) in [
+        for (final (label, shortcut, visible, expanded) in [
           (
             'Panel Left',
-            LogicalKeyboardKey.digit1,
+            AppShortcut.panelLeft,
             leftPanelVisibleProvider,
             leftPanelExpandedProvider,
           ),
           (
             'Panel Bottom',
-            LogicalKeyboardKey.digit2,
+            AppShortcut.panelBottom,
             bottomPanelVisibleProvider,
             bottomPanelExpandedProvider,
           ),
           (
             'Panel Right',
-            LogicalKeyboardKey.digit3,
+            AppShortcut.panelRight,
             rightPanelVisibleProvider,
             rightPanelExpandedProvider,
           ),
         ])
           PlatformMenuItem(
             label: '$label: Hide, Min, Max',
-            shortcut: SingleActivator(digit, meta: true),
+            shortcut: shortcut,
             onSelected: () => cyclePanelSize(ref, visible, expanded),
           ),
         PlatformMenuItemGroup(
           members: [
             PlatformMenuItem(
               label: 'Next Left Panel Tab',
-              shortcut: const SingleActivator(
-                LogicalKeyboardKey.digit1,
-                control: true,
-              ),
+              shortcut: AppShortcut.nextLeftPanelTab,
               onSelected: () => nextLeftPanelTab(ref),
             ),
             PlatformMenuItem(
               label: 'Next Right Panel Tab',
-              shortcut: const SingleActivator(
-                LogicalKeyboardKey.digit3,
-                control: true,
-              ),
+              shortcut: AppShortcut.nextRightPanelTab,
               onSelected: () => nextRightPanelTab(ref),
             ),
           ],
@@ -314,50 +302,13 @@ class NativeMenuBuilder {
         ),
         PlatformMenuItemGroup(
           members: [
-            PlatformMenuItem(
-              label: 'Explorer',
-              shortcut: const SingleActivator(
-                LogicalKeyboardKey.keyE,
-                meta: true,
-                shift: true,
-              ),
-              onSelected: () {
-                onSwitchPanel(LeftPanelTab.folder);
-              },
-            ),
-            PlatformMenuItem(
-              label: 'Organized',
-              shortcut: const SingleActivator(
-                LogicalKeyboardKey.keyJ,
-                meta: true,
-                shift: true,
-              ),
-              onSelected: () {
-                onSwitchPanel(LeftPanelTab.organized);
-              },
-            ),
-            PlatformMenuItem(
-              label: 'Git',
-              shortcut: const SingleActivator(
-                LogicalKeyboardKey.keyG,
-                control: true,
-                shift: true,
-              ),
-              onSelected: () {
-                onSwitchPanel(LeftPanelTab.git);
-              },
-            ),
-            PlatformMenuItem(
-              label: 'Search',
-              shortcut: const SingleActivator(
-                LogicalKeyboardKey.keyF,
-                meta: true,
-                shift: true,
-              ),
-              onSelected: () {
-                onSwitchPanel(LeftPanelTab.search);
-              },
-            ),
+            for (final tab in LeftPanelTab.values)
+              if (tab.shortcut case final shortcut?)
+                PlatformMenuItem(
+                  label: tab.label,
+                  shortcut: shortcut,
+                  onSelected: () => onSwitchPanel(tab),
+                ),
           ],
         ),
       ],

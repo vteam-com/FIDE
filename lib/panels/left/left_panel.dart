@@ -110,12 +110,17 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
       showTabBar: widget.projectLoaded,
       tabs: [
         for (final tab in LeftPanelTab.values)
-          Tab(
-            key: tab.key,
-            icon: CountBadge(
-              count: tab == LeftPanelTab.git ? gitChangeCount : 0,
-              child: Icon(
-                _tabController.index == tab.index ? tab.selectedIcon : tab.icon,
+          Tooltip(
+            message: tab.tooltip,
+            child: Tab(
+              key: tab.key,
+              icon: CountBadge(
+                count: tab == LeftPanelTab.git ? gitChangeCount : 0,
+                child: Icon(
+                  _tabController.index == tab.index
+                      ? tab.selectedIcon
+                      : tab.icon,
+                ),
               ),
             ),
           ),

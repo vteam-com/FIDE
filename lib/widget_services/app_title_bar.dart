@@ -5,6 +5,7 @@ import 'dart:math';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/project_menu_action.dart';
+import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/clickable.dart';
@@ -179,6 +180,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
         _panelToggle(
           'Left',
           'left',
+          AppShortcut.panelLeft,
           widget.leftPanelVisible,
           widget.onToggleLeftPanel,
           colorScheme,
@@ -186,6 +188,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
         _panelToggle(
           'Bottom',
           'bottom',
+          AppShortcut.panelBottom,
           widget.bottomPanelVisible,
           widget.onToggleBottomPanel,
           colorScheme,
@@ -193,6 +196,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
         _panelToggle(
           'Right',
           'right',
+          AppShortcut.panelRight,
           widget.rightPanelVisible,
           widget.onToggleRightPanel,
           colorScheme,
@@ -202,10 +206,12 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
   }
 
   /// The toggle for the [label] panel, whose asset and key use [side];
-  /// highlighted while [visible].
+  /// highlighted while [visible]. Its tooltip names the [shortcut] that
+  /// cycles the panel through Hide, Min and Max.
   Widget _panelToggle(
     String label,
     String side,
+    SingleActivator shortcut,
     bool visible,
     VoidCallback? onPressed,
     ColorScheme colorScheme,
@@ -222,7 +228,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
         ),
       ),
       onPressed: onPressed,
-      tooltip: 'Toggle $label Panel',
+      tooltip: ShortcutHelpEntry.tooltip('Toggle $label Panel', shortcut),
     );
   }
 
@@ -232,7 +238,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     return IconButton(
       icon: const Icon(Icons.settings, size: AppIconSize.mediumLarge),
       onPressed: widget.onToggleSettings,
-      tooltip: 'Settings',
+      tooltip: ShortcutHelpEntry.tooltip('Settings', AppShortcut.settings),
       style: IconButton.styleFrom(
         foregroundColor: onSurface.withValues(alpha: AppOpacity.prominent),
       ),

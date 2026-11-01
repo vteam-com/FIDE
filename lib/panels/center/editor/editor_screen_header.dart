@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/document_state.dart';
+import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/widget_services/diff_counter.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
@@ -121,19 +122,22 @@ class EditorScreenHeader extends StatelessWidget {
           key: const Key('keyEditorFind'),
           icon: const Icon(Icons.search),
           onPressed: showDiffView ? null : onToggleSearch,
-          tooltip: 'Find (Cmd+F)',
+          tooltip: ShortcutHelpEntry.tooltip('Find', AppShortcut.find),
         ),
         IconButton(
           key: const Key('keyEditorSave'),
           icon: const Icon(Icons.download),
           onPressed: isDirty ? onSave : null,
-          tooltip: 'Save',
+          tooltip: ShortcutHelpEntry.tooltip('Save', AppShortcut.save),
         ),
         IconButton(
           key: const Key('keyEditorClose'),
           icon: const Icon(Icons.close),
           onPressed: onClose,
-          tooltip: 'Close Editor',
+          tooltip: ShortcutHelpEntry.tooltip(
+            'Close Editor',
+            AppShortcut.closeDocument,
+          ),
         ),
       ],
     );

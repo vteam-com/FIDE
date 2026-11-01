@@ -65,6 +65,12 @@ class ShortcutHelpEntry {
     return entries;
   }
 
+  /// The tooltip of a button running [label], followed by its [shortcut]
+  /// when it has one, such as `Settings (⌘,)`.
+  static String tooltip(String label, [SingleActivator? shortcut]) {
+    return shortcut == null ? label : '$label (${format(shortcut)})';
+  }
+
   /// [activator] as macOS menus show it, such as `⇧⌘O`.
   static String format(SingleActivator activator) {
     return [

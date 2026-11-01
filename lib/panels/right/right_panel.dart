@@ -76,11 +76,14 @@ class _RightPanelState extends State<RightPanel>
           },
           tabs: [
             for (final tab in RightPanelTab.values)
-              Tab(
-                key: tab.key,
-                icon: CountBadge(
-                  count: tab == RightPanelTab.localize ? stringIssueCount : 0,
-                  child: _buildTabIcon(tab),
+              Tooltip(
+                message: tab.tooltip,
+                child: Tab(
+                  key: tab.key,
+                  icon: CountBadge(
+                    count: tab == RightPanelTab.localize ? stringIssueCount : 0,
+                    child: _buildTabIcon(tab),
+                  ),
                 ),
               ),
           ],
