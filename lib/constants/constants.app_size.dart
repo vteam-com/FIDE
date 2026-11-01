@@ -15,6 +15,9 @@ class AppSize {
   /// Height the bottom panel always leaves the editor above it, enough for
   /// its header, find bar, status bar and a few lines.
   static const double editorMinHeight = 240;
+
+  /// Width expanded side panels always leave the editor between them.
+  static const double editorMinWidth = 320;
   static const double folderPanelFallbackHeight = 400;
   static const double compactIconButton = 24;
   static const double platformDetailLabelWidth = 70;

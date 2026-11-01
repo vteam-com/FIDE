@@ -19,6 +19,12 @@ void main() {
       '⌃⌥⇧⌘G',
     );
     expect(ShortcutHelpEntry.format(AppShortcut.openFile), '⇧⌘O');
+    expect(
+      ShortcutHelpEntry.format(
+        const SingleActivator(LogicalKeyboardKey.tab, control: true),
+      ),
+      '⌃⇥',
+    );
   });
 
   test('lists menu items with shortcuts, groups included, with aliases', () {

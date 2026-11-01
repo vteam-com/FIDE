@@ -5,6 +5,10 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   double _explorerWidth = AppSize.initialSidePanelWidth;
   double _outlineWidth = AppSize.initialSidePanelWidth;
 
+  /// Widths the side panels had in the last layout, expanded or not.
+  double _shownExplorerWidth = AppSize.initialSidePanelWidth;
+  double _shownOutlineWidth = AppSize.initialSidePanelWidth;
+
   VoidCallback? _refreshOutlineCallback;
 
   String? _lastSelectedFilePath;
@@ -24,22 +28,72 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     _refreshOutlineCallback = callback;
   }
 
+  /// Resizes the left panel as its splitter moves [delta] right.
   void _onResize(double delta) {
     setState(() {
-      _explorerWidth = (_explorerWidth + delta).clamp(
-        AppSize.minSidePanelWidth,
-        AppSize.maxSidePanelWidth,
+      _explorerWidth = _dragged(
+        _explorerWidth,
+        _shownExplorerWidth,
+        leftPanelExpandedProvider,
+        delta,
       );
     });
   }
 
+  /// Resizes the right panel as its splitter moves [delta] right.
   void _onOutlineResize(double delta) {
     setState(() {
-      _outlineWidth = (_outlineWidth - delta).clamp(
-        AppSize.minSidePanelWidth,
-        AppSize.maxSidePanelWidth,
+      _outlineWidth = _dragged(
+        _outlineWidth,
+        _shownOutlineWidth,
+        rightPanelExpandedProvider,
+        -delta,
       );
     });
+  }
+
+  /// A side panel's [width] after its splitter moves [delta] wider; an
+  /// [expanded] panel, [shownWidth] wide, stops being expanded and grows
+  /// from that width.
+  double _dragged(
+    double width,
+    double shownWidth,
+    StateProvider<bool> expanded,
+    double delta,
+  ) {
+    var start = width;
+    if (ref.read(expanded)) {
+      ref.read(expanded.notifier).state = false;
+      start = shownWidth;
+    }
+    return (start + delta).clamp(
+      AppSize.minSidePanelWidth,
+      AppSize.maxSidePanelWidth,
+    );
+  }
+
+  /// Lays out the side panels in [availableWidth]: expanded ones share
+  /// what the others leave, keeping [AppSize.editorMinWidth] for the
+  /// editor, up to [AppSize.maxSidePanelWidth] each. A hidden panel is
+  /// neither shown nor expanded.
+  void _fitSidePanels(
+    double availableWidth, {
+    required bool leftShown,
+    required bool rightShown,
+    required bool leftExpanded,
+    required bool rightExpanded,
+  }) {
+    final fixedWidth =
+        (leftShown && !leftExpanded ? _explorerWidth : 0) +
+        (rightShown && !rightExpanded ? _outlineWidth : 0);
+    final expandedCount = (leftExpanded ? 1 : 0) + (rightExpanded ? 1 : 0);
+    final expandedWidth = expandedCount == 0
+        ? 0.0
+        : ((availableWidth - AppSize.editorMinWidth - fixedWidth) /
+                  expandedCount)
+              .clamp(AppSize.minSidePanelWidth, AppSize.maxSidePanelWidth);
+    _shownExplorerWidth = leftExpanded ? expandedWidth : _explorerWidth;
+    _shownOutlineWidth = rightExpanded ? expandedWidth : _outlineWidth;
   }
 
   /// Opens [filePath] in the editor and scrolls to 1-based [line].
@@ -61,6 +115,11 @@ class MainLayoutState extends ConsumerState<MainLayout> {
       }
     });
 
+    final leftShown = projectLoaded && ref.watch(leftPanelVisibleProvider);
+    final rightShown = ref.watch(rightPanelVisibleProvider);
+    final leftExpanded = leftShown && ref.watch(leftPanelExpandedProvider);
+    final rightExpanded = rightShown && ref.watch(rightPanelExpandedProvider);
+
     // Panels float as islands on the window-wide workspace gradient; the
     // splitters between them double as the gaps
     return Scaffold(
@@ -72,60 +131,73 @@ class MainLayoutState extends ConsumerState<MainLayout> {
           AppSize.islandGap,
           AppSize.islandGap,
         ),
-        child: Row(
-          children: [
-            if (projectLoaded && ref.watch(leftPanelVisibleProvider)) ...[
-              SizedBox(
-                width: _explorerWidth,
-                child: PanelIsland(
-                  child: LeftPanel(
+        child: LayoutBuilder(
+          builder: (_ /*context*/, constraints) {
+            _fitSidePanels(
+              constraints.maxWidth,
+              leftShown: leftShown,
+              rightShown: rightShown,
+              leftExpanded: leftExpanded,
+              rightExpanded: rightExpanded,
+            );
+            return Row(
+              children: [
+                if (leftShown) ...[
+                  SizedBox(
+                    width: _shownExplorerWidth,
+                    child: PanelIsland(
+                      child: LeftPanel(
+                        selectedFile: selectedFile,
+                        currentProjectPath: currentProjectPath,
+                        projectLoaded: projectLoaded,
+                        onFileSelected: (file) {
+                          ref.read(selectedFileProvider.notifier).state = file;
+                        },
+                        onJumpToLine: _jumpToLine,
+                      ),
+                    ),
+                  ),
+                  ResizableSplitter(onResize: _onResize),
+                ],
+                Expanded(
+                  child: CenterPanel(
                     selectedFile: selectedFile,
-                    currentProjectPath: currentProjectPath,
                     projectLoaded: projectLoaded,
-                    onFileSelected: (file) {
-                      ref.read(selectedFileProvider.notifier).state = file;
-                    },
-                    onJumpToLine: _jumpToLine,
-                  ),
-                ),
-              ),
-              ResizableSplitter(onResize: _onResize),
-            ],
-            Expanded(
-              child: CenterPanel(
-                selectedFile: selectedFile,
-                projectLoaded: projectLoaded,
-                mruFolders: mruFolders,
-                terminalVisible: ref.watch(bottomPanelVisibleProvider),
-                onOpenFolder: widget.onOpenFolder,
-                onOpenMruProject: widget.onOpenProject,
-                onRemoveMruEntry: ref.read(mruFoldersProvider.notifier).remove,
-                onContentChanged: _refreshOutlineCallback,
-                onClose: () {
-                  ref.read(selectedFileProvider.notifier).state = null;
-                  ref.read(openDocumentsProvider.notifier).deactivate();
-                },
-              ),
-            ),
-            if (ref.watch(rightPanelVisibleProvider)) ...[
-              ResizableSplitter(onResize: _onOutlineResize),
-              SizedBox(
-                width: _outlineWidth,
-                child: PanelIsland(
-                  child: RightPanel(
-                    selectedFile: selectedFile,
-                    onOutlineUpdate: _setOutlineRefreshCallback,
-                    onJumpToLine: _jumpToLine,
-                    onOutlineNodeSelected: (int line, int column) {
-                      ref
-                          .read(activeEditorProvider)
-                          .navigateToLine(line, column: column);
+                    mruFolders: mruFolders,
+                    terminalVisible: ref.watch(bottomPanelVisibleProvider),
+                    onOpenFolder: widget.onOpenFolder,
+                    onOpenMruProject: widget.onOpenProject,
+                    onRemoveMruEntry: ref
+                        .read(mruFoldersProvider.notifier)
+                        .remove,
+                    onContentChanged: _refreshOutlineCallback,
+                    onClose: () {
+                      ref.read(selectedFileProvider.notifier).state = null;
+                      ref.read(openDocumentsProvider.notifier).deactivate();
                     },
                   ),
                 ),
-              ),
-            ],
-          ],
+                if (rightShown) ...[
+                  ResizableSplitter(onResize: _onOutlineResize),
+                  SizedBox(
+                    width: _shownOutlineWidth,
+                    child: PanelIsland(
+                      child: RightPanel(
+                        selectedFile: selectedFile,
+                        onOutlineUpdate: _setOutlineRefreshCallback,
+                        onJumpToLine: _jumpToLine,
+                        onOutlineNodeSelected: (int line, int column) {
+                          ref
+                              .read(activeEditorProvider)
+                              .navigateToLine(line, column: column);
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
         ),
       ),
     );

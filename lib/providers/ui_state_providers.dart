@@ -11,6 +11,16 @@ final leftPanelVisibleProvider = StateProvider<bool>((_ /*ref*/) => true);
 final bottomPanelVisibleProvider = StateProvider<bool>((_ /*ref*/) => false);
 final rightPanelVisibleProvider = StateProvider<bool>((_ /*ref*/) => true);
 
+/// Whether each panel is expanded to its largest size; restoring it brings
+/// back the size it had.
+final leftPanelExpandedProvider = StateProvider<bool>((_ /*ref*/) => false);
+final bottomPanelExpandedProvider = StateProvider<bool>((_ /*ref*/) => false);
+final rightPanelExpandedProvider = StateProvider<bool>((_ /*ref*/) => false);
+
+/// Whether the tab picked last is the right panel's rather than the left
+/// panel's: the one cycling panel tabs moves on from.
+final rightPanelTabPickedProvider = StateProvider<bool>((_ /*ref*/) => false);
+
 /// Theme mode provider (moved from app_providers.dart for better organization)
 final themeModeProvider = StateProvider<ThemeMode>(
   (_ /*ref*/) => ThemeMode.system,

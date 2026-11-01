@@ -79,34 +79,38 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   }
 
   /// Reloads status, recent commits, whether the last commit can be
-  /// amended, and what there is to push or pull.
+  /// amended, and what there is to push or pull; stops once the panel is
+  /// gone, as switching tabs disposes it mid-load.
   Future<void> _loadGitData() async {
-    await ref.read(gitStatusProvider.notifier).loadStatus(widget.projectPath);
-    await ref.read(gitCommitsProvider.notifier).loadCommits(widget.projectPath);
+    if (!mounted) return;
     final git = ref.read(gitServiceProvider);
+    final commits = ref.read(gitCommitsProvider.notifier);
+    await ref.read(gitStatusProvider.notifier).loadStatus(widget.projectPath);
+    if (!mounted) return;
+    final status = ref.read(gitStatusProvider).value;
+    await commits.loadCommits(widget.projectPath);
     final canAmend = await git.canAmend(widget.projectPath);
     final counts = await git.syncCounts(widget.projectPath);
-    final status = ref.read(gitStatusProvider).value;
     final stats = status == null
         ? null
         : await git.getChangeStats(widget.projectPath, status);
-    if (mounted) {
-      setState(() {
-        _stagedStats = stats?.staged ?? {};
-        _unstagedStats = stats?.unstaged ?? {};
-        _canAmend = canAmend;
-        _ahead = counts.ahead;
-        _behind = counts.behind;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _stagedStats = stats?.staged ?? {};
+      _unstagedStats = stats?.unstaged ?? {};
+      _canAmend = canAmend;
+      _ahead = counts.ahead;
+      _behind = counts.behind;
+    });
   }
 
   /// Reloads the panel, then fetches from the remote and reloads again so
   /// Pull shows commits that arrived there; the fetch needs the network,
   /// so only opening the panel and Refresh run it.
   Future<void> _refresh() async {
+    final git = ref.read(gitServiceProvider);
     await _loadGitData();
-    if (await ref.read(gitServiceProvider).fetch(widget.projectPath)) {
+    if (mounted && await git.fetch(widget.projectPath)) {
       await _loadGitData();
     }
   }
@@ -160,11 +164,11 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   /// changes.
   Future<void> _writeCommitMessage() async {
     setState(() => _isWritingMessage = true);
+    final git = ref.read(gitServiceProvider);
+    final ai = ref.read(aiServiceProvider);
     try {
-      final diff = await ref
-          .read(gitServiceProvider)
-          .getStagedDiff(widget.projectPath);
-      final message = await ref.read(aiServiceProvider).commitMessage(diff);
+      final diff = await git.getStagedDiff(widget.projectPath);
+      final message = await ai.commitMessage(diff);
       if (mounted && message.isNotEmpty) _commitController.text = message;
     } catch (e) {
       if (mounted) MessageBox.showError(context, 'AI commit message: $e');
@@ -219,7 +223,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
       confirmLabel: 'Discard',
     );
 
-    if (!confirmed) return;
+    if (!confirmed || !mounted) return;
 
     await _runGitAction((git) => git.discardChanges(widget.projectPath, files));
   }

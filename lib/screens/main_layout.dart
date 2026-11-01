@@ -13,6 +13,7 @@ import 'package:fide/widgets/panel_island.dart';
 import 'package:fide/widgets/resizable_splitter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:path/path.dart' as p;
 
 part 'main_layout.state.dart';

@@ -5,6 +5,7 @@ import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/left_panel_tab.dart';
 import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/screens/create_project_screen.dart';
 import 'package:fide/screens/loading_screen.dart';
@@ -18,6 +19,7 @@ import 'package:fide/widgets/goto_line_dialog.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 
@@ -136,8 +138,18 @@ class _FIDEState extends ConsumerState<FIDE> {
   @override
   void initState() {
     super.initState();
+    HardwareKeyboard.instance.addHandler(_handlePanelTabKeys);
     _initializeApp();
   }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handlePanelTabKeys);
+    super.dispose();
+  }
+
+  /// Runs [handlePanelTabKeys] before any focused widget sees [event].
+  bool _handlePanelTabKeys(KeyEvent event) => handlePanelTabKeys(ref, event);
 
   /// Initializes app services, restores settings, and attempts MRU auto-load.
   Future<void> _initializeApp() async {

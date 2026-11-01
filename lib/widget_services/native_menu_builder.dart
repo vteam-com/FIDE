@@ -2,7 +2,9 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/left_panel_tab.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/git_service.dart';
+import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -279,6 +281,60 @@ class NativeMenuBuilder {
           onSelected: () {
             onToggleRightPanel();
           },
+        ),
+        PlatformMenuItemGroup(
+          members: [
+            PlatformMenuItem(
+              label: 'Expand or Restore Panel Left',
+              shortcut: const SingleActivator(
+                LogicalKeyboardKey.digit1,
+                alt: true,
+              ),
+              onSelected: () => togglePanelExpanded(
+                ref,
+                leftPanelVisibleProvider,
+                leftPanelExpandedProvider,
+              ),
+            ),
+            PlatformMenuItem(
+              label: 'Expand or Restore Panel Bottom',
+              shortcut: const SingleActivator(
+                LogicalKeyboardKey.digit2,
+                alt: true,
+              ),
+              onSelected: () => togglePanelExpanded(
+                ref,
+                bottomPanelVisibleProvider,
+                bottomPanelExpandedProvider,
+              ),
+            ),
+            PlatformMenuItem(
+              label: 'Expand or Restore Panel Right',
+              shortcut: const SingleActivator(
+                LogicalKeyboardKey.digit3,
+                alt: true,
+              ),
+              onSelected: () => togglePanelExpanded(
+                ref,
+                rightPanelVisibleProvider,
+                rightPanelExpandedProvider,
+              ),
+            ),
+          ],
+        ),
+        PlatformMenuItemGroup(
+          members: [
+            PlatformMenuItem(
+              label: 'Next Panel Tab',
+              shortcut: AppShortcut.nextPanelTab,
+              onSelected: () => cyclePanelTabs(ref),
+            ),
+            PlatformMenuItem(
+              label: 'Previous Panel Tab',
+              shortcut: AppShortcut.previousPanelTab,
+              onSelected: () => cyclePanelTabs(ref, backward: true),
+            ),
+          ],
         ),
         PlatformMenuItemGroup(
           members: [

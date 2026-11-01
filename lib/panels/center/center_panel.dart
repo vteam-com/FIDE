@@ -5,6 +5,7 @@ import 'package:fide/panels/center/editor/editor_screen.dart';
 import 'package:fide/panels/center/project_overview_panel.dart';
 import 'package:fide/panels/center/terminal_panel.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/panel_island.dart';
 import 'package:fide/widgets/resizable_splitter.dart';
 import 'package:flutter/material.dart';
@@ -46,7 +47,14 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
   /// [AppSize.editorMinHeight].
   double _maxTerminalHeight = AppSize.bottomPanelMaxHeight;
 
+  /// Resizes the terminal by its splitter's [delta]; an expanded terminal
+  /// stops being expanded and resizes from its expanded height.
   void _onTerminalResize(double delta) {
+    final expanded = bottomPanelExpandedProvider;
+    if (ref.read(expanded)) {
+      ref.read(expanded.notifier).state = false;
+      _terminalHeight = _maxTerminalHeight;
+    }
     setState(() {
       _terminalHeight = (_terminalHeight - delta).clamp(
         AppSize.terminalMinHeight,
@@ -56,18 +64,21 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
   }
 
   /// The terminal's height in a center panel [availableHeight] tall: the
-  /// dragged height, shrunk so the editor keeps [AppSize.editorMinHeight].
-  double _fitTerminalHeight(double availableHeight) {
+  /// dragged height, or the tallest when [expanded], shrunk so the editor
+  /// keeps [AppSize.editorMinHeight].
+  double _fitTerminalHeight(double availableHeight, {required bool expanded}) {
     _maxTerminalHeight = (availableHeight - AppSize.editorMinHeight).clamp(
       AppSize.terminalMinHeight,
       AppSize.bottomPanelMaxHeight,
     );
+    if (expanded) return _maxTerminalHeight;
     return _terminalHeight.clamp(AppSize.terminalMinHeight, _maxTerminalHeight);
   }
 
   @override
   Widget build(BuildContext context) {
     final DocumentState? activeDocument = ref.watch(activeDocumentProvider);
+    final terminalExpanded = ref.watch(bottomPanelExpandedProvider);
 
     // Determine the main content to display
     Widget mainContent;
@@ -93,7 +104,10 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
 
             // Terminal at bottom
             SizedBox(
-              height: _fitTerminalHeight(constraints.maxHeight),
+              height: _fitTerminalHeight(
+                constraints.maxHeight,
+                expanded: terminalExpanded,
+              ),
               child: PanelIsland(
                 child: ColoredBox(
                   color: Theme.of(context).colorScheme.surfaceContainerLow,
