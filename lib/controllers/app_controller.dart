@@ -21,6 +21,7 @@ class AppController {
   /// Initialize the app theme and MRU folders (callable from widget context)
   Future<void> initializeAppServices() async {
     await _initializeTheme();
+    await _initializeZoom();
     await _loadMruFolders();
   }
 
@@ -62,6 +63,17 @@ class AppController {
     }
   }
 
+  /// Restores the UI zoom from shared preferences.
+  Future<void> _initializeZoom() async {
+    final SharedPreferences prefs = await ref.read(
+      sharedPreferencesProvider.future,
+    );
+    final savedZoom = prefs.getDouble(PrefKeys.zoom);
+    if (savedZoom != null) {
+      ref.read(zoomProvider.notifier).state = savedZoom;
+    }
+  }
+
   /// Load MRU folders, dropping ones that no longer exist
   Future<void> _loadMruFolders() {
     return ref.read(mruFoldersProvider.notifier).load();
@@ -75,6 +87,24 @@ class AppController {
     );
     await prefs.setString(PrefKeys.themeMode, themeMode.name);
   }
+
+  /// Zooms the whole UI to [zoom] and persists it for the next launch.
+  Future<void> setZoom(double zoom) async {
+    ref.read(zoomProvider.notifier).state = zoom;
+    final SharedPreferences prefs = await ref.read(
+      sharedPreferencesProvider.future,
+    );
+    await prefs.setDouble(PrefKeys.zoom, zoom);
+  }
+
+  /// Enlarges the UI one zoom level.
+  Future<void> zoomIn() => setZoom(AppZoom.larger(ref.read(zoomProvider)));
+
+  /// Shrinks the UI one zoom level.
+  Future<void> zoomOut() => setZoom(AppZoom.smaller(ref.read(zoomProvider)));
+
+  /// Returns the UI to its actual size.
+  Future<void> resetZoom() => setZoom(AppZoom.actualSize);
 }
 
 final appControllerProvider = Provider<AppController>((ref) {

@@ -16,4 +16,7 @@ class PrefKeys {
 
   /// Theme mode name: `light`, `dark` or `system`.
   static const String themeMode = 'theme_mode';
+
+  /// Zoom of the whole UI, `1` for actual size.
+  static const String zoom = 'zoom';
 }

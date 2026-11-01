@@ -3,13 +3,15 @@ import 'package:fide/controllers/app_controller.dart';
 import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// The full-screen settings: the display mode, then the keyboard shortcuts
+/// The full-screen settings: the display mode and zoom, then the keyboard shortcuts
 /// of the app's menus. Escape or the close button leaves it.
 class SettingsScreen extends ConsumerStatefulWidget {
   /// Creates the settings listing the shortcuts of [menus].
@@ -97,6 +99,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ],
                       ),
                     ),
+                    OutlinedSurface(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text('Zoom', style: AppTextStyle.body),
+                          ),
+                          _buildZoomButtons(),
+                        ],
+                      ),
+                    ),
                     const SectionTitle('Keyboard Shortcuts'),
                     for (final MapEntry(key: menu, value: entries)
                         in byMenu.entries)
@@ -135,6 +147,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       selected: {ref.watch(themeModeProvider)},
       onSelectionChanged: (selection) =>
           ref.read(appControllerProvider).setThemeMode(selection.first),
+    );
+  }
+
+  /// Zoom Out, the current zoom (resetting it on a click) and Zoom In,
+  /// as the View menu's zoom items.
+  Widget _buildZoomButtons() {
+    final controller = ref.read(appControllerProvider);
+    final zoom = ref.watch(zoomProvider);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: AppSpacing.small,
+      children: [
+        CompactIconButton(
+          icon: Icons.remove,
+          tooltip: 'Zoom Out (⌘-)',
+          onPressed: zoom > AppZoom.levels.first ? controller.zoomOut : null,
+        ),
+        Tooltip(
+          message: 'Actual Size (⌘0)',
+          child: CompactTextButton(
+            label: AppZoom.label(zoom),
+            onPressed: zoom == AppZoom.actualSize ? null : controller.resetZoom,
+          ),
+        ),
+        CompactIconButton(
+          icon: Icons.add,
+          tooltip: 'Zoom In (⌘+)',
+          onPressed: zoom < AppZoom.levels.last ? controller.zoomIn : null,
+        ),
+      ],
     );
   }
 

@@ -16,6 +16,7 @@ import 'package:fide/widget_services/file_open_actions.dart';
 import 'package:fide/widget_services/native_menu_builder.dart';
 import 'package:fide/widgets/goto_line_dialog.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/zoomed_view.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -217,13 +218,20 @@ class _FIDEState extends ConsumerState<FIDE> {
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
       navigatorKey: navigatorKey,
+      // Zooms everything the navigator shows, dialogs included
+      builder: (_, child) =>
+          ZoomedView(zoom: ref.watch(zoomProvider), child: child!),
       home: Scaffold(
         // Builder so the gradient resolves against the app theme, not the
         // context above MaterialApp
-        // The native menu binds Go to File's main key; this binds its alias.
+        // The native menu binds each menu shortcut's main key; this binds
+        // the aliases.
         // The autofocused Focus routes keys here before any widget has focus
         body: CallbackShortcuts(
-          bindings: {AppShortcut.quickOpenAlias: _quickOpenFile},
+          bindings: {
+            AppShortcut.quickOpenAlias: _quickOpenFile,
+            AppShortcut.zoomInAlias: ref.read(appControllerProvider).zoomIn,
+          },
           child: Focus(
             autofocus: true,
             child: Builder(

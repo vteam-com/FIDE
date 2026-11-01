@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/controllers/app_controller.dart';
 import 'package:fide/models/left_panel_tab.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/git_service.dart';
@@ -241,7 +242,8 @@ class NativeMenuBuilder {
     );
   }
 
-  /// Builds the View menu with panel-visibility and layout toggle items.
+  /// Builds the View menu with panel-visibility, layout toggle and zoom
+  /// items.
   PlatformMenu _buildViewMenu() {
     return PlatformMenu(
       label: 'View',
@@ -288,6 +290,25 @@ class NativeMenuBuilder {
                 control: true,
               ),
               onSelected: () => nextRightPanelTab(ref),
+            ),
+          ],
+        ),
+        PlatformMenuItemGroup(
+          members: [
+            PlatformMenuItem(
+              label: 'Zoom In',
+              shortcut: AppShortcut.zoomIn,
+              onSelected: ref.read(appControllerProvider).zoomIn,
+            ),
+            PlatformMenuItem(
+              label: 'Zoom Out',
+              shortcut: AppShortcut.zoomOut,
+              onSelected: ref.read(appControllerProvider).zoomOut,
+            ),
+            PlatformMenuItem(
+              label: 'Actual Size',
+              shortcut: AppShortcut.actualSize,
+              onSelected: ref.read(appControllerProvider).resetZoom,
             ),
           ],
         ),

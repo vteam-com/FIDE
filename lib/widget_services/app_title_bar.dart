@@ -1,10 +1,12 @@
 // ignore_for_file:  use_build_context_synchronously
 
 import 'dart:io';
+import 'dart:math';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/project_menu_action.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/project_icon.dart';
@@ -65,19 +67,22 @@ class AppTitleBar extends ConsumerStatefulWidget {
 class _TitleBarState extends ConsumerState<AppTitleBar> {
   @override
   Widget build(BuildContext context) {
+    // The native window buttons do not zoom: keep their space on screen and
+    // the bar no shorter than they need
+    final zoom = ref.watch(zoomProvider);
     // Drags the window, runs the platform's title-bar double-click action and
     // opens the system window menu on a secondary click.
     return DragToMoveArea(
       child: Container(
-        height: AppSize.titleBarHeight,
+        height: AppSize.titleBarHeight / min(zoom, AppZoom.actualSize),
         // Transparent so the window's workspace gradient runs behind it
         color: Colors.transparent,
         child: Row(
           children: [
             // Platform-specific spacing for window controls
             if (Platform.isMacOS)
-              const SizedBox(
-                width: AppSize.macWindowControlsSpacing,
+              SizedBox(
+                width: AppSize.macWindowControlsSpacing / zoom,
               ), // Space for macOS traffic lights (left side)
             // Left section: Project dropdown or app title
             Consumer(

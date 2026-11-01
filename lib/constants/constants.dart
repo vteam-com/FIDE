@@ -21,3 +21,4 @@ part 'constants.app_gradient.dart';
 part 'constants.app_shade.dart';
 part 'constants.pref_keys.dart';
 part 'constants.app_shortcut.dart';
+part 'constants.app_zoom.dart';

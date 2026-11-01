@@ -1,3 +1,4 @@
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/left_panel_tab.dart';
 import 'package:fide/models/reference_search.dart';
 import 'package:fide/models/right_panel_tab.dart';
@@ -21,6 +22,9 @@ final rightPanelExpandedProvider = StateProvider<bool>((_ /*ref*/) => false);
 final themeModeProvider = StateProvider<ThemeMode>(
   (_ /*ref*/) => ThemeMode.system,
 );
+
+/// Zoom of the whole UI, [AppZoom.actualSize] for unscaled.
+final zoomProvider = StateProvider<double>((_ /*ref*/) => AppZoom.actualSize);
 
 /// The tab shown in the left panel.
 final activeLeftPanelTabProvider = StateProvider<LeftPanelTab>(
