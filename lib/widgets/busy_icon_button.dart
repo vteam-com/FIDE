@@ -23,8 +23,8 @@ class BusyIconButton extends StatelessWidget {
   /// Button text.
   final String label;
 
-  /// Called on press while idle.
-  final VoidCallback onPressed;
+  /// Called on press while idle; the button is disabled when null.
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {

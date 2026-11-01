@@ -15,7 +15,12 @@ class StatCard extends StatelessWidget {
     required this.value,
     this.issues = const [],
     this.details = const [],
+    this.action,
   });
+
+  /// Button at the end of the card, such as one opening a review; none
+  /// when null.
+  final Widget? action;
 
   /// Smaller lines explaining [value].
   final List<String> details;
@@ -39,6 +44,7 @@ class StatCard extends StatelessWidget {
       child: ActionCard(
         title: title,
         icon: icon,
+        action: action,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: AppSpacing.medium,

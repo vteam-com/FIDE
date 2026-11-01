@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/panels/center/app_icons_panel.dart';
 import 'package:fide/panels/center/editor/editor_screen.dart';
 import 'package:fide/panels/center/project_overview_panel.dart';
 import 'package:fide/panels/center/terminal_panel.dart';
@@ -79,10 +80,16 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
   Widget build(BuildContext context) {
     final DocumentState? activeDocument = ref.watch(activeDocumentProvider);
     final terminalExpanded = ref.watch(bottomPanelExpandedProvider);
+    // Opening or switching files leaves the App Icons view
+    ref.listen(activeDocumentProvider.select((doc) => doc?.filePath), (_, _) {
+      ref.read(appIconsVisibleProvider.notifier).state = false;
+    });
 
     // Determine the main content to display
     Widget mainContent;
-    if (activeDocument != null) {
+    if (ref.watch(appIconsVisibleProvider)) {
+      mainContent = const AppIconsPanel();
+    } else if (activeDocument != null) {
       mainContent = EditorScreen(
         documentState: activeDocument,
         onContentChanged: widget.onContentChanged,

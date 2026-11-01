@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:math' as math;
 
+import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/file_system_item.dart';
@@ -175,6 +177,46 @@ final projectOverviewProvider = FutureProvider<ProjectOverview?>((ref) {
   ref.watch(savedFilesRevisionProvider);
   if (projectPath == null) return null;
   return ref.read(projectOverviewServiceProvider).load(projectPath);
+});
+
+/// The open project's app icon slots and problems, checked again after
+/// each save and fix; null without a project.
+final appIconReportProvider = FutureProvider<fcheck.AppIconReport?>((ref) {
+  final projectPath = ref.watch(currentProjectPathProvider);
+  ref.watch(savedFilesRevisionProvider);
+  if (projectPath == null) return null;
+  return Isolate.run(
+    () => const fcheck.AppIconChecker().inspect(Directory(projectPath)),
+  );
+});
+
+/// The open project's app icon problems; null until checked.
+final appIconIssuesProvider = Provider<List<fcheck.AppIconIssue>?>(
+  (ref) => ref.watch(appIconReportProvider).value?.issues,
+);
+
+/// The image the user picked to generate the open project's icons from;
+/// null for the default. Forgotten when the project changes.
+final appIconMasterChoiceProvider = StateProvider<String?>((ref) {
+  ref.watch(currentProjectPathProvider);
+  return null;
+});
+
+/// The app icon file picked in the App Icons view, as an absolute path,
+/// whose details the Outline tab shows while the view is open; null when
+/// none is. Forgotten when the project changes.
+final appIconSelectionProvider = StateProvider<String?>((ref) {
+  ref.watch(currentProjectPathProvider);
+  return null;
+});
+
+/// The image the open project's icons are generated from: the one the
+/// user picked, else the fixer's default; null when there is none.
+final appIconMasterProvider = FutureProvider<String?>((ref) {
+  final projectPath = ref.watch(currentProjectPathProvider);
+  final choice = ref.watch(appIconMasterChoiceProvider);
+  if (projectPath == null || choice != null) return choice;
+  return ref.read(appIconFixerProvider).defaultMasterPath(projectPath);
 });
 
 /// The open project's hardcoded-string and localization issues, or null

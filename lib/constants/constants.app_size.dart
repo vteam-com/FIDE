@@ -20,7 +20,7 @@ class AppSize {
   static const double editorMinWidth = 320;
   static const double folderPanelFallbackHeight = 400;
   static const double compactIconButton = 24;
-  static const double platformDetailLabelWidth = 70;
+  static const double detailLabelWidth = 90;
   static const double diffLineNumberWidth = 40;
   static const double compactActionButton = 32;
   static const double panelFallbackHeight = 600;
@@ -51,6 +51,10 @@ class AppSize {
   static const double splitterGripThickness = 4;
   static const double heroLogoHeight = 100;
   static const double statCardWidth = 260;
+  static const double appIconPreview = 64;
+  static const double appIconSlot = 72;
+  static const double appIconSlotMinDrawn = 16;
+  static const double transparencySquare = 6;
   static const double compactTextButtonMinWidth = 50;
   static const double compactTextButtonHeight = 28;
   static const double initialSidePanelWidth = 250;

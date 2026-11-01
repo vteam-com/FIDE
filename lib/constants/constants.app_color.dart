@@ -9,5 +9,9 @@ class AppColor {
   static const Color sidePanelDividerLight = Color(0xFFE5E5E5);
   static const Color sidePanelDividerDark = Color(0xFF3E3E42);
 
+  /// The two squares of the checkerboard showing an image's transparency.
+  static const Color transparencyLight = Color(0xFFFFFFFF);
+  static const Color transparencyDark = Color(0xFFD6D6D6);
+
   const AppColor._();
 }

@@ -3,7 +3,9 @@ import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/project_overview.dart';
 import 'package:fide/models/quality_issues.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/empty_state.dart';
@@ -11,6 +13,7 @@ import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/platform_icon.dart';
 import 'package:fide/widgets/stat_card.dart';
+import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -34,6 +37,35 @@ class ProjectOverviewPanel extends ConsumerWidget {
           error: (error, _) =>
               EmptyState(message: 'Could not analyze the project: $error'),
         );
+  }
+
+  /// How many app icon problems the platforms have, opening the App Icons
+  /// view to review and fix them.
+  Widget _appIconsCard(WidgetRef ref) {
+    final issues = ref.watch(appIconIssuesProvider);
+    final platforms = {for (final issue in issues ?? const []) issue.platform};
+    return StatCard(
+      icon: Icons.apps,
+      title: 'App icons',
+      value: issues == null
+          ? StatCard.text('…')
+          : issues.isEmpty
+          ? StatusIndicator.tone(StatusTone.success, label: 'All good')
+          : StatusIndicator.tone(
+              StatusTone.warning,
+              label: issues.length.count('problem'),
+            ),
+      details: [
+        if (platforms.isNotEmpty)
+          'On ${platforms.map((platform) => platform.label).join(', ')}',
+      ],
+      action: TextButton.icon(
+        icon: const Icon(Icons.auto_fix_high),
+        label: const Text('Review'),
+        onPressed: () =>
+            ref.read(appIconsVisibleProvider.notifier).state = true,
+      ),
+    );
   }
 
   /// The project's translations, or how to start them.
@@ -210,6 +242,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
                 ],
               ),
               _localizationCard(overview),
+              _appIconsCard(ref),
             ],
           ),
         ],

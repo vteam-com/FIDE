@@ -1,4 +1,5 @@
 import 'package:fide/providers/ai_service.dart';
+import 'package:fide/providers/app_icon_fixer.dart';
 import 'package:fide/providers/arb_key_remover.dart';
 import 'package:fide/providers/arb_migrator.dart';
 import 'package:fide/providers/arb_translator.dart';
@@ -110,6 +111,11 @@ final flutterBuildServiceProvider = Provider<FlutterBuildService>(
 /// output with.
 final buildArtifactsInspectorProvider = Provider<BuildArtifactsInspector>(
   (_) => const BuildArtifactsInspector(),
+);
+
+/// Provides the [AppIconFixer] behind the App Icons view's fixes.
+final appIconFixerProvider = Provider<AppIconFixer>(
+  (_) => const AppIconFixer(),
 );
 
 /// Provides the [CodeFormatter] behind the editor's Format action.

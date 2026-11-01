@@ -1,6 +1,8 @@
 // ignore: fcheck_secrets
 import 'dart:io';
+import 'dart:isolate';
 
+import 'package:fcheck/fcheck.dart';
 import 'package:fide/models/build_artifacts.dart';
 import 'package:fide/models/byte_size.dart';
 import 'package:fide/models/flutter_platform.dart';
@@ -10,38 +12,6 @@ import 'package:path/path.dart' as p;
 /// Reads a project's build output and app icon for the Execute panel and
 /// the project overview.
 class BuildArtifactsInspector {
-  /// Size units, smallest first.
-  /// App icon locations per platform, best resolution first, relative to the
-  /// project root.
-  static const Map<FlutterPlatform, List<String>> _iconCandidates = {
-    FlutterPlatform.android: [
-      'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png',
-      'android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png',
-      'android/app/src/main/res/mipmap-xhdpi/ic_launcher.png',
-      'android/app/src/main/res/mipmap-hdpi/ic_launcher.png',
-      'android/app/src/main/res/mipmap-mdpi/ic_launcher.png',
-      'android/app/src/main/res/drawable/ic_launcher.png',
-    ],
-    FlutterPlatform.ios: [
-      'ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png',
-      'ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png',
-      'ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png',
-      'ios/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png',
-    ],
-    FlutterPlatform.macos: [
-      'macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png',
-      'macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png',
-      'macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png',
-      'macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png',
-    ],
-    FlutterPlatform.windows: ['windows/runner/resources/app_icon.ico'],
-    FlutterPlatform.web: [
-      'web/favicon.png',
-      'web/icons/Icon-192.png',
-      'web/icons/Icon-512.png',
-    ],
-  };
-
   /// Platforms whose icon best represents the whole app, sharpest first.
   static const List<FlutterPlatform> _projectIconPlatforms = [
     FlutterPlatform.ios,
@@ -56,12 +26,45 @@ class BuildArtifactsInspector {
 
   /// The project's app icon from whichever platform has one, or null.
   Future<String?> projectIconPath(String projectPath) async {
+    final report = await _slots(projectPath);
     for (final platform in _projectIconPlatforms) {
-      final iconPath = await _appIconPath(projectPath, platform);
+      final iconPath = iconOf(report, projectPath, platform);
       if (iconPath != null) return iconPath;
     }
     return null;
   }
+
+  /// The sharpest icon of [platform] among [report]'s slots, as an
+  /// absolute path in [projectPath]; null when no slot is filled. Icons
+  /// still showing Flutter's default come last.
+  static String? iconOf(
+    AppIconReport report,
+    String projectPath,
+    FlutterPlatform platform,
+  ) {
+    AppIconSlot? best;
+    for (final slot in report.slots) {
+      if (slot.platform.name != platform.name || !slot.isFilled) continue;
+      final current = best;
+      if (current == null ||
+          (current.isFlutterDefault && !slot.isFlutterDefault) ||
+          (current.isFlutterDefault == slot.isFlutterDefault &&
+              slot.file!.width > current.file!.width)) {
+        best = slot;
+      }
+    }
+    final path = best?.filePath;
+    return path == null ? null : p.join(projectPath, path);
+  }
+
+  /// The icon slots of the project in [projectPath], read off the UI
+  /// thread, without telling Flutter's default icons.
+  static Future<AppIconReport> _slots(String projectPath) => Isolate.run(
+    () => const AppIconChecker().inspect(
+      Directory(projectPath),
+      detectFlutterDefaults: false,
+    ),
+  );
 
   /// Describes [platform]'s build output and app icon in [projectPath].
   Future<BuildArtifacts> inspect(
@@ -71,25 +74,19 @@ class BuildArtifactsInspector {
     final buildDir = Directory(ProjectPaths(projectPath).buildDir);
     final location = await _buildLocation(buildDir, platform.name);
     return BuildArtifacts(
-      appIconPath: await _appIconPath(projectPath, platform),
+      appIconPath: await appIconPath(projectPath, platform),
       location: location ?? 'No build directory found',
       size: location == null ? 'Not built' : await _size(Directory(location)),
       lastBuildTime: await _lastBuildTime(buildDir),
     );
   }
 
-  /// First existing icon for [platform], or null.
-  Future<String?> _appIconPath(
+  /// The sharpest app icon [platform]'s configuration names in
+  /// [projectPath], or null.
+  Future<String?> appIconPath(
     String projectPath,
     FlutterPlatform platform,
-  ) async {
-    final candidates = _iconCandidates[platform];
-    for (final relativePath in candidates ?? const <String>[]) {
-      final iconPath = p.join(projectPath, relativePath);
-      if (await File(iconPath).exists()) return iconPath;
-    }
-    return null;
-  }
+  ) async => iconOf(await _slots(projectPath), projectPath, platform);
 
   /// `build/<platform>`, else a build entry named like the platform, else
   /// `build/` itself; null when nothing has been built.

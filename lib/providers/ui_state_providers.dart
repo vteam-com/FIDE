@@ -26,6 +26,10 @@ final themeModeProvider = StateProvider<ThemeMode>(
 /// Zoom of the whole UI, [AppZoom.actualSize] for unscaled.
 final zoomProvider = StateProvider<double>((_ /*ref*/) => AppZoom.actualSize);
 
+/// Whether the center panel shows the App Icons view instead of the
+/// editor or the project overview.
+final appIconsVisibleProvider = StateProvider<bool>((_ /*ref*/) => false);
+
 /// The tab shown in the left panel.
 final activeLeftPanelTabProvider = StateProvider<LeftPanelTab>(
   (_ /*ref*/) => LeftPanelTab.values.first,

@@ -25,6 +25,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
+  archive:
+    dependency: transitive
+    description:
+      name: archive
+      sha256: de5ac590b8155e4e676088d714bd41ea620449a6adc0f7950c5073874b287ddb
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.6.0"
   args:
     dependency: transitive
     description:
@@ -101,10 +109,10 @@ packages:
     dependency: "direct main"
     description:
       name: code_forge
-      sha256: c73d44c71b8f186f0ca72ea6e1696ca02a4ae7371fe949a49e63d679f9e8d50a
+      sha256: "59a34c52908a2a44e898536f23c8d471a49bb10bee67b30d8e04ad3d5ccac912"
       url: "https://pub.dev"
     source: hosted
-    version: "11.4.0"
+    version: "11.5.0"
   collection:
     dependency: transitive
     description:
@@ -180,10 +188,9 @@ packages:
   fcheck:
     dependency: "direct main"
     description:
-      name: fcheck
-      sha256: "7fa9d398118338fccc58b9adb59c2c67841433a12add7ba3235db35226f4d7ca"
-      url: "https://pub.dev"
-    source: hosted
+      path: "../fcheck"
+      relative: true
+    source: path
     version: "1.6.1"
   ffi:
     dependency: transitive
@@ -378,6 +385,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
+  image:
+    dependency: "direct main"
+    description:
+      name: image
+      sha256: "89ed75b2f8231fe676808c5564f9590d728024ded7ac782a7ed8474f1c95b72a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.12.0"
   integration_test:
     dependency: "direct dev"
     description: flutter
@@ -655,6 +670,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.8"
+  posix:
+    dependency: transitive
+    description:
+      name: posix
+      sha256: "613646d076944f3acc125830af935b48d4b8a57a388691547bbfd25b434f4d63"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.5.4"
   process:
     dependency: transitive
     description:

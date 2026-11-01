@@ -24,4 +24,8 @@ extension LocaleNumber on num {
 
   /// This number with the user's locale separators.
   String get localized => _format.format(this);
+
+  /// This number [localized], then [noun], plural unless the number is
+  /// one: `1 issue`, `1,204 issues`.
+  String count(String noun) => '$localized $noun${this == 1 ? '' : 's'}';
 }

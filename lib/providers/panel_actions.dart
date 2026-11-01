@@ -34,6 +34,12 @@ void nextRightPanelTab(WidgetRef ref) => _nextTab(
   rightPanelVisibleProvider,
 );
 
+/// Shows the right panel on [tab].
+void showRightPanelTab(WidgetRef ref, RightPanelTab tab) {
+  ref.read(rightPanelVisibleProvider.notifier).state = true;
+  ref.read(activeRightPanelTabProvider.notifier).state = tab;
+}
+
 /// Shows the tab of [tabs] after the [active] one, looping back to the
 /// first, and its panel ([visible]) when hidden.
 void _nextTab<T extends Enum>(

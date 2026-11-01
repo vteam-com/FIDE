@@ -2,10 +2,12 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/right_panel_tab.dart';
 import 'package:fide/panels/right/ai_panel.dart';
+import 'package:fide/panels/right/image_details_panel.dart';
 import 'package:fide/panels/right/info_panel.dart';
 import 'package:fide/panels/right/localization/localization_panel.dart';
 import 'package:fide/panels/right/outline_panel.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/count_badge.dart';
 import 'package:fide/widgets/empty_state.dart';
@@ -40,7 +42,6 @@ class RightPanel extends StatefulWidget {
 class _RightPanelState extends State<RightPanel>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-
   @override
   void initState() {
     super.initState();
@@ -93,18 +94,39 @@ class _RightPanelState extends State<RightPanel>
     );
   }
 
+  /// The Outline tab: the details of the image at [iconPath] when given,
+  /// else of the selected image, else the selected file's outline.
+  Widget _buildOutline(String? iconPath) {
+    final file = widget.selectedFile;
+    final imagePath =
+        iconPath ??
+        (file != null && FileTypeUtils.isImageFile(file.path)
+            ? file.path
+            : null);
+    if (imagePath != null) return ImageDetailsPanel(path: imagePath);
+    if (file == null) {
+      return const EmptyState(message: 'Select a file to view outline');
+    }
+    return OutlinePanel(
+      file: file,
+      onOutlineUpdate: widget.onOutlineUpdate,
+      onNodeSelected: widget.onOutlineNodeSelected,
+      onJumpToLine: widget.onJumpToLine,
+    );
+  }
+
   /// The panel shown under [tab].
   Widget _buildTab(RightPanelTab tab) {
     return switch (tab) {
-      RightPanelTab.outline =>
-        widget.selectedFile != null
-            ? OutlinePanel(
-                file: widget.selectedFile!,
-                onOutlineUpdate: widget.onOutlineUpdate,
-                onNodeSelected: widget.onOutlineNodeSelected,
-                onJumpToLine: widget.onJumpToLine,
-              )
-            : const EmptyState(message: 'Select a file to view outline'),
+      RightPanelTab.outline => Consumer(
+        builder: (_, ref, _) {
+          // The icon picked in the App Icons view, while it is open
+          final icon = ref.watch(appIconsVisibleProvider)
+              ? ref.watch(appIconSelectionProvider)
+              : null;
+          return _buildOutline(icon);
+        },
+      ),
       RightPanelTab.localize => LocalizationPanel(
         selectedFile: widget.selectedFile,
       ),

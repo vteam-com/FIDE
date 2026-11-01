@@ -25,6 +25,9 @@ class Pubspec {
   /// Whether the file has a top-level `flutter:` key, even an empty one.
   final bool hasFlutterSection;
 
+  /// The `flutter_launcher_icons:` section; empty when absent.
+  final Map<String, Object?> launcherIconsSection;
+
   const Pubspec._({
     required this.name,
     required this.version,
@@ -33,6 +36,7 @@ class Pubspec {
     required this.devDependencies,
     required this.flutterSection,
     required this.hasFlutterSection,
+    required this.launcherIconsSection,
   });
 
   /// Parses pubspec [content]; content that isn't a YAML map yields an
@@ -53,6 +57,7 @@ class Pubspec {
       devDependencies: _section(map['dev_dependencies']),
       flutterSection: _section(map['flutter']),
       hasFlutterSection: map.containsKey('flutter'),
+      launcherIconsSection: _section(map['flutter_launcher_icons']),
     );
   }
 
@@ -72,6 +77,16 @@ class Pubspec {
 
   /// Whether `flutter: generate: true` is set.
   bool get generatesLocalizations => flutterSection['generate'] == true;
+
+  /// Project-relative image paths `flutter_launcher_icons:` generates
+  /// icons from: its own `image_path`, then each platform's.
+  List<String> get launcherIconsImagePaths => [
+    for (final section in [
+      launcherIconsSection,
+      for (final value in launcherIconsSection.values) _section(value),
+    ])
+      if (section['image_path'] case final String path) path,
+  ];
 
   /// Whether [package] is a direct dependency.
   bool dependsOn(String package) => dependencies.containsKey(package);

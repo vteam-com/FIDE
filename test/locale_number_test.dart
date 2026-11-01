@@ -9,4 +9,10 @@ void main() {
     expect(text.length, greaterThan('1234456'.length));
     expect(7.localized, '7');
   });
+
+  test('count is singular only for one', () {
+    expect(1.count('issue'), '1 issue');
+    expect(0.count('issue'), '0 issues');
+    expect(2.count('file'), '2 files');
+  });
 }

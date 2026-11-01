@@ -5,10 +5,14 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/build_artifacts.dart';
 import 'package:fide/models/flutter_platform.dart';
+import 'package:fide/models/locale_number.dart';
+import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/process_runner.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/detail_row.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/outlined_surface.dart';
@@ -16,6 +20,7 @@ import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/surface_card.dart';
 import 'package:fide/widgets/surface_padding.dart';
+import 'package:fide/widgets/warning_count.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -124,11 +129,11 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
               children: [
                 _buildHeading('Build Info:'),
                 const SizedBox(height: AppSpacing.tiny),
-                _buildDetailRow('Last Build:', _artifacts.lastBuildTime),
+                DetailRow('Last Build:', _artifacts.lastBuildTime),
                 const SizedBox(height: AppSpacing.micro),
-                _buildDetailRow('Size:', _artifacts.size),
+                DetailRow('Size:', _artifacts.size),
                 const SizedBox(height: AppSpacing.micro),
-                _buildDetailRow('Location:', p.basename(_artifacts.location)),
+                DetailRow('Location:', p.basename(_artifacts.location)),
               ],
             ),
 
@@ -192,6 +197,7 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
                       ],
                     ),
                   ),
+                  _buildIconIssues(),
                   PopupMenuButton<String>(
                     icon: Icon(
                       Icons.more_vert,
@@ -253,33 +259,27 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
     );
   }
 
+  /// How many problems the platform's app icons have, opening the App
+  /// Icons view to fix them; nothing when they have none.
+  Widget _buildIconIssues() {
+    final count = (ref.watch(appIconIssuesProvider) ?? const [])
+        .where((issue) => issue.platform.name == widget.selectedPlatform.name)
+        .length;
+    if (count == 0) return const SizedBox();
+    return WarningCount(
+      icon: Icons.apps,
+      count: count,
+      message:
+          '${count.count('app icon problem')} on '
+          '${widget.selectedPlatform.displayName}.'
+          '\nClick to review and fix them.',
+      onTap: () => ref.read(appIconsVisibleProvider.notifier).state = true,
+    );
+  }
+
   /// A bold caption introducing a group of details.
   Widget _buildHeading(String label) {
     return Text(label, style: AppTextStyle.captionStrong);
-  }
-
-  /// A build-info line: a fixed-width [label] column, then [value] in
-  /// monospace, truncated to one line.
-  Widget _buildDetailRow(String label, String value) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Row(
-      children: [
-        SizedBox(
-          width: AppSize.platformDetailLabelWidth,
-          child: Text(label, style: AppTextStyle.secondary(context)),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: AppTextStyle.code.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
   }
 
   /// Returns the platform icon widget — either an SVG asset or a Material icon fallback.
