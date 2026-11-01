@@ -2,19 +2,18 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/ai_action.dart';
-import 'package:fide/models/chat_message.dart';
-import 'package:fide/models/relative_time.dart';
+import 'package:fide/panels/right/ai_panel.ai_transcript_entry.dart';
 import 'package:fide/providers/ai_chat_notifier.dart';
 import 'package:fide/providers/ai_service.dart';
 import 'package:fide/providers/ollama_installer.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_text_field.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
-import 'package:fide/widgets/markdown_text.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -63,7 +62,6 @@ class _AIPanelState extends ConsumerState<AIPanel> {
   Widget build(BuildContext context) {
     final chat = ref.watch(aiChatProvider);
     final messages = chat.messages;
-    final notifier = ref.read(aiChatProvider.notifier);
     ref.listen(
       aiChatProvider.select((chat) => chat.messages.length),
       (_, _) =>
@@ -73,8 +71,6 @@ class _AIPanelState extends ConsumerState<AIPanel> {
       color: Theme.of(context).colorScheme.surfaceContainerLow,
       child: Column(
         children: [
-          // Header with action selector
-
           // Setup instructions if no messages and not all ready
           if (messages.isEmpty &&
               !(_hasOllamaInstalled && _isOllamaRunning && _hasModelInstalled))
@@ -87,101 +83,135 @@ class _AIPanelState extends ConsumerState<AIPanel> {
               ),
             ),
 
-          // Chat area
+          // Transcript: one selection spans every entry
           Expanded(
-            child: messages.isEmpty
+            child: messages.isEmpty && !chat.isBusy
                 ? const EmptyState(
                     message: 'Start a conversation with the AI assistant',
                   )
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(AppSpacing.medium),
-                    itemCount: messages.length,
-                    itemBuilder: (_ /*context*/, index) {
-                      final message = messages[index];
-
-                      /// Handles `_buildMessageBubble`.
-                      return _buildMessageBubble(message);
-                    },
+                : SelectionArea(
+                    child: ListView.separated(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(AppSpacing.large),
+                      itemCount: messages.length + (chat.isBusy ? 1 : 0),
+                      separatorBuilder: (_ /*context*/, _ /*index*/) =>
+                          const SizedBox(height: AppSpacing.large),
+                      itemBuilder: (_ /*context*/, index) =>
+                          index < messages.length
+                          ? AiTranscriptEntry(message: messages[index])
+                          : _buildWorking(),
+                    ),
                   ),
           ),
-          Divider(),
+          const Divider(height: AppSize.borderThin),
+          _buildPrompt(chat.action.hint, chat.isBusy),
+          _buildFooter(chat.action),
+        ],
+      ),
+    );
+  }
+
+  /// The action new prompts use, as a menu, and the model answering them.
+  Widget _buildFooter(AiAction selected) {
+    final notifier = ref.read(aiChatProvider.notifier);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.medium,
+        0,
+        AppSpacing.large,
+        AppSpacing.medium,
+      ),
+      child: Row(
+        spacing: AppSpacing.medium,
+        children: [
           PopupMenuButton<AiAction>(
+            tooltip: 'Action',
             itemBuilder: (_) => [
               for (final action in AiAction.values)
                 PopupMenuItem(
                   value: action,
                   child: IconMenuRow(
-                    icon: action == chat.action ? Icons.check : null,
+                    icon: action == selected ? Icons.check : null,
                     label: action.label,
                   ),
                 ),
             ],
             onSelected: notifier.selectAction,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.xLarge,
-                vertical: AppSpacing.large,
-              ),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.tiny),
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(chat.action.label),
-                  const Spacer(),
-                  if (_hasModelInstalled)
-                    Flexible(
-                      child: Tooltip(
-                        message: _modelLabel,
-                        child: Text(
-                          _modelLabel,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyle.secondary(context),
-                        ),
-                      ),
-                    ),
-                  const Icon(Icons.arrow_drop_down),
+                  Text(selected.label, style: AppTextStyle.caption),
+                  const Icon(Icons.arrow_drop_down, size: AppIconSize.medium),
                 ],
               ),
             ),
           ),
-          // Input area
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.medium),
-            child: Row(
-              spacing: AppSpacing.medium,
-              children: [
-                Expanded(
-                  // Enter sends; Shift+Enter, left unbound, starts a new
-                  // line; Escape stops the pending reply
-                  child: CallbackShortcuts(
-                    bindings: {
-                      const SingleActivator(LogicalKeyboardKey.enter): _send,
-                      const SingleActivator(LogicalKeyboardKey.escape):
-                          notifier.cancel,
-                    },
-                    child: AppTextField(
-                      controller: _promptController,
-                      hintText: chat.action.hint,
-                      maxLines: AppMetric.aiInputMaxLines,
-                      minLines: 1,
-                    ),
-                  ),
+          const Spacer(),
+          if (_hasModelInstalled)
+            Flexible(
+              child: Tooltip(
+                message: _modelLabel,
+                child: Text(
+                  _modelLabel,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyle.secondary(context),
                 ),
-
-                if (chat.isBusy) const InlineSpinner(),
-                chat.isBusy
-                    ? IconButton(
-                        onPressed: notifier.cancel,
-                        icon: const Icon(Icons.stop_circle_outlined),
-                        tooltip: 'Stop (Esc)',
-                      )
-                    : IconButton(
-                        onPressed: _send,
-                        icon: const Icon(Icons.send),
-                        tooltip: 'Send',
-                      ),
-              ],
+              ),
             ),
-          ),
+        ],
+      ),
+    );
+  }
+
+  /// The prompt box with its Send button, or Stop while a reply is
+  /// pending.
+  Widget _buildPrompt(String hint, bool isBusy) {
+    final notifier = ref.read(aiChatProvider.notifier);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.medium,
+        AppSpacing.medium,
+        AppSpacing.medium,
+        AppSpacing.tiny,
+      ),
+      // Enter sends; Shift+Enter, left unbound, starts a new line; Escape
+      // stops the pending reply
+      child: CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.enter): _send,
+          const SingleActivator(LogicalKeyboardKey.escape): notifier.cancel,
+        },
+        child: AppTextField(
+          controller: _promptController,
+          hintText: hint,
+          maxLines: AppMetric.aiInputMaxLines,
+          minLines: 1,
+          trailing: isBusy
+              ? CompactIconButton(
+                  onPressed: notifier.cancel,
+                  icon: Icons.stop_circle_outlined,
+                  tooltip: 'Stop (Esc)',
+                )
+              : CompactIconButton(
+                  onPressed: _send,
+                  icon: Icons.arrow_upward,
+                  tooltip: 'Send (Enter)',
+                ),
+        ),
+      ),
+    );
+  }
+
+  /// The last transcript line while a reply or task is pending.
+  Widget _buildWorking() {
+    return SelectionContainer.disabled(
+      child: Row(
+        spacing: AppSpacing.medium,
+        children: [
+          const InlineSpinner(size: AppIconSize.tiny),
+          Text('Working… Esc to stop', style: AppTextStyle.secondary(context)),
         ],
       ),
     );
@@ -231,58 +261,6 @@ class _AIPanelState extends ConsumerState<AIPanel> {
         else
           ElevatedButton(onPressed: onPressed, child: Text(buttonLabel)),
       ],
-    );
-  }
-
-  /// Handles `_buildMessageBubble`.
-  Widget _buildMessageBubble(ChatMessage message) {
-    final isUser = message.isUser;
-    return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: AppSpacing.tiny),
-        padding: const EdgeInsets.all(AppSpacing.large),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * AppOpacity.emphasis,
-        ),
-        decoration: BoxDecoration(
-          color: isUser
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(AppSpacing.large),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (isUser)
-              Text(
-                message.content,
-                style: AppTextStyle.label.copyWith(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-              )
-            else
-              MarkdownText(
-                data: message.content,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            if (message.timestamp != null)
-              Padding(
-                padding: const EdgeInsets.only(top: AppSpacing.tiny),
-                child: Text(
-                  message.timestamp!.timeAgo(),
-                  style: AppTextStyle.badge.copyWith(
-                    color: isUser
-                        ? Theme.of(context).colorScheme.onPrimary
-                              .withValues(alpha: AppOpacity.secondaryText)
-                        : Theme.of(context).colorScheme.onSurface
-                              .withValues(alpha: AppOpacity.disabled),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 

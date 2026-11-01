@@ -3,7 +3,8 @@ import 'package:fide/widgets/open_url.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
-/// Renders Markdown [data] as selectable rich text in [color].
+/// Renders Markdown [data] as selectable rich text in [color]; inside a
+/// `SelectionArea` it is part of that area's selection.
 ///
 /// Code spans and fenced blocks use [AppTextStyle.monospace] on a tinted
 /// background; links open in the system browser.
@@ -26,9 +27,8 @@ class MarkdownText extends StatelessWidget {
       color: color,
       backgroundColor: codeBackground,
     );
-    return MarkdownBody(
+    final body = MarkdownBody(
       data: data,
-      selectable: true,
       onTapLink: (_, href, _) {
         if (href != null) openUrl(context, href);
       },
@@ -57,5 +57,10 @@ class MarkdownText extends StatelessWidget {
         ),
       ),
     );
+    // Inside a SelectionArea, such as the AI transcript, it joins that
+    // selection so one drag spans several messages
+    return SelectionContainer.maybeOf(context) == null
+        ? SelectionArea(child: body)
+        : body;
   }
 }
