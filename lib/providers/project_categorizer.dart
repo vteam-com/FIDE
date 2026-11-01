@@ -5,6 +5,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/code_category.dart';
 import 'package:fide/models/project_categories.dart';
 import 'package:fide/models/project_node.dart';
+import 'package:fide/providers/asset_categorizer.dart';
 import 'package:fide/providers/localization_service.dart';
 import 'package:fide/providers/project_tree_reader.dart';
 import 'package:path/path.dart' as p;
@@ -14,7 +15,7 @@ import 'package:path/path.dart' as p;
 /// Entries of each category's folders go there. Other Dart files under
 /// `lib` are sorted by content: an app (`MaterialApp(`) is a view, a widget
 /// subclass a widget. Files outside views that call `showDialog` move to
-/// dialogs.
+/// dialogs. Assets are grouped apart, by [AssetCategorizer].
 class ProjectCategorizer {
   final ProjectTreeReader _reader;
 
@@ -98,6 +99,7 @@ class ProjectCategorizer {
       viewsWithDialogs: viewsWithDialogs,
       multiClassFiles: multiClassFiles,
       multiClassFolders: _foldersHolding(root.path, multiClassFiles.keys),
+      assets: await AssetCategorizer(_reader).categorize(root),
     );
   }
 

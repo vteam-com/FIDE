@@ -1,7 +1,6 @@
-import 'package:fide/constants/constants.dart';
 import 'package:fide/models/project_node.dart';
-import 'package:fide/widgets/empty_folder_label.dart';
 import 'package:fide/widgets/foldername_widget.dart';
+import 'package:fide/widgets/tree_branch.dart';
 import 'package:flutter/material.dart';
 
 /// A directory in a project tree: its name row and, when expanded, its
@@ -50,37 +49,20 @@ class FolderNode extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasError = node.hasLoadError;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        FolderNameWidget(
-          node: node,
-          isExpanded: isExpanded && !hasError,
-          isFiltered: isFiltered,
-          hasError: hasError,
-          rootPath: rootPath,
-          trailing: trailing,
-          onTap: onTap,
-          onShowContextMenu: onShowContextMenu,
-        ),
-        if (isExpanded)
-          Padding(
-            // The empty label lines up with the name, past the chevron
-            padding: EdgeInsets.only(
-              left: node.children.isEmpty
-                  ? AppSize.compactActionButton
-                  : AppSpacing.xLarge,
-            ),
-            // A filter can hide every child of a folder that is not empty
-            child: node.children.isEmpty
-                ? const EmptyFolderLabel()
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: children,
-                  ),
-          ),
-      ],
+    return TreeBranch(
+      header: FolderNameWidget(
+        node: node,
+        isExpanded: isExpanded && !hasError,
+        isFiltered: isFiltered,
+        hasError: hasError,
+        rootPath: rootPath,
+        trailing: trailing,
+        onTap: onTap,
+        onShowContextMenu: onShowContextMenu,
+      ),
+      isExpanded: isExpanded,
+      isEmpty: node.children.isEmpty,
+      children: children,
     );
   }
 }

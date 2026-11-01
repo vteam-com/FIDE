@@ -268,11 +268,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
                   : !FileTypeUtils.isFileSupportedInEditor(_currentFile)
                   ? EditorScreenUnsupportedFileView(filePath: _currentFile)
                   : _isImageFile(_currentFile)
-                  ? EditorScreenImageView(
-                      filePath: _currentFile,
-                      documentContentLength:
-                          widget.documentState!.content.length,
-                    )
+                  ? EditorScreenImageView(filePath: _currentFile)
                   : _showDiffView
                   ? _buildDiffView()
                   // ignore: deprecated_member_use

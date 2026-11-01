@@ -77,7 +77,6 @@ class FileTypeUtils {
     'svelte': const FileTypeInfo.text(FileCategory.markup),
     'html': FileTypeInfo.text(FileCategory.markup, langXml),
     'xml': FileTypeInfo.text(FileCategory.markup, langXml),
-    'svg': FileTypeInfo.text(FileCategory.image, langXml),
     'css': FileTypeInfo.text(FileCategory.stylesheet, langCss),
     'scss': FileTypeInfo.text(FileCategory.stylesheet, langScss),
     'sass': FileTypeInfo.text(FileCategory.stylesheet, langScss),
@@ -126,6 +125,7 @@ class FileTypeUtils {
     'webp': const FileTypeInfo.image(),
     'tiff': const FileTypeInfo.image(),
     'tif': const FileTypeInfo.image(),
+    'svg': const FileTypeInfo.image(),
     // Recognized but not opened
     'ora': const FileTypeInfo.other(FileCategory.image),
     'pdf': const FileTypeInfo.other(FileCategory.pdf),

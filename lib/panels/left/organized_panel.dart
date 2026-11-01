@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/asset_kind.dart';
 import 'package:fide/models/code_category.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_categories.dart';
@@ -10,10 +11,13 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/class_splitter.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
+import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/folder_node.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/section_panel.dart';
+import 'package:fide/widgets/tree_branch.dart';
+import 'package:fide/widgets/tree_row.dart';
 import 'package:fide/widgets/warning_count.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -108,6 +112,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
             categories.elementCounts[category] ?? 0,
             categories.publicClassCounts[category] ?? 0,
           ),
+      if (categories.assets.isNotEmpty) _buildAssetsSection(categories.assets),
     ];
 
     return LayoutBuilder(
@@ -172,8 +177,54 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     );
   }
 
-  /// The row for [node] (and its expanded children) in [category].
-  Widget _buildNode(ProjectNode node, CodeCategory category) {
+  /// The Assets section: one group per kind of asset in [assets].
+  Widget _buildAssetsSection(Map<AssetKind, List<ProjectNode>> assets) {
+    const expansionKey = 'category_assets';
+    final isExpanded = expandedState[expansionKey] ?? false;
+    return SectionPanel(
+      title: 'Assets',
+      isExpanded: isExpanded,
+      count: assets.values.fold<int>(0, (sum, files) => sum + files.length),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final MapEntry(key: kind, value: files) in assets.entries)
+            _buildAssetGroup(kind, files),
+        ],
+      ),
+      onExpansionToggle: () {
+        if (mounted) {
+          setState(() => expandedState[expansionKey] = !isExpanded);
+        }
+      },
+    );
+  }
+
+  /// The [kind] group row and, when expanded, its [files].
+  Widget _buildAssetGroup(AssetKind kind, List<ProjectNode> files) {
+    final expansionKey = 'assets_${kind.name}';
+    final isExpanded = expandedState[expansionKey] ?? false;
+    final color = Theme.of(context).colorScheme.primary;
+    return TreeBranch(
+      header: TreeRow(
+        icon: Icon(kind.icon, color: color, size: AppIconSize.medium),
+        name: kind.label,
+        nameStyle: AppTextStyle.body.copyWith(color: isExpanded ? color : null),
+        onTap: () => setState(() => expandedState[expansionKey] = !isExpanded),
+        trailing: [
+          ContainerCounter(
+            count: files.length,
+            tooltip: '${kind.label} in the project assets',
+          ),
+        ],
+      ),
+      isExpanded: isExpanded,
+      children: [for (final file in files) _buildNode(file)],
+    );
+  }
+
+  /// The row for [node] (and its expanded children) in [category], if any.
+  Widget _buildNode(ProjectNode node, [CodeCategory? category]) {
     // Cache FileSystemItem creation to avoid expensive object creation on every build
     final itemCacheKey = '${node.path}_${node.gitStatus.index}';
     FileSystemItem item;

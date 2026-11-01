@@ -1,3 +1,4 @@
+import 'package:fide/models/asset_kind.dart';
 import 'package:fide/models/code_category.dart';
 import 'package:fide/models/project_node.dart';
 
@@ -27,6 +28,9 @@ class ProjectCategories {
   /// Paths of views that call `showDialog`, which get a warning.
   final Set<String> viewsWithDialogs;
 
+  /// Asset files by kind, in path order; kinds without assets are absent.
+  final Map<AssetKind, List<ProjectNode>> assets;
+
   /// Creates a grouping.
   const ProjectCategories({
     required this.nodes,
@@ -36,5 +40,6 @@ class ProjectCategories {
     required this.viewsWithDialogs,
     required this.multiClassFiles,
     required this.multiClassFolders,
+    required this.assets,
   });
 }

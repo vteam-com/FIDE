@@ -1,8 +1,8 @@
 // ignore: fcheck_secrets
 import 'dart:io';
 
-import 'package:fide/constants/constants.dart';
 import 'package:fide/models/build_artifacts.dart';
+import 'package:fide/models/byte_size.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:path/path.dart' as p;
@@ -11,8 +11,6 @@ import 'package:path/path.dart' as p;
 /// the project overview.
 class BuildArtifactsInspector {
   /// Size units, smallest first.
-  static const List<String> _sizeUnits = ['B', 'KB', 'MB', 'GB'];
-
   /// App icon locations per platform, best resolution first, relative to the
   /// project root.
   static const Map<FlutterPlatform, List<String>> _iconCandidates = {
@@ -133,15 +131,7 @@ class BuildArtifactsInspector {
       await for (final entry in directory.list(recursive: true)) {
         if (entry is File) totalBytes += await entry.length();
       }
-      if (totalBytes == 0) return '0 B';
-
-      var unit = 0;
-      var size = totalBytes.toDouble();
-      while (size > AppMetric.fileSizeDivisor && unit < _sizeUnits.length - 1) {
-        size /= AppMetric.fileSizeDivisor;
-        unit++;
-      }
-      return '${size.toStringAsFixed(1)} ${_sizeUnits[unit]}';
+      return totalBytes.readableSize;
     } catch (_) {
       return 'Unknown';
     }
