@@ -24,25 +24,30 @@ class AppController {
     await _loadMruFolders();
   }
 
-  /// Initialize window manager with default settings
+  /// Sizes, centres and shows the main window with a hidden title bar.
   Future<void> _initializeWindowManager() async {
     WidgetsFlutterBinding.ensureInitialized();
 
-    await windowManager.ensureInitialized();
-
-    const windowOptions = WindowOptions(
-      size: Size(1200, 800),
-      minimumSize: Size(800, 600),
-      center: true,
-      backgroundColor: Colors.transparent,
-      skipTaskbar: false,
-      titleBarStyle: TitleBarStyle.hidden,
-    );
-
-    await windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
-      await windowManager.focus();
-    });
+    final window = WindowManager.instance.getCurrent();
+    if (window == null) {
+      return;
+    }
+    window
+      ..titleBarStyle = TitleBarStyle.hidden
+      // The hidden style also hides the window buttons; keep them
+      ..isWindowControlButtonsVisible = true
+      ..backgroundColor = Colors.transparent.toNative()
+      ..setSize(AppSize.initialWindowSize.toNative(), false)
+      ..minimumSize = AppSize.minWindowSize.toNative()
+      ..center()
+      ..show()
+      ..focus()
+      // Leaving full screen hides the window buttons again; bring them back
+      ..addListener((event) {
+        if (event is WindowExitedFullScreenEvent) {
+          window.isWindowControlButtonsVisible = true;
+        }
+      });
   }
 
   /// Initialize theme from shared preferences

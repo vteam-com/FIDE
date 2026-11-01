@@ -33,6 +33,12 @@ class AppSize {
   static const double platformSelectorLabelBreakpoint = 300;
   static const double macWindowControlsSpacing = 80;
   static const double desktopWindowControlsSpacing = 120;
+
+  /// Size of the main window at launch.
+  static const Size initialWindowSize = Size(1200, 800);
+
+  /// Smallest the main window can be resized to.
+  static const Size minWindowSize = Size(800, 600);
   static const double diffHeaderDividerHeight = 16;
   static const double diffRowDividerHeight = 20;
   static const double diffLineNumberColumnWidth = 60;

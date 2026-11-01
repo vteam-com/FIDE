@@ -11,7 +11,6 @@ import 'package:fide/widgets/project_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:window_manager/window_manager.dart';
 
@@ -64,27 +63,11 @@ class AppTitleBar extends ConsumerStatefulWidget {
 }
 
 class _TitleBarState extends ConsumerState<AppTitleBar> {
-  final Logger _logger = Logger('_TitleBarState');
-
-  /// Toggles the window between maximised and restored states.
-  Future<void> _toggleMaximize() async {
-    try {
-      final isMaximized = await windowManager.isMaximized();
-      if (isMaximized) {
-        await windowManager.unmaximize();
-      } else {
-        await windowManager.maximize();
-      }
-    } catch (e) {
-      // Silently handle window manager errors
-      _logger.severe('Error toggling window maximize state: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onDoubleTap: _toggleMaximize,
+    // Drags the window, runs the platform's title-bar double-click action and
+    // opens the system window menu on a secondary click.
+    return DragToMoveArea(
       child: Container(
         height: AppSize.titleBarHeight,
         // Transparent so the window's workspace gradient runs behind it
