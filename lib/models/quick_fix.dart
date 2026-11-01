@@ -52,6 +52,15 @@ enum QuickFix {
         'their metadata, and regenerates the classes',
   ),
 
+  /// Sort the members of widget and `State` classes, and imports, in the
+  /// order fCheck checks, with fCheck's own sorter.
+  sortMembers(
+    Icons.sort,
+    'Sort members',
+    'sorts the members of widget and State classes, and the imports, of '
+        'every file in the order fCheck checks',
+  ),
+
   /// Translate missing, empty or untranslated ARB keys one short prompt at
   /// a time, FIDE writing the ARB files.
   translateKeys(

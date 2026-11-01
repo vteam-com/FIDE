@@ -46,16 +46,19 @@ void main() {
     final result = await ArbTranslator(ai, LocalizationService(runner)).apply(
       project.path,
       [
-        for (final MapEntry(:key, :value) in {
-          'deleteMessage': 'Delete {name}?',
-          'hello': 'Hello {name}',
-        }.entries)
-          ArbTranslation(
-            key: key,
-            source: value,
-            language: 'French',
-            arbPath: arbPath,
-          ),
+        ArbTranslation(
+          key: 'deleteMessage',
+          source: 'Delete {name}?',
+          language: 'French',
+          arbPath: arbPath,
+          description: 'Confirmation dialog title',
+        ),
+        ArbTranslation(
+          key: 'hello',
+          source: 'Hello {name}',
+          language: 'French',
+          arbPath: arbPath,
+        ),
       ],
     );
 
@@ -66,8 +69,21 @@ void main() {
       'deleteMessage': 'Supprimer {name} ?',
     });
     expect(runner.commands, ['flutter gen-l10n']);
-    // One request for the batch, the texts sent as a JSON list
-    expect(requests.single, endsWith('["Delete {name}?","Hello {name}"]'));
+    // One request for the batch, the texts sent as a JSON list with their
+    // keys and descriptions
+    expect(
+      requests.single,
+      endsWith(
+        jsonEncode([
+          {
+            'key': 'deleteMessage',
+            'text': 'Delete {name}?',
+            'description': 'Confirmation dialog title',
+          },
+          {'key': 'hello', 'text': 'Hello {name}'},
+        ]),
+      ),
+    );
   });
 
   test('marks a translation the same as the template reviewed', () async {

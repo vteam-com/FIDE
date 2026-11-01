@@ -55,4 +55,29 @@ void main() {
     expect(findings, contains('## Files importing the most project files'));
     expect(findings, contains('lib/a.dart: 0 imports'));
   });
+
+  test('sorts members with fcheck and lists the files it rewrote', () async {
+    final unsorted = File('${project.path}/lib/c.dart')
+      ..writeAsStringSync('''
+import 'package:flutter/widgets.dart';
+
+/// A sample.
+class Sample extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const SizedBox();
+
+  /// Creates a sample.
+  const Sample({super.key});
+}
+''');
+
+    final changed = await const CodeReview().sortMembers(project.path);
+
+    expect(changed, [unsorted.path]);
+    final sorted = unsorted.readAsStringSync();
+    expect(
+      sorted.indexOf('const Sample('),
+      lessThan(sorted.indexOf('Widget build')),
+    );
+  });
 }

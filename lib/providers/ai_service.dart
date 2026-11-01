@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/ai_action.dart';
+import 'package:fide/models/arb_translation.dart';
 import 'package:fide/models/text_truncation.dart';
 import 'package:fide/providers/flutter_sdk.dart';
 import 'package:fide/providers/ollama_installer.dart';
@@ -40,12 +41,16 @@ class AIService {
   /// Capability Ollama reports for models that can call tools.
   static const String _toolsCapability = 'tools';
 
+  /// Capability Ollama reports for models that reason before answering.
+  static const String _thinkingCapability = 'thinking';
+
   final FlutterSdk _sdk;
   final http.Client _client;
 
   String _model = OllamaInstaller.model;
   bool _isModelResolved = false;
   bool _supportsTools = true;
+  bool _supportsThinking = false;
 
   /// Completed by [cancel] to abort the requests in flight.
   Completer<void> _cancellation = Completer<void>();
@@ -92,29 +97,38 @@ class AIService {
       ...names.where((name) => !_isPreferred(name)),
     ];
     var chosen = candidates.first;
+    List<Object?>? capabilities;
     var canCallTools = false;
     for (final name in candidates) {
-      if (await _canCallTools(name)) {
+      final listed = await _capabilities(name);
+      if (name == chosen) capabilities = listed;
+      if (_canCallTools(listed)) {
         chosen = name;
+        capabilities = listed;
         canCallTools = true;
         break;
       }
     }
     _model = chosen;
     _supportsTools = canCallTools;
+    _supportsThinking = capabilities?.contains(_thinkingCapability) ?? false;
     _isModelResolved = true;
     return chosen;
   }
 
-  /// Whether Ollama says [name] can call tools; true when it doesn't say,
-  /// as older Ollama versions report no capabilities.
-  Future<bool> _canCallTools(String name) async {
+  /// The capabilities Ollama reports for [name], or null when it doesn't
+  /// say, as older Ollama versions report none.
+  Future<List<Object?>?> _capabilities(String name) async {
     final details = await _send(_showPath, AppDuration.aiSuggestionTimeout, {
       'model': name,
     });
     final capabilities = details?['capabilities'];
-    return capabilities is! List || capabilities.contains(_toolsCapability);
+    return capabilities is List ? capabilities : null;
   }
+
+  /// Whether [capabilities] let a model call tools; true when unknown.
+  static bool _canCallTools(List<Object?>? capabilities) =>
+      capabilities == null || capabilities.contains(_toolsCapability);
 
   /// Whether [name] is [OllamaInstaller.model] under any tag.
   bool _isPreferred(String name) =>
@@ -124,11 +138,19 @@ class AIService {
   /// Sends [body] (plus the model name) to Ollama's [path], resolving the
   /// model first when [resolveModel] hasn't, and returns the reply like
   /// [_send].
+  ///
+  /// A thinking model reasons before answering only when [think] is set:
+  /// on a local model the hidden reasoning costs most of the time and
+  /// energy of a request, so only tasks needing judgment ask for it. The
+  /// model stays loaded for [AppDuration.aiModelKeepAlive] so the next
+  /// request doesn't reload it, with one [AppMetric.aiContextTokens]
+  /// context window for every request.
   Future<Map<String, dynamic>?> _post(
     String path,
     Map<String, Object> body,
-    Duration timeout,
-  ) async {
+    Duration timeout, {
+    bool think = false,
+  }) async {
     if (!_isModelResolved) {
       try {
         await resolveModel();
@@ -138,7 +160,14 @@ class AIService {
         // The request below reports the failure
       }
     }
-    return _send(path, timeout, {'model': _model, 'stream': false, ...body});
+    return _send(path, timeout, {
+      'model': _model,
+      'stream': false,
+      'keep_alive': AppDuration.aiModelKeepAlive.inSeconds,
+      'options': {'num_ctx': AppMetric.aiContextTokens},
+      if (_supportsThinking) 'think': think,
+      ...body,
+    });
   }
 
   /// Posts [body] to Ollama's [path], or gets it when [body] is null, and
@@ -187,38 +216,49 @@ class AIService {
   }
 
   /// Sends [prompt] to the model and returns its response text, which may
-  /// be empty; [contextTokens] widens the model's context window for long
-  /// prompts. Throws like [_post].
+  /// be empty; [think] lets a thinking model reason first. Throws like
+  /// [_post].
   Future<String> _generate(
     String prompt,
     Duration timeout, {
-    int? contextTokens,
+    bool think = false,
   }) async {
-    final data = await _post(_generatePath, {
-      'prompt': prompt,
-      if (contextTokens != null) 'options': {'num_ctx': contextTokens},
-    }, timeout);
+    final data = await _post(
+      _generatePath,
+      {'prompt': prompt},
+      timeout,
+      think: think,
+    );
     return data?['response']?.toString() ?? '';
   }
 
   /// Sends the conversation [messages] with the [tools] the model may call
   /// and returns the model's reply message, whose `tool_calls` list the
-  /// calls it wants run. Throws like [_post].
+  /// calls it wants run; [think] lets a thinking model reason first.
+  /// Throws like [_post].
   Future<Map<String, dynamic>> chat(
     List<Map<String, dynamic>> messages,
-    List<Map<String, dynamic>> tools,
-  ) async {
-    final data = await _post(_chatPath, {
-      'messages': messages,
-      'tools': tools,
-    }, AppDuration.aiToolStepTimeout);
+    List<Map<String, dynamic>> tools, {
+    bool think = false,
+  }) async {
+    final data = await _post(
+      _chatPath,
+      {'messages': messages, 'tools': tools},
+      AppDuration.aiToolStepTimeout,
+      think: think,
+    );
     final message = data?['message'];
     return message is Map<String, dynamic> ? message : const {};
   }
 
   /// Requests a coding suggestion from Ollama using prompt and contextual
-  /// text; empty when the model has nothing to say.
-  Future<String> getCodeSuggestion(String prompt, String context) {
+  /// text; empty when the model has nothing to say. [think] lets a
+  /// thinking model reason first.
+  Future<String> getCodeSuggestion(
+    String prompt,
+    String context, {
+    bool think = false,
+  }) {
     return _generate(
       '''
 You are a helpful coding assistant. Provide concise, accurate code suggestions.
@@ -228,7 +268,8 @@ Context: $context
 Request: $prompt
 
 Please provide a helpful response focused on the coding request.''',
-      AppDuration.aiSuggestionTimeout,
+      think ? AppDuration.aiToolStepTimeout : AppDuration.aiSuggestionTimeout,
+      think: think,
     );
   }
 
@@ -268,7 +309,8 @@ Please provide a helpful response focused on the coding request.''',
 
   /// Reviews the project [findings] (fcheck's results and the code they
   /// point to) as [instructions] say, with the user's [notes] on what to
-  /// focus on, and returns the review in Markdown.
+  /// focus on, and returns the review in Markdown. A thinking model
+  /// reasons first, as judging the findings is what the review is for.
   Future<String> reviewCode(
     String instructions,
     String notes,
@@ -286,18 +328,22 @@ $notes
 
 $findings''',
       AppDuration.aiReviewTimeout,
-      contextTokens: AppMetric.aiReviewContextTokens,
+      think: true,
     );
   }
 
   /// Explains the cause of failed build output and the code changes that
-  /// fix it; [errors] is the build's error output and [notes] any errors
-  /// or details the user added.
+  /// fix it, a thinking model reasoning first; [errors] is the build's
+  /// error output and [notes] any errors or details the user added.
   Future<String> fixBuild(String notes, String errors) {
-    return getCodeSuggestion('''
+    return getCodeSuggestion(
+      '''
 This Flutter/Dart build failed. Find the root cause of each error and show the code changes that fix it, naming the file each change belongs to.
 
-$notes''', errors);
+$notes''',
+      errors,
+      think: true,
+    );
   }
 
   /// Writes a one-line commit message stating the intent of the changes
@@ -318,19 +364,33 @@ $changes''', AppDuration.aiGenerateTimeout);
     return _unquoted(line);
   }
 
-  /// [texts], app interface texts in English, translated into [language]
-  /// by the model in one request, keeping every `{placeholder}`; the same
-  /// number of items, empty for each text without a usable reply.
+  /// The sources of [texts], app interface texts in English, translated
+  /// into [language] by the model in one request, keeping every
+  /// `{placeholder}`; the same number of items, empty for each text
+  /// without a usable reply.
   ///
-  /// The model only sees the texts, never the files, so a short list stays
-  /// fast on a local model. Throws an [AiServiceException] when the
-  /// request fails.
-  Future<List<String>> translateAll(List<String> texts, String language) async {
+  /// The model sees each text with its ARB key and description, which say
+  /// where it appears, such as whether "Open" is a menu item or a state,
+  /// but never the files, so a short list stays fast on a local model.
+  /// Throws an [AiServiceException] when the request fails.
+  Future<List<String>> translateAll(
+    List<ArbTranslation> texts,
+    String language,
+  ) async {
+    final items = [
+      for (final text in texts)
+        {
+          'key': text.key,
+          'text': text.source,
+          'description': ?text.description,
+        },
+    ];
     final response = await _generate('''
-Translate each string of this JSON array of app interface texts from English to $language.
-Keep every {placeholder} exactly as written. Reply with only a JSON array of the translations, in the same order and with the same number of items.
+Translate the "text" of each item of this JSON array of app interface texts from English to $language.
+Each item's "key" and "description" tell where the text appears in the app: use them to pick the right meaning and wording, and do not translate them.
+Keep every {placeholder} exactly as written. Reply with only a JSON array of the translated texts, as strings, in the same order and with the same number of items.
 
-${jsonEncode(texts)}''', AppDuration.aiGenerateTimeout);
+${jsonEncode(items)}''', AppDuration.aiGenerateTimeout);
     final reply = response.replaceAll(RegExp(r'<think>[\s\S]*?</think>'), '');
     final start = reply.indexOf('[');
     final end = reply.lastIndexOf(']');

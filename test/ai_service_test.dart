@@ -109,12 +109,15 @@ void main() {
   });
 
   /// A service whose Ollama lists [models], of which [toolModels] can call
-  /// tools, and records the model each generate request names.
+  /// tools and [thinkingModels] think, and records the model each generate
+  /// request names, and its whole body in [bodies].
   AIService serviceWithModels(
     List<String> models,
     Set<String> toolModels,
-    List<String> requested,
-  ) => AIService(
+    List<String> requested, {
+    Set<String> thinkingModels = const {},
+    List<Map<String, dynamic>>? bodies,
+  }) => AIService(
     const _NoSdk(),
     MockClient((request) async {
       if (request.method == 'GET') {
@@ -127,19 +130,22 @@ void main() {
           HttpStatus.ok,
         );
       }
-      final model = jsonDecode(request.body)['model'] as String;
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      final model = body['model'] as String;
       if (request.url.path == '/api/show') {
         return http.Response(
           jsonEncode({
             'capabilities': [
               'completion',
               if (toolModels.contains(model)) 'tools',
+              if (thinkingModels.contains(model)) 'thinking',
             ],
           }),
           HttpStatus.ok,
         );
       }
       requested.add(model);
+      bodies?.add(body);
       return http.Response(jsonEncode({'response': 'ok'}), HttpStatus.ok);
     }),
   );
@@ -178,6 +184,41 @@ void main() {
 
     expect(await service.resolveModel(), 'codellama:latest');
     expect(service.supportsTools, isFalse);
+  });
+
+  test('thinking models think only for reviews', () async {
+    final bodies = <Map<String, dynamic>>[];
+    final service = serviceWithModels(
+      ['qwen3:8b'],
+      {'qwen3:8b'},
+      [],
+      thinkingModels: {'qwen3:8b'},
+      bodies: bodies,
+    );
+
+    await service.getCodeSuggestion('tip?', '');
+    await service.reviewCode('Review.', '', 'findings');
+
+    expect([for (final body in bodies) body['think']], [false, true]);
+    expect(bodies.first['keep_alive'], isPositive);
+    // One context size for every request, so Ollama never reloads
+    expect({
+      for (final body in bodies) jsonEncode(body['options']),
+    }, hasLength(1));
+  });
+
+  test('models without thinking get no think option', () async {
+    final bodies = <Map<String, dynamic>>[];
+    final service = serviceWithModels(
+      ['codellama:latest'],
+      {},
+      [],
+      bodies: bodies,
+    );
+
+    await service.getCodeSuggestion('tip?', '');
+
+    expect(bodies.single.containsKey('think'), isFalse);
   });
 
   test('commit message keeps the first line without quotes', () async {

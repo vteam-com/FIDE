@@ -6,10 +6,15 @@ class ArbTranslation {
     required this.source,
     required this.language,
     required this.arbPath,
+    this.description,
   });
 
   /// Absolute path of the target language's ARB file.
   final String arbPath;
+
+  /// The template's `@key` description of where the text appears; null
+  /// when it has none.
+  final String? description;
 
   /// The ARB key.
   final String key;

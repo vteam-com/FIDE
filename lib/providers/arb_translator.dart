@@ -67,6 +67,7 @@ class ArbTranslator {
               ArbTranslation(
                 key: detail.key,
                 source: source[detail.key] as String,
+                description: _description(source['@${detail.key}']),
                 language: issue.languageName,
                 arbPath: p.join(
                   projectPath,
@@ -75,6 +76,13 @@ class ArbTranslator {
                 ),
               ),
     ];
+  }
+
+  /// The `description` of an ARB key's [metadata], or null when it has
+  /// none.
+  static String? _description(Object? metadata) {
+    final description = metadata is Map ? metadata['description'] : null;
+    return description is String && description.isNotEmpty ? description : null;
   }
 
   /// Asks the model for [translations] in batches per language, telling
@@ -110,9 +118,7 @@ class ArbTranslator {
         );
         final List<String> texts;
         try {
-          texts = await _ai.translateAll([
-            for (final translation in batch) translation.source,
-          ], language);
+          texts = await _ai.translateAll(batch, language);
         } catch (e) {
           failure = e;
           break batches;

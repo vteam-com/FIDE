@@ -13,7 +13,13 @@ class AppMetric {
   static const int aiMaxReadChars = 40000;
   static const int aiCommitDiffChars = 12000;
   static const int aiReviewContextChars = 40000;
-  static const int aiReviewContextTokens = 16384;
+
+  /// Context window of every model request, in tokens: room for Fix
+  /// Build's file reads and history. Ollama otherwise gives a model its
+  /// full context, whose memory can spill onto the CPU and slow it many
+  /// times over, and reloads the model whenever the size changes.
+  static const int aiContextTokens = 32768;
+
   static const int aiReviewMaxItems = 15;
 
   /// Texts translated per model request: small enough to stay fast on a

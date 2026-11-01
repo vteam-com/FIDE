@@ -10,10 +10,12 @@ import 'package:fide/providers/process_runner.dart';
 /// Kept apart from `AIService` so talking to the model and managing the
 /// Ollama installation can change independently.
 class OllamaInstaller {
-  /// The model FIDE uses. Fix Build edits files through Ollama tool
-  /// calling, so a replacement must support tools (`llama3.1`, `qwen3`,
-  /// `mistral`, ...); `codellama` does not.
-  static const String model = 'qwen2.5-coder';
+  /// The model FIDE uses: a mixture of experts running only about 3B of
+  /// its 30B parameters per token, so it answers fast and spends little
+  /// energy. Fix Build edits files through Ollama tool calling, so a
+  /// replacement must support tools (`llama3.1`, `qwen3`, `mistral`, ...);
+  /// `codellama` does not.
+  static const String model = 'qwen3-coder';
 
   final ProcessRunner _runner;
 

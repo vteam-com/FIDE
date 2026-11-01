@@ -174,7 +174,7 @@ class CodeEditAgent {
         'summary naming each file you changed. When the user only asks a '
         'question, answer it without editing. Paths are relative to the '
         'project root.'
-        '${hooks.runQuickFix == null ? '' : ' For hardcoded strings, localization, translations or string constants, call run_quick_fix first, then edit by hand only what it left.'}',
+        '${hooks.runQuickFix == null ? '' : ' For hardcoded strings, localization, translations, string constants or member sorting, call run_quick_fix first, then edit by hand only what it left.'}',
     [
       ...history,
       {'role': 'user', 'content': request},
@@ -184,7 +184,8 @@ class CodeEditAgent {
   );
 
   /// Asks the model to fix the build that failed with [errors], with the
-  /// user's [notes], and returns its closing summary.
+  /// user's [notes], and returns its closing summary; a thinking model
+  /// reasons before each step, as tracing errors to their cause needs it.
   ///
   /// Throws an [AiServiceException] when the model can't be reached, and
   /// an [AiCancelledException] after [cancel].
@@ -200,16 +201,19 @@ class CodeEditAgent {
     ],
     'Stopped after ${AppMetric.aiMaxToolRounds} steps without a '
         'passing build.',
+    think: true,
   );
 
   /// Runs the tool loop: sends [system] and [conversation] to the model,
   /// runs the skills it calls, and returns its first reply that calls
-  /// none, or [stoppedMessage] after [AppMetric.aiMaxToolRounds] rounds.
+  /// none, or [stoppedMessage] after [AppMetric.aiMaxToolRounds] rounds;
+  /// [think] lets a thinking model reason before each step.
   Future<String> _converse(
     String system,
     List<Map<String, String>> conversation,
-    String stoppedMessage,
-  ) async {
+    String stoppedMessage, {
+    bool think = false,
+  }) async {
     final tools = [for (final skill in skills) skill.toTool()];
     final messages = <Map<String, dynamic>>[
       {'role': 'system', 'content': system},
@@ -217,7 +221,7 @@ class CodeEditAgent {
     ];
     for (var round = 0; round < AppMetric.aiMaxToolRounds; round++) {
       _throwIfCancelled();
-      final reply = await _ai.chat(messages, tools);
+      final reply = await _ai.chat(messages, tools, think: think);
       messages.add(reply);
       final calls = reply['tool_calls'];
       if (calls is! List || calls.isEmpty) {

@@ -124,16 +124,19 @@ extension QualityIssues on fcheck.ProjectMetrics {
 
   /// What the AI agent does to [domain]'s findings: localize hardcoded
   /// strings and fix the rest; none for translations, which Translate with
-  /// AI handles key by key.
+  /// AI handles key by key, nor for sorting, which Sort members does.
   String? _aiVerb(fcheck.AnalyzerDomain? domain) => switch (domain) {
     fcheck.AnalyzerDomain.hardcodedStrings => 'Localize',
     // Translate with AI asks the model per key instead of the agent
     fcheck.AnalyzerDomain.localization => null,
+    // Sorting is mechanical: fCheck's sorter does it at once
+    fcheck.AnalyzerDomain.sourceSorting => null,
     _ => 'Fix',
   };
 
   /// The fixes FIDE applies itself to [domain]'s findings: translating
-  /// incomplete translations; for hardcoded strings, localizing them once
+  /// incomplete translations; sorting unsorted members; for hardcoded
+  /// strings, localizing them once
   /// the project is localized, its translations are in the ARB files, and
   /// some strings have a `BuildContext`, and making the ones without
   /// interpolations constants.
@@ -147,6 +150,9 @@ extension QualityIssues on fcheck.ProjectMetrics {
         for (final fix in QuickFix.values)
           if (fix.localizationProblems.any(problems.contains)) fix,
       ];
+    }
+    if (domain == fcheck.AnalyzerDomain.sourceSorting) {
+      return const [QuickFix.sortMembers];
     }
     if (domain != fcheck.AnalyzerDomain.hardcodedStrings) return const [];
     return [

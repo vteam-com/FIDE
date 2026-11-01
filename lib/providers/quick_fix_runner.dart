@@ -126,6 +126,15 @@ class QuickFixRunner {
         }
         final result = await keyRemover.apply(projectPath, keys);
         return (summary: result.summary, changedFiles: result.changedFiles);
+      case QuickFix.sortMembers:
+        if (metrics.sourceSortIssues.isEmpty) {
+          return (summary: 'Members already sorted', changedFiles: <String>[]);
+        }
+        final changed = await review.sortMembers(projectPath);
+        return (
+          summary: 'Sorted members in ${changed.length.localized} files',
+          changedFiles: changed,
+        );
       case QuickFix.translateKeys:
         final translations = await translator.plan(projectPath, metrics);
         if (translations.isEmpty) {

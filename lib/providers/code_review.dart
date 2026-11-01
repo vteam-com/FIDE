@@ -3,6 +3,7 @@ import 'dart:isolate';
 
 import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/project_files.dart';
 import 'package:fide/models/text_truncation.dart';
 import 'package:path/path.dart' as p;
 
@@ -35,6 +36,38 @@ class CodeReview {
           : null,
     ).analyze(),
   );
+
+  /// Sorts the members of widget and `State` classes, and the imports, of
+  /// the project at [projectPath] with fcheck's own sorter, honoring its `.fcheck` file, on a
+  /// background isolate, and returns the paths of the files it rewrote.
+  ///
+  /// Only the sorting analyzer runs, so fcheck's other fixes, such as
+  /// rewriting ARB files, don't.
+  Future<List<String>> sortMembers(String projectPath) => Isolate.run(() {
+    final config = fcheck.FcheckConfig.loadForInputDirectory(
+      Directory(projectPath),
+    );
+    final root = config.analysisDirectory;
+    final before = {
+      for (final entity in root.listSync(recursive: true, followLinks: false))
+        if (entity is File &&
+            p.extension(entity.path) == '.dart' &&
+            !ProjectFiles.isSkippedPath(
+              p.relative(entity.path, from: root.path),
+            ))
+          entity.path: entity.readAsStringSync(),
+    };
+    fcheck.AnalyzeFolder(
+      root,
+      fix: true,
+      excludePatterns: config.mergeExcludePatterns(const []),
+      enabledAnalyzers: const {fcheck.AnalyzerDomain.sourceSorting},
+    ).analyze();
+    return [
+      for (final MapEntry(key: path, value: content) in before.entries)
+        if (File(path).readAsStringSync() != content) path,
+    ];
+  });
 
   /// The code that [metrics] shows is too big or too coupled for a SOLID
   /// review: the largest classes with their source, the files importing
