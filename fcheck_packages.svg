@@ -456,7 +456,7 @@
 </g>
 <g>
   <path d="M 367.0 494.0 H 283.0 Q 277.0 494.0 277.0 500.0 V 3330.0 Q 277.0 3336.0 283.0 3336.0 H 547.0" class="edgeVertical"/>
-  <title>file_picker -> file_picker_darwin v2.4.0</title>
+  <title>file_picker -> file_picker_darwin v2.4.1</title>
 </g>
 <g>
   <path d="M 367.0 1022.0 H 280.0 Q 274.0 1022.0 274.0 1028.0 V 3906.0 Q 274.0 3912.0 280.0 3912.0 H 547.0" class="edgeVertical"/>
@@ -1063,7 +1063,7 @@
 <g class="platformBadge platformBadge--windows"><title>Windows</title><rect x="486.0" y="499.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#2563eb" stroke="#1d4ed8" stroke-width="0.6"/><text x="492.5" y="506.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">W</text></g>
 <g class="platformBadge platformBadge--web"><title>Browser</title><rect x="503.0" y="499.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#0891b2" stroke="#0e7490" stroke-width="0.6"/><text x="509.5" y="506.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">B</text></g>
 <text x="467.0" y="480.0" class="packageLabelNodeName packageLabelCaption" text-anchor="middle">file_picker</text>
-<text x="467.0" y="493.0" class="packageLabelNodeVersion" text-anchor="middle">v13.3.0</text>
+<text x="467.0" y="493.0" class="packageLabelNodeVersion" text-anchor="middle">v13.3.1</text>
 </g>
 <g class="badge outgoingBadge">
   <path d="M 361.0,494.0 L 373.0,487.0 Q 376.0,487.0 376.0,490.0 L 376.0,498.0 Q 376.0,501.0 373.0,501.0 Z" fill="#10b981"/>
@@ -1522,7 +1522,7 @@
 <g class="platformBadge platformBadge--ios"><title>iOS</title><rect x="672.0" y="3333.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#111827" stroke="#0f172a" stroke-width="0.6"/><text x="678.5" y="3340.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">I</text></g>
 <g class="platformBadge platformBadge--macos"><title>macOS</title><rect x="689.0" y="3333.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#475569" stroke="#334155" stroke-width="0.6"/><text x="695.5" y="3340.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">M</text></g>
 <text x="555.0" y="3328.0" class="packageLabelDerivedName packageLabelCaption" text-anchor="start">file_picker_darwin</text>
-<text x="819.0" y="3328.0" class="packageLabelDerivedVersion" text-anchor="end">^2.4.0</text>
+<text x="819.0" y="3328.0" class="packageLabelDerivedVersion" text-anchor="end">^2.4.1</text>
 </g>
 <g class="badge incomingBadge">
   <path d="M 553.0,3336.0 L 541.0,3329.0 Q 538.0,3329.0 538.0,3332.0 L 538.0,3340.0 Q 538.0,3343.0 541.0,3343.0 Z" fill="#3b82f6"/>
