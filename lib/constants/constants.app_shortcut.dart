@@ -22,19 +22,6 @@ class AppShortcut {
     shift: true,
   );
 
-  /// Next Panel Tab: the left panel's tabs, then the right panel's.
-  static const SingleActivator nextPanelTab = SingleActivator(
-    LogicalKeyboardKey.tab,
-    control: true,
-  );
-
-  /// Previous Panel Tab: [nextPanelTab] backward.
-  static const SingleActivator previousPanelTab = SingleActivator(
-    LogicalKeyboardKey.tab,
-    control: true,
-    shift: true,
-  );
-
   /// Second keys of menu shortcuts, by the menu item's own shortcut.
   static const Map<SingleActivator, SingleActivator> aliases = {
     quickOpen: quickOpenAlias,

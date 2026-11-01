@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 /// One command of the keyboard shortcut help: the menu it is in, its
@@ -16,11 +15,6 @@ class ShortcutHelpEntry {
   static const String _alt = '⌥';
   static const String _shift = '⇧';
   static const String _meta = '⌘';
-
-  /// Symbols macOS menus show for keys whose label is a word.
-  static final Map<LogicalKeyboardKey, String> _keySymbols = {
-    LogicalKeyboardKey.tab: '⇥',
-  };
 
   /// Ellipsis ending labels of commands that ask for more input.
   static const String _ellipsis = '...';
@@ -78,8 +72,7 @@ class ShortcutHelpEntry {
       if (activator.alt) _alt,
       if (activator.shift) _shift,
       if (activator.meta) _meta,
-      _keySymbols[activator.trigger] ??
-          activator.trigger.keyLabel.toUpperCase(),
+      activator.trigger.keyLabel.toUpperCase(),
     ].join();
   }
 }

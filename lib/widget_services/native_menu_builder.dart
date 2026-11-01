@@ -27,9 +27,6 @@ class NativeMenuBuilder {
   final Function() onFindNext;
   final Function() onFindPrevious;
   final Function() onGoToLine;
-  final Function() onToggleLeftPanel;
-  final Function() onToggleBottomPanel;
-  final Function() onToggleRightPanel;
   final ValueChanged<LeftPanelTab> onSwitchPanel;
   final Function(String) onProjectSwitch;
   final Function()? onCloseProject;
@@ -50,9 +47,6 @@ class NativeMenuBuilder {
     required this.onFindNext,
     required this.onFindPrevious,
     required this.onGoToLine,
-    required this.onToggleLeftPanel,
-    required this.onToggleBottomPanel,
-    required this.onToggleRightPanel,
     required this.onSwitchPanel,
     required this.onProjectSwitch,
     this.onCloseProject,
@@ -252,87 +246,48 @@ class NativeMenuBuilder {
     return PlatformMenu(
       label: 'View',
       menus: [
-        PlatformMenuItem(
-          label: 'Panel Left',
-          shortcut: const SingleActivator(
+        for (final (label, digit, visible, expanded) in [
+          (
+            'Panel Left',
             LogicalKeyboardKey.digit1,
-            meta: true,
+            leftPanelVisibleProvider,
+            leftPanelExpandedProvider,
           ),
-          onSelected: () {
-            onToggleLeftPanel();
-          },
-        ),
-        PlatformMenuItem(
-          label: 'Panel Bottom',
-          shortcut: const SingleActivator(
+          (
+            'Panel Bottom',
             LogicalKeyboardKey.digit2,
-            meta: true,
+            bottomPanelVisibleProvider,
+            bottomPanelExpandedProvider,
           ),
-          onSelected: () {
-            onToggleBottomPanel();
-          },
-        ),
-        PlatformMenuItem(
-          label: 'Panel Right',
-          shortcut: const SingleActivator(
+          (
+            'Panel Right',
             LogicalKeyboardKey.digit3,
-            meta: true,
+            rightPanelVisibleProvider,
+            rightPanelExpandedProvider,
           ),
-          onSelected: () {
-            onToggleRightPanel();
-          },
-        ),
+        ])
+          PlatformMenuItem(
+            label: '$label: Hide, Min, Max',
+            shortcut: SingleActivator(digit, meta: true),
+            onSelected: () => cyclePanelSize(ref, visible, expanded),
+          ),
         PlatformMenuItemGroup(
           members: [
             PlatformMenuItem(
-              label: 'Expand or Restore Panel Left',
+              label: 'Next Left Panel Tab',
               shortcut: const SingleActivator(
                 LogicalKeyboardKey.digit1,
-                alt: true,
+                control: true,
               ),
-              onSelected: () => togglePanelExpanded(
-                ref,
-                leftPanelVisibleProvider,
-                leftPanelExpandedProvider,
-              ),
+              onSelected: () => nextLeftPanelTab(ref),
             ),
             PlatformMenuItem(
-              label: 'Expand or Restore Panel Bottom',
-              shortcut: const SingleActivator(
-                LogicalKeyboardKey.digit2,
-                alt: true,
-              ),
-              onSelected: () => togglePanelExpanded(
-                ref,
-                bottomPanelVisibleProvider,
-                bottomPanelExpandedProvider,
-              ),
-            ),
-            PlatformMenuItem(
-              label: 'Expand or Restore Panel Right',
+              label: 'Next Right Panel Tab',
               shortcut: const SingleActivator(
                 LogicalKeyboardKey.digit3,
-                alt: true,
+                control: true,
               ),
-              onSelected: () => togglePanelExpanded(
-                ref,
-                rightPanelVisibleProvider,
-                rightPanelExpandedProvider,
-              ),
-            ),
-          ],
-        ),
-        PlatformMenuItemGroup(
-          members: [
-            PlatformMenuItem(
-              label: 'Next Panel Tab',
-              shortcut: AppShortcut.nextPanelTab,
-              onSelected: () => cyclePanelTabs(ref),
-            ),
-            PlatformMenuItem(
-              label: 'Previous Panel Tab',
-              shortcut: AppShortcut.previousPanelTab,
-              onSelected: () => cyclePanelTabs(ref, backward: true),
+              onSelected: () => nextRightPanelTab(ref),
             ),
           ],
         ),

@@ -1,57 +1,48 @@
-import 'package:fide/constants/constants.dart';
 import 'package:fide/models/left_panel_tab.dart';
 import 'package:fide/models/right_panel_tab.dart';
 import 'package:fide/providers/ui_state_providers.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
-/// Expands the panel shown while [visible] to its largest size, showing
-/// it, or restores the size it had when [expanded] already.
-void togglePanelExpanded(
+/// Moves the panel shown while [visible] to its next size: hidden, then
+/// its own size, then expanded to its largest ([expanded]), then hidden
+/// again.
+void cyclePanelSize(
   WidgetRef ref,
   StateProvider<bool> visible,
   StateProvider<bool> expanded,
 ) {
-  final expand = !ref.read(visible) || !ref.read(expanded);
+  final shown = ref.read(visible);
+  final wasExpanded = ref.read(expanded);
+  ref.read(visible.notifier).state = !shown || !wasExpanded;
+  ref.read(expanded.notifier).state = shown && !wasExpanded;
+}
+
+/// Shows the left panel's next tab, looping back to the first.
+void nextLeftPanelTab(WidgetRef ref) => _nextTab(
+  ref,
+  LeftPanelTab.values,
+  activeLeftPanelTabProvider,
+  leftPanelVisibleProvider,
+);
+
+/// Shows the right panel's next tab, looping back to the first.
+void nextRightPanelTab(WidgetRef ref) => _nextTab(
+  ref,
+  RightPanelTab.values,
+  activeRightPanelTabProvider,
+  rightPanelVisibleProvider,
+);
+
+/// Shows the tab of [tabs] after the [active] one, looping back to the
+/// first, and its panel ([visible]) when hidden.
+void _nextTab<T extends Enum>(
+  WidgetRef ref,
+  List<T> tabs,
+  StateProvider<T> active,
+  StateProvider<bool> visible,
+) {
   ref.read(visible.notifier).state = true;
-  ref.read(expanded.notifier).state = expand;
-}
-
-/// Shows the next panel tab after the one picked last, or the previous
-/// one when [backward]: the left panel's tabs, then the right panel's,
-/// looping back to the first or last.
-void cyclePanelTabs(WidgetRef ref, {bool backward = false}) {
-  final leftCount = LeftPanelTab.values.length;
-  final count = leftCount + RightPanelTab.values.length;
-  final current = ref.read(rightPanelTabPickedProvider)
-      ? leftCount + ref.read(activeRightPanelTabProvider).index
-      : ref.read(activeLeftPanelTabProvider).index;
-  final next = (current + (backward ? -1 : 1)) % count;
-  final onRight = next >= leftCount;
-  ref.read(rightPanelTabPickedProvider.notifier).state = onRight;
-  if (onRight) {
-    ref.read(rightPanelVisibleProvider.notifier).state = true;
-    ref.read(activeRightPanelTabProvider.notifier).state =
-        RightPanelTab.values[next - leftCount];
-  } else {
-    ref.read(leftPanelVisibleProvider.notifier).state = true;
-    ref.read(activeLeftPanelTabProvider.notifier).state =
-        LeftPanelTab.values[next];
-  }
-}
-
-/// Cycles the panel tabs when [event] is [AppShortcut.nextPanelTab] or
-/// [AppShortcut.previousPanelTab], and says whether it did; for a
-/// [HardwareKeyboard] handler, which sees keys before any focused widget:
-/// the code editor takes Tab with any modifier, and macOS doesn't hand ⌃⇥
-/// to the menu.
-bool handlePanelTabKeys(WidgetRef ref, KeyEvent event) {
-  final keyboard = HardwareKeyboard.instance;
-  final backward = AppShortcut.previousPanelTab.accepts(event, keyboard);
-  if (!backward && !AppShortcut.nextPanelTab.accepts(event, keyboard)) {
-    return false;
-  }
-  cyclePanelTabs(ref, backward: backward);
-  return true;
+  ref.read(active.notifier).state =
+      tabs[(ref.read(active).index + 1) % tabs.length];
 }

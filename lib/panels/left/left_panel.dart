@@ -77,7 +77,6 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
       // Update the provider when tab changes
       ref.read(activeLeftPanelTabProvider.notifier).state =
           LeftPanelTab.values[_tabController.index];
-      ref.read(rightPanelTabPickedProvider.notifier).state = false;
 
       // Trigger rebuild to update tab icons
       setState(() {});

@@ -73,7 +73,6 @@ class _RightPanelState extends State<RightPanel>
           onTap: (index) {
             ref.read(activeRightPanelTabProvider.notifier).state =
                 RightPanelTab.values[index];
-            ref.read(rightPanelTabPickedProvider.notifier).state = true;
           },
           tabs: [
             for (final tab in RightPanelTab.values)
