@@ -85,10 +85,10 @@ packages:
     dependency: transitive
     description:
       name: cnativeapi
-      sha256: "3314fe77c37f606cf37b473402da977f0dff04af3b529c27bd01e878117742b0"
+      sha256: "4bccdb9f1f543b4c2c89f81ecc2515c623e2e49dcbf284bdde6cde61e8bb042c"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.5"
+    version: "0.5.6"
   code_assets:
     dependency: transitive
     description:
@@ -515,18 +515,18 @@ packages:
     dependency: transitive
     description:
       name: nativeapi
-      sha256: "220c05e12bd22ad50649b8c69038ad937612415d001d599cefde3d40c9c9f08f"
+      sha256: "5bdd8de1f9239a7e35725b91696e2f1465b45ee21b9cf60ecb1af3167d8efbdd"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.5"
+    version: "0.5.6"
   nativeapi_flutter:
     dependency: transitive
     description:
       name: nativeapi_flutter
-      sha256: "0a50f5c4122d3f9d5d33e2ba2dfe92e01def42e5732f53b88948311f681dbc9a"
+      sha256: "98d61786a3aef4a1cc8062bc51c8129d92431a240961609de74cba9f622beca2"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.5"
+    version: "0.5.6"
   nested:
     dependency: transitive
     description:

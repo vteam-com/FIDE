@@ -200,6 +200,22 @@ void main() {
     expect(stats.unstaged['new.txt']!.added, 3);
   });
 
+  test(
+    'getChangeStats counts an untracked binary file as zero lines',
+    () async {
+      // Not valid UTF-8, like the bytes of a PNG
+      File(path.join(repo.path, 'image.png')).writeAsBytesSync([0x89, 0xff]);
+      const git = GitService();
+
+      final stats = await git.getChangeStats(
+        repo.path,
+        await git.getStatus(repo.path),
+      );
+
+      expect(stats.unstaged['image.png']!.added, 0);
+    },
+  );
+
   test('getRecentCommits dates commits and flags unpushed ones', () async {
     final remote = Directory.systemTemp.createTempSync('fide_git_remote_');
     addTearDown(() => remote.deleteSync(recursive: true));

@@ -560,12 +560,19 @@ class GitService {
   }
 
   /// Counts every line of the untracked [file] as added; zero lines when it
-  /// is missing or too big to load.
+  /// is missing, too big to load or binary, as `git diff --numstat` counts
+  /// binary files.
   static Future<GitDiffStats> _newFileStats(File file) async {
     if (!await file.exists()) {
       return GitDiffStats(added: 0, removed: 0, isNewFile: true);
     }
-    final content = await FileSystemItem.fileToStringMaxSizeCheck(file);
+    final String content;
+    try {
+      content = await FileSystemItem.fileToStringMaxSizeCheck(file);
+    } on FileSystemException {
+      // Not UTF-8 text, such as an image
+      return GitDiffStats(added: 0, removed: 0, isNewFile: true);
+    }
     if (content == FileSystemItem.fileTooBigMessage) {
       return GitDiffStats(added: 0, removed: 0, isNewFile: true);
     }
