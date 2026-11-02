@@ -13,10 +13,10 @@ class AppOpacity {
   static const double emphasis = 0.8;
 
   /// Primary tint blended into the outer edge of the workspace gradient.
-  static const double workspaceGlow = 0.35;
+  static const double workspaceGlow = 0.6;
 
   /// Shadow blended into the workspace gradient's core to deepen contrast.
-  static const double workspaceShade = 0.12;
+  static const double workspaceShade = 0.2;
 
   const AppOpacity._();
 }
