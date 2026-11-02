@@ -82,42 +82,55 @@ class _SectionPanelState extends State<SectionPanel> {
         AppTextStyle.captionStrong.copyWith(color: theme.colorScheme.primary);
     final iconColor = widget.iconColor ?? theme.colorScheme.primary;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Section header
-        InkWell(
-          onTap: _handleToggle,
-          child: Container(
-            padding: widget.headerPadding,
-            color: headerBackgroundColor,
-            child: Row(
-              spacing: AppSpacing.tiny,
-              children: [
-                Icon(
-                  _isExpanded ? widget.iconExpanded : widget.iconCollapsed,
-                  size: widget.iconSize,
-                  color: iconColor,
-                ),
+    // A gap above and rounded top corners on the header set each section
+    // apart, tying the header to the content below it
+    const headerRadius = BorderRadius.vertical(
+      top: Radius.circular(AppRadius.small),
+    );
 
-                Expanded(
-                  child: Text(widget.title.toUpperCase(), style: titleStyle),
-                ),
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.micro),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section header
+          InkWell(
+            onTap: _handleToggle,
+            borderRadius: headerRadius,
+            child: Container(
+              padding: widget.headerPadding,
+              decoration: BoxDecoration(
+                color: headerBackgroundColor,
+                borderRadius: headerRadius,
+              ),
+              child: Row(
+                spacing: AppSpacing.tiny,
+                children: [
+                  Icon(
+                    _isExpanded ? widget.iconExpanded : widget.iconCollapsed,
+                    size: widget.iconSize,
+                    color: iconColor,
+                  ),
 
-                // optoon widgets
-                if (widget.rightWidget != null) widget.rightWidget!,
+                  Expanded(
+                    child: Text(widget.title.toUpperCase(), style: titleStyle),
+                  ),
 
-                // optional count
-                if (widget.count != null)
-                  ContainerCounter(count: widget.count!),
-              ],
+                  // optoon widgets
+                  if (widget.rightWidget != null) widget.rightWidget!,
+
+                  // optional count
+                  if (widget.count != null)
+                    ContainerCounter(count: widget.count!),
+                ],
+              ),
             ),
           ),
-        ),
-        // Section content
-        if (_isExpanded && widget.child != null)
-          Padding(padding: widget.contentPadding, child: widget.child),
-      ],
+          // Section content
+          if (_isExpanded && widget.child != null)
+            Padding(padding: widget.contentPadding, child: widget.child),
+        ],
+      ),
     );
   }
 
