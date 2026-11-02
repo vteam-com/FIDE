@@ -17,7 +17,7 @@ class CommandRuns {
   bool isAnyRunning(Iterable<String> ids) => ids.any(isRunning);
 
   /// Whether action [id] is in progress.
-  bool isRunning(String id) => statusOf(id) == ActionStatus.running;
+  bool isRunning(String id) => statusOf(id).isInProgress;
 
   /// The log kept under [key]; an empty one when nothing wrote to it yet.
   OutputLog logOf(String key) => logs[key] ?? OutputLog();

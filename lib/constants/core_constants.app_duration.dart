@@ -2,6 +2,9 @@ part of 'core_constants.dart';
 
 /// Common animation and timing durations used by UI interactions.
 class AppDuration {
+  /// How long a section takes to expand or collapse.
+  static const Duration expand = Duration(milliseconds: 200);
+
   static const Duration splitterHover = Duration(milliseconds: 150);
   static const Duration editorScroll = Duration(milliseconds: 100);
   static const Duration tooltipWait = Duration(seconds: 1);

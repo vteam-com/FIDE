@@ -41,7 +41,7 @@ class PanelAction {
   });
 
   /// Whether the action is in progress.
-  bool get isRunning => status == ActionStatus.running;
+  bool get isRunning => status.isInProgress;
 
   /// This action at [status], stopped by [onStop].
   PanelAction withProgress(ActionStatus status, {VoidCallback? onStop}) =>

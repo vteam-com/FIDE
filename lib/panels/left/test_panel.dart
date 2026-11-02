@@ -4,7 +4,7 @@ import 'package:fide/providers/command_runner.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/flutter_build_service.dart';
 import 'package:fide/services/test_suite_inspector.dart';
-import 'package:fide/widgets/command_action_tabs.dart';
+import 'package:fide/widgets/command_action_list.dart';
 import 'package:fide/widgets/command_output.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/message_box.dart';
@@ -81,7 +81,7 @@ class TestPanel extends ConsumerWidget {
                 if (isRunning) const InlineSpinner(),
               ],
             ),
-            CommandActionTabs(actions: actions),
+            CommandActionList(actions: actions),
             const CommandOutput(logKey: _logKey),
           ],
         ),

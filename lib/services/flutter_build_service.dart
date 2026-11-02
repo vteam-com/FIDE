@@ -11,6 +11,8 @@ part 'flutter_build_service.build_output.dart';
 /// Holds no UI state: callers render whatever arrives through [BuildOutput]
 /// and decide how to present success or failure.
 class FlutterBuildService {
+  /// Line `flutter run` prints once the app has launched.
+  static const String _appLaunchedMarker = 'Flutter run key commands';
   static const String _podOutputPrefix = 'POD: ';
 
   final ProcessRunner _runner;
@@ -127,6 +129,11 @@ class FlutterBuildService {
       workingDirectory: directory,
     );
   }
+
+  /// Whether [output] of [run] shows the app has launched: `flutter run`
+  /// lists its key commands once the app is up.
+  static bool isAppLaunched(String output) =>
+      output.contains(_appLaunchedMarker);
 
   /// Runs the app on [device] in debug or release mode; completes with the
   /// exit code when the app stops.

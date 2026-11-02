@@ -7,7 +7,7 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/command_runner.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/flutter_build_service.dart';
-import 'package:fide/widgets/command_action_tabs.dart';
+import 'package:fide/widgets/command_action_list.dart';
 import 'package:fide/widgets/command_output.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/outlined_surface.dart';
@@ -79,11 +79,7 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
               projectPath: currentProjectPath,
             ),
             if (isSupported && canBuild)
-              // Run Debug is what this tab is opened for nearly every time
-              CommandActionTabs(
-                actions: _actionsFor(platform),
-                initialId: 'debug',
-              )
+              CommandActionList(actions: _actionsFor(platform))
             else
               OutlinedSurface(
                 child: StatusIndicator.tone(
@@ -287,6 +283,7 @@ Updates ${platform.displayName} CocoaPods dependencies.
         '✗ App ${isDebug ? 'debug' : 'run'} failed with exit code $exitCode',
     errorPrefix: '✗ Run error: ',
     resetWhenDone: false,
+    isLive: FlutterBuildService.isAppLaunched,
   );
 
   /// Runs action [id] of [platform] against the loaded project, into the
@@ -302,6 +299,7 @@ Updates ${platform.displayName} CocoaPods dependencies.
     required String Function(int) failureMessage,
     required String errorPrefix,
     bool resetWhenDone = true,
+    bool Function(String output)? isLive,
   }) async {
     final projectPath = ref.read(currentProjectPathProvider);
     if (projectPath == null) return;
@@ -317,6 +315,7 @@ Updates ${platform.displayName} CocoaPods dependencies.
           errorPrefix: errorPrefix,
           resetWhenDone: resetWhenDone,
           reportsBuildErrors: true,
+          isLive: isLive,
         );
   }
 

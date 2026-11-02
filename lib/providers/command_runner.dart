@@ -62,7 +62,9 @@ class CommandRunner extends StateNotifier<CommandRuns> {
   /// processes it starts. Returns whether it succeeded.
   ///
   /// The status returns to idle after a pause, except when [resetWhenDone]
-  /// is false (app runs), whose final state stays visible. With
+  /// is false (app runs), whose final state stays visible. The action
+  /// turns [ActionStatus.live] at the first output [isLive] accepts, such
+  /// as an app's launch banner. With
   /// [reportsBuildErrors], the errors of a failure, or none after a
   /// success, become [lastBuildErrorsProvider] for the AI's Fix Build.
   Future<bool> run(
@@ -75,6 +77,7 @@ class CommandRunner extends StateNotifier<CommandRuns> {
     required String errorPrefix,
     bool resetWhenDone = true,
     bool reportsBuildErrors = false,
+    bool Function(String output)? isLive,
   }) async {
     // A reset ends this run: whatever it still reports is dropped
     final generation = _generation;
@@ -97,7 +100,15 @@ class CommandRunner extends StateNotifier<CommandRuns> {
     try {
       final exitCode = await command(
         BuildOutput(
-          onOutput: (text) => write((log) => log.addOutput(text)),
+          onOutput: (text) {
+            write((log) => log.addOutput(text));
+            if (isLive != null &&
+                isCurrent() &&
+                state.statusOf(id) == ActionStatus.running &&
+                isLive(text)) {
+              _setStatus(id, ActionStatus.live);
+            }
+          },
           onError: (text) => write((log) => log.addError(text)),
           onResetErrors: () => write((log) => log.clearErrors()),
           // Later steps of a stopped or ended run don't get to run

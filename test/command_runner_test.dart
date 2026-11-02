@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:fide/models/action_status.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/command_runner.dart';
+import 'package:fide/services/flutter_build_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -83,5 +84,35 @@ void main() {
     final runs = container.read(commandRunnerProvider);
     expect(runs.statusOf('build'), ActionStatus.idle);
     expect(runs.logOf(_log).hasOutput, isFalse);
+  });
+
+  test('turns live at the output marking the launch', () async {
+    final exit = Completer<int>();
+    late BuildOutput output;
+    final done = runner.run(
+      'run',
+      logKey: _log,
+      startMessages: const [],
+      command: (o) {
+        output = o;
+        return exit.future;
+      },
+      successMessage: 'ok',
+      failureMessage: (code) => 'failed $code',
+      errorPrefix: 'error: ',
+      isLive: (text) => text.contains('ready'),
+    );
+    ActionStatus status() =>
+        container.read(commandRunnerProvider).statusOf('run');
+
+    output.onOutput('building');
+    expect(status(), ActionStatus.running);
+    output.onOutput('ready');
+    expect(status(), ActionStatus.live);
+    expect(container.read(commandRunnerProvider).isRunning('run'), isTrue);
+
+    exit.complete(0);
+    await done;
+    expect(status(), ActionStatus.success);
   });
 }

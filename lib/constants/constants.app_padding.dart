@@ -29,6 +29,19 @@ class AppPadding {
     horizontal: 8,
     vertical: 4,
   );
+
+  /// Insets of one action's row in an action list.
+  static const EdgeInsets actionRow = EdgeInsets.symmetric(
+    horizontal: AppSpacing.medium,
+    vertical: AppSpacing.micro,
+  );
+
+  /// Insets of an action's details, aligned under its title.
+  static const EdgeInsets actionRowDetails = EdgeInsets.only(
+    left: AppSpacing.medium + AppIconSize.large + AppSpacing.medium,
+    right: AppSpacing.medium,
+    bottom: AppSpacing.medium,
+  );
   static const EdgeInsets selectedBadgeMargin = EdgeInsets.only(left: 4);
   static const EdgeInsets messageMargin = EdgeInsets.symmetric(
     horizontal: 16,

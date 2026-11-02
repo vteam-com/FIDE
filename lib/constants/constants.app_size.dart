@@ -23,8 +23,11 @@ class AppSize {
   static const double detailLabelWidth = 90;
   static const double diffLineNumberWidth = 40;
   static const double compactActionButton = 32;
+
+  /// Size of the progress ring around an action's run button.
+  static const double actionButtonRing =
+      compactActionButton + AppSpacing.medium;
   static const double panelFallbackHeight = 600;
-  static const double actionTabContentHeight = 220;
   static const double compactContextButton = 20;
   static const double compactProgressIndicator = 18;
   static const double regularProgressIndicator = 20;

@@ -1,5 +1,4 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/action_status.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/status_tone_style.dart';
@@ -47,20 +46,6 @@ class StatusIndicator extends StatelessWidget {
         if (text != null)
           Flexible(child: Text(text, style: labelStyle(color, colorScheme))),
       ],
-    );
-  }
-
-  /// The success or failure mark for a finished [status], labelled unless
-  /// [showLabel] is false; null while the action is idle or running.
-  static StatusIndicator? forResult(
-    ActionStatus status, {
-    bool showLabel = true,
-  }) {
-    final tone = status.resultTone;
-    if (tone == null) return null;
-    return StatusIndicator.tone(
-      tone,
-      label: showLabel ? status.resultLabel : null,
     );
   }
 
