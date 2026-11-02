@@ -30,10 +30,4 @@ class OutputLog {
 
   /// Discards captured errors, e.g. before an automatic retry.
   void clearErrors() => _errors.clear();
-
-  /// Appends [text] to the errors as-is.
-  void writeError(String text) => _errors.write(text);
-
-  /// Appends [text] to the output as-is.
-  void writeOutput(String text) => _output.write(text);
 }

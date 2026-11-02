@@ -65,6 +65,38 @@ class AppShortcut {
     meta: true,
   );
 
+  /// Find Next: the active document's next match.
+  static const SingleActivator findNext = SingleActivator(
+    LogicalKeyboardKey.keyG,
+    meta: true,
+  );
+
+  /// Find Previous: the active document's previous match.
+  static const SingleActivator findPrevious = SingleActivator(
+    LogicalKeyboardKey.keyG,
+    meta: true,
+    shift: true,
+  );
+
+  /// Go to Line: move the caret to a line of the active document.
+  static const SingleActivator goToLine = SingleActivator(
+    LogicalKeyboardKey.keyG,
+    control: true,
+  );
+
+  /// Refresh Status: reload the open project's Git state.
+  static const SingleActivator refreshGitStatus = SingleActivator(
+    LogicalKeyboardKey.keyR,
+    meta: true,
+    shift: true,
+  );
+
+  /// Quit: close the app.
+  static const SingleActivator quit = SingleActivator(
+    LogicalKeyboardKey.keyQ,
+    meta: true,
+  );
+
   /// Settings: show the settings screen.
   static const SingleActivator settings = SingleActivator(
     LogicalKeyboardKey.comma,

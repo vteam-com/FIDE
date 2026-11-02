@@ -137,23 +137,15 @@ class MessageBox {
     return confirmed ?? false;
   }
 
-  /// Presents an overlay message bar of [type], dismissed automatically
-  /// after that type's display duration.
+  /// Presents an overlay message bar of [type]; the bar removes itself
+  /// once closed or after that type's display duration.
   static void _showMessage(
     BuildContext context,
     String message,
     StatusTone type,
   ) {
-    final duration = switch (type) {
-      StatusTone.success => AppDuration.messageSuccess,
-      StatusTone.warning => AppDuration.messageWarning,
-      StatusTone.error => AppDuration.messageError,
-      StatusTone.info || StatusTone.neutral => AppDuration.messageInfo,
-    };
-    // Errors are the messages users need to copy into reports
-    final showCopyButton = type == StatusTone.error;
-    final overlay = Overlay.of(context);
-    final overlayEntry = OverlayEntry(
+    late final OverlayEntry overlayEntry;
+    overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         bottom: MediaQuery.of(context).padding.bottom + AppSpacing.medium,
         left: 0,
@@ -161,23 +153,14 @@ class MessageBox {
         child: MessageWidget(
           message: message,
           type: type,
-          duration: duration,
-          showCloseButton: true,
-          showCopyButton: showCopyButton,
+          // Removed rather than left faded out: an invisible bar would
+          // still catch the clicks meant for what lies under it
           onClose: () {
-            // This will be called when the message is dismissed
+            if (overlayEntry.mounted) overlayEntry.remove();
           },
         ),
       ),
     );
-
-    overlay.insert(overlayEntry);
-
-    // Auto remove after duration
-    Future.delayed(duration, () {
-      if (overlayEntry.mounted) {
-        overlayEntry.remove();
-      }
-    });
+    Overlay.of(context).insert(overlayEntry);
   }
 }

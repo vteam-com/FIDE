@@ -1,215 +1,75 @@
-// ignore: fcheck_dead_code
-import 'dart:io';
-
-import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:fide/models/git_file_status.dart';
+import 'package:fide/models/project_node.dart';
 import 'package:path/path.dart' as p;
 
-enum FileSystemItemType { file, directory, drive, parent }
+export 'package:fide/models/git_file_status.dart';
 
-enum GitFileStatus {
-  untracked, // ? - New file, not tracked by Git
-  added, // A - Added to staging area
-  modified, // M - Modified
-  deleted, // D - Deleted
-  renamed, // R - Renamed
-  copied, // C - Copied
-  updated, // U - Updated but unmerged
-  ignored, // ! - Ignored
-  clean, // No changes
-}
-
-/// Shared display helpers for Git status values.
-extension GitFileStatusDisplay on GitFileStatus {
-  /// Returns the badge symbol for this Git status.
-  String badgeSymbol({String deletedSymbol = '-'}) {
-    switch (this) {
-      case GitFileStatus.modified:
-        return '●';
-      case GitFileStatus.added:
-        return '+';
-      case GitFileStatus.deleted:
-        return deletedSymbol;
-      case GitFileStatus.untracked:
-        return '?';
-      case GitFileStatus.ignored:
-        return '!';
-      default:
-        return '';
-    }
-  }
-
-  /// Color for names and badges with this status; the theme's text color
-  /// for clean files.
-  Color color(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return switch (this) {
-      GitFileStatus.added => Colors.green,
-      GitFileStatus.modified => Colors.orange,
-      GitFileStatus.deleted => Colors.red,
-      GitFileStatus.untracked =>
-        Colors.grey[isDark ? AppShade.medium : AppShade.mild]!,
-      GitFileStatus.ignored =>
-        Colors.grey[isDark ? AppShade.strong : AppShade.neutral]!,
-      _ => Theme.of(context).colorScheme.onSurface,
-    };
-  }
-
-  /// Small icon marking a folder with this status; null when unmarked.
-  IconData? get icon => switch (this) {
-    GitFileStatus.added => Icons.add_circle,
-    GitFileStatus.modified => Icons.edit,
-    GitFileStatus.deleted => Icons.remove_circle,
-    GitFileStatus.untracked => Icons.new_releases,
-    _ => null,
-  };
-
-  /// [base] styled for this status: colored, and struck through when
-  /// deleted.
-  TextStyle textStyle(BuildContext context, TextStyle base) {
-    return switch (this) {
-      GitFileStatus.deleted => base.copyWith(
-        decoration: TextDecoration.lineThrough,
-        color: color(context),
-      ),
-      GitFileStatus.ignored ||
-      GitFileStatus.untracked ||
-      GitFileStatus.added ||
-      GitFileStatus.modified => base.copyWith(color: color(context)),
-      _ => base,
-    };
-  }
-}
-
-/// A node in the file-system tree used by the explorer panels, representing a file or directory.
+/// A file or directory shown and selected in the explorer panels.
+///
+/// Plain data built from values: the tree reader stats the disk, and
+/// [FileSystemItem.fromNode] copies what it read.
 class FileSystemItem {
+  /// The entry's name, without its directory.
   final String name;
-  final String path;
-  final String? warning;
-  final FileSystemItemType type;
-  final DateTime? modified;
-  final int? size;
-  final List<FileSystemItem>? children;
-  bool isExpanded;
-  GitFileStatus gitStatus;
 
-  FileSystemItem({
+  /// The entry's full path.
+  final String path;
+
+  /// A note shown under the name, e.g. a design warning; null for none.
+  final String? warning;
+
+  /// Whether the entry is a file or a directory.
+  final ProjectNodeType type;
+
+  /// When the entry was last modified; null when not read.
+  final DateTime? modified;
+
+  /// The file's size in bytes; null for directories and when not read.
+  final int? size;
+
+  /// The entry's state in Git.
+  final GitFileStatus gitStatus;
+
+  /// Creates an item from its values.
+  const FileSystemItem({
     required this.name,
     required this.path,
     required this.type,
     this.modified,
     this.size,
-    this.children,
-    this.isExpanded = false,
     this.gitStatus = GitFileStatus.clean,
     this.warning,
   });
 
-  factory FileSystemItem.fromFileSystemEntity(FileSystemEntity entity) {
-    FileStat? stat;
-    try {
-      stat = entity.statSync();
-    } catch (_) {
-      // statSync can fail (e.g., large files, permission issues): list the
-      // entry without its date and size
-    }
-    final isDirectory = FileSystemEntity.isDirectorySync(entity.path);
-    final isFile = stat != null && FileSystemEntity.isFileSync(entity.path);
-
-    return FileSystemItem(
-      name: p.basename(entity.path),
-      path: entity.path,
-      type: isDirectory
-          ? FileSystemItemType.directory
-          : FileSystemItemType.file,
-      modified: stat?.modified,
-      size: isFile ? stat.size : null,
-    );
-  }
-
-  // Create a parent directory item (for navigation)
-  factory FileSystemItem.parentDirectory(String currentPath) {
-    final parentPath = p.dirname(currentPath);
-    return FileSystemItem(
-      name: '..',
-      path: parentPath,
-      type: FileSystemItemType.parent,
-    );
-  }
-
-  /// A file item from [filePath] alone, without reading the disk: no date
-  /// or size.
-  factory FileSystemItem.fromPath(String filePath) {
+  /// An item from [filePath] alone, without reading the disk: no date or
+  /// size; a file unless [isDirectory].
+  factory FileSystemItem.fromPath(
+    String filePath, {
+    bool isDirectory = false,
+    GitFileStatus gitStatus = GitFileStatus.clean,
+  }) {
     return FileSystemItem(
       name: p.basename(filePath),
       path: filePath,
-      type: FileSystemItemType.file,
-      modified: null,
-      size: null,
+      type: isDirectory ? ProjectNodeType.directory : ProjectNodeType.file,
+      gitStatus: gitStatus,
     );
   }
 
-  // Get file extension for icons
-  /// Returns `fileExtension`.
-  String get fileExtension {
-    if (type != FileSystemItemType.file) return '';
-    final basename = p.basename(path);
-
-    // Handle dotfiles (files starting with .)
-    if (basename.startsWith('.') && basename.length > 1) {
-      final secondDotIndex = basename.indexOf('.', 1);
-      if (secondDotIndex != -1) {
-        // File like .gitignore, .dockerignore
-        return basename.substring(1, secondDotIndex);
-      } else {
-        // File like .env, .bashrc
-        return basename.substring(1);
-      }
-    }
-
-    final ext = p.extension(basename);
-    return ext.isNotEmpty ? ext.substring(1) : ''; // Remove the dot
+  /// The item for a project-tree [node]: its type, date, size and Git
+  /// status, with an optional [warning] shown under its name.
+  factory FileSystemItem.fromNode(ProjectNode node, {String? warning}) {
+    return FileSystemItem(
+      name: node.name,
+      path: node.path,
+      type: node.type,
+      modified: node.modified,
+      size: node.size,
+      gitStatus: node.gitStatus,
+      warning: warning,
+    );
   }
 
-  static const int maxFileSize = 1 * 1024 * 1024; // 1MB
-  static const String fileTooBigMessage = '// file too big to load';
-
-  /// Check if file is within maximum file size limit
-  static Future<bool> isWithinMaxFileSize(File file) async {
-    final fileSize = await file.length();
-    return fileSize <= maxFileSize;
-  }
-
-  /// Load file content with custom error message if too big
-  static Future<String> fileToStringMaxSizeCheck(
-    File file, {
-    String tooBigMessage = fileTooBigMessage,
-  }) async {
-    if (!await isWithinMaxFileSize(file)) {
-      return tooBigMessage;
-    }
-    return await file.readAsString();
-  }
-
-  // Read file content as string
-  /// Handles `FileSystemItem.readAsString`.
-  Future<String> readAsString() async {
-    if (type != FileSystemItemType.file) {
-      throw Exception('Cannot read content of a directory');
-    }
-    final file = File(path);
-    return await fileToStringMaxSizeCheck(file);
-  }
-
-  // Get file extension for filtering
-  /// Returns `extension`.
-  String get extension {
-    if (type != FileSystemItemType.file) return '';
-    final ext = p.extension(name).toLowerCase();
-    return ext.isNotEmpty ? ext.substring(1) : ''; // Remove the dot
-  }
-
-  // Check if item has Git status changes
-  /// Returns `hasGitChanges`.
-  bool get hasGitChanges => gitStatus != GitFileStatus.clean;
+  /// Whether this item is a directory.
+  bool get isDirectory => type == ProjectNodeType.directory;
 }

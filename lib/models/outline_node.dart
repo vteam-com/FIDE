@@ -1,11 +1,13 @@
+import 'package:fide/models/outline_kind.dart';
+
 /// One entry of the outline: a declaration, heading or key with where it
 /// starts and how deeply it is nested.
 class OutlineNode {
   /// Displayed name.
   final String name;
 
-  /// Kind, e.g. `class`, `Heading 2` or `YAML Key`.
-  final String type;
+  /// What the entry is: a class, a heading, a key, ...
+  final OutlineKind kind;
 
   /// 1-based line it starts on.
   final int line;
@@ -23,7 +25,7 @@ class OutlineNode {
   /// Creates an outline entry.
   const OutlineNode({
     required this.name,
-    required this.type,
+    required this.kind,
     required this.line,
     this.column = 1,
     this.level = 0,

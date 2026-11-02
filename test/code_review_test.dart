@@ -1,6 +1,7 @@
 import 'dart:io';
 
-import 'package:fide/providers/code_review.dart';
+import 'package:fide/services/ai_assistant.dart';
+import 'package:fide/services/code_review.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// A function long enough for fcheck to compare as duplicate code.
@@ -38,7 +39,7 @@ void main() {
   test('quotes both sides of the duplicates fcheck finds', () async {
     const review = CodeReview();
     final metrics = await review.analyze(project.path);
-    final findings = await review.duplicates(metrics);
+    final findings = await const ReviewFindings().duplicates(metrics);
 
     expect(findings, contains('fcheck found 1 duplicate code pairs.'));
     expect(findings, contains('lib/a.dart:'));
@@ -49,7 +50,9 @@ void main() {
 
   test('lists files and their imports for the design review', () async {
     const review = CodeReview();
-    final findings = await review.design(await review.analyze(project.path));
+    final findings = await const ReviewFindings().design(
+      await review.analyze(project.path),
+    );
 
     expect(findings, contains('## Largest classes'));
     expect(findings, contains('## Files importing the most project files'));

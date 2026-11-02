@@ -6,7 +6,6 @@ part of 'shared_panel_utils.dart';
 mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
   /// Expansion, filter and Git state for this panel.
   late final PanelStateManager panelState = PanelStateManager(
-    ref.read(gitServiceProvider),
     ref.read(projectTreeReaderProvider),
   );
 
@@ -47,15 +46,14 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
   void handleFileTap(ProjectNode node) {
     if (widget.selectedFile?.path == node.path) return;
 
-    if (node.gitStatus == GitFileStatus.clean && projectRoot != null) {
-      panelState.seedGitStatusForFile(node).then((_) {
-        if (mounted) setState(() {});
-      });
+    final root = projectRoot;
+    if (node.gitStatus == GitFileStatus.clean && root != null) {
+      // The status the Git badge already loaded; no Git process per tap
+      final status = ref.read(gitRepoControllerProvider(root.path)).value;
+      setState(() => panelState.seedGitStatusForFile(node, status?.status));
     }
 
-    widget.onFileSelected?.call(
-      FileSystemItem.fromFileSystemEntity(File(node.path)),
-    );
+    widget.onFileSelected?.call(FileSystemItem.fromNode(node));
   }
 
   @override
@@ -138,11 +136,11 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
   /// Shows [node]'s folder, or [node] selected in its folder, in the file
   /// manager.
   Future<void> _reveal(ProjectNode node) async {
-    final processRunner = ref.read(processRunnerProvider);
+    final shell = ref.read(desktopShellProvider);
     try {
       await (node.isDirectory
-          ? processRunner.revealInFileManager(node.path)
-          : processRunner.revealFile(node.path));
+          ? shell.revealInFileManager(node.path)
+          : shell.revealFile(node.path));
     } catch (e) {
       showError('Failed to reveal ${node.name}: $e');
     }

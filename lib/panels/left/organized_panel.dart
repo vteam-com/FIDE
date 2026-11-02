@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/asset_kind.dart';
 import 'package:fide/models/code_category.dart';
@@ -9,11 +7,11 @@ import 'package:fide/models/project_categories.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/panels/left/shared_panel_utils.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/class_splitter.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
+import 'package:fide/widgets/asset_kind_icon.dart';
 import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/folder_node.dart';
 import 'package:fide/widgets/inline_spinner.dart';
@@ -41,8 +39,6 @@ class OrganizedPanel extends ProjectTreePanel {
 
 class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     with ProjectTreePanelState<OrganizedPanel> {
-  final Map<String, FileSystemItem> _cachedFileSystemItems = {};
-
   /// The grouping of the current tree; null while it is computed.
   ProjectCategories? _categories;
 
@@ -54,19 +50,19 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
 
   @override
   void onProjectTreeChanged() {
-    _cachedFileSystemItems.clear();
     _categories = null;
     _categorize();
   }
 
-  /// Groups the current tree off the build path and rebuilds with it.
+  /// Groups the current tree off the build path, counting classes from
+  /// the overview's fCheck analysis once there is one, and rebuilds with it.
   Future<void> _categorize() async {
     final root = projectRoot;
     if (root == null) return;
     final generation = ++_categorizeGeneration;
     final categories = await ref
         .read(projectCategorizerProvider)
-        .categorize(root);
+        .categorize(root, ref.read(projectOverviewProvider).value?.code);
     if (!mounted || generation != _categorizeGeneration) return;
     setState(() => _categories = categories);
   }
@@ -83,6 +79,8 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     ref.listen(savedFilesRevisionProvider, (_, _) => _categorize());
     // Files were added or removed, e.g. by a class split
     ref.listen(projectTreeRevisionProvider, (_, _) => _categorize());
+    // Class counts come from fCheck, analyzing again after each save
+    ref.listen(projectOverviewProvider, (_, _) => _categorize());
 
     return !isProjectLoaded ? buildNotLoadedView() : buildPanelContent();
   }
@@ -173,13 +171,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
       rightWidget: rightWidget,
       count: elementCount,
       child: contentWidget,
-      onExpansionToggle: () {
-        if (mounted) {
-          setState(() {
-            expandedState[expansionKey] = !isExpanded;
-          });
-        }
-      },
+      onExpansionChanged: (expanded) => expandedState[expansionKey] = expanded,
     );
   }
 
@@ -199,11 +191,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
             _buildAssetGroup(kind, files),
         ],
       ),
-      onExpansionToggle: () {
-        if (mounted) {
-          setState(() => expandedState[expansionKey] = !isExpanded);
-        }
-      },
+      onExpansionChanged: (expanded) => expandedState[expansionKey] = expanded,
     );
   }
 
@@ -263,40 +251,16 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
 
   /// The row for [node] (and its expanded children) in [category], if any.
   Widget _buildNode(ProjectNode node, [CodeCategory? category]) {
-    // Cache FileSystemItem creation to avoid expensive object creation on every build
-    final itemCacheKey = '${node.path}_${node.gitStatus.index}';
-    FileSystemItem item;
-
-    if (_cachedFileSystemItems.containsKey(itemCacheKey)) {
-      // Use cached FileSystemItem and update dynamic properties
-      item = _cachedFileSystemItems[itemCacheKey]!;
-      item.isExpanded =
-          expandedState[node.path] ?? false; // Update expansion state
-    } else {
-      // Create new FileSystemItem - expensive operation
-      item = FileSystemItem.fromFileSystemEntity(File(node.path));
-      item.gitStatus = node.gitStatus;
-      item.isExpanded = expandedState[node.path] ?? false;
-
-      // Cache it
-      _cachedFileSystemItems[itemCacheKey] = item;
-    }
-
-    // Add warning if applicable - this creates a new object but warnings are rare
-    if (category == CodeCategory.views &&
-        (_categories?.viewsWithDialogs.contains(node.path) ?? false)) {
-      item = FileSystemItem(
-        name: item.name,
-        path: item.path,
-        type: item.type,
-        modified: item.modified,
-        size: item.size,
-        children: item.children,
-        isExpanded: item.isExpanded,
-        gitStatus: item.gitStatus,
-        warning: 'This file contains a showDialog, we suggest to move dialog related code to single file with dialog logic.',
-      );
-    }
+    final isExpanded = expandedState[node.path] ?? false;
+    final hasDialogs =
+        category == CodeCategory.views &&
+        (_categories?.viewsWithDialogs.contains(node.path) ?? false);
+    final item = FileSystemItem.fromNode(
+      node,
+      warning: hasDialogs
+          ? 'This file contains a showDialog, we suggest to move dialog related code to single file with dialog logic.'
+          : null,
+    );
 
     final isSelected = widget.selectedFile?.path == item.path;
 
@@ -304,7 +268,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
       final multiClassFileCount = _categories?.multiClassFolders[node.path];
       return FolderNode(
         node: node,
-        isExpanded: item.isExpanded,
+        isExpanded: isExpanded,
         rootPath: projectRoot!.path,
         trailing: multiClassFileCount == null
             ? null
@@ -316,10 +280,10 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
                     'than one public class; expected one public class '
                     'per file',
               ),
-        onTap: () => toggleOrOpenNode(node, item.isExpanded),
+        onTap: () => toggleOrOpenNode(node, isExpanded),
         onShowContextMenu: (position) => showNodeContextMenu(node, position),
         children: [
-          if (item.isExpanded)
+          if (isExpanded)
             for (final child in node.children) _buildNode(child, category),
         ],
       );
@@ -350,14 +314,10 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     }
   }
 
-  /// After confirmation, moves every public class of [node] but one into
-  /// its own file, updating imports across the project.
+  /// After confirmation, saves the open files and moves every public class
+  /// of [node] but one into its own file, updating imports across the
+  /// project.
   Future<void> _splitClasses(ProjectNode node, int classCount) async {
-    final openDocuments = ref.read(openDocumentsProvider);
-    if (openDocuments.documents.any((d) => d.isDirty)) {
-      MessageBox.showError(context, 'Save your open files before splitting');
-      return;
-    }
     final confirmed = await MessageBox.confirm(
       context,
       title: 'Split ${node.name}?',
@@ -370,27 +330,23 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
 
     setState(() => _splittingPath = node.path);
     try {
-      final sdkPath = await ref.read(flutterSdkProvider).dartSdkPath();
-      if (sdkPath == null) {
-        throw const ClassSplitException('Flutter SDK not found');
-      }
-      final splitter = ClassSplitter(dartSdkPath: sdkPath);
-      final result = await splitter.plan(
-        projectPath: projectRoot!.path,
-        filePath: node.path,
-      );
-      await splitter.apply(result, ref.read(codeFormatterProvider));
-      await ref.read(openDocumentsProvider.notifier).reload(result.files.keys);
+      var createdFiles = const <String>[];
+      await ref.read(openDocumentsProvider.notifier).applyEdits(() async {
+        final result = await ref
+            .read(classSplitServiceProvider)
+            .plan(projectPath: projectRoot!.path, filePath: node.path);
+        createdFiles = result.createdFiles;
+        return result.files;
+      });
       if (!mounted) return;
       MessageBox.showSuccess(
         context,
-        'Moved into ${result.createdFiles.map(p.basename).join(', ')}',
+        'Moved into ${createdFiles.map(p.basename).join(', ')}',
       );
     } catch (e) {
       if (mounted) MessageBox.showError(context, 'Split failed: $e');
     } finally {
       if (mounted) setState(() => _splittingPath = null);
-      _categorize();
     }
   }
 }

@@ -1,53 +1,16 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:fide/models/quick_fix.dart';
-import 'package:fide/providers/ai_service.dart';
-import 'package:fide/providers/code_edit_agent.dart';
-import 'package:fide/providers/flutter_sdk.dart';
+import 'package:fide/services/chat_model.dart';
+import 'package:fide/services/code_edit_agent.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:path/path.dart' as p;
 
-/// An SDK whose versions can't be detected, so no tool runs.
-class _NoSdk extends FlutterSdk {
-  const _NoSdk();
-
-  @override
-  Future<({String? flutter, String? dart})?> versions() async => null;
-}
-
-/// An Ollama chat reply calling [name] with [arguments].
-http.Response _toolCall(String name, Map<String, String> arguments) =>
-    http.Response(
-      jsonEncode({
-        'message': {
-          'role': 'assistant',
-          'content': '',
-          'tool_calls': [
-            {
-              'function': {'name': name, 'arguments': arguments},
-            },
-          ],
-        },
-      }),
-      HttpStatus.ok,
-    );
-
-/// An Ollama chat reply with [content] and no tool calls.
-http.Response _answer(String content) => http.Response(
-  jsonEncode({
-    'message': {'role': 'assistant', 'content': content},
-  }),
-  HttpStatus.ok,
-);
+import 'fake_chat_model.dart';
 
 void main() {
   late Directory project;
   late List<String> written;
-  late List<Map<String, dynamic>> toolResults;
-  late List<dynamic> sentMessages;
 
   setUp(() {
     project = Directory.systemTemp.createTempSync('code_edit_agent');
@@ -55,49 +18,44 @@ void main() {
       ..createSync(recursive: true)
       ..writeAsStringSync('void main() { print(1) }');
     written = [];
-    toolResults = [];
   });
 
   tearDown(() => project.deleteSync(recursive: true));
 
-  /// An agent whose model sends [replies] in order and whose build passes.
-  CodeEditAgent agentReplying(List<http.Response> replies) {
-    final client = MockClient((request) async {
-      // Model lookups: no model listed, so requests keep the default
-      if (request.method == 'GET') {
-        return http.Response(jsonEncode({'models': []}), HttpStatus.ok);
-      }
-      final messages = jsonDecode(request.body)['messages'] as List;
-      sentMessages = messages;
-      toolResults = [
-        for (final message in messages)
-          if (message['role'] == 'tool') message as Map<String, dynamic>,
-      ];
-      return replies.removeAt(0);
-    });
-    return CodeEditAgent(
-      AIService(const _NoSdk(), client),
-      projectPath: project.path,
-      hooks: CodeEditHooks(
-        onStep: (_) {},
-        onFileWritten: (path) async => written.add(path),
-        checkBuild: () async => '',
-      ),
-    );
-  }
+  /// An agent whose [model] answers, stopped by [cancelToken], whose build
+  /// passes.
+  CodeEditAgent agentOf(FakeChatModel model, {AiCancelToken? cancelToken}) =>
+      CodeEditAgent(
+        model,
+        projectPath: project.path,
+        cancelToken: cancelToken,
+        hooks: CodeEditHooks(
+          onStep: (_) {},
+          onFileWritten: (path) async => written.add(path),
+          checkBuild: () async => '',
+        ),
+      );
+
+  /// The tool results the agent sent in its last chat request to [model].
+  List<Map<String, dynamic>> toolResults(FakeChatModel model) => [
+    for (final message in model.chats.last)
+      if (message['role'] == 'tool') message,
+  ];
 
   test('edits files through skills and checks the build', () async {
-    final agent = agentReplying([
-      _toolCall('replace_in_file', {
-        'path': 'lib/main.dart',
-        'old_text': 'print(1)',
-        'new_text': 'print(1);',
-      }),
-      _toolCall('check_build', {}),
-      _answer('Added the missing semicolon.'),
-    ]);
+    final model = FakeChatModel(
+      chatReplies: [
+        toolCall('replace_in_file', {
+          'path': 'lib/main.dart',
+          'old_text': 'print(1)',
+          'new_text': 'print(1);',
+        }),
+        toolCall('check_build', {}),
+        answer('Added the missing semicolon.'),
+      ],
+    );
 
-    final summary = await agent.fixBuild("Expected ';'", '');
+    final summary = await agentOf(model).fixBuild("Expected ';'", '');
 
     expect(summary, 'Added the missing semicolon.');
     expect(
@@ -105,23 +63,18 @@ void main() {
       'void main() { print(1); }',
     );
     expect(written, [p.join(project.path, 'lib', 'main.dart')]);
-    expect(toolResults.last['content'], 'Build succeeded.');
+    expect(toolResults(model).last['content'], 'Build succeeded.');
+    // Tracing build errors needs the model to think
+    expect(model.thinks, everyElement(isTrue));
   });
 
   test('cancel stops the agent before its next model request', () async {
-    var requests = 0;
+    final model = FakeChatModel(
+      chatReplies: [toolCall('check_build', {}), answer('never sent')],
+    );
     late CodeEditAgent agent;
     agent = CodeEditAgent(
-      AIService(
-        const _NoSdk(),
-        MockClient((request) async {
-          if (request.method == 'GET') {
-            return http.Response(jsonEncode({'models': []}), HttpStatus.ok);
-          }
-          requests++;
-          return _toolCall('check_build', {});
-        }),
-      ),
+      model,
       projectPath: project.path,
       hooks: CodeEditHooks(
         onStep: (_) {},
@@ -137,22 +90,35 @@ void main() {
       agent.fixBuild("Expected ';'", ''),
       throwsA(isA<AiCancelledException>()),
     );
-    expect(requests, 1);
+    expect(model.chats, hasLength(1));
+  });
+
+  test('a cancelled token given to the agent stops it', () async {
+    final model = FakeChatModel(chatReplies: [answer('never sent')]);
+    final agent = agentOf(model, cancelToken: AiCancelToken()..cancel());
+
+    await expectLater(
+      agent.edit('fix it', const []),
+      throwsA(isA<AiCancelledException>()),
+    );
+    expect(model.chats, isEmpty);
   });
 
   test(
     'makes a requested change in the files, with the chat as context',
     () async {
-      final agent = agentReplying([
-        _toolCall('replace_in_file', {
-          'path': 'lib/main.dart',
-          'old_text': 'print(1)',
-          'new_text': 'print(2);',
-        }),
-        _answer('Changed lib/main.dart.'),
-      ]);
+      final model = FakeChatModel(
+        chatReplies: [
+          toolCall('replace_in_file', {
+            'path': 'lib/main.dart',
+            'old_text': 'print(1)',
+            'new_text': 'print(2);',
+          }),
+          answer('Changed lib/main.dart.'),
+        ],
+      );
 
-      final summary = await agent.edit('fix 1', [
+      final summary = await agentOf(model).edit('fix 1', [
         {'role': 'user', 'content': 'D.R.Y. review'},
         {'role': 'assistant', 'content': '1. main prints the wrong value'},
       ]);
@@ -162,23 +128,29 @@ void main() {
         File(p.join(project.path, 'lib', 'main.dart')).readAsStringSync(),
         'void main() { print(2); }',
       );
+      final sent = model.chats.last;
       expect(
-        [for (final m in sentMessages) m['role']],
+        [for (final m in sent) m['role']],
         ['system', 'user', 'assistant', 'user', 'assistant', 'tool'],
       );
-      expect(sentMessages[3]['content'], 'fix 1');
+      expect(sent[3]['content'], 'fix 1');
     },
   );
 
   test('refuses paths outside the project', () async {
-    final agent = agentReplying([
-      _toolCall('write_file', {'path': '../escape.dart', 'content': ''}),
-      _answer('done'),
-    ]);
+    final model = FakeChatModel(
+      chatReplies: [
+        toolCall('write_file', {'path': '../escape.dart', 'content': ''}),
+        answer('done'),
+      ],
+    );
 
-    await agent.fixBuild('error', '');
+    await agentOf(model).fixBuild('error', '');
 
-    expect(toolResults.single['content'], contains('outside the project'));
+    expect(
+      toolResults(model).single['content'],
+      contains('outside the project'),
+    );
     expect(written, isEmpty);
   });
 
@@ -187,7 +159,7 @@ void main() {
       ..createSync(recursive: true)
       ..writeAsStringSync('');
 
-    final agent = agentReplying([]);
+    final agent = agentOf(FakeChatModel());
 
     expect(await agent.listFiles('.'), p.join('lib', 'main.dart'));
   });
@@ -195,7 +167,7 @@ void main() {
   test('runs FIDE quick fixes through run_quick_fix', () async {
     final ran = <QuickFix>[];
     final agent = CodeEditAgent(
-      AIService(const _NoSdk(), MockClient((_) async => _answer(''))),
+      FakeChatModel(),
       projectPath: project.path,
       hooks: CodeEditHooks(
         onStep: (_) {},
@@ -218,7 +190,7 @@ void main() {
     expect(ran, [QuickFix.makeConstants]);
     expect(() => skill.run({'name': 'rewriteAll'}), throwsFormatException);
     expect(
-      agentReplying([]).skills.map((skill) => skill.name),
+      agentOf(FakeChatModel()).skills.map((skill) => skill.name),
       isNot(contains('run_quick_fix')),
     );
   });

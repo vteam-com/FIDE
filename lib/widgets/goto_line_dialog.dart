@@ -1,4 +1,4 @@
-import 'package:fide/providers/editor_commands.dart';
+import 'package:fide/services/editor_commands.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/material.dart';
 

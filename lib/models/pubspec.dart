@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:yaml/yaml.dart';
 
 /// The parts of a `pubspec.yaml` the IDE reads.
@@ -59,13 +57,6 @@ class Pubspec {
       hasFlutterSection: map.containsKey('flutter'),
       launcherIconsSection: _section(map['flutter_launcher_icons']),
     );
-  }
-
-  /// Reads and parses the pubspec at [path]; null when the file is missing.
-  static Future<Pubspec?> read(String path) async {
-    final file = File(path);
-    if (!await file.exists()) return null;
-    return Pubspec.parse(await file.readAsString());
   }
 
   /// Whether this is a Flutter package: it depends on the Flutter SDK or

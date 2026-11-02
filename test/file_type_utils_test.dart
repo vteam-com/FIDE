@@ -1,7 +1,9 @@
+import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/project_node.dart';
+import 'package:fide/services/file_type_utils.dart';
+import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fide/models/file_system_item.dart';
-import 'package:fide/providers/file_type_utils.dart';
 
 // Helper class for test cases
 class TestCase {
@@ -14,6 +16,43 @@ class TestCase {
 
 void main() {
   group('FileTypeUtils', () {
+    group('extensionOf', () {
+      test('is the lowercase text after the file name\'s last dot', () {
+        expect(FileTypeUtils.extensionOf('/p/lib/main.DART'), 'dart');
+        expect(FileTypeUtils.extensionOf('archive.tar.gz'), 'gz');
+      });
+
+      test('ignores dots in folder names', () {
+        expect(FileTypeUtils.extensionOf('/a.b/Makefile'), '');
+        expect(FileTypeUtils.extensionOf('/a.b/c.d/notes.txt'), 'txt');
+      });
+
+      test('is empty without a dot or after a trailing one', () {
+        expect(FileTypeUtils.extensionOf('Makefile'), '');
+        expect(FileTypeUtils.extensionOf('name.'), '');
+        expect(FileTypeUtils.extensionOf(''), '');
+      });
+
+      test('types a dotfile without another dot by its name', () {
+        expect(FileTypeUtils.extensionOf('/p/.gitignore'), 'gitignore');
+        expect(FileTypeUtils.extensionOf('.ENV'), 'env');
+        expect(FileTypeUtils.extensionOf('.env.local'), 'local');
+      });
+    });
+
+    group('viewKindOf', () {
+      test('shows text files as code and images in the image viewer', () {
+        expect(FileTypeUtils.viewKindOf('lib/main.dart'), FileViewKind.code);
+        expect(FileTypeUtils.viewKindOf('logo.PNG'), FileViewKind.image);
+      });
+
+      test('is unsupported for recognized-only, unknown and empty paths', () {
+        expect(FileTypeUtils.viewKindOf('doc.pdf'), FileViewKind.unsupported);
+        expect(FileTypeUtils.viewKindOf('a.xyz'), FileViewKind.unsupported);
+        expect(FileTypeUtils.viewKindOf(''), FileViewKind.unsupported);
+      });
+    });
+
     group('isFileSupportedInEditor', () {
       test('returns true for supported text file extensions', () {
         expect(FileTypeUtils.isFileSupportedInEditor('main.dart'), true);
@@ -265,7 +304,7 @@ void main() {
           final item = FileSystemItem(
             path: '/path/to/${testCase.filename}',
             name: testCase.filename,
-            type: FileSystemItemType.file,
+            type: ProjectNodeType.file,
             size: 100,
             modified: DateTime.now(),
           );
@@ -283,7 +322,7 @@ void main() {
         final item = FileSystemItem(
           path: '/path/to/main.dart',
           name: 'main.dart',
-          type: FileSystemItemType.file,
+          type: ProjectNodeType.file,
           size: 100,
           modified: DateTime.now(),
         );
@@ -297,7 +336,7 @@ void main() {
         final item = FileSystemItem(
           path: '/path/to/MAIN.DART',
           name: 'MAIN.DART',
-          type: FileSystemItemType.file,
+          type: ProjectNodeType.file,
           size: 100,
           modified: DateTime.now(),
         );

@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fide/providers/localization_service.dart';
-import 'package:fide/providers/process_runner.dart';
+import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/process_runner.dart';
+import 'package:fide/services/project_config_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // Fails the commands whose joined text is in [failing]; succeeds otherwise
@@ -49,8 +50,10 @@ void main() {
       final runner = FakeFlutterRunner();
       final steps = <String>[];
 
-      await LocalizationService(runner)
-          .initializeLocalization(project.path, onStep: steps.add);
+      await LocalizationService(
+        runner,
+        const ProjectConfigReader(),
+      ).initializeLocalization(project.path, onStep: steps.add);
 
       expect(steps, hasLength(4));
       expect(runner.commands, [
@@ -74,7 +77,10 @@ void main() {
     final runner = FakeFlutterRunner(failing: {'flutter pub add intl'});
 
     await expectLater(
-      LocalizationService(runner).initializeLocalization(project.path),
+      LocalizationService(
+        runner,
+        const ProjectConfigReader(),
+      ).initializeLocalization(project.path),
       throwsA(isA<Exception>()),
     );
     expect(Directory('${project.path}/lib/l10n').existsSync(), false);
@@ -85,8 +91,10 @@ void main() {
       failing: {'flutter pub add intl', 'flutter gen-l10n'},
     );
 
-    await LocalizationService(runner)
-        .initializeLocalization(project.path, tolerateToolFailures: true);
+    await LocalizationService(
+      runner,
+      const ProjectConfigReader(),
+    ).initializeLocalization(project.path, tolerateToolFailures: true);
 
     expect(File('${project.path}/lib/l10n/app_fr.arb').existsSync(), true);
   });
@@ -98,16 +106,24 @@ void main() {
     test('enables generate when the flutter section is $label', () async {
       File('${project.path}/pubspec.yaml').writeAsStringSync(pubspec);
 
-      await LocalizationService(FakeFlutterRunner())
-          .initializeLocalization(project.path);
+      await LocalizationService(
+        FakeFlutterRunner(),
+        const ProjectConfigReader(),
+      ).initializeLocalization(project.path);
 
-      final service = LocalizationService(FakeFlutterRunner());
+      final service = LocalizationService(
+        FakeFlutterRunner(),
+        const ProjectConfigReader(),
+      );
       expect((await service.inspect(project.path)).hasGenerateFlag, true);
     });
   }
 
   test('inspect reports what the project already has', () async {
-    final service = LocalizationService(FakeFlutterRunner());
+    final service = LocalizationService(
+      FakeFlutterRunner(),
+      const ProjectConfigReader(),
+    );
 
     final before = await service.inspect(project.path);
     expect(before.isFlutterProject, true);

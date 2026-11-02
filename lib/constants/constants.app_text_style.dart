@@ -70,6 +70,11 @@ class AppTextStyle {
   /// Emphasis alone, merged into surrounding text such as markdown bold.
   static const TextStyle strong = TextStyle(fontWeight: _strong);
 
+  /// Strike-through alone, merged into a deleted file's name.
+  static const TextStyle struckThrough = TextStyle(
+    decoration: TextDecoration.lineThrough,
+  );
+
   /// Fixed-width text for the code editor, whose size the editor sets.
   static const TextStyle monospace = TextStyle(
     fontFamily: _monoFamily,

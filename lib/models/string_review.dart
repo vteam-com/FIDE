@@ -7,6 +7,12 @@ import 'package:fide/models/lookup_plan.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:path/path.dart' as p;
 
+part 'string_review.string_fix.dart';
+
+/// The fix the user picked in a review and the strings it rewrites; a
+/// null [fix] has the AI fix them.
+typedef StringReviewChoice = ({StringFix? fix, List<HardcodedString> strings});
+
 /// A project's hardcoded strings for the user to review by role: what
 /// localizing them and making them constants would do.
 class StringReview {
@@ -36,27 +42,19 @@ class StringReview {
   /// The fixes offered for strings of [role]: those rewriting that role,
   /// and all of them when the role is unknown; none for fragments, which
   /// only the AI can rewrite.
-  static List<QuickFix> fixesFor(fcheck.HardcodedStringRole role) => [
-    for (final fix in QuickFix.values)
-      if (fix.stringRole != null &&
-          (fix.stringRole == role ||
-              role == fcheck.HardcodedStringRole.unknown))
-        fix,
+  static List<StringFix> fixesFor(fcheck.HardcodedStringRole role) => [
+    for (final fix in StringFix.values)
+      if (fix.role == role || role == fcheck.HardcodedStringRole.unknown) fix,
   ];
 
   /// Strings [fix] can rewrite.
-  List<HardcodedString> candidatesOf(QuickFix fix) => switch (fix) {
-    QuickFix.localizeStrings => localization?.candidates ?? const [],
-    QuickFix.passLookup => lookups.candidates.keys.toList(),
-    QuickFix.makeConstants => constants.candidates,
-    _ => const [],
-  };
+  List<HardcodedString> candidatesOf(StringFix fix) => fix.candidatesIn(this);
 
   /// Strings of [role], those a fix can rewrite and those it cannot, in
   /// file order.
   List<HardcodedString> withRole(fcheck.HardcodedStringRole role) =>
       {
-        ...candidatesOf(QuickFix.localizeStrings),
+        ...candidatesOf(StringFix.localizeStrings),
         ...?localization?.rejected.keys,
         ...constants.candidates,
         ...constants.rejected.keys,
@@ -68,24 +66,13 @@ class StringReview {
 
   /// Why [fix] cannot rewrite [string], such as "skips strings without a
   /// BuildContext"; null when it can.
-  String? whyNot(QuickFix fix, HardcodedString string) {
+  String? whyNot(StringFix fix, HardcodedString string) {
     if (candidatesOf(fix).contains(string)) return null;
     if (localizationBlocker case final blocker?
-        when fix.stringRole == fcheck.HardcodedStringRole.presentation) {
+        when fix.role == fcheck.HardcodedStringRole.presentation) {
       return 'cannot run: $blocker';
     }
-    if (fix == QuickFix.passLookup) {
-      return 'cannot: '
-          '${lookups.rejected[string] ?? LookupPlan.notAsked}';
-    }
-    final rejected = switch (fix) {
-      QuickFix.localizeStrings => localization?.rejected,
-      _ => constants.rejected,
-    };
-    final reason = rejected?[string];
-    return reason == null
-        ? 'cannot: string not found'
-        : 'skips strings $reason';
+    return fix.rejectionIn(this, string);
   }
 
   /// The request asking the AI to fix [strings], which FIDE's own fixes

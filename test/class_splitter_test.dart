@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:fide/providers/class_splitter.dart';
+import 'package:fide/services/class_splitter.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 

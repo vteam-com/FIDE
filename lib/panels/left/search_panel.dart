@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:fide/constants/constants.dart'
     show AppPadding, AppSpacing, AppIconSize, AppTextStyle;
 import 'package:fide/models/editor_search.dart';
@@ -7,14 +5,13 @@ import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/reference_search.dart';
 import 'package:fide/models/search_result.dart';
 import 'package:fide/models/search_result_node.dart';
-import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/empty_state.dart';
+import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
@@ -230,8 +227,8 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
   }
 
   /// Replaces every match in the results, after confirming, then searches
-  /// again. Unsaved edits of open files are kept and saved with the
-  /// replacement.
+  /// again. Open files are saved first, so their unsaved edits are
+  /// replaced too.
   Future<void> _replaceAll() async {
     final tree = _resultsTree;
     if (tree == null) return;
@@ -249,41 +246,26 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     if (!confirmed || !mounted) return;
 
     try {
-      // Reloading closes the active editor, which would write its unsaved
-      // buffer over the replacement
-      final active = ref.read(activeDocumentProvider);
-      if (active != null &&
-          active.isDirty &&
-          filePaths.contains(active.filePath)) {
-        await ref.read(activeEditorProvider).save();
-      }
-      final replaced = await ref
-          .read(projectSearchServiceProvider)
-          .replaceAll(
-            filePaths,
-            query,
-            replacement,
-            caseSensitive: _matchCase,
-            wholeWord: _wholeWord,
-            contents: {
-              for (final document in ref.read(openDocumentsProvider).documents)
-                if (document.isDirty) document.filePath: document.content,
-            },
-          );
-      for (final MapEntry(key: path, value: content)
-          in replaced.files.entries) {
-        await File(path).writeAsString(content);
-      }
-      await ref
-          .read(openDocumentsProvider.notifier)
-          .reloadWritten(replaced.files.keys);
+      var count = 0;
+      final files = await ref.read(openDocumentsProvider.notifier).applyEdits(
+        () async {
+          final replaced = await ref
+              .read(projectSearchServiceProvider)
+              .replaceAll(
+                filePaths,
+                query,
+                replacement,
+                caseSensitive: _matchCase,
+                wholeWord: _wholeWord,
+              );
+          count = replaced.count;
+          return replaced.files;
+        },
+      );
       if (!mounted) return;
       MessageBox.showSuccess(
         context,
-        EditorSearch.replacedMessage(
-          replaced.count,
-          fileCount: replaced.files.length,
-        ),
+        EditorSearch.replacedMessage(count, fileCount: files.length),
       );
       _searchController.text = query;
       await _performSearch();
@@ -340,7 +322,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
 
   /// Handles `_buildFileResultNode`.
   Widget _buildFileResultNode(SearchResultNode node) {
-    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
+    final item = FileSystemItem.fromPath(node.path);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

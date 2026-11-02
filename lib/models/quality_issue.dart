@@ -1,4 +1,4 @@
-import 'package:fide/constants/constants.dart';
+import 'package:fide/constants/core_constants.dart';
 import 'package:fide/models/quality_issue.quality_finding.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/status_tone.dart';

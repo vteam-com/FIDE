@@ -1,7 +1,8 @@
 import 'dart:io';
 
-import 'package:fide/providers/flutter_build_service.dart';
-import 'package:fide/providers/process_runner.dart';
+import 'package:fide/models/flutter_platform.dart';
+import 'package:fide/services/flutter_build_service.dart';
+import 'package:fide/services/process_runner.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const String _podRepoError =
@@ -67,7 +68,7 @@ void main() {
         ]);
 
         final exitCode = await FlutterBuildService(runner)
-            .build('/p', 'macos', sink);
+            .build('/p', FlutterPlatform.macos, sink);
 
         expect(exitCode, 0);
         expect(runner.commands, [
@@ -87,19 +88,19 @@ void main() {
       ]);
 
       final exitCode = await FlutterBuildService(runner)
-          .build('/p', 'macos', sink);
+          .build('/p', FlutterPlatform.macos, sink);
 
       expect(exitCode, 1);
       expect(runner.commands, hasLength(3));
     });
 
-    test('does not repair CocoaPods for non-macOS targets', () async {
+    test('does not repair CocoaPods for platforms without CocoaPods', () async {
       final runner = FakeProcessRunner([
         const FakeReply(1, stderr: [_podRepoError]),
       ]);
 
       final exitCode = await FlutterBuildService(runner)
-          .build('/p', 'apk', sink);
+          .build('/p', FlutterPlatform.android, sink);
 
       expect(exitCode, 1);
       expect(runner.commands, ['flutter build apk']);
@@ -108,7 +109,7 @@ void main() {
     test('adds the wasm dry-run opt-out for web builds', () async {
       final runner = FakeProcessRunner([const FakeReply(0)]);
 
-      await FlutterBuildService(runner).build('/p', 'web', sink);
+      await FlutterBuildService(runner).build('/p', FlutterPlatform.web, sink);
 
       expect(runner.commands, ['flutter build web --no-wasm-dry-run']);
     });
@@ -125,7 +126,52 @@ void main() {
     });
   });
 
-  group('FlutterBuildService.deepCleanMacOS', () {
+  group('FlutterBuildService.build targets', () {
+    test('repairs a stale CocoaPods repo for iOS builds too', () async {
+      final runner = FakeProcessRunner([
+        const FakeReply(1, stderr: [_podRepoError]),
+        const FakeReply(0),
+        const FakeReply(0),
+      ]);
+
+      final exitCode = await FlutterBuildService(runner)
+          .build('/p', FlutterPlatform.ios, sink);
+
+      expect(exitCode, 0);
+      expect(runner.commands, [
+        'flutter build ios',
+        'pod repo update',
+        'flutter build ios',
+      ]);
+    });
+
+    test('builds an Android App Bundle with the appbundle target', () async {
+      final runner = FakeProcessRunner([const FakeReply(0)]);
+
+      await FlutterBuildService(runner).build(
+        '/p',
+        FlutterPlatform.android,
+        sink,
+        target: FlutterPlatform.appBundleTarget,
+      );
+
+      expect(runner.commands, ['flutter build appbundle']);
+    });
+  });
+
+  group('FlutterBuildService.test', () {
+    test('runs the given test files with coverage', () async {
+      final runner = FakeProcessRunner([const FakeReply(0)]);
+
+      final exitCode = await FlutterBuildService(runner)
+          .test('/p', sink, paths: ['test/a_test.dart'], coverage: true);
+
+      expect(exitCode, 0);
+      expect(runner.commands, ['flutter test --coverage test/a_test.dart']);
+    });
+  });
+
+  group('FlutterBuildService.deepClean', () {
     test('tolerates CocoaPods failures and runs every Flutter step', () async {
       final runner = FakeProcessRunner([
         const FakeReply(1),
@@ -135,7 +181,8 @@ void main() {
         const FakeReply(0),
       ]);
 
-      await FlutterBuildService(runner).deepCleanMacOS('/p', sink);
+      await FlutterBuildService(runner)
+          .deepClean('/p', FlutterPlatform.macos, sink);
 
       expect(runner.commands, [
         'pod repo update',
@@ -155,7 +202,8 @@ void main() {
       ]);
 
       expect(
-        FlutterBuildService(runner).deepCleanMacOS('/p', sink),
+        FlutterBuildService(runner)
+            .deepClean('/p', FlutterPlatform.macos, sink),
         throwsA(contains('pub get')),
       );
     });

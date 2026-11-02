@@ -1,59 +1,28 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/controllers/app_controller.dart';
-import 'package:fide/models/left_panel_tab.dart';
-import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/git_service.dart';
+import 'package:fide/providers/active_editor.dart';
+import 'package:fide/providers/left_panel_tab.dart';
 import 'package:fide/providers/panel_actions.dart';
-import 'package:fide/providers/service_providers.dart';
+import 'package:fide/providers/side_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
-import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widget_services/app_command.dart';
+import 'package:fide/widget_services/project_git_actions.dart';
+import 'package:fide/widgets/goto_line_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Represents `NativeMenuBuilder`.
+/// Builds the app's native menus; every item runs its command through
+/// [ref], showing any dialog over [context].
 class NativeMenuBuilder {
+  /// Context under the app's navigator, for the dialogs menu items open.
   final BuildContext context;
+
+  /// Reaches the state and commands the menu items act on.
   final WidgetRef ref;
-  final Function() onOpenFolder;
 
-  /// Go to File: the palette over the project's files.
-  final VoidCallback onQuickOpen;
-
-  /// Open File: the platform's file dialog.
-  final VoidCallback onOpenFile;
-  final Function() onSave;
-  final Function() onCloseDocument;
-  final Function() onFind;
-  final Function() onFindNext;
-  final Function() onFindPrevious;
-  final Function() onGoToLine;
-  final ValueChanged<LeftPanelTab> onSwitchPanel;
-  final Function(String) onProjectSwitch;
-  final Function()? onCloseProject;
-  final String? lastOpenedFileName;
-
-  /// Shows the settings screen.
-  final VoidCallback onShowSettings;
-
-  NativeMenuBuilder({
-    required this.context,
-    required this.ref,
-    required this.onOpenFolder,
-    required this.onQuickOpen,
-    required this.onOpenFile,
-    required this.onSave,
-    required this.onCloseDocument,
-    required this.onFind,
-    required this.onFindNext,
-    required this.onFindPrevious,
-    required this.onGoToLine,
-    required this.onSwitchPanel,
-    required this.onProjectSwitch,
-    this.onCloseProject,
-    this.lastOpenedFileName,
-    required this.onShowSettings,
-  });
+  /// Creates the builder of the menus acting through [ref] and [context].
+  NativeMenuBuilder({required this.context, required this.ref});
 
   /// Builds the native platform menu structure for the app shell.
   List<PlatformMenu> buildMenus() {
@@ -65,7 +34,7 @@ class NativeMenuBuilder {
     ];
   }
 
-  /// Builds the FIDE application menu (About, Hide, Quit, etc.).
+  /// Builds the FIDE application menu (About, Settings, Quit).
   PlatformMenu _buildFideMenu() {
     return PlatformMenu(
       label: 'FIDE',
@@ -84,89 +53,41 @@ class NativeMenuBuilder {
         PlatformMenuItem(
           label: 'Settings',
           shortcut: AppShortcut.settings,
-          onSelected: onShowSettings,
+          onSelected: () =>
+              ref.read(settingsVisibleProvider.notifier).state = true,
         ),
-        PlatformMenuItem(
+        const PlatformMenuItem(
           label: 'Quit FIDE',
-          shortcut: const SingleActivator(LogicalKeyboardKey.keyQ, meta: true),
-          onSelected: () {
-            SystemNavigator.pop();
-          },
+          shortcut: AppShortcut.quit,
+          onSelected: SystemNavigator.pop,
         ),
       ],
     );
   }
 
-  /// Builds the File menu with open-file, open-folder, save, and
-  /// close-project items.
+  /// Builds the File menu: the [AppCommand]s, the Git items, then save and
+  /// close.
   PlatformMenu _buildFileMenu() {
+    final editor = ref.read(activeEditorProvider);
     return PlatformMenu(
       label: 'File',
       menus: [
-        PlatformMenuItemGroup(
-          members: [
-            PlatformMenuItem(
-              label: 'Go to File...',
-              shortcut: AppShortcut.quickOpen,
-              onSelected: onQuickOpen,
-            ),
-            PlatformMenuItem(
-              label: 'Open File...',
-              shortcut: AppShortcut.openFile,
-              onSelected: onOpenFile,
-            ),
-          ],
-        ),
-        PlatformMenuItem(
-          label: 'Open folder',
-          onSelected: () async {
-            onOpenFolder();
-          },
-        ),
-        if (onCloseProject != null)
-          PlatformMenuItem(
-            label: 'Close Project',
-            onSelected: () {
-              onCloseProject!();
-            },
+        for (final group in AppCommand.groups)
+          PlatformMenuItemGroup(
+            members: [
+              for (final command in group) command.menuItem(context, ref),
+            ],
           ),
-        PlatformMenuItem(
-          label: _getLastOpenedFileLabel(),
-          onSelected: () {
-            // This would be handled by the parent - reopen last file
-          },
-        ),
         PlatformMenuItemGroup(
           members: [
             PlatformMenuItem(
               label: 'Initialize Repository',
-              onSelected: () async {
-                final currentPath = ref.read(currentProjectPathProvider);
-                if (currentPath != null) {
-                  final gitService = ref.read(gitServiceProvider);
-                  try {
-                    final result = await gitService.initRepository(currentPath);
-                    if (context.mounted) {
-                      MessageBox.showSuccess(context, result);
-                    }
-                  } on GitException catch (e) {
-                    if (context.mounted) {
-                      MessageBox.showError(context, '$e');
-                    }
-                  }
-                }
-              },
+              onSelected: () => initProjectRepository(context, ref),
             ),
             PlatformMenuItem(
               label: 'Refresh Status',
-              shortcut: const SingleActivator(
-                LogicalKeyboardKey.keyR,
-                meta: true,
-                shift: true,
-              ),
-              onSelected: () {
-                // This will be handled by the Git panel refresh
-              },
+              shortcut: AppShortcut.refreshGitStatus,
+              onSelected: () => refreshProjectGitStatus(ref),
             ),
           ],
         ),
@@ -175,16 +96,12 @@ class NativeMenuBuilder {
             PlatformMenuItem(
               label: 'Save',
               shortcut: AppShortcut.save,
-              onSelected: () {
-                onSave();
-              },
+              onSelected: editor.save,
             ),
             PlatformMenuItem(
               label: 'Close Document',
               shortcut: AppShortcut.closeDocument,
-              onSelected: () {
-                onCloseDocument();
-              },
+              onSelected: editor.close,
             ),
           ],
         ),
@@ -194,78 +111,45 @@ class NativeMenuBuilder {
 
   /// Builds the Edit menu with find, find-previous, and go-to-line items.
   PlatformMenu _buildEditMenu() {
+    final editor = ref.read(activeEditorProvider);
     return PlatformMenu(
       label: 'Edit',
       menus: [
         PlatformMenuItem(
           label: 'Find',
           shortcut: AppShortcut.find,
-          onSelected: () {
-            onFind();
-          },
+          onSelected: editor.openSearch,
         ),
         PlatformMenuItem(
           label: 'Find Next',
-          shortcut: const SingleActivator(LogicalKeyboardKey.keyG, meta: true),
-          onSelected: () {
-            onFindNext();
-          },
+          shortcut: AppShortcut.findNext,
+          onSelected: editor.findNext,
         ),
         PlatformMenuItem(
           label: 'Find Previous',
-          shortcut: const SingleActivator(
-            LogicalKeyboardKey.keyG,
-            meta: true,
-            shift: true,
-          ),
-          onSelected: () {
-            onFindPrevious();
-          },
+          shortcut: AppShortcut.findPrevious,
+          onSelected: editor.findPrevious,
         ),
         PlatformMenuItem(
           label: 'Go to Line',
-          shortcut: const SingleActivator(
-            LogicalKeyboardKey.keyG,
-            control: true,
-          ),
-          onSelected: () {
-            onGoToLine();
-          },
+          shortcut: AppShortcut.goToLine,
+          onSelected: () => GotoLineDialog.show(context, editor),
         ),
       ],
     );
   }
 
-  /// Builds the View menu with panel-visibility, layout toggle and zoom
-  /// items.
+  /// Builds the View menu with panel-size, panel-tab and zoom items.
   PlatformMenu _buildViewMenu() {
+    final controller = ref.read(appControllerProvider);
     return PlatformMenu(
       label: 'View',
       menus: [
-        for (final (label, shortcut, visible, expanded) in [
-          (
-            'Panel Left',
-            AppShortcut.panelLeft,
-            leftPanelVisibleProvider,
-            leftPanelExpandedProvider,
-          ),
-          (
-            'Panel Bottom',
-            AppShortcut.panelBottom,
-            bottomPanelVisibleProvider,
-            bottomPanelExpandedProvider,
-          ),
-          (
-            'Panel Right',
-            AppShortcut.panelRight,
-            rightPanelVisibleProvider,
-            rightPanelExpandedProvider,
-          ),
-        ])
+        for (final panel in SidePanel.values)
           PlatformMenuItem(
-            label: '$label: Hide, Min, Max',
-            shortcut: shortcut,
-            onSelected: () => cyclePanelSize(ref, visible, expanded),
+            label: panel.commandLabel,
+            shortcut: panel.shortcut,
+            onSelected: () => cyclePanelSize(ref, panel),
           ),
         PlatformMenuItemGroup(
           members: [
@@ -294,17 +178,17 @@ class NativeMenuBuilder {
             PlatformMenuItem(
               label: 'Zoom In',
               shortcut: AppShortcut.zoomIn,
-              onSelected: ref.read(appControllerProvider).zoomIn,
+              onSelected: controller.zoomIn,
             ),
             PlatformMenuItem(
               label: 'Zoom Out',
               shortcut: AppShortcut.zoomOut,
-              onSelected: ref.read(appControllerProvider).zoomOut,
+              onSelected: controller.zoomOut,
             ),
             PlatformMenuItem(
               label: 'Actual Size',
               shortcut: AppShortcut.actualSize,
-              onSelected: ref.read(appControllerProvider).resetZoom,
+              onSelected: controller.resetZoom,
             ),
           ],
         ),
@@ -315,18 +199,11 @@ class NativeMenuBuilder {
                 PlatformMenuItem(
                   label: tab.label,
                   shortcut: shortcut,
-                  onSelected: () => onSwitchPanel(tab),
+                  onSelected: () => switchLeftPanelTab(ref, tab),
                 ),
           ],
         ),
       ],
     );
-  }
-
-  String _getLastOpenedFileLabel() {
-    if (lastOpenedFileName != null) {
-      return 'Last file opened: $lastOpenedFileName';
-    }
-    return 'No file opened';
   }
 }

@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:fide/models/project_node.dart';
-import 'package:fide/providers/project_tree_reader.dart';
+import 'package:fide/services/project_tree_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // Flattens a tree into indented names so trees can be compared directly
@@ -65,5 +65,23 @@ void main() {
     expect(await reader.loadChildren(node), LoadChildrenResult.fileSystemError);
     reader.loadTreeSync(node);
     expect(node.loadResult, LoadChildrenResult.fileSystemError);
+  });
+
+  test('records each entry\'s date, and its size when a file', () async {
+    const content = 'hello';
+    File('${root.path}/b.txt').writeAsStringSync(content);
+    final node = await reader.nodeFor(root);
+    await reader.loadChildren(node);
+    final syncNode = reader.nodeForSync(root);
+    reader.loadTreeSync(syncNode);
+
+    for (final loaded in [node, syncNode]) {
+      final file = loaded.findNode('${root.path}/b.txt')!;
+      final folder = loaded.findNode('${root.path}/lib')!;
+      expect(file.size, content.length);
+      expect(file.modified, isNotNull);
+      expect(folder.size, isNull);
+      expect(folder.modified, isNotNull);
+    }
   });
 }

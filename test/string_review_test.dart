@@ -3,7 +3,6 @@ import 'package:fide/models/constants_plan.dart';
 import 'package:fide/models/hardcoded_string.dart';
 import 'package:fide/models/l10n_config.dart';
 import 'package:fide/models/localization_plan.dart';
-import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/string_review.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -69,10 +68,10 @@ void main() {
     expect(strings.withRole(fcheck.HardcodedStringRole.data), [compared]);
     expect(strings.withRole(fcheck.HardcodedStringRole.fragment), [fragment]);
     expect(strings.withRole(fcheck.HardcodedStringRole.unknown), isEmpty);
-    expect(strings.candidatesOf(QuickFix.makeConstants), contains(shown));
-    expect(strings.whyNot(QuickFix.localizeStrings, shown), isNull);
+    expect(strings.candidatesOf(StringFix.makeConstants), contains(shown));
+    expect(strings.whyNot(StringFix.localizeStrings, shown), isNull);
     expect(
-      strings.whyNot(QuickFix.makeConstants, fragment),
+      strings.whyNot(StringFix.makeConstants, fragment),
       'skips strings with interpolations',
     );
   });
@@ -80,11 +79,11 @@ void main() {
   test('says why when the project cannot be localized', () {
     final strings = review(canLocalize: false);
 
-    expect(strings.candidatesOf(QuickFix.localizeStrings), isEmpty);
+    expect(strings.candidatesOf(StringFix.localizeStrings), isEmpty);
     // Still listed: rejected by the constants plan
     expect(strings.withRole(fcheck.HardcodedStringRole.fragment), [fragment]);
     expect(
-      strings.whyNot(QuickFix.localizeStrings, shown),
+      strings.whyNot(StringFix.localizeStrings, shown),
       'cannot run: no template ARB file',
     );
   });

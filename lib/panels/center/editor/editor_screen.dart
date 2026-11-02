@@ -5,20 +5,20 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/editor_search.dart';
 import 'package:fide/models/text_offsets.dart';
+import 'package:fide/panels/center/editor/code_folding.dart';
 import 'package:fide/panels/center/editor/editor_screen_header.dart';
 import 'package:fide/panels/center/editor/editor_screen_image_view.dart';
 import 'package:fide/panels/center/editor/editor_screen_search_bar.dart';
 import 'package:fide/panels/center/editor/editor_screen_status_bar.dart';
 import 'package:fide/panels/center/editor/editor_screen_unsupported_file_view.dart';
-import 'package:fide/panels/center/editor/large_file_message.dart';
+import 'package:fide/panels/center/editor/editor_search_controller.dart';
 import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/code_formatter.dart';
-import 'package:fide/providers/editor_commands.dart';
-import 'package:fide/providers/file_type_utils.dart';
-import 'package:fide/providers/git_service.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/services/code_formatter.dart';
+import 'package:fide/services/editor_commands.dart';
+import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
@@ -27,7 +27,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as p;
 import 'package:re_highlight/styles/atom-one-dark.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
 
@@ -36,7 +35,6 @@ class EditorScreen extends ConsumerStatefulWidget {
   const EditorScreen({
     super.key,
     this.documentState,
-    this.onContentChanged,
     this.onClose,
     this.onSave,
   });
@@ -44,8 +42,6 @@ class EditorScreen extends ConsumerStatefulWidget {
   final DocumentState? documentState;
 
   final VoidCallback? onClose;
-
-  final VoidCallback? onContentChanged;
 
   final VoidCallback? onSave;
 
@@ -62,8 +58,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     openDocumentsProvider.notifier,
   );
 
-  final Map<String, GitDiffStats?> _allGitDiffStats = {};
-
   bool _appIsActive = true;
 
   late CodeForgeController _codeController;
@@ -74,19 +68,14 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
   late String _currentFile;
 
-  String? _diffNewText;
-
-  String? _diffOldText;
+  /// The sides of the diff view: the committed text and the editor's.
+  ({String oldText, String newText})? _diff;
 
   bool _editorHasFocus = false;
-
-  double _fileSizeMB = 0.0;
 
   bool _isDirty = false;
 
   bool _isDisposed = false;
-
-  bool _isLargeFile = false;
 
   bool _isLoading = false;
 
@@ -98,19 +87,16 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
   late String _savedText;
 
-  final TextEditingController _searchController = TextEditingController();
+  /// Find and replace in the editor's text.
+  late final EditorSearchController _search = EditorSearchController(
+    _codeController,
+    onMatchSelected: _revealSelectionAfterFrame,
+  )..addListener(_onSearchChanged);
 
-  /// Replacement text of find-in-file.
-  final TextEditingController _replaceController = TextEditingController();
-
-  late FocusNode _searchFocusNode;
-
-  /// Find-in-file query, options and matches.
-  final EditorSearch _search = EditorSearch();
+  /// Receives the find bar's Escape and Enter keys.
+  final FocusNode _searchKeysFocusNode = FocusNode();
 
   bool _showDiffView = false;
-
-  bool _showSearch = false;
 
   @override
   void initState() {
@@ -118,7 +104,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     _currentFile = widget.documentState?.filePath ?? '';
 
     _codeController = CodeForgeController();
-    _searchFocusNode = FocusNode();
 
     // Initialize from document state (always provided by CenterPanel)
     _codeController.text = widget.documentState!.content;
@@ -136,9 +121,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
         }
       },
     );
-
-    // Load git diff stats for the file
-    _loadGitDiffStatsForFile(_currentFile);
 
     // Receive menu and shortcut commands while mounted
     _activeEditor = ref.read(activeEditorProvider)..attach(this);
@@ -167,9 +149,11 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     _lifecycleListener.dispose();
 
     // Dispose controller
+    _search
+      ..removeListener(_onSearchChanged)
+      ..dispose();
+    _searchKeysFocusNode.dispose();
     _codeController.dispose();
-    _searchFocusNode.dispose();
-    _replaceController.dispose();
     super.dispose();
   }
 
@@ -196,12 +180,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
           _isDirty = widget.documentState!.isDirty;
           _savedText = widget.documentState!.content;
           _isLoading = false;
-          _isLargeFile = false; // Reset large file flag for new file
-          _fileSizeMB = 0.0;
         });
-
-        // Load git diff stats for the new file
-        _loadGitDiffStatsForFile(_currentFile);
 
         // Set selection safely after the build cycle, checking mounted status and not disposed
         if (mounted && !_isDisposed) {
@@ -220,23 +199,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Check if file is too large to load
-    if (_isLargeFile) {
-      return LargeFileMessage(
-        fileName: p.basename(_currentFile),
-        fileSizeMB: _fileSizeMB,
-      );
-    }
-
     return Consumer(
-      builder: (context, ref, _) {
+      builder: (_, ref, _) {
         final openDocuments = ref.watch(openDocumentsProvider).documents;
         final activeIndex = ref.watch(openDocumentsProvider).activeIndex;
-
-        // Load git stats for all documents if not already loaded
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _loadGitDiffStatsForAllDocuments(openDocuments);
-        });
 
         return Column(
           children: [
@@ -244,7 +210,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
               openDocuments: openDocuments,
               activeIndex: activeIndex,
               currentFile: _currentFile,
-              allGitDiffStats: _allGitDiffStats,
               isDirty: _isDirty,
               showDiffView: _showDiffView,
               onDocumentSelected: (newIndex) {
@@ -253,109 +218,95 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
               onToggleDiffView: () {
                 _toggleDiffView();
               },
-              onToggleSearch: _toggleSearch,
+              onToggleSearch: _search.toggle,
               onSave: () {
                 _saveFile();
               },
               onClose: close,
             ),
 
-            Expanded(
-              child: _isLoading
-                  ? const LoadingIndicator()
-                  : _currentFile.isEmpty
-                  ? const EmptyState(message: 'No file selected')
-                  : !FileTypeUtils.isFileSupportedInEditor(_currentFile)
-                  ? EditorScreenUnsupportedFileView(filePath: _currentFile)
-                  : _isImageFile(_currentFile)
-                  ? EditorScreenImageView(filePath: _currentFile)
-                  : _showDiffView
-                  ? _buildDiffView()
-                  // ignore: deprecated_member_use
-                  : KeyboardListener(
-                      focusNode: FocusNode(),
-                      onKeyEvent: _handleKeyEvent,
-                      child: Column(
-                        children: [
-                          // Search bar (only visible when searching)
-                          if (_showSearch)
-                            EditorScreenSearchBar(
-                              searchController: _searchController,
-                              replaceController: _replaceController,
-                              searchFocusNode: _searchFocusNode,
-                              caseSensitive: _search.caseSensitive,
-                              wholeWord: _search.wholeWord,
-                              currentMatchIndex: _search.currentIndex,
-                              matchCount: _search.matches.length,
-                              onSearchChanged: _performSearch,
-                              onClose: _closeSearch,
-                              onPreviousMatch: _previousMatch,
-                              onNextMatch: _nextMatch,
-                              onCaseSensitiveChanged: (value) {
-                                _search.caseSensitive = value;
-                                _performSearch(_search.query);
-                              },
-                              onWholeWordChanged: (value) {
-                                _search.wholeWord = value;
-                                _performSearch(_search.query);
-                              },
-                              onReplace: _replaceMatch,
-                              onReplaceAll: _replaceAllMatches,
-                            ),
-                          // Editor content
-                          Expanded(
-                            child: Focus(
-                              canRequestFocus: false,
-                              skipTraversal: true,
-                              onFocusChange: (hasFocus) {
-                                setState(() => _editorHasFocus = hasFocus);
-                              },
-                              // CodeForge's caret blink never stops and
-                              // repaints the whole editor every frame; pause
-                              // its tickers while the caret isn't visible.
-                              child: TickerMode(
-                                enabled: _editorHasFocus && _appIsActive,
-                                child: CodeForge(
-                                  controller: _codeController,
-                                  language:
-                                      widget.documentState?.language ??
-                                      FileTypeUtils.languageForFile(
-                                        _currentFile,
-                                      ),
-                                  gutterStyle: GutterStyle(
-                                    lineNumberStyle: AppTextStyle.lineNumber(
-                                      context,
-                                    ),
-                                  ),
-                                  editorTheme: _getCodeTheme(),
-                                ),
-                              ),
-                            ),
-                          ),
-                          // Status bar
-                          EditorScreenStatusBar(
-                            showDiffView: _showDiffView,
-                            regionsExpanded: _regionsExpanded,
-                            currentLineNumber: _getCurrentLineNumber(),
-                            currentColumnNumber: _getCurrentColumnNumber(),
-                            currentMatchIndex: _search.currentIndex,
-                            matchCount: _search.matches.length,
-                            canFormat:
-                                !_showDiffView &&
-                                CodeFormatter.canFormat(_currentFile),
-                            fileLanguage: _getFileLanguage(),
-                            onToggleAllRegions: _toggleAllRegions,
-                            onFormatFile: () {
-                              _formatFile();
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-            ),
+            Expanded(child: _buildContent()),
           ],
         );
       },
+    );
+  }
+
+  /// The editor's body: a loading or empty state while there is no
+  /// content, else the view [_currentFile]'s kind calls for.
+  Widget _buildContent() {
+    if (_isLoading) return const LoadingIndicator();
+    if (_currentFile.isEmpty) {
+      return const EmptyState(message: 'No file selected');
+    }
+    return switch (FileTypeUtils.viewKindOf(_currentFile)) {
+      FileViewKind.unsupported => EditorScreenUnsupportedFileView(
+        filePath: _currentFile,
+      ),
+      FileViewKind.image => EditorScreenImageView(filePath: _currentFile),
+      FileViewKind.code => _showDiffView ? _buildDiffView() : _buildCodeView(),
+    };
+  }
+
+  /// The code editor with its find bar and status bar.
+  Widget _buildCodeView() {
+    // ignore: deprecated_member_use
+    return KeyboardListener(
+      focusNode: _searchKeysFocusNode,
+      onKeyEvent: _handleKeyEvent,
+      child: Column(
+        children: [
+          // Search bar (only visible when searching)
+          if (_search.isOpen)
+            EditorScreenSearchBar(
+              controller: _search,
+              onPreviousMatch: findPrevious,
+              onNextMatch: findNext,
+              onReplaceAll: _replaceAllMatches,
+            ),
+          // Editor content
+          Expanded(
+            child: Focus(
+              canRequestFocus: false,
+              skipTraversal: true,
+              onFocusChange: (hasFocus) {
+                setState(() => _editorHasFocus = hasFocus);
+              },
+              // CodeForge's caret blink never stops and
+              // repaints the whole editor every frame; pause
+              // its tickers while the caret isn't visible.
+              child: TickerMode(
+                enabled: _editorHasFocus && _appIsActive,
+                child: CodeForge(
+                  controller: _codeController,
+                  language:
+                      widget.documentState?.language ??
+                      FileTypeUtils.languageForFile(_currentFile),
+                  gutterStyle: GutterStyle(
+                    lineNumberStyle: AppTextStyle.lineNumber(context),
+                  ),
+                  editorTheme: _getCodeTheme(),
+                ),
+              ),
+            ),
+          ),
+          // Status bar
+          EditorScreenStatusBar(
+            showDiffView: _showDiffView,
+            regionsExpanded: _regionsExpanded,
+            currentLineNumber: _getCurrentLineNumber(),
+            currentColumnNumber: _getCurrentColumnNumber(),
+            currentMatchIndex: _search.currentIndex,
+            matchCount: _search.matchCount,
+            canFormat: !_showDiffView && CodeFormatter.canFormat(_currentFile),
+            fileLanguage: _getFileLanguage(),
+            onToggleAllRegions: _toggleAllRegions,
+            onFormatFile: () {
+              _formatFile();
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -363,27 +314,27 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   void close() => widget.onClose?.call();
 
   @override
-  void findNext() => _nextMatch();
+  void findNext() {
+    if (_search.findNext()) _focusEditorAfterFrame();
+  }
 
   @override
-  void findPrevious() => _previousMatch();
+  void findPrevious() {
+    if (_search.findPrevious()) _focusEditorAfterFrame();
+  }
 
   @override
   void navigateToLine(int lineNumber, {int column = 1}) =>
       _navigateToLine(lineNumber, column: column);
 
   @override
-  void openSearch() => _openSearch();
+  void openSearch() => _search.open();
 
   @override
   Future<void> save() => _saveFile();
 
   @override
-  String get searchSeed {
-    final selection = _codeController.selection;
-    if (!selection.isValid) return '';
-    return EditorSearch.seedFrom(selection.textInside(_codeController.text));
-  }
+  String get searchSeed => _search.seed;
 
   /// Builds syntax highlight styles from a full highlight.js theme with the
   /// app's own colors layered on top.
@@ -395,19 +346,12 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   };
 
   Widget _buildDiffView() {
-    if (_diffOldText == null || _diffNewText == null) {
+    final diff = _diff;
+    if (diff == null) {
       return const EmptyState(message: 'No diff data available');
     }
 
-    return SideBySideDiff(oldText: _diffOldText!, newText: _diffNewText!);
-  }
-
-  /// Closes the search UI; the query stays, so Find Next and Find Previous
-  /// keep working and reopening shows it again.
-  void _closeSearch() {
-    if (!mounted) return;
-    setState(() => _showSearch = false);
-    _searchFocusNode.unfocus();
+    return SideBySideDiff(oldText: diff.oldText, newText: diff.newText);
   }
 
   /// Scrolls the editor so the current text selection is visible.
@@ -431,23 +375,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   /// must own its focus node; it is reached through the controller instead.
   void _focusEditor() {
     _codeController.focusNode?.requestFocus();
-  }
-
-  /// Folds every outermost foldable region, leaving nested regions inside.
-  ///
-  /// Replaces `CodeForgeController.foldAll`, which crashes in code_forge
-  /// 11.4.0 on a null check whenever a scanned line has no fold range.
-  void _foldTopLevelRegions() {
-    final lineCount = _codeController.lineCount;
-    var line = 0;
-    while (line < lineCount) {
-      final existing = _codeController.foldings[line];
-      if (existing == null || !existing.isFolded) {
-        _codeController.toggleFold(line);
-      }
-      final fold = _codeController.foldings[line];
-      line = fold != null && fold.isFolded ? fold.endIndex + 1 : line + 1;
-    }
   }
 
   /// Formats the editor's text, unsaved edits included, without saving it.
@@ -525,67 +452,13 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   /// Handles editor keyboard shortcuts while search UI is active.
   void _handleKeyEvent(KeyEvent event) {
     if (event is KeyDownEvent) {
-      if (_showSearch) {
+      if (_search.isOpen) {
         if (event.logicalKey == LogicalKeyboardKey.escape) {
-          _closeSearch();
+          _search.close();
         } else if (event.logicalKey == LogicalKeyboardKey.enter) {
-          _nextMatch();
+          findNext();
         }
       }
-    }
-  }
-
-  bool _isImageFile(String filePath) {
-    return FileTypeUtils.isImageFile(filePath);
-  }
-
-  /// Loads git diff counters for open documents not yet cached.
-  ///
-  /// Called after every build, so it must not trigger a rebuild when there is
-  /// nothing new to load; otherwise it loops, spawning git processes forever.
-  Future<void> _loadGitDiffStatsForAllDocuments(
-    List<DocumentState> documents,
-  ) async {
-    final futures = <Future>[];
-    for (final doc in documents) {
-      if (!_allGitDiffStats.containsKey(doc.filePath)) {
-        // Reserve the slot so overlapping frames don't start duplicate loads.
-        _allGitDiffStats[doc.filePath] = null;
-        futures.add(_loadGitDiffStatsForFile(doc.filePath));
-      }
-    }
-    if (futures.isEmpty) {
-      return;
-    }
-    await Future.wait(futures);
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  /// Loads git diff counters for a single file and caches the result.
-  Future<void> _loadGitDiffStatsForFile(String filePath) async {
-    if (filePath.isEmpty) {
-      _allGitDiffStats[filePath] = null;
-      return;
-    }
-
-    try {
-      final gitService = ref.read(gitServiceProvider);
-      final isGitRepo = await gitService.isGitRepository(p.dirname(filePath));
-      if (!isGitRepo) {
-        _allGitDiffStats[filePath] = null;
-        return;
-      }
-
-      final stats = await gitService.getFileDiffStats(
-        p.dirname(filePath),
-        filePath,
-      );
-      _allGitDiffStats[filePath] = stats;
-    } catch (e) {
-      _logger.warning('Error loading git diff stats for $filePath: $e');
-      _allGitDiffStats[filePath] = null;
     }
   }
 
@@ -622,77 +495,25 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     });
   }
 
-  /// Selects and reveals the search match at the given match index.
-  void _navigateToMatch(int index) {
-    if (index < 0 || index >= _search.matches.length) return;
-
-    final offset = _search.matches[index];
-
-    // Set selection to highlight the found text
-    _codeController.selection = TextSelection(
-      baseOffset: offset,
-      extentOffset: offset + _search.query.length,
-    );
-
-    setState(() {
-      _search.currentIndex = index;
-    });
-
-    // Ensure the selection is visible and properly displayed
+  /// Scrolls the selected search match into view once laid out; focus
+  /// stays in the find bar.
+  void _revealSelectionAfterFrame() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-
-      // Force a rebuild to ensure selection is displayed
-      setState(() {});
-
-      // Find the scrollable widget and ensure the selection is visible
-      _ensureSelectionVisible();
-
-      // Don't request focus on editor during search - keep focus on search field
-      // Focus will only be requested when explicitly navigating with keyboard shortcuts
+      if (mounted) _ensureSelectionVisible();
     });
   }
 
-  /// Navigates to the next search match after the caret, wrapping at the
-  /// end.
-  void _nextMatch() => _stepMatch(backward: false);
-
-  /// Navigates to the previous search match before the caret, wrapping at
-  /// the start.
-  void _previousMatch() => _stepMatch(backward: true);
-
-  /// Selects the match of the last query after the caret, or before it when
-  /// [backward], even with the find bar closed or the text edited since.
-  /// Without a query yet, searches for the selected text; without a
-  /// selection either, opens the find bar.
-  void _stepMatch({required bool backward}) {
-    if (_search.query.isEmpty) {
-      final seed = searchSeed;
-      if (seed.isEmpty) {
-        _openSearch();
-        return;
-      }
-      _search.query = seed;
-      _searchController.text = seed;
-    }
-    final selection = _codeController.selection;
-    _search.step(
-      _codeController.text,
-      selection.isValid ? selection.start : 0,
-      backward: backward,
-    );
-    if (!_search.hasMatches) {
-      setState(() {});
-      return;
-    }
-    _navigateToMatch(_search.currentIndex);
-
-    // Request focus on editor when navigating with keyboard shortcuts
+  /// Focuses the editor after a match is selected from a shortcut or the
+  /// find bar's arrows.
+  void _focusEditorAfterFrame() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _focusEditor();
-      }
+      if (mounted) _focusEditor();
     });
+  }
+
+  /// Rebuilds for the find bar's visibility, query and matches.
+  void _onSearchChanged() {
+    if (mounted && !_isDisposed) setState(() {});
   }
 
   /// Handles editor content changes and syncs document state.
@@ -715,66 +536,17 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       isDirty: _isDirty,
     );
 
-    // Notify outline panel to refresh when content changes
-    widget.onContentChanged?.call();
-
     // Notify cursor position changes
     final currentLine = _getCurrentLineNumber();
     ref.read(editorCursorLineProvider.notifier).state = currentLine;
   }
 
-  /// Recomputes search matches for [query] and selects the first one.
-  void _performSearch(String query) {
-    setState(
-      () => _search.run(
-        _codeController.text,
-        query,
-        fromOffset: _codeController.selection.start,
-      ),
-    );
-    if (_search.hasMatches) _navigateToMatch(_search.currentIndex);
-  }
-
-  /// Replaces the current search match, then selects the next one after
-  /// the replacement.
-  void _replaceMatch() {
-    // Matches go stale once the text is edited by hand
-    _search.run(
-      _codeController.text,
-      _search.query,
-      fromOffset: _codeController.selection.start,
-    );
-    if (!_search.hasMatches) return;
-    final start = _search.matches[_search.currentIndex];
-    final replacement = _replaceController.text;
-    _codeController.replaceRange(
-      start,
-      start + _search.query.length,
-      replacement,
-    );
-    _codeController.selection = TextSelection.collapsed(
-      offset: start + replacement.length,
-    );
-    _performSearch(_search.query);
-  }
-
-  /// Replaces every search match in one undoable edit.
+  /// Replaces every search match in one undoable edit and confirms how
+  /// many.
   void _replaceAllMatches() {
-    final text = _codeController.text;
-    final replaced = EditorSearch.replaceAll(
-      text,
-      _search.query,
-      _replaceController.text,
-      caseSensitive: _search.caseSensitive,
-      wholeWord: _search.wholeWord,
-    );
-    if (replaced.count == 0) return;
-    _codeController.replaceRange(0, text.length, replaced.text);
-    _performSearch(_search.query);
-    MessageBox.showSuccess(
-      context,
-      EditorSearch.replacedMessage(replaced.count),
-    );
+    final count = _search.replaceAll();
+    if (count == 0) return;
+    MessageBox.showSuccess(context, EditorSearch.replacedMessage(count));
   }
 
   /// Persists current editor content to disk and clears dirty state.
@@ -807,11 +579,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     });
 
     try {
-      if (_regionsExpanded) {
-        _codeController.unfoldAll();
-      } else {
-        _foldTopLevelRegions();
-      }
+      _codeController.setAllRegionsExpanded(_regionsExpanded);
     } on StateError catch (e) {
       _logger.warning('Folding unavailable: $e');
     }
@@ -827,8 +595,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       // Back to editor view
       setState(() {
         _showDiffView = false;
-        _diffOldText = null;
-        _diffNewText = null;
+        _diff = null;
       });
       return;
     }
@@ -839,39 +606,22 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     }
 
     try {
-      final gitService = ref.read(gitServiceProvider);
-      final isGitRepo = await gitService.isGitRepository(
-        p.dirname(_currentFile),
-      );
+      final diff = await ref
+          .read(gitServiceProvider)
+          .diffAgainstHead(_currentFile, newText: _codeController.text);
       if (!mounted) return;
 
-      if (!isGitRepo) {
+      if (diff == null) {
         MessageBox.showError(context, 'Not a Git repository');
         return;
       }
-
-      final diff = await gitService.getFileDiff(
-        p.dirname(_currentFile),
-        _currentFile,
-      );
-
-      if (!mounted) return;
-
-      if (diff.isEmpty) {
+      if (diff.oldText == diff.newText) {
         MessageBox.showInfo(context, 'No changes to show');
         return;
       }
 
-      // Committed content; empty for files not yet in HEAD
-      final oldText = await gitService.getHeadContent(_currentFile);
-
-      // Current file content for newText
-      final newText = _codeController.text;
-
-      // Switch to diff view
       setState(() {
-        _diffOldText = oldText;
-        _diffNewText = newText;
+        _diff = diff;
         _showDiffView = true;
       });
     } catch (e) {
@@ -880,39 +630,4 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       }
     }
   }
-
-  /// Shows the search UI focused with its query selected, starting from the
-  /// selected text when there is a [searchSeed], else from the last query
-  /// with its matches counted again in the current text.
-  void _openSearch() {
-    if (!mounted) return;
-    final seed = searchSeed;
-    setState(() {
-      _showSearch = true;
-      if (seed.isEmpty) {
-        _searchController.text = _search.query;
-        _search.run(
-          _codeController.text,
-          _search.query,
-          fromOffset: _codeController.selection.start,
-        );
-      }
-    });
-    if (seed.isNotEmpty) {
-      _searchController.text = seed;
-      _performSearch(seed);
-    }
-    _searchController.selection = TextSelection(
-      baseOffset: 0,
-      extentOffset: _searchController.text.length,
-    );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _searchFocusNode.requestFocus();
-      }
-    });
-  }
-
-  /// Toggles the search UI.
-  void _toggleSearch() => _showSearch ? _closeSearch() : _openSearch();
 }

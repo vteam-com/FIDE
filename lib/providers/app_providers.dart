@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:isolate';
 import 'dart:math' as math;
 
 import 'package:fcheck/fcheck.dart' as fcheck;
@@ -15,14 +14,24 @@ import 'package:fide/models/project_node.dart';
 import 'package:fide/models/project_overview.dart';
 import 'package:fide/models/quality_issue.dart';
 import 'package:fide/models/quality_issues.dart';
-import 'package:fide/providers/file_type_utils.dart';
-import 'package:fide/providers/project_service.dart';
-import 'package:fide/providers/project_state_sink.dart';
-import 'package:fide/providers/quick_fix_runner.dart';
-import 'package:fide/providers/reference_finder.dart';
+import 'package:fide/models/quick_fix.dart';
+import 'package:fide/models/string_review.dart';
+import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/service_providers.dart';
-import 'package:fide/providers/string_lookup_passer.dart';
-import 'package:flutter/material.dart';
+import 'package:fide/services/app_icon_inspector.dart';
+import 'package:fide/services/class_split_service.dart';
+import 'package:fide/services/editor_commands.dart';
+import 'package:fide/services/file_content_reader.dart';
+import 'package:fide/services/file_type_utils.dart';
+import 'package:fide/services/loading_progress.dart';
+import 'package:fide/services/project_service.dart';
+import 'package:fide/services/project_state_sink.dart';
+import 'package:fide/services/quick_fix_handler.dart';
+import 'package:fide/services/quick_fix_runner.dart';
+import 'package:fide/services/reference_finder.dart';
+import 'package:fide/services/string_fixer.dart';
+import 'package:fide/services/string_lookup_passer.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:logging/logging.dart';
@@ -82,17 +91,42 @@ final stringLookupPasserProvider = Provider<StringLookupPasser>(
   ),
 );
 
+/// Provides the [StringFixer] reviewing and rewriting hardcoded strings.
+final stringFixerProvider = Provider<StringFixer>(
+  (ref) => StringFixer(
+    localizer: ref.read(stringLocalizerProvider),
+    lookups: ref.watch(stringLookupPasserProvider),
+    extractor: ref.read(stringConstantsExtractorProvider),
+  ),
+);
+
+/// Provides the handler of each [QuickFix]: a new fix registers its
+/// handler here.
+final quickFixHandlersProvider = Provider<Map<QuickFix, QuickFixHandler>>((
+  ref,
+) {
+  final strings = ref.watch(stringFixerProvider);
+  return {
+    for (final fix in StringFix.values)
+      fix.quickFix: StringFixHandler(strings, fix),
+    QuickFix.migrateToArb: MigrateToArbHandler(ref.read(arbMigratorProvider)),
+    QuickFix.removeUnusedKeys: RemoveUnusedKeysHandler(
+      ref.read(arbKeyRemoverProvider),
+    ),
+    QuickFix.sortMembers: SortMembersHandler(ref.read(codeReviewProvider)),
+    QuickFix.translateKeys: TranslateKeysHandler(
+      ref.read(arbTranslatorProvider),
+    ),
+  };
+});
+
 /// Provides the [QuickFixRunner] behind the issue dialogs' quick fixes and
 /// the AI's `run_quick_fix` hook.
 final quickFixRunnerProvider = Provider<QuickFixRunner>(
   (ref) => QuickFixRunner(
     review: ref.read(codeReviewProvider),
-    localizer: ref.read(stringLocalizerProvider),
-    lookups: ref.watch(stringLookupPasserProvider),
-    extractor: ref.read(stringConstantsExtractorProvider),
-    translator: ref.read(arbTranslatorProvider),
-    migrator: ref.read(arbMigratorProvider),
-    keyRemover: ref.read(arbKeyRemoverProvider),
+    strings: ref.watch(stringFixerProvider),
+    handlers: ref.watch(quickFixHandlersProvider),
   ),
 );
 
@@ -138,15 +172,27 @@ final projectManagerProvider = Provider<ProjectManager>((ref) {
   return ProjectManager(ref);
 });
 
-// Project service provider for complete project management
+/// Provides the [ProjectService] doing [ProjectManager]'s loading steps;
+/// it stops watching the project when the provider is disposed.
 final projectServiceProvider = Provider<ProjectService>((ref) {
-  return ProjectService(
+  final service = ProjectService(
     _ProviderProjectStateSink(ref),
     ref.read(gitServiceProvider),
     ref.read(fileSystemWatcherProvider),
+    ref.read(projectConfigReaderProvider),
     loadTree: ref.read(projectTreeLoaderProvider),
   );
+  ref.onDispose(service.dispose);
+  return service;
 });
+
+/// Reports the steps of loading a project to [loadingActionsProvider],
+/// for the loading screen; override in tests to skip its pauses.
+final projectLoadProgressProvider = Provider<LoadingProgress>(
+  (ref) => LoadingProgress(
+    (actions) => ref.read(loadingActionsProvider.notifier).state = actions,
+  ),
+);
 
 // State management for project creation errors
 final projectCreationErrorProvider = StateProvider<String?>(
@@ -163,6 +209,7 @@ final openDocumentsProvider =
     StateNotifierProvider<OpenDocumentsNotifier, OpenDocuments>(
       (ref) => OpenDocumentsNotifier(
         onSaved: () => ref.read(savedFilesRevisionProvider.notifier).state++,
+        activeEditor: ref.read(activeEditorProvider),
       ),
     );
 
@@ -185,10 +232,23 @@ final appIconReportProvider = FutureProvider<fcheck.AppIconReport?>((ref) {
   final projectPath = ref.watch(currentProjectPathProvider);
   ref.watch(savedFilesRevisionProvider);
   if (projectPath == null) return null;
-  return Isolate.run(
-    () => const fcheck.AppIconChecker().inspect(Directory(projectPath)),
-  );
+  return ref.read(appIconInspectorProvider).inspect(projectPath);
 });
+
+/// Provides the [AppIconInspector] behind [appIconReportProvider]; override
+/// in tests to fake the check.
+final appIconInspectorProvider = Provider<AppIconInspector>(
+  (_) => const AppIconInspector(),
+);
+
+/// Provides the [ClassSplitService] behind the Organized view's split of
+/// files with more than one public class.
+final classSplitServiceProvider = Provider<ClassSplitService>(
+  (ref) => ClassSplitService(
+    ref.read(flutterSdkProvider),
+    ref.read(codeFormatterProvider),
+  ),
+);
 
 /// The open project's app icon problems; null until checked.
 final appIconIssuesProvider = Provider<List<fcheck.AppIconIssue>?>(
@@ -247,10 +307,12 @@ final activeDocumentProvider = Provider<DocumentState?>(
   (ref) => ref.watch(openDocumentsProvider).active,
 );
 
+/// The Info panel's metrics of the current project, starting again from
+/// the cached ones when another project opens.
 final projectMetricsProvider =
-    StateNotifierProvider<ProjectMetricsNotifier, ProjectMetrics>((ref) {
-      final prefs = ref
-          .watch(sharedPreferencesProvider)
-          .maybeWhen(data: (data) => data, orElse: () => null);
-      return ProjectMetricsNotifier(ref, prefs);
-    });
+    StateNotifierProvider<ProjectMetricsNotifier, ProjectMetrics>(
+      (ref) => ProjectMetricsNotifier(
+        ref.watch(sharedPreferencesProvider.future),
+        ref.watch(currentProjectPathProvider),
+      ),
+    );

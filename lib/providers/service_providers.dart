@@ -1,29 +1,41 @@
-import 'package:fide/providers/ai_service.dart';
-import 'package:fide/providers/app_icon_fixer.dart';
-import 'package:fide/providers/arb_key_remover.dart';
-import 'package:fide/providers/arb_migrator.dart';
-import 'package:fide/providers/arb_translator.dart';
-import 'package:fide/providers/build_artifacts_inspector.dart';
-import 'package:fide/providers/code_formatter.dart';
-import 'package:fide/providers/code_review.dart';
-import 'package:fide/providers/file_entry_service.dart';
-import 'package:fide/providers/file_system_watcher.dart';
-import 'package:fide/providers/flutter_build_service.dart';
-import 'package:fide/providers/flutter_sdk.dart';
-import 'package:fide/providers/git_service.dart';
-import 'package:fide/providers/localization_service.dart';
-import 'package:fide/providers/ollama_installer.dart';
-import 'package:fide/providers/process_runner.dart';
-import 'package:fide/providers/project_analyzer.dart';
-import 'package:fide/providers/project_categorizer.dart';
-import 'package:fide/providers/project_creation_service.dart';
-import 'package:fide/providers/project_maintenance_service.dart';
-import 'package:fide/providers/project_overview_service.dart';
-import 'package:fide/providers/project_search_service.dart';
-import 'package:fide/providers/project_service.dart';
-import 'package:fide/providers/project_tree_reader.dart';
-import 'package:fide/providers/string_constants_extractor.dart';
-import 'package:fide/providers/string_localizer.dart';
+import 'dart:io';
+
+import 'package:fide/models/flutter_platform.dart';
+import 'package:fide/services/ai_assistant.dart';
+import 'package:fide/services/app_icon_fixer.dart';
+import 'package:fide/services/arb_key_remover.dart';
+import 'package:fide/services/arb_migrator.dart';
+import 'package:fide/services/arb_translator.dart';
+import 'package:fide/services/asset_categorizer.dart';
+import 'package:fide/services/build_artifacts_inspector.dart';
+import 'package:fide/services/chat_model.dart';
+import 'package:fide/services/code_formatter.dart';
+import 'package:fide/services/code_review.dart';
+import 'package:fide/services/commit_message_writer.dart';
+import 'package:fide/services/desktop_shell.dart';
+import 'package:fide/services/file_content_reader.dart';
+import 'package:fide/services/file_entry_service.dart';
+import 'package:fide/services/file_system_watcher.dart';
+import 'package:fide/services/flutter_build_service.dart';
+import 'package:fide/services/flutter_sdk.dart';
+import 'package:fide/services/git_service.dart';
+import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/ollama_client.dart';
+import 'package:fide/services/ollama_installer.dart';
+import 'package:fide/services/process_runner.dart';
+import 'package:fide/services/project_analyzer.dart';
+import 'package:fide/services/project_categorizer.dart';
+import 'package:fide/services/project_config_reader.dart';
+import 'package:fide/services/project_creation_service.dart';
+import 'package:fide/services/project_maintenance_service.dart';
+import 'package:fide/services/project_overview_service.dart';
+import 'package:fide/services/project_search_service.dart';
+import 'package:fide/services/project_service.dart';
+import 'package:fide/services/project_template.dart';
+import 'package:fide/services/project_tree_reader.dart';
+import 'package:fide/services/string_constants_extractor.dart';
+import 'package:fide/services/string_localizer.dart';
+import 'package:fide/services/test_suite_inspector.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
@@ -31,6 +43,26 @@ import 'package:http/http.dart' as http;
 /// override in tests to fake external tools.
 final processRunnerProvider = Provider<ProcessRunner>(
   (_) => const ProcessRunner(),
+);
+
+/// Provides the [DesktopShell] of the platform FIDE runs on, chosen once.
+final desktopShellProvider = Provider<DesktopShell>(
+  (ref) => DesktopShell.forOperatingSystem(
+    Platform.operatingSystem,
+    ref.read(processRunnerProvider),
+  ),
+);
+
+/// Provides the [ProjectConfigReader] services read a project's pubspec,
+/// `l10n.yaml` and platform folders with.
+final projectConfigReaderProvider = Provider<ProjectConfigReader>(
+  (_) => const ProjectConfigReader(),
+);
+
+/// The desktop platform FIDE runs on, which decides what it can build;
+/// null on an OS Flutter does not target.
+final hostPlatformProvider = Provider<FlutterPlatform?>(
+  (_) => FlutterPlatform.fromId(Platform.operatingSystem),
 );
 
 /// Provides the shared [GitService]; override in tests to stub Git commands.
@@ -46,13 +78,41 @@ final httpClientProvider = Provider<http.Client>((ref) {
   return client;
 });
 
-/// Provides the shared [AIService]; override in tests to stub Ollama calls.
-final aiServiceProvider = Provider<AIService>(
-  (ref) =>
-      AIService(ref.read(flutterSdkProvider), ref.read(httpClientProvider)),
+/// Provides the shared [OllamaClient], which picks the local model and
+/// says whether it can call tools.
+final ollamaClientProvider = Provider<OllamaClient>(
+  (ref) => OllamaClient(ref.read(httpClientProvider)),
 );
 
-/// Provides the [CodeReview] that runs fcheck for the AI reviews.
+/// Provides the [ChatModel] every AI feature asks; override in tests with
+/// a fake model.
+final chatModelProvider = Provider<ChatModel>(
+  (ref) => ref.read(ollamaClientProvider),
+);
+
+/// Provides the [AiAssistant] answering the AI panel's suggestions and
+/// reviews.
+final aiAssistantProvider = Provider<AiAssistant>(
+  (ref) => AiAssistant(ref.read(chatModelProvider)),
+);
+
+/// Provides the [CommitMessageWriter] behind the Git panel's AI commit
+/// message.
+final commitMessageWriterProvider = Provider<CommitMessageWriter>(
+  (ref) => CommitMessageWriter(ref.read(chatModelProvider)),
+);
+
+/// Provides the [ProjectTemplate] scaffolding the new-project wizard's
+/// starter files.
+final projectTemplateProvider = Provider<ProjectTemplate>(
+  (ref) => ProjectTemplate(
+    ref.read(chatModelProvider),
+    ref.read(flutterSdkProvider),
+  ),
+);
+
+/// Provides the [CodeReview] that runs fcheck for the AI reviews, the
+/// overview and the quick fixes.
 final codeReviewProvider = Provider<CodeReview>((_) => const CodeReview());
 
 /// Provides the [OllamaInstaller] that installs and starts the local model.
@@ -62,7 +122,10 @@ final ollamaInstallerProvider = Provider<OllamaInstaller>(
 
 /// Provides the shared [LocalizationService] for project l10n setup.
 final localizationServiceProvider = Provider<LocalizationService>(
-  (ref) => LocalizationService(ref.read(processRunnerProvider)),
+  (ref) => LocalizationService(
+    ref.read(processRunnerProvider),
+    ref.read(projectConfigReaderProvider),
+  ),
 );
 
 /// Provides the [StringLocalizer] behind the Localize strings quick fix.
@@ -91,7 +154,7 @@ final arbKeyRemoverProvider = Provider<ArbKeyRemover>(
 /// Localization panel's per-key translation.
 final arbTranslatorProvider = Provider<ArbTranslator>(
   (ref) => ArbTranslator(
-    ref.read(aiServiceProvider),
+    ref.read(chatModelProvider),
     ref.read(localizationServiceProvider),
   ),
 );
@@ -99,12 +162,20 @@ final arbTranslatorProvider = Provider<ArbTranslator>(
 /// Provides the [StringConstantsExtractor] behind the Make string
 /// constants quick fix.
 final stringConstantsExtractorProvider = Provider<StringConstantsExtractor>(
-  (ref) => StringConstantsExtractor(ref.read(codeFormatterProvider)),
+  (ref) => StringConstantsExtractor(
+    ref.read(codeFormatterProvider),
+    ref.read(projectConfigReaderProvider),
+  ),
 );
 
 /// Provides the [FlutterBuildService] that runs build, clean and pod commands.
 final flutterBuildServiceProvider = Provider<FlutterBuildService>(
   (ref) => FlutterBuildService(ref.read(processRunnerProvider)),
+);
+
+/// Provides the [TestSuiteInspector] the Test panel finds tests with.
+final testSuiteInspectorProvider = Provider<TestSuiteInspector>(
+  (_) => const TestSuiteInspector(),
 );
 
 /// Provides the [BuildArtifactsInspector] the Execute panel reads build
@@ -115,12 +186,18 @@ final buildArtifactsInspectorProvider = Provider<BuildArtifactsInspector>(
 
 /// Provides the [AppIconFixer] behind the App Icons view's fixes.
 final appIconFixerProvider = Provider<AppIconFixer>(
-  (_) => const AppIconFixer(),
+  (ref) => AppIconFixer(ref.read(projectConfigReaderProvider)),
 );
 
 /// Provides the [CodeFormatter] behind the editor's Format action.
 final codeFormatterProvider = Provider<CodeFormatter>(
   (ref) => CodeFormatter(ref.read(processRunnerProvider)),
+);
+
+/// Provides the [FileContentReader] that loads files as text for the
+/// editor and the outline.
+final fileContentReaderProvider = Provider<FileContentReader>(
+  (_) => const FileContentReader(),
 );
 
 /// Provides the [FileEntryService] the tree panels create, rename and delete
@@ -131,7 +208,7 @@ final fileEntryServiceProvider = Provider<FileEntryService>(
 
 /// Provides the [ProjectAnalyzer] that computes Info panel metrics.
 final projectAnalyzerProvider = Provider<ProjectAnalyzer>(
-  (_) => const ProjectAnalyzer(),
+  (ref) => ProjectAnalyzer(ref.read(projectConfigReaderProvider)),
 );
 
 /// Provides the [ProjectCreationService] the new-project wizard runs.
@@ -140,7 +217,7 @@ final projectCreationServiceProvider = Provider<ProjectCreationService>(
     ref.read(processRunnerProvider),
     ref.read(gitServiceProvider),
     ref.read(localizationServiceProvider),
-    ref.read(aiServiceProvider),
+    ref.read(projectTemplateProvider),
   ),
 );
 
@@ -164,6 +241,7 @@ final projectOverviewServiceProvider = Provider<ProjectOverviewService>(
     ref.read(codeReviewProvider),
     ref.read(arbServiceProvider),
     ref.read(buildArtifactsInspectorProvider),
+    ref.read(projectConfigReaderProvider),
   ),
 );
 
@@ -190,7 +268,18 @@ final projectSearchServiceProvider = Provider<ProjectSearchService>(
 
 /// Provides the [ProjectCategorizer] behind the Organized view.
 final projectCategorizerProvider = Provider<ProjectCategorizer>(
-  (ref) => ProjectCategorizer(ref.read(projectTreeReaderProvider)),
+  (ref) => ProjectCategorizer(
+    ref.read(projectTreeReaderProvider),
+    ref.read(assetCategorizerProvider),
+  ),
+);
+
+/// Provides the [AssetCategorizer] grouping the Organized view's assets.
+final assetCategorizerProvider = Provider<AssetCategorizer>(
+  (ref) => AssetCategorizer(
+    ref.read(projectTreeReaderProvider),
+    ref.read(projectConfigReaderProvider),
+  ),
 );
 
 /// Provides the [FileSystemWatcher] used for incremental project tree updates.

@@ -3,17 +3,14 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/hardcoded_string.dart';
 import 'package:fide/models/hardcoded_string_role.dart';
 import 'package:fide/models/locale_number.dart';
-import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/models/string_review.dart';
 import 'package:fide/widgets/compact_text_button.dart';
+import 'package:fide/widgets/quick_fix_icon.dart';
 import 'package:fide/widgets/section_title.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
-
-/// The fix the user picked in a [StringReviewDialog] and the strings it
-/// rewrites; a null [fix] has the AI fix them.
-typedef StringReviewChoice = ({QuickFix? fix, List<HardcodedString> strings});
 
 /// Shows a project's hardcoded strings grouped by role, each string with
 /// the use that decided it and a link to its code, and each group with
@@ -105,7 +102,7 @@ class _StringReviewDialogState extends State<StringReviewDialog> {
   Widget _action({
     required IconData icon,
     required String label,
-    required QuickFix? fix,
+    required StringFix? fix,
     required List<HardcodedString> strings,
   }) => FilledButton.icon(
     icon: Icon(icon),
@@ -230,7 +227,7 @@ class _StringReviewDialogState extends State<StringReviewDialog> {
                   (string) => widget.review.whyNot(fix, string) == null,
                 ))
                   _action(
-                    icon: fix.icon,
+                    icon: fix.quickFix.icon,
                     label: fix.label,
                     fix: fix,
                     strings: checked(

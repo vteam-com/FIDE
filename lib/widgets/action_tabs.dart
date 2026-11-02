@@ -2,13 +2,14 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_status.dart';
-import 'package:fide/models/app_theme.dart';
-import 'package:fide/models/panel_action.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/icon_label_tab.dart';
 import 'package:fide/widgets/icon_tab_bar.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/panel_action.dart';
 import 'package:fide/widgets/status_indicator.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/surface_card.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:flutter/material.dart';
@@ -111,7 +112,7 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
               children: widget.actions.map((action) {
                 final status = action.status;
                 final isRunning = action.isRunning;
-                final color = action.color;
+                final color = colorScheme.primary;
                 final canStop = isRunning && action.onStop != null;
 
                 return Padding(

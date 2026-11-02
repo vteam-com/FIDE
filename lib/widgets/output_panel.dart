@@ -15,6 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// to existing files, relative ones resolved against the open project, are
 /// links that open the file at that line.
 class OutputPanel extends ConsumerStatefulWidget {
+  /// Creates a section titled [title] showing [text].
   const OutputPanel({
     super.key,
     required this.title,
@@ -23,12 +24,16 @@ class OutputPanel extends ConsumerStatefulWidget {
     this.onClear,
   });
 
+  /// Whether the section starts expanded.
   final bool isExpanded;
 
+  /// Clears the output; no Clear button when null.
   final Function? onClear;
 
+  /// The command output shown.
   final String text;
 
+  /// The section heading.
   final String title;
 
   @override
@@ -36,8 +41,6 @@ class OutputPanel extends ConsumerStatefulWidget {
 }
 
 class _OutputPanelState extends ConsumerState<OutputPanel> {
-  bool _isExpanded = false;
-
   bool _wrapText = false;
 
   /// File references in the text, each with the recognizer that opens it.
@@ -50,7 +53,6 @@ class _OutputPanelState extends ConsumerState<OutputPanel> {
   @override
   void initState() {
     super.initState();
-    _isExpanded = widget.isExpanded;
     _findLinks();
   }
 
@@ -70,7 +72,7 @@ class _OutputPanelState extends ConsumerState<OutputPanel> {
   Widget build(BuildContext context) {
     return SectionPanel(
       title: widget.title,
-      isExpanded: _isExpanded,
+      isExpanded: widget.isExpanded,
       rightWidget: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

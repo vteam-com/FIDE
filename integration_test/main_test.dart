@@ -2,16 +2,16 @@
 
 import 'dart:io';
 
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fide/controllers/app_controller.dart';
 import 'package:fide/main.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/file_system_watcher.dart';
-import 'package:fide/providers/project_service.dart';
 import 'package:fide/providers/service_providers.dart';
-import 'package:fide/controllers/app_controller.dart';
+import 'package:fide/services/file_system_watcher.dart';
+import 'package:fide/services/project_service.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
 import 'package:path/path.dart' as path;
 
 import 'package:shared_preferences/shared_preferences.dart';

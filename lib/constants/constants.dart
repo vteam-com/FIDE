@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+export 'core_constants.dart';
+
 part 'constants.app_size.dart';
 part 'constants.app_padding.dart';
 part 'constants.app_spacing.dart';
@@ -8,17 +10,14 @@ part 'constants.app_icon_size.dart';
 part 'constants.app_font_size.dart';
 part 'constants.app_text_style.dart';
 part 'constants.app_radius.dart';
-part 'constants.app_duration.dart';
 part 'constants.app_opacity.dart';
 part 'constants.app_alpha.dart';
 part 'constants.app_border_width.dart';
 part 'constants.app_line_height.dart';
-part 'constants.app_metric.dart';
 part 'constants.editor_config.dart';
 part 'constants.terminal_palette.dart';
 part 'constants.app_color.dart';
 part 'constants.app_gradient.dart';
 part 'constants.app_shade.dart';
-part 'constants.pref_keys.dart';
 part 'constants.app_shortcut.dart';
 part 'constants.app_zoom.dart';

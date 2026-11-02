@@ -1,0 +1,635 @@
+// ignore: fcheck_dead_code
+import 'dart:io';
+
+import 'package:fide/constants/constants.dart';
+import 'package:fide/models/git_file_status.dart';
+import 'package:fide/services/file_content_reader.dart';
+import 'package:fide/services/process_runner.dart';
+import 'package:path/path.dart' as p;
+
+part 'git_service.git_status.dart';
+part 'git_service.git_commit.dart';
+part 'git_service.git_diff_stats.dart';
+part 'git_service.git_exception.dart';
+
+/// Represents `GitService`.
+class GitService {
+  final ProcessRunner _runner;
+
+  /// Creates a Git service that launches commands through [_runner].
+  const GitService(this._runner);
+
+  /// Fields of `git rev-list --left-right --count`: ahead, then behind.
+  static const int _syncCountFields = 2;
+
+  /// What a tracked file's changes compare against: HEAD, or the index
+  /// before the first commit, when there is no HEAD.
+  static const List<List<String>> _headBases = [
+    ['HEAD'],
+    ['--cached'],
+  ];
+
+  /// Tab-separated fields of a [getRecentCommits] line: hash, time, subject.
+  static const int _commitFields = 3;
+
+  /// Porcelain separator between the old and new path of a rename or copy.
+  static const String _renameArrow = ' -> ';
+
+  /// `git diff --no-index` exit code meaning "the files differ".
+  static const int _noIndexDiffFoundExitCode = 1;
+
+  /// Runs a mutating Git command and returns [successMessage].
+  ///
+  /// Throws a [GitException] carrying [failureMessage] when git fails or
+  /// can't be started.
+  Future<String> _runGitMutation({
+    required String path,
+    required List<String> args,
+    required String successMessage,
+    required String failureMessage,
+  }) async {
+    final ProcessResult result;
+    try {
+      result = await _runner.run('git', args, workingDirectory: path);
+    } catch (e) {
+      throw GitException(failureMessage, '$e');
+    }
+    if (result.exitCode != 0) {
+      throw GitException(failureMessage, '${result.stderr}');
+    }
+    return successMessage;
+  }
+
+  /// Files the porcelain entry for [file] with two-letter [status] into the
+  /// staged, unstaged and untracked lists of [into].
+  static void _classify(String status, String file, GitStatus into) {
+    if (status[0] == '?') {
+      into.untracked.add(file);
+      return;
+    }
+    if (status[0] != ' ') {
+      into.staged.add(file);
+      into.stagedKinds[file] = _kindOf(status[0]);
+    }
+    if (status[1] != ' ') {
+      into.unstaged.add(file);
+      into.unstagedKinds[file] = _kindOf(status[1]);
+    }
+  }
+
+  /// The change a porcelain status letter stands for: added, deleted, or
+  /// modified for everything else (edits, renames, type changes, conflicts).
+  static GitFileStatus _kindOf(String letter) => switch (letter) {
+    'A' => GitFileStatus.added,
+    'D' => GitFileStatus.deleted,
+    _ => GitFileStatus.modified,
+  };
+
+  // Expand directory to all contained files
+  Future<List<String>> _expandDirectoryToFiles(
+    String projectPath,
+    String dirPath,
+  ) async {
+    final files = <String>[];
+    final dir = Directory('$projectPath/$dirPath');
+
+    if (await dir.exists()) {
+      await for (final entity in dir.list(
+        recursive: true,
+        followLinks: false,
+      )) {
+        if (entity is File) {
+          // Get relative path from project root
+          final relativePath = p.relative(entity.path, from: projectPath);
+          files.add(relativePath);
+        }
+      }
+    }
+
+    return files;
+  }
+
+  /// Installed Git version (e.g. `2.39.3`); null when Git isn't available,
+  /// `Unknown` when its version output can't be parsed.
+  Future<String?> version() async {
+    final output = await _runner.outputOf('git', [
+      '--version',
+    ], runInShell: true);
+    if (output == null) return null;
+    return RegExp(r'git version (\d+\.\d+\.\d+)')
+            .firstMatch(output)
+            ?.group(1) ??
+        'Unknown';
+  }
+
+  /// Returns true if the provided path is inside a valid Git repository.
+  Future<bool> isGitRepository(String path) {
+    return _runner.succeeds('git', [
+      'rev-parse',
+      '--git-dir',
+    ], workingDirectory: path);
+  }
+
+  /// Initializes a new Git repository at the provided path.
+  Future<String> initRepository(String path) async {
+    return _runGitMutation(
+      path: path,
+      args: ['init'],
+      successMessage: 'Git repository initialized successfully',
+      failureMessage: 'Failed to initialize Git repository',
+    );
+  }
+
+  /// Initializes a repository at [path] and commits everything in it; true
+  /// only when init, add and commit all succeed within the Git timeout.
+  Future<bool> initWithInitialCommit(String path) async {
+    const steps = [
+      ['init'],
+      ['add', '.'],
+      ['commit', '-m', 'Initial commit'],
+    ];
+    for (final args in steps) {
+      final succeeded = await _runner
+          .succeeds('git', args, workingDirectory: path)
+          .timeout(AppDuration.gitOperationTimeout, onTimeout: () => false);
+      if (!succeeded) return false;
+    }
+    return true;
+  }
+
+  /// Reads Git porcelain status and groups files into staged/unstaged/untracked.
+  ///
+  /// Throws a [GitException] when git fails.
+  Future<GitStatus> getStatus(String path) async {
+    final ProcessResult result;
+    try {
+      result = await _runner.run('git', [
+        'status',
+        '--porcelain',
+      ], workingDirectory: path);
+    } catch (e) {
+      throw GitException('Failed to get Git status', '$e');
+    }
+    if (result.exitCode != 0) {
+      throw GitException('Failed to get Git status', '${result.stderr}');
+    }
+
+    final status = GitStatus(staged: [], unstaged: [], untracked: []);
+    final lines = result.stdout
+        .toString()
+        .split('\n')
+        .where((line) => line.isNotEmpty);
+    for (final line in lines) {
+      if (line.length < AppMetric.gitStatusFieldOffset) continue;
+      final code = line.substring(0, AppMetric.doubleLineLimit);
+      // A rename or copy lists `old -> new`; the change lives at the new path
+      final entryPath = line.substring(AppMetric.gitStatusFieldOffset);
+      final file = entryPath.contains(_renameArrow)
+          ? entryPath.split(_renameArrow).last
+          : entryPath;
+
+      // Porcelain reports a wholly new directory as `dir/`; list its files
+      final files = file.endsWith('/')
+          ? await _expandDirectoryToFiles(
+              path,
+              file.substring(0, file.length - 1),
+            )
+          : [file];
+      for (final entry in files) {
+        _classify(code, entry, status);
+      }
+    }
+    return status;
+  }
+
+  /// Stages the provided file paths.
+  Future<String> stageFiles(String path, List<String> files) async {
+    return _runGitMutation(
+      path: path,
+      args: ['add', ...files],
+      successMessage: 'Files staged successfully',
+      failureMessage: 'Failed to stage files',
+    );
+  }
+
+  /// Unstages the provided file paths from the index.
+  Future<String> unstageFiles(String path, List<String> files) async {
+    return _runGitMutation(
+      path: path,
+      args: ['reset', 'HEAD', ...files],
+      successMessage: 'Files unstaged successfully',
+      failureMessage: 'Failed to unstage files',
+    );
+  }
+
+  /// Creates a commit with the given commit message.
+  Future<String> commit(String path, String message) async {
+    return _runGitMutation(
+      path: path,
+      args: ['commit', '-m', message],
+      successMessage: 'Changes committed successfully',
+      failureMessage: 'Failed to commit changes',
+    );
+  }
+
+  /// Rewrites the last commit with the staged changes; keeps its message
+  /// when [message] is empty.
+  Future<String> amend(String path, String message) async {
+    return _runGitMutation(
+      path: path,
+      args: [
+        'commit',
+        '--amend',
+        ...message.isEmpty ? ['--no-edit'] : ['-m', message],
+      ],
+      successMessage: 'Last commit amended successfully',
+      failureMessage: 'Failed to amend last commit',
+    );
+  }
+
+  /// Whether the last commit can be amended safely: HEAD exists and no
+  /// remote-tracking branch contains it yet (it has not been pushed).
+  Future<bool> canAmend(String path) async {
+    final remoteBranches = await _runner.outputOf('git', [
+      'branch',
+      '--remotes',
+      '--contains',
+      'HEAD',
+    ], workingDirectory: path);
+    return remoteBranches != null && remoteBranches.trim().isEmpty;
+  }
+
+  /// Updates the remote-tracking branches so [syncCounts] sees new remote
+  /// commits; true when the fetch succeeds.
+  Future<bool> fetch(String path) {
+    return _runner.succeeds('git', [
+      'fetch',
+      '--quiet',
+    ], workingDirectory: path);
+  }
+
+  /// Commits the current branch has that its upstream lacks ([ahead], to
+  /// push) and the reverse ([behind], to pull), as of the last [fetch].
+  /// Both are zero when the branch has no upstream.
+  Future<({int ahead, int behind})> syncCounts(String path) async {
+    final output = await _runner.outputOf('git', [
+      'rev-list',
+      '--left-right',
+      '--count',
+      'HEAD...@{upstream}',
+    ], workingDirectory: path);
+    final counts = output?.trim().split(RegExp(r'\s+'));
+    if (counts == null || counts.length != _syncCountFields) {
+      return (ahead: 0, behind: 0);
+    }
+    return (
+      ahead: int.tryParse(counts.first) ?? 0,
+      behind: int.tryParse(counts.last) ?? 0,
+    );
+  }
+
+  /// Pushes local commits to the configured remote.
+  Future<String> push(String path) async {
+    return _runGitMutation(
+      path: path,
+      args: ['push'],
+      successMessage: 'Changes pushed successfully',
+      failureMessage: 'Failed to push changes',
+    );
+  }
+
+  /// Pulls remote changes into the current branch.
+  Future<String> pull(String path) async {
+    return _runGitMutation(
+      path: path,
+      args: ['pull'],
+      successMessage: 'Changes pulled successfully',
+      failureMessage: 'Failed to pull changes',
+    );
+  }
+
+  /// Returns the current checked-out branch name, if available.
+  Future<String?> getCurrentBranch(String path) async {
+    try {
+      final result = await _runner.run('git', [
+        'branch',
+        '--show-current',
+      ], workingDirectory: path);
+      if (result.exitCode == 0) {
+        return result.stdout.toString().trim();
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+    return null;
+  }
+
+  /// Returns a summary of the staged changes followed by their unified
+  /// diff, so a cut diff still names every staged file; empty when nothing
+  /// is staged.
+  ///
+  /// Throws a [GitException] when git fails.
+  Future<String> getStagedDiff(String path) async {
+    const failure = 'Failed to get staged diff';
+    final output = StringBuffer();
+    for (final args in [
+      ['diff', '--cached', '--stat'],
+      ['diff', '--cached'],
+    ]) {
+      final result = await _runner.run('git', args, workingDirectory: path);
+      if (result.exitCode != 0) {
+        throw GitException(failure, '${result.stderr}');
+      }
+      output.writeln(result.stdout.toString().trim());
+    }
+    return output.toString().trim();
+  }
+
+  /// Returns up to [count] recent commits, newest first, each with its date
+  /// and whether it still waits to be pushed.
+  Future<List<GitCommit>> getRecentCommits(
+    String path, {
+    int count = AppMetric.gitCommitDefaultCount,
+  }) async {
+    try {
+      final result = await _runner.run('git', [
+        'log',
+        '--format=%H%x09%ct%x09%s',
+        '-n',
+        count.toString(),
+      ], workingDirectory: path);
+      if (result.exitCode == 0) {
+        final unpushed = await _unpushedHashes(path);
+        final lines = result.stdout
+            .toString()
+            .split('\n')
+            .where((line) => line.isNotEmpty);
+        return [for (final line in lines) ?_parseCommit(line, unpushed)];
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+    return [];
+  }
+
+  /// Parses a `hash<TAB>unix time<TAB>subject` log [line]; null when it
+  /// doesn't have that shape.
+  static GitCommit? _parseCommit(String line, Set<String> unpushed) {
+    final fields = line.split('\t');
+    if (fields.length < _commitFields) return null;
+    final seconds = int.tryParse(fields[1]);
+    if (seconds == null) return null;
+    final hash = fields.first;
+    return GitCommit(
+      hash: hash,
+      // A subject may itself hold tabs
+      message: fields.skip(_commitFields - 1).join('\t'),
+      date: DateTime.fromMillisecondsSinceEpoch(
+        seconds * Duration.millisecondsPerSecond,
+      ),
+      isUnpushed: unpushed.contains(hash),
+    );
+  }
+
+  /// Full hashes of the commits the upstream branch lacks; empty when the
+  /// branch has no upstream.
+  Future<Set<String>> _unpushedHashes(String path) async {
+    final output = await _runner.outputOf('git', [
+      'rev-list',
+      '@{upstream}..HEAD',
+    ], workingDirectory: path);
+    return (output ?? '').split('\n').where((h) => h.isNotEmpty).toSet();
+  }
+
+  /// Returns the unified diff of [filePath] against HEAD (staged and
+  /// unstaged changes together); untracked files diff as wholly added.
+  /// Empty when the file has no changes.
+  ///
+  /// Throws a [GitException] when git fails.
+  Future<String> getFileDiff(String path, String filePath) async {
+    const failure = 'Failed to get diff';
+    try {
+      if (!await _isTracked(path, filePath)) {
+        final result = await _runner.run('git', [
+          'diff',
+          '--no-index',
+          '--',
+          '/dev/null',
+          filePath,
+        ], workingDirectory: path);
+        if (result.exitCode != _noIndexDiffFoundExitCode) {
+          throw GitException(failure, '${result.stderr}');
+        }
+        return result.stdout.toString();
+      }
+
+      for (final base in _headBases) {
+        final result = await _runner.run('git', [
+          'diff',
+          ...base,
+          '--',
+          filePath,
+        ], workingDirectory: path);
+        if (result.exitCode == 0) return result.stdout.toString();
+      }
+      throw const GitException(failure);
+    } on GitException {
+      rethrow;
+    } catch (e) {
+      throw GitException(failure, '$e');
+    }
+  }
+
+  /// Returns the committed content of the absolute [filePath] at HEAD, or an
+  /// empty string when the file isn't in HEAD (new or untracked).
+  Future<String> getHeadContent(String filePath) async {
+    return await _showRelativeToFile(filePath, 'HEAD') ?? '';
+  }
+
+  /// Returns the staged (index) content of the absolute [filePath], or null
+  /// when the file isn't in the index.
+  Future<String?> getStagedContent(String filePath) {
+    return _showRelativeToFile(filePath, '');
+  }
+
+  /// Runs `git show <revision>:./<name>` from the file's own directory, so
+  /// the path resolves correctly wherever the repository root is.
+  Future<String?> _showRelativeToFile(String filePath, String revision) async {
+    try {
+      final result = await _runner.run('git', [
+        'show',
+        '$revision:./${p.basename(filePath)}',
+      ], workingDirectory: p.dirname(filePath));
+      return result.exitCode == 0 ? result.stdout.toString() : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Whether [file] is tracked in the repository at [path].
+  ///
+  /// Deliberately not [ProcessRunner.succeeds]: when git can't run this
+  /// throws, so [discardChanges] never mistakes every file for an untracked
+  /// one and deletes it.
+  Future<bool> _isTracked(String path, String file) async {
+    final result = await _runner.run('git', [
+      'ls-files',
+      '--error-unmatch',
+      file,
+    ], workingDirectory: path);
+    return result.exitCode == 0;
+  }
+
+  /// Discards local changes for tracked files and removes untracked files.
+  ///
+  /// Throws a [GitException] when git fails.
+  Future<String> discardChanges(String path, List<String> files) async {
+    const failure = 'Failed to discard changes';
+    try {
+      final untrackedFiles = <String>[];
+      final modifiedFiles = <String>[];
+      for (final file in files) {
+        (await _isTracked(path, file) ? modifiedFiles : untrackedFiles).add(
+          file,
+        );
+      }
+
+      if (modifiedFiles.isNotEmpty) {
+        await _runGitMutation(
+          path: path,
+          args: ['checkout', '--', ...modifiedFiles],
+          successMessage: '',
+          failureMessage: failure,
+        );
+      }
+
+      for (final file in untrackedFiles) {
+        final fileEntity = File('$path/$file');
+        if (await fileEntity.exists()) {
+          await fileEntity.delete();
+        }
+      }
+
+      return 'Changes discarded successfully';
+    } on GitException {
+      rethrow;
+    } catch (e) {
+      throw GitException(failure, '$e');
+    }
+  }
+
+  /// Added/removed line counts of every changed file in [status], keyed by
+  /// repository-relative path: [staged] compares the index to HEAD,
+  /// [unstaged] the working copy to the index, with untracked files counted
+  /// as wholly added.
+  Future<
+    ({Map<String, GitDiffStats> staged, Map<String, GitDiffStats> unstaged})
+  >
+  getChangeStats(String projectPath, GitStatus status) async {
+    final staged = await _numstat(projectPath, cached: true);
+    final unstaged = await _numstat(projectPath, cached: false);
+    for (final file in status.untracked) {
+      unstaged[file] = await _newFileStats(File(p.join(projectPath, file)));
+    }
+    return (staged: staged, unstaged: unstaged);
+  }
+
+  /// Parses `git diff --numstat` of the index ([cached]) or the working
+  /// copy into line counts per file; empty when git fails.
+  Future<Map<String, GitDiffStats>> _numstat(
+    String path, {
+    required bool cached,
+  }) async {
+    final output = await _runner.outputOf('git', [
+      'diff',
+      if (cached) '--cached',
+      '--numstat',
+      '--no-renames',
+    ], workingDirectory: path);
+    return GitDiffStats.parseNumstat(output ?? '');
+  }
+
+  /// Counts every line of the untracked [file] as added; zero lines when it
+  /// is missing, too big to load or binary, as `git diff --numstat` counts
+  /// binary files.
+  static Future<GitDiffStats> _newFileStats(File file) async {
+    if (!await file.exists()) {
+      return GitDiffStats(added: 0, removed: 0, isNewFile: true);
+    }
+    final String? content;
+    try {
+      content = await const FileContentReader().tryRead(file.path);
+    } on FileSystemException {
+      // Not UTF-8 text, such as an image
+      return GitDiffStats(added: 0, removed: 0, isNewFile: true);
+    }
+    if (content == null) {
+      return GitDiffStats(added: 0, removed: 0, isNewFile: true);
+    }
+    return GitDiffStats(
+      added: content.split('\n').length,
+      removed: 0,
+      isNewFile: true,
+    );
+  }
+
+  /// Added/removed line counts of [filePath] against HEAD (staged and
+  /// unstaged changes together, as [getFileDiff] shows them); an untracked
+  /// file counts as wholly added. Zero when git fails.
+  Future<GitDiffStats> getFileDiffStats(String path, String filePath) async {
+    try {
+      if (!await _isTracked(path, filePath)) {
+        return await _newFileStats(File(filePath));
+      }
+      for (final base in _headBases) {
+        final output = await _runner.outputOf('git', [
+          'diff',
+          ...base,
+          '--numstat',
+          '--no-renames',
+          '--',
+          filePath,
+        ], workingDirectory: path);
+        if (output == null) continue;
+        return GitDiffStats.parseNumstat(output).values.firstOrNull ??
+            _noChanges;
+      }
+    } catch (_) {
+      // Counted as unchanged below
+    }
+    return _noChanges;
+  }
+
+  /// Line counts of a tracked file without changes.
+  static GitDiffStats get _noChanges =>
+      GitDiffStats(added: 0, removed: 0, isNewFile: false);
+
+  /// The two sides of the change to the absolute [filePath] since HEAD:
+  /// its committed content (empty when it isn't in HEAD) and [newText], or
+  /// without it the staged content when [staged], else the working copy.
+  /// Null when the file isn't in a Git repository.
+  Future<({String oldText, String newText})?> diffAgainstHead(
+    String filePath, {
+    String? newText,
+    bool staged = false,
+  }) async {
+    if (!await isGitRepository(p.dirname(filePath))) return null;
+    final oldText = await getHeadContent(filePath);
+    final stagedText = staged ? await getStagedContent(filePath) : null;
+    return (
+      oldText: oldText,
+      newText: newText ?? stagedText ?? await _readWorkingCopy(filePath),
+    );
+  }
+
+  /// The working-copy content of [filePath], or '' when it is missing or
+  /// unreadable.
+  static Future<String> _readWorkingCopy(String filePath) async {
+    try {
+      final file = File(filePath);
+      return await file.exists() ? await file.readAsString() : '';
+    } catch (_) {
+      return '';
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import 'package:fide/providers/editor_commands.dart';
+import 'package:fide/services/editor_commands.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Routes [EditorCommands] to the editor that is currently mounted.

@@ -1,20 +1,21 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/quality_issue.dart';
 import 'package:fide/models/quality_issue.quality_finding.dart';
-import 'package:fide/models/quick_fix.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/models/string_review.dart';
-import 'package:fide/providers/ai_chat_notifier.dart';
 import 'package:fide/providers/ai_request.dart';
-import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
-import 'package:fide/providers/quick_fix_runner.dart';
+import 'package:fide/providers/quick_fix_controller.dart';
+import 'package:fide/services/quick_fix_runner.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/markdown_text.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/path_text.dart';
+import 'package:fide/widgets/quick_fix_icon.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/string_review_dialog.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter/material.dart';
@@ -30,9 +31,6 @@ class IssueRow extends ConsumerWidget {
 
   /// The issue shown.
   final QualityIssue issue;
-
-  /// Label of the button reviewing hardcoded strings.
-  static const String _reviewStringsLabel = 'Review strings';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -59,110 +57,47 @@ class IssueRow extends ConsumerWidget {
   Widget _label() =>
       Text(issue.label, style: StatusIndicator.labelStyle(issue.tone.color));
 
-  /// Applies [fix] to the open project after the user reviews it, or
-  /// [apply] when given, reports the outcome and refreshes the project
-  /// overview; a fix asking the model runs as a task in the AI panel, with
-  /// its progress. Does nothing without a project.
-  Future<void> _applyQuickFix(
-    BuildContext context,
-    WidgetRef ref,
-    QuickFix fix, {
-    Future<QuickFixOutcome> Function(QuickFixRunner)? apply,
-  }) async {
-    final projectPath = ref.read(currentProjectPathProvider);
-    if (projectPath == null) return;
-    // Read before the pauses: the calling widget may be gone after them
-    final runner = ref.read(quickFixRunnerProvider);
-    final openDocuments = ref.read(openDocumentsProvider.notifier);
-    final chat = ref.read(aiChatProvider.notifier);
-    final container = ProviderScope.containerOf(context);
-    if (fix.usesAi && ref.read(aiChatProvider).isBusy) {
-      MessageBox.showError(context, 'The AI is busy: wait for it or stop it');
-      return;
-    }
+  /// Asks the user to confirm a quick fix in a dialog over [context];
+  /// false once the row is gone.
+  static QuickFixConfirmation _confirm(BuildContext context) =>
+      (fix, message) async =>
+          context.mounted &&
+          await MessageBox.confirm(
+            context,
+            title: fix.label,
+            message: message,
+            confirmLabel: fix.label,
+          );
 
-    // A fix asking the model runs as a task in the AI panel once confirmed
-    var inChat = false;
-    void showInChat() {
-      if (!fix.usesAi || inChat) return;
-      inChat = true;
-      showAiPanel(ref);
-      chat.beginTask(fix.label);
-    }
-
-    if (!fix.usesAi) MessageBox.showInfo(context, '${fix.label}…');
-    try {
-      final outcome =
-          await (apply?.call(runner) ??
-              runner.run(
-                projectPath,
-                fix,
-                confirm: (fix, message) async {
-                  final confirmed =
-                      context.mounted &&
-                      await MessageBox.confirm(
-                        context,
-                        title: fix.label,
-                        message: message,
-                        confirmLabel: fix.label,
-                      );
-                  if (confirmed) showInChat();
-                  return confirmed;
-                },
-                onProgress: (step) => chat.addReply(step, isProgress: true),
-              ));
-      if (outcome == null) return;
-      await openDocuments.reloadWritten(outcome.changedFiles);
-      container.invalidate(projectOverviewProvider);
-      if (inChat) {
-        chat.endTask(outcome.summary);
-      } else if (context.mounted) {
-        MessageBox.showSuccess(context, outcome.summary);
-      }
-    } catch (e) {
-      if (inChat) {
-        chat.endTask('Error: $e');
-      } else if (context.mounted) {
-        MessageBox.showError(context, '${fix.label}: $e');
-      }
-    }
-  }
-
-  /// Shows the open project's hardcoded strings grouped by role and applies
-  /// the fix the user picks, or has the AI rewrite fragments. Does nothing
-  /// without a project.
-  Future<void> _reviewStrings(BuildContext context, WidgetRef ref) async {
-    final projectPath = ref.read(currentProjectPathProvider);
-    if (projectPath == null) return;
-    final runner = ref.read(quickFixRunnerProvider);
-    MessageBox.showInfo(context, '$_reviewStringsLabel…');
-    final StringReview review;
-    try {
-      review = await runner.reviewStrings(projectPath);
-    } catch (e) {
-      if (context.mounted) {
-        MessageBox.showError(context, '$_reviewStringsLabel: $e');
-      }
-      return;
-    }
+  /// Shows a quick fix's messages over [context] while the row is there.
+  static QuickFixNotice _notify(BuildContext context) => (message, tone) {
     if (!context.mounted) return;
-    final choice = await StringReviewDialog.show(
-      context,
-      review,
-      onOpen: (string) => openFileAtLine(ref, string.path, string.line),
-    );
-    if (choice == null || !context.mounted) return;
-    final fix = choice.fix;
-    if (fix == null) {
-      askAi(ref, review.aiRequest(choice.strings));
-      return;
-    }
-    await _applyQuickFix(
-      context,
-      ref,
-      fix,
-      apply: (runner) => runner.applyStrings(review, fix, choice.strings),
-    );
+    final show = switch (tone) {
+      StatusTone.error => MessageBox.showError,
+      StatusTone.success => MessageBox.showSuccess,
+      StatusTone.warning => MessageBox.showWarning,
+      StatusTone.info || StatusTone.neutral => MessageBox.showInfo,
+    };
+    show(context, message);
+  };
+
+  /// Has the user pick strings of the open project to fix in a
+  /// [StringReviewDialog], then applies the fix they picked.
+  void _reviewStrings(BuildContext context, WidgetRef ref) {
+    ref
+        .read(quickFixControllerProvider)
+        .reviewStrings(
+          choose: (review) async => context.mounted
+              ? StringReviewDialog.show(
+                  context,
+                  review,
+                  onOpen: (string) =>
+                      openFileAtLine(ref, string.path, string.line),
+                )
+              : null,
+          confirm: _confirm(context),
+          notify: _notify(context),
+        );
   }
 
   /// One finding, opening its file at its line when tapped.
@@ -235,23 +170,29 @@ class IssueRow extends ConsumerWidget {
       ),
       actions: [
         // The string fixes are picked per string, grouped by role
-        if (quickFixes.any((fix) => fix.stringRole != null))
+        if (quickFixes.any((fix) => StringFix.of(fix) != null))
           FilledButton.icon(
             icon: const Icon(Icons.checklist),
-            label: const Text(_reviewStringsLabel),
+            label: const Text(QuickFixController.reviewStringsLabel),
             onPressed: () {
               Navigator.of(context).pop();
               _reviewStrings(context, ref);
             },
           ),
         for (final quickFix in quickFixes)
-          if (quickFix.stringRole == null)
+          if (StringFix.of(quickFix) == null)
             FilledButton.icon(
               icon: Icon(quickFix.icon),
               label: Text(quickFix.label),
               onPressed: () {
                 Navigator.of(context).pop();
-                _applyQuickFix(context, ref, quickFix);
+                ref
+                    .read(quickFixControllerProvider)
+                    .apply(
+                      quickFix,
+                      confirm: _confirm(context),
+                      notify: _notify(context),
+                    );
               },
             ),
         if (fixRequest != null)
@@ -261,7 +202,7 @@ class IssueRow extends ConsumerWidget {
             label: Text(issue.aiActionLabel!),
             onPressed: () {
               Navigator.of(context).pop();
-              askAi(ref, fixRequest);
+              ref.read(aiRequestsProvider).ask(fixRequest);
             },
           ),
       ],

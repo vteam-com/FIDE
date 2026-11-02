@@ -1,4 +1,4 @@
-import 'package:fide/models/app_theme.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 /// An orange counter overlaid on the corner of [child], such as a tab icon,

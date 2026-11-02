@@ -1,15 +1,17 @@
+import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/ai_action.dart';
 import 'package:fide/models/ai_chat.dart';
 import 'package:fide/models/chat_message.dart';
 import 'package:fide/models/output_log.dart';
 import 'package:fide/models/text_truncation.dart';
-import 'package:fide/providers/ai_service.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/code_edit_agent.dart';
-import 'package:fide/providers/flutter_build_service.dart';
-import 'package:fide/providers/ollama_installer.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/ai_assistant.dart';
+import 'package:fide/services/chat_model.dart';
+import 'package:fide/services/code_edit_agent.dart';
+import 'package:fide/services/flutter_build_service.dart';
+import 'package:fide/services/ollama_installer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:path/path.dart' as p;
@@ -28,17 +30,14 @@ class AiChatNotifier extends StateNotifier<AiChat> {
   /// Creates an empty conversation reading services through [_ref].
   AiChatNotifier(this._ref) : super(const AiChat());
 
-  /// The agent editing files for the pending request, if any.
-  CodeEditAgent? _agent;
+  /// Stops the pending reply or task's model requests, if any.
+  AiCancelToken? _cancelToken;
 
   final Ref _ref;
 
   /// Bumped per request and by [cancel], so a stopped request's late
   /// reply is dropped.
   int _requestId = 0;
-
-  /// The model service.
-  AIService get _ai => _ref.read(aiServiceProvider);
 
   /// Adds a model message showing [content]; [isProgress] keeps it out of
   /// the history sent to the model.
@@ -52,19 +51,22 @@ class AiChatNotifier extends StateNotifier<AiChat> {
   );
 
   /// Shows a task named [label], such as a quick fix, as the user's
-  /// request and marks the chat busy until [endTask].
-  void beginTask(String label) {
+  /// request and marks the chat busy until [endTask]; [cancel] stops its
+  /// model requests.
+  void beginTask(String label, {AiCancelToken? cancel}) {
     _requestId++;
+    _cancelToken = cancel;
     _add(ChatMessage(content: label, isUser: true, timestamp: DateTime.now()));
     state = state.copyWith(isBusy: true);
   }
 
-  /// Stops the pending reply or task: aborts the model request and the
-  /// agent's edits, and frees the input for the next prompt.
+  /// Stops the pending reply or task: aborts its model requests and the
+  /// agent's edits, and frees the input for the next prompt. Other
+  /// features' model requests, such as a commit message, go on.
   void cancel() {
     if (!state.isBusy) return;
-    (_agent?.cancel ?? _ai.cancel)();
-    _agent = null;
+    _cancelToken?.cancel();
+    _cancelToken = null;
     _requestId++;
     state = state.copyWith(isBusy: false);
     addReply('⏹ Stopped.', isProgress: true);
@@ -92,15 +94,16 @@ class AiChatNotifier extends StateNotifier<AiChat> {
     final selected = action ?? state.action;
     final buildErrors = _ref.read(lastBuildErrorsProvider);
     final projectPath = _ref.read(currentProjectPathProvider);
-    // Fix Build needs no prompt when the last build left errors to send;
-    // reviews send fcheck's findings
+    // Actions sending build errors need no prompt when the last build left
+    // some; reviews send fcheck's findings
+    final sendsBuildErrors = selected.context == AiContext.buildErrors;
     final canSendEmpty =
-        (selected == AiAction.fixBuild && buildErrors.isNotEmpty) ||
-        selected.isReview;
+        (sendsBuildErrors && buildErrors.isNotEmpty) || selected.isReview;
     if (text.isEmpty && !canSendEmpty) return;
 
     final requestId = ++_requestId;
     bool isStopped() => requestId != _requestId;
+    final cancel = _cancelToken = AiCancelToken();
     _add(
       ChatMessage(
         content: text.isEmpty ? selected.label : text,
@@ -111,10 +114,11 @@ class AiChatNotifier extends StateNotifier<AiChat> {
     state = state.copyWith(action: selected, isBusy: true);
 
     // Models without tool calling can only suggest changes
-    final canEditFiles = projectPath != null && _ai.supportsTools;
+    final ollama = _ref.read(ollamaClientProvider);
+    final canEditFiles = projectPath != null && ollama.supportsTools;
     if (selected.editsFiles && projectPath != null && !canEditFiles) {
       addReply(
-        "${_ai.model} can't call tools, so it can only suggest changes. "
+        "${ollama.model} can't call tools, so it can only suggest changes. "
         'Download ${OllamaInstaller.model} to let it edit files.',
         isProgress: true,
       );
@@ -125,24 +129,25 @@ class AiChatNotifier extends StateNotifier<AiChat> {
         addReply('Open a project to review it.');
         return;
       }
-      final response = switch (selected) {
-        AiAction.fixBuild when canEditFiles => await _editAgent(
-          projectPath,
-        ).fixBuild(buildErrors, text),
-        _ when selected.editsFiles && canEditFiles => await _editAgent(
-          projectPath,
-        ).edit(_withSelectedFile(text, projectPath), _history()),
-        _ => await _ai.respond(selected, text, switch (selected) {
-          AiAction.fixBuild => buildErrors.truncated(
-            AppMetric.aiContextPreviewChars,
-          ),
-          _ when selected.isReview => await _reviewFindings(
-            selected,
-            projectPath!,
-          ),
-          _ => await _selectedFileContext(),
-        }),
-      };
+      final String response;
+      if (selected.editsFiles && canEditFiles) {
+        final agent = _editAgent(projectPath, cancel);
+        response = sendsBuildErrors
+            ? await agent.fixBuild(buildErrors, text)
+            : await agent.edit(
+                _withSelectedFile(text, projectPath),
+                _history(),
+              );
+      } else {
+        response = await _ref
+            .read(aiAssistantProvider)
+            .respond(
+              selected,
+              text,
+              await _context(selected.context, projectPath),
+              cancel: cancel,
+            );
+      }
       if (isStopped()) return;
       addReply(response.trim().isEmpty ? 'No suggestion available' : response);
       if (selected.isReview) {
@@ -157,7 +162,7 @@ class AiChatNotifier extends StateNotifier<AiChat> {
       if (!isStopped()) addReply('Error: $e');
     } finally {
       if (!isStopped()) {
-        _agent = null;
+        _cancelToken = null;
         state = state.copyWith(isBusy: false);
       }
     }
@@ -169,17 +174,18 @@ class AiChatNotifier extends StateNotifier<AiChat> {
 
   /// An agent that edits the project at [projectPath], reporting its steps
   /// in the chat, rebuilding for the platform selected in the Execute
-  /// panel and running FIDE's quick fixes when the model asks; kept in
-  /// [_agent] so [cancel] can stop it.
-  CodeEditAgent _editAgent(String projectPath) {
+  /// panel and running FIDE's quick fixes when the model asks; [cancel]
+  /// stops it and the fixes it runs.
+  CodeEditAgent _editAgent(String projectPath, AiCancelToken cancel) {
     final buildService = _ref.read(flutterBuildServiceProvider);
-    final target = _ref.read(selectedPlatformProvider).name;
+    final platform = _ref.read(selectedPlatformProvider);
     final lastBuildErrors = _ref.read(lastBuildErrorsProvider.notifier);
     final openDocuments = _ref.read(openDocumentsProvider.notifier);
     final quickFixes = _ref.read(quickFixRunnerProvider);
-    return _agent = CodeEditAgent(
-      _ai,
+    return CodeEditAgent(
+      _ref.read(chatModelProvider),
       projectPath: projectPath,
+      cancelToken: cancel,
       hooks: CodeEditHooks(
         onStep: (step) => addReply('🔧 $step', isProgress: true),
         onFileWritten: (path) => openDocuments.reloadWritten([path]),
@@ -190,6 +196,7 @@ class AiChatNotifier extends StateNotifier<AiChat> {
               projectPath,
               fix,
               onProgress: (step) => addReply(step, isProgress: true),
+              cancel: cancel,
             );
             if (outcome == null) return '${fix.label} was cancelled.';
             await openDocuments.reloadWritten(outcome.changedFiles);
@@ -203,7 +210,7 @@ class AiChatNotifier extends StateNotifier<AiChat> {
           final log = OutputLog();
           final exitCode = await buildService.build(
             projectPath,
-            target,
+            platform,
             BuildOutput(
               onOutput: log.addOutput,
               onError: log.addError,
@@ -243,14 +250,41 @@ class AiChatNotifier extends StateNotifier<AiChat> {
     ];
   }
 
-  /// fcheck's findings for the project at [projectPath] that the review
-  /// [action] needs, with the code they point to.
-  Future<String> _reviewFindings(AiAction action, String projectPath) async {
-    final review = _ref.read(codeReviewProvider);
+  /// What [context] sends the model for the project at [projectPath],
+  /// which a review needs.
+  Future<String> _context(AiContext context, String? projectPath) async =>
+      switch (context) {
+        AiContext.none => '',
+        AiContext.selectedFile => await _selectedFileContext(),
+        AiContext.buildErrors =>
+          _ref
+              .read(lastBuildErrorsProvider)
+              .truncated(AppMetric.aiContextPreviewChars),
+        AiContext.duplicates => await _reviewFindings(
+          projectPath!,
+          const ReviewFindings().duplicates,
+          nearDuplicates: true,
+        ),
+        AiContext.design => await _reviewFindings(
+          projectPath!,
+          const ReviewFindings().design,
+        ),
+      };
+
+  /// fcheck's findings for the project at [projectPath], written by
+  /// [write] with the code they point to; [nearDuplicates] also finds code
+  /// that was copied and has since drifted.
+  Future<String> _reviewFindings(
+    String projectPath,
+    Future<String> Function(fcheck.ProjectMetrics) write, {
+    bool nearDuplicates = false,
+  }) async {
     addReply('🔍 Analyzing the project with fcheck...', isProgress: true);
-    final isDry = action == AiAction.dryReview;
-    final metrics = await review.analyze(projectPath, nearDuplicates: isDry);
-    return isDry ? review.duplicates(metrics) : review.design(metrics);
+    return write(
+      await _ref
+          .read(codeReviewProvider)
+          .analyze(projectPath, nearDuplicates: nearDuplicates),
+    );
   }
 
   /// Content of the file open in the editor for the model, empty when
@@ -259,9 +293,8 @@ class AiChatNotifier extends StateNotifier<AiChat> {
     final file = _ref.read(selectedFileProvider);
     if (file == null) return '';
     try {
-      return (await file.readAsString()).truncated(
-        AppMetric.aiContextPreviewChars,
-      );
+      return (await _ref.read(fileContentReaderProvider).read(file.path))
+          .truncated(AppMetric.aiContextPreviewChars);
     } catch (_) {
       return 'Could not read file content';
     }

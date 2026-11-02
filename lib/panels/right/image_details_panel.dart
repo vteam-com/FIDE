@@ -4,7 +4,7 @@ import 'package:fide/models/image_details.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/relative_time.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/image_inspector.dart';
+import 'package:fide/services/image_inspector.dart';
 import 'package:fide/widgets/detail_row.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/loading_indicator.dart';

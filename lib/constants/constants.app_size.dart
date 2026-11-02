@@ -83,5 +83,11 @@ class AppSize {
   /// Width of an issue's best practice and findings dialog.
   static const double issueDetailsWidth = 600;
 
+  /// Share of the window's width a file's diff dialog takes.
+  static const double diffDialogWidthFactor = 0.8;
+
+  /// Share of the window's height a file's diff dialog takes.
+  static const double diffDialogHeightFactor = 0.6;
+
   const AppSize._();
 }

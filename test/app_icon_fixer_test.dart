@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fcheck/fcheck.dart';
-import 'package:fide/providers/app_icon_fixer.dart';
+import 'package:fide/services/app_icon_fixer.dart';
+import 'package:fide/services/project_config_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
@@ -31,7 +32,8 @@ void main() {
       File(p.join(project.path, path)).readAsStringSync();
 
   Future<List<String>> fixThenCheck(AppIconPlatform platform) async {
-    await const AppIconFixer().fix(project.path, platform, master);
+    await const AppIconFixer(ProjectConfigReader())
+        .fix(project.path, platform, master);
     return [
       for (final issue in const AppIconChecker().check(project))
         if (issue.platform == platform) issue.format(),
@@ -163,7 +165,8 @@ void main() {
 
     // A second fix leaves the runner and the install rule as they are
     final fixed = read(source);
-    await const AppIconFixer().fix(project.path, AppIconPlatform.linux, master);
+    await const AppIconFixer(ProjectConfigReader())
+        .fix(project.path, AppIconPlatform.linux, master);
     expect(read(source), fixed);
     expect('app_icon.png'.allMatches(read('linux/CMakeLists.txt')).length, 1);
   });
@@ -173,7 +176,8 @@ void main() {
     Directory(p.join(project.path, 'ios')).createSync();
 
     expect(
-      const AppIconFixer().fix(project.path, AppIconPlatform.ios, master),
+      const AppIconFixer(ProjectConfigReader())
+          .fix(project.path, AppIconPlatform.ios, master),
       throwsA(isA<AppIconFixException>()),
     );
   });
@@ -187,7 +191,8 @@ void main() {
     );
 
     expect(
-      await const AppIconFixer().defaultMasterPath(project.path),
+      await const AppIconFixer(ProjectConfigReader())
+          .defaultMasterPath(project.path),
       p.join(project.path, 'assets', 'logo.png'),
     );
   });

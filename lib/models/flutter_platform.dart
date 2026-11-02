@@ -1,5 +1,3 @@
-import 'dart:io';
-
 /// The platforms a Flutter project can target, with the metadata each part
 /// of the UI needs. Declaration order is the order platforms are shown in.
 ///
@@ -15,19 +13,22 @@ enum FlutterPlatform {
 
   const FlutterPlatform(this.displayName, this.deviceTarget);
 
+  /// The `flutter build` target packaging an Android App Bundle.
+  static const String appBundleTarget = 'appbundle';
+
   /// Human-readable platform name.
   final String displayName;
 
   /// Device id passed to `flutter run -d`.
   final String deviceTarget;
 
-  /// Whether the host OS can build this platform: web and Android build
-  /// anywhere, iOS needs macOS, and desktop targets need their own OS.
-  bool get canBuildOnHost => switch (this) {
+  /// Whether [host], the desktop platform the IDE runs on (null for an
+  /// unknown OS), can build this platform: web and Android build anywhere,
+  /// iOS needs macOS, and desktop targets need their own OS.
+  bool canBuildOn(FlutterPlatform? host) => switch (this) {
     android || web => true,
-    ios || macos => Platform.isMacOS,
-    linux => Platform.isLinux,
-    windows => Platform.isWindows,
+    ios => host == macos,
+    macos || linux || windows => host == this,
   };
 
   /// How to add this platform to a project that has no folder for it.
@@ -53,19 +54,33 @@ enum FlutterPlatform {
     return '$displayName builds require a $requiredHost machine.\n\nYou cannot build $displayName apps from $hostOs.';
   }
 
+  /// The `flutter build` arguments for [target], one of [buildTargets]
+  /// (the first by default), with this platform's extra flags.
+  List<String> buildArguments([String? target]) => [
+    'build',
+    target ?? buildTargets.first,
+    ...extraBuildArguments,
+  ];
+
+  /// The `flutter build` targets packaging this platform, the default
+  /// first: Android builds an APK or an App Bundle, the others their id.
+  List<String> get buildTargets => switch (this) {
+    android => const ['apk', appBundleTarget],
+    _ => [name],
+  };
+
+  /// Flags every `flutter build` of this platform adds: web builds skip the
+  /// WebAssembly dry run, which only warns.
+  List<String> get extraBuildArguments => switch (this) {
+    web => const ['--no-wasm-dry-run'],
+    _ => const [],
+  };
+
   /// Bundled SVG icon for this platform.
   String get iconAsset => 'assets/platform_$name.svg';
 
   /// Whether this platform's native dependencies are managed by CocoaPods.
   bool get usesCocoaPods => this == ios || this == macos;
-
-  /// The platforms that have a folder in the project at [projectPath].
-  static Set<FlutterPlatform> configuredIn(String projectPath) {
-    return {
-      for (final platform in values)
-        if (Directory('$projectPath/${platform.name}').existsSync()) platform,
-    };
-  }
 
   /// Returns the platform with id [id], or null for an unknown id.
   static FlutterPlatform? fromId(String id) => values.asNameMap()[id];

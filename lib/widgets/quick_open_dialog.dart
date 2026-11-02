@@ -1,8 +1,8 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/quick_open_matcher.dart';
-import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/empty_state.dart';
+import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

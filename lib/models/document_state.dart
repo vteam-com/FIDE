@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
+import 'package:re_highlight/re_highlight.dart';
 
 /// An open document in the editor: its path, content, cursor and dirty flag.
 ///
@@ -11,7 +13,10 @@ class DocumentState {
   final String content;
   final TextSelection selection;
   final bool isDirty;
-  final dynamic language;
+
+  /// The syntax highlighting language; null to pick it from the file
+  /// name.
+  final Mode? language;
 
   /// Creates a document for [filePath].
   const DocumentState({

@@ -1,6 +1,7 @@
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/status_indicator.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter/material.dart';
 
 /// A small orange [icon] and [count] flagging a rule breach, explained by

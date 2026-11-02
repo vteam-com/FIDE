@@ -1,6 +1,5 @@
-import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/git_file_status.dart';
 import 'package:fide/models/tree_order.dart';
-import 'package:path/path.dart' as p;
 
 enum ProjectNodeType { file, directory }
 
@@ -14,9 +13,15 @@ class ProjectNode {
   final String name;
   final String path;
   final ProjectNodeType type;
-  bool isExpanded;
+
+  /// When the entry was last modified, as read with the tree; null when
+  /// unknown.
+  final DateTime? modified;
+
+  /// The file's size in bytes, as read with the tree; null for directories
+  /// and when unknown.
+  final int? size;
   final List<ProjectNode> children;
-  final String? fileExtension;
   LoadChildrenResult? loadResult;
   final bool isHidden;
   GitFileStatus gitStatus;
@@ -25,13 +30,11 @@ class ProjectNode {
     required this.name,
     required this.path,
     required this.type,
-    this.isExpanded = false,
+    this.modified,
+    this.size,
     List<ProjectNode>? children,
     this.gitStatus = GitFileStatus.clean,
   }) : children = children ?? [],
-       fileExtension = type == ProjectNodeType.file
-           ? p.extension(name).toLowerCase()
-           : null,
        isHidden = name.startsWith('.');
 
   /// [children] with duplicate paths collapsed, keeping the last entry;

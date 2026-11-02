@@ -1,42 +1,20 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:fide/models/ai_action.dart';
 import 'package:fide/providers/ai_chat_notifier.dart';
-import 'package:fide/providers/ai_service.dart';
-import 'package:fide/providers/flutter_sdk.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/chat_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 
-/// An SDK whose versions can't be detected, so no tool runs.
-class _NoSdk extends FlutterSdk {
-  const _NoSdk();
-
-  @override
-  Future<({String? flutter, String? dart})?> versions() async => null;
-}
+import 'fake_chat_model.dart';
 
 void main() {
   late ProviderContainer container;
+  late FakeChatModel model;
 
   setUp(() {
-    final client = MockClient((request) async {
-      // Model lookups: no model listed, so requests keep the default
-      if (request.method == 'GET') {
-        return http.Response(jsonEncode({'models': []}), HttpStatus.ok);
-      }
-      return http.Response(
-        jsonEncode({'response': 'It prints a greeting.'}),
-        HttpStatus.ok,
-      );
-    });
+    model = FakeChatModel(answer: (_) => 'It prints a greeting.');
     container = ProviderContainer(
-      overrides: [
-        aiServiceProvider.overrideWithValue(AIService(const _NoSdk(), client)),
-      ],
+      overrides: [chatModelProvider.overrideWithValue(model)],
     );
   });
 
@@ -54,6 +32,19 @@ void main() {
     );
     expect(chat.isBusy, isFalse);
     expect(chat.action, AiAction.explain);
+    expect(model.prompts.single, contains('Context: What does this do?'));
+  });
+
+  test('a review without a project asks to open one', () async {
+    await container
+        .read(aiChatProvider.notifier)
+        .send('', action: AiAction.dryReview);
+
+    expect(
+      container.read(aiChatProvider).messages.last.content,
+      'Open a project to review it.',
+    );
+    expect(model.prompts, isEmpty);
   });
 
   test('shows a task with its progress until it ends', () {
@@ -70,14 +61,16 @@ void main() {
     expect(state.messages.last.content, 'Translated 22 strings in 1 files');
   });
 
-  test('stops a pending task', () {
+  test('stops a pending task and its model requests', () {
+    final task = AiCancelToken();
     final chat = container.read(aiChatProvider.notifier)
-      ..beginTask('Translate with AI');
+      ..beginTask('Translate with AI', cancel: task);
 
     chat.cancel();
 
     final state = container.read(aiChatProvider);
     expect(state.isBusy, isFalse);
     expect(state.messages.last.content, '⏹ Stopped.');
+    expect(task.isCancelled, isTrue);
   });
 }

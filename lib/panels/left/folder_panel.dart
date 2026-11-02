@@ -1,7 +1,5 @@
 // ignore_for_file:  avoid_print
 
-import 'dart:io';
-
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
@@ -32,9 +30,6 @@ class FolderPanel extends ProjectTreePanel {
 
 class _FolderPanelState extends ConsumerState<FolderPanel>
     with ProjectTreePanelState<FolderPanel> {
-  // Performance optimization caches
-  final Map<String, FileSystemItem> _cachedFileSystemItems = {};
-
   /// The file last revealed through [explorerRevealPathProvider],
   /// highlighted until another file is selected.
   String? _revealedPath;
@@ -104,7 +99,6 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
 
   @override
   void onProjectTreeChanged() {
-    _cachedFileSystemItems.clear();
     _expandToSelectedAfterBuild();
   }
 
@@ -123,27 +117,10 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
   /// Returns `filterQuery`.
   String get filterQuery => panelState.filterQuery;
 
-  // Cached FileSystemItem getter to avoid expensive object creation
-  FileSystemItem _getCachedFileSystemItem(
-    String path,
-    GitFileStatus gitStatus,
-  ) {
-    final cacheKey = '${path}_${gitStatus.index}';
-    if (_cachedFileSystemItems.containsKey(cacheKey)) {
-      return _cachedFileSystemItems[cacheKey]!;
-    }
-
-    final item = FileSystemItem.fromFileSystemEntity(File(path));
-    item.gitStatus = gitStatus;
-    _cachedFileSystemItems[cacheKey] = item;
-    return item;
-  }
-
   void _handleFileSelection(ProjectNode node) {
-    final item = _getCachedFileSystemItem(node.path, node.gitStatus);
     // Only select files for editing, not folders
     if (widget.onFileSelected != null && node.isFile) {
-      widget.onFileSelected!(item);
+      widget.onFileSelected!(FileSystemItem.fromNode(node));
     }
   }
 

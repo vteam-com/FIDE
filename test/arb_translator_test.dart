@@ -2,24 +2,15 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fide/models/arb_translation.dart';
-import 'package:fide/providers/ai_service.dart';
-import 'package:fide/providers/arb_translator.dart';
-import 'package:fide/providers/flutter_sdk.dart';
-import 'package:fide/providers/localization_service.dart';
+import 'package:fide/services/arb_translator.dart';
+import 'package:fide/services/chat_model.dart';
+import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/project_config_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:path/path.dart' as p;
 
+import 'fake_chat_model.dart';
 import 'localization_service_test.dart' show FakeFlutterRunner;
-
-/// An SDK whose versions can't be detected, so no tool runs.
-class _NoSdk extends FlutterSdk {
-  const _NoSdk();
-
-  @override
-  Future<({String? flutter, String? dart})?> versions() async => null;
-}
 
 void main() {
   late Directory project;
@@ -28,39 +19,35 @@ void main() {
   tearDown(() => project.deleteSync(recursive: true));
 
   test('translates a batch in one request, keeping placeholders', () async {
-    final requests = <String>[];
-    final ai = AIService(
-      const _NoSdk(),
-      MockClient((request) async {
-        requests.add(jsonDecode(request.body)['prompt'] as String);
-        const reply =
-            '<think>French</think>```json\n'
-            '["Supprimer {name} ?", "Bonjour"]\n```';
-        return http.Response(jsonEncode({'response': reply}), HttpStatus.ok);
-      }),
+    final ai = FakeChatModel(
+      answer: (_) =>
+          '<think>French</think>```json\n'
+          '["Supprimer {name} ?", "Bonjour"]\n```',
     );
+    final requests = ai.prompts;
     final runner = FakeFlutterRunner();
     final arbPath = p.join(project.path, 'app_fr.arb');
     File(arbPath).writeAsStringSync('{"@@locale": "fr"}');
 
-    final result = await ArbTranslator(ai, LocalizationService(runner)).apply(
-      project.path,
-      [
-        ArbTranslation(
-          key: 'deleteMessage',
-          source: 'Delete {name}?',
-          language: 'French',
-          arbPath: arbPath,
-          description: 'Confirmation dialog title',
-        ),
-        ArbTranslation(
-          key: 'hello',
-          source: 'Hello {name}',
-          language: 'French',
-          arbPath: arbPath,
-        ),
-      ],
-    );
+    final result =
+        await ArbTranslator(
+          ai,
+          LocalizationService(runner, const ProjectConfigReader()),
+        ).apply(project.path, [
+          ArbTranslation(
+            key: 'deleteMessage',
+            source: 'Delete {name}?',
+            language: 'French',
+            arbPath: arbPath,
+            description: 'Confirmation dialog title',
+          ),
+          ArbTranslation(
+            key: 'hello',
+            source: 'Hello {name}',
+            language: 'French',
+            arbPath: arbPath,
+          ),
+        ]);
 
     expect(result.rewritten, 1);
     expect(result.skipped, {ArbTranslator.lostPlaceholder: 1});
@@ -87,32 +74,24 @@ void main() {
   });
 
   test('marks a translation the same as the template reviewed', () async {
-    final ai = AIService(
-      const _NoSdk(),
-      MockClient(
-        (request) async => http.Response(
-          jsonEncode({'response': '["Photos"]'}),
-          HttpStatus.ok,
-        ),
-      ),
-    );
+    final ai = FakeChatModel(answer: (_) => '["Photos"]');
     final arbPath = p.join(project.path, 'app_fr.arb');
     File(arbPath).writeAsStringSync(
       '{"@@locale": "fr", "photos": "Photos", "@photos": {"type": "text"}}',
     );
 
     final result =
-        await ArbTranslator(ai, LocalizationService(FakeFlutterRunner())).apply(
-          project.path,
-          [
-            ArbTranslation(
-              key: 'photos',
-              source: 'Photos',
-              language: 'French',
-              arbPath: arbPath,
-            ),
-          ],
-        );
+        await ArbTranslator(
+          ai,
+          LocalizationService(FakeFlutterRunner(), const ProjectConfigReader()),
+        ).apply(project.path, [
+          ArbTranslation(
+            key: 'photos',
+            source: 'Photos',
+            language: 'French',
+            arbPath: arbPath,
+          ),
+        ]);
 
     expect(result.rewritten, 0);
     expect(result.skipped, {ArbTranslator.sameText: 1});
@@ -124,5 +103,29 @@ void main() {
         'description': ArbTranslator.reviewedDescription,
       },
     });
+  });
+
+  test('stops at the batch its token cancels', () async {
+    final ai = FakeChatModel(answer: (_) => '["Bonjour"]');
+    final arbPath = p.join(project.path, 'app_fr.arb');
+    File(arbPath).writeAsStringSync('{"@@locale": "fr"}');
+
+    await expectLater(
+      ArbTranslator(
+        ai,
+        LocalizationService(FakeFlutterRunner(), const ProjectConfigReader()),
+      ).apply(project.path, [
+        ArbTranslation(
+          key: 'hello',
+          source: 'Hello',
+          language: 'French',
+          arbPath: arbPath,
+        ),
+      ], cancel: AiCancelToken()..cancel()),
+      throwsA(
+        isA<Exception>().having((e) => '$e', 'message', contains('Stopped')),
+      ),
+    );
+    expect(ai.prompts, isEmpty);
   });
 }

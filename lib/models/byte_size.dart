@@ -1,4 +1,4 @@
-import 'package:fide/constants/constants.dart';
+import 'package:fide/constants/core_constants.dart';
 
 /// Formats a byte count for people to read.
 extension ByteSize on int {

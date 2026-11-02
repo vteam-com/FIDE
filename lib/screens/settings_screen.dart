@@ -1,8 +1,8 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/controllers/app_controller.dart';
-import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
@@ -154,11 +154,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       children: [
         CompactIconButton(
           icon: Icons.remove,
-          tooltip: 'Zoom Out (⌘-)',
+          tooltip: ShortcutHelpEntry.tooltip('Zoom Out', AppShortcut.zoomOut),
           onPressed: zoom > AppZoom.levels.first ? controller.zoomOut : null,
         ),
         Tooltip(
-          message: 'Actual Size (⌘0)',
+          message: ShortcutHelpEntry.tooltip(
+            'Actual Size',
+            AppShortcut.actualSize,
+          ),
           child: CompactTextButton(
             label: AppZoom.label(zoom),
             onPressed: zoom == AppZoom.actualSize ? null : controller.resetZoom,
@@ -166,7 +169,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
         CompactIconButton(
           icon: Icons.add,
-          tooltip: 'Zoom In (⌘+)',
+          tooltip: ShortcutHelpEntry.tooltip('Zoom In', AppShortcut.zoomIn),
           onPressed: zoom < AppZoom.levels.last ? controller.zoomIn : null,
         ),
       ],

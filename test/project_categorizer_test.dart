@@ -1,9 +1,13 @@
 import 'dart:io';
 
 import 'package:fide/models/code_category.dart';
+import 'package:fide/models/project_categories.dart';
 import 'package:fide/models/project_node.dart';
-import 'package:fide/providers/project_categorizer.dart';
-import 'package:fide/providers/project_tree_reader.dart';
+import 'package:fide/services/asset_categorizer.dart';
+import 'package:fide/services/code_review.dart';
+import 'package:fide/services/project_categorizer.dart';
+import 'package:fide/services/project_config_reader.dart';
+import 'package:fide/services/project_tree_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -29,6 +33,16 @@ void main() {
     return root;
   }
 
+  /// Groups the project, counting classes from fCheck's analysis of it.
+  Future<ProjectCategories> categorize() async =>
+      const ProjectCategorizer(
+        ProjectTreeReader(),
+        AssetCategorizer(ProjectTreeReader(), ProjectConfigReader()),
+      ).categorize(
+        await loadedRoot(),
+        await const CodeReview().analyze(project.path),
+      );
+
   List<String> names(List<ProjectNode> nodes) => [
     for (final node in nodes) node.name,
   ];
@@ -39,9 +53,7 @@ void main() {
     write('lib/card.dart', 'class Card extends StatelessWidget {}');
     write('lib/util.dart', 'int add(int a, int b) => a + b;');
 
-    final categories = await const ProjectCategorizer().categorize(
-      await loadedRoot(),
-    );
+    final categories = await categorize();
 
     expect(names(categories.nodes[CodeCategory.models]!), ['user.dart']);
     expect(names(categories.nodes[CodeCategory.views]!), ['main.dart']);
@@ -53,9 +65,7 @@ void main() {
     write('lib/widgets/picker.dart', 'void f() { showDialog(); }');
     write('lib/screens/home.dart', 'void g() { showDialog(); }');
 
-    final categories = await const ProjectCategorizer().categorize(
-      await loadedRoot(),
-    );
+    final categories = await categorize();
 
     expect(names(categories.nodes[CodeCategory.dialogs]!), ['picker.dart']);
     expect(categories.nodes[CodeCategory.widgets], isEmpty);
@@ -70,9 +80,7 @@ void main() {
     write('lib/models/base.dart', 'abstract class Base {}');
     write('lib/models/helpers.dart', 'int add(int a, int b) => a + b;');
 
-    final categories = await const ProjectCategorizer().categorize(
-      await loadedRoot(),
-    );
+    final categories = await categorize();
 
     expect(categories.sourceFileCounts[CodeCategory.models], 3);
     expect(categories.elementCounts[CodeCategory.models], 4);
@@ -82,9 +90,7 @@ void main() {
     write('lib/models/chord.dart', 'class Chord {}\n\nclass _Note {}');
     write('lib/models/scale.dart', 'class _Step {}');
 
-    final categories = await const ProjectCategorizer().categorize(
-      await loadedRoot(),
-    );
+    final categories = await categorize();
 
     expect(categories.sourceFileCounts[CodeCategory.models], 2);
     expect(categories.elementCounts[CodeCategory.models], 3);
@@ -96,9 +102,7 @@ void main() {
     write('lib/models/chord.dart', 'class Chord {}\nclass Note {}');
     write('lib/models/scale.dart', 'class Scale {}');
 
-    final categories = await const ProjectCategorizer().categorize(
-      await loadedRoot(),
-    );
+    final categories = await categorize();
 
     expect(categories.multiClassFiles, {
       p.join(project.path, 'lib', 'models', 'chord.dart'): 2,
@@ -110,9 +114,7 @@ void main() {
     write('lib/models/music/key.dart', 'class Key {}\nclass Mode {}');
     write('lib/models/scale.dart', 'class Scale {}\nclass Step {}');
 
-    final categories = await const ProjectCategorizer().categorize(
-      await loadedRoot(),
-    );
+    final categories = await categorize();
 
     expect(categories.multiClassFolders, {
       p.join(project.path, 'lib'): 3,
@@ -127,11 +129,35 @@ void main() {
       '// ignore: fcheck_one_class_per_file\nclass Chord {}\nclass Note {}',
     );
 
-    final categories = await const ProjectCategorizer().categorize(
-      await loadedRoot(),
-    );
+    final categories = await categorize();
 
     expect(categories.elementCounts[CodeCategory.models], 2);
+    expect(categories.publicClassCounts[CodeCategory.models], 1);
+    expect(categories.multiClassFiles, isEmpty);
+  });
+
+  test('follows fCheck: a widget and its State share a file', () async {
+    write(
+      'lib/widgets/counter.dart',
+      'class Counter extends StatefulWidget {}\n'
+          'class CounterState extends State<Counter> {}',
+    );
+
+    final categories = await categorize();
+
+    expect(categories.publicClassCounts[CodeCategory.widgets], 1);
+    expect(categories.multiClassFiles, isEmpty);
+  });
+
+  test('counts each Dart file once until fCheck has analyzed it', () async {
+    write('lib/models/chord.dart', 'class Chord {}\nclass Note {}');
+
+    final categories = await const ProjectCategorizer(
+      ProjectTreeReader(),
+      AssetCategorizer(ProjectTreeReader(), ProjectConfigReader()),
+    ).categorize(await loadedRoot());
+
+    expect(categories.elementCounts[CodeCategory.models], 1);
     expect(categories.publicClassCounts[CodeCategory.models], 1);
     expect(categories.multiClassFiles, isEmpty);
   });
@@ -139,9 +165,7 @@ void main() {
   test('counts translations in ARB files', () async {
     write('lib/l10n/app_en.arb', '{"@@locale": "en", "a": "A", "b": "B"}');
 
-    final categories = await const ProjectCategorizer().categorize(
-      await loadedRoot(),
-    );
+    final categories = await categorize();
 
     expect(categories.elementCounts[CodeCategory.localization], 2);
   });

@@ -3,9 +3,10 @@ import 'dart:io';
 import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/models/constants_plan.dart';
 import 'package:fide/models/hardcoded_string.dart';
-import 'package:fide/providers/code_formatter.dart';
-import 'package:fide/providers/process_runner.dart';
-import 'package:fide/providers/string_constants_extractor.dart';
+import 'package:fide/services/code_formatter.dart';
+import 'package:fide/services/process_runner.dart';
+import 'package:fide/services/project_config_reader.dart';
+import 'package:fide/services/string_constants_extractor.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -81,6 +82,7 @@ class DataKeys {
 
     final result = await const StringConstantsExtractor(
       CodeFormatter(ProcessRunner()),
+      ProjectConfigReader(),
     ).apply(plan, strings);
 
     expect(result.rewritten, 4);

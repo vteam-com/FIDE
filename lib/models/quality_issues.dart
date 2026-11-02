@@ -134,40 +134,13 @@ extension QualityIssues on fcheck.ProjectMetrics {
     _ => 'Fix',
   };
 
-  /// The fixes FIDE applies itself to [domain]'s findings: translating
-  /// incomplete translations; sorting unsorted members; for hardcoded
-  /// strings, localizing them once
-  /// the project is localized, its translations are in the ARB files, and
-  /// some strings have a `BuildContext`, and making the ones without
-  /// interpolations constants.
-  List<QuickFix> _quickFixes(fcheck.AnalyzerDomain? domain) {
-    if (domain == fcheck.AnalyzerDomain.localization) {
-      final problems = {
-        for (final issue in localizationIssues)
-          for (final detail in issue.details) detail.problemType.name,
-      };
-      return [
-        for (final fix in QuickFix.values)
-          if (fix.localizationProblems.any(problems.contains)) fix,
-      ];
-    }
-    if (domain == fcheck.AnalyzerDomain.sourceSorting) {
-      return const [QuickFix.sortMembers];
-    }
-    if (domain != fcheck.AnalyzerDomain.hardcodedStrings) return const [];
-    return [
-      if (usesLocalization &&
-          localizationSync?.isInSync != false &&
-          hardcodedStringIssues.any(
-            (issue) => issue.site?.buildContextName != null,
-          ))
-        QuickFix.localizeStrings,
-      if (hardcodedStringIssues.any(
-        (issue) => issue.site?.interpolations.isEmpty ?? false,
-      ))
-        QuickFix.makeConstants,
-    ];
-  }
+  /// The fixes FIDE applies itself to [domain]'s findings: those offered
+  /// for the analyzer that apply to these metrics.
+  List<QuickFix> _quickFixes(fcheck.AnalyzerDomain? domain) => [
+    if (domain != null)
+      for (final fix in QuickFix.values)
+        if (fix.domain == domain && fix.appliesTo(this)) fix,
+  ];
 
   /// [analyzer]'s issue, costing [deduction] percent of the score.
   QualityIssue _issue(

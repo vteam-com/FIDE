@@ -66,7 +66,7 @@ The service will be available at `http://localhost:11434`
 
 ### Changing the Model
 
-To use a different model, edit `lib/providers/ollama_installer.dart`:
+To use a different model, edit `lib/services/ollama_installer.dart`:
 
 ```dart
 static const String model = 'your-preferred-model';

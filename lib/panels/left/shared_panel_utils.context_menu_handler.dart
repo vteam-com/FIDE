@@ -10,6 +10,10 @@ class ContextMenuHandler {
     Offset position,
     void Function(NodeAction, ProjectNode) onAction,
   ) {
+    final shell = ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(desktopShellProvider);
     showMenu<NodeAction>(
       context: context,
       position: MoreMenuButton.menuPosition(position),
@@ -20,7 +24,7 @@ class ContextMenuHandler {
               value: action,
               child: IconMenuRow(
                 icon: action.icon,
-                label: action.label,
+                label: action.labelIn(shell),
                 isError: action.isDestructive,
               ),
             ),

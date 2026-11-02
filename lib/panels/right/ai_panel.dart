@@ -2,11 +2,13 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/ai_action.dart';
+import 'package:fide/models/ollama_step.dart';
 import 'package:fide/panels/right/ai_panel.ai_transcript_entry.dart';
 import 'package:fide/providers/ai_chat_notifier.dart';
-import 'package:fide/providers/ai_service.dart';
-import 'package:fide/providers/ollama_installer.dart';
+import 'package:fide/providers/ollama_status_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/ollama_client.dart';
+import 'package:fide/services/ollama_installer.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
@@ -30,22 +32,13 @@ class AIPanel extends ConsumerStatefulWidget {
 }
 
 class _AIPanelState extends ConsumerState<AIPanel> {
-  late final AIService _aiService = ref.read(aiServiceProvider);
-  late final OllamaInstaller _ollama = ref.read(ollamaInstallerProvider);
-  bool _hasModelInstalled = false;
-  bool _hasOllamaInstalled = false;
-  bool _isCheckingStatus = true;
-  bool _isInstalling = false;
-  bool _isOllamaRunning = false;
+  late final OllamaClient _aiService = ref.read(ollamaClientProvider);
   final TextEditingController _promptController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-
-    /// Handles `_checkStatus`.
-    _checkStatus();
 
     // Back to the latest message of a chat kept while the panel was hidden
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToEnd());
@@ -62,6 +55,8 @@ class _AIPanelState extends ConsumerState<AIPanel> {
   Widget build(BuildContext context) {
     final chat = ref.watch(aiChatProvider);
     final messages = chat.messages;
+    final setup = ref.watch(ollamaStatusProvider);
+    final isReady = setup.value == OllamaStep.ready;
     ref.listen(
       aiChatProvider.select((chat) => chat.messages.length),
       (_, _) =>
@@ -72,14 +67,13 @@ class _AIPanelState extends ConsumerState<AIPanel> {
       child: Column(
         children: [
           // Setup instructions if no messages and not all ready
-          if (messages.isEmpty &&
-              !(_hasOllamaInstalled && _isOllamaRunning && _hasModelInstalled))
+          if (messages.isEmpty && !isReady)
             Padding(
               padding: const EdgeInsets.all(AppSpacing.medium),
               child: ActionCard(
                 title: 'Setup',
                 icon: Icons.info_outline,
-                child: _buildSetupState(),
+                child: _buildSetupState(setup.value),
               ),
             ),
 
@@ -105,14 +99,14 @@ class _AIPanelState extends ConsumerState<AIPanel> {
           ),
           const Divider(height: AppSize.borderThin),
           _buildPrompt(chat.action.hint, chat.isBusy),
-          _buildFooter(chat.action),
+          _buildFooter(chat.action, isReady),
         ],
       ),
     );
   }
 
   /// The action new prompts use, as a menu, and the model answering them.
-  Widget _buildFooter(AiAction selected) {
+  Widget _buildFooter(AiAction selected, bool isReady) {
     final notifier = ref.read(aiChatProvider.notifier);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -149,7 +143,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
             ),
           ),
           const Spacer(),
-          if (_hasModelInstalled)
+          if (isReady)
             Flexible(
               child: Tooltip(
                 message: _modelLabel,
@@ -217,138 +211,36 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     );
   }
 
-  /// The first missing piece of the Ollama setup, or that it is ready.
-  Widget _buildSetupState() {
-    if (_isCheckingStatus) return const LoadingIndicator();
-    if (!_hasOllamaInstalled) {
-      return _buildSetupStep(
-        'Ollama is not installed.',
-        'Install Ollama',
-        _installOllama,
-      );
-    }
-    if (!_isOllamaRunning) {
-      return _buildSetupStep(
-        'Ollama is installed but not running.',
-        'Run Ollama',
-        _runOllama,
-      );
-    }
-    if (!_hasModelInstalled) {
-      return _buildSetupStep(
-        'Ollama is running but no model is downloaded.',
-        'Download Model',
-        _downloadModel,
-      );
-    }
-    return const Text('Ollama is ready to use!', style: AppTextStyle.caption);
-  }
-
-  /// One setup stage: what's missing and the button that fixes it, or a
-  /// spinner while an install action runs.
-  Widget _buildSetupStep(
-    String message,
-    String buttonLabel,
-    VoidCallback onPressed,
-  ) {
+  /// The first missing piece of the Ollama setup, with the button that
+  /// fixes it, a spinner while a fix runs, or that it is ready; [step] is
+  /// null while it is being checked.
+  Widget _buildSetupState(OllamaStep? step) {
+    if (step == null) return const LoadingIndicator();
+    final actionLabel = step.actionLabel;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: AppSpacing.medium,
       children: [
-        Text(message, style: AppTextStyle.caption),
-        const SizedBox(height: AppSpacing.medium),
-        if (_isInstalling)
+        Text(step.message, style: AppTextStyle.caption),
+        if (step == OllamaStep.installing)
           const InlineSpinner()
-        else
-          ElevatedButton(onPressed: onPressed, child: Text(buttonLabel)),
+        else if (actionLabel != null)
+          ElevatedButton(
+            onPressed: () => _fixSetup(step),
+            child: Text(actionLabel),
+          ),
       ],
     );
   }
 
-  /// Handles `_checkStatus`.
-  Future<void> _checkStatus() async {
-    if (!mounted) return;
-    setState(() => _isCheckingStatus = true);
+  /// Runs the fix of setup [step] and reports how it went.
+  Future<void> _fixSetup(OllamaStep step) async {
     try {
-      _hasOllamaInstalled = await _ollama.isInstalled();
-
-      if (_hasOllamaInstalled) {
-        _isOllamaRunning = await _ollama.isRunning();
-
-        if (_isOllamaRunning) {
-          _hasModelInstalled = await _aiService.resolveModel() != null;
-        }
-      } else {
-        _isOllamaRunning = false;
-        _hasModelInstalled = false;
-      }
-    } catch (_) {
-      // Ollama not available
-      _hasOllamaInstalled = false;
-      _isOllamaRunning = false;
-      _hasModelInstalled = false;
-    }
-    if (!mounted) return;
-    setState(() => _isCheckingStatus = false);
-  }
-
-  /// Handles `_downloadModel`.
-  Future<void> _downloadModel() async {
-    await _runInstallAction(
-      action: () async {
-        await _ollama.downloadModel();
-        await _checkStatus();
-      },
-      successMessage: '${OllamaInstaller.model} model downloaded.',
-      errorPrefix: 'Error downloading model',
-    );
-  }
-
-  /// Installs Ollama, downloads the model and starts the service.
-  Future<void> _installOllama() async {
-    await _runInstallAction(
-      action: () async {
-        await _ollama.install();
-        await _checkStatus();
-      },
-      successMessage:
-          'Ollama installed, ${OllamaInstaller.model} model downloaded, and service started.',
-      errorPrefix: 'Error installing Ollama',
-    );
-  }
-
-  /// Runs an install-related action with shared loading state and messages.
-  Future<void> _runInstallAction({
-    required Future<void> Function() action,
-    String? successMessage,
-    required String errorPrefix,
-  }) async {
-    setState(() => _isInstalling = true);
-    try {
-      await action();
-      if (mounted && successMessage != null) {
-        MessageBox.showInfo(context, successMessage);
-      }
+      final done = await ref.read(ollamaStatusProvider.notifier).fix();
+      if (mounted && done != null) MessageBox.showInfo(context, done);
     } catch (e) {
-      if (mounted) {
-        MessageBox.showError(context, '$errorPrefix: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isInstalling = false);
-      }
+      if (mounted) MessageBox.showError(context, '${step.errorPrefix}: $e');
     }
-  }
-
-  /// Handles `_runOllama`.
-  Future<void> _runOllama() async {
-    await _runInstallAction(
-      action: () async {
-        await _ollama.start();
-        await _checkStatus();
-      },
-      successMessage: 'Ollama started.',
-      errorPrefix: 'Error starting Ollama',
-    );
   }
 
   /// The model in use, noting when it stands in for the preferred one.

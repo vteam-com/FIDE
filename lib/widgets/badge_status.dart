@@ -1,5 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/theme/app_theme.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter/material.dart';
 
 /// A small tinted label marking a status, a count or a short code.
@@ -121,7 +123,7 @@ class BadgeStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fontSize = large ? AppFontSize.title : AppFontSize.badge;
-    final textColor = Colors.white.withAlpha(AppAlpha.badgeText);
+    final textColor = AppTheme.onStatusColor;
     final icon = this.icon;
     return Container(
       padding: const EdgeInsets.symmetric(

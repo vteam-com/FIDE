@@ -15,4 +15,15 @@ class ArbComparison {
     this.isMissingInEnglish = false,
     this.missingInLanguages = const [],
   });
+
+  /// Whether the key, the English value or any translation contains
+  /// [query], ignoring case; an empty query matches everything.
+  bool matches(String query) {
+    final lowerQuery = query.toLowerCase();
+    return [
+      key,
+      englishValue,
+      ...otherValues.values,
+    ].any((text) => text != null && text.toLowerCase().contains(lowerQuery));
+  }
 }

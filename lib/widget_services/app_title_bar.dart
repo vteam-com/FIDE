@@ -4,10 +4,14 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/project_menu_action.dart';
+import 'package:fide/models/app_view_state.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/app_view_notifier.dart';
+import 'package:fide/providers/panel_actions.dart';
+import 'package:fide/providers/side_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/widget_services/app_command.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/project_icon.dart';
@@ -19,47 +23,11 @@ import 'package:window_manager/window_manager.dart';
 
 // Widgets
 
-/// Represents `AppTitleBar`.
+/// The window's title bar: the project menu, the side panel buttons while
+/// a project is open, and the settings button.
 class AppTitleBar extends ConsumerStatefulWidget {
-  /// Shows or hides the settings screen.
-  final VoidCallback onToggleSettings;
-  final VoidCallback? onToggleLeftPanel;
-  final VoidCallback? onToggleBottomPanel;
-  final VoidCallback? onToggleRightPanel;
-  final bool leftPanelVisible;
-  final bool bottomPanelVisible;
-  final bool rightPanelVisible;
-  final bool showPanelToggles;
-  final Future<bool> Function(String directoryPath) onProjectSwitch;
-  final VoidCallback onOpenFolder;
-
-  /// Go to File: the palette over the project's files.
-  final VoidCallback onQuickOpen;
-
-  /// Open File: the platform's file dialog.
-  final VoidCallback onOpenFile;
-  final VoidCallback? onProjectCreateComplete;
-  final VoidCallback? onShowCreateProjectScreen;
-  final VoidCallback? onCloseProject;
-
-  const AppTitleBar({
-    super.key,
-    required this.onToggleSettings,
-    this.onToggleLeftPanel,
-    this.onToggleBottomPanel,
-    this.onToggleRightPanel,
-    this.leftPanelVisible = true,
-    this.bottomPanelVisible = true,
-    this.rightPanelVisible = true,
-    this.showPanelToggles = true,
-    required this.onProjectSwitch,
-    required this.onOpenFolder,
-    required this.onQuickOpen,
-    required this.onOpenFile,
-    this.onProjectCreateComplete,
-    this.onShowCreateProjectScreen,
-    this.onCloseProject,
-  });
+  /// Creates the title bar.
+  const AppTitleBar({super.key});
 
   @override
   ConsumerState<AppTitleBar> createState() => _TitleBarState();
@@ -112,7 +80,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
             ),
 
             // Center section: Panel toggle buttons (only shown when in main layout)
-            if (widget.showPanelToggles)
+            if (ref.watch(appViewProvider) == AppViewState.mainLayout)
               Expanded(child: Center(child: _buildPanelToggleButtons()))
             else
               const Spacer(),
@@ -170,65 +138,32 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     return Text('The Flutter IDE', style: AppTextStyle.label);
   }
 
-  /// Builds the row of icon buttons for toggling left, center, and right panels.
+  /// The buttons cycling each [SidePanel] through Hide, Min and Max, each
+  /// highlighted while its panel shows.
   Widget _buildPanelToggleButtons() {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _panelToggle(
-          'Left',
-          'left',
-          AppShortcut.panelLeft,
-          widget.leftPanelVisible,
-          widget.onToggleLeftPanel,
-          colorScheme,
-        ),
-        _panelToggle(
-          'Bottom',
-          'bottom',
-          AppShortcut.panelBottom,
-          widget.bottomPanelVisible,
-          widget.onToggleBottomPanel,
-          colorScheme,
-        ),
-        _panelToggle(
-          'Right',
-          'right',
-          AppShortcut.panelRight,
-          widget.rightPanelVisible,
-          widget.onToggleRightPanel,
-          colorScheme,
-        ),
+        for (final panel in SidePanel.values)
+          IconButton(
+            key: panel.toggleKey,
+            icon: SvgPicture.asset(
+              panel.asset,
+              width: AppIconSize.mediumLarge,
+              height: AppIconSize.mediumLarge,
+              colorFilter: ColorFilter.mode(
+                ref.watch(panel.visibleProvider)
+                    ? colorScheme.primary
+                    : colorScheme.onSurface,
+                BlendMode.srcIn,
+              ),
+            ),
+            onPressed: () => cyclePanelSize(ref, panel),
+            tooltip: panel.tooltip,
+          ),
       ],
-    );
-  }
-
-  /// The toggle for the [label] panel, whose asset and key use [side];
-  /// highlighted while [visible]. Its tooltip names the [shortcut] that
-  /// cycles the panel through Hide, Min and Max.
-  Widget _panelToggle(
-    String label,
-    String side,
-    SingleActivator shortcut,
-    bool visible,
-    VoidCallback? onPressed,
-    ColorScheme colorScheme,
-  ) {
-    return IconButton(
-      key: Key('togglePanel$label'),
-      icon: SvgPicture.asset(
-        'assets/toggle_panel_$side.svg',
-        width: AppIconSize.mediumLarge,
-        height: AppIconSize.mediumLarge,
-        colorFilter: ColorFilter.mode(
-          visible ? colorScheme.primary : colorScheme.onSurface,
-          BlendMode.srcIn,
-        ),
-      ),
-      onPressed: onPressed,
-      tooltip: ShortcutHelpEntry.tooltip('Toggle $label Panel', shortcut),
     );
   }
 
@@ -237,7 +172,9 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     return IconButton(
       icon: const Icon(Icons.settings, size: AppIconSize.mediumLarge),
-      onPressed: widget.onToggleSettings,
+      onPressed: () => ref
+          .read(settingsVisibleProvider.notifier)
+          .update((visible) => !visible),
       tooltip: ShortcutHelpEntry.tooltip('Settings', AppShortcut.settings),
       style: IconButton.styleFrom(
         foregroundColor: onSurface.withValues(alpha: AppOpacity.prominent),
@@ -245,85 +182,32 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     );
   }
 
-  /// Runs the project menu's chosen [action]; [folder] is the project to
-  /// switch to.
-  Future<void> _handleDropdownSelection(
-    ProjectMenuAction action,
-    String? folder,
-    WidgetRef ref,
-  ) async {
-    switch (action) {
-      case ProjectMenuAction.quickOpen:
-        widget.onQuickOpen();
-      case ProjectMenuAction.openFile:
-        widget.onOpenFile();
-      case ProjectMenuAction.openFolder:
-        widget.onOpenFolder();
-      case ProjectMenuAction.createProject:
-        ref.read(projectManagerProvider).unloadProject();
-        widget.onShowCreateProjectScreen?.call();
-      case ProjectMenuAction.closeProject:
-        widget.onCloseProject?.call();
-      case ProjectMenuAction.switchProject:
-        if (folder != null) await widget.onProjectSwitch(folder);
-    }
-  }
-
-  /// The project menu: recent projects ([accessible] ones openable), the
-  /// open-file actions, then the open, create and close actions.
-  List<PopupMenuEntry<(ProjectMenuAction, String?)>> _buildDropdownMenuItems(
+  /// The project menu: recent projects ([accessible] ones openable), then
+  /// the [AppCommand] groups; each entry's value runs it.
+  List<PopupMenuEntry<VoidCallback>> _buildDropdownMenuItems(
     List<String> mruFolders,
     Set<String> accessible,
   ) {
-    PopupMenuItem<(ProjectMenuAction, String?)> action(
-      ProjectMenuAction value,
-      IconData icon,
-      String label,
-    ) {
-      return PopupMenuItem(
-        value: (value, null),
-        child: IconMenuRow(icon: icon, label: label),
-      );
-    }
-
     return [
       for (final folderPath in mruFolders)
         _buildRecentProjectItem(folderPath, accessible.contains(folderPath)),
-      if (mruFolders.isNotEmpty) const PopupMenuDivider(),
-      action(ProjectMenuAction.quickOpen, Icons.search, 'Go to File...'),
-      action(
-        ProjectMenuAction.openFile,
-        Icons.file_open_outlined,
-        'Open File...',
-      ),
-      const PopupMenuDivider(),
-      action(
-        ProjectMenuAction.openFolder,
-        Icons.create_new_folder_outlined,
-        'Open Existing Project...',
-      ),
-      action(
-        ProjectMenuAction.createProject,
-        Icons.add_box_outlined,
-        'Create new Project...',
-      ),
-      action(
-        ProjectMenuAction.closeProject,
-        Icons.folder_off_outlined,
-        'Close Project',
-      ),
+      for (final group in AppCommand.groups) ...[
+        if (mruFolders.isNotEmpty || group != AppCommand.groups.first)
+          const PopupMenuDivider(),
+        for (final command in group) command.popupItem(context, ref),
+      ],
     ];
   }
 
   /// The menu entry switching to [folderPath], shown locked when not
   /// [hasAccess].
-  PopupMenuItem<(ProjectMenuAction, String?)> _buildRecentProjectItem(
+  PopupMenuItem<VoidCallback> _buildRecentProjectItem(
     String folderPath,
     bool hasAccess,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
     return PopupMenuItem(
-      value: (ProjectMenuAction.switchProject, folderPath),
+      value: () => ref.read(appViewProvider.notifier).loadProject(folderPath),
       child: IconMenuRow(
         icon: Icons.folder_off,
         leading: hasAccess ? ProjectIcon(projectPath: folderPath) : null,
@@ -349,7 +233,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     final RenderBox button = context.findRenderObject() as RenderBox;
     final Offset offset = button.localToGlobal(Offset.zero);
 
-    showMenu<(ProjectMenuAction, String?)>(
+    showMenu<VoidCallback>(
       context: context,
       position: RelativeRect.fromLTRB(
         offset.dx,
@@ -361,10 +245,6 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
         mruFolders,
         ref.read(accessibleMruFoldersProvider),
       ),
-    ).then((choice) async {
-      if (choice != null) {
-        await _handleDropdownSelection(choice.$1, choice.$2, ref);
-      }
-    });
+    ).then((choice) => choice?.call());
   }
 }

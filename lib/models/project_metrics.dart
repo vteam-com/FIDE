@@ -1,3 +1,4 @@
+import 'package:fide/models/dependency_version.dart';
 import 'package:fide/models/health_indicators.dart';
 import 'package:fide/models/outdated_package.dart';
 
@@ -19,11 +20,11 @@ class ProjectMetrics {
   /// Pubspec `description`.
   final String? description;
 
-  /// Direct dependencies mapped to their version or a kind label.
-  final Map<String, String> dependencies;
+  /// Direct dependencies mapped to their version.
+  final Map<String, DependencyVersion> dependencies;
 
-  /// Dev dependencies mapped to their version or a kind label.
-  final Map<String, String> devDependencies;
+  /// Dev dependencies mapped to their version.
+  final Map<String, DependencyVersion> devDependencies;
 
   /// File count per extension.
   final Map<String, int> fileStats;
@@ -54,14 +55,17 @@ class ProjectMetrics {
   factory ProjectMetrics.fromJson(Map<String, dynamic> json) {
     Map<String, T> mapOf<T>(String key) =>
         (json[key] as Map<String, dynamic>?)?.cast<String, T>() ?? {};
+    Map<String, DependencyVersion> versionsOf(String key) => mapOf<String>(
+      key,
+    ).map((name, label) => MapEntry(name, DependencyVersion.fromJson(label)));
     final health = json['healthIndicators'] as Map<String, dynamic>?;
     final outdated = json['outdated'] as Map<String, dynamic>? ?? {};
     return ProjectMetrics(
       name: json['name'] as String?,
       version: json['version'] as String?,
       description: json['description'] as String?,
-      dependencies: mapOf<String>('dependencies'),
-      devDependencies: mapOf<String>('devDependencies'),
+      dependencies: versionsOf('dependencies'),
+      devDependencies: versionsOf('devDependencies'),
       fileStats: mapOf<int>('fileStats'),
       directoryStructure: mapOf<int>('directoryStructure'),
       health: health == null ? null : HealthIndicators.fromJson(health),
@@ -97,8 +101,8 @@ class ProjectMetrics {
     'name': ?name,
     'version': ?version,
     'description': ?description,
-    'dependencies': dependencies,
-    'devDependencies': devDependencies,
+    'dependencies': _versionsToJson(dependencies),
+    'devDependencies': _versionsToJson(devDependencies),
     'fileStats': fileStats,
     'totalFiles': totalFiles,
     'directoryStructure': directoryStructure,
@@ -106,4 +110,9 @@ class ProjectMetrics {
     'qualityScore': ?health?.qualityScore,
     'outdated': outdated.map((package, row) => MapEntry(package, row.toJson())),
   };
+
+  /// [versions] as JSON, each version as its label.
+  static Map<String, String> _versionsToJson(
+    Map<String, DependencyVersion> versions,
+  ) => versions.map((name, version) => MapEntry(name, version.toJson()));
 }

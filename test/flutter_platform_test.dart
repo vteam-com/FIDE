@@ -21,16 +21,13 @@ void main() {
     }
   });
 
-  test('configuredIn lists only platforms with a project folder', () {
-    final project = Directory.systemTemp.createTempSync('fide_platforms_');
-    addTearDown(() => project.deleteSync(recursive: true));
-    Directory('${project.path}/android').createSync();
-    Directory('${project.path}/web').createSync();
-
-    expect(FlutterPlatform.configuredIn(project.path), {
-      FlutterPlatform.android,
-      FlutterPlatform.web,
-    });
+  test('iOS and macOS build only on a Mac, the others where they run', () {
+    expect(FlutterPlatform.ios.canBuildOn(FlutterPlatform.macos), isTrue);
+    expect(FlutterPlatform.ios.canBuildOn(FlutterPlatform.linux), isFalse);
+    expect(FlutterPlatform.linux.canBuildOn(FlutterPlatform.linux), isTrue);
+    expect(FlutterPlatform.windows.canBuildOn(FlutterPlatform.macos), isFalse);
+    expect(FlutterPlatform.web.canBuildOn(null), isTrue);
+    expect(FlutterPlatform.android.canBuildOn(FlutterPlatform.windows), isTrue);
   });
 
   test('web runs on Chrome and CocoaPods covers only Apple platforms', () {
@@ -52,5 +49,19 @@ void main() {
 
   test('iOS builds need a Mac', () {
     expect(FlutterPlatform.ios.cannotBuildOn('linux'), contains('macOS'));
+  });
+
+  test('build arguments carry each platform target and its extra flags', () {
+    expect(FlutterPlatform.android.buildArguments(), ['build', 'apk']);
+    expect(
+      FlutterPlatform.android.buildArguments(FlutterPlatform.appBundleTarget),
+      ['build', 'appbundle'],
+    );
+    expect(FlutterPlatform.web.buildArguments(), [
+      'build',
+      'web',
+      '--no-wasm-dry-run',
+    ]);
+    expect(FlutterPlatform.macos.buildArguments(), ['build', 'macos']);
   });
 }

@@ -9,8 +9,6 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   double _shownExplorerWidth = AppSize.initialSidePanelWidth;
   double _shownOutlineWidth = AppSize.initialSidePanelWidth;
 
-  VoidCallback? _refreshOutlineCallback;
-
   String? _lastSelectedFilePath;
 
   @override
@@ -22,10 +20,6 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     if (projectPath != null) {
       ref.read(projectManagerProvider).tryReopenLastFile(projectPath);
     }
-  }
-
-  void _setOutlineRefreshCallback(VoidCallback callback) {
-    _refreshOutlineCallback = callback;
   }
 
   /// Resizes the left panel as its splitter moves [delta] right.
@@ -105,7 +99,6 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     final selectedFile = ref.watch(selectedFileProvider);
     final projectLoaded = ref.watch(projectLoadedProvider);
     final currentProjectPath = ref.watch(currentProjectPathProvider);
-    final mruFolders = ref.watch(mruFoldersProvider);
 
     ref.listen<FileSystemItem?>(selectedFileProvider, (_, next) {
       if (next != null && next.path != _lastSelectedFilePath) {
@@ -172,16 +165,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                 ],
                 Expanded(
                   child: CenterPanel(
-                    selectedFile: selectedFile,
-                    projectLoaded: projectLoaded,
-                    mruFolders: mruFolders,
                     terminalVisible: ref.watch(bottomPanelVisibleProvider),
-                    onOpenFolder: widget.onOpenFolder,
-                    onOpenMruProject: widget.onOpenProject,
-                    onRemoveMruEntry: ref
-                        .read(mruFoldersProvider.notifier)
-                        .remove,
-                    onContentChanged: _refreshOutlineCallback,
                     onClose: () {
                       ref.read(selectedFileProvider.notifier).state = null;
                       ref.read(openDocumentsProvider.notifier).deactivate();
@@ -193,16 +177,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                   SizedBox(
                     width: _shownOutlineWidth,
                     child: PanelIsland(
-                      child: RightPanel(
-                        selectedFile: selectedFile,
-                        onOutlineUpdate: _setOutlineRefreshCallback,
-                        onJumpToLine: _jumpToLine,
-                        onOutlineNodeSelected: (int line, int column) {
-                          ref
-                              .read(activeEditorProvider)
-                              .navigateToLine(line, column: column);
-                        },
-                      ),
+                      child: RightPanel(selectedFile: selectedFile),
                     ),
                   ),
                 ],
@@ -217,9 +192,6 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   Future<void> _handleFileSelection(FileSystemItem file) async {
     await ref.read(projectManagerProvider).saveLastOpenedFile(file.path);
     await ref.read(openDocumentsProvider.notifier).open(file.path);
-
-    final fileName = p.basename(file.path);
-    widget.onFileOpened?.call(fileName);
 
     ref.read(rightPanelVisibleProvider.notifier).state = true;
     _lastSelectedFilePath = file.path;

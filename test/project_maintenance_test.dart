@@ -2,10 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/dependency_version.dart';
 import 'package:fide/models/project_metrics.dart';
-import 'package:fide/providers/process_runner.dart';
-import 'package:fide/providers/project_analyzer.dart';
-import 'package:fide/providers/project_maintenance_service.dart';
+import 'package:fide/services/process_runner.dart';
+import 'package:fide/services/project_analyzer.dart';
+import 'package:fide/services/project_config_reader.dart';
+import 'package:fide/services/project_maintenance_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const String _pubspec = '''
@@ -54,19 +56,23 @@ void main() {
 
   group('ProjectAnalyzer.analyze', () {
     test('reads pubspec info and dependencies', () async {
-      final metrics = await const ProjectAnalyzer().analyze(project.path);
+      final metrics = await const ProjectAnalyzer(ProjectConfigReader())
+          .analyze(project.path);
 
       expect(metrics.name, 'demo');
       expect(metrics.version, '1.2.3');
       expect(metrics.dependencies, {
-        'flutter': 'Flutter SDK',
-        'http': '^1.0.0',
+        'flutter': DependencyVersion.sdk,
+        'http': const DependencyVersion.hosted('^1.0.0'),
       });
-      expect(metrics.devDependencies, {'lints': '^2.0.0'});
+      expect(metrics.devDependencies, {
+        'lints': const DependencyVersion.hosted('^2.0.0'),
+      });
     });
 
     test('counts files and tracked directories in one walk', () async {
-      final metrics = await const ProjectAnalyzer().analyze(project.path);
+      final metrics = await const ProjectAnalyzer(ProjectConfigReader())
+          .analyze(project.path);
 
       expect(metrics.fileStats, {'yaml': 1, 'dart': 1});
       expect(metrics.totalFiles, 2);
@@ -74,7 +80,8 @@ void main() {
     });
 
     test('deducts for a missing pubspec.lock', () async {
-      final metrics = await const ProjectAnalyzer().analyze(project.path);
+      final metrics = await const ProjectAnalyzer(ProjectConfigReader())
+          .analyze(project.path);
 
       expect(metrics.health?.hasPubspecLock, false);
       expect(
@@ -100,13 +107,15 @@ http     1.0.0    1.1.0       1.1.0       2.0.0
   });
 
   test('ProjectMetrics survives the JSON cache round trip', () async {
-    final metrics = await const ProjectAnalyzer().analyze(project.path);
+    final metrics = await const ProjectAnalyzer(ProjectConfigReader())
+        .analyze(project.path);
 
     final restored = ProjectMetrics.fromJson(
       jsonDecode(jsonEncode(metrics.toJson())) as Map<String, dynamic>,
     );
 
     expect(restored.toJson(), metrics.toJson());
+    expect(restored.dependencies, metrics.dependencies);
     expect(restored.health?.qualityScore, metrics.health?.qualityScore);
   });
 

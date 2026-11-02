@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/message_widget.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -24,14 +24,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: MessageWidget(
-              message: 'Test message',
-              type: StatusTone.info,
-              duration: Duration(seconds: 4),
-              showCloseButton: true,
-              showCopyButton: false,
-              autoDismiss: false,
-            ),
+            body: MessageWidget(message: 'Test message', type: StatusTone.info),
           ),
         ),
       );
@@ -48,38 +41,10 @@ void main() {
           home: Scaffold(
             body: Column(
               children: [
-                MessageWidget(
-                  message: 'Success',
-                  type: StatusTone.success,
-                  duration: Duration(seconds: 1),
-                  showCloseButton: false,
-                  showCopyButton: false,
-                  autoDismiss: false,
-                ),
-                MessageWidget(
-                  message: 'Warning',
-                  type: StatusTone.warning,
-                  duration: Duration(seconds: 1),
-                  showCloseButton: false,
-                  showCopyButton: false,
-                  autoDismiss: false,
-                ),
-                MessageWidget(
-                  message: 'Error',
-                  type: StatusTone.error,
-                  duration: Duration(seconds: 1),
-                  showCloseButton: false,
-                  showCopyButton: false,
-                  autoDismiss: false,
-                ),
-                MessageWidget(
-                  message: 'Info',
-                  type: StatusTone.info,
-                  duration: Duration(seconds: 1),
-                  showCloseButton: false,
-                  showCopyButton: false,
-                  autoDismiss: false,
-                ),
+                MessageWidget(message: 'Success', type: StatusTone.success),
+                MessageWidget(message: 'Warning', type: StatusTone.warning),
+                MessageWidget(message: 'Error', type: StatusTone.error),
+                MessageWidget(message: 'Info', type: StatusTone.info),
               ],
             ),
           ),
@@ -93,20 +58,13 @@ void main() {
       expect(find.text('Info'), findsOneWidget);
     });
 
-    testWidgets('MessageWidget shows close button when enabled', (
+    testWidgets('MessageWidget always shows a close button', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: MessageWidget(
-              message: 'Test message',
-              type: StatusTone.info,
-              duration: Duration(seconds: 4),
-              showCloseButton: true,
-              showCopyButton: false,
-              autoDismiss: false,
-            ),
+            body: MessageWidget(message: 'Test message', type: StatusTone.info),
           ),
         ),
       );
@@ -114,7 +72,7 @@ void main() {
       expect(find.byIcon(Icons.close), findsOneWidget);
     });
 
-    testWidgets('MessageWidget shows copy button when enabled', (
+    testWidgets('MessageWidget offers to copy error messages', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
@@ -123,10 +81,6 @@ void main() {
             body: MessageWidget(
               message: 'Test message',
               type: StatusTone.error,
-              duration: Duration(seconds: 4),
-              showCloseButton: false,
-              showCopyButton: true,
-              autoDismiss: false,
             ),
           ),
         ),
@@ -135,20 +89,51 @@ void main() {
       expect(find.byIcon(Icons.copy), findsOneWidget);
     });
 
+    testWidgets('MessageWidget does not offer to copy info messages', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: MessageWidget(message: 'Test message', type: StatusTone.info),
+          ),
+        ),
+      );
+
+      expect(find.byIcon(Icons.copy), findsNothing);
+    });
+
+    testWidgets('MessageWidget reports closing once', (
+      WidgetTester tester,
+    ) async {
+      var closed = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MessageWidget(
+              message: 'Test message',
+              onClose: () => closed++,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.tap(find.byIcon(Icons.close), warnIfMissed: false);
+      await tester.pump(StatusTone.info.messageDuration);
+      await tester.pumpAndSettle();
+
+      expect(closed, 1);
+    });
+
     testWidgets('MessageWidget can be closed manually', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: MessageWidget(
-              message: 'Test message',
-              type: StatusTone.info,
-              duration: Duration(seconds: 4),
-              showCloseButton: true,
-              showCopyButton: false,
-              autoDismiss: false,
-            ),
+            body: MessageWidget(message: 'Test message', type: StatusTone.info),
           ),
         ),
       );
@@ -172,10 +157,6 @@ void main() {
             body: MessageWidget(
               message: 'Styled message',
               type: StatusTone.success,
-              duration: Duration(seconds: 4),
-              showCloseButton: true,
-              showCopyButton: false,
-              autoDismiss: false,
             ),
           ),
         ),
@@ -279,6 +260,42 @@ void main() {
 
       // Pump to advance time and allow auto-removal
       await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('closing an overlay message removes it at once', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: Placeholder())),
+      );
+      final context = tester.element(find.byType(Placeholder));
+
+      MessageBox.showError(context, 'Test error message');
+      await tester.pumpAndSettle();
+      expect(find.byType(MessageWidget), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+
+      // Gone well before the error's display duration, so nothing invisible
+      // is left over the app to catch clicks
+      expect(find.byType(MessageWidget), findsNothing);
+    });
+
+    testWidgets('an overlay message removes itself after its duration', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: Placeholder())),
+      );
+      final context = tester.element(find.byType(Placeholder));
+
+      MessageBox.showInfo(context, 'Test info message');
+      await tester.pumpAndSettle();
+      await tester.pump(StatusTone.info.messageDuration);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MessageWidget), findsNothing);
     });
   });
 }

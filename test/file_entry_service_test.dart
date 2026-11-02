@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:fide/providers/file_entry_service.dart';
+import 'package:fide/services/file_entry_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -1,4 +1,4 @@
-import 'package:fide/constants/constants.dart';
+import 'package:fide/constants/core_constants.dart';
 
 /// Describes a past moment relative to now, the way people say it.
 extension RelativeTime on DateTime {

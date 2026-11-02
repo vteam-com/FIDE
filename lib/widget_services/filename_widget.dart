@@ -1,10 +1,11 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/file_system_item.dart';
-import 'package:fide/providers/file_type_utils.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/file_icon_utils.dart';
+import 'package:fide/widgets/git_file_status_style.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter/material.dart';
 
@@ -43,13 +44,14 @@ class FileNameWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final gitStatus = fileItem.gitStatus;
-    final gitColor = gitStatus.color(context);
+    final gitColor = gitStatus.color(colorScheme);
     final badgeText = showGitBadge ? gitStatus.badgeSymbol() : '';
     final warning = fileItem.warning;
 
     return TreeRow(
-      icon: _getIcon(context),
+      icon: _getIcon(colorScheme),
       name: fileItem.name,
       path: fileItem.path,
       rootPath: rootPath,
@@ -58,12 +60,12 @@ class FileNameWidget extends StatelessWidget {
       // Git styling (strike-through, italic, color), recolored when the
       // file has a warning or is selected
       nameStyle: gitStatus
-          .textStyle(context, AppTextStyle.body)
+          .textStyle(colorScheme, AppTextStyle.body)
           .copyWith(
             color: warning != null
                 ? AppTheme.warningColor
                 : isSelected
-                ? Theme.of(context).colorScheme.primary
+                ? colorScheme.primary
                 : null,
           ),
       highlighted: isSelected,
@@ -82,18 +84,8 @@ class FileNameWidget extends StatelessWidget {
   }
 
   /// Returns the file-type icon widget for this entry, using the file extension or item type.
-  Widget _getIcon(BuildContext context) {
-    final ColorScheme colorScheme = Theme.of(context).colorScheme;
-
-    if (fileItem.type == FileSystemItemType.parent) {
-      return Icon(
-        Icons.folder_special,
-        color: colorScheme.primary,
-        size: AppIconSize.medium,
-      );
-    }
-
-    if (fileItem.type == FileSystemItemType.directory) {
+  Widget _getIcon(ColorScheme colorScheme) {
+    if (fileItem.isDirectory) {
       return Icon(
         Icons.folder,
         color: colorScheme.primary,

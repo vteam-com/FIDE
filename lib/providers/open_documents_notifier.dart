@@ -2,15 +2,59 @@ part of 'app_providers.dart';
 
 /// The only writer of the editor's open documents and active tab.
 class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
-  /// Starts with no documents open; calls [onSaved] after each [save].
-  OpenDocumentsNotifier({this.onSaved}) : super(OpenDocuments.empty);
+  /// Starts with no documents open; calls [onSaved] after each [save] and
+  /// saves the showing document through [activeEditor]; reads files with
+  /// [reader].
+  OpenDocumentsNotifier({
+    this.onSaved,
+    this.activeEditor,
+    this.reader = const FileContentReader(),
+  }) : super(OpenDocuments.empty);
+
+  /// Loads the text of the documents opened.
+  final FileContentReader reader;
 
   /// Called after each [save] writes its file.
   final VoidCallback? onSaved;
 
+  /// The mounted editor, which saves the showing document so it knows
+  /// the document is saved; without it, that document saves as the others.
+  final EditorCommands? activeEditor;
+
   /// Shows the tab at [index].
   void activate(int index) {
     state = OpenDocuments(documents: state.documents, activeIndex: index);
+  }
+
+  /// Applies a project-wide edit (a rename, a replace-all, a class
+  /// split...), the one way such edits reach the disk.
+  ///
+  /// Every document with unsaved edits is saved first, so [edit] computes
+  /// its changes from what the user sees and no editor later writes its
+  /// buffer over them. The files [edit] returns, keyed by absolute path,
+  /// are then written and [reloadWritten]; they are returned too.
+  ///
+  /// Throws, writing nothing, when one of them was edited again while
+  /// [edit] ran.
+  Future<Map<String, String>> applyEdits(
+    Future<Map<String, String>> Function() edit,
+  ) async {
+    await _saveAll();
+    final files = await edit();
+    final editedMeanwhile = state.documents.where(
+      (document) => document.isDirty && files.containsKey(document.filePath),
+    );
+    if (editedMeanwhile.isNotEmpty) {
+      throw StateError(
+        '${p.basename(editedMeanwhile.first.filePath)} was edited '
+        'meanwhile, so nothing was changed',
+      );
+    }
+    for (final MapEntry(key: path, value: content) in files.entries) {
+      await File(path).writeAsString(content);
+    }
+    if (files.isNotEmpty) await reloadWritten(files.keys);
+    return files;
   }
 
   /// Closes every tab.
@@ -111,13 +155,23 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
     );
   }
 
+  /// Saves every document with unsaved edits: the showing one through
+  /// [activeEditor], the others (and that one without an editor) from
+  /// their recorded content.
+  Future<void> _saveAll() async {
+    if (state.active?.isDirty ?? false) await activeEditor?.save();
+    for (final document in state.documents.where((d) => d.isDirty).toList()) {
+      await save(document.filePath, document.content);
+    }
+  }
+
   /// Text content of [filePath]; empty for images and missing files.
   Future<String> _readContent(String filePath) async {
     if (FileTypeUtils.isImageFile(filePath)) return '';
     try {
       final file = File(filePath);
       if (!await file.exists()) return '';
-      return await FileSystemItem.fileToStringMaxSizeCheck(file);
+      return await reader.read(filePath);
     } catch (_) {
       return '// Error loading file\n';
     }

@@ -1,37 +1,35 @@
 // ignore_for_file:  use_build_context_synchronously
 
+import 'dart:async';
+
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Represents `MessageWidget`.
+/// A message bar in the icon and color of its [type], with a close button
+/// and, for tones whose messages are copyable, a copy button; it fades out
+/// after the tone's display duration or when closed, then calls [onClose].
 class MessageWidget extends StatefulWidget {
+  /// Creates a message bar showing [message] in the style of [type].
   const MessageWidget({
     super.key,
     required this.message,
     this.type = StatusTone.info,
-    this.duration,
-    this.showCloseButton = true,
-    this.showCopyButton = false,
     this.onClose,
-    this.autoDismiss = true,
   });
 
-  final bool autoDismiss;
-
-  final Duration? duration;
-
+  /// The text shown.
   final String message;
 
+  /// Called once the message has faded out, to remove it.
   final VoidCallback? onClose;
 
-  final bool showCloseButton;
-
-  final bool showCopyButton;
-
+  /// The tone giving the message its icon, color, duration and buttons.
   final StatusTone type;
 
   @override
@@ -41,6 +39,13 @@ class MessageWidget extends StatefulWidget {
 class _MessageWidgetState extends State<MessageWidget>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
+
+  /// Fades the message out once the tone's display duration is over.
+  Timer? _autoDismissTimer;
+
+  /// Whether the message is already fading out, so closing it while the
+  /// timer fires reports [MessageWidget.onClose] only once.
+  bool _dismissing = false;
 
   late Animation<double> _fadeAnimation;
 
@@ -58,53 +63,21 @@ class _MessageWidgetState extends State<MessageWidget>
     );
     _animationController.forward();
 
-    if (widget.autoDismiss && widget.duration != null) {
-      Future.delayed(widget.duration!, () {
-        if (mounted) {
-          _dismiss();
-        }
-      });
-    }
+    _autoDismissTimer = Timer(widget.type.messageDuration, _dismiss);
   }
 
   @override
   void dispose() {
+    _autoDismissTimer?.cancel();
     _animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    Color backgroundColor;
-    Color foregroundColor;
-    String semanticLabel;
-
-    switch (widget.type) {
-      case StatusTone.success:
-        backgroundColor = colorScheme.primaryContainer;
-        foregroundColor = colorScheme.onPrimaryContainer;
-        semanticLabel = 'Success message';
-        break;
-      case StatusTone.warning:
-        backgroundColor = colorScheme.tertiaryContainer;
-        foregroundColor = colorScheme.onTertiaryContainer;
-        semanticLabel = 'Warning message';
-        break;
-      case StatusTone.error:
-        backgroundColor = colorScheme.errorContainer;
-        foregroundColor = colorScheme.onErrorContainer;
-        semanticLabel = 'Error message';
-        break;
-      case StatusTone.info:
-      case StatusTone.neutral:
-        backgroundColor = colorScheme.secondaryContainer;
-        foregroundColor = colorScheme.onSecondaryContainer;
-        semanticLabel = 'Information message';
-        break;
-    }
+    final backgroundColor = widget.type.color;
+    final foregroundColor = AppTheme.onStatusColor;
+    final semanticLabel = widget.type.messageLabel;
 
     return FadeTransition(
       opacity: _fadeAnimation,
@@ -151,7 +124,7 @@ class _MessageWidgetState extends State<MessageWidget>
                       ),
                     ),
                   ),
-                  if (widget.showCopyButton) ...[
+                  if (widget.type.messageCopyable) ...[
                     const SizedBox(width: AppSpacing.medium),
                     SizedBox(
                       height: AppSize.compactActionButton,
@@ -190,17 +163,15 @@ class _MessageWidgetState extends State<MessageWidget>
                             ),
                     ),
                   ],
-                  if (widget.showCloseButton) ...[
-                    const SizedBox(width: AppSpacing.tiny),
-                    CompactIconButton(
-                      icon: Icons.close,
-                      color: foregroundColor.withValues(
-                        alpha: AppOpacity.secondaryText,
-                      ),
-                      onPressed: _dismiss,
-                      tooltip: 'Close message',
+                  const SizedBox(width: AppSpacing.tiny),
+                  CompactIconButton(
+                    icon: Icons.close,
+                    color: foregroundColor.withValues(
+                      alpha: AppOpacity.secondaryText,
                     ),
-                  ],
+                    onPressed: _dismiss,
+                    tooltip: 'Close message',
+                  ),
                 ],
               ),
             ),
@@ -210,9 +181,14 @@ class _MessageWidgetState extends State<MessageWidget>
     );
   }
 
+  /// Fades the message out, then reports it closed; later calls, from the
+  /// close button or the timer, do nothing.
   void _dismiss() {
+    if (_dismissing || !mounted) return;
+    _dismissing = true;
+    _autoDismissTimer?.cancel();
     _animationController.reverse().then((_) {
-      widget.onClose?.call();
+      if (mounted) widget.onClose?.call();
     });
   }
 }

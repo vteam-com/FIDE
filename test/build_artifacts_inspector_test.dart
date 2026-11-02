@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:fide/models/flutter_platform.dart';
-import 'package:fide/providers/build_artifacts_inspector.dart';
+import 'package:fide/services/build_artifacts_inspector.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 

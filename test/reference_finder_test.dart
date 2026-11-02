@@ -5,14 +5,15 @@ import 'package:fide/models/arb_keys.dart';
 import 'package:fide/models/hardcoded_string.dart';
 import 'package:fide/models/l10n_config.dart';
 import 'package:fide/models/lookup_rewrite.dart';
-import 'package:fide/providers/flutter_sdk.dart';
-import 'package:fide/providers/reference_finder.dart';
+import 'package:fide/services/flutter_sdk.dart';
+import 'package:fide/services/process_runner.dart';
+import 'package:fide/services/reference_finder.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 // Reports the Dart SDK the tests run on, without launching flutter
 class _TestSdk extends FlutterSdk {
-  const _TestSdk();
+  const _TestSdk() : super(const ProcessRunner());
 
   @override
   Future<String?> dartSdkPath() async =>

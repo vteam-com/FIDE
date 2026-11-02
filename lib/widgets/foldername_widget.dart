@@ -1,9 +1,10 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/git_file_status.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/widgets/container_counter.dart';
+import 'package:fide/widgets/git_file_status_style.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter/material.dart';
 
@@ -18,7 +19,6 @@ class FolderNameWidget extends StatelessWidget {
     this.rootPath,
     this.onTap,
     this.onShowContextMenu,
-    this.onFileSelected,
     this.trailing,
   });
 
@@ -29,8 +29,6 @@ class FolderNameWidget extends StatelessWidget {
   final bool isFiltered;
 
   final ProjectNode node;
-
-  final Function(ProjectNode)? onFileSelected;
 
   final ValueChanged<Offset>? onShowContextMenu;
 
@@ -99,7 +97,7 @@ class FolderNameWidget extends StatelessWidget {
     if (icon == null) return const SizedBox();
     return Icon(
       icon,
-      color: node.gitStatus.color(context),
+      color: node.gitStatus.color(Theme.of(context).colorScheme),
       size: AppIconSize.tiny,
     );
   }

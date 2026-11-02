@@ -3,7 +3,9 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/app_theme.dart';
+import 'package:fide/models/dependency_version.dart';
+import 'package:fide/models/health_check.dart';
+import 'package:fide/models/health_deduction.dart';
 import 'package:fide/models/health_indicators.dart';
 import 'package:fide/models/project_metrics.dart';
 import 'package:fide/models/project_paths.dart';
@@ -11,8 +13,9 @@ import 'package:fide/models/quality_issue.dart';
 import 'package:fide/models/quality_issue.quality_finding.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/project_maintenance_service.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/project_maintenance_service.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/busy_icon_button.dart';
 import 'package:fide/widgets/clickable.dart';
@@ -95,32 +98,20 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Starting Score: 100 points', style: AppTextStyle.captionStrong),
+          Text(
+            'Starting Score: ${AppMetric.maxScore} points',
+            style: AppTextStyle.captionStrong,
+          ),
           const SizedBox(height: AppSpacing.large),
           const SectionTitle('Deductions'),
           const SizedBox(height: AppSpacing.medium),
-
-          /// Handles `_buildDeductionItem`.
-          _buildDeductionItem(
-            'Missing pubspec.lock',
-            -AppMetric.missingLockDeduction,
-            !health.hasPubspecLock,
-          ),
-          _buildDeductionItem(
-            'Build errors (max 50 points)',
-            -health.buildErrorDeduction,
-            health.buildErrors > 0,
-          ),
-          _buildDeductionItem(
-            'Build warnings (max 20 points)',
-            -health.buildWarningDeduction,
-            health.buildWarnings > 0,
-          ),
-          _buildDeductionItem(
-            'Large files (>3 files over 10MB)',
-            -AppMetric.largeFileThresholdMb,
-            health.hasTooManyLargeFiles,
-          ),
+          for (final deduction in health.deductions)
+            StatusIndicator.tone(
+              deduction.isActive ? StatusTone.error : StatusTone.success,
+              label: deduction.isActive
+                  ? '${deduction.label}: -${deduction.points} pts'
+                  : '${deduction.label}: no deduction',
+            ),
           const Divider(height: AppSpacing.xxLarge),
           SectionTitle(
             'Final Score: ${health.qualityScore}/${AppMetric.maxScore}',
@@ -129,21 +120,15 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           const Text('Score ranges:', style: AppTextStyle.captionStrong),
           const SizedBox(height: AppSpacing.tiny),
           Text(
-            '• Green (80-100): Good project health\n'
-            '• Orange (50-79): Needs attention\n'
-            '• Red (0-49): Critical issues',
+            '• Green (${AppMetric.warningScoreThreshold}-${AppMetric.maxScore}): '
+            'Good project health\n'
+            '• Orange (${AppMetric.criticalScoreThreshold}-'
+            '${AppMetric.warningScoreThreshold - 1}): Needs attention\n'
+            '• Red (0-${AppMetric.criticalScoreThreshold - 1}): Critical issues',
             style: AppTextStyle.secondary(context),
           ),
         ],
       ),
-    );
-  }
-
-  /// Handles `_buildDeductionItem`.
-  Widget _buildDeductionItem(String label, int points, bool active) {
-    return StatusIndicator.tone(
-      active ? StatusTone.error : StatusTone.success,
-      label: active ? '$label: $points pts' : '$label: no deduction',
     );
   }
 
@@ -257,7 +242,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   /// Handles `_buildDependencyChip`.
   Widget _buildDependencyChip(
     String packageName,
-    String version,
+    DependencyVersion version,
     ProjectMetrics projectMetrics,
   ) {
     final outdatedInfo = projectMetrics.outdated[packageName];
@@ -267,22 +252,8 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         outdatedInfo?.hasNoResolvableVersion ?? false;
 
     final label = isOutdated
-        ? '$packageName $version → ${outdatedInfo.latest}'
-        : '$packageName $version';
-
-    final isClickable =
-        version != 'Flutter SDK' && version != 'Complex dependency';
-
-    void onChipPressed() {
-      if (isClickable) {
-        if (hasIncompatibleVersion) {
-          // Focus on the dependency conflict panel when clicked on incompatible version
-          // This will scroll to and expand the panel automatically
-        } else {
-          _openPubDev(packageName);
-        }
-      }
-    }
+        ? '$packageName ${version.label} → ${outdatedInfo.latest}'
+        : '$packageName ${version.label}';
 
     return InputChip(
       label: Row(
@@ -306,7 +277,12 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           ],
         ],
       ),
-      onPressed: onChipPressed,
+      // Kept enabled for every chip so they all render alike
+      onPressed: () {
+        if (version.isHosted && !hasIncompatibleVersion) {
+          _openPubDev(packageName);
+        }
+      },
       backgroundColor: isProblematic || hasIncompatibleVersion
           ? AppTheme.errorBackground
           : null,
@@ -434,31 +410,51 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
   /// The project's score with each health issue and how to fix it.
   Widget _buildHealthCard(HealthIndicators health) {
-    final projectPath = ref.read(currentProjectPathProvider);
-    final issues = [
-      if (!health.hasPubspecLock)
-        const QualityIssue(
+    return IssueSection(
+      title: 'Score',
+      issues: [
+        for (final deduction in health.deductions)
+          if (deduction.count > 0) _healthIssue(deduction, health),
+      ],
+      emptyLabel: 'No issues detected',
+      rightWidget: Clickable(
+        onTap: () => _showScoreDetails(context, health),
+        child: BadgeStatus.score(health.qualityScore),
+      ),
+    );
+  }
+
+  /// The issue a failed health [deduction] shows, with how to fix it.
+  QualityIssue _healthIssue(
+    HealthDeduction deduction,
+    HealthIndicators health,
+  ) {
+    final count = deduction.count;
+    switch (deduction.check) {
+      case HealthCheck.missingLock:
+        return const QualityIssue(
           label: 'Missing pubspec.lock',
           guidance:
               'Run `flutter pub get` to resolve the dependencies and write '
               '`pubspec.lock`; commit it so every build uses the same '
               'package versions.',
-        ),
-      if (health.buildErrors > 0)
-        QualityIssue(
+        );
+      case HealthCheck.buildErrors:
+        return QualityIssue(
           tone: StatusTone.error,
-          label: '${health.buildErrors} build errors',
+          label: '$count build errors',
           guidance: _fixBuildGuidance,
-        ),
-      if (health.buildWarnings > 0)
-        QualityIssue(
-          label: '${health.buildWarnings} build warnings',
+        );
+      case HealthCheck.buildWarnings:
+        return QualityIssue(
+          label: '$count build warnings',
           guidance: _fixBuildGuidance,
-        ),
-      if (health.largeFiles.isNotEmpty)
-        QualityIssue(
+        );
+      case HealthCheck.largeFiles:
+        final projectPath = ref.read(currentProjectPathProvider);
+        return QualityIssue(
           tone: StatusTone.info,
-          label: '${health.largeFiles.length} large files',
+          label: '$count large files',
           guidance:
               'Files over ${AppMetric.largeFileThresholdMb} MB slow down '
               'clones and builds: compress images and media, download '
@@ -473,18 +469,8 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                   text: p.basename(file),
                 ),
           ],
-        ),
-    ];
-
-    return IssueSection(
-      title: 'Score',
-      issues: issues,
-      emptyLabel: 'No issues detected',
-      rightWidget: Clickable(
-        onTap: () => _showScoreDetails(context, health),
-        child: BadgeStatus.score(health.qualityScore),
-      ),
-    );
+        );
+    }
   }
 
   /// Handles `_buildDependenciesCard`.

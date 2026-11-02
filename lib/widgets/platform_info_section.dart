@@ -1,13 +1,13 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/build_artifacts.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/detail_row.dart';
@@ -30,17 +30,11 @@ class PlatformInfoSection extends ConsumerStatefulWidget {
     required this.isSupported,
     required this.canBuild,
     required this.projectPath,
-    this.onAppendOutput,
-    this.onAppendError,
   });
 
   final bool canBuild;
 
   final bool isSupported;
-
-  final void Function(String error)? onAppendError;
-
-  final void Function(String output)? onAppendOutput;
 
   final String projectPath;
 

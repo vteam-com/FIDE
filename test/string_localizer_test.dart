@@ -1,9 +1,9 @@
 import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/models/arb_keys.dart';
 import 'package:fide/models/arb_message.dart';
-import 'package:fide/models/l10n_config.dart';
 import 'package:fide/models/hardcoded_string.dart';
-import 'package:fide/providers/string_localizer.dart';
+import 'package:fide/models/l10n_config.dart';
+import 'package:fide/services/string_localizer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The site of [literal] in [content], as fCheck reports it.

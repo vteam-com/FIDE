@@ -6,9 +6,6 @@ class _ProviderProjectStateSink implements ProjectStateSink {
   _ProviderProjectStateSink(this._ref);
 
   @override
-  List<LoadingAction> get loadingActions => _ref.read(loadingActionsProvider);
-
-  @override
   void bumpProjectTreeRevision() {
     _ref.read(projectTreeRevisionProvider.notifier).state++;
   }
@@ -19,11 +16,6 @@ class _ProviderProjectStateSink implements ProjectStateSink {
   }
 
   @override
-  void replaceLoadingActions(List<LoadingAction> actions) {
-    _ref.read(loadingActionsProvider.notifier).state = actions;
-  }
-
-  @override
   void setCurrentProjectPath(String? path) {
     _ref.read(currentProjectPathProvider.notifier).state = path;
   }
@@ -31,11 +23,6 @@ class _ProviderProjectStateSink implements ProjectStateSink {
   @override
   void setCurrentProjectRoot(ProjectNode? root) {
     _ref.read(currentProjectRootProvider.notifier).state = root;
-  }
-
-  @override
-  void setProjectCreationError(String? message) {
-    _ref.read(projectCreationErrorProvider.notifier).state = message;
   }
 
   @override

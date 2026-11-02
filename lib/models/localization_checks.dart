@@ -1,3 +1,5 @@
+import 'package:fide/models/localization_status.dart';
+
 /// Which parts of the localization setup a project already has, read from
 /// its files in one pass by `LocalizationService.inspect`.
 class LocalizationChecks {
@@ -43,4 +45,15 @@ class LocalizationChecks {
     required this.hasDependencies,
     required this.hasGenerateFlag,
   });
+
+  /// Summarises the checks as the status that picks which view to show.
+  LocalizationStatus get status {
+    if (!hasPubspec) return LocalizationStatus.noProject;
+    if (!isFlutterProject) return LocalizationStatus.notFlutterProject;
+    if (hasArbFiles && hasGeneratedClasses && hasAppIntegration) {
+      return LocalizationStatus.complete;
+    }
+    if (hasArbFiles || hasGeneratedClasses) return LocalizationStatus.partial;
+    return LocalizationStatus.notStarted;
+  }
 }

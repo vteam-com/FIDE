@@ -2,7 +2,6 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/panel_actions.dart';
-import 'package:fide/providers/process_runner.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
@@ -28,7 +27,7 @@ class FileActions extends ConsumerWidget {
     final isActive = ref.watch(
       activeDocumentProvider.select((doc) => doc?.filePath == path),
     );
-    final processRunner = ref.read(processRunnerProvider);
+    final shell = ref.read(desktopShellProvider);
 
     /// Runs [action], telling the user when it fails to [verb] the file.
     Future<void> runOrShowError(
@@ -97,18 +96,14 @@ class FileActions extends ConsumerWidget {
             CompactTextButton(
               icon: Icons.launch,
               label: 'Open in Default App',
-              onPressed: () => runOrShowError(
-                () => processRunner.openWithDefaultApp(path),
-                'open',
-              ),
+              onPressed: () =>
+                  runOrShowError(() => shell.openWithDefaultApp(path), 'open'),
             ),
             CompactTextButton(
               icon: Icons.folder_open,
-              label: 'Reveal in ${ProcessRunner.fileManagerName}',
-              onPressed: () => runOrShowError(
-                () => processRunner.revealFile(path),
-                'reveal',
-              ),
+              label: 'Reveal in ${shell.fileManagerName}',
+              onPressed: () =>
+                  runOrShowError(() => shell.revealFile(path), 'reveal'),
             ),
           ],
         ),

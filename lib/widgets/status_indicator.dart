@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_status.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter/material.dart';
 
 /// An icon followed by an optional label, both in one color, marking a

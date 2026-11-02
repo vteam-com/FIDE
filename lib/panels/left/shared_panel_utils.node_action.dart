@@ -21,9 +21,9 @@ enum NodeAction {
   /// Whether the action is destructive and drawn in the error color.
   bool get isDestructive => this == delete;
 
-  /// Menu label, naming the platform's file manager for [reveal].
-  String get label =>
-      this == reveal ? '$_label ${ProcessRunner.fileManagerName}' : _label;
+  /// Menu label, naming [shell]'s file manager for [reveal].
+  String labelIn(DesktopShell shell) =>
+      this == reveal ? '$_label ${shell.fileManagerName}' : _label;
 
   /// Whether the action is offered for [node]; creating entries needs a
   /// directory to create them in.

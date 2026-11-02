@@ -15,4 +15,14 @@ void main() {
     expect(0.count('issue'), '0 issues');
     expect(2.count('file'), '2 files');
   });
+
+  test('useLocale switches to the locale separators', () {
+    addTearDown(() => LocaleNumber.useLocale('en'));
+
+    LocaleNumber.useLocale('de');
+    expect(1234.5.localized, '1.234,5');
+
+    LocaleNumber.useLocale('xx_unknown');
+    expect(1234.5.localized, '1,234.5');
+  });
 }

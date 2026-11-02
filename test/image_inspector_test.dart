@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:fide/providers/image_inspector.dart';
+import 'package:fide/services/image_inspector.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;

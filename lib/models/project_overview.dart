@@ -1,5 +1,5 @@
 import 'package:fcheck/fcheck.dart' as fcheck;
-import 'package:fide/constants/constants.dart';
+import 'package:fide/constants/core_constants.dart';
 import 'package:fide/models/code_coverage.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/localization_data.dart';

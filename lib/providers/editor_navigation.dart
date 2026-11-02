@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/providers/active_editor.dart';
@@ -8,8 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Opens [filePath] in the editor.
 void openFile(WidgetRef ref, String filePath) {
-  ref.read(selectedFileProvider.notifier).state =
-      FileSystemItem.fromFileSystemEntity(File(filePath));
+  ref.read(selectedFileProvider.notifier).state = FileSystemItem.fromPath(
+    filePath,
+  );
 }
 
 /// Opens [filePath] in the editor and moves the caret to 1-based [line]

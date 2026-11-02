@@ -53,9 +53,6 @@ class NodeBuilder extends StatelessWidget {
 
   /// Handles `_buildFileNode`.
   Widget _buildFileNode() {
-    final item = FileSystemItem.fromFileSystemEntity(File(node.path));
-    item.gitStatus = node.gitStatus;
-
     final isRevealed = node.path == revealedPath;
     final isSelected =
         isRevealed ||
@@ -67,7 +64,7 @@ class NodeBuilder extends StatelessWidget {
 
     return FileNameWidget(
       key: isRevealed ? revealedKey : null,
-      fileItem: item,
+      fileItem: FileSystemItem.fromNode(node),
       isSelected: isSelected,
       rootPath: rootPath,
       onTap: _handleFileTap,

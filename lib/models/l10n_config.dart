@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -53,23 +51,27 @@ class L10nConfig {
   /// File name of the ARB file new messages are added to.
   final String templateArbFile;
 
-  /// Reads the settings of the project at [projectPath]; the defaults when
-  /// it has no valid `l10n.yaml`.
-  static Future<L10nConfig> read(String projectPath) async {
-    final file = File(p.join(projectPath, fileName));
-    if (!await file.exists()) return const L10nConfig();
-    final Object? yaml = loadYaml(await file.readAsString());
+  /// Parses the `l10n.yaml` [content]; the defaults for content that
+  /// isn't a YAML map.
+  factory L10nConfig.parse(String content) {
+    Object? yaml;
+    try {
+      yaml = loadYaml(content);
+    } on YamlException {
+      yaml = null;
+    }
     if (yaml is! YamlMap) return const L10nConfig();
+    final map = yaml;
     String text(String key, String fallback) =>
-        yaml[key] is String ? yaml[key] as String : fallback;
+        map[key] is String ? map[key] as String : fallback;
     return L10nConfig(
       arbDir: text('arb-dir', _defaultArbDir),
       templateArbFile: text('template-arb-file', _defaultTemplateArbFile),
       outputClass: text('output-class', _defaultOutputClass),
       outputFile: text('output-localization-file', _defaultOutputFile),
-      outputDir: yaml['output-dir'] as String?,
-      nullableGetter: yaml['nullable-getter'] != false,
-      syntheticPackage: yaml['synthetic-package'] == true,
+      outputDir: map['output-dir'] as String?,
+      nullableGetter: map['nullable-getter'] != false,
+      syntheticPackage: map['synthetic-package'] == true,
     );
   }
 

@@ -1,6 +1,5 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
-import 'package:fide/models/file_system_item.dart';
 import 'package:fide/panels/center/app_icons_panel.dart';
 import 'package:fide/panels/center/editor/editor_screen.dart';
 import 'package:fide/panels/center/project_overview_panel.dart';
@@ -14,28 +13,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The center panel host widget that displays the active editor, welcome screen, or create-project flow.
 class CenterPanel extends ConsumerStatefulWidget {
-  final FileSystemItem? selectedFile;
-  final bool projectLoaded;
-  final List<String> mruFolders;
+  /// Whether the terminal shows below the main content.
   final bool terminalVisible;
-  final VoidCallback? onOpenFolder;
-  final Function(String)? onOpenMruProject;
-  final Function(String)? onRemoveMruEntry;
-  final VoidCallback? onContentChanged;
+
+  /// Closes the active editor tab.
   final VoidCallback? onClose;
 
-  const CenterPanel({
-    super.key,
-    this.selectedFile,
-    required this.projectLoaded,
-    required this.mruFolders,
-    required this.terminalVisible,
-    this.onOpenFolder,
-    this.onOpenMruProject,
-    this.onRemoveMruEntry,
-    this.onContentChanged,
-    this.onClose,
-  });
+  /// Creates the center panel.
+  const CenterPanel({super.key, required this.terminalVisible, this.onClose});
 
   @override
   ConsumerState<CenterPanel> createState() => _CenterPanelState();
@@ -105,7 +90,6 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
     } else if (activeDocument != null) {
       mainContent = EditorScreen(
         documentState: activeDocument,
-        onContentChanged: widget.onContentChanged,
         onClose: widget.onClose,
       );
     } else {

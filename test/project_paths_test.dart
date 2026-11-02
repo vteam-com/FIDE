@@ -8,7 +8,7 @@ void main() {
     test('refuses the project the app was built from', () {
       expect(
         () => paths.ensureCleanable(
-          executable: '/src/app/build/macos/Build/Products/Debug/App.app/Contents/MacOS/App',
+          '/src/app/build/macos/Build/Products/Debug/App.app/Contents/MacOS/App',
         ),
         throwsA(isA<String>()),
       );
@@ -16,11 +16,11 @@ void main() {
 
     test('allows other projects', () {
       expect(
-        () => paths.ensureCleanable(executable: '/Applications/App.app/App'),
+        () => paths.ensureCleanable('/Applications/App.app/App'),
         returnsNormally,
       );
       expect(
-        () => paths.ensureCleanable(executable: '/src/app2/build/App'),
+        () => paths.ensureCleanable('/src/app2/build/App'),
         returnsNormally,
       );
     });

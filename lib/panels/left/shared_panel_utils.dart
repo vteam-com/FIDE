@@ -1,21 +1,19 @@
 // ignore_for_file:  avoid_print, use_build_context_synchronously
 
-import 'dart:io';
-
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
-import 'package:fide/providers/file_entry_service.dart';
-import 'package:fide/providers/git_service.dart';
-import 'package:fide/providers/process_runner.dart';
-import 'package:fide/providers/project_tree_reader.dart';
+import 'package:fide/providers/git_repo_controller.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/desktop_shell.dart';
+import 'package:fide/services/file_entry_service.dart';
+import 'package:fide/services/git_service.dart';
+import 'package:fide/services/project_tree_reader.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/more_menu_button.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
 part 'shared_panel_utils.file_operations.dart';
@@ -26,17 +24,14 @@ part 'shared_panel_utils.project_tree_panel_state.dart';
 
 /// Shared state management for panel widgets
 class PanelStateManager {
-  final Logger _logger = Logger('PanelStateManager');
   final Map<String, bool> _expandedState = {};
   final TextEditingController _filterController = TextEditingController();
   String _filterQuery = '';
   ProjectNode? projectRoot;
-  final GitService _gitService;
   final ProjectTreeReader _reader;
 
-  /// Creates panel state that reads Git status with [_gitService] and
-  /// folders with [_reader].
-  PanelStateManager(this._gitService, this._reader);
+  /// Creates panel state that reads folders with [_reader].
+  PanelStateManager(this._reader);
 
   // Getters
   /// Returns `expandedState`.
@@ -99,22 +94,11 @@ class PanelStateManager {
     return _reader.loadChildren(node);
   }
 
-  /// Handles `PanelStateManager.seedGitStatusForFile`.
-  Future<void> seedGitStatusForFile(ProjectNode node) async {
-    if (projectRoot == null) return;
-
-    try {
-      // Check if current directory is a Git repository
-      final isGitRepo = await _gitService.isGitRepository(projectRoot!.path);
-      if (!isGitRepo) return;
-
-      // Get Git status for this specific file
-      final gitStatus = await _gitService.getStatus(projectRoot!.path);
-      final relativePath = p.relative(node.path, from: projectRoot!.path);
-
-      node.gitStatus = gitStatus.statusOf(relativePath);
-    } catch (e) {
-      _logger.severe('Error seeding Git status for file: $e');
-    }
+  /// Tags [node] with its change in [status], the project's Git status;
+  /// leaves it as is while the status is unknown.
+  void seedGitStatusForFile(ProjectNode node, GitStatus? status) {
+    final root = projectRoot;
+    if (root == null || status == null) return;
+    node.gitStatus = status.statusOf(p.relative(node.path, from: root.path));
   }
 }

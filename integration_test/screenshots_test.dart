@@ -9,8 +9,8 @@ import 'package:fide/main.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/providers/ai_chat_notifier.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/project_service.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/project_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -102,8 +102,8 @@ void main() {
     stepStart('Editor');
     container
         .read(selectedFileProvider.notifier)
-        .state = FileSystemItem.fromFileSystemEntity(
-      File(path.join(_projectPath, 'lib', 'panels', 'right', 'ai_panel.dart')),
+        .state = FileSystemItem.fromPath(
+      path.join(_projectPath, 'lib', 'panels', 'right', 'ai_panel.dart'),
     );
     await _settleFor(tester, _renderTime);
     await _tapKey(tester, 'keyTabFolder');

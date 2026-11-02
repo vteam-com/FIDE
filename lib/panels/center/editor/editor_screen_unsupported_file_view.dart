@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/providers/file_type_utils.dart';
+import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/open_url.dart';
@@ -21,7 +21,9 @@ class EditorScreenUnsupportedFileView extends StatelessWidget {
     final extension = FileTypeUtils.extensionOf(filePath).toUpperCase();
     return EmptyState(
       icon: Icons.insert_drive_file_outlined,
-      title: 'The file type .$extension is not yet supported',
+      title: extension.isEmpty
+          ? 'Files without an extension are not yet supported'
+          : 'The file type .$extension is not yet supported',
       message:
           'Currently supported: most text files including programming '
           'languages, web files, configs, scripts, and images',

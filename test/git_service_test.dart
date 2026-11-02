@@ -1,7 +1,8 @@
 import 'dart:io';
 
 import 'package:fide/models/file_system_item.dart';
-import 'package:fide/providers/git_service.dart';
+import 'package:fide/services/git_service.dart';
+import 'package:fide/services/process_runner.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as path;
 
@@ -36,14 +37,17 @@ void main() {
   test('getHeadContent reads a nested file by absolute path', () async {
     File(nestedFile).writeAsStringSync('edited\n');
 
-    expect(await const GitService().getHeadContent(nestedFile), 'committed\n');
+    expect(
+      await const GitService(ProcessRunner()).getHeadContent(nestedFile),
+      'committed\n',
+    );
   });
 
   test('getHeadContent is empty for files not in HEAD', () async {
     final newFile = path.join(repo.path, 'lib', 'new.dart');
     File(newFile).writeAsStringSync('new\n');
 
-    expect(await const GitService().getHeadContent(newFile), '');
+    expect(await const GitService(ProcessRunner()).getHeadContent(newFile), '');
   });
 
   test('getStagedContent reads the index, not the working copy', () async {
@@ -51,11 +55,18 @@ void main() {
     _git(repo.path, ['add', 'lib/main.dart']);
     File(nestedFile).writeAsStringSync('working\n');
 
-    expect(await const GitService().getStagedContent(nestedFile), 'staged\n');
+    expect(
+      await const GitService(ProcessRunner()).getStagedContent(nestedFile),
+      'staged\n',
+    );
   });
 
   test('getFileDiff is empty for an unchanged tracked file', () async {
-    expect(await const GitService().getFileDiff(repo.path, nestedFile), '');
+    expect(
+      await const GitService(ProcessRunner())
+          .getFileDiff(repo.path, nestedFile),
+      '',
+    );
   });
 
   test('getFileDiff shows staged and unstaged edits against HEAD', () async {
@@ -63,7 +74,8 @@ void main() {
     _git(repo.path, ['add', 'lib/main.dart']);
     File(nestedFile).writeAsStringSync('working\n');
 
-    final diff = await const GitService().getFileDiff(repo.path, nestedFile);
+    final diff = await const GitService(ProcessRunner())
+        .getFileDiff(repo.path, nestedFile);
 
     expect(diff, contains('-committed'));
     expect(diff, contains('+working'));
@@ -73,20 +85,21 @@ void main() {
     final newFile = path.join(repo.path, 'lib', 'new.dart');
     File(newFile).writeAsStringSync('new\n');
 
-    final diff = await const GitService().getFileDiff(repo.path, newFile);
+    final diff = await const GitService(ProcessRunner())
+        .getFileDiff(repo.path, newFile);
 
     expect(diff, contains('+new'));
   });
 
   test('a failing mutation throws GitException', () async {
     expect(
-      const GitService().commit(repo.path, 'nothing to commit'),
+      const GitService(ProcessRunner()).commit(repo.path, 'nothing to commit'),
       throwsA(isA<GitException>()),
     );
   });
 
   test('canAmend is true for an unpushed commit', () async {
-    expect(await const GitService().canAmend(repo.path), isTrue);
+    expect(await const GitService(ProcessRunner()).canAmend(repo.path), isTrue);
   });
 
   test('canAmend is false once the commit is on a remote branch', () async {
@@ -96,24 +109,32 @@ void main() {
     _git(repo.path, ['remote', 'add', 'origin', remote.path]);
     _git(repo.path, ['push', '-q', 'origin', 'HEAD']);
 
-    expect(await const GitService().canAmend(repo.path), isFalse);
+    expect(
+      await const GitService(ProcessRunner()).canAmend(repo.path),
+      isFalse,
+    );
   });
 
   test('amend with an empty message keeps the last commit message', () async {
     File(nestedFile).writeAsStringSync('amended\n');
     _git(repo.path, ['add', 'lib/main.dart']);
 
-    await const GitService().amend(repo.path, '');
+    await const GitService(ProcessRunner()).amend(repo.path, '');
 
-    final commits = await const GitService().getRecentCommits(repo.path);
+    final commits = await const GitService(ProcessRunner())
+        .getRecentCommits(repo.path);
     expect(commits.map((c) => c.message), ['init']);
-    expect(await const GitService().getHeadContent(nestedFile), 'amended\n');
+    expect(
+      await const GitService(ProcessRunner()).getHeadContent(nestedFile),
+      'amended\n',
+    );
   });
 
   test('amend with a message rewords the last commit', () async {
-    await const GitService().amend(repo.path, 'reworded');
+    await const GitService(ProcessRunner()).amend(repo.path, 'reworded');
 
-    final commits = await const GitService().getRecentCommits(repo.path);
+    final commits = await const GitService(ProcessRunner())
+        .getRecentCommits(repo.path);
     expect(commits.map((c) => c.message), ['reworded']);
   });
 
@@ -122,7 +143,8 @@ void main() {
     _git(repo.path, ['add', '.']);
     File(path.join(repo.path, 'other.txt')).writeAsStringSync('unstaged\n');
 
-    final diff = await const GitService().getStagedDiff(repo.path);
+    final diff = await const GitService(ProcessRunner())
+        .getStagedDiff(repo.path);
 
     expect(diff, contains('lib/main.dart'));
     expect(diff, contains('+staged'));
@@ -132,7 +154,7 @@ void main() {
   test(
     'syncCounts reports commits to push and, after a fetch, to pull',
     () async {
-      const git = GitService();
+      const git = GitService(ProcessRunner());
       expect(await git.syncCounts(repo.path), (ahead: 0, behind: 0));
 
       final remote = Directory.systemTemp.createTempSync('fide_git_remote_');
@@ -173,7 +195,7 @@ void main() {
     File(path.join(repo.path, 'gone.txt')).deleteSync();
     File(nestedFile).writeAsStringSync('edited\n');
 
-    final status = await const GitService().getStatus(repo.path);
+    final status = await const GitService(ProcessRunner()).getStatus(repo.path);
 
     expect(status.stagedKinds, {'new.txt': GitFileStatus.added});
     expect(status.unstagedKinds, {
@@ -188,7 +210,7 @@ void main() {
     File(nestedFile).writeAsStringSync('one\ntwo\n');
     _git(repo.path, ['add', '.']);
     File(path.join(repo.path, 'new.txt')).writeAsStringSync('x\ny\nz');
-    const git = GitService();
+    const git = GitService(ProcessRunner());
 
     final stats = await git.getChangeStats(
       repo.path,
@@ -205,7 +227,7 @@ void main() {
     () async {
       // Not valid UTF-8, like the bytes of a PNG
       File(path.join(repo.path, 'image.png')).writeAsBytesSync([0x89, 0xff]);
-      const git = GitService();
+      const git = GitService(ProcessRunner());
 
       final stats = await git.getChangeStats(
         repo.path,
@@ -225,7 +247,8 @@ void main() {
     File(nestedFile).writeAsStringSync('local\n');
     _git(repo.path, ['commit', '-q', '-am', 'local only']);
 
-    final commits = await const GitService().getRecentCommits(repo.path);
+    final commits = await const GitService(ProcessRunner())
+        .getRecentCommits(repo.path);
 
     expect(commits.map((c) => (c.message, c.isUnpushed)), [
       ('local only', true),
@@ -235,5 +258,82 @@ void main() {
       DateTime.now().difference(commits.first.date),
       lessThan(const Duration(minutes: 1)),
     );
+  });
+
+  test(
+    'getFileDiffStats counts staged and unstaged edits against HEAD',
+    () async {
+      File(nestedFile).writeAsStringSync('staged\n');
+      _git(repo.path, ['add', 'lib/main.dart']);
+      File(nestedFile).writeAsStringSync('staged\nworking\n');
+
+      final stats = await const GitService(ProcessRunner())
+          .getFileDiffStats(path.dirname(nestedFile), nestedFile);
+
+      expect((stats.added, stats.removed, stats.isNewFile), (2, 1, false));
+    },
+  );
+
+  test('getFileDiffStats is zero for an unchanged file', () async {
+    final stats = await const GitService(ProcessRunner())
+        .getFileDiffStats(path.dirname(nestedFile), nestedFile);
+
+    expect(stats.hasChanges, isFalse);
+  });
+
+  test('diffAgainstHead pairs HEAD with the given text', () async {
+    final diff = await const GitService(ProcessRunner())
+        .diffAgainstHead(nestedFile, newText: 'buffer\n');
+
+    expect((diff!.oldText, diff.newText), ('committed\n', 'buffer\n'));
+  });
+
+  test('diffAgainstHead reads the index or the working copy', () async {
+    File(nestedFile).writeAsStringSync('staged\n');
+    _git(repo.path, ['add', 'lib/main.dart']);
+    File(nestedFile).writeAsStringSync('working\n');
+    const git = GitService(ProcessRunner());
+
+    final staged = await git.diffAgainstHead(nestedFile, staged: true);
+    final working = await git.diffAgainstHead(nestedFile);
+
+    expect(staged!.newText, 'staged\n');
+    expect(working!.newText, 'working\n');
+  });
+
+  test('diffAgainstHead is null outside a repository', () async {
+    final outside = Directory.systemTemp.createTempSync('fide_no_git_');
+    addTearDown(() => outside.deleteSync(recursive: true));
+    final file = File(path.join(outside.path, 'a.txt'))..writeAsStringSync('a');
+
+    expect(
+      await const GitService(ProcessRunner()).diffAgainstHead(file.path),
+      isNull,
+    );
+  });
+
+  group('GitDiffStats.parseNumstat', () {
+    test('reads added and removed lines per path', () {
+      final stats = GitDiffStats.parseNumstat(
+        '3\t1\tlib/a.dart\n0\t2\tb.txt\n',
+      );
+
+      expect(stats.map((file, s) => MapEntry(file, (s.added, s.removed))), {
+        'lib/a.dart': (3, 1),
+        'b.txt': (0, 2),
+      });
+    });
+
+    test('counts binary files as zero lines', () {
+      final stats = GitDiffStats.parseNumstat('-\t-\timage.png');
+
+      expect(stats['image.png']!.hasChanges, isFalse);
+    });
+
+    test('keeps tabs in paths and skips malformed lines', () {
+      final stats = GitDiffStats.parseNumstat('1\t0\ta\tb\n\nnot numstat\n');
+
+      expect(stats.keys, ['a\tb']);
+    });
   });
 }

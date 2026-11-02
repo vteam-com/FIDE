@@ -1,71 +1,43 @@
 part of 'app_providers.dart';
 
-/// Represents `ProjectManager`.
+/// The one owner of the project lifecycle: loading a project (after
+/// unloading the open one), unloading it with its documents, and the
+/// recent projects list. [ProjectService] does the loading steps.
 class ProjectManager {
   final Logger _logger = Logger('ProjectManager');
 
   final Ref ref;
 
+  /// Creates the manager reading its services and state through [ref].
   ProjectManager(this.ref);
 
-  /// Load a project with proper cleanup and MRU management.
+  /// Unloads the open project, then loads the one at [directoryPath],
+  /// logging the steps for the loading screen; a project that opens moves
+  /// to the top of the recent projects. Returns whether it opened.
   Future<bool> loadProject(String directoryPath) async {
+    final loading = ref.read(projectLoadingProvider.notifier)..state = true;
     try {
-      _logger.info('loadProject called with: $directoryPath');
-      _logger.info('Loading project: $directoryPath');
-
-      _logger.fine('Setting loading state to true');
-      ref.read(projectLoadingProvider.notifier).state = true;
-
-      final currentProjectLoaded = ref.read(projectLoadedProvider);
-      _logger.fine('Current project loaded: $currentProjectLoaded');
-
-      if (currentProjectLoaded) {
-        _logger.info('Unloading current project first...');
-        await unloadProject();
-        _logger.info('Current project unloaded');
-      }
-
-      final projectService = ref.read(projectServiceProvider);
-      final success = await projectService.loadProject(directoryPath);
-
+      if (ref.read(projectLoadedProvider)) unloadProject();
+      final progress = ref.read(projectLoadProgressProvider)..start();
+      final success = await ref
+          .read(projectServiceProvider)
+          .loadProject(directoryPath, progress);
       if (success) {
-        _logger.info('Project loaded successfully');
-        await _updateMruList(directoryPath);
-        _logger.info('MRU list updated');
+        await ref.read(mruFoldersProvider.notifier).touch(directoryPath);
       }
-
-      _logger.fine('Setting loading state to false');
-      ref.read(projectLoadingProvider.notifier).state = false;
-
       return success;
     } catch (e) {
       _logger.severe('Error loading project: $e');
-      ref.read(projectLoadingProvider.notifier).state = false;
       return false;
+    } finally {
+      loading.state = false;
     }
   }
 
-  /// Unload the current project.
-  Future<void> unloadProject() async {
-    try {
-      _logger.info('Unloading project...');
-
-      // Resets project path, root, loaded flag and selection via its sink
-      final projectService = ref.read(projectServiceProvider);
-      projectService.unloadProject();
-
-      ref.read(openDocumentsProvider.notifier).closeAll();
-
-      _logger.info('Project unloaded successfully');
-    } catch (e) {
-      _logger.severe('Error unloading project: $e');
-    }
-  }
-
-  /// Update MRU list with the selected project at the top.
-  Future<void> _updateMruList(String directoryPath) {
-    return ref.read(mruFoldersProvider.notifier).touch(directoryPath);
+  /// Closes the open project and its documents.
+  void unloadProject() {
+    ref.read(projectServiceProvider).unloadProject();
+    ref.read(openDocumentsProvider.notifier).closeAll();
   }
 
   /// Remembers [filePath] so [tryReopenLastFile] can restore it next time.
@@ -101,7 +73,9 @@ class ProjectManager {
         return;
       }
 
-      if (!await FileSystemItem.isWithinMaxFileSize(file)) {
+      if (!await ref
+          .read(fileContentReaderProvider)
+          .isWithinMaxSize(lastFilePath)) {
         return;
       }
 

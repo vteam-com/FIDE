@@ -3,14 +3,14 @@ import 'dart:io';
 import 'package:fcheck/fcheck.dart';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/locale_number.dart';
-import 'package:fide/models/right_panel_tab.dart';
 import 'package:fide/models/status_tone.dart';
-import 'package:fide/providers/app_icon_fixer.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/panel_actions.dart';
+import 'package:fide/providers/right_panel_tab.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/services/app_icon_fixer.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/app_icon_slot_tile.dart';
@@ -280,7 +280,7 @@ class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
   /// Shows the details of the icon file at [path] in the Outline tab.
   void _select(String path) {
     ref.read(appIconSelectionProvider.notifier).state = path;
-    showRightPanelTab(ref, RightPanelTab.outline);
+    showRightPanelTab(ref.read, RightPanelTab.outline);
   }
 
   /// Lets the user pick the master image, starting in the project folder.

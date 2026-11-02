@@ -1,72 +1,26 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/project_name.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/providers/create_project_draft_notifier.dart';
+import 'package:fide/providers/tool_availability_provider.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/step_header.dart';
 import 'package:fide/widgets/tool_status_row.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Represents `CreateProjectStep1`.
-class CreateProjectStep1 extends StatefulWidget {
-  const CreateProjectStep1({
-    super.key,
-    required this.initialDirectory,
-    required this.defaultParentDirectory,
-    required this.flutterStatusChecked,
-    required this.flutterAvailable,
-    required this.flutterVersion,
-    required this.gitStatusChecked,
-    required this.gitAvailable,
-    required this.gitVersion,
-    required this.ollamaStatusChecked,
-    required this.ollamaAvailable,
-    required this.onProjectNameChanged,
-    required this.onDirectoryChanged,
-    required this.onValidationChanged,
-    required this.onUseAIChanged,
-  });
-
-  final String? defaultParentDirectory;
-
-  final bool flutterAvailable;
-
-  final bool flutterStatusChecked;
-
-  final String? flutterVersion;
-
-  final bool gitAvailable;
-
-  final bool gitStatusChecked;
-
-  final String? gitVersion;
-
-  final String? initialDirectory;
-
-  final bool ollamaAvailable;
-
-  final bool ollamaStatusChecked;
-
-  final void Function(String directory) onDirectoryChanged;
-
-  final void Function(String projectName, String? finalProjectName)
-  onProjectNameChanged;
-
-  final void Function(bool useAI) onUseAIChanged;
-
-  final void Function(bool canProceed) onValidationChanged;
+/// The wizard's first step: project name, parent folder, the installed
+/// tools and AI generation, all kept in [createProjectDraftProvider].
+class CreateProjectStep1 extends ConsumerStatefulWidget {
+  /// Creates the step.
+  const CreateProjectStep1({super.key});
 
   @override
-  State<CreateProjectStep1> createState() => _CreateProjectStep1State();
+  ConsumerState<CreateProjectStep1> createState() => _CreateProjectStep1State();
 }
 
-class _CreateProjectStep1State extends State<CreateProjectStep1> {
-  String? _directory;
-
-  String? _finalProjectName;
-
+class _CreateProjectStep1State extends ConsumerState<CreateProjectStep1> {
   /// How to install Flutter, shown when it isn't found.
   static const String _flutterInstallInstructions =
       'Flutter SDK is not installed or not available in PATH.\n\n'
@@ -95,38 +49,37 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
 
   /// This step's place in the wizard.
   static const int _stepNumber = 1;
-  bool _useAI = false;
 
-  final TextEditingController descriptionController = TextEditingController();
+  late final TextEditingController _nameController;
+  late final TextEditingController _directoryController;
+  late final TextEditingController _descriptionController;
 
-  final TextEditingController directoryController = TextEditingController();
-
-  final TextEditingController nameController = TextEditingController();
-
-  String? selectedDirectory;
+  CreateProjectDraftNotifier get _notifier =>
+      ref.read(createProjectDraftProvider.notifier);
 
   @override
   void initState() {
     super.initState();
-    nameController.addListener(_onProjectNameChanged);
-    _initializeDirectoryController();
-    // Defer notifying parent until after first build to avoid setState during build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      widget.onUseAIChanged(_useAI);
-    });
+    final draft = ref.read(createProjectDraftProvider);
+    _nameController = TextEditingController(text: draft.name);
+    _directoryController = TextEditingController(text: draft.parentDirectory);
+    _descriptionController = TextEditingController(text: draft.description);
   }
 
   @override
   void dispose() {
-    nameController.dispose();
-    directoryController.dispose();
-    descriptionController.dispose();
+    _nameController.dispose();
+    _directoryController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final draft = ref.watch(createProjectDraftProvider);
+    final tools = ref.watch(toolAvailabilityProvider).value;
+    final packageName = draft.packageName;
+    final ollamaAvailable = tools?.ollamaAvailable ?? false;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: AppIconSize.xLarge,
@@ -136,16 +89,17 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
         const SizedBox(height: AppSpacing.xLarge),
 
         AppTextField(
-          controller: nameController,
+          controller: _nameController,
           labelText: 'Project Name',
           hintText: 'Enter project name',
+          onChanged: _notifier.setName,
         ),
 
         Row(
           children: [
             Expanded(
               child: AppTextField(
-                controller: directoryController,
+                controller: _directoryController,
                 labelText: 'Parent Directory',
                 hintText: 'Select parent directory',
                 readOnly: true,
@@ -160,28 +114,26 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
         ),
 
         // Show final project name if it's different from input
-        if (_finalProjectName != null &&
-            _finalProjectName != nameController.text)
+        if (packageName != null && packageName != draft.name)
           StatusIndicator.tone(
             StatusTone.warning,
-            label: 'Project name will be: "$_finalProjectName"',
+            label: 'Project name will be: "$packageName"',
           ),
 
-        if (widget.flutterStatusChecked)
+        if (tools != null) ...[
           ToolStatusRow(
             name: 'Flutter SDK',
-            available: widget.flutterAvailable,
-            version: widget.flutterVersion,
+            available: tools.flutterAvailable,
+            version: tools.flutterVersion,
             installInstructions: _flutterInstallInstructions,
           ),
-
-        if (widget.gitStatusChecked)
           ToolStatusRow(
             name: 'Git',
-            available: widget.gitAvailable,
-            version: widget.gitVersion,
+            available: tools.gitAvailable,
+            version: tools.gitVersion,
             installInstructions: _gitInstallInstructions,
           ),
+        ],
 
         // AI-powered generation toggle
         Row(
@@ -193,83 +145,31 @@ class _CreateProjectStep1State extends State<CreateProjectStep1> {
               ),
             ),
             Switch(
-              value: _useAI,
-              onChanged: widget.ollamaStatusChecked && widget.ollamaAvailable
-                  ? _onUseAIChanged
-                  : null,
+              value: draft.useAi,
+              onChanged: ollamaAvailable ? _notifier.setUseAi : null,
             ),
           ],
         ),
 
         // Description field only if AI is enabled AND Ollama is available
-        if (_useAI && widget.ollamaStatusChecked && widget.ollamaAvailable)
+        if (draft.useAi && ollamaAvailable)
           AppTextField(
-            controller: descriptionController,
+            controller: _descriptionController,
             labelText: 'App Description (AI-powered generation)',
             hintText: 'Describe what kind of app you want to create...',
             maxLines: AppMetric.aiInputMaxLines,
             minLines: AppMetric.doubleLineLimit,
+            onChanged: _notifier.setDescription,
           ),
       ],
     );
   }
 
-  /// Opens a directory picker and updates the project directory selection.
-  void _handleBrowseDirectory() async {
+  /// Opens a directory picker and makes the chosen folder the parent.
+  Future<void> _handleBrowseDirectory() async {
     final selectedDir = await FilePicker.getDirectoryPath();
-    if (selectedDir != null && mounted) {
-      setState(() {
-        selectedDirectory = selectedDir;
-        directoryController.text = selectedDir;
-        _directory = selectedDir;
-      });
-      widget.onDirectoryChanged(selectedDir);
-      _updateValidation();
-    }
-  }
-
-  /// Resolves the initial directory (from args or documents folder) and populates the directory controller.
-  Future<void> _initializeDirectoryController() async {
-    final directoryPath =
-        widget.defaultParentDirectory ??
-        widget.initialDirectory ??
-        (await getApplicationDocumentsDirectory()).path;
-    if (!mounted) return;
-    setState(() {
-      directoryController.text = directoryPath;
-      _directory = directoryPath;
-    });
-    widget.onDirectoryChanged(directoryPath);
-    // Delay validation update until after widget is built to avoid setState during build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updateValidation();
-    });
-  }
-
-  /// Reacts to project name field changes by validating and notifying the parent widget.
-  void _onProjectNameChanged() {
-    final validatedName = ProjectName.normalize(nameController.text);
-    if (_finalProjectName != validatedName) {
-      setState(() {
-        _finalProjectName = validatedName;
-      });
-      widget.onProjectNameChanged(nameController.text, validatedName);
-      _updateValidation();
-    }
-  }
-
-  void _onUseAIChanged(bool value) {
-    setState(() {
-      _useAI = value;
-    });
-    widget.onUseAIChanged(value);
-  }
-
-  void _updateValidation() {
-    final canProceed =
-        _finalProjectName != null &&
-        _directory != null &&
-        _directory!.isNotEmpty;
-    widget.onValidationChanged(canProceed);
+    if (selectedDir == null || !mounted) return;
+    _directoryController.text = selectedDir;
+    _notifier.setParentDirectory(selectedDir);
   }
 }

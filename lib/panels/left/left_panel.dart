@@ -1,14 +1,14 @@
 import 'package:fide/models/file_system_item.dart';
-import 'package:fide/models/left_panel_tab.dart';
 import 'package:fide/panels/left/execute_panel.dart';
 import 'package:fide/panels/left/folder_panel.dart';
 import 'package:fide/panels/left/git_panel.dart';
 import 'package:fide/panels/left/organized_panel.dart';
 import 'package:fide/panels/left/search_panel.dart';
 import 'package:fide/panels/left/test_panel.dart';
-import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/left_panel_tab.dart';
+import 'package:fide/providers/panel_tab_badges.dart';
 import 'package:fide/providers/ui_state_providers.dart';
-import 'package:fide/widgets/count_badge.dart';
+import 'package:fide/widgets/panel_tab_header.dart';
 import 'package:fide/widgets/panel_tabs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,22 +46,6 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
       vsync: this,
     );
     _tabController.addListener(_handleTabChange);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshGitStatus());
-  }
-
-  @override
-  void didUpdateWidget(LeftPanel oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.currentProjectPath != widget.currentProjectPath) {
-      _refreshGitStatus();
-    }
-  }
-
-  /// Re-reads the project's Git status, which feeds the Git tab's badge.
-  void _refreshGitStatus() {
-    final projectPath = widget.currentProjectPath;
-    if (!mounted || projectPath == null) return;
-    ref.read(gitStatusProvider.notifier).refreshStatus(projectPath);
   }
 
   @override
@@ -99,29 +83,17 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
       }
     });
 
-    // Files on disk changed or were saved: the Git badge may be stale
-    ref.listen(projectTreeRevisionProvider, (_, _) => _refreshGitStatus());
-    ref.listen(savedFilesRevisionProvider, (_, _) => _refreshGitStatus());
-    final gitChangeCount =
-        ref.watch(gitStatusProvider).value?.changedFileCount ?? 0;
-
     return PanelTabs(
       controller: _tabController,
       showTabBar: widget.projectLoaded,
       tabs: [
         for (final tab in LeftPanelTab.values)
-          Tooltip(
-            message: tab.tooltip,
-            child: Tab(
-              key: tab.key,
-              icon: CountBadge(
-                count: tab == LeftPanelTab.git ? gitChangeCount : 0,
-                child: Icon(
-                  _tabController.index == tab.index
-                      ? tab.selectedIcon
-                      : tab.icon,
-                ),
-              ),
+          PanelTabHeader(
+            key: tab.key,
+            tooltip: tab.tooltip,
+            badgeCount: ref.watch(leftPanelTabBadgeProvider(tab)),
+            icon: Icon(
+              _tabController.index == tab.index ? tab.selectedIcon : tab.icon,
             ),
           ),
       ],

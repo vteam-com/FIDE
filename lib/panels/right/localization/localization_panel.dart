@@ -1,18 +1,17 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/arb_translation.dart';
-import 'package:fide/models/file_system_item.dart';
-import 'package:fide/models/localization_checks.dart';
 import 'package:fide/models/localization_data.dart';
-import 'package:fide/models/project_paths.dart';
+import 'package:fide/models/localization_outcome.dart';
+import 'package:fide/models/localization_state.dart';
+import 'package:fide/models/localization_status.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/panels/right/localization/localization_entry_widget.dart';
 import 'package:fide/panels/right/localization/localization_setup_widget.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
-import 'package:fide/providers/localization_service.dart';
-import 'package:fide/providers/service_providers.dart';
+import 'package:fide/providers/localization_controller.dart';
+import 'package:fide/services/localization_service.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/compact_text_button.dart';
@@ -28,59 +27,29 @@ import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logging/logging.dart';
 
-enum LocalizationStatus {
-  checking,
-  noProject,
-  notFlutterProject,
-  notStarted,
-  partial,
-  complete,
-  error,
-}
-
-/// Represents `LocalizationPanel`.
+/// Shows the open project's localization setup and ARB keys, rendering
+/// [localizationControllerProvider] and calling its actions.
 class LocalizationPanel extends ConsumerStatefulWidget {
-  const LocalizationPanel({super.key, this.selectedFile});
-
-  final FileSystemItem? selectedFile;
+  /// Creates the panel.
+  const LocalizationPanel({super.key});
 
   @override
   ConsumerState<LocalizationPanel> createState() => _LocalizationPanelState();
 }
 
 class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
-  final Logger _logger = Logger('_LocalizationPanelState');
-  late final ArbService _arbService = ref.read(arbServiceProvider);
-  late final LocalizationService _localizationService = ref.read(
-    localizationServiceProvider,
-  );
   final TextEditingController _filterController = TextEditingController();
   String _filterQuery = '';
 
-  List<ArbFile> _arbFiles = [];
-  List<ArbComparison> _comparisons = [];
-  List<String> _malformedArbFiles = [];
-  bool _isLoading = false;
-  String? _errorMessage;
-
-  // Localization status
-  LocalizationStatus _localizationStatus = LocalizationStatus.checking;
-
-  // Latest file checks behind [_localizationStatus]
-  LocalizationChecks _checks = LocalizationChecks.none;
+  /// The controller behind the panel's actions.
+  LocalizationController get _controller =>
+      ref.read(localizationControllerProvider.notifier);
 
   @override
   void initState() {
     super.initState();
     _filterController.addListener(_onFilterChanged);
-
-    /// Handles `_checkLocalizationStatus`.
-    _checkLocalizationStatus();
-
-    /// Handles `_loadArbFiles`.
-    _loadArbFiles();
   }
 
   @override
@@ -91,246 +60,60 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
   }
 
   void _onFilterChanged() {
-    setState(() {
-      _filterQuery = _filterController.text.toLowerCase();
-    });
+    setState(() => _filterQuery = _filterController.text);
   }
 
-  /// Handles `_matchesFilter`.
-  bool _matchesFilter(ArbComparison comparison, String query) {
-    final lowerQuery = query.toLowerCase();
-
-    // Check the key
-    if (comparison.key.toLowerCase().contains(lowerQuery)) {
-      return true;
-    }
-
-    // Check English value
-    if (comparison.englishValue != null &&
-        comparison.englishValue!.toLowerCase().contains(lowerQuery)) {
-      return true;
-    }
-
-    // Check other translation values
-    for (final value in comparison.otherValues.values) {
-      if (value != null && value.toLowerCase().contains(lowerQuery)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /// Handles `_checkLocalizationStatus`.
-  Future<void> _checkLocalizationStatus() async {
-    final projectRoot = ref.read(currentProjectRootProvider);
-    if (projectRoot == null) {
-      setState(() => _localizationStatus = LocalizationStatus.noProject);
-      return;
-    }
-
-    setState(() => _localizationStatus = LocalizationStatus.checking);
-
-    try {
-      final checks = await _localizationService.inspect(projectRoot.path);
-      setState(() {
-        _checks = checks;
-        _localizationStatus = _statusFor(checks);
-      });
-    } catch (e) {
-      setState(() => _localizationStatus = LocalizationStatus.error);
-      _logger.severe('Error checking localization status: $e');
+  /// Waits for [outcome] and tells the user how the action ended.
+  Future<void> _show(Future<LocalizationOutcome?> outcome) async {
+    final result = await outcome;
+    if (result == null || !mounted) return;
+    if (result.succeeded) {
+      MessageBox.showSuccess(context, result.message);
+    } else {
+      MessageBox.showError(context, result.message);
     }
   }
 
-  /// Summarises [checks] as the status that picks which view to show.
-  LocalizationStatus _statusFor(LocalizationChecks checks) {
-    if (!checks.hasPubspec) return LocalizationStatus.noProject;
-    if (!checks.isFlutterProject) return LocalizationStatus.notFlutterProject;
-    if (checks.hasArbFiles &&
-        checks.hasGeneratedClasses &&
-        checks.hasAppIntegration) {
-      return LocalizationStatus.complete;
-    }
-    if (checks.hasArbFiles || checks.hasGeneratedClasses) {
-      return LocalizationStatus.partial;
-    }
-    return LocalizationStatus.notStarted;
-  }
+  /// Sets localization up, showing each step as it starts.
+  void _initializeLocalization() => _show(
+    _controller.initialize(
+      onStep: (step) {
+        if (mounted) MessageBox.showInfo(context, step);
+      },
+    ),
+  );
 
-  /// Handles `_loadArbFiles`.
-  Future<void> _loadArbFiles() async {
-    final projectRoot = ref.read(currentProjectRootProvider);
-    if (projectRoot == null) return;
+  /// Wires the generated localizations into `main.dart`.
+  void _updateMainDart() => _show(_controller.updateMainDart());
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-      _malformedArbFiles = [];
-    });
-
-    try {
-      final arbFiles = await _arbService.loadArbFiles(
-        ProjectPaths(projectRoot.path).l10nDir,
-      );
-      final validArbFiles = arbFiles.valid;
-      final malformedFiles = arbFiles.malformed;
-
-      final comparisons = _arbService.compareArbFiles(validArbFiles);
-
-      setState(() {
-        _arbFiles = validArbFiles;
-        _comparisons = comparisons;
-        _malformedArbFiles = malformedFiles;
-        _isLoading = false;
-      });
-
-      // Update localization status after loading ARB files to ensure consistency
-      await _checkLocalizationStatus();
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Error loading ARB files: $e';
-        _isLoading = false;
-      });
-    }
-  }
-
-  /// Handles `_initializeLocalization`.
-  Future<void> _initializeLocalization() async {
-    final projectRoot = ref.read(currentProjectRootProvider);
-    if (projectRoot == null) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      await _localizationService.initializeLocalization(
-        projectRoot.path,
-        onStep: (step) {
-          if (mounted) MessageBox.showInfo(context, step);
-        },
-      );
-
-      if (mounted) {
-        MessageBox.showInfo(context, 'Updating main.dart...');
-      }
-      await _localizationService.updateMainDartForLocalization(
-        projectRoot.path,
-      );
-
-      await _loadArbFiles();
-      await _checkLocalizationStatus();
-
-      if (mounted) {
-        MessageBox.showSuccess(
-          context,
-          'Localization system initialized and main.dart updated successfully!',
-        );
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        MessageBox.showError(context, 'Error initializing localization: $e');
-      }
-    }
-  }
-
-  /// Handles `_updateMainDart`.
-  Future<void> _updateMainDart() async {
-    final projectRoot = ref.read(currentProjectRootProvider);
-    if (projectRoot == null) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      await _localizationService.updateMainDartForLocalization(
-        projectRoot.path,
-      );
-      await _checkLocalizationStatus();
-
-      if (mounted) {
-        MessageBox.showSuccess(context, 'main.dart updated successfully!');
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        MessageBox.showError(context, 'Error updating main.dart: $e');
-      }
-    }
-  }
-
-  /// Handles `_generateLocalizationClasses`.
-  Future<void> _generateLocalizationClasses() async {
-    final projectRoot = ref.read(currentProjectRootProvider);
-    if (projectRoot == null) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      final hasGenerateFlag = (await _localizationService.inspect(
-        projectRoot.path,
-      )).hasGenerateFlag;
-
-      if (!hasGenerateFlag) {
-        setState(() => _isLoading = false);
-        if (mounted) {
-          MessageBox.showError(
-            context,
-            'Cannot generate localization classes. Please ensure your pubspec.yaml has "generate: true" properly indented under the flutter section, run "flutter pub get", and restart your IDE. Example:\n\nflutter:\n  generate: true\n  uses-material-design: true',
-          );
-        }
-        return;
-      }
-
-      await _localizationService.generateClasses(projectRoot.path);
-      await _checkLocalizationStatus();
-      if (mounted) {
-        MessageBox.showSuccess(
-          context,
-          'Localization classes generated successfully!',
-        );
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        MessageBox.showError(context, 'Error generating classes: $e');
-      }
-    }
-  }
+  /// Runs `flutter gen-l10n`.
+  void _generateLocalizationClasses() => _show(_controller.generateClasses());
 
   @override
   Widget build(BuildContext context) {
     final projectRoot = ref.watch(currentProjectRootProvider);
+    final state = ref.watch(localizationControllerProvider);
 
     if (projectRoot == null) {
       return const NoProjectPlaceholder();
     }
 
-    if (_isLoading) {
+    if (state.isBusy) {
       return const LoadingIndicator();
     }
 
-    if (_errorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(_errorMessage!),
-            const SizedBox(height: AppSpacing.xLarge),
-            ElevatedButton(
-              onPressed: _loadArbFiles,
-              child: const Text('Retry'),
-            ),
-          ],
+    if (state.loadError case final loadError?) {
+      return EmptyState(
+        message: loadError,
+        isError: true,
+        child: ElevatedButton(
+          onPressed: _controller.reload,
+          child: const Text('Retry'),
         ),
       );
     }
 
-    // The ARB files may have changed, e.g. after Localize strings
-    ref.listen(stringIssuesProvider, (previous, next) {
-      if (previous != null && next != null) _loadArbFiles();
-    });
-
-    final statusView = _buildStatusContent();
+    final statusView = _buildStatusContent(state);
     final issues = ref.watch(stringIssuesProvider);
     if (issues == null) return statusView;
     return Column(
@@ -349,14 +132,12 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     );
   }
 
-  /// The view for the current [_localizationStatus].
-  Widget _buildStatusContent() {
-    switch (_localizationStatus) {
+  /// The view for [state]'s status.
+  Widget _buildStatusContent(LocalizationState state) {
+    switch (state.status) {
       case LocalizationStatus.checking:
         return const LoadingIndicator();
       case LocalizationStatus.noProject:
-
-        /// Handles `_buildStatusView`.
         return _buildStatusView(
           'No Project',
           'No Flutter project is currently loaded.',
@@ -374,24 +155,20 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
             onInitializeLocalization: _initializeLocalization,
             showUpdateMainDart: false, // Not needed for initial setup
             onUpdateMainDart: _updateMainDart,
-            isInitializing: _isLoading,
+            isInitializing: state.isBusy,
           ),
         );
       case LocalizationStatus.partial:
-
-        /// Handles `_buildPartialView`.
-        return _buildPartialView();
+        return _buildPartialView(state);
       case LocalizationStatus.complete:
-
-        /// Handles `_buildCompleteView`.
-        return _buildCompleteView();
+        return _buildCompleteView(state);
       case LocalizationStatus.error:
         return _buildStatusView(
           'Error',
           'An error occurred while checking localization status.',
           Icons.error,
           action: ElevatedButton(
-            onPressed: _checkLocalizationStatus,
+            onPressed: _controller.reload,
             child: const Text('Retry'),
           ),
         );
@@ -413,14 +190,14 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     );
   }
 
-  /// Handles `_buildPartialView`.
-  Widget _buildPartialView() {
-    final hasArbFiles = _checks.hasArbFiles;
-    final hasValidArbFiles = _arbFiles.isNotEmpty;
-    final hasGeneratedClasses = _checks.hasGeneratedClasses;
-    final hasAppIntegration = _checks.hasAppIntegration;
-    final hasLocalizationDependencies = _checks.hasDependencies;
-    final hasFlutterGenerateFlag = _checks.hasGenerateFlag;
+  /// The checklist and next step for a partly set up project.
+  Widget _buildPartialView(LocalizationState state) {
+    final checks = state.checks;
+    if (checks == null) return const LoadingIndicator();
+    final hasArbFiles = checks.hasArbFiles;
+    final hasValidArbFiles = state.arbFiles.isNotEmpty;
+    final hasGeneratedClasses = checks.hasGeneratedClasses;
+    final hasAppIntegration = checks.hasAppIntegration;
 
     return SingleChildScrollView(
       padding: AppPadding.panelContent,
@@ -443,23 +220,21 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           const SizedBox(height: AppSpacing.xLarge),
 
           // Status checks
-          /// Handles `_buildStatusCheck`.
           _buildStatusCheck(
             'Localization dependencies configured',
-            hasLocalizationDependencies,
+            checks.hasDependencies,
           ),
           _buildStatusCheck(
             'Flutter generate flag configured',
-            hasFlutterGenerateFlag,
+            checks.hasGenerateFlag,
           ),
           _buildStatusCheck('ARB files exist', hasArbFiles),
           if (hasArbFiles) ...[
             hasValidArbFiles
                 ? _buildStatusCheck('ARB files are valid JSON', true)
-                /// Handles `_buildStatusCheckWithMalformedFiles`.
                 : _buildStatusCheckWithMalformedFiles(
                     'ARB files are valid JSON',
-                    _malformedArbFiles,
+                    state.malformedArbFiles,
                   ),
           ],
           _buildStatusCheck('Generated classes exist', hasGeneratedClasses),
@@ -473,14 +248,13 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
 
           // Show specific actions based on what's missing
           if (!hasArbFiles) ...[
-            /// Handles `_buildActionItem`.
             _buildActionItem(
               'Create ARB files',
               'Set up localization files with template content',
               Icons.file_copy,
               _initializeLocalization,
             ),
-          ] else if (hasArbFiles && !hasValidArbFiles) ...[
+          ] else if (!hasValidArbFiles) ...[
             _buildActionItem(
               'Fix malformed ARB files',
               'ARB files exist but contain invalid JSON. Check and repair the files in lib/l10n/',
@@ -511,19 +285,15 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           const SizedBox(height: AppSpacing.xxLarge),
 
           // Show ARB file management if files are loaded
-          if (_arbFiles.isNotEmpty) ...[
+          if (state.arbFiles.isNotEmpty) ...[
             const SectionTitle('ARB File Management'),
             const SizedBox(height: AppSpacing.large),
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: _comparisons.length,
-              itemBuilder: (_ /*context*/, index) {
-                final comparison = _comparisons[index];
-
-                /// Handles `_buildComparisonTile`.
-                return _buildComparisonTile(comparison);
-              },
+              itemCount: state.comparisons.length,
+              itemBuilder: (_ /*context*/, index) =>
+                  _buildComparisonTile(state.comparisons[index]),
             ),
           ],
         ],
@@ -531,27 +301,15 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     );
   }
 
-  /// Handles `_buildCompleteView`.
-  Widget _buildCompleteView() {
-    // Filter comparisons based on filter query
-    final filteredComparisons = _filterQuery.isEmpty
-        ? _comparisons
-        : _comparisons.where((comparison) {
-            return _matchesFilter(comparison, _filterQuery);
-          }).toList();
-
-    // Find duplicate English values (2 or more occurrences)
-    final englishValueCounts = <String, int>{};
-    for (final comparison in filteredComparisons) {
-      if (comparison.englishValue != null) {
-        englishValueCounts[comparison.englishValue!] =
-            (englishValueCounts[comparison.englishValue!] ?? 0) + 1;
-      }
-    }
-    final duplicatedValues = englishValueCounts.entries
-        .where((entry) => entry.value >= AppMetric.duplicateThreshold)
-        .map((entry) => entry.key)
-        .toSet();
+  /// The filterable list of every ARB key, flagging duplicated English
+  /// values.
+  Widget _buildCompleteView(LocalizationState state) {
+    final filteredComparisons = state.comparisons
+        .where((comparison) => comparison.matches(_filterQuery))
+        .toList();
+    final duplicatedValues = ArbService.duplicatedEnglishValues(
+      filteredComparisons,
+    );
 
     return Column(
       children: [
@@ -566,18 +324,17 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
             ),
           ),
         Expanded(
-          child: _arbFiles.isEmpty
+          child: state.arbFiles.isEmpty
               ? const EmptyState(message: 'No ARB files found')
               : ListView.separated(
                   itemCount: filteredComparisons.length,
                   itemBuilder: (_ /*context*/, index) {
                     final comparison = filteredComparisons[index];
-                    final isDuplicated =
-                        comparison.englishValue != null &&
-                        duplicatedValues.contains(comparison.englishValue);
                     return LocalizationEntryWidget(
                       comparison: comparison,
-                      showWarning: isDuplicated,
+                      showWarning: duplicatedValues.contains(
+                        comparison.englishValue,
+                      ),
                     );
                   },
                   separatorBuilder: (_ /*context*/, _ /*index*/) =>
@@ -684,7 +441,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     );
   }
 
-  /// Handles `_buildComparisonTile`.
+  /// One key with a Translate button per language it is missing in.
   Widget _buildComparisonTile(ArbComparison comparison) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.medium),
@@ -704,19 +461,11 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
               spacing: AppSpacing.medium,
               runSpacing: AppSpacing.tiny,
               children: comparison.missingInLanguages.map((lang) {
-                final targetFile = _arbFiles.firstWhere(
-                  (file) => file.languageCode == lang,
-                );
                 return ElevatedButton.icon(
                   icon: const Icon(Icons.translate, size: AppIconSize.medium),
                   label: Text('Translate to $lang'),
                   onPressed: comparison.englishValue != null
-                      ? () => _translateMissingKey(
-                          comparison.key,
-                          comparison.englishValue!,
-                          lang,
-                          targetFile.path,
-                        )
+                      ? () => _show(_controller.translate(comparison, lang))
                       : null,
                 );
               }).toList(),
@@ -725,36 +474,5 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
         ),
       ),
     );
-  }
-
-  /// Translates [key] from [englishValue] into [targetLanguage] with the
-  /// shared [ArbTranslator], writing it to [targetFilePath].
-  Future<void> _translateMissingKey(
-    String key,
-    String englishValue,
-    String targetLanguage,
-    String targetFilePath,
-  ) async {
-    final projectPath = ref.read(currentProjectPathProvider);
-    if (projectPath == null) return;
-    try {
-      final result = await ref.read(arbTranslatorProvider).apply(projectPath, [
-        ArbTranslation(
-          key: key,
-          source: englishValue,
-          language: targetLanguage,
-          arbPath: targetFilePath,
-        ),
-      ]);
-      await _loadArbFiles();
-      if (!mounted) return;
-      if (result.rewritten > 0) {
-        MessageBox.showSuccess(context, 'Translated "$key" to $targetLanguage');
-      } else {
-        MessageBox.showError(context, 'Translation failed: ${result.summary}');
-      }
-    } catch (e) {
-      if (mounted) MessageBox.showError(context, 'Error translating: $e');
-    }
   }
 }

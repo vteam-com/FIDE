@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:fide/providers/flutter_sdk.dart';
-import 'package:fide/providers/git_service.dart';
-import 'package:fide/providers/process_runner.dart';
+import 'package:fide/services/flutter_sdk.dart';
+import 'package:fide/services/git_service.dart';
+import 'package:fide/services/process_runner.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 

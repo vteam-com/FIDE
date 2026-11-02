@@ -1,4 +1,5 @@
-import 'package:fide/providers/outline_parser.dart';
+import 'package:fide/models/outline_kind.dart';
+import 'package:fide/services/outline_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -15,11 +16,11 @@ void main() {
     );
 
     expect(
-      [for (final n in nodes) (n.name, n.type, n.line, n.level)],
+      [for (final n in nodes) (n.name, n.kind, n.line, n.level)],
       [
-        ('top', 'variable', 1, 0),
-        ('A', 'class', 3, 0),
-        ('run', 'method', 4, 1),
+        ('top', OutlineKind.variable, 1, 0),
+        ('A', OutlineKind.dartClass, 3, 0),
+        ('run', OutlineKind.method, 4, 1),
       ],
     );
     expect(nodes.last.column, 3);
@@ -37,8 +38,11 @@ void main() {
     final nodes = const MarkdownOutlineParser().parse('# Title\ntext\n## Sub');
 
     expect(
-      [for (final n in nodes) (n.name, n.type, n.line, n.level)],
-      [('Title', 'Heading 1', 1, 0), ('Sub', 'Heading 2', 3, 1)],
+      [for (final n in nodes) (n.name, n.kind, n.line, n.level)],
+      [
+        ('Title', OutlineKind.heading1, 1, 0),
+        ('Sub', OutlineKind.heading2, 3, 1),
+      ],
     );
   });
 
@@ -48,8 +52,37 @@ void main() {
     );
 
     expect(
-      [for (final n in nodes) (n.name, n.line)],
-      [('name', 1), ('dependencies', 3)],
+      [for (final n in nodes) (n.name, n.kind, n.line)],
+      [
+        ('name', OutlineKind.yamlKey, 1),
+        ('dependencies', OutlineKind.yamlKey, 3),
+      ],
+    );
+  });
+
+  test('Markdown headings deeper than six share the last heading kind', () {
+    final nodes = const MarkdownOutlineParser().parse(
+      '###### Six\n####### Seven',
+    );
+
+    expect(
+      [for (final n in nodes) n.kind],
+      [OutlineKind.heading6, OutlineKind.heading6],
+    );
+  });
+
+  test('only Dart declarations count their consumers', () {
+    expect(
+      [
+        for (final kind in OutlineKind.values)
+          if (kind.isCountable) kind,
+      ],
+      [
+        OutlineKind.dartClass,
+        OutlineKind.function,
+        OutlineKind.method,
+        OutlineKind.variable,
+      ],
     );
   });
 }

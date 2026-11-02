@@ -3,8 +3,9 @@ import 'dart:io';
 import 'package:fide/models/asset_kind.dart';
 import 'package:fide/models/byte_size.dart';
 import 'package:fide/models/project_node.dart';
-import 'package:fide/providers/asset_categorizer.dart';
-import 'package:fide/providers/project_tree_reader.dart';
+import 'package:fide/services/asset_categorizer.dart';
+import 'package:fide/services/project_config_reader.dart';
+import 'package:fide/services/project_tree_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -75,9 +76,10 @@ flutter:
       write('fonts/Inter.ttf');
       write('fonts/unlisted.otf');
 
-      final assets = await const AssetCategorizer().categorize(
-        await loadedRoot(),
-      );
+      final assets = await const AssetCategorizer(
+        ProjectTreeReader(),
+        ProjectConfigReader(),
+      ).categorize(await loadedRoot());
 
       expect(assets.keys, [
         AssetKind.images,
@@ -100,9 +102,10 @@ flutter:
     - missing/
 ''');
 
-      final assets = await const AssetCategorizer().categorize(
-        await loadedRoot(),
-      );
+      final assets = await const AssetCategorizer(
+        ProjectTreeReader(),
+        ProjectConfigReader(),
+      ).categorize(await loadedRoot());
 
       expect(assets, isEmpty);
     });

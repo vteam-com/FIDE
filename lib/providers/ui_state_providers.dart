@@ -1,8 +1,8 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/image_backdrop.dart';
-import 'package:fide/models/left_panel_tab.dart';
 import 'package:fide/models/reference_search.dart';
-import 'package:fide/models/right_panel_tab.dart';
+import 'package:fide/providers/left_panel_tab.dart';
+import 'package:fide/providers/right_panel_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
@@ -23,6 +23,9 @@ final rightPanelExpandedProvider = StateProvider<bool>((_ /*ref*/) => false);
 final themeModeProvider = StateProvider<ThemeMode>(
   (_ /*ref*/) => ThemeMode.system,
 );
+
+/// Whether the settings screen covers the current view.
+final settingsVisibleProvider = StateProvider<bool>((_ /*ref*/) => false);
 
 /// Zoom of the whole UI, [AppZoom.actualSize] for unscaled.
 final zoomProvider = StateProvider<double>((_ /*ref*/) => AppZoom.actualSize);

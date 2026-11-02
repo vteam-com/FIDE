@@ -1,4 +1,4 @@
-import 'package:fide/constants/constants.dart';
+import 'package:fide/constants/core_constants.dart';
 
 /// Line coverage summed from an `lcov.info` report, as written by
 /// `flutter test --coverage`.

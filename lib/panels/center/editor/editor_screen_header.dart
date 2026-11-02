@@ -1,11 +1,12 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/file_type_utils.dart';
-import 'package:fide/providers/git_service.dart';
+import 'package:fide/providers/git_diff_stats_provider.dart';
+import 'package:fide/services/git_service.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widget_services/diff_counter.dart';
+import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/toggle_experience_mode.dart';
@@ -20,7 +21,6 @@ class EditorScreenHeader extends ConsumerWidget {
     required this.openDocuments,
     required this.activeIndex,
     required this.currentFile,
-    required this.allGitDiffStats,
     required this.isDirty,
     required this.showDiffView,
     required this.onDocumentSelected,
@@ -30,7 +30,6 @@ class EditorScreenHeader extends ConsumerWidget {
     required this.onClose,
   });
   final int activeIndex;
-  final Map<String, GitDiffStats?> allGitDiffStats;
   final String currentFile;
   final bool isDirty;
   final VoidCallback onClose;
@@ -43,6 +42,13 @@ class EditorScreenHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final projectPath = ref.watch(currentProjectPathProvider);
+    // Watched here, as the menu builds its entries outside of build
+    final diffStats = {
+      for (final document in openDocuments)
+        document.filePath: ref
+            .watch(gitDiffStatsProvider(document.filePath))
+            .value,
+    };
     return Row(
       children: [
         const SizedBox(width: AppSpacing.medium),
@@ -61,7 +67,7 @@ class EditorScreenHeader extends ConsumerWidget {
                     // one-line path can't report
                     child: SizedBox(
                       width: AppSize.fileMenuWidth,
-                      child: _documentRow(entry.value, projectPath),
+                      child: _documentRow(entry.value, projectPath, diffStats),
                     ),
                   );
                 }).toList();
@@ -75,6 +81,7 @@ class EditorScreenHeader extends ConsumerWidget {
                       child: _documentRow(
                         openDocuments[activeIndex],
                         projectPath,
+                        diffStats,
                       ),
                     ),
                   Icon(
@@ -86,7 +93,8 @@ class EditorScreenHeader extends ConsumerWidget {
             ),
           ),
         const Spacer(),
-        if (allGitDiffStats[currentFile]?.hasChanges ?? false)
+        if (ref.watch(gitDiffStatsProvider(currentFile)).value?.hasChanges ??
+            false)
           ToggleExperienceMode(
             isAlternativeMode: showDiffView,
             primaryIcon: Icons.difference,
@@ -139,8 +147,12 @@ class EditorScreenHeader extends ConsumerWidget {
   }
 
   /// [document]'s file icon, path relative to [projectPath] and Git
-  /// changes, as the picker and its entries show them.
-  Widget _documentRow(DocumentState document, String? projectPath) {
+  /// changes from [diffStats], as the picker and its entries show them.
+  Widget _documentRow(
+    DocumentState document,
+    String? projectPath,
+    Map<String, GitDiffStats?> diffStats,
+  ) {
     return IconMenuRow(
       icon: null,
       leading: FileIconUtils.ofPath(document.filePath),
@@ -150,7 +162,7 @@ class EditorScreenHeader extends ConsumerWidget {
         rootPath: projectPath,
         style: AppTextStyle.label,
       ),
-      trailing: DiffCounter(gitStats: allGitDiffStats[document.filePath]),
+      trailing: DiffCounter(gitStats: diffStats[document.filePath]),
     );
   }
 }

@@ -1,15 +1,17 @@
-import 'dart:io';
-
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
-import 'package:fide/models/left_panel_tab.dart';
 import 'package:fide/models/open_documents.dart';
 import 'package:fide/models/outline_node.dart';
 import 'package:fide/models/reference_search.dart';
 import 'package:fide/models/search_result.dart';
+import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/outline_parser.dart';
+import 'package:fide/providers/editor_navigation.dart';
+import 'package:fide/providers/left_panel_tab.dart';
+import 'package:fide/providers/panel_actions.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/services/outline_parser.dart';
 import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
@@ -17,6 +19,7 @@ import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/more_menu_button.dart';
+import 'package:fide/widgets/outline_kind_style.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter/material.dart';
@@ -24,22 +27,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Represents `OutlinePanel`.
 class OutlinePanel extends ConsumerStatefulWidget {
-  const OutlinePanel({
-    super.key,
-    required this.file,
-    this.onOutlineUpdate,
-    this.onNodeSelected,
-    this.onJumpToLine,
-  });
+  /// Creates the outline of [file].
+  const OutlinePanel({super.key, required this.file});
 
+  /// The file outlined; its editor text when open, else its saved text.
   final FileSystemItem file;
-
-  final Function(int, int)? onNodeSelected;
-
-  /// Opens a file at a 1-based line, for jumping to a caller.
-  final Function(String, int)? onJumpToLine;
-
-  final Function(VoidCallback)? onOutlineUpdate;
 
   @override
   ConsumerState<OutlinePanel> createState() => _OutlinePanelState();
@@ -51,14 +43,6 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
   _cachedOutlines = {};
 
   int _currentHighlightedLine = -1;
-
-  /// Outline kinds that are Dart declarations, whose consumers are counted.
-  static const Set<String> _countableTypes = {
-    'class',
-    'function',
-    'method',
-    'variable',
-  };
 
   /// The selected entry whose consumers are shown, if any.
   OutlineNode? _countedNode;
@@ -90,10 +74,6 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
   void initState() {
     super.initState();
     _parseFile();
-    // Set up the callback for external updates
-    if (widget.onOutlineUpdate != null) {
-      widget.onOutlineUpdate!(() => refreshOutline());
-    }
   }
 
   @override
@@ -111,6 +91,13 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
     ref.listen<int>(
       editorCursorLineProvider,
       (_, line) => _onCursorPositionChanged(line),
+    );
+    // Re-outline as the file is edited
+    ref.listen<String?>(
+      openDocumentsProvider.select(
+        (documents) => _openContentOf(documents, widget.file.path),
+      ),
+      (_, _) => _debouncedParseFile(),
     );
     final list = ListView.builder(
       padding: AppPadding.panelContent,
@@ -159,77 +146,25 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
     );
   }
 
-  /// Handles `_OutlinePanelState.refreshOutline`.
-  void refreshOutline() {
-    _debouncedParseFile();
-  }
-
   /// Builds a single outline tree node widget with icon, label, and cursor-based highlight.
   Widget _buildOutlineNode(OutlineNode node) {
     // Check if this node should be highlighted (cursor is on or near this line)
     final isHighlighted = _isNodeHighlighted(node);
 
-    // Determine icon based on node type
-    IconData iconData;
-    Color iconColor;
-
-    switch (node.type.toLowerCase()) {
-      case 'class':
-        iconData = Icons.class_;
-        iconColor = Theme.of(context).colorScheme.primary;
-        break;
-      case 'function':
-        iconData = Icons.functions;
-        iconColor = Theme.of(context).colorScheme.secondary;
-        break;
-      case 'method':
-        iconData = Icons.functions;
-        iconColor = Theme.of(context).colorScheme.tertiary;
-        break;
-      case 'variable':
-        iconData = Icons.tag;
-        iconColor = Theme.of(context).colorScheme.onSurfaceVariant;
-        break;
-      case 'heading 1':
-        iconData = Icons.looks_one;
-        iconColor = Theme.of(context).colorScheme.primary;
-        break;
-      case 'heading 2':
-        iconData = Icons.looks_two;
-        iconColor = Theme.of(context).colorScheme.secondary;
-        break;
-      case 'heading 3':
-        iconData = Icons.looks_3;
-        iconColor = Theme.of(context).colorScheme.tertiary;
-        break;
-      case 'heading 4':
-        iconData = Icons.looks_4;
-        iconColor = Theme.of(context).colorScheme.primary;
-        break;
-      case 'heading 5':
-        iconData = Icons.looks_5;
-        iconColor = Theme.of(context).colorScheme.secondary;
-        break;
-      case 'heading 6':
-        iconData = Icons.looks_6;
-        iconColor = Theme.of(context).colorScheme.tertiary;
-        break;
-      case 'yaml key':
-        iconData = Icons.vpn_key;
-        iconColor = Theme.of(context).colorScheme.primary;
-        break;
-      default:
-        iconData = Icons.circle;
-        iconColor = Theme.of(context).colorScheme.onSurfaceVariant;
-    }
-
+    final kind = node.kind;
     return TreeRow(
-      icon: Icon(iconData, color: iconColor, size: AppIconSize.medium),
+      icon: Icon(
+        kind.icon,
+        color: kind.colorIn(Theme.of(context).colorScheme),
+        size: AppIconSize.medium,
+      ),
       name: node.name,
       depth: node.level,
       highlighted: isHighlighted,
       // Navigate to the corresponding line and column in the editor
-      onTap: () => widget.onNodeSelected?.call(node.line, node.column),
+      onTap: () => ref
+          .read(activeEditorProvider)
+          .navigateToLine(node.line, column: node.column),
       trailing: [
         if (_isSameNode(node, _countedNode)) ...[
           _buildConsumerCount(node),
@@ -275,7 +210,8 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
         ),
         if (consumers != null && consumers.length == 1)
           PopupMenuItem(
-            value: () => widget.onJumpToLine?.call(
+            value: () => openFileAtLine(
+              ref,
               consumers.single.filePath,
               consumers.single.lineNumber,
             ),
@@ -300,14 +236,11 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
   static String _usedName(OutlineNode node) => node.name.split('<').first;
 
   /// Asks for a new name and renames [node] and its uses across the
-  /// project, writing the files only when the result still compiles.
+  /// project, after saving the open files, writing the files only when the
+  /// result still compiles.
   Future<void> _rename(OutlineNode node) async {
     final finder = ref.read(referenceFinderProvider);
     if (finder == null) return;
-    if (ref.read(openDocumentsProvider).documents.any((d) => d.isDirty)) {
-      MessageBox.showError(context, 'Save your open files before renaming');
-      return;
-    }
     final name = _usedName(node);
     final newName = await MessageBox.promptForText(
       context,
@@ -323,16 +256,16 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
 
     setState(() => _isRenaming = true);
     try {
-      final files = await finder.rename(
-        filePath: widget.file.path,
-        line: node.line,
-        column: node.column,
-        newName: newName,
-      );
-      for (final MapEntry(key: path, value: content) in files.entries) {
-        await File(path).writeAsString(content);
-      }
-      await ref.read(openDocumentsProvider.notifier).reloadWritten(files.keys);
+      final files = await ref
+          .read(openDocumentsProvider.notifier)
+          .applyEdits(
+            () => finder.rename(
+              filePath: widget.file.path,
+              line: node.line,
+              column: node.column,
+              newName: newName,
+            ),
+          );
       if (!mounted) return;
       MessageBox.showSuccess(
         context,
@@ -344,7 +277,7 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
       if (mounted) MessageBox.showError(context, 'Rename failed: $e');
     } finally {
       if (mounted) setState(() => _isRenaming = false);
-      refreshOutline();
+      _debouncedParseFile();
     }
   }
 
@@ -354,8 +287,7 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
       name: _usedName(node),
       results: consumers,
     );
-    ref.read(leftPanelVisibleProvider.notifier).state = true;
-    ref.read(activeLeftPanelTabProvider.notifier).state = LeftPanelTab.search;
+    showLeftPanelTab(ref.read, LeftPanelTab.search);
   }
 
   /// Whether [a] and [b] are the same outline entry, even across re-parses.
@@ -363,7 +295,7 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
       a != null &&
       b != null &&
       a.name == b.name &&
-      a.type == b.type &&
+      a.kind == b.kind &&
       a.line == b.line &&
       a.column == b.column;
 
@@ -376,8 +308,7 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
     final countable =
         selected != null &&
         finder != null &&
-        widget.file.path.endsWith('.dart') &&
-        _countableTypes.contains(selected.type) &&
+        selected.kind.isCountable &&
         // Overrides are reached through the overridden member
         !selected.isOverride;
     final generation = ++_consumersGeneration;
@@ -469,12 +400,16 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
   /// The text to outline: the editor's, unsaved edits included, when the
   /// file is open there, otherwise what is on disk.
   Future<String> _contentOf(FileSystemItem file) async {
-    final openDocuments = ref.read(openDocumentsProvider);
-    final index = openDocuments.indexOf(file.path);
-    if (index != OpenDocuments.noActiveDocument) {
-      return openDocuments.documents[index].content;
-    }
-    return file.readAsString();
+    return _openContentOf(ref.read(openDocumentsProvider), file.path) ??
+        ref.read(fileContentReaderProvider).read(file.path);
+  }
+
+  /// The editor's text for [filePath] among [openDocuments], or null when
+  /// it isn't open.
+  static String? _openContentOf(OpenDocuments openDocuments, String filePath) {
+    final index = openDocuments.indexOf(filePath);
+    if (index == OpenDocuments.noActiveDocument) return null;
+    return openDocuments.documents[index].content;
   }
 
   /// Outlines the current file into [_outlineNodes], reusing the last

@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fide/providers/arb_key_remover.dart';
-import 'package:fide/providers/localization_service.dart';
+import 'package:fide/services/arb_key_remover.dart';
+import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/project_config_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -36,8 +37,9 @@ void main() {
     });
     final runner = FakeFlutterRunner();
 
-    final result = await ArbKeyRemover(LocalizationService(runner))
-        .apply(project.path, ['noNote', 'helloWorld']);
+    final result = await ArbKeyRemover(
+      LocalizationService(runner, const ProjectConfigReader()),
+    ).apply(project.path, ['noNote', 'helloWorld']);
 
     expect(result.rewritten, 1);
     expect(result.changedFiles, unorderedEquals([english, french]));
