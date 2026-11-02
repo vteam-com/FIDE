@@ -2,7 +2,8 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/container_counter.dart';
 import 'package:flutter/material.dart';
 
-/// A reusable section panel widget with expand/collapse functionality
+/// A collapsible section drawn as one outlined card: a header band over its
+/// content; stack sections with spacing between the cards
 class SectionPanel extends StatefulWidget {
   const SectionPanel({
     super.key,
@@ -82,27 +83,30 @@ class _SectionPanelState extends State<SectionPanel> {
         AppTextStyle.captionStrong.copyWith(color: theme.colorScheme.primary);
     final iconColor = widget.iconColor ?? theme.colorScheme.primary;
 
-    // A gap above and rounded top corners on the header set each section
-    // apart, tying the header to the content below it
-    const headerRadius = BorderRadius.vertical(
-      top: Radius.circular(AppRadius.small),
-    );
-
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.micro),
+    // One card per section: the filled header band and the tinted content
+    // share a rounded outline, so the content reads as the header's own and
+    // nested sections show their depth by sitting inside their parent's card
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: headerBackgroundColor.withValues(alpha: AppOpacity.selected),
+        borderRadius: BorderRadius.circular(AppRadius.medium),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(
+            alpha: AppOpacity.divider,
+          ),
+          width: AppSize.borderThin,
+        ),
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Section header
           InkWell(
             onTap: _handleToggle,
-            borderRadius: headerRadius,
             child: Container(
               padding: widget.headerPadding,
-              decoration: BoxDecoration(
-                color: headerBackgroundColor,
-                borderRadius: headerRadius,
-              ),
+              color: headerBackgroundColor,
               child: Row(
                 spacing: AppSpacing.tiny,
                 children: [
@@ -116,7 +120,7 @@ class _SectionPanelState extends State<SectionPanel> {
                     child: Text(widget.title.toUpperCase(), style: titleStyle),
                   ),
 
-                  // optoon widgets
+                  // optional widgets
                   if (widget.rightWidget != null) widget.rightWidget!,
 
                   // optional count

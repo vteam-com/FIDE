@@ -119,19 +119,21 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
         _buildAssetsSection(categories.assets),
     ];
 
+    final content = SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.small),
+      child: Column(spacing: AppSpacing.small, children: sections),
+    );
+
     return LayoutBuilder(
       builder: (_, constraints) {
         final isConstrained = constraints.maxHeight.isFinite;
 
         if (isConstrained) {
-          return SingleChildScrollView(child: Column(children: sections));
+          return content;
         }
 
         // For unconstrained layouts, use a Container with fixed height (no flex)
-        return SizedBox(
-          height: AppSize.panelFallbackHeight,
-          child: SingleChildScrollView(child: Column(children: sections)),
-        );
+        return SizedBox(height: AppSize.panelFallbackHeight, child: content);
       },
     );
   }

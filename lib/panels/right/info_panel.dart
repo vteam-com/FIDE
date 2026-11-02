@@ -13,7 +13,6 @@ import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/project_maintenance_service.dart';
 import 'package:fide/providers/service_providers.dart';
-import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/busy_icon_button.dart';
 import 'package:fide/widgets/clickable.dart';
@@ -497,6 +496,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     // Build dependency content widget
     final dependenciesContent = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: AppSpacing.medium,
       children: [
         Wrap(
           spacing: AppSpacing.medium,
@@ -551,10 +551,8 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             ),
           ),
 
-        if (depsDirect.isEmpty && depsDev.isEmpty) ...[
-          const SizedBox(height: AppSpacing.medium),
+        if (depsDirect.isEmpty && depsDev.isEmpty)
           Text('No dependencies', style: AppTextStyle.secondary(context)),
-        ],
       ],
     );
 
@@ -563,7 +561,8 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       children: [
         // Use SectionPanel for main dependencies section
         SectionPanel(
-          title: 'Dependencies ($totalDeps)',
+          title: 'Dependencies',
+          count: totalDeps,
           isExpanded:
               true, // Dependencies section should be expanded by default
           child: dependenciesContent,
@@ -594,8 +593,9 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
   /// Handles `_buildActionsCard`.
   Widget _buildActionsCard() {
-    return ActionCard(
+    return SectionPanel(
       title: 'Actions',
+      isExpanded: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: AppSpacing.medium,

@@ -15,7 +15,6 @@ import 'package:fide/widgets/file_actions.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/section_title.dart';
-import 'package:fide/widgets/surface_card.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:fide/widgets/warning_count.dart';
 import 'package:flutter/material.dart';
@@ -93,99 +92,96 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
           ),
         ],
       ),
-      child: SurfaceCard(
-        padding: SurfacePadding.dense,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Status Row
-            Row(
-              children: [
-                _buildHeading('Status:'),
-                const SizedBox(width: AppSpacing.medium),
-                Row(
-                  spacing: AppSpacing.medium,
-                  children: [
-                    widget.isSupported
-                        ? BadgeStatus.success(text: 'SUPPORTED')
-                        : BadgeStatus.error(text: 'UNSUPPORTED'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Status Row
+          Row(
+            children: [
+              _buildHeading('Status:'),
+              const SizedBox(width: AppSpacing.medium),
+              Row(
+                spacing: AppSpacing.medium,
+                children: [
+                  widget.isSupported
+                      ? BadgeStatus.success(text: 'SUPPORTED')
+                      : BadgeStatus.error(text: 'UNSUPPORTED'),
 
-                    widget.canBuild
-                        ? BadgeStatus.success(text: 'BUILDABLE')
-                        : BadgeStatus.warning(text: 'UNBUILDABLE'),
-                  ],
-                ),
-              ],
-            ),
-
-            const SizedBox(height: AppSpacing.small),
-
-            // Build Info
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeading('Build Info:'),
-                const SizedBox(height: AppSpacing.tiny),
-                DetailRow('Last Build:', _artifacts.lastBuildTime),
-                const SizedBox(height: AppSpacing.micro),
-                DetailRow('Size:', _artifacts.size),
-                const SizedBox(height: AppSpacing.micro),
-                DetailRow('Location:', p.basename(_artifacts.location)),
-              ],
-            ),
-
-            // Enable instructions (if not supported)
-            if (!widget.isSupported) ...[
-              const SizedBox(height: AppSpacing.medium),
-              OutlinedSurface(
-                padding: SurfacePadding.dense,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        BadgeStatus.info(text: 'ENABLE'),
-                        const SizedBox(width: AppSpacing.medium),
-                        Expanded(
-                          child: SectionTitle(
-                            'Instructions for ${widget.selectedPlatform.displayName}',
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.small),
-                    Text(
-                      _getEnableInstructions(),
-                      style: AppTextStyle.secondary(context),
-                    ),
-                  ],
-                ),
+                  widget.canBuild
+                      ? BadgeStatus.success(text: 'BUILDABLE')
+                      : BadgeStatus.warning(text: 'UNBUILDABLE'),
+                ],
               ),
             ],
+          ),
 
-            // The app icon and its file's actions
+          const SizedBox(height: AppSpacing.small),
+
+          // Build Info
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeading('Build Info:'),
+              const SizedBox(height: AppSpacing.tiny),
+              DetailRow('Last Build:', _artifacts.lastBuildTime),
+              const SizedBox(height: AppSpacing.micro),
+              DetailRow('Size:', _artifacts.size),
+              const SizedBox(height: AppSpacing.micro),
+              DetailRow('Location:', p.basename(_artifacts.location)),
+            ],
+          ),
+
+          // Enable instructions (if not supported)
+          if (!widget.isSupported) ...[
             const SizedBox(height: AppSpacing.medium),
             OutlinedSurface(
               padding: SurfacePadding.dense,
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildIcon(),
-                  const SizedBox(width: AppSpacing.medium),
-                  Expanded(
-                    child: switch (_artifacts.appIconPath) {
-                      final path? => FileActions(path: path),
-                      null => Text(
-                        p.basename(_genericIconPath),
-                        style: AppTextStyle.captionStrong,
+                  Row(
+                    children: [
+                      BadgeStatus.info(text: 'ENABLE'),
+                      const SizedBox(width: AppSpacing.medium),
+                      Expanded(
+                        child: SectionTitle(
+                          'Instructions for ${widget.selectedPlatform.displayName}',
+                        ),
                       ),
-                    },
+                    ],
                   ),
-                  _buildIconIssues(),
+                  const SizedBox(height: AppSpacing.small),
+                  Text(
+                    _getEnableInstructions(),
+                    style: AppTextStyle.secondary(context),
+                  ),
                 ],
               ),
             ),
           ],
-        ),
+
+          // The app icon and its file's actions
+          const SizedBox(height: AppSpacing.medium),
+          OutlinedSurface(
+            padding: SurfacePadding.dense,
+            child: Row(
+              children: [
+                _buildIcon(),
+                const SizedBox(width: AppSpacing.medium),
+                Expanded(
+                  child: switch (_artifacts.appIconPath) {
+                    final path? => FileActions(path: path),
+                    null => Text(
+                      p.basename(_genericIconPath),
+                      style: AppTextStyle.captionStrong,
+                    ),
+                  },
+                ),
+                _buildIconIssues(),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

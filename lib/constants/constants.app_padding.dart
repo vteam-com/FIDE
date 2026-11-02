@@ -6,7 +6,7 @@ class AppPadding {
     horizontal: AppSpacing.huge,
     vertical: AppSpacing.xLarge,
   );
-  static const EdgeInsets sectionContent = EdgeInsets.only(left: 16, bottom: 8);
+  static const EdgeInsets sectionContent = EdgeInsets.all(AppSpacing.medium);
   static const EdgeInsets sectionHeader = EdgeInsets.symmetric(
     horizontal: 8,
     vertical: 4,

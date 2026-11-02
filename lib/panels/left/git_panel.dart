@@ -362,8 +362,10 @@ class _GitPanelState extends ConsumerState<GitPanel> {
           // Content
           Expanded(
             child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.small),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: AppSpacing.small,
                 children: [
                   // Staged files
                   if (status.staged.isNotEmpty) ...[
@@ -411,7 +413,6 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   ],
 
                   // Recent commits
-                  const Divider(),
                   SectionPanel(
                     title: 'Recent Commits',
                     isExpanded:

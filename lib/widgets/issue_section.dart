@@ -36,17 +36,14 @@ class IssueSection extends StatelessWidget {
       title: title,
       isExpanded: true,
       rightWidget: rightWidget,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.large),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: AppSpacing.tiny,
-          children: [
-            if (issues.isEmpty)
-              StatusIndicator.tone(StatusTone.success, label: emptyLabel),
-            for (final issue in issues) IssueRow(issue),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppSpacing.tiny,
+        children: [
+          if (issues.isEmpty)
+            StatusIndicator.tone(StatusTone.success, label: emptyLabel),
+          for (final issue in issues) IssueRow(issue),
+        ],
       ),
     );
   }
