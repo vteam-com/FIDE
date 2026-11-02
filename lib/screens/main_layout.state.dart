@@ -166,10 +166,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                 Expanded(
                   child: CenterPanel(
                     terminalVisible: ref.watch(bottomPanelVisibleProvider),
-                    onClose: () {
-                      ref.read(selectedFileProvider.notifier).state = null;
-                      ref.read(openDocumentsProvider.notifier).deactivate();
-                    },
+                    onClose: _closeActiveDocument,
                   ),
                 ),
                 if (rightShown) ...[
@@ -187,6 +184,17 @@ class MainLayoutState extends ConsumerState<MainLayout> {
         ),
       ),
     );
+  }
+
+  /// Closes the showing document; the next tab's file becomes the
+  /// selected one, or none when no tab is left.
+  Future<void> _closeActiveDocument() async {
+    final documents = ref.read(openDocumentsProvider.notifier);
+    await documents.closeActive();
+    if (!mounted || ref.read(activeDocumentProvider) != null) return;
+    ref.read(selectedFileProvider.notifier).state = null;
+    // Selecting the closed file again must reopen it
+    _lastSelectedFilePath = null;
   }
 
   Future<void> _handleFileSelection(FileSystemItem file) async {

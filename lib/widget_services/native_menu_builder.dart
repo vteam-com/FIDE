@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/controllers/app_controller.dart';
 import 'package:fide/providers/active_editor.dart';
+import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/left_panel_tab.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/side_panel.dart';
@@ -109,9 +110,11 @@ class NativeMenuBuilder {
     );
   }
 
-  /// Builds the Edit menu with find, find-previous, and go-to-line items.
+  /// Builds the Edit menu with the find, go-to-line, and go back and
+  /// forward items.
   PlatformMenu _buildEditMenu() {
     final editor = ref.read(activeEditorProvider);
+    final documents = ref.read(openDocumentsProvider.notifier);
     return PlatformMenu(
       label: 'Edit',
       menus: [
@@ -134,6 +137,20 @@ class NativeMenuBuilder {
           label: 'Go to Line',
           shortcut: AppShortcut.goToLine,
           onSelected: () => GotoLineDialog.show(context, editor),
+        ),
+        PlatformMenuItemGroup(
+          members: [
+            PlatformMenuItem(
+              label: 'Go Back',
+              shortcut: AppShortcut.goBack,
+              onSelected: documents.goBack,
+            ),
+            PlatformMenuItem(
+              label: 'Go Forward',
+              shortcut: AppShortcut.goForward,
+              onSelected: documents.goForward,
+            ),
+          ],
         ),
       ],
     );

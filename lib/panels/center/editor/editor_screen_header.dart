@@ -50,9 +50,28 @@ class EditorScreenHeader extends ConsumerWidget {
             .watch(gitDiffStatsProvider(document.filePath))
             .value,
     };
+    final history = ref.watch(
+      openDocumentsProvider.select((documents) => documents.history),
+    );
+    final documents = ref.read(openDocumentsProvider.notifier);
     return Row(
       children: [
         const SizedBox(width: AppSpacing.medium),
+        CompactIconButton(
+          key: const Key('keyEditorGoBack'),
+          icon: Icons.chevron_left,
+          onPressed: history.canGoBack ? documents.goBack : null,
+          tooltip: ShortcutHelpEntry.tooltip('Go Back', AppShortcut.goBack),
+        ),
+        CompactIconButton(
+          key: const Key('keyEditorGoForward'),
+          icon: Icons.chevron_right,
+          onPressed: history.canGoForward ? documents.goForward : null,
+          tooltip: ShortcutHelpEntry.tooltip(
+            'Go Forward',
+            AppShortcut.goForward,
+          ),
+        ),
         // Flexible so a long name or a narrow editor shortens the name
         // instead of overflowing the action buttons
         if (openDocuments.isNotEmpty)

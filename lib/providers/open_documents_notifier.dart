@@ -22,9 +22,13 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
   final EditorCommands? activeEditor;
 
   /// Shows the tab at [index].
-  void activate(int index) {
-    state = OpenDocuments(documents: state.documents, activeIndex: index);
-  }
+  void activate(int index) => _show(state.documents, index);
+
+  /// Shows the file shown before the showing one, reopening it if closed.
+  Future<void> goBack() => _revisit(state.history.back());
+
+  /// Shows the file [goBack] left, reopening it if closed.
+  Future<void> goForward() => _revisit(state.history.forward());
 
   /// Applies a project-wide edit (a rename, a replace-all, a class
   /// split...), the one way such edits reach the disk.
@@ -57,6 +61,32 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
     return files;
   }
 
+  /// Closes the showing tab, saving its unsaved edits first, and shows
+  /// the tab after it (the one before when it was the last); hides the
+  /// editor when no tab is left.
+  Future<void> closeActive() async {
+    final closing = state.active;
+    if (closing == null) return;
+    if (closing.isDirty) {
+      final editor = activeEditor;
+      if (editor == null) {
+        await save(closing.filePath, closing.content);
+      } else {
+        await editor.save();
+      }
+    }
+    // Looked up again: the tabs may have changed while saving
+    final index = state.indexOf(closing.filePath);
+    if (index == OpenDocuments.noActiveDocument) return;
+    final kept = [...state.documents]..removeAt(index);
+    _show(
+      kept,
+      kept.isEmpty
+          ? OpenDocuments.noActiveDocument
+          : math.min(index, kept.length - 1),
+    );
+  }
+
   /// Closes every tab.
   void closeAll() {
     state = OpenDocuments.empty;
@@ -72,9 +102,9 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
         if (!paths.contains(document.filePath)) document,
     ];
     if (kept.length == state.documents.length) return;
-    state = OpenDocuments(
-      documents: kept,
-      activeIndex: activePath == null
+    _show(
+      kept,
+      activePath == null
           ? OpenDocuments.noActiveDocument
           : kept.indexWhere((d) => d.filePath == activePath),
     );
@@ -90,9 +120,6 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
     onSaved?.call();
   }
 
-  /// Hides the editor while keeping the tabs open.
-  void deactivate() => activate(OpenDocuments.noActiveDocument);
-
   /// Shows [filePath], loading it into a new tab unless it is already open.
   Future<void> open(String filePath) async {
     final existingIndex = state.indexOf(filePath);
@@ -107,10 +134,7 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
       language: FileTypeUtils.languageForFile(filePath),
     );
     final documents = [...state.documents, document];
-    state = OpenDocuments(
-      documents: documents,
-      activeIndex: documents.length - 1,
-    );
+    _show(documents, documents.length - 1);
   }
 
   /// Writes [content] to [filePath] and records it as the clean, saved
@@ -149,10 +173,31 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
         updated.isDirty == current.isDirty) {
       return;
     }
+    _show([...state.documents]..[index] = updated, state.activeIndex);
+  }
+
+  /// Shows [documents] at [activeIndex], recording the visit of the
+  /// document showing then.
+  void _show(List<DocumentState> documents, int activeIndex) {
+    final next = OpenDocuments(documents: documents, activeIndex: activeIndex);
     state = OpenDocuments(
-      documents: [...state.documents]..[index] = updated,
-      activeIndex: state.activeIndex,
+      documents: documents,
+      activeIndex: activeIndex,
+      history: state.history.visit(next.active?.filePath),
     );
+  }
+
+  /// Moves to [history]'s current visit, then shows its file: opening it
+  /// records no visit, as that file is the current one already.
+  Future<void> _revisit(FileHistory history) async {
+    final path = history.current;
+    if (path == null || history.index == state.history.index) return;
+    state = OpenDocuments(
+      documents: state.documents,
+      activeIndex: state.activeIndex,
+      history: history,
+    );
+    await open(path);
   }
 
   /// Saves every document with unsaved edits: the showing one through

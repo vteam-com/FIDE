@@ -1,6 +1,8 @@
 import 'package:fide/models/document_state.dart';
+import 'package:fide/models/file_history.dart';
 
-/// The editor's open tabs and which one is showing.
+/// The editor's open tabs, which one is showing and the files shown
+/// before it.
 class OpenDocuments {
   /// No tabs open.
   static const OpenDocuments empty = OpenDocuments(documents: []);
@@ -14,10 +16,15 @@ class OpenDocuments {
   /// Index of the showing tab in [documents], or [noActiveDocument].
   final int activeIndex;
 
-  /// Creates the tab list [documents] showing [activeIndex].
+  /// The files shown, for going back and forward through them.
+  final FileHistory history;
+
+  /// Creates the tab list [documents] showing [activeIndex], after the
+  /// visits of [history].
   const OpenDocuments({
     required this.documents,
     this.activeIndex = noActiveDocument,
+    this.history = FileHistory.empty,
   });
 
   /// The showing document, or null when none is.

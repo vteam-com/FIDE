@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
+import 'package:fide/models/file_history.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/loading_action.dart';

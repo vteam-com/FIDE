@@ -84,6 +84,19 @@ class AppShortcut {
     control: true,
   );
 
+  /// Go Back: show the file shown before the showing one (as in VS Code).
+  static const SingleActivator goBack = SingleActivator(
+    LogicalKeyboardKey.minus,
+    control: true,
+  );
+
+  /// Go Forward: show the file Go Back left.
+  static const SingleActivator goForward = SingleActivator(
+    LogicalKeyboardKey.minus,
+    control: true,
+    shift: true,
+  );
+
   /// Refresh Status: reload the open project's Git state.
   static const SingleActivator refreshGitStatus = SingleActivator(
     LogicalKeyboardKey.keyR,
