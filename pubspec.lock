@@ -188,10 +188,11 @@ packages:
   fcheck:
     dependency: "direct main"
     description:
-      path: "../fcheck"
-      relative: true
-    source: path
-    version: "1.6.1"
+      name: fcheck
+      sha256: "6f5a03a7257786f969d024f85f9e7f7e87c3fb102d1582f333e54fef8d02e803"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.6.2"
   ffi:
     dependency: transitive
     description:

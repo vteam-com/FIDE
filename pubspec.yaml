@@ -31,7 +31,7 @@ dependencies:
   analyzer: 14.7.0
   code_forge: 11.6.0
   diff_match_patch: 0.4.1
-  fcheck: 1.6.1
+  fcheck: 1.6.2
   flutter:
     sdk: flutter
   flutter_markdown_plus: 1.0.12
@@ -85,13 +85,3 @@ flutter:
     - assets/app.png
     - assets/app.svg
     - assets/
-
-# dart run flutter_launcher_icons
-flutter_launcher_icons:
-  windows:
-    generate: true
-    image_path: "assets/app.png"
-    icon_size: 48 # min:48, max:256, default: 48
-  macos:
-    generate: true
-    image_path: "assets/app.png"
