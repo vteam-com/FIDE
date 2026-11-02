@@ -135,14 +135,14 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
     MessageBox.copyToClipboard(context, text, confirmation: confirmation);
   }
 
-  /// Shows [node]'s folder (or the folder holding it) in the file manager.
+  /// Shows [node]'s folder, or [node] selected in its folder, in the file
+  /// manager.
   Future<void> _reveal(ProjectNode node) async {
+    final processRunner = ref.read(processRunnerProvider);
     try {
-      await ref
-          .read(processRunnerProvider)
-          .revealInFileManager(
-            node.isDirectory ? node.path : p.dirname(node.path),
-          );
+      await (node.isDirectory
+          ? processRunner.revealInFileManager(node.path)
+          : processRunner.revealFile(node.path));
     } catch (e) {
       showError('Failed to reveal ${node.name}: $e');
     }

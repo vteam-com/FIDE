@@ -115,6 +115,17 @@ class MainLayoutState extends ConsumerState<MainLayout> {
       }
     });
 
+    // Switching editor tabs selects the tab's file, so the tree and the
+    // Outline follow it
+    ref.listen(activeDocumentProvider.select((doc) => doc?.filePath), (
+      _,
+      path,
+    ) {
+      if (path != null && path != ref.read(selectedFileProvider)?.path) {
+        openFile(ref, path);
+      }
+    });
+
     final leftShown = projectLoaded && ref.watch(leftPanelVisibleProvider);
     final rightShown = ref.watch(rightPanelVisibleProvider);
     final leftExpanded = leftShown && ref.watch(leftPanelExpandedProvider);

@@ -2,16 +2,21 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/byte_size.dart';
+import 'package:fide/models/image_backdrop.dart';
 import 'package:fide/providers/file_type_utils.dart';
+import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/empty_state.dart';
-import 'package:fide/widgets/section_title.dart';
-import 'package:fide/widgets/surface_card.dart';
+import 'package:fide/widgets/header_bar.dart';
+import 'package:fide/widgets/image_backdrop_box.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 /// Renders the editor image preview for supported image files, SVG
-/// included, with the file's size and format.
-class EditorScreenImageView extends StatefulWidget {
+/// included, under a strip picking its background and showing the file's
+/// size and format.
+class EditorScreenImageView extends ConsumerStatefulWidget {
   /// Creates the editor image preview.
   const EditorScreenImageView({super.key, required this.filePath});
 
@@ -19,10 +24,11 @@ class EditorScreenImageView extends StatefulWidget {
   final String filePath;
 
   @override
-  State<EditorScreenImageView> createState() => _EditorScreenImageViewState();
+  ConsumerState<EditorScreenImageView> createState() =>
+      _EditorScreenImageViewState();
 }
 
-class _EditorScreenImageViewState extends State<EditorScreenImageView> {
+class _EditorScreenImageViewState extends ConsumerState<EditorScreenImageView> {
   /// Size of [EditorScreenImageView.filePath] on disk, read once per file.
   late Future<int> _fileLength;
 
@@ -48,54 +54,76 @@ class _EditorScreenImageViewState extends State<EditorScreenImageView> {
     final extension = FileTypeUtils.extensionOf(filePath);
     final file = File(filePath);
     final screen = MediaQuery.sizeOf(context);
-    return Center(
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              constraints: BoxConstraints(
-                maxWidth:
-                    screen.width * EditorConfig.imagePreviewMaxWidthFactor,
-                maxHeight:
-                    screen.height * EditorConfig.imagePreviewMaxHeightFactor,
-              ),
-              child: extension == _svgExtension
-                  ? SvgPicture.file(
-                      file,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, _ /* error */, _ /* stackTrace */) =>
-                          _buildError(),
-                    )
-                  : Image.file(
-                      file,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, _ /* error */, _ /* stackTrace */) =>
-                          _buildError(),
-                    ),
-            ),
-            const SizedBox(height: AppSpacing.xLarge),
-            SurfaceCard(
-              child: Column(
-                children: [
-                  const SectionTitle('Image Preview'),
-                  const SizedBox(height: AppSpacing.tiny),
-                  FutureBuilder<int>(
-                    future: _fileLength,
-                    builder: (context, snapshot) => Text(
-                      [
-                        ?snapshot.data?.readableSize,
-                        extension.toUpperCase(),
-                      ].join(' • '),
-                      style: AppTextStyle.secondary(context),
-                    ),
+    final backdrop = ref.watch(imageBackdropProvider);
+    return Column(
+      children: [
+        HeaderBar(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.small),
+            child: Row(
+              spacing: AppSpacing.medium,
+              children: [
+                ChoiceButtons(
+                  values: ImageBackdrop.values,
+                  selected: backdrop,
+                  icon: (backdrop) => backdrop.icon,
+                  label: (backdrop) => backdrop.label,
+                  onSelected: (backdrop) =>
+                      ref.read(imageBackdropProvider.notifier).state = backdrop,
+                ),
+                const Spacer(),
+                FutureBuilder<int>(
+                  future: _fileLength,
+                  builder: (context, snapshot) => Text(
+                    [
+                      ?snapshot.data?.readableSize,
+                      extension.toUpperCase(),
+                    ].join(' • '),
+                    style: AppTextStyle.secondary(context),
                   ),
-                ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.large),
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth:
+                      screen.width * EditorConfig.imagePreviewMaxWidthFactor,
+                  maxHeight:
+                      screen.height * EditorConfig.imagePreviewMaxHeightFactor,
+                ),
+                child: ImageBackdropBox(
+                  backdrop: backdrop,
+                  child: extension == _svgExtension
+                      ? SvgPicture.file(
+                          file,
+                          fit: BoxFit.contain,
+                          errorBuilder: (
+                            _,
+                            _ /* error */,
+                            _ /* stackTrace */,
+                          ) => _buildError(),
+                        )
+                      : Image.file(
+                          file,
+                          fit: BoxFit.contain,
+                          errorBuilder: (
+                            _,
+                            _ /* error */,
+                            _ /* stackTrace */,
+                          ) => _buildError(),
+                        ),
+                ),
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 

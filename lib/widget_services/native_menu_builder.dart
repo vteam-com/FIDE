@@ -284,6 +284,15 @@ class NativeMenuBuilder {
         PlatformMenuItemGroup(
           members: [
             PlatformMenuItem(
+              label: 'App Icons',
+              onSelected: () =>
+                  ref.read(appIconsVisibleProvider.notifier).state = true,
+            ),
+          ],
+        ),
+        PlatformMenuItemGroup(
+          members: [
+            PlatformMenuItem(
               label: 'Zoom In',
               shortcut: AppShortcut.zoomIn,
               onSelected: ref.read(appControllerProvider).zoomIn,

@@ -4,12 +4,14 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/asset_kind.dart';
 import 'package:fide/models/code_category.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/project_categories.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/panels/left/shared_panel_utils.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/class_splitter.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/folder_node.dart';
@@ -112,7 +114,8 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
             categories.elementCounts[category] ?? 0,
             categories.publicClassCounts[category] ?? 0,
           ),
-      if (categories.assets.isNotEmpty) _buildAssetsSection(categories.assets),
+      if (categories.assets.isNotEmpty || _hasAppIcons)
+        _buildAssetsSection(categories.assets),
     ];
 
     return LayoutBuilder(
@@ -188,6 +191,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (_hasAppIcons) _buildAppIconsRow(),
           for (final MapEntry(key: kind, value: files) in assets.entries)
             _buildAssetGroup(kind, files),
         ],
@@ -197,6 +201,37 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
           setState(() => expandedState[expansionKey] = !isExpanded);
         }
       },
+    );
+  }
+
+  /// Whether the project has platforms with app icons or icon problems.
+  bool get _hasAppIcons {
+    final report = ref.watch(appIconReportProvider).value;
+    return report != null &&
+        (report.slots.isNotEmpty || report.issues.isNotEmpty);
+  }
+
+  /// The row opening the App Icons view, flagging the icons' problems.
+  Widget _buildAppIconsRow() {
+    final isVisible = ref.watch(appIconsVisibleProvider);
+    final issueCount = ref.watch(appIconIssuesProvider)?.length ?? 0;
+    return TreeRow(
+      icon: Icon(
+        Icons.apps,
+        color: Theme.of(context).colorScheme.primary,
+        size: AppIconSize.medium,
+      ),
+      name: 'App Icons',
+      highlighted: isVisible,
+      onTap: () => ref.read(appIconsVisibleProvider.notifier).state = true,
+      trailing: [
+        if (issueCount > 0)
+          WarningCount(
+            icon: Icons.apps,
+            count: issueCount,
+            message: '${issueCount.count('app icon problem')}; click to fix',
+          ),
+      ],
     );
   }
 

@@ -210,6 +210,14 @@ final appIconSelectionProvider = StateProvider<String?>((ref) {
   return null;
 });
 
+/// The icon file the App Icons view opened in the editor, as an absolute
+/// path: closing it returns to the view. Null when the editor shows
+/// anything else; forgotten when the project changes.
+final appIconsOpenedPathProvider = StateProvider<String?>((ref) {
+  ref.watch(currentProjectPathProvider);
+  return null;
+});
+
 /// The image the open project's icons are generated from: the one the
 /// user picked, else the fixer's default; null when there is none.
 final appIconMasterProvider = FutureProvider<String?>((ref) {

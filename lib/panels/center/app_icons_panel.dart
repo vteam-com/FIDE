@@ -7,6 +7,7 @@ import 'package:fide/models/right_panel_tab.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_icon_fixer.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
@@ -229,18 +230,7 @@ class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
               runSpacing: AppSpacing.large,
               children: [
                 for (final slot in groupSlots)
-                  AppIconSlotTile(
-                    slot: slot,
-                    projectPath: projectPath,
-                    isSelected: _pathOf(projectPath, slot) == selection,
-                    onTap: _pathOf(projectPath, slot) == null
-                        ? null
-                        : () => _select(_pathOf(projectPath, slot)!),
-                    problems: [
-                      for (final issue in issues)
-                        if (issue.filePath == slot.filePath) issue.message,
-                    ],
-                  ),
+                  _buildTile(projectPath, slot, issues, selection),
               ],
             ),
           ],
@@ -260,6 +250,28 @@ class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
     );
   }
 
+  /// The tile of [slot] with its [issues], filled when its file is the
+  /// [selection]: a click shows its details, a double-click opens it.
+  Widget _buildTile(
+    String projectPath,
+    AppIconSlot slot,
+    List<AppIconIssue> issues,
+    String? selection,
+  ) {
+    final path = _pathOf(projectPath, slot);
+    return AppIconSlotTile(
+      slot: slot,
+      projectPath: projectPath,
+      isSelected: path != null && path == selection,
+      onTap: path == null ? null : () => _select(path),
+      onDoubleTap: path == null ? null : () => _open(path),
+      problems: [
+        for (final issue in issues)
+          if (issue.filePath == slot.filePath) issue.message,
+      ],
+    );
+  }
+
   /// The absolute path of [slot]'s file; null when it has none to show.
   static String? _pathOf(String projectPath, AppIconSlot slot) {
     final path = slot.filePath;
@@ -270,6 +282,13 @@ class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
   void _select(String path) {
     ref.read(appIconSelectionProvider.notifier).state = path;
     showRightPanelTab(ref, RightPanelTab.outline);
+  }
+
+  /// Opens the icon file at [path] in the editor, returning here when it
+  /// is closed.
+  void _open(String path) {
+    ref.read(appIconsOpenedPathProvider.notifier).state = path;
+    openFile(ref, path);
   }
 
   /// Lets the user pick the master image, starting in the project folder.

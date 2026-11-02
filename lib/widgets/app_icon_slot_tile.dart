@@ -2,10 +2,12 @@ import 'dart:math';
 
 import 'package:fcheck/fcheck.dart';
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/image_backdrop.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/ico_frame_image.dart';
+import 'package:fide/widgets/image_backdrop_box.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/surface_padding.dart';
@@ -25,10 +27,14 @@ class AppIconSlotTile extends StatelessWidget {
     this.problems = const [],
     this.isSelected = false,
     this.onTap,
+    this.onDoubleTap,
   });
 
   /// Whether the slot's file is the one picked, filling the tile.
   final bool isSelected;
+
+  /// Opens the slot's file, such as in the editor's image preview.
+  final VoidCallback? onDoubleTap;
 
   /// Picks the slot's file; null leaves the tile unclickable.
   final VoidCallback? onTap;
@@ -72,6 +78,7 @@ class AppIconSlotTile extends StatelessWidget {
       message: [relativePath ?? 'No file assigned', ...notes].join('\n'),
       child: Clickable(
         onTap: onTap,
+        onDoubleTap: onDoubleTap,
         child: Container(
           width: AppSize.appIconSlot + SurfacePadding.dense.insets.horizontal,
           // The fill of the picked row in trees
@@ -91,30 +98,12 @@ class AppIconSlotTile extends StatelessWidget {
                 child: SizedBox.square(
                   dimension: AppSize.appIconSlot,
                   child: Center(
-                    child: CustomPaint(
-                      painter: slot.isFilled ? _TransparencyPainter() : null,
-                      child: SizedBox.square(
-                        dimension: slot.isFilled ? drawn : AppSize.appIconSlot,
-                        child: Center(
-                          child: path == null || !slot.isFilled
-                              ? empty
-                              : file != null &&
-                                    file.icoSizes.isNotEmpty &&
-                                    size != null
-                              ? IcoFrameImage(
-                                  path: path,
-                                  size: size,
-                                  drawnSize: drawn,
-                                  fallback: empty,
-                                )
-                              : AppIconImage(
-                                  path: path,
-                                  size: drawn,
-                                  fallback: empty,
-                                ),
-                        ),
-                      ),
-                    ),
+                    child: slot.isFilled
+                        ? ImageBackdropBox(
+                            backdrop: ImageBackdrop.transparent,
+                            child: _buildImage(path, file, size, drawn, empty),
+                          )
+                        : empty,
                   ),
                 ),
               ),
@@ -149,36 +138,30 @@ class AppIconSlotTile extends StatelessWidget {
       ),
     );
   }
-}
 
-/// A checkerboard behind an icon, so its transparent parts show as such,
-/// light or dark artwork alike; nothing behind an empty slot.
-class _TransparencyPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = AppColor.transparencyLight,
+  /// The image of the slot at [path], [drawn] pixels wide; [empty] when
+  /// there is none or it can't be drawn.
+  Widget _buildImage(
+    String? path,
+    AppIconFileInfo? file,
+    int? size,
+    double drawn,
+    Widget empty,
+  ) {
+    return SizedBox.square(
+      dimension: drawn,
+      child: Center(
+        child: path == null
+            ? empty
+            : file != null && file.icoSizes.isNotEmpty && size != null
+            ? IcoFrameImage(
+                path: path,
+                size: size,
+                drawnSize: drawn,
+                fallback: empty,
+              )
+            : AppIconImage(path: path, size: drawn, fallback: empty),
+      ),
     );
-    final dark = Paint()..color = AppColor.transparencyDark;
-    const square = AppSize.transparencySquare;
-    for (var y = 0.0; y < size.height; y += square) {
-      for (var x = 0.0; x < size.width; x += square) {
-        if (((x + y) / square).round().isOdd) {
-          canvas.drawRect(
-            Rect.fromLTWH(
-              x,
-              y,
-              min(square, size.width - x),
-              min(square, size.height - y),
-            ),
-            dark,
-          );
-        }
-      }
-    }
   }
-
-  @override
-  bool shouldRepaint(_TransparencyPainter oldDelegate) => false;
 }

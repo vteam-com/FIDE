@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+
 /// Receives the output of a streamed process, one trimmed non-empty chunk at a time.
 typedef ProcessOutputCallback = void Function(String text);
 
@@ -105,6 +107,30 @@ class ProcessRunner {
       await run('explorer', [directory]);
     } else if (Platform.isLinux) {
       await run('xdg-open', [directory]);
+    }
+  }
+
+  /// Shows [file] selected in the platform's file manager; on Linux, which
+  /// has no common way to select it, opens the folder holding it.
+  Future<void> revealFile(String file) async {
+    if (Platform.isMacOS) {
+      await run('open', ['-R', file]);
+    } else if (Platform.isWindows) {
+      await run('explorer', ['/select,$file']);
+    } else {
+      await revealInFileManager(p.dirname(file));
+    }
+  }
+
+  /// Opens [file] with the application the OS associates with its type.
+  Future<void> openWithDefaultApp(String file) async {
+    if (Platform.isMacOS) {
+      await run('open', [file]);
+    } else if (Platform.isWindows) {
+      // `start` is a shell built-in; its first quoted argument is a title
+      await run('cmd', ['/c', 'start', '', file]);
+    } else if (Platform.isLinux) {
+      await run('xdg-open', [file]);
     }
   }
 

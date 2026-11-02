@@ -3,6 +3,7 @@ import 'package:fide/controllers/app_controller.dart';
 import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/outlined_surface.dart';
@@ -125,28 +126,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   /// The System / Light / Dark choice, applied as soon as it is picked.
   Widget _buildDisplayModeButtons() {
-    return SegmentedButton<ThemeMode>(
-      showSelectedIcon: false,
-      segments: const [
-        ButtonSegment(
-          value: ThemeMode.system,
-          icon: Icon(Icons.brightness_auto),
-          label: Text('System'),
-        ),
-        ButtonSegment(
-          value: ThemeMode.light,
-          icon: Icon(Icons.light_mode),
-          label: Text('Light'),
-        ),
-        ButtonSegment(
-          value: ThemeMode.dark,
-          icon: Icon(Icons.dark_mode),
-          label: Text('Dark'),
-        ),
-      ],
-      selected: {ref.watch(themeModeProvider)},
-      onSelectionChanged: (selection) =>
-          ref.read(appControllerProvider).setThemeMode(selection.first),
+    return ChoiceButtons(
+      values: const [ThemeMode.system, ThemeMode.light, ThemeMode.dark],
+      selected: ref.watch(themeModeProvider),
+      icon: (mode) => switch (mode) {
+        ThemeMode.system => Icons.brightness_auto,
+        ThemeMode.light => Icons.light_mode,
+        ThemeMode.dark => Icons.dark_mode,
+      },
+      label: (mode) => switch (mode) {
+        ThemeMode.system => 'System',
+        ThemeMode.light => 'Light',
+        ThemeMode.dark => 'Dark',
+      },
+      onSelected: ref.read(appControllerProvider).setThemeMode,
     );
   }
 

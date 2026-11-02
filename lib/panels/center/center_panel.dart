@@ -80,9 +80,18 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
   Widget build(BuildContext context) {
     final DocumentState? activeDocument = ref.watch(activeDocumentProvider);
     final terminalExpanded = ref.watch(bottomPanelExpandedProvider);
-    // Opening or switching files leaves the App Icons view
-    ref.listen(activeDocumentProvider.select((doc) => doc?.filePath), (_, _) {
-      ref.read(appIconsVisibleProvider.notifier).state = false;
+    // Opening or switching files leaves the App Icons view; closing a file
+    // opened from it goes back to it
+    ref.listen(activeDocumentProvider.select((doc) => doc?.filePath), (
+      previous,
+      next,
+    ) {
+      final openedPath = ref.read(appIconsOpenedPathProvider);
+      ref.read(appIconsVisibleProvider.notifier).state =
+          next == null && previous != null && previous == openedPath;
+      if (next != openedPath) {
+        ref.read(appIconsOpenedPathProvider.notifier).state = null;
+      }
     });
 
     // Determine the main content to display

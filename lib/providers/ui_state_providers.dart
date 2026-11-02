@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/image_backdrop.dart';
 import 'package:fide/models/left_panel_tab.dart';
 import 'package:fide/models/reference_search.dart';
 import 'package:fide/models/right_panel_tab.dart';
@@ -29,6 +30,11 @@ final zoomProvider = StateProvider<double>((_ /*ref*/) => AppZoom.actualSize);
 /// Whether the center panel shows the App Icons view instead of the
 /// editor or the project overview.
 final appIconsVisibleProvider = StateProvider<bool>((_ /*ref*/) => false);
+
+/// What image previews are drawn on, kept from one image to the next.
+final imageBackdropProvider = StateProvider<ImageBackdrop>(
+  (_ /*ref*/) => ImageBackdrop.transparent,
+);
 
 /// The tab shown in the left panel.
 final activeLeftPanelTabProvider = StateProvider<LeftPanelTab>(
