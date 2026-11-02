@@ -51,4 +51,18 @@ void main() {
   test('has no details with only a label', () {
     expect(const QualityIssue(label: 'Checks bypassed').hasDetails, isFalse);
   });
+
+  test('describes a finding with its title, else its label', () {
+    expect(
+      const QualityIssue(
+        label: 'Hardcoded strings: -3% (1 issues)',
+        title: 'Hardcoded strings',
+      ).describe(finding),
+      'Hardcoded strings: "Unknown Performer"',
+    );
+    expect(
+      const QualityIssue(label: 'Hardcoded strings').describe(finding),
+      'Hardcoded strings: "Unknown Performer"',
+    );
+  });
 }

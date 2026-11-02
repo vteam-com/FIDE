@@ -109,10 +109,10 @@ packages:
     dependency: "direct main"
     description:
       name: code_forge
-      sha256: "59a34c52908a2a44e898536f23c8d471a49bb10bee67b30d8e04ad3d5ccac912"
+      sha256: "53dbdd8f53428553206c27e68714505fc9253457277f4733ba2c95b8ce69a2ef"
       url: "https://pub.dev"
     source: hosted
-    version: "11.5.0"
+    version: "11.6.0"
   collection:
     dependency: transitive
     description:
@@ -220,10 +220,10 @@ packages:
     dependency: "direct main"
     description:
       name: file_picker
-      sha256: "02f2945a7f29535c735f6b283c3c5553810566d3052d730429aec78fe9d06592"
+      sha256: c64036857780d7125f011d543f89eedcb5df61da473668bace4eee9ab875284d
       url: "https://pub.dev"
     source: hosted
-    version: "13.3.1"
+    version: "13.3.2"
   file_picker_darwin:
     dependency: transitive
     description:

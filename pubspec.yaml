@@ -29,7 +29,7 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   analyzer: 14.7.0
-  code_forge: 11.5.0
+  code_forge: 11.6.0
   diff_match_patch: 0.4.1
   fcheck: 1.6.1
   flutter:
@@ -38,7 +38,7 @@ dependencies:
   flutter_riverpod: 3.4.3
   flutter_svg: 2.3.2
   flutter_pty2: ^3.0.0
-  file_picker: 13.3.1
+  file_picker: 13.3.2
   http: 1.6.0
   image: 4.12.0
   intl: 0.20.3

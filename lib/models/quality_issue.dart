@@ -12,6 +12,7 @@ class QualityIssue {
   /// Creates the issue named [label].
   const QualityIssue({
     required this.label,
+    this.title,
     this.tone = StatusTone.warning,
     this.guidance,
     this.findings = const [],
@@ -39,6 +40,10 @@ class QualityIssue {
 
   /// The project folder [findings] are listed relative to.
   final String? rootPath;
+
+  /// The kind of problem without its count or score impact, such as
+  /// `Magic numbers`; [label] when null.
+  final String? title;
 
   /// How serious the issue is.
   final StatusTone tone;
@@ -71,6 +76,11 @@ class QualityIssue {
   /// quick fixes.
   bool get hasDetails =>
       guidance != null || findings.isNotEmpty || quickFixes.isNotEmpty;
+
+  /// What [finding] is, prefixed with the kind of problem, such as
+  /// `Magic numbers: 42`.
+  String describe(QualityFinding finding) =>
+      '${title ?? label}: ${finding.text}';
 
   /// The path of [finding], relative to [rootPath] when given.
   String shownPath(QualityFinding finding) {

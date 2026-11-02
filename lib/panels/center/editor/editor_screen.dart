@@ -12,6 +12,7 @@ import 'package:fide/panels/center/editor/editor_screen_search_bar.dart';
 import 'package:fide/panels/center/editor/editor_screen_status_bar.dart';
 import 'package:fide/panels/center/editor/editor_screen_unsupported_file_view.dart';
 import 'package:fide/panels/center/editor/editor_search_controller.dart';
+import 'package:fide/panels/center/editor/quality_diagnostics.dart';
 import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/service_providers.dart';
@@ -111,7 +112,13 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     _isDirty = widget.documentState!.isDirty;
     _savedText = widget.documentState!.content;
 
-    _codeController.addListener(_onCodeChanged);
+    _codeController
+      ..addListener(_onCodeChanged)
+      ..showFindings(ref.read(qualityIssuesProvider), _currentFile);
+    ref.listenManual(qualityIssuesProvider, (_, issues) {
+      _codeController.showFindings(issues, _currentFile);
+      setState(() {}); // The status bar shows the cursor line's findings
+    });
 
     _lifecycleListener = AppLifecycleListener(
       onStateChange: (state) {
@@ -171,7 +178,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
         // Update to new document state
         _currentFile = widget.documentState!.filePath;
 
-        _codeController.text = widget.documentState!.content;
+        _codeController
+          ..text = widget.documentState!.content
+          ..showFindings(ref.read(qualityIssuesProvider), _currentFile);
 
         // Re-add listener after updates
         _codeController.addListener(_onCodeChanged);
@@ -296,6 +305,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
             regionsExpanded: _regionsExpanded,
             currentLineNumber: _getCurrentLineNumber(),
             currentColumnNumber: _getCurrentColumnNumber(),
+            findings: _codeController.findingsAt(_getCurrentLineNumber() - 1),
             currentMatchIndex: _search.currentIndex,
             matchCount: _search.matchCount,
             canFormat: !_showDiffView && CodeFormatter.canFormat(_currentFile),

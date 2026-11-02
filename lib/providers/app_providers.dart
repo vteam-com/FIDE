@@ -287,6 +287,12 @@ final appIconMasterProvider = FutureProvider<String?>((ref) {
   return ref.read(appIconFixerProvider).defaultMasterPath(projectPath);
 });
 
+/// Every fCheck issue lowering the open project's score, or null until
+/// the overview is analyzed; listening to it re-analyzes after each save.
+final qualityIssuesProvider = Provider<List<QualityIssue>?>(
+  (ref) => ref.watch(projectOverviewProvider).value?.code.qualityIssues,
+);
+
 /// The open project's hardcoded-string and localization issues, or null
 /// until the overview is analyzed.
 final stringIssuesProvider = Provider<List<QualityIssue>?>(

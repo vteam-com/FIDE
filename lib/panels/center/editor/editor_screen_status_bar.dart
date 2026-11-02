@@ -1,5 +1,7 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 
 /// Renders the editor status bar with cursor, search, and formatting controls.
@@ -15,6 +17,7 @@ class EditorScreenStatusBar extends StatelessWidget {
     required this.matchCount,
     required this.canFormat,
     required this.fileLanguage,
+    this.findings,
     required this.onToggleAllRegions,
     required this.onFormatFile,
   });
@@ -23,6 +26,10 @@ class EditorScreenStatusBar extends StatelessWidget {
   final int currentLineNumber;
   final int currentMatchIndex;
   final String fileLanguage;
+
+  /// The fCheck findings on the cursor line, with their most severe tone;
+  /// none when null.
+  final ({StatusTone tone, String message})? findings;
   final int matchCount;
   final VoidCallback onFormatFile;
   final VoidCallback onToggleAllRegions;
@@ -59,7 +66,7 @@ class EditorScreenStatusBar extends StatelessWidget {
               ),
             ],
           ],
-          const Spacer(),
+          Expanded(child: _findingsIndicator()),
           if (canFormat)
             CompactIconButton(
               icon: Icons.format_indent_increase,
@@ -69,6 +76,24 @@ class EditorScreenStatusBar extends StatelessWidget {
           const SizedBox(width: AppSpacing.medium),
           Text(fileLanguage, style: AppTextStyle.caption),
         ],
+      ),
+    );
+  }
+
+  /// [findings] on one line, ellipsized, in full on hover; empty space
+  /// when there are none.
+  Widget _findingsIndicator() {
+    final current = findings;
+    if (current == null || showDiffView) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xLarge),
+      child: Tooltip(
+        message: current.message,
+        child: DefaultTextStyle.merge(
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          child: StatusIndicator.tone(current.tone, label: current.message),
+        ),
       ),
     );
   }

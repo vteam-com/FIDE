@@ -158,6 +158,7 @@ extension QualityIssues on fcheck.ProjectMetrics {
       label:
           '${analyzer.label}: -${deduction.localized}% '
           '(${count.localized} issues)',
+      title: analyzer.label,
       guidance: _guidance(domain),
       aiVerb: _aiVerb(domain),
       findings: findings,
