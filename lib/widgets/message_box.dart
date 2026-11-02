@@ -160,6 +160,10 @@ class MessageBox {
         ),
       ),
     );
-    Overlay.of(context).insert(overlayEntry);
+    // The navigator's own context (navigatorKey.currentContext) sits above
+    // the overlay it builds, so take the overlay from the navigator first
+    (Navigator.maybeOf(context)?.overlay ?? Overlay.of(context)).insert(
+      overlayEntry,
+    );
   }
 }
