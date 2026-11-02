@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fide/models/project_files.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:path/path.dart' as p;
 
@@ -7,6 +8,10 @@ import 'package:path/path.dart' as p;
 ///
 /// Children are listed hidden entries included, directories first, each
 /// group sorted case-insensitively. The sync variants are for isolates.
+///
+/// Whole-tree loads leave the folders [ProjectFiles] skips (tool output,
+/// dependencies, hidden folders) unread: in large projects they hold most
+/// of the files, and they load when first expanded.
 class ProjectTreeReader {
   /// Creates a stateless reader.
   const ProjectTreeReader();
@@ -32,7 +37,7 @@ class ProjectTreeReader {
             (entity, entity.statSync()),
         ]),
       );
-      for (final child in node.children.where((child) => child.isDirectory)) {
+      for (final child in _subtreesToLoad(node)) {
         loadTreeSync(child);
       }
     } catch (e) {
@@ -66,7 +71,7 @@ class ProjectTreeReader {
       node.replaceChildren(_sortedNodes(entries));
 
       if (recursive) {
-        for (final child in node.children.where((c) => c.isDirectory)) {
+        for (final child in _subtreesToLoad(node)) {
           await loadTree(child);
         }
       }
@@ -74,6 +79,13 @@ class ProjectTreeReader {
     } catch (e) {
       return node.loadResult = _classifyLoadError(e);
     }
+  }
+
+  /// [node]'s subfolders a whole-tree load descends into.
+  static Iterable<ProjectNode> _subtreesToLoad(ProjectNode node) {
+    return node.children.where(
+      (child) => child.isDirectory && !ProjectFiles.isSkipped(child.name),
+    );
   }
 
   /// Maps an enumeration failure to the result shown to the user.

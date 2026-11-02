@@ -55,6 +55,23 @@ void main() {
     expect(_outline(syncNode), _outline(asyncNode));
   });
 
+  test('leaves skipped folders unread until expanded', () async {
+    Directory('${root.path}/build/app').createSync(recursive: true);
+    final node = await reader.nodeFor(root);
+    await reader.loadTree(node);
+    final syncNode = reader.nodeForSync(root);
+    reader.loadTreeSync(syncNode);
+
+    for (final loaded in [node, syncNode]) {
+      final build = loaded.findNode('${root.path}/build')!;
+      expect(build.isLoaded, isFalse);
+      expect(build.children, isEmpty);
+      expect(loaded.findNode('${root.path}/lib')!.isLoaded, isTrue);
+      await reader.loadChildren(build);
+      expect(_outline(build), ['app/']);
+    }
+  });
+
   test('reports a file system error for a vanished directory', () async {
     final node = ProjectNode(
       name: 'gone',

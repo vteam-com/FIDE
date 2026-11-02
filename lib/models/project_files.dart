@@ -4,8 +4,15 @@ import 'package:path/path.dart' as p;
 /// The files of a project the user works on, leaving out tool output and
 /// hidden folders and files.
 class ProjectFiles {
-  /// Folders left out besides hidden ones: tool output and Git data.
-  static const Set<String> skippedFolders = {'build', '.dart_tool', '.git'};
+  /// Folders left out besides hidden ones: tool output, installed
+  /// dependencies and Git data.
+  static const Set<String> skippedFolders = {
+    'build',
+    '.dart_tool',
+    '.git',
+    'node_modules',
+    'Pods',
+  };
 
   /// Whether a folder or file named [name] is left out.
   static bool isSkipped(String name) =>

@@ -49,6 +49,10 @@ class ProjectNode {
   /// Returns `isFile`.
   bool get isFile => type == ProjectNodeType.file;
 
+  /// Whether this node's children were read; a folder left unread loads
+  /// them when first expanded.
+  bool get isLoaded => loadResult == LoadChildrenResult.success;
+
   /// Whether reading this node's children was attempted and failed.
   bool get hasLoadError =>
       loadResult != null && loadResult != LoadChildrenResult.success;

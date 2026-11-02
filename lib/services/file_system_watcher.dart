@@ -55,9 +55,11 @@ class FileSystemWatcher {
     _onTreeUpdated = null;
   }
 
-  /// Watch a directory and all its subdirectories recursively
+  /// Watches [node] and its loaded subdirectories; folders left unread
+  /// (such as build output) are not watched, so their churn costs nothing
+  /// and no event fills them in partially before they are expanded.
   void _watchDirectoryRecursive(ProjectNode node) {
-    if (!node.isDirectory) return;
+    if (!node.isDirectory || !node.isLoaded) return;
 
     // Watch this directory
     _watchDirectory(node);
