@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:fide/services/login_shell_environment.dart';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:flutter/material.dart';
@@ -111,8 +112,11 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
         PtySpawnOptions(
           executable: '/bin/zsh',
           workingDirectory: projectPath,
-          environment: const PtyEnvironment.inherit(
-            overrides: {'TERM': 'xterm-256color'},
+          environment: PtyEnvironment.inherit(
+            overrides: {
+              ...await LoginShellEnvironment.overrides,
+              'TERM': 'xterm-256color',
+            },
           ),
         ),
       );

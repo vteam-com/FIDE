@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fide/services/login_shell_environment.dart';
+
 /// Receives the output of a streamed process, one trimmed non-empty chunk at a time.
 typedef ProcessOutputCallback = void Function(String text);
 
@@ -20,11 +22,12 @@ class ProcessRunner {
     List<String> arguments, {
     String? workingDirectory,
     bool runInShell = false,
-  }) {
+  }) async {
     return Process.run(
       executable,
       arguments,
       workingDirectory: workingDirectory,
+      environment: await LoginShellEnvironment.overrides,
       runInShell: runInShell,
     );
   }
@@ -96,11 +99,12 @@ class ProcessRunner {
     String? workingDirectory,
     bool runInShell = false,
     ProcessStartMode mode = ProcessStartMode.normal,
-  }) {
+  }) async {
     return Process.start(
       executable,
       arguments,
       workingDirectory: workingDirectory,
+      environment: await LoginShellEnvironment.overrides,
       runInShell: runInShell,
       mode: mode,
     );

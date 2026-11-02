@@ -23,6 +23,7 @@ class AppDuration {
   static const Duration aiProjectCreateTimeout = Duration(seconds: 120);
   static const Duration gitInitTimeout = Duration(seconds: 10);
   static const Duration gitOperationTimeout = Duration(seconds: 30);
+  static const Duration loginShellTimeout = Duration(seconds: 30);
   static const Duration projectLoadDelay = Duration(milliseconds: 150);
 
   const AppDuration._();

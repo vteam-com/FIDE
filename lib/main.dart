@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
@@ -12,6 +13,7 @@ import 'package:fide/screens/loading_screen.dart';
 import 'package:fide/screens/main_layout.dart';
 import 'package:fide/screens/settings_screen.dart';
 import 'package:fide/screens/welcome_screen.dart';
+import 'package:fide/services/login_shell_environment.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widget_services/app_command.dart';
 import 'package:fide/widget_services/app_title_bar.dart';
@@ -26,6 +28,8 @@ import 'package:logging/logging.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   LocaleNumber.useLocale(Platform.localeName);
+  // Read the shell PATH in the background: apps opened from the Dock lack it
+  unawaited(LoginShellEnvironment.load());
 
   // Setup logging
   Logger.root.level = Level.ALL;
