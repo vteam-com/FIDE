@@ -1,5 +1,4 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/quick_open_matcher.dart';
 import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/widgets/app_text_field.dart';
@@ -158,33 +157,20 @@ class _QuickOpenDialogState extends State<QuickOpenDialog> {
     limit: AppMetric.quickOpenMaxResults,
   );
 
-  /// The row for result [index]: its icon and name, then its folder.
+  /// The row for result [index]: its icon and relative path.
   Widget _row(int index) {
     final path = _results[index];
     final name = p.basename(path);
-    final folder = p.dirname(p.relative(path, from: widget.rootPath));
     final isSelected = index == _selected;
     return TreeRow(
       key: isSelected ? _selectedKey : null,
-      icon: FileIconUtils.getFileIcon(
-        FileSystemItem(name: name, path: path, type: FileSystemItemType.file),
-      ),
+      icon: FileIconUtils.ofPath(path),
       name: name,
       path: path,
       rootPath: widget.rootPath,
+      showPath: true,
       highlighted: isSelected,
       onTap: () => _open(index),
-      trailing: [
-        if (folder != '.')
-          Flexible(
-            child: Text(
-              folder,
-              style: AppTextStyle.secondary(context),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-          ),
-      ],
     );
   }
 }

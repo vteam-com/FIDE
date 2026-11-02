@@ -23,12 +23,12 @@ import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as p;
 
 enum LocalizationStatus {
   checking,
@@ -632,14 +632,14 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                 ),
                 const SizedBox(height: AppSpacing.tiny),
                 ...malformedFiles.map((filePath) {
-                  final fileName = p.basename(filePath);
                   return Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.micro),
                     child: Row(
                       children: [
                         Expanded(
-                          child: Text(
-                            fileName,
+                          child: PathText(
+                            filePath,
+                            showFolder: false,
                             style: AppTextStyle.caption.copyWith(
                               color: Theme.of(context).colorScheme.error,
                             ),

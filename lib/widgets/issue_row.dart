@@ -12,13 +12,13 @@ import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/markdown_text.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/string_review_dialog.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart' as p;
 
 /// A [QualityIssue] as one line, the same in every panel: its label in
 /// its tone's color and a How to fix button opening the best practice, the
@@ -181,8 +181,10 @@ class IssueRow extends ConsumerWidget {
       path: finding.path,
       rootPath: issue.rootPath,
       trailing: [
-        Text(
-          '${p.basename(finding.path)}:${finding.line}',
+        PathText(
+          finding.path,
+          line: finding.line,
+          showFolder: false,
           style: AppTextStyle.secondary(context),
         ),
       ],

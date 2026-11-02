@@ -137,8 +137,9 @@ class FileSystemItem {
     );
   }
 
-  // Create a minimal file item for MRU loading (avoids file system calls)
-  factory FileSystemItem.forMruLoading(String filePath) {
+  /// A file item from [filePath] alone, without reading the disk: no date
+  /// or size.
+  factory FileSystemItem.fromPath(String filePath) {
     return FileSystemItem(
       name: p.basename(filePath),
       path: filePath,

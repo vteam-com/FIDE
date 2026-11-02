@@ -17,6 +17,7 @@ import 'package:fide/widgets/app_icon_slot_tile.dart';
 import 'package:fide/widgets/busy_icon_button.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -154,12 +155,10 @@ class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: AppSpacing.tiny,
               children: [
-                Text(
-                  master == null
-                      ? 'No image yet: choose one'
-                      : p.relative(master, from: projectPath),
-                  style: AppTextStyle.code,
-                ),
+                if (master == null)
+                  const Text('No image yet: choose one')
+                else
+                  PathText(master, rootPath: projectPath, selectable: true),
                 if (image != null)
                   Text(
                     '${image.width}×${image.height} px',

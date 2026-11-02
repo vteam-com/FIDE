@@ -1,7 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/more_menu_button.dart';
+import 'package:fide/widgets/path_text.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as p;
 
 /// One row of a tree (files, folders, outline symbols, search results):
 /// [icon], [name] with its path as a tooltip, then [trailing] indicators.
@@ -18,6 +18,7 @@ class TreeRow extends StatelessWidget {
     this.nameStyle,
     this.highlighted = false,
     this.showMenuButton = false,
+    this.showPath = false,
     this.trailing = const [],
     this.onTap,
     this.onContextMenu,
@@ -57,6 +58,10 @@ class TreeRow extends StatelessWidget {
   /// Whether to show the "more" button that opens the context menu.
   final bool showMenuButton;
 
+  /// Whether the row shows [path], relative to [rootPath], instead of
+  /// [name].
+  final bool showPath;
+
   /// Indicators after the name, such as counts, badges or status icons.
   final List<Widget> trailing;
 
@@ -65,18 +70,18 @@ class TreeRow extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final path = this.path;
     final root = rootPath;
-    final shownPath = path == null || root == null
-        ? path
-        : p.join('~', p.relative(path, from: root));
+    final shownPath = path == null ? null : PathText.shownPath(path, root);
     final tooltip = note == null ? shownPath : '${shownPath ?? ''}\n\n$note';
-    final text = Text(
-      name,
-      style: (highlighted ? AppTextStyle.bodyStrong : AppTextStyle.body).merge(
-        nameStyle,
-      ),
-      overflow: TextOverflow.ellipsis,
-      maxLines: 1,
-    );
+    final style = (highlighted ? AppTextStyle.bodyStrong : AppTextStyle.body)
+        .merge(nameStyle);
+    final text = showPath && path != null
+        ? PathText(path, rootPath: root, style: style)
+        : Text(
+            name,
+            style: style,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          );
     final onContextMenu = this.onContextMenu;
     return InkWell(
       onTap: onTap,

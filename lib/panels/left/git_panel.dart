@@ -519,16 +519,8 @@ class _GitPanelState extends ConsumerState<GitPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: files.map((file) {
         final filePath = p.join(widget.projectPath, file);
-        final item = FileSystemItem.fromFileSystemEntity(File(filePath));
-
-        // Create display name with parent folder context if not a root file
-        final displayItem = FileSystemItem(
-          path: item.path,
-
-          name: _getContextualFileName(file),
-          type: item.type,
-          gitStatus: kindOf(file),
-        );
+        final item = FileSystemItem.fromFileSystemEntity(File(filePath))
+          ..gitStatus = kindOf(file);
 
         final isSelected = widget.selectedFile?.path == item.path;
 
@@ -536,9 +528,10 @@ class _GitPanelState extends ConsumerState<GitPanel> {
           children: [
             Expanded(
               child: FileNameWidget(
-                fileItem: displayItem,
+                fileItem: item,
                 isSelected: isSelected,
                 showGitBadge: false,
+                showPath: true,
                 rootPath: widget.projectPath,
                 trailing: DiffCounter(gitStats: stats[file]),
                 onTap: () => widget.onFileSelected?.call(item),
@@ -581,29 +574,6 @@ class _GitPanelState extends ConsumerState<GitPanel> {
       contentPadding: const EdgeInsets.only(bottom: AppSpacing.medium),
       child: contentWidget,
     );
-  }
-
-  /// Handles `_getContextualFileName`.
-  String _getContextualFileName(String filePath) {
-    // Split the path into parts
-    final parts = p.split(filePath);
-
-    // If it's a root-level file (only one part), just return the filename
-    if (parts.length <= 1) {
-      return p.basename(filePath);
-    }
-
-    // For files deeper in the hierarchy, show the immediate parent directory + filename
-    // e.g., "lib/utils/file_type_utils.dart" becomes "utils/file_type_utils.dart"
-    if (parts.length >= AppMetric.minDirPathDepth) {
-      return p.join(
-        parts[parts.length - AppMetric.minDirPathDepth],
-        parts[parts.length - 1],
-      );
-    }
-
-    // Fallback
-    return p.basename(filePath);
   }
 
   @override

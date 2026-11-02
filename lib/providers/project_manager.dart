@@ -105,8 +105,9 @@ class ProjectManager {
         return;
       }
 
-      ref.read(selectedFileProvider.notifier).state =
-          FileSystemItem.forMruLoading(lastFilePath);
+      ref.read(selectedFileProvider.notifier).state = FileSystemItem.fromPath(
+        lastFilePath,
+      );
     } catch (_) {
       // Silently handle errors.
     }

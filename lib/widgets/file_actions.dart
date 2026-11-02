@@ -6,8 +6,8 @@ import 'package:fide/providers/process_runner.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
-import 'package:fide/widgets/full_path_widget.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/path_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -53,7 +53,11 @@ class FileActions extends ConsumerWidget {
           spacing: AppSpacing.tiny,
           children: [
             Expanded(
-              child: FullPathWidget(path: path, style: AppTextStyle.caption),
+              child: PathText(
+                path,
+                selectable: true,
+                style: AppTextStyle.caption,
+              ),
             ),
             CompactIconButton(
               icon: Icons.content_copy,

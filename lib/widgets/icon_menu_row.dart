@@ -14,6 +14,7 @@ class IconMenuRow extends StatelessWidget {
     required this.label,
     this.isError = false,
     this.leading,
+    this.labelWidget,
     this.trailing,
   });
 
@@ -27,13 +28,15 @@ class IconMenuRow extends StatelessWidget {
   /// Entry text.
   final String label;
 
+  /// Widget shown instead of [label], such as a file's path.
+  final Widget? labelWidget;
+
   /// Widget shown instead of [icon], such as a project's app icon; sized to
   /// the same square.
   final Widget? leading;
 
   /// Widget after the label, such as a count or a lock.
   final Widget? trailing;
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -55,12 +58,14 @@ class IconMenuRow extends StatelessWidget {
                     )),
         ),
         Flexible(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyle.label.copyWith(color: color),
-          ),
+          child:
+              labelWidget ??
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyle.label.copyWith(color: color),
+              ),
         ),
         ?trailing,
       ],

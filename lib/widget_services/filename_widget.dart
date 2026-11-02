@@ -15,6 +15,7 @@ class FileNameWidget extends StatelessWidget {
     required this.fileItem,
     this.isSelected = false,
     this.showGitBadge = true,
+    this.showPath = false,
     this.rootPath,
     this.onTap,
     this.onContextMenu,
@@ -33,6 +34,10 @@ class FileNameWidget extends StatelessWidget {
 
   final bool showGitBadge;
 
+  /// Whether the row shows the file's path, relative to [rootPath],
+  /// instead of its name.
+  final bool showPath;
+
   /// Extra indicator shown after the name, before the Git badge.
   final Widget? trailing;
 
@@ -48,6 +53,7 @@ class FileNameWidget extends StatelessWidget {
       name: fileItem.name,
       path: fileItem.path,
       rootPath: rootPath,
+      showPath: showPath,
       note: warning,
       // Git styling (strike-through, italic, color), recolored when the
       // file has a warning or is selected

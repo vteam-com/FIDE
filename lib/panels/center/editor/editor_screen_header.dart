@@ -2,14 +2,18 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_theme.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
+import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/providers/git_service.dart';
 import 'package:fide/widget_services/diff_counter.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
+import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/toggle_experience_mode.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Renders the editor header with document switching and primary editor actions.
-class EditorScreenHeader extends StatelessWidget {
+class EditorScreenHeader extends ConsumerWidget {
   /// Creates the editor header.
   const EditorScreenHeader({
     super.key,
@@ -37,7 +41,8 @@ class EditorScreenHeader extends StatelessWidget {
   final List<DocumentState> openDocuments;
   final bool showDiffView;
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final projectPath = ref.watch(currentProjectPathProvider);
     return Row(
       children: [
         const SizedBox(width: AppSpacing.medium),
@@ -47,18 +52,16 @@ class EditorScreenHeader extends StatelessWidget {
           Flexible(
             child: PopupMenuButton<int>(
               key: const Key('keyMruForFiles'),
+              initialValue: activeIndex,
               itemBuilder: (_ /*context*/) {
                 return openDocuments.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final doc = entry.value;
-                  final gitStats = allGitDiffStats[doc.filePath];
-
                   return PopupMenuItem<int>(
-                    value: index,
-                    child: IconMenuRow(
-                      icon: index == activeIndex ? Icons.check : null,
-                      label: doc.fileName,
-                      trailing: DiffCounter(gitStats: gitStats),
+                    value: entry.key,
+                    // A fixed width: menus measure their entries, which a
+                    // one-line path can't report
+                    child: SizedBox(
+                      width: AppSize.fileMenuWidth,
+                      child: _documentRow(entry.value, projectPath),
                     ),
                   );
                 }).toList();
@@ -67,21 +70,13 @@ class EditorScreenHeader extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (activeIndex < openDocuments.length) ...[
+                  if (activeIndex < openDocuments.length)
                     Flexible(
-                      child: Text(
-                        openDocuments[activeIndex].fileName,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                        style: AppTextStyle.label,
+                      child: _documentRow(
+                        openDocuments[activeIndex],
+                        projectPath,
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.medium),
-                    DiffCounter(
-                      gitStats:
-                          allGitDiffStats[openDocuments[activeIndex].filePath],
-                    ),
-                  ],
                   Icon(
                     Icons.arrow_drop_down,
                     color: Theme.of(context).colorScheme.onSurface,
@@ -140,6 +135,22 @@ class EditorScreenHeader extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  /// [document]'s file icon, path relative to [projectPath] and Git
+  /// changes, as the picker and its entries show them.
+  Widget _documentRow(DocumentState document, String? projectPath) {
+    return IconMenuRow(
+      icon: null,
+      leading: FileIconUtils.ofPath(document.filePath),
+      label: document.fileName,
+      labelWidget: PathText(
+        document.filePath,
+        rootPath: projectPath,
+        style: AppTextStyle.label,
+      ),
+      trailing: DiffCounter(gitStats: allGitDiffStats[document.filePath]),
     );
   }
 }

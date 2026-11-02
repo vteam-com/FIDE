@@ -2,6 +2,10 @@ part of 'file_type_utils.dart';
 
 /// Shared utility for getting file icons.
 class FileIconUtils {
+  /// The icon of the type of the file at [path].
+  static Widget ofPath(String path, {double size = AppIconSize.medium}) =>
+      getFileIcon(FileSystemItem.fromPath(path), size: size);
+
   /// Returns an icon widget for the provided file item and extension.
   static Widget getFileIcon(
     FileSystemItem item, {

@@ -8,9 +8,9 @@ import 'package:fide/providers/service_providers.dart';
 import 'package:fide/screens/create_project_step1.dart';
 import 'package:fide/screens/create_project_step2.dart';
 import 'package:fide/screens/create_project_step3.dart';
-import 'package:fide/widgets/full_path_widget.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/widgets/loading_indicator.dart';
+import 'package:fide/widgets/path_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
@@ -390,7 +390,11 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
             HeroTitleWidget(
               title: 'New Flutter Project',
               subWidget: _currentFullPathToNewProject != null
-                  ? FullPathWidget(path: _currentFullPathToNewProject!)
+                  ? PathText(
+                      _currentFullPathToNewProject!,
+                      selectable: true,
+                      style: AppTextStyle.label,
+                    )
                   : null,
             ),
             const SizedBox(height: AppSpacing.huge),

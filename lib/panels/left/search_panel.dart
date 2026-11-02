@@ -340,7 +340,6 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
 
   /// Handles `_buildFileResultNode`.
   Widget _buildFileResultNode(SearchResultNode node) {
-    final relativePath = p.relative(node.path, from: widget.projectPath);
     final item = FileSystemItem.fromFileSystemEntity(File(node.path));
 
     return Column(
@@ -349,9 +348,10 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
         // File header
         TreeRow(
           icon: FileIconUtils.getFileIcon(item),
-          name: relativePath,
+          name: item.name,
           path: node.path,
           rootPath: widget.projectPath,
+          showPath: true,
           onTap: () => widget.onFileSelected?.call(item),
         ),
         // Match results

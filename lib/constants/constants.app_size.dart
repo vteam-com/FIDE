@@ -70,6 +70,10 @@ class AppSize {
   static const double welcomeContentWidth = 700;
   static const double largeActionButtonHeight = 56;
 
+  /// Width of a menu listing files by path, such as the editor's open
+  /// files; longer paths shorten their folders.
+  static const double fileMenuWidth = 400;
+
   /// Width of the Go to File palette.
   static const double quickOpenWidth = 600;
 

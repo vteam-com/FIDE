@@ -2,10 +2,10 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/widgets/full_path_widget.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/widgets/loading_actions_log.dart';
 import 'package:fide/widgets/loading_progress_bar.dart';
+import 'package:fide/widgets/path_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -35,7 +35,11 @@ class _LoadingScreenState extends State<LoadingScreen> {
         children: [
           HeroTitleWidget(
             title: 'Loading ${p.basename(projectPath)}',
-            subWidget: FullPathWidget(path: projectPath),
+            subWidget: PathText(
+              projectPath,
+              selectable: true,
+              style: AppTextStyle.label,
+            ),
           ),
 
           Center(

@@ -1,12 +1,13 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/widgets/full_path_widget.dart';
 import 'package:fide/widgets/loading_actions_log.dart';
 import 'package:fide/widgets/loading_progress_bar.dart';
+import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/surface_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 
 /// Represents `CreateProjectStep3`.
 class CreateProjectStep3 extends StatefulWidget {
@@ -49,8 +50,10 @@ class _CreateProjectStep3State extends State<CreateProjectStep3> {
                   spacing: AppSpacing.medium,
                   children: [
                     SectionTitle('Creating project: ${widget.projectName}'),
-                    FullPathWidget(
-                      path: '${widget.projectLocation}/${widget.projectName}',
+                    PathText(
+                      p.join(widget.projectLocation, widget.projectName),
+                      selectable: true,
+                      style: AppTextStyle.label,
                     ),
                   ],
                 ),
