@@ -5,6 +5,10 @@ class AppSize {
   static const double borderThin = 1;
   static const double gutterDividerAlpha = 100;
   static const double titleBarHeight = 40;
+
+  /// Height of the strip atop each panel (the side panels' tab bars, the
+  /// editor header), so the three line up.
+  static const double panelHeaderHeight = 48;
   static const double terminalDefaultHeight = 200;
   static const double terminalMinHeight = 100;
   static const double terminalMaxHeight = 400;

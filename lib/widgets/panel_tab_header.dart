@@ -1,3 +1,4 @@
+import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/count_badge.dart';
 import 'package:flutter/material.dart';
 
@@ -27,7 +28,10 @@ class PanelTabHeader extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Tab(
-        icon: CountBadge(count: badgeCount, child: icon),
+        icon: IconTheme.merge(
+          data: const IconThemeData(size: AppIconSize.panelHeader),
+          child: CountBadge(count: badgeCount, child: icon),
+        ),
       ),
     );
   }

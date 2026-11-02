@@ -43,7 +43,7 @@ class PanelTabs extends StatelessWidget {
       child: Column(
         children: [
           if (showTabBar)
-            HeaderBar(
+            HeaderBar.top(
               child: TabBar(
                 controller: controller,
                 onTap: _handleTap,

@@ -133,8 +133,8 @@ class _RightPanelState extends ConsumerState<RightPanel>
     return Builder(
       builder: (context) => SvgPicture.asset(
         svgAsset,
-        width: AppIconSize.xLarge,
-        height: AppIconSize.xLarge,
+        width: AppIconSize.panelHeader,
+        height: AppIconSize.panelHeader,
         colorFilter: ColorFilter.mode(
           IconTheme.of(context).color!,
           BlendMode.srcIn,

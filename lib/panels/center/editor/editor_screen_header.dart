@@ -8,6 +8,7 @@ import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widget_services/diff_counter.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
+import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/toggle_experience_mode.dart';
@@ -54,118 +55,131 @@ class EditorScreenHeader extends ConsumerWidget {
       openDocumentsProvider.select((documents) => documents.history),
     );
     final documents = ref.read(openDocumentsProvider.notifier);
-    return Row(
-      children: [
-        const SizedBox(width: AppSpacing.medium),
-        CompactIconButton(
-          key: const Key('keyEditorGoBack'),
-          icon: Icons.chevron_left,
-          onPressed: history.canGoBack ? documents.goBack : null,
-          tooltip: ShortcutHelpEntry.tooltip('Go Back', AppShortcut.goBack),
-        ),
-        CompactIconButton(
-          key: const Key('keyEditorGoForward'),
-          icon: Icons.chevron_right,
-          onPressed: history.canGoForward ? documents.goForward : null,
-          tooltip: ShortcutHelpEntry.tooltip(
-            'Go Forward',
-            AppShortcut.goForward,
+    return HeaderBar.top(
+      child: Row(
+        children: [
+          const SizedBox(width: AppSpacing.medium),
+          CompactIconButton.header(
+            key: const Key('keyEditorGoBack'),
+            icon: Icons.chevron_left,
+            onPressed: history.canGoBack ? documents.goBack : null,
+            tooltip: ShortcutHelpEntry.tooltip('Go Back', AppShortcut.goBack),
           ),
-        ),
-        // Flexible so a long name or a narrow editor shortens the name
-        // instead of overflowing the action buttons
-        if (openDocuments.isNotEmpty)
-          Flexible(
-            child: PopupMenuButton<int>(
-              key: const Key('keyMruForFiles'),
-              initialValue: activeIndex,
-              itemBuilder: (_ /*context*/) {
-                return openDocuments.asMap().entries.map((entry) {
-                  return PopupMenuItem<int>(
-                    value: entry.key,
-                    // A fixed width: menus measure their entries, which a
-                    // one-line path can't report
-                    child: SizedBox(
-                      width: AppSize.fileMenuWidth,
-                      child: _documentRow(entry.value, projectPath, diffStats),
-                    ),
-                  );
-                }).toList();
-              },
-              onSelected: onDocumentSelected,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (activeIndex < openDocuments.length)
-                    Flexible(
-                      child: _documentRow(
-                        openDocuments[activeIndex],
-                        projectPath,
-                        diffStats,
+          CompactIconButton.header(
+            key: const Key('keyEditorGoForward'),
+            icon: Icons.chevron_right,
+            onPressed: history.canGoForward ? documents.goForward : null,
+            tooltip: ShortcutHelpEntry.tooltip(
+              'Go Forward',
+              AppShortcut.goForward,
+            ),
+          ),
+          // One Expanded holds the name and the unsaved note, so the space
+          // they leave goes between them and the actions, which stay at the
+          // right edge; Flexible so a long name or a narrow editor shortens
+          // the name instead of overflowing the actions
+          Expanded(
+            child: Row(
+              children: [
+                if (openDocuments.isNotEmpty)
+                  Flexible(
+                    child: PopupMenuButton<int>(
+                      key: const Key('keyMruForFiles'),
+                      initialValue: activeIndex,
+                      itemBuilder: (_ /*context*/) {
+                        return openDocuments.asMap().entries.map((entry) {
+                          return PopupMenuItem<int>(
+                            value: entry.key,
+                            // A fixed width: menus measure their
+                            // entries, which a one-line path can't report
+                            child: SizedBox(
+                              width: AppSize.fileMenuWidth,
+                              child: _documentRow(
+                                entry.value,
+                                projectPath,
+                                diffStats,
+                              ),
+                            ),
+                          );
+                        }).toList();
+                      },
+                      onSelected: onDocumentSelected,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (activeIndex < openDocuments.length)
+                            Flexible(
+                              child: _documentRow(
+                                openDocuments[activeIndex],
+                                projectPath,
+                                diffStats,
+                              ),
+                            ),
+                          Icon(
+                            Icons.arrow_drop_down,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ],
                       ),
                     ),
-                  Icon(
-                    Icons.arrow_drop_down,
-                    color: Theme.of(context).colorScheme.onSurface,
                   ),
-                ],
-              ),
+                if (isDirty)
+                  Flexible(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.xLarge,
+                        vertical: AppSpacing.medium,
+                      ),
+                      child: Text(
+                        'Unsaved Changes',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: AppTextStyle.caption.copyWith(
+                          color: AppTheme.readable(
+                            AppTheme.warningColor,
+                            Theme.of(context).colorScheme,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
-        const Spacer(),
-        if (ref.watch(gitDiffStatsProvider(currentFile)).value?.hasChanges ??
-            false)
-          ToggleExperienceMode(
-            isAlternativeMode: showDiffView,
-            primaryIcon: Icons.difference,
-            alternativeIcon: Icons.edit,
-            primaryTooltip: 'Show Diff View',
-            alternativeTooltip: 'Back to Editor',
-            onPressed: onToggleDiffView,
+          if (ref.watch(gitDiffStatsProvider(currentFile)).value?.hasChanges ??
+              false)
+            ToggleExperienceMode(
+              isAlternativeMode: showDiffView,
+              primaryIcon: Icons.difference,
+              alternativeIcon: Icons.edit,
+              primaryTooltip: 'Show Diff View',
+              alternativeTooltip: 'Back to Editor',
+              onPressed: onToggleDiffView,
+              iconSize: AppIconSize.panelHeader,
+            ),
+          CompactIconButton.header(
+            key: const Key('keyEditorFind'),
+            icon: Icons.search,
+            onPressed: showDiffView ? null : onToggleSearch,
+            tooltip: ShortcutHelpEntry.tooltip('Find', AppShortcut.find),
           ),
-        const Spacer(),
-        if (isDirty)
-          Flexible(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.xLarge,
-                vertical: AppSpacing.medium,
-              ),
-              child: Text(
-                'Unsaved Changes',
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-                style: AppTextStyle.caption.copyWith(
-                  color: AppTheme.readable(
-                    AppTheme.warningColor,
-                    Theme.of(context).colorScheme,
-                  ),
-                ),
-              ),
+          CompactIconButton.header(
+            key: const Key('keyEditorSave'),
+            icon: Icons.download,
+            onPressed: isDirty ? onSave : null,
+            tooltip: ShortcutHelpEntry.tooltip('Save', AppShortcut.save),
+          ),
+          CompactIconButton.header(
+            key: const Key('keyEditorClose'),
+            icon: Icons.close,
+            onPressed: onClose,
+            tooltip: ShortcutHelpEntry.tooltip(
+              'Close Editor',
+              AppShortcut.closeDocument,
             ),
           ),
-        CompactIconButton(
-          key: const Key('keyEditorFind'),
-          icon: Icons.search,
-          onPressed: showDiffView ? null : onToggleSearch,
-          tooltip: ShortcutHelpEntry.tooltip('Find', AppShortcut.find),
-        ),
-        CompactIconButton(
-          key: const Key('keyEditorSave'),
-          icon: Icons.download,
-          onPressed: isDirty ? onSave : null,
-          tooltip: ShortcutHelpEntry.tooltip('Save', AppShortcut.save),
-        ),
-        CompactIconButton(
-          key: const Key('keyEditorClose'),
-          icon: Icons.close,
-          onPressed: onClose,
-          tooltip: ShortcutHelpEntry.tooltip(
-            'Close Editor',
-            AppShortcut.closeDocument,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

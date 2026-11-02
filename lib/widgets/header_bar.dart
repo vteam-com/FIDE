@@ -5,10 +5,20 @@ import 'package:flutter/material.dart';
 /// bar, or below it as a footer, separated from it by a thin divider.
 class HeaderBar extends StatelessWidget {
   /// Creates the strip around [child].
-  const HeaderBar({super.key, required this.child, this.isFooter = false});
+  const HeaderBar({super.key, required this.child, this.isFooter = false})
+    : height = null;
+
+  /// Creates the strip atop a panel around [child], as tall as every
+  /// panel's, so the side panels' tabs and the editor header line up.
+  const HeaderBar.top({super.key, required this.child})
+    : isFooter = false,
+      height = AppSize.panelHeaderHeight;
 
   /// The header content.
   final Widget child;
+
+  /// The strip's fixed height, or null to fit [child].
+  final double? height;
 
   /// Whether the strip sits below the content, its divider on top.
   final bool isFooter;
@@ -23,7 +33,7 @@ class HeaderBar extends StatelessWidget {
       decoration: BoxDecoration(
         border: isFooter ? Border(top: divider) : Border(bottom: divider),
       ),
-      child: child,
+      child: SizedBox(height: height, child: child),
     );
   }
 }

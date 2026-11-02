@@ -11,5 +11,9 @@ class AppIconSize {
   static const double xLarge = 24;
   static const double emptyState = 48;
 
+  /// Icons in the strip atop each panel: the side panels' tabs and the
+  /// editor header's buttons, so they read alike.
+  static const double panelHeader = xLarge;
+
   const AppIconSize._();
 }
