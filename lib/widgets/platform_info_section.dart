@@ -1,5 +1,4 @@
 // ignore_for_file: deprecated_member_use
-import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_theme.dart';
@@ -7,14 +6,12 @@ import 'package:fide/models/build_artifacts.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/process_runner.dart';
+import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/service_providers.dart';
-import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/detail_row.dart';
-import 'package:fide/widgets/icon_menu_row.dart';
-import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/file_actions.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/section_title.dart';
@@ -166,7 +163,7 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
               ),
             ],
 
-            // Icon with Context Menu at Bottom
+            // The app icon and its file's actions
             const SizedBox(height: AppSpacing.medium),
             OutlinedSurface(
               padding: SurfacePadding.dense,
@@ -175,81 +172,15 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
                   _buildIcon(),
                   const SizedBox(width: AppSpacing.medium),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          p.basename(_iconPath),
-                          style: AppTextStyle.captionStrong,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          _iconPath,
-                          style: AppTextStyle.code.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                          ),
-                          maxLines: AppMetric.doubleLineLimit,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  _buildIconIssues(),
-                  PopupMenuButton<String>(
-                    icon: Icon(
-                      Icons.more_vert,
-                      size: AppIconSize.medium,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    itemBuilder: (_) => [
-                      PopupMenuItem<String>(
-                        value: 'copy_path',
-                        child: IconMenuRow(
-                          icon: Icons.copy,
-                          label: 'Copy Path',
-                        ),
+                    child: switch (_artifacts.appIconPath) {
+                      final path? => FileActions(path: path),
+                      null => Text(
+                        p.basename(_genericIconPath),
+                        style: AppTextStyle.captionStrong,
                       ),
-                      if (!_iconPath.startsWith('assets/'))
-                        PopupMenuItem<String>(
-                          value: 'open_finder',
-                          child: IconMenuRow(
-                            icon: Icons.folder_open,
-                            label: 'Open in ${ProcessRunner.fileManagerName}',
-                          ),
-                        ),
-                      PopupMenuItem<String>(
-                        value: 'select_in_fide',
-                        child: IconMenuRow(
-                          icon: Icons.search,
-                          label: 'Select in FIDE-Explorer',
-                        ),
-                      ),
-                    ],
-                    onSelected: (value) {
-                      switch (value) {
-                        case 'copy_path':
-                          MessageBox.copyToClipboard(
-                            context,
-                            _iconPath,
-                            confirmation: 'Path copied to clipboard',
-                          );
-                          break;
-                        case 'open_finder':
-                          _openFolder(_iconPath);
-                          break;
-                        case 'select_in_fide':
-                          // Show a message for now since we don't have access to the explorer
-                          MessageBox.showInfo(
-                            context,
-                            'Select in FIDE-Explorer: $_iconPath',
-                          );
-                          break;
-                      }
                     },
                   ),
+                  _buildIconIssues(),
                 ],
               ),
             ),
@@ -273,7 +204,7 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
           '${count.count('app icon problem')} on '
           '${widget.selectedPlatform.displayName}.'
           '\nClick to review and fix them.',
-      onTap: () => ref.read(appIconsVisibleProvider.notifier).state = true,
+      onTap: () => showAppIcons(ref),
     );
   }
 
@@ -304,9 +235,6 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
     return widget.selectedPlatform.enableInstructions;
   }
 
-  /// The project's app icon, or the bundled one for the platform.
-  String get _iconPath => _artifacts.appIconPath ?? _genericIconPath;
-
   /// Reads the build output off the UI thread's critical path; results for
   /// a platform the user has since switched away from are dropped.
   Future<void> _inspectArtifacts() async {
@@ -316,24 +244,6 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
         .inspect(widget.projectPath, platform);
     if (mounted && platform == widget.selectedPlatform) {
       setState(() => _artifacts = artifacts);
-    }
-  }
-
-  /// Opens the folder containing [path] in the system file manager.
-  void _openFolder(String path) {
-    try {
-      // For assets, we can't open in file explorer (they're packaged)
-      if (path.startsWith('assets/')) {
-        return;
-      }
-
-      // Get the directory containing the file
-      final file = File(path);
-      final directory = file.parent.path;
-
-      ref.read(processRunnerProvider).revealInFileManager(directory);
-    } catch (_) {
-      // Ignore errors silently
     }
   }
 }

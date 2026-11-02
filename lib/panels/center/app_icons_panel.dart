@@ -264,7 +264,7 @@ class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
       projectPath: projectPath,
       isSelected: path != null && path == selection,
       onTap: path == null ? null : () => _select(path),
-      onDoubleTap: path == null ? null : () => _open(path),
+      onDoubleTap: path == null ? null : () => openFile(ref, path),
       problems: [
         for (final issue in issues)
           if (issue.filePath == slot.filePath) issue.message,
@@ -282,13 +282,6 @@ class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
   void _select(String path) {
     ref.read(appIconSelectionProvider.notifier).state = path;
     showRightPanelTab(ref, RightPanelTab.outline);
-  }
-
-  /// Opens the icon file at [path] in the editor, returning here when it
-  /// is closed.
-  void _open(String path) {
-    ref.read(appIconsOpenedPathProvider.notifier).state = path;
-    openFile(ref, path);
   }
 
   /// Lets the user pick the master image, starting in the project folder.

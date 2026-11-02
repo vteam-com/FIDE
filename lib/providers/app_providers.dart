@@ -210,7 +210,7 @@ final appIconSelectionProvider = StateProvider<String?>((ref) {
   return null;
 });
 
-/// The icon file the App Icons view opened in the editor, as an absolute
+/// The file opened in the editor from the App Icons view, as an absolute
 /// path: closing it returns to the view. Null when the editor shows
 /// anything else; forgotten when the project changes.
 final appIconsOpenedPathProvider = StateProvider<String?>((ref) {

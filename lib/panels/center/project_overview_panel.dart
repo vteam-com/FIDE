@@ -5,7 +5,7 @@ import 'package:fide/models/project_overview.dart';
 import 'package:fide/models/quality_issues.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/empty_state.dart';
@@ -62,8 +62,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
       action: TextButton.icon(
         icon: const Icon(Icons.auto_fix_high),
         label: const Text('Review'),
-        onPressed: () =>
-            ref.read(appIconsVisibleProvider.notifier).state = true,
+        onPressed: () => showAppIcons(ref),
       ),
     );
   }

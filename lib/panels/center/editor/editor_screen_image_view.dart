@@ -59,7 +59,7 @@ class _EditorScreenImageViewState extends ConsumerState<EditorScreenImageView> {
       children: [
         HeaderBar(
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.small),
+            padding: const EdgeInsets.all(AppSpacing.medium),
             child: Row(
               spacing: AppSpacing.medium,
               children: [

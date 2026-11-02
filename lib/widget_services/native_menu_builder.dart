@@ -285,8 +285,7 @@ class NativeMenuBuilder {
           members: [
             PlatformMenuItem(
               label: 'App Icons',
-              onSelected: () =>
-                  ref.read(appIconsVisibleProvider.notifier).state = true,
+              onSelected: () => showAppIcons(ref),
             ),
           ],
         ),

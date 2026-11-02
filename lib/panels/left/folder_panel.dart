@@ -48,19 +48,18 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
   @override
   void didUpdateWidget(FolderPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedFile?.path != widget.selectedFile?.path) {
+    final selected = widget.selectedFile?.path;
+    if (oldWidget.selectedFile?.path != selected) {
       _revealedPath = null;
+      if (selected != null) _expandTo(selected);
     }
   }
 
   /// Expands the folders down to the file at [path], loading them as
-  /// needed, clears the filter hiding it, then highlights its row and
-  /// scrolls to it.
-  Future<void> _reveal(String path) async {
-    ref.read(explorerRevealPathProvider.notifier).state = null;
+  /// needed; nothing for a file outside the project.
+  Future<void> _expandTo(String path) async {
     final root = projectRoot;
     if (root == null || !p.isWithin(root.path, path)) return;
-    filterController.clear();
     var folder = root;
     for (final segment in p.split(
       p.relative(p.dirname(path), from: root.path),
@@ -74,6 +73,15 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
       expandedState[child.path] = true;
       folder = child;
     }
+    if (mounted) setState(() {});
+  }
+
+  /// Clears the filter, expands the folders down to the file at [path],
+  /// then highlights its row and scrolls to it.
+  Future<void> _reveal(String path) async {
+    ref.read(explorerRevealPathProvider.notifier).state = null;
+    filterController.clear();
+    await _expandTo(path);
     if (!mounted) return;
     setState(() => _revealedPath = path);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -89,8 +97,24 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
   }
 
   @override
+  void initState() {
+    super.initState();
+    _expandToSelectedAfterBuild();
+  }
+
+  @override
   void onProjectTreeChanged() {
     _cachedFileSystemItems.clear();
+    _expandToSelectedAfterBuild();
+  }
+
+  /// Once the current build is done, expands the folders down to the
+  /// selected file, so it shows when the panel or its tree is new.
+  void _expandToSelectedAfterBuild() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final selected = widget.selectedFile?.path;
+      if (mounted && selected != null) _expandTo(selected);
+    });
   }
 
   /// Returns `filterController`.
@@ -123,46 +147,6 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
     }
   }
 
-  /// Handles `_ensureSelectedFileVisible`.
-  void _ensureSelectedFileVisible(String filePath) {
-    if (panelState.projectRoot == null || !mounted) return;
-
-    // For filesystem view, expand the directory containing the file
-    final fileDir = p.dirname(filePath);
-    if (fileDir != panelState.projectRoot!.path) {
-      /// Handles `_findNodeByPath`.
-      final directoryNode = _findNodeByPath(fileDir);
-      if (directoryNode != null && mounted) {
-        setState(() {
-          panelState.expandedState[fileDir] = true;
-        });
-      }
-    }
-  }
-
-  /// Handles `_findNodeByPath`.
-  ProjectNode? _findNodeByPath(String targetPath) {
-    if (panelState.projectRoot == null) return null;
-
-    // Helper function to search recursively
-    ProjectNode? findInNode(ProjectNode node) {
-      if (node.path == targetPath) {
-        return node;
-      }
-
-      for (final child in node.children) {
-        final found = findInNode(child);
-        if (found != null) {
-          return found;
-        }
-      }
-
-      return null;
-    }
-
-    return findInNode(panelState.projectRoot!);
-  }
-
   @override
   Widget build(BuildContext context) {
     // Watch for project data from ProjectService
@@ -179,16 +163,6 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
         // Several builds may schedule it; the first one handles it
         if (mounted && ref.read(explorerRevealPathProvider) == path) {
           _reveal(path);
-        }
-      });
-    }
-
-    // Ensure selected file is expanded and visible when building
-    if (widget.selectedFile != null && panelState.projectRoot != null) {
-      // Use a microtask to ensure this happens after the current build cycle
-      Future.microtask(() {
-        if (mounted) {
-          _ensureSelectedFileVisible(widget.selectedFile!.path);
         }
       });
     }

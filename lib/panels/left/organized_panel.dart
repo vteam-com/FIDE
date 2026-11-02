@@ -10,6 +10,7 @@ import 'package:fide/models/project_node.dart';
 import 'package:fide/panels/left/shared_panel_utils.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/class_splitter.dart';
+import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
@@ -223,7 +224,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
       ),
       name: 'App Icons',
       highlighted: isVisible,
-      onTap: () => ref.read(appIconsVisibleProvider.notifier).state = true,
+      onTap: () => showAppIcons(ref),
       trailing: [
         if (issueCount > 0)
           WarningCount(

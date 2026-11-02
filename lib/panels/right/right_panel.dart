@@ -2,7 +2,6 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/right_panel_tab.dart';
 import 'package:fide/panels/right/ai_panel.dart';
-import 'package:fide/panels/right/file_actions_bar.dart';
 import 'package:fide/panels/right/image_details_panel.dart';
 import 'package:fide/panels/right/info_panel.dart';
 import 'package:fide/panels/right/localization/localization_panel.dart';
@@ -12,6 +11,8 @@ import 'package:fide/providers/file_type_utils.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/count_badge.dart';
 import 'package:fide/widgets/empty_state.dart';
+import 'package:fide/widgets/file_actions.dart';
+import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/panel_tabs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -116,7 +117,13 @@ class _RightPanelState extends State<RightPanel>
                   onJumpToLine: widget.onJumpToLine,
                 ),
         ),
-        FileActionsBar(path: path),
+        HeaderBar(
+          isFooter: true,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.medium),
+            child: FileActions(path: path),
+          ),
+        ),
       ],
     );
   }

@@ -86,12 +86,16 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
       previous,
       next,
     ) {
-      final openedPath = ref.read(appIconsOpenedPathProvider);
-      ref.read(appIconsVisibleProvider.notifier).state =
-          next == null && previous != null && previous == openedPath;
-      if (next != openedPath) {
-        ref.read(appIconsOpenedPathProvider.notifier).state = null;
+      final visible = ref.read(appIconsVisibleProvider.notifier);
+      final opened = ref.read(appIconsOpenedPathProvider.notifier);
+      final isClosingOpened =
+          next == null && previous != null && previous == opened.state;
+      if (visible.state) {
+        opened.state = next;
+      } else if (isClosingOpened || next != opened.state) {
+        opened.state = null;
       }
+      visible.state = isClosingOpened;
     });
 
     // Determine the main content to display

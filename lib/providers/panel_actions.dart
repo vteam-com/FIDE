@@ -47,6 +47,11 @@ void revealInExplorer(WidgetRef ref, String path) {
   ref.read(explorerRevealPathProvider.notifier).state = path;
 }
 
+/// Shows the App Icons view in the center panel.
+void showAppIcons(WidgetRef ref) {
+  ref.read(appIconsVisibleProvider.notifier).state = true;
+}
+
 /// Shows the right panel on [tab].
 void showRightPanelTab(WidgetRef ref, RightPanelTab tab) {
   ref.read(rightPanelVisibleProvider.notifier).state = true;
