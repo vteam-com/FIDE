@@ -15,7 +15,9 @@ import 'package:fide/widgets/asset_kind_icon.dart';
 import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/folder_node.dart';
 import 'package:fide/widgets/inline_spinner.dart';
+import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/tree_branch.dart';
 import 'package:fide/widgets/tree_row.dart';
@@ -82,13 +84,15 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     // Class counts come from fCheck, analyzing again after each save
     ref.listen(projectOverviewProvider, (_, _) => _categorize());
 
-    return !isProjectLoaded ? buildNotLoadedView() : buildPanelContent();
+    return !isProjectLoaded
+        ? const NoProjectPlaceholder()
+        : buildPanelContent();
   }
 
   /// Handles `_OrganizedPanelState.buildPanelContent`.
   Widget buildPanelContent() {
     if (projectRoot == null) {
-      return buildNoProjectView();
+      return const NoProjectPlaceholder();
     }
 
     /// Handles `_buildOrganizedView`.
@@ -99,7 +103,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
   Widget _buildOrganizedView() {
     final categories = _categories;
     if (categories == null) {
-      return const Center(child: InlineSpinner());
+      return const LoadingIndicator();
     }
 
     final sections = [

@@ -72,8 +72,6 @@ class LocalizationEntryWidget extends StatelessWidget {
             // Show missing languages if any
             if (comparison.missingInLanguages.isNotEmpty ||
                 comparison.isMissingInEnglish) ...[
-              const SizedBox(height: AppSpacing.large),
-              const SizedBox(height: AppSpacing.large),
               const Divider(),
               Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.medium),

@@ -17,7 +17,6 @@ import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/project_maintenance_service.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/badge_status.dart';
-import 'package:fide/widgets/busy_icon_button.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/issue_section.dart';
@@ -25,6 +24,7 @@ import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/open_url.dart';
 import 'package:fide/widgets/output_panel.dart';
+import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
@@ -112,7 +112,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                   ? '${deduction.label}: -${deduction.points} pts'
                   : '${deduction.label}: no deduction',
             ),
-          const Divider(height: AppSpacing.xxLarge),
+          const Divider(),
           SectionTitle(
             'Final Score: ${health.qualityScore}/${AppMetric.maxScore}',
           ),
@@ -491,13 +491,13 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           spacing: AppSpacing.medium,
           runSpacing: AppSpacing.medium,
           children: [
-            BusyIconButton(
+            PrimaryButton(
               busy: _checkingOutdated,
               icon: Icons.update,
               label: 'Outdated',
               onPressed: _checkOutdated,
             ),
-            BusyIconButton(
+            PrimaryButton(
               busy: _upgrading,
               icon: Icons.arrow_upward,
               label: 'Upgrade',
@@ -589,13 +589,13 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: AppSpacing.medium,
         children: [
-          BusyIconButton(
+          PrimaryButton(
             busy: _isRefreshing,
             icon: Icons.cleaning_services,
             label: 'Full Project Cleanup',
             onPressed: _performFullCleanup,
           ),
-          BusyIconButton(
+          PrimaryButton(
             busy: _isRefreshing,
             icon: Icons.refresh,
             label: 'Refresh Analysis',

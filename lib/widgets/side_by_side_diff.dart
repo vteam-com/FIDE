@@ -43,12 +43,7 @@ class SideBySideDiff extends StatelessWidget {
             child: Row(
               children: [
                 _buildHeaderLabel('Original'),
-                Container(
-                  width: AppSize.borderThin,
-                  height: AppSize.diffHeaderDividerHeight,
-                  color: Theme.of(context).colorScheme.outline
-                      .withValues(alpha: AppOpacity.divider),
-                ),
+                _buildColumnDivider(context, AppSize.diffHeaderDividerHeight),
                 _buildHeaderLabel('Modified'),
               ],
             ),
@@ -77,12 +72,9 @@ class SideBySideDiff extends StatelessWidget {
                             ? Colors.red[AppShade.strong]
                             : null,
                       ),
-                      // Divider
-                      Container(
-                        width: AppSize.borderThin,
-                        height: AppSize.diffRowDividerHeight,
-                        color: Theme.of(context).colorScheme.outline
-                            .withValues(alpha: AppOpacity.divider),
+                      _buildColumnDivider(
+                        context,
+                        AppSize.diffRowDividerHeight,
                       ),
                       _buildSide(
                         context,
@@ -161,6 +153,16 @@ class SideBySideDiff extends StatelessWidget {
       }
     }
     return diffLines;
+  }
+
+  /// The thin line, [height] tall, between the original and modified sides.
+  Widget _buildColumnDivider(BuildContext context, double height) {
+    return Container(
+      width: AppSize.borderThin,
+      height: height,
+      color: Theme.of(context).colorScheme.outline
+          .withValues(alpha: AppOpacity.divider),
+    );
   }
 
   /// The bold title above one side of the diff.

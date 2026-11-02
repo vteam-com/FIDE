@@ -9,6 +9,7 @@ import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/filter_field.dart';
 import 'package:fide/widgets/folder_node.dart';
+import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -144,13 +145,15 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
       });
     }
 
-    return !isProjectLoaded ? buildNotLoadedView() : buildPanelContent();
+    return !isProjectLoaded
+        ? const NoProjectPlaceholder()
+        : buildPanelContent();
   }
 
   /// Handles `_FolderPanelState.buildPanelContent`.
   Widget buildPanelContent() {
     if (projectRoot == null) {
-      return buildNoProjectView();
+      return const NoProjectPlaceholder();
     }
 
     final tree = SingleChildScrollView(

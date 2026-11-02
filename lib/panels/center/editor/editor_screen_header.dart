@@ -6,6 +6,7 @@ import 'package:fide/providers/git_diff_stats_provider.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widget_services/diff_counter.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/path_text.dart';
@@ -124,21 +125,21 @@ class EditorScreenHeader extends ConsumerWidget {
               ),
             ),
           ),
-        IconButton(
+        CompactIconButton(
           key: const Key('keyEditorFind'),
-          icon: const Icon(Icons.search),
+          icon: Icons.search,
           onPressed: showDiffView ? null : onToggleSearch,
           tooltip: ShortcutHelpEntry.tooltip('Find', AppShortcut.find),
         ),
-        IconButton(
+        CompactIconButton(
           key: const Key('keyEditorSave'),
-          icon: const Icon(Icons.download),
+          icon: Icons.download,
           onPressed: isDirty ? onSave : null,
           tooltip: ShortcutHelpEntry.tooltip('Save', AppShortcut.save),
         ),
-        IconButton(
+        CompactIconButton(
           key: const Key('keyEditorClose'),
-          icon: const Icon(Icons.close),
+          icon: Icons.close,
           onPressed: onClose,
           tooltip: ShortcutHelpEntry.tooltip(
             'Close Editor',

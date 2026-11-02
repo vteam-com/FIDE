@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:flutter/material.dart';
 
 /// The outlined text box used by every panel (search, find, filter, AI
@@ -89,8 +90,9 @@ class AppTextField extends StatelessWidget {
           hintText: hintText,
           prefixIcon: icon == null ? null : Icon(icon, size: AppIconSize.large),
           suffixIcon: clearable && value.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear, size: AppIconSize.large),
+              ? CompactIconButton(
+                  icon: Icons.clear,
+                  tooltip: 'Clear',
                   onPressed: () {
                     controller.clear();
                     onCleared?.call();

@@ -23,7 +23,9 @@ class OutlinedSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    // Clipped, so content that fills the box keeps its rounded corners
     return Container(
+      clipBehavior: Clip.antiAlias,
       padding: padding.insets,
       decoration: BoxDecoration(
         color: colorScheme.surface,

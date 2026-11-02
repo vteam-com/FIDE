@@ -2,10 +2,6 @@ part of 'constants.dart';
 
 /// Reusable `EdgeInsets` presets for consistent widget padding and margins.
 class AppPadding {
-  static const EdgeInsets wizardButton = EdgeInsets.symmetric(
-    horizontal: AppSpacing.huge,
-    vertical: AppSpacing.xLarge,
-  );
   static const EdgeInsets sectionContent = EdgeInsets.all(AppSpacing.medium);
   static const EdgeInsets sectionHeader = EdgeInsets.symmetric(
     horizontal: 8,
@@ -19,13 +15,18 @@ class AppPadding {
     horizontal: 4,
     vertical: 1,
   );
-  static const EdgeInsets actionTabContent = EdgeInsets.all(16);
-  static const EdgeInsets actionTabLabel = EdgeInsets.symmetric(horizontal: 8);
-  static const EdgeInsets actionTabLabelCompact = EdgeInsets.symmetric(
+
+  /// Inset of a full page's or overlay's content from its edges.
+  static const EdgeInsets pageContent = EdgeInsets.all(AppSpacing.xLarge);
+
+  /// Insets of a tab that shows only its icon.
+  static const EdgeInsets tabLabelCompact = EdgeInsets.symmetric(
     horizontal: 8,
     vertical: 8,
   );
-  static const EdgeInsets actionTabLabelExpanded = EdgeInsets.symmetric(
+
+  /// Insets of a tab that shows its icon and name.
+  static const EdgeInsets tabLabelExpanded = EdgeInsets.symmetric(
     horizontal: 8,
     vertical: 4,
   );

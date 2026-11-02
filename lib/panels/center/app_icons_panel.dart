@@ -14,10 +14,12 @@ import 'package:fide/services/app_icon_fixer.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/app_icon_slot_tile.dart';
-import 'package:fide/widgets/busy_icon_button.dart';
-import 'package:fide/widgets/hero_title_widget.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/page_header.dart';
 import 'package:fide/widgets/path_text.dart';
+import 'package:fide/widgets/primary_button.dart';
+import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -63,26 +65,22 @@ class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: AppSpacing.xxLarge,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: HeroTitleWidget(
-                  title: 'App Icons',
-                  subTitle: issues.isEmpty
-                      ? 'Every platform icon checks out'
-                      : '${issues.length.count('problem')} on '
-                            '${broken.length.count('platform')}',
-                  logo: const Icon(Icons.apps, size: AppSize.heroLogoHeight),
-                ),
-              ),
-              IconButton(
+          PageHeader(
+            title: 'App Icons',
+            subTitle: issues.isEmpty
+                ? 'Every platform icon checks out'
+                : '${issues.length.count('problem')} on '
+                      '${broken.length.count('platform')}',
+            logo: const Icon(Icons.apps, size: AppSize.heroLogoHeight),
+            actions: [
+              CompactIconButton(
                 tooltip: 'Check again',
-                icon: const Icon(Icons.refresh),
+                icon: Icons.refresh,
                 onPressed: () => ref.invalidate(appIconReportProvider),
               ),
-              IconButton(
+              CompactIconButton(
                 tooltip: 'Close',
-                icon: const Icon(Icons.close),
+                icon: Icons.close,
                 onPressed: () =>
                     ref.read(appIconsVisibleProvider.notifier).state = false,
               ),
@@ -131,12 +129,12 @@ class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
       action: Wrap(
         spacing: AppSpacing.medium,
         children: [
-          TextButton.icon(
-            icon: const Icon(Icons.folder_open),
-            label: const Text('Choose…'),
+          SecondaryButton(
+            icon: Icons.folder_open,
+            label: 'Choose…',
             onPressed: () => _chooseMaster(projectPath),
           ),
-          BusyIconButton(
+          PrimaryButton(
             icon: Icons.auto_fix_high,
             label: 'Fix all',
             busy: _fixing.isNotEmpty,
@@ -201,7 +199,7 @@ class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
       title: platform.label,
       action: issues.isEmpty
           ? null
-          : BusyIconButton(
+          : PrimaryButton(
               icon: Icons.auto_fix_high,
               label: 'Fix',
               busy: _fixing.contains(platform),

@@ -32,7 +32,6 @@ class AppSize {
   static const double compactProgressIndicator = 18;
   static const double regularProgressIndicator = 20;
   static const double expandedProgressIndicator = 24;
-  static const double tabLabelBreakpoint = 240;
   static const double platformSelectorLabelBreakpoint = 300;
   static const double macWindowControlsSpacing = 80;
   static const double desktopWindowControlsSpacing = 120;
@@ -71,7 +70,6 @@ class AppSize {
   static const double statusIconTall = 25;
   static const double wizardMaxWidth = 600;
   static const double welcomeContentWidth = 700;
-  static const double largeActionButtonHeight = 56;
 
   /// Width of a menu listing files by path, such as the editor's open
   /// files; longer paths shorten their folders.

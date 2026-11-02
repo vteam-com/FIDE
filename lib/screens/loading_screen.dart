@@ -6,6 +6,7 @@ import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/widgets/loading_actions_log.dart';
 import 'package:fide/widgets/loading_progress_bar.dart';
 import 'package:fide/widgets/path_text.dart';
+import 'package:fide/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -29,7 +30,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
   Widget build(BuildContext context) {
     final projectPath = widget.loadingProjectName!;
     return Padding(
-      padding: const EdgeInsets.all(AppSize.compactActionButton),
+      padding: const EdgeInsets.all(AppSpacing.huge),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -78,7 +79,8 @@ class _LoadingScreenState extends State<LoadingScreen> {
                                 ),
                                 textAlign: TextAlign.center,
                               ),
-                              ElevatedButton(
+                              PrimaryButton(
+                                label: 'Retry',
                                 onPressed: () {
                                   // Clear loading state and let user try again
                                   ref
@@ -87,7 +89,6 @@ class _LoadingScreenState extends State<LoadingScreen> {
                                       [];
                                   // The main app should handle retry logic
                                 },
-                                child: const Text('Retry'),
                               ),
                             ],
                           ),

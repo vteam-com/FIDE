@@ -56,7 +56,7 @@ class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(AppSpacing.medium)),
+          borderRadius: BorderRadius.all(Radius.circular(AppRadius.medium)),
         ),
       ),
       appBarTheme: const AppBarTheme(

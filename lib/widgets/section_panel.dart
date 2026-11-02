@@ -1,5 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/container_counter.dart';
+import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/surface_padding.dart';
 import 'package:flutter/material.dart';
 
 /// A collapsible section drawn as one outlined card: a header band over its
@@ -52,19 +54,11 @@ class _SectionPanelState extends State<SectionPanel> {
     final count = widget.count;
     final child = widget.child;
 
-    // One card per section: the filled header band and the tinted content
+    // One outlined box per section: the filled header band and the content
     // share a rounded outline, so the content reads as the header's own and
-    // nested sections show their depth by sitting inside their parent's card
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: headerBackgroundColor.withValues(alpha: AppOpacity.selected),
-        borderRadius: BorderRadius.circular(AppRadius.medium),
-        border: Border.all(
-          color: colorScheme.outline.withValues(alpha: AppOpacity.divider),
-          width: AppSize.borderThin,
-        ),
-      ),
+    // nested sections show their depth by sitting inside their parent's box
+    return OutlinedSurface(
+      padding: SurfacePadding.none,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

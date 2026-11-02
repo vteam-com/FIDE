@@ -106,7 +106,7 @@ class _MessageWidgetState extends State<MessageWidget>
               ],
             ),
             child: Padding(
-              padding: AppPadding.actionTabContent,
+              padding: AppPadding.pageContent,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

@@ -8,6 +8,8 @@ import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/path_text.dart';
+import 'package:fide/widgets/primary_button.dart';
+import 'package:fide/widgets/secondary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -96,21 +98,9 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  OutlinedButton(
-                    onPressed: widget.onCancel,
-                    style: OutlinedButton.styleFrom(
-                      padding: AppPadding.wizardButton,
-                    ),
-                    child: const Text('Cancel'),
-                  ),
+                  SecondaryButton(onPressed: widget.onCancel, label: 'Cancel'),
                   const SizedBox(width: AppSpacing.xLarge),
-                  FilledButton(
-                    onPressed: onPressed,
-                    style: FilledButton.styleFrom(
-                      padding: AppPadding.wizardButton,
-                    ),
-                    child: Text(label),
-                  ),
+                  PrimaryButton(onPressed: onPressed, label: label),
                 ],
               ),
             ),

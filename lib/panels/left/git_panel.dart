@@ -9,11 +9,14 @@ import 'package:fide/widget_services/diff_counter.dart';
 import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/primary_button.dart';
+import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
 import 'package:flutter/material.dart';
@@ -101,11 +104,9 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     required VoidCallback onPressed,
   }) {
     final hasPending = pending > 0;
-    return IconButton(
-      icon: Icon(
-        hasPending ? pendingIcon : idleIcon,
-        color: hasPending ? Theme.of(context).colorScheme.primary : null,
-      ),
+    return CompactIconButton(
+      icon: hasPending ? pendingIcon : idleIcon,
+      color: hasPending ? Theme.of(context).colorScheme.primary : null,
       onPressed: onPressed,
       tooltip: hasPending
           ? '$label $pending commit${pending == 1 ? '' : 's'}'
@@ -223,8 +224,8 @@ class _GitPanelState extends ConsumerState<GitPanel> {
             children: [
               Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
+                  CompactIconButton(
+                    icon: Icons.refresh,
                     onPressed: _refresh,
                     tooltip: 'Refresh',
                   ),
@@ -257,31 +258,26 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                         controller: _commitController,
                         hintText: 'Enter commit message...',
                         maxLines: AppMetric.aiInputMaxLines,
-                        trailing: IconButton(
-                          icon: _isWritingMessage
-                              ? const InlineSpinner()
-                              : const Icon(
-                                  Icons.auto_awesome,
-                                  size: AppIconSize.large,
-                                ),
-                          onPressed: _isWritingMessage
-                              ? null
-                              : _writeCommitMessage,
-                          tooltip: 'Write commit message with AI',
-                        ),
+                        trailing: _isWritingMessage
+                            ? const InlineSpinner()
+                            : CompactIconButton(
+                                icon: Icons.auto_awesome,
+                                onPressed: _writeCommitMessage,
+                                tooltip: 'Write commit message with AI',
+                              ),
                       ),
                       Row(
+                        spacing: AppSpacing.medium,
                         children: [
-                          ElevatedButton(
-                            onPressed: _isCommitting ? null : _commit,
-                            child: _isCommitting
-                                ? const InlineSpinner()
-                                : const Text('Commit'),
+                          PrimaryButton(
+                            busy: _isCommitting,
+                            onPressed: _commit,
+                            label: 'Commit',
                           ),
                           if (repo.canAmend)
-                            TextButton(
+                            SecondaryButton(
                               onPressed: _isCommitting ? null : _amend,
-                              child: const Text('Amend'),
+                              label: 'Amend',
                             ),
                         ],
                       ),
@@ -422,22 +418,22 @@ class _GitPanelState extends ConsumerState<GitPanel> {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (onStage != null)
-          TextButton(
+          CompactTextButton(
+            icon: Icons.add,
             onPressed: () => onStage(files),
-            child: const Text('Stage All'),
+            label: 'Stage All',
           ),
         if (onUnstage != null)
-          TextButton(
+          CompactTextButton(
+            icon: Icons.remove,
             onPressed: () => onUnstage(files),
-            child: const Text('Unstage All'),
+            label: 'Unstage All',
           ),
         if (canDiscard && onDiscard != null)
-          TextButton(
+          CompactTextButton(
+            icon: Icons.delete_outline,
             onPressed: () => onDiscard(files),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Discard All'),
+            label: 'Discard All',
           ),
       ],
     );

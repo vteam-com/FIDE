@@ -17,6 +17,7 @@ import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -97,7 +98,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
                     ),
                   ),
           ),
-          const Divider(height: AppSize.borderThin),
+          const Divider(),
           _buildPrompt(chat.action.hint, chat.isBusy),
           _buildFooter(chat.action, isReady),
         ],
@@ -225,10 +226,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
         if (step == OllamaStep.installing)
           const InlineSpinner()
         else if (actionLabel != null)
-          ElevatedButton(
-            onPressed: () => _fixSetup(step),
-            child: Text(actionLabel),
-          ),
+          PrimaryButton(onPressed: () => _fixSetup(step), label: actionLabel),
       ],
     );
   }

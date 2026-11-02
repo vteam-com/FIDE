@@ -2,6 +2,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_status.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/panel_action.dart';
 import 'package:fide/widgets/status_tone_style.dart';
@@ -169,11 +170,7 @@ class _ActionRowState extends State<_ActionRow> {
         alignment: Alignment.center,
         children: [
           if (action.status == ActionStatus.running)
-            const SizedBox.expand(
-              child: CircularProgressIndicator(
-                strokeWidth: AppBorderWidth.medium,
-              ),
-            ),
+            const InlineSpinner(size: AppSize.actionButtonRing),
           button,
         ],
       ),

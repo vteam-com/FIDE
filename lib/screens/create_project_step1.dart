@@ -3,6 +3,7 @@ import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/create_project_draft_notifier.dart';
 import 'package:fide/providers/tool_availability_provider.dart';
 import 'package:fide/widgets/app_text_field.dart';
+import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/step_header.dart';
 import 'package:fide/widgets/tool_status_row.dart';
@@ -106,10 +107,7 @@ class _CreateProjectStep1State extends ConsumerState<CreateProjectStep1> {
               ),
             ),
             const SizedBox(width: AppSpacing.xLarge),
-            ElevatedButton(
-              onPressed: _handleBrowseDirectory,
-              child: const Text('Browse'),
-            ),
+            SecondaryButton(onPressed: _handleBrowseDirectory, label: 'Browse'),
           ],
         ),
 

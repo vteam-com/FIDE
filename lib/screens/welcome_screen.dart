@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/app_view_notifier.dart';
@@ -7,6 +5,9 @@ import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/widgets/outlined_list_tile.dart';
+import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/primary_button.dart';
+import 'package:fide/widgets/secondary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -34,7 +35,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   Widget build(BuildContext context) {
     final view = ref.read(appViewProvider.notifier);
     return Container(
-      padding: const EdgeInsets.all(AppSize.compactActionButton),
+      padding: const EdgeInsets.all(AppSpacing.huge),
       decoration: AppTheme.screenBackground(context),
       child: LayoutBuilder(
         builder: (context, _) {
@@ -44,7 +45,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             children: [
               // Fixed content at top (centered)
               Row(
-                spacing: AppSize.compactActionButton,
+                spacing: AppSpacing.huge,
                 children: [
                   HeroTitleWidget(
                     title: 'Welcome to FIDE',
@@ -62,98 +63,30 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               Expanded(
                 child: SingleChildScrollView(
                   child: Center(
-                    child: Container(
+                    child: SizedBox(
                       width: AppSize.welcomeContentWidth,
-                      padding: const EdgeInsets.all(AppIconSize.xLarge),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface
-                            .withAlpha(AppSize.gutterDividerAlpha.toInt()),
-                        borderRadius: BorderRadius.circular(AppSpacing.xLarge),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Theme.of(context).colorScheme.shadow
-                                .withValues(alpha: AppOpacity.subtle),
-                            blurRadius: AppSpacing.regular,
-                            offset: const Offset(0, AppSpacing.tiny),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        spacing: AppSpacing.xLarge,
-                        children: [
-                          // Action Buttons
-                          // Open Folder Button
-                          SizedBox(
-                            width: double.infinity,
-                            height: AppSize.largeActionButtonHeight,
-                            child: ElevatedButton.icon(
+                      child: OutlinedSurface(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          spacing: AppSpacing.xLarge,
+                          children: [
+                            PrimaryButton(
                               onPressed: view.pickAndOpenProject,
-                              icon: Icon(
-                                Icons.folder_open,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
-                              label: Text(
-                                'Open Flutter Project',
-                                style: AppTextStyle.title.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onPrimary,
-                                ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(context)
-                                    .colorScheme
-                                    .primary,
-                                foregroundColor: Theme.of(context)
-                                    .colorScheme
-                                    .onPrimary,
-                                elevation: AppSpacing.tiny,
-                                shadowColor: Theme.of(context)
-                                    .colorScheme
-                                    .shadow,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppSpacing.large,
-                                  ),
-                                ),
-                              ),
+                              icon: Icons.folder_open,
+                              label: 'Open Flutter Project',
                             ),
-                          ),
-                          // Create Project Button
-                          SizedBox(
-                            width: double.infinity,
-                            height: AppSize.largeActionButtonHeight,
-                            child: OutlinedButton.icon(
+                            SecondaryButton(
                               onPressed: view.showCreateProject,
-                              icon: Icon(
-                                Icons.add,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              label: Text(
-                                'Create New Project',
-                                style: AppTextStyle.title.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  width: AppBorderWidth.medium,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppSpacing.large,
-                                  ),
-                                ),
-                              ),
+                              icon: Icons.add,
+                              label: 'Create New Project',
                             ),
-                          ),
-                          // Recent Projects Section
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: _buildRecentProjectsList(),
-                          ),
-                        ],
+                            // Recent Projects Section
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: _buildRecentProjectsList(),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

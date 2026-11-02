@@ -23,6 +23,7 @@ import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/path_text.dart';
+import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
@@ -106,10 +107,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       return EmptyState(
         message: loadError,
         isError: true,
-        child: ElevatedButton(
-          onPressed: _controller.reload,
-          child: const Text('Retry'),
-        ),
+        child: _buildRetryButton(),
       );
     }
 
@@ -138,16 +136,13 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       case LocalizationStatus.checking:
         return const LoadingIndicator();
       case LocalizationStatus.noProject:
-        return _buildStatusView(
-          'No Project',
-          'No Flutter project is currently loaded.',
-          Icons.folder_off,
-        );
+        return const NoProjectPlaceholder();
       case LocalizationStatus.notFlutterProject:
-        return _buildStatusView(
-          'Not a Flutter Project',
-          'The loaded project does not appear to be a Flutter project.',
-          Icons.flutter_dash,
+        return const EmptyState(
+          icon: Icons.flutter_dash,
+          title: 'Not a Flutter Project',
+          message:
+              'The loaded project does not appear to be a Flutter project.',
         );
       case LocalizationStatus.notStarted:
         return SingleChildScrollView(
@@ -163,31 +158,19 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       case LocalizationStatus.complete:
         return _buildCompleteView(state);
       case LocalizationStatus.error:
-        return _buildStatusView(
-          'Error',
-          'An error occurred while checking localization status.',
-          Icons.error,
-          action: ElevatedButton(
-            onPressed: _controller.reload,
-            child: const Text('Retry'),
-          ),
+        return EmptyState(
+          icon: Icons.error,
+          title: 'Error',
+          message: 'An error occurred while checking localization status.',
+          isError: true,
+          child: _buildRetryButton(),
         );
     }
   }
 
-  /// Handles `_buildStatusView`.
-  Widget _buildStatusView(
-    String title,
-    String message,
-    IconData icon, {
-    Widget? action,
-  }) {
-    return EmptyState(
-      icon: icon,
-      title: title,
-      message: message,
-      child: action,
-    );
+  /// Reloads the localization status after a failure.
+  Widget _buildRetryButton() {
+    return PrimaryButton(onPressed: _controller.reload, label: 'Retry');
   }
 
   /// The checklist and next step for a partly set up project.
@@ -338,10 +321,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                     );
                   },
                   separatorBuilder: (_ /*context*/, _ /*index*/) =>
-                      const Divider(
-                        height: AppSpacing.medium,
-                        thickness: AppSize.borderThin,
-                      ),
+                      const Divider(),
                 ),
         ),
         // Filter bar
@@ -432,9 +412,9 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
         title: title,
         icon: icon,
         description: description,
-        action: ElevatedButton.icon(
-          icon: const Icon(Icons.arrow_forward),
-          label: const Text('Execute'),
+        action: PrimaryButton(
+          icon: Icons.arrow_forward,
+          label: 'Execute',
           onPressed: onPressed,
         ),
       ),
@@ -461,9 +441,9 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
               spacing: AppSpacing.medium,
               runSpacing: AppSpacing.tiny,
               children: comparison.missingInLanguages.map((lang) {
-                return ElevatedButton.icon(
-                  icon: const Icon(Icons.translate, size: AppIconSize.medium),
-                  label: Text('Translate to $lang'),
+                return PrimaryButton(
+                  icon: Icons.translate,
+                  label: 'Translate to $lang',
                   onPressed: comparison.englishValue != null
                       ? () => _show(_controller.translate(comparison, lang))
                       : null,

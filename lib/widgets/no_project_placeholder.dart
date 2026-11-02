@@ -3,17 +3,14 @@ import 'package:flutter/material.dart';
 
 /// Centered "No project loaded" message for panels that need an open project.
 class NoProjectPlaceholder extends StatelessWidget {
-  /// Creates the placeholder, optionally with a folder icon above the text.
-  const NoProjectPlaceholder({super.key, this.showIcon = false});
-
-  /// Whether to show a large folder icon above the message.
-  final bool showIcon;
+  /// Creates the placeholder.
+  const NoProjectPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return EmptyState(
+    return const EmptyState(
       message: 'No project loaded',
-      icon: showIcon ? Icons.folder_open : null,
+      icon: Icons.folder_open,
     );
   }
 }

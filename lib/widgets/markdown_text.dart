@@ -45,7 +45,7 @@ class MarkdownText extends StatelessWidget {
         codeblockPadding: const EdgeInsets.all(AppSpacing.medium),
         codeblockDecoration: BoxDecoration(
           color: codeBackground,
-          borderRadius: BorderRadius.circular(AppSpacing.tiny),
+          borderRadius: BorderRadius.circular(AppRadius.tiny),
         ),
         blockquoteDecoration: BoxDecoration(
           border: Border(

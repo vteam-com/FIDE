@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/action_card.dart';
+import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:flutter/material.dart';
 
@@ -46,9 +47,9 @@ class LocalizationSetupWidget extends StatelessWidget {
               'Create l10n directory and ARB files',
               'Generate AppLocalizations class',
             ],
-            action: ElevatedButton.icon(
-              icon: const Icon(Icons.auto_fix_high),
-              label: const Text('Initialize'),
+            action: PrimaryButton(
+              icon: Icons.auto_fix_high,
+              label: 'Initialize',
               onPressed: onInitializeLocalization,
             ),
           ),
@@ -66,9 +67,9 @@ class LocalizationSetupWidget extends StatelessWidget {
                 'Add localizations delegates',
                 'Set supported locales',
               ],
-              action: ElevatedButton.icon(
-                icon: const Icon(Icons.code),
-                label: const Text('Update main.dart'),
+              action: PrimaryButton(
+                icon: Icons.code,
+                label: 'Update main.dart',
                 onPressed: onUpdateMainDart,
               ),
             ),

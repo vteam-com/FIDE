@@ -7,7 +7,9 @@ import 'package:fide/models/status_tone.dart';
 import 'package:fide/models/string_review.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/compact_text_button.dart';
+import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/quick_fix_icon.dart';
+import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter/material.dart';
@@ -91,9 +93,9 @@ class _StringReviewDialogState extends State<StringReviewDialog> {
         ),
       ),
       actions: [
-        TextButton(
+        SecondaryButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close'),
+          label: 'Close',
         ),
       ],
     );
@@ -105,9 +107,9 @@ class _StringReviewDialogState extends State<StringReviewDialog> {
     required String label,
     required StringFix? fix,
     required List<HardcodedString> strings,
-  }) => FilledButton.icon(
-    icon: Icon(icon),
-    label: Text('$label (${strings.length.localized})'),
+  }) => PrimaryButton(
+    icon: icon,
+    label: '$label (${strings.length.localized})',
     onPressed: strings.isEmpty
         ? null
         : () => Navigator.of(context).pop((fix: fix, strings: strings)),

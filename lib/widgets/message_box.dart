@@ -2,6 +2,8 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/message_widget.dart';
+import 'package:fide/widgets/primary_button.dart';
+import 'package:fide/widgets/secondary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -54,9 +56,9 @@ class MessageBox {
         title: title,
         content: scrollable ? SingleChildScrollView(child: content) : content,
         actions: [
-          TextButton(
+          SecondaryButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+            label: 'Close',
           ),
           ...actions,
         ],
@@ -92,13 +94,13 @@ class MessageBox {
           onSubmitted: (text) => Navigator.of(context).pop(text.trim()),
         ),
         actions: [
-          TextButton(
+          SecondaryButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          ElevatedButton(
+          PrimaryButton(
             onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: Text(confirmLabel),
+            label: confirmLabel,
           ),
         ],
       ),
@@ -119,17 +121,14 @@ class MessageBox {
         title: Text(title),
         content: Text(message),
         actions: [
-          TextButton(
+          SecondaryButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          ElevatedButton(
+          PrimaryButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            child: Text(confirmLabel),
+            destructive: true,
+            label: confirmLabel,
           ),
         ],
       ),

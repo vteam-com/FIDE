@@ -1,8 +1,7 @@
 part of 'shared_panel_utils.dart';
 
 /// Behaviour shared by the project tree panels: panel state lifecycle,
-/// following the loaded project, file taps, context menus, refresh, and the
-/// empty states shown before a tree exists.
+/// following the loaded project, file taps, context menus and refresh.
 mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
   /// Expansion, filter and Git state for this panel.
   late final PanelStateManager panelState = PanelStateManager(
@@ -19,22 +18,6 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
 
   /// Root of the tree the panel is showing, if a project is loaded.
   ProjectNode? get projectRoot => panelState.projectRoot;
-
-  /// Renders the tree placeholder shown while the project has no root node.
-  Widget buildNoProjectView() {
-    return Container(
-      color: Theme.of(context).colorScheme.inverseSurface,
-      child: const NoProjectPlaceholder(showIcon: true),
-    );
-  }
-
-  /// Renders the panel-wide placeholder shown when no project is loaded.
-  Widget buildNotLoadedView() {
-    return Container(
-      color: Theme.of(context).colorScheme.surface,
-      child: const NoProjectPlaceholder(),
-    );
-  }
 
   @override
   void dispose() {

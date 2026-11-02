@@ -8,10 +8,12 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_state.dart';
-import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/widgets/loading_indicator.dart';
+import 'package:fide/widgets/page_header.dart';
 import 'package:fide/widgets/platform_icon.dart';
+import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/stat_card.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
@@ -59,9 +61,9 @@ class ProjectOverviewPanel extends ConsumerWidget {
         if (platforms.isNotEmpty)
           'On ${platforms.map((platform) => platform.label).join(', ')}',
       ],
-      action: TextButton.icon(
-        icon: const Icon(Icons.auto_fix_high),
-        label: const Text('Review'),
+      action: SecondaryButton(
+        icon: Icons.auto_fix_high,
+        label: 'Review',
         onPressed: () => showAppIcons(ref),
       ),
     );
@@ -147,31 +149,21 @@ class ProjectOverviewPanel extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: AppSpacing.xxLarge,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: AppSpacing.medium,
-                  children: [
-                    HeroTitleWidget(
-                      title: code.projectName,
-                      logo: AppIconImage(
-                        path: overview.appIconPath,
-                        size: AppSize.heroLogoHeight,
-                        fallback: const Icon(
-                          Icons.flutter_dash,
-                          size: AppSize.heroLogoHeight,
-                        ),
-                      ),
-                    ),
-                    Text('Version ${code.version}', style: AppTextStyle.title),
-                  ],
-                ),
+          PageHeader(
+            title: code.projectName,
+            subTitle: 'Version ${code.version}',
+            logo: AppIconImage(
+              path: overview.appIconPath,
+              size: AppSize.heroLogoHeight,
+              fallback: const Icon(
+                Icons.flutter_dash,
+                size: AppSize.heroLogoHeight,
               ),
-              IconButton(
+            ),
+            actions: [
+              CompactIconButton(
                 tooltip: 'Analyze again',
-                icon: const Icon(Icons.refresh),
+                icon: Icons.refresh,
                 onPressed: () => ref.invalidate(projectOverviewProvider),
               ),
             ],

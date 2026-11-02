@@ -205,7 +205,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
             replaceController: _replaceController,
             onReplaceAll: _resultsTree == null ? null : _replaceAll,
           ),
-          Divider(),
+          const Divider(),
 
           // Results
           Expanded(

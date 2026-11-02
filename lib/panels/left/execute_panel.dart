@@ -49,7 +49,7 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
     final platform = ref.watch(selectedPlatformProvider);
 
     if (currentProjectPath == null) {
-      return const NoProjectPlaceholder(showIcon: true);
+      return const NoProjectPlaceholder();
     }
 
     final supportedPlatforms = ref

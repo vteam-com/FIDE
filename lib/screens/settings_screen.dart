@@ -7,6 +7,7 @@ import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/page_header.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -64,7 +65,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           decoration: AppTheme.workspaceBackground(context),
           // Padding inside the scroll view, so content scrolls to the edges
           child: SingleChildScrollView(
-            padding: AppPadding.actionTabContent,
+            padding: AppPadding.pageContent,
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(
@@ -74,13 +75,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   spacing: AppSpacing.xLarge,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text('Settings', style: AppTextStyle.headline),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
+                    PageHeader(
+                      title: 'Settings',
+                      logo: const Icon(
+                        Icons.settings,
+                        size: AppSize.heroLogoHeight,
+                      ),
+                      actions: [
+                        CompactIconButton(
+                          icon: Icons.close,
                           tooltip: 'Close (Esc)',
                           onPressed: widget.onClose,
                         ),
