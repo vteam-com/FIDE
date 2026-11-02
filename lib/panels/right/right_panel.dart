@@ -2,6 +2,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/right_panel_tab.dart';
 import 'package:fide/panels/right/ai_panel.dart';
+import 'package:fide/panels/right/file_actions_bar.dart';
 import 'package:fide/panels/right/image_details_panel.dart';
 import 'package:fide/panels/right/info_panel.dart';
 import 'package:fide/panels/right/localization/localization_panel.dart';
@@ -95,23 +96,28 @@ class _RightPanelState extends State<RightPanel>
   }
 
   /// The Outline tab: the details of the image at [iconPath] when given,
-  /// else of the selected image, else the selected file's outline.
+  /// else of the selected image, else the selected file's outline; the
+  /// file's path and actions below.
   Widget _buildOutline(String? iconPath) {
     final file = widget.selectedFile;
-    final imagePath =
-        iconPath ??
-        (file != null && FileTypeUtils.isImageFile(file.path)
-            ? file.path
-            : null);
-    if (imagePath != null) return ImageDetailsPanel(path: imagePath);
-    if (file == null) {
+    final path = iconPath ?? file?.path;
+    if (path == null) {
       return const EmptyState(message: 'Select a file to view outline');
     }
-    return OutlinePanel(
-      file: file,
-      onOutlineUpdate: widget.onOutlineUpdate,
-      onNodeSelected: widget.onOutlineNodeSelected,
-      onJumpToLine: widget.onJumpToLine,
+    return Column(
+      children: [
+        Expanded(
+          child: iconPath != null || FileTypeUtils.isImageFile(path)
+              ? ImageDetailsPanel(path: path)
+              : OutlinePanel(
+                  file: file!,
+                  onOutlineUpdate: widget.onOutlineUpdate,
+                  onNodeSelected: widget.onOutlineNodeSelected,
+                  onJumpToLine: widget.onJumpToLine,
+                ),
+        ),
+        FileActionsBar(path: path),
+      ],
     );
   }
 

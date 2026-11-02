@@ -34,6 +34,19 @@ void nextRightPanelTab(WidgetRef ref) => _nextTab(
   rightPanelVisibleProvider,
 );
 
+/// Shows the left panel on [tab].
+void showLeftPanelTab(WidgetRef ref, LeftPanelTab tab) {
+  ref.read(leftPanelVisibleProvider.notifier).state = true;
+  ref.read(activeLeftPanelTabProvider.notifier).state = tab;
+}
+
+/// Shows the file at [path] in the left panel's Explorer, its folders
+/// expanded and its row highlighted.
+void revealInExplorer(WidgetRef ref, String path) {
+  showLeftPanelTab(ref, LeftPanelTab.folder);
+  ref.read(explorerRevealPathProvider.notifier).state = path;
+}
+
 /// Shows the right panel on [tab].
 void showRightPanelTab(WidgetRef ref, RightPanelTab tab) {
   ref.read(rightPanelVisibleProvider.notifier).state = true;

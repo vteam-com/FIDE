@@ -4,15 +4,10 @@ import 'package:fide/models/image_details.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/relative_time.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/image_inspector.dart';
-import 'package:fide/providers/process_runner.dart';
-import 'package:fide/providers/service_providers.dart';
-import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/detail_row.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/loading_indicator.dart';
-import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -89,7 +84,6 @@ class _ImageDetailsPanelState extends ConsumerState<ImageDetailsPanel> {
         return ListView(
           padding: AppPadding.panelContent,
           children: [
-            _buildActions(),
             ..._section('File', [
               DetailRow('Format', details.format),
               DetailRow('Size', details.fileBytes.readableSize),
@@ -138,55 +132,6 @@ class _ImageDetailsPanelState extends ConsumerState<ImageDetailsPanel> {
         );
       },
     );
-  }
-
-  /// Buttons opening the image in FIDE (unless it is the open tab already)
-  /// or the OS's default app, and revealing it in the file manager.
-  Widget _buildActions() {
-    final path = widget.path;
-    final isActive = ref.watch(
-      activeDocumentProvider.select((doc) => doc?.filePath == path),
-    );
-    final processRunner = ref.read(processRunnerProvider);
-    return Wrap(
-      spacing: AppSpacing.small,
-      children: [
-        if (!isActive)
-          CompactTextButton(
-            icon: Icons.open_in_new,
-            label: 'Open in FIDE',
-            onPressed: () => openFile(ref, path),
-          ),
-        CompactTextButton(
-          icon: Icons.launch,
-          label: 'Open in Default App',
-          onPressed: () => _runOrShowError(
-            () => processRunner.openWithDefaultApp(path),
-            'open',
-          ),
-        ),
-        CompactTextButton(
-          icon: Icons.folder_open,
-          label: 'Reveal in ${ProcessRunner.fileManagerName}',
-          onPressed: () =>
-              _runOrShowError(() => processRunner.revealFile(path), 'reveal'),
-        ),
-      ],
-    );
-  }
-
-  /// Runs [action], telling the user when it fails to [verb] the image.
-  Future<void> _runOrShowError(
-    Future<void> Function() action,
-    String verb,
-  ) async {
-    try {
-      await action();
-    } catch (e) {
-      if (mounted) {
-        MessageBox.showError(context, 'Failed to $verb the image: $e');
-      }
-    }
   }
 
   /// [argb] as `#RRGGBB`.

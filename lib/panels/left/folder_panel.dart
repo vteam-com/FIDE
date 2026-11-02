@@ -7,6 +7,7 @@ import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/panels/left/shared_panel_utils.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/filter_field.dart';
 import 'package:fide/widgets/folder_node.dart';
@@ -33,6 +34,59 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
     with ProjectTreePanelState<FolderPanel> {
   // Performance optimization caches
   final Map<String, FileSystemItem> _cachedFileSystemItems = {};
+
+  /// The file last revealed through [explorerRevealPathProvider],
+  /// highlighted until another file is selected.
+  String? _revealedPath;
+
+  /// Marks the row of [_revealedPath], to scroll it into view.
+  final GlobalKey _revealedKey = GlobalKey();
+
+  /// Where a revealed row is scrolled to: the middle of the tree.
+  static const double _revealAlignment = 0.5;
+
+  @override
+  void didUpdateWidget(FolderPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedFile?.path != widget.selectedFile?.path) {
+      _revealedPath = null;
+    }
+  }
+
+  /// Expands the folders down to the file at [path], loading them as
+  /// needed, clears the filter hiding it, then highlights its row and
+  /// scrolls to it.
+  Future<void> _reveal(String path) async {
+    ref.read(explorerRevealPathProvider.notifier).state = null;
+    final root = projectRoot;
+    if (root == null || !p.isWithin(root.path, path)) return;
+    filterController.clear();
+    var folder = root;
+    for (final segment in p.split(
+      p.relative(p.dirname(path), from: root.path),
+    )) {
+      if (segment == '.') break;
+      final child = folder.children
+          .where((node) => node.isDirectory && node.name == segment)
+          .firstOrNull;
+      if (child == null) break;
+      await panelState.ensureDirectoryLoaded(child);
+      expandedState[child.path] = true;
+      folder = child;
+    }
+    if (!mounted) return;
+    setState(() => _revealedPath = path);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final rowContext = _revealedKey.currentContext;
+      if (rowContext != null) {
+        Scrollable.ensureVisible(
+          rowContext,
+          alignment: _revealAlignment,
+          duration: AppDuration.editorScroll,
+        );
+      }
+    });
+  }
 
   @override
   void onProjectTreeChanged() {
@@ -118,6 +172,16 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
     ref.watch(projectTreeRevisionProvider);
 
     syncProjectRoot(currentProjectRoot);
+
+    // A file to reveal, asked for while this tab was hidden or just now
+    if (ref.watch(explorerRevealPathProvider) case final path?) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Several builds may schedule it; the first one handles it
+        if (mounted && ref.read(explorerRevealPathProvider) == path) {
+          _reveal(path);
+        }
+      });
+    }
 
     // Ensure selected file is expanded and visible when building
     if (widget.selectedFile != null && panelState.projectRoot != null) {
@@ -217,6 +281,8 @@ class _FolderPanelState extends ConsumerState<FolderPanel>
     return NodeBuilder(
       node: node,
       selectedFile: widget.selectedFile,
+      revealedPath: _revealedPath,
+      revealedKey: _revealedKey,
       expandedState: panelState.expandedState,
       rootPath: projectRoot!.path,
       onNodeTapped: toggleOrOpenNode,

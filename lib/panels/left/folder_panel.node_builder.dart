@@ -6,6 +6,8 @@ class NodeBuilder extends StatelessWidget {
     super.key,
     required this.node,
     this.selectedFile,
+    this.revealedPath,
+    this.revealedKey,
     required this.expandedState,
     this.rootPath,
     required this.onNodeTapped,
@@ -13,16 +15,20 @@ class NodeBuilder extends StatelessWidget {
     this.onFileSelected,
     this.isFilteredView = false,
   });
-
   final Map<String, bool> expandedState;
   final bool isFilteredView;
   final ProjectNode node;
   final Function(ProjectNode)? onFileSelected;
   final Function(ProjectNode, bool) onNodeTapped;
   final Function(ProjectNode, Offset) onShowContextMenu;
+
+  /// Key given to the row of [revealedPath], to scroll it into view.
+  final GlobalKey? revealedKey;
+
+  /// A file revealed in the tree, highlighted like [selectedFile].
+  final String? revealedPath;
   final String? rootPath;
   final FileSystemItem? selectedFile;
-
   @override
   Widget build(BuildContext context) {
     if (node.isDirectory) {
@@ -50,13 +56,17 @@ class NodeBuilder extends StatelessWidget {
     final item = FileSystemItem.fromFileSystemEntity(File(node.path));
     item.gitStatus = node.gitStatus;
 
+    final isRevealed = node.path == revealedPath;
     final isSelected =
+        isRevealed ||
         selectedFile != null &&
-        (selectedFile!.path == node.path ||
-            p.normalize(selectedFile!.path) == p.normalize(node.path) ||
-            p.canonicalize(selectedFile!.path) == p.canonicalize(node.path));
+            (selectedFile!.path == node.path ||
+                p.normalize(selectedFile!.path) == p.normalize(node.path) ||
+                p.canonicalize(selectedFile!.path) ==
+                    p.canonicalize(node.path));
 
     return FileNameWidget(
+      key: isRevealed ? revealedKey : null,
       fileItem: item,
       isSelected: isSelected,
       rootPath: rootPath,
@@ -72,6 +82,8 @@ class NodeBuilder extends StatelessWidget {
           (child) => NodeBuilder(
             node: child,
             selectedFile: selectedFile,
+            revealedPath: revealedPath,
+            revealedKey: revealedKey,
             expandedState: expandedState,
             rootPath: rootPath,
             onNodeTapped: onNodeTapped,

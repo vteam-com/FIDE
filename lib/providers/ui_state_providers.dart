@@ -36,6 +36,9 @@ final imageBackdropProvider = StateProvider<ImageBackdrop>(
   (_ /*ref*/) => ImageBackdrop.transparent,
 );
 
+/// A file the Explorer is asked to reveal; it clears it once shown.
+final explorerRevealPathProvider = StateProvider<String?>((_ /*ref*/) => null);
+
 /// The tab shown in the left panel.
 final activeLeftPanelTabProvider = StateProvider<LeftPanelTab>(
   (_ /*ref*/) => LeftPanelTab.values.first,
