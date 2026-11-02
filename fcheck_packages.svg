@@ -684,7 +684,7 @@
 </g>
 <g>
   <path d="M 373.0 934.0 H 118.0 Q 112.0 934.0 112.0 940.0 V 6874.0 Q 112.0 6880.0 118.0 6880.0 H 553.0" class="edgeVertical"/>
-  <title>flutter_svg -> vector_graphics v1.2.5</title>
+  <title>flutter_svg -> vector_graphics v1.2.6</title>
 </g>
 <g>
   <path d="M 373.0 934.0 H 115.0 Q 109.0 934.0 109.0 940.0 V 6938.0 Q 109.0 6944.0 115.0 6944.0 H 553.0" class="edgeVertical"/>
@@ -2093,7 +2093,7 @@
 <g class="platformBadge platformBadge--windows"><title>Windows</title><rect x="712.0" y="6877.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#2563eb" stroke="#1d4ed8" stroke-width="0.6"/><text x="718.5" y="6884.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">W</text></g>
 <g class="platformBadge platformBadge--web"><title>Browser</title><rect x="729.0" y="6877.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#0891b2" stroke="#0e7490" stroke-width="0.6"/><text x="735.5" y="6884.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">B</text></g>
 <text x="561.0" y="6872.0" class="packageLabelDerivedName packageLabelCaption" text-anchor="start">vector_graphics</text>
-<text x="825.0" y="6872.0" class="packageLabelDerivedVersion" text-anchor="end">^1.2.5</text>
+<text x="825.0" y="6872.0" class="packageLabelDerivedVersion" text-anchor="end">^1.2.6</text>
 </g>
 <g class="badge incomingBadge">
   <path d="M 559.0,6880.0 L 547.0,6873.0 Q 544.0,6873.0 544.0,6876.0 L 544.0,6884.0 Q 544.0,6887.0 547.0,6887.0 Z" fill="#3b82f6"/>

@@ -13,6 +13,7 @@ class PanelTabs extends StatelessWidget {
     required this.tabs,
     required this.children,
     this.onTap,
+    this.onReselect,
     this.showTabBar = true,
   });
 
@@ -21,6 +22,10 @@ class PanelTabs extends StatelessWidget {
 
   /// Selects which of [children] is shown; its length matches [tabs].
   final TabController controller;
+
+  /// Called when the already selected tab is tapped again, such as to
+  /// expand or contract the panel.
+  final VoidCallback? onReselect;
 
   /// Called with the tapped tab's index.
   final ValueChanged<int>? onTap;
@@ -41,7 +46,7 @@ class PanelTabs extends StatelessWidget {
             HeaderBar(
               child: TabBar(
                 controller: controller,
-                onTap: onTap,
+                onTap: _handleTap,
                 tabs: tabs,
                 labelPadding: EdgeInsets.zero,
               ),
@@ -56,5 +61,15 @@ class PanelTabs extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Reports a tap on tab [index], and a tap on the selected tab as a
+  /// reselect: the [TabBar] has already moved to a newly tapped tab, but
+  /// its move is still animating, while a reselected tab doesn't move.
+  void _handleTap(int index) {
+    if (index == controller.index && !controller.indexIsChanging) {
+      onReselect?.call();
+    }
+    onTap?.call(index);
   }
 }

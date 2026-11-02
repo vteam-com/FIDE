@@ -18,6 +18,13 @@ void cyclePanelSize(WidgetRef ref, SidePanel panel) {
   ref.read(expanded.notifier).state = shown && !wasExpanded;
 }
 
+/// Switches [panel] between its own size and expanded to its largest,
+/// keeping it shown.
+void togglePanelExpanded(WidgetRef ref, SidePanel panel) {
+  final expanded = panel.expandedProvider;
+  ref.read(expanded.notifier).state = !ref.read(expanded);
+}
+
 /// Shows the left panel's next tab, looping back to the first.
 void nextLeftPanelTab(WidgetRef ref) => _nextTab(
   ref,

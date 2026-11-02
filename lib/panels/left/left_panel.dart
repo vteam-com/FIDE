@@ -6,7 +6,9 @@ import 'package:fide/panels/left/organized_panel.dart';
 import 'package:fide/panels/left/search_panel.dart';
 import 'package:fide/panels/left/test_panel.dart';
 import 'package:fide/providers/left_panel_tab.dart';
+import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/panel_tab_badges.dart';
+import 'package:fide/providers/side_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/panel_tab_header.dart';
 import 'package:fide/widgets/panel_tabs.dart';
@@ -86,6 +88,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
     return PanelTabs(
       controller: _tabController,
       showTabBar: widget.projectLoaded,
+      onReselect: () => togglePanelExpanded(ref, SidePanel.left),
       tabs: [
         for (final tab in LeftPanelTab.values)
           PanelTabHeader(

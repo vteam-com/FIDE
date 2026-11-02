@@ -6,8 +6,10 @@ import 'package:fide/panels/right/info_panel.dart';
 import 'package:fide/panels/right/localization/localization_panel.dart';
 import 'package:fide/panels/right/outline_panel.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/panel_tab_badges.dart';
 import 'package:fide/providers/right_panel_tab.dart';
+import 'package:fide/providers/side_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/widgets/empty_state.dart';
@@ -60,6 +62,7 @@ class _RightPanelState extends ConsumerState<RightPanel>
         ref.read(activeRightPanelTabProvider.notifier).state =
             RightPanelTab.values[index];
       },
+      onReselect: () => togglePanelExpanded(ref, SidePanel.right),
       tabs: [
         for (final tab in RightPanelTab.values)
           PanelTabHeader(
