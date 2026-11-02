@@ -5,6 +5,7 @@ import 'package:fide/models/hardcoded_string_role.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/models/string_review.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/quick_fix_icon.dart';
 import 'package:fide/widgets/section_title.dart';
@@ -142,7 +143,12 @@ class _StringReviewDialogState extends State<StringReviewDialog> {
         for (final reason in reasons)
           Text(
             reason,
-            style: secondary.copyWith(color: StatusTone.warning.color),
+            style: secondary.copyWith(
+              color: AppTheme.readable(
+                StatusTone.warning.color,
+                Theme.of(context).colorScheme,
+              ),
+            ),
           ),
       ],
     );

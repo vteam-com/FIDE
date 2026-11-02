@@ -489,7 +489,10 @@ class _GitPanelState extends ConsumerState<GitPanel> {
             if (canDiscard && onDiscard != null)
               CompactIconButton(
                 icon: Icons.undo,
-                color: AppTheme.errorColor,
+                color: AppTheme.readable(
+                  AppTheme.errorColor,
+                  Theme.of(context).colorScheme,
+                ),
                 onPressed: () => onDiscard([file]),
                 tooltip: 'Discard Changes',
               ),

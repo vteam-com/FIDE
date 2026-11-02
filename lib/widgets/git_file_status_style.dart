@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/git_file_status.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter/material.dart';
 
@@ -33,6 +34,11 @@ extension GitFileStatusStyle on GitFileStatus {
     _ => null,
   };
 
+  /// [color] made readable as text or a glyph on the surfaces of
+  /// [colorScheme].
+  Color foreground(ColorScheme colorScheme) =>
+      AppTheme.readable(color(colorScheme), colorScheme);
+
   /// [base] styled for this status: colored, and struck through when
   /// deleted; [base] itself when clean.
   TextStyle textStyle(ColorScheme colorScheme, TextStyle base) {
@@ -40,11 +46,11 @@ extension GitFileStatusStyle on GitFileStatus {
       GitFileStatus.deleted =>
         base
             .merge(AppTextStyle.struckThrough)
-            .copyWith(color: color(colorScheme)),
+            .copyWith(color: foreground(colorScheme)),
       GitFileStatus.ignored ||
       GitFileStatus.untracked ||
       GitFileStatus.added ||
-      GitFileStatus.modified => base.copyWith(color: color(colorScheme)),
+      GitFileStatus.modified => base.copyWith(color: foreground(colorScheme)),
       _ => base,
     };
   }

@@ -97,7 +97,7 @@ class FolderNameWidget extends StatelessWidget {
     if (icon == null) return const SizedBox();
     return Icon(
       icon,
-      color: node.gitStatus.color(Theme.of(context).colorScheme),
+      color: node.gitStatus.foreground(Theme.of(context).colorScheme),
       size: AppIconSize.tiny,
     );
   }

@@ -81,7 +81,10 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
             color: widget.isSupported
                 ? widget.canBuild
                       ? Theme.of(context).colorScheme.primary
-                      : AppTheme.warningColor
+                      : AppTheme.readable(
+                          AppTheme.warningColor,
+                          Theme.of(context).colorScheme,
+                        )
                 : Theme.of(context).colorScheme.error,
           ),
         ],

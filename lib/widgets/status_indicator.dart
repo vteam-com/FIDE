@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_status.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter/material.dart';
 
@@ -33,12 +34,18 @@ class StatusIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = label;
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       mainAxisSize: MainAxisSize.min,
       spacing: AppSpacing.medium,
       children: [
-        Icon(icon, size: AppIconSize.medium, color: color),
-        if (text != null) Flexible(child: Text(text, style: labelStyle(color))),
+        Icon(
+          icon,
+          size: AppIconSize.medium,
+          color: AppTheme.readable(color, colorScheme),
+        ),
+        if (text != null)
+          Flexible(child: Text(text, style: labelStyle(color, colorScheme))),
       ],
     );
   }
@@ -57,7 +64,10 @@ class StatusIndicator extends StatelessWidget {
     );
   }
 
-  /// The style of a status label drawn in [color].
-  static TextStyle labelStyle(Color color) =>
-      AppTextStyle.captionStrong.copyWith(color: color);
+  /// The style of a status label drawn in [color], made readable on the
+  /// surfaces of [colorScheme].
+  static TextStyle labelStyle(Color color, ColorScheme colorScheme) =>
+      AppTextStyle.captionStrong.copyWith(
+        color: AppTheme.readable(color, colorScheme),
+      );
 }

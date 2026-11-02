@@ -63,7 +63,7 @@ class FileNameWidget extends StatelessWidget {
           .textStyle(colorScheme, AppTextStyle.body)
           .copyWith(
             color: warning != null
-                ? AppTheme.warningColor
+                ? AppTheme.readable(AppTheme.warningColor, colorScheme)
                 : isSelected
                 ? colorScheme.primary
                 : null,

@@ -7,6 +7,7 @@ import 'package:fide/providers/ai_request.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/quick_fix_controller.dart';
 import 'package:fide/services/quick_fix_runner.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/markdown_text.dart';
@@ -41,7 +42,7 @@ class IssueRow extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          child: Clickable(onTap: showDetails, child: _label()),
+          child: Clickable(onTap: showDetails, child: _label(context)),
         ),
         if (showDetails != null)
           CompactIconButton(
@@ -54,8 +55,13 @@ class IssueRow extends ConsumerWidget {
   }
 
   /// The issue's label in its tone's color.
-  Widget _label() =>
-      Text(issue.label, style: StatusIndicator.labelStyle(issue.tone.color));
+  Widget _label(BuildContext context) => Text(
+    issue.label,
+    style: StatusIndicator.labelStyle(
+      issue.tone.color,
+      Theme.of(context).colorScheme,
+    ),
+  );
 
   /// Asks the user to confirm a quick fix in a dialog over [context];
   /// false once the row is gone.
@@ -110,7 +116,10 @@ class IssueRow extends ConsumerWidget {
       icon: Icon(
         issue.tone.icon,
         size: AppIconSize.small,
-        color: issue.tone.color,
+        color: AppTheme.readable(
+          issue.tone.color,
+          Theme.of(context).colorScheme,
+        ),
       ),
       name: finding.text,
       path: finding.path,
@@ -138,7 +147,7 @@ class IssueRow extends ConsumerWidget {
     final quickFixes = issue.quickFixes;
     return MessageBox.showDetails(
       context,
-      title: _label(),
+      title: _label(context),
       content: SizedBox(
         width: AppSize.issueDetailsWidth,
         child: Column(

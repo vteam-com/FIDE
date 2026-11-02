@@ -90,6 +90,46 @@ class AppTheme {
     );
   }
 
+  /// Least contrast ratio of text against its background, WCAG 2 level AA.
+  static const double minTextContrast = 4.5;
+
+  /// Luminance WCAG adds to both colors of a contrast ratio, for flare.
+  static const double _contrastFlare = 0.05;
+
+  /// Lightness [readable] moves a color by per step.
+  static const double _lightnessStep = 0.05;
+
+  /// [color] with its hue and saturation kept and its lightness moved,
+  /// away from the surface, until text in it reaches [minTextContrast]
+  /// on every surface of [colorScheme].
+  ///
+  /// The status colors are mid-dark shades: they read on light surfaces
+  /// but not on dark ones, and some not on white either. Draw status text
+  /// and glyphs straight on a surface in this color; badge fills keep the
+  /// status color itself.
+  static Color readable(Color color, ColorScheme colorScheme) {
+    // The surface tone closest to text colors, so text reads on all of
+    // them: the darkest in light mode, the lightest in dark mode.
+    final surface = colorScheme.surfaceContainerHighest;
+    final step = colorScheme.brightness == Brightness.dark
+        ? _lightnessStep
+        : -_lightnessStep;
+    var hsl = HSLColor.fromColor(color);
+    while (_contrast(hsl.toColor(), surface) < minTextContrast) {
+      final lightness = (hsl.lightness + step).clamp(0.0, 1.0);
+      if (lightness == hsl.lightness) break;
+      hsl = hsl.withLightness(lightness);
+    }
+    return hsl.toColor();
+  }
+
+  /// The WCAG contrast ratio between [a] and [b], from 1 to 21.
+  static double _contrast(Color a, Color b) {
+    final la = a.computeLuminance() + _contrastFlare;
+    final lb = b.computeLuminance() + _contrastFlare;
+    return la > lb ? la / lb : lb / la;
+  }
+
   /// Returns the side-panel surface color for cards and nested containers.
   static Color sidePanelSurface(BuildContext context) {
     final brightness = Theme.of(context).brightness;

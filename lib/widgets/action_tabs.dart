@@ -89,7 +89,10 @@ class _ActionTabsWithExecuteState extends State<ActionTabsWithExecute>
                         size: showLabels
                             ? AppSize.regularProgressIndicator
                             : AppSize.expandedProgressIndicator,
-                        color: AppTheme.warningColor,
+                        color: AppTheme.readable(
+                          AppTheme.warningColor,
+                          colorScheme,
+                        ),
                       )
                     : Icon(
                         action.status.resultTone?.icon ?? action.icon,

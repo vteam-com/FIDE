@@ -1023,7 +1023,7 @@
 10. watcher</title></g><g class="packageNode">
 <rect x="373.0" y="196.0" width="200.0" height="68.0" rx="8.0" ry="8.0" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1"/>
 <text x="473.0" y="216.0" class="packageLabelNodeName packageLabelCaption" text-anchor="middle">code_forge</text>
-<text x="473.0" y="229.0" class="packageLabelNodeVersion" text-anchor="middle">v11.5.0</text>
+<text x="473.0" y="229.0" class="packageLabelNodeVersion" text-anchor="middle">v11.6.0</text>
 </g>
 <g class="badge outgoingBadge">
   <path d="M 367.0,230.0 L 379.0,223.0 Q 382.0,223.0 382.0,226.0 L 382.0,234.0 Q 382.0,237.0 379.0,237.0 Z" fill="#10b981"/>
@@ -1059,7 +1059,7 @@
 <g class="platformBadge platformBadge--windows"><title>Windows</title><rect x="492.0" y="499.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#2563eb" stroke="#1d4ed8" stroke-width="0.6"/><text x="498.5" y="506.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">W</text></g>
 <g class="platformBadge platformBadge--web"><title>Browser</title><rect x="509.0" y="499.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#0891b2" stroke="#0e7490" stroke-width="0.6"/><text x="515.5" y="506.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">B</text></g>
 <text x="473.0" y="480.0" class="packageLabelNodeName packageLabelCaption" text-anchor="middle">file_picker</text>
-<text x="473.0" y="493.0" class="packageLabelNodeVersion" text-anchor="middle">v13.3.1</text>
+<text x="473.0" y="493.0" class="packageLabelNodeVersion" text-anchor="middle">v13.3.2</text>
 </g>
 <g class="badge outgoingBadge">
   <path d="M 367.0,494.0 L 379.0,487.0 Q 382.0,487.0 382.0,490.0 L 382.0,498.0 Q 382.0,501.0 379.0,501.0 Z" fill="#10b981"/>

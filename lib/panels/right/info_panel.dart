@@ -251,6 +251,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     final hasIncompatibleVersion =
         outdatedInfo?.hasNoResolvableVersion ?? false;
 
+    final colorScheme = Theme.of(context).colorScheme;
     final label = isOutdated
         ? '$packageName ${version.label} → ${outdatedInfo.latest}'
         : '$packageName ${version.label}';
@@ -263,8 +264,10 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             label,
             style: AppTextStyle.badge.copyWith(
               color: isProblematic || hasIncompatibleVersion
-                  ? AppTheme.errorColor
-                  : (isOutdated ? AppTheme.warningColor : null),
+                  ? AppTheme.readable(AppTheme.errorColor, colorScheme)
+                  : (isOutdated
+                        ? AppTheme.readable(AppTheme.warningColor, colorScheme)
+                        : null),
             ),
           ),
           if (isProblematic || hasIncompatibleVersion) ...[
@@ -272,7 +275,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             Icon(
               Icons.warning,
               size: AppIconSize.tiny,
-              color: AppTheme.errorColor,
+              color: AppTheme.readable(AppTheme.errorColor, colorScheme),
             ),
           ],
         ],

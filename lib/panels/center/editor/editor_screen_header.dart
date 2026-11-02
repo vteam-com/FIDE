@@ -116,7 +116,10 @@ class EditorScreenHeader extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
                 style: AppTextStyle.caption.copyWith(
-                  color: AppTheme.warningColor,
+                  color: AppTheme.readable(
+                    AppTheme.warningColor,
+                    Theme.of(context).colorScheme,
+                  ),
                 ),
               ),
             ),
