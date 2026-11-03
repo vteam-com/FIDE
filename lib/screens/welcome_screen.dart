@@ -45,9 +45,13 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               Row(
                 spacing: AppSpacing.huge,
                 children: [
-                  HeroTitleWidget(
-                    title: 'Welcome to FIDE',
-                    subTitle: 'Flutter Integrated Developer Environment',
+                  // Flexible so a narrow window shortens the title instead
+                  // of overflowing the version beside it
+                  Flexible(
+                    child: HeroTitleWidget(
+                      title: 'Welcome to FIDE',
+                      subTitle: 'Flutter Integrated Developer Environment',
+                    ),
                   ),
                   // Version Info
                   Text(
