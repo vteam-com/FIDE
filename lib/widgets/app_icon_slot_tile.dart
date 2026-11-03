@@ -1,7 +1,7 @@
 import 'dart:math';
 
-import 'package:fcheck/fcheck.dart';
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/app_icon_review.dart';
 import 'package:fide/models/image_backdrop.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/theme/app_theme.dart';
@@ -13,19 +13,15 @@ import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as p;
 
 /// One app icon slot as Xcode's icon set editor shows it: the image at its
 /// own size (up to the tile's), its label and pixel size, and a warning
 /// mark when it is empty, wrong or still Flutter's default.
 class AppIconSlotTile extends StatelessWidget {
-  /// Creates the tile of [slot], whose file path is relative to
-  /// [projectPath].
+  /// Creates the tile of [slot].
   const AppIconSlotTile({
     super.key,
     required this.slot,
-    required this.projectPath,
-    this.problems = const [],
     this.isSelected = false,
     this.onTap,
     this.onDoubleTap,
@@ -40,23 +36,12 @@ class AppIconSlotTile extends StatelessWidget {
   /// Picks the slot's file; null leaves the tile unclickable.
   final VoidCallback? onTap;
 
-  /// What is wrong with the slot's file, one message each.
-  final List<String> problems;
-
-  /// The project the slot's file path is relative to.
-  final String projectPath;
-
   /// The slot shown.
-  final AppIconSlot slot;
+  final AppIconSlotInfo slot;
 
   @override
   Widget build(BuildContext context) {
-    final relativePath = slot.filePath;
-    final path = relativePath == null
-        ? null
-        : p.join(projectPath, relativePath);
     final size = slot.size;
-    final file = slot.file;
     final drawn = size == null
         ? AppSize.appIconSlot
         : max(
@@ -66,7 +51,7 @@ class AppIconSlotTile extends StatelessWidget {
     final notes = [
       if (!slot.isFilled) 'Empty',
       if (slot.isFlutterDefault) "Flutter's default icon",
-      ...problems,
+      ...slot.problems,
     ];
     final empty = Icon(
       Icons.add_photo_alternate_outlined,
@@ -75,7 +60,7 @@ class AppIconSlotTile extends StatelessWidget {
     );
 
     return Tooltip(
-      message: [relativePath ?? 'No file assigned', ...notes].join('\n'),
+      message: [slot.filePath ?? 'No file assigned', ...notes].join('\n'),
       child: Clickable(
         onTap: onTap,
         onDoubleTap: onDoubleTap,
@@ -97,7 +82,7 @@ class AppIconSlotTile extends StatelessWidget {
                     child: slot.isFilled
                         ? ImageBackdropBox(
                             backdrop: ImageBackdrop.transparent,
-                            child: _buildImage(path, file, size, drawn, empty),
+                            child: _buildImage(drawn, empty),
                           )
                         : empty,
                   ),
@@ -122,9 +107,9 @@ class AppIconSlotTile extends StatelessWidget {
               ),
               Text(
                 size == null
-                    ? file == null
-                          ? 'any size'
-                          : '${file.width}×${file.height} px'
+                    ? slot.isReadable
+                          ? '${slot.fileWidth}×${slot.fileHeight} px'
+                          : 'any size'
                     : '$size×$size px',
                 style: AppTextStyle.secondary(context),
               ),
@@ -135,21 +120,17 @@ class AppIconSlotTile extends StatelessWidget {
     );
   }
 
-  /// The image of the slot at [path], [drawn] pixels wide; [empty] when
-  /// there is none or it can't be drawn.
-  Widget _buildImage(
-    String? path,
-    AppIconFileInfo? file,
-    int? size,
-    double drawn,
-    Widget empty,
-  ) {
+  /// The image of the slot, [drawn] pixels wide; [empty] when there is
+  /// none or it can't be drawn.
+  Widget _buildImage(double drawn, Widget empty) {
+    final path = slot.path;
+    final size = slot.size;
     return SizedBox.square(
       dimension: drawn,
       child: Center(
         child: path == null
             ? empty
-            : file != null && file.icoSizes.isNotEmpty && size != null
+            : slot.isIco && size != null
             ? IcoFrameImage(
                 path: path,
                 size: size,

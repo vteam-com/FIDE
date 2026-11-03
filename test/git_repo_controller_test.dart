@@ -175,4 +175,16 @@ void main() {
       expect(await container.read(gitDiffStatsProvider('').future), isNull);
     });
   });
+
+  group('GitMessages', () {
+    test('words a failed status read and passes other errors through', () {
+      expect(
+        GitMessages.describeLoadError(
+          const GitException('git status', 'not a repo'),
+        ),
+        'Failed to get Git status: not a repo',
+      );
+      expect(GitMessages.describeLoadError(StateError('x')), 'Bad state: x');
+    });
+  });
 }

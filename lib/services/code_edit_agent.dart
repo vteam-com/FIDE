@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/project_files.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/text_truncation.dart';
 import 'package:fide/services/chat_model.dart';
+import 'package:fide/services/project_file_store.dart';
 import 'package:path/path.dart' as p;
 
 part 'code_edit_agent.ai_skill.dart';
@@ -14,27 +14,31 @@ part 'code_edit_agent.code_edit_hooks.dart';
 /// through [skills]: fixing a broken build ([fixBuild]) or carrying out a
 /// request from the chat ([edit]), rebuilding to check its work.
 ///
-/// Every path a skill touches must lie inside [projectPath].
+/// Every path a skill touches goes through [files], which keeps it inside
+/// the project.
 class CodeEditAgent {
   final ChatModel _model;
 
   /// Stops the agent's model requests and skills; see [cancel].
   final AiCancelToken _cancelToken;
 
-  /// Root of the project the model may read and edit.
-  final String projectPath;
+  /// The project files the model may list, read and edit.
+  final ProjectFileStore files;
 
   /// What the agent calls as it works.
   final CodeEditHooks hooks;
 
-  /// Creates an agent that talks to [_model], stopped by [cancelToken]
-  /// as well as by [cancel].
+  /// Creates an agent that talks to [_model] and edits [files], stopped by
+  /// [cancelToken] as well as by [cancel].
   CodeEditAgent(
     this._model, {
-    required this.projectPath,
+    required this.files,
     required this.hooks,
     AiCancelToken? cancelToken,
   }) : _cancelToken = cancelToken ?? AiCancelToken();
+
+  /// Root of the project the model may read and edit.
+  String get projectPath => files.root;
 
   /// Stops the agent: aborts its model request in flight and runs no
   /// further skill or request, so [edit] or [fixBuild] throws an
@@ -54,9 +58,9 @@ class CodeEditAgent {
       name: 'read_file',
       description: 'Returns the content of a project file.',
       parameters: {'path': 'File relative to the project root'},
-      run: (args) async => (await _resolve(
-        _argument(args, 'path'),
-      ).readAsString()).truncated(AppMetric.aiMaxReadChars),
+      run: (args) async =>
+          (await files.read(_argument(args, 'path')))
+              .truncated(AppMetric.aiMaxReadChars),
     ),
     AiSkill(
       name: 'replace_in_file',
@@ -82,7 +86,7 @@ class CodeEditAgent {
         'content': 'The complete new file content',
       },
       run: (args) =>
-          _write(_resolve(_argument(args, 'path')), _argument(args, 'content')),
+          _write(_argument(args, 'path'), _argument(args, 'content')),
     ),
     AiSkill(
       name: 'check_build',
@@ -121,16 +125,8 @@ class CodeEditAgent {
   /// Files under [folder] (relative to [projectPath]), one relative path
   /// per line, at most [AppMetric.aiMaxListedFiles] of them.
   Future<String> listFiles(String folder) async {
-    final files = <String>[];
-    await for (final entity in Directory(
-      _resolve(folder).path,
-    ).list(recursive: true)) {
-      final relative = p.relative(entity.path, from: projectPath);
-      if (entity is! File || ProjectFiles.isSkippedPath(relative)) continue;
-      files.add(relative);
-      if (files.length >= AppMetric.aiMaxListedFiles) break;
-    }
-    return (files..sort()).join('\n');
+    final listed = await files.list(folder, limit: AppMetric.aiMaxListedFiles);
+    return listed.join('\n');
   }
 
   /// Replaces the single occurrence of [oldText] in [path] with [newText].
@@ -142,8 +138,7 @@ class CodeEditAgent {
     String oldText,
     String newText,
   ) async {
-    final file = _resolve(path);
-    final content = await file.readAsString();
+    final content = await files.read(path);
     final index = content.indexOf(oldText);
     if (oldText.isEmpty || index < 0) {
       throw FormatException('old_text not found in $path');
@@ -154,7 +149,7 @@ class CodeEditAgent {
       );
     }
     return _write(
-      file,
+      path,
       content.replaceRange(index, index + oldText.length, newText),
     );
   }
@@ -265,18 +260,6 @@ class CodeEditAgent {
     return value.toString();
   }
 
-  /// The file at [path], relative to [projectPath] or absolute inside it.
-  ///
-  /// Throws a [FormatException] for paths outside the project.
-  File _resolve(String path) {
-    final resolved = p.normalize(p.join(projectPath, path));
-    if (resolved != p.normalize(projectPath) &&
-        !p.isWithin(projectPath, resolved)) {
-      throw FormatException('$path is outside the project');
-    }
-    return File(resolved);
-  }
-
   /// Runs the skill called [name], reporting it to [CodeEditHooks.onStep];
   /// failures come back as text so the model can correct itself.
   Future<String> _runSkill(String name, Map<String, dynamic> arguments) async {
@@ -293,12 +276,12 @@ class CodeEditAgent {
     }
   }
 
-  /// Writes [content] to [file], creating its folders, and runs
-  /// [CodeEditHooks.onFileWritten].
-  Future<String> _write(File file, String content) async {
-    await file.parent.create(recursive: true);
-    await file.writeAsString(content);
-    await hooks.onFileWritten(file.path);
-    return 'Saved ${p.relative(file.path, from: projectPath)}.';
+  /// Writes [content] to the project file at [path] and runs
+  /// [CodeEditHooks.onFileWritten] with its absolute path.
+  Future<String> _write(String path, String content) async {
+    await files.write(path, content);
+    final absolute = files.resolve(path);
+    await hooks.onFileWritten(absolute);
+    return 'Saved ${p.relative(absolute, from: projectPath)}.';
   }
 }

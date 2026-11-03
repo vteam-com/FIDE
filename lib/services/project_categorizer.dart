@@ -6,8 +6,8 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/code_category.dart';
 import 'package:fide/models/project_categories.dart';
 import 'package:fide/models/project_node.dart';
+import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/asset_categorizer.dart';
-import 'package:fide/services/localization_service.dart';
 import 'package:fide/services/project_tree_reader.dart';
 import 'package:path/path.dart' as p;
 

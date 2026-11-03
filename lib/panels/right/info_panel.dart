@@ -1,20 +1,12 @@
-// ignore_for_file: deprecated_member_use
-
-import 'dart:io';
-
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/action_outcome.dart';
 import 'package:fide/models/dependency_version.dart';
-import 'package:fide/models/health_check.dart';
-import 'package:fide/models/health_deduction.dart';
 import 'package:fide/models/health_indicators.dart';
+import 'package:fide/models/project_info_state.dart';
 import 'package:fide/models/project_metrics.dart';
-import 'package:fide/models/project_paths.dart';
-import 'package:fide/models/quality_issue.dart';
-import 'package:fide/models/quality_issue.quality_finding.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/service_providers.dart';
-import 'package:fide/services/project_maintenance_service.dart';
+import 'package:fide/providers/project_info_controller.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/clickable.dart';
@@ -32,10 +24,11 @@ import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart' as p;
 
-/// Represents `InfoPanel`.
+/// The Info tab: the open project's name, version, health score,
+/// dependencies and maintenance actions, run by [ProjectInfoController].
 class InfoPanel extends ConsumerStatefulWidget {
+  /// Creates the panel.
   const InfoPanel({super.key});
 
   @override
@@ -43,51 +36,21 @@ class InfoPanel extends ConsumerStatefulWidget {
 }
 
 class _InfoPanelState extends ConsumerState<InfoPanel> {
-  /// How to clear build errors and warnings.
-  static const String _fixBuildGuidance =
-      'Build for the platform selected in the Execute panel, then pick '
-      '**Fix Build** in the AI panel to have the errors of the last build '
-      'fixed in the files.';
-
-  bool _isRefreshing = false;
-  bool _checkingOutdated = false;
-  bool _upgrading = false;
-  String? _dependencyConflictError;
-  String? _outdatedCommandOutput;
-  Map<String, String> _problematicPackages = {};
+  /// The controller running the panel's actions.
+  ProjectInfoController get _controller =>
+      ref.read(projectInfoControllerProvider.notifier);
 
   @override
   void initState() {
     super.initState();
-
-    /// Handles `_analyzeProject`.
-    _analyzeProject();
+    _show(_controller.analyze());
   }
 
-  /// Handles `_analyzeProject`.
-  Future<void> _analyzeProject() async {
-    final currentProjectPath = ref.read(currentProjectPathProvider);
-    if (currentProjectPath == null) return;
-
-    setState(() => _isRefreshing = true);
-
-    try {
-      final metrics = await ref
-          .read(projectAnalyzerProvider)
-          .analyze(currentProjectPath);
-      await ref
-          .read(projectMetricsProvider.notifier)
-          .updateMetrics(currentProjectPath, metrics);
-      if (mounted) {
-        setState(() {
-          _isRefreshing = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isRefreshing = false);
-        MessageBox.showError(context, 'Failed to analyze project: $e');
-      }
+  /// Shows how an action ended, once it has, while the panel is there.
+  Future<void> _show(Future<ActionOutcome?> outcome) async {
+    final result = await outcome;
+    if (mounted && result != null) {
+      MessageBox.showOutcome(context, result);
     }
   }
 
@@ -134,122 +97,41 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     );
   }
 
-  /// Handles `_performFullCleanup`.
+  /// Cleans the project up once the user confirms what it involves.
   Future<void> _performFullCleanup() async {
-    final currentProjectPath = ref.read(currentProjectPathProvider);
-    if (currentProjectPath == null) return;
-
     final confirmed = await MessageBox.confirm(
       context,
       title: 'Full Project Cleanup',
       message: 'This will:\n• Flutter clean\n• Remove build artifacts\n• Clear pub cache\n• Reset CocoaPods (if macOS)\n\nContinue?',
       confirmLabel: 'Continue',
     );
-
-    if (!confirmed) return;
-
-    setState(() => _isRefreshing = true);
-
-    try {
-      await ref
-          .read(projectMaintenanceServiceProvider)
-          .fullCleanup(currentProjectPath);
-
-      // Re-analyze project
-      await _analyzeProject();
-
-      if (mounted) {
-        MessageBox.showSuccess(context, 'Full project cleanup completed!');
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isRefreshing = false);
-        MessageBox.showError(context, 'Cleanup failed: $e');
-      }
-    }
+    if (confirmed && mounted) _show(_controller.fullCleanup());
   }
 
   /// Opens the project's pubspec.yaml in the editor.
   void _openPubspecYaml() {
-    try {
-      final currentProjectPath = ref.read(currentProjectPathProvider);
-      if (currentProjectPath == null) return;
-
-      final pubspecPath = ProjectPaths(currentProjectPath).pubspec;
-      if (!File(pubspecPath).existsSync()) {
-        MessageBox.showError(context, 'pubspec.yaml not found');
-        return;
-      }
-
-      ref.read(openDocumentsProvider.notifier).open(pubspecPath);
-    } catch (e) {
-      MessageBox.showError(context, 'Failed to open pubspec.yaml: $e');
+    final pubspecPath = _controller.pubspecPath;
+    if (pubspecPath == null) {
+      MessageBox.showError(context, 'pubspec.yaml not found');
+      return;
     }
-  }
-
-  /// Handles `_checkOutdated`.
-  Future<void> _checkOutdated() async {
-    final currentProjectPath = ref.read(currentProjectPathProvider);
-    if (currentProjectPath == null) return;
-
-    setState(() => _checkingOutdated = true);
-
-    try {
-      final output = await ref
-          .read(projectMaintenanceServiceProvider)
-          .outdatedReport(currentProjectPath);
-
-      // Store the full command output
-      setState(() {
-        _outdatedCommandOutput = output;
-        _dependencyConflictError = null;
-      });
-
-      final updatedMetrics = ref
-          .read(projectMetricsProvider)
-          .copyWith(outdated: ProjectMaintenanceService.parseOutdated(output));
-
-      ref
-          .read(projectMetricsProvider.notifier)
-          .updateMetrics(currentProjectPath, updatedMetrics);
-
-      if (mounted) {
-        MessageBox.showSuccess(context, 'Outdated check completed');
-      }
-    } catch (e) {
-      if (mounted) {
-        MessageBox.showError(context, 'Failed to check outdated: $e');
-      }
-    } finally {
-      if (mounted) setState(() => _checkingOutdated = false);
-    }
+    ref.read(openDocumentsProvider.notifier).open(pubspecPath);
   }
 
   /// Opens [packageName]'s page on pub.dev.
   Future<void> _openPubDev(String packageName) =>
       openUrl(context, 'https://pub.dev/packages/$packageName');
 
-  /// Shows pub's version-solving [error] and flags the package it blames.
-  void _showDependencyConflict(String error) {
-    final conflict = ProjectMaintenanceService.parseVersionConflict(error);
-    setState(() {
-      _dependencyConflictError = conflict.summary;
-      final package = conflict.package;
-      if (package != null) {
-        _problematicPackages[package] = 'Incompatible version constraint';
-      }
-    });
-  }
-
   /// Handles `_buildDependencyChip`.
   Widget _buildDependencyChip(
     String packageName,
     DependencyVersion version,
     ProjectMetrics projectMetrics,
+    ProjectInfoState info,
   ) {
     final outdatedInfo = projectMetrics.outdated[packageName];
     final isOutdated = outdatedInfo != null;
-    final isProblematic = _problematicPackages.containsKey(packageName);
+    final isProblematic = info.problematicPackages.contains(packageName);
     final hasIncompatibleVersion =
         outdatedInfo?.hasNoResolvableVersion ?? false;
 
@@ -296,60 +178,11 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     );
   }
 
-  /// Handles `_upgradePackages`.
-  Future<void> _upgradePackages() async {
-    final currentProjectPath = ref.read(currentProjectPathProvider);
-    if (currentProjectPath == null) return;
-
-    // Clear previous error state
-    setState(() {
-      _upgrading = true;
-      _dependencyConflictError = null;
-      _problematicPackages = {};
-    });
-
-    try {
-      final updatedPackages = await ref
-          .read(projectMaintenanceServiceProvider)
-          .upgradeToResolvable(currentProjectPath);
-
-      await _analyzeProject();
-
-      if (mounted) {
-        if (updatedPackages.isNotEmpty) {
-          MessageBox.showSuccess(
-            context,
-            'Packages upgraded to compatible versions!',
-          );
-        } else {
-          MessageBox.showInfo(
-            context,
-            'All packages already up to date with compatible versions.',
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        final errorStr = e.toString();
-        if (errorStr.contains(ProjectMaintenanceService.versionSolvingFailed)) {
-          _showDependencyConflict(errorStr);
-          MessageBox.showError(
-            context,
-            'Package upgrade failed due to dependency conflicts',
-          );
-        } else {
-          MessageBox.showError(context, 'Error upgrading packages: $e');
-        }
-      }
-    } finally {
-      if (mounted) setState(() => _upgrading = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final currentProjectPath = ref.watch(currentProjectPathProvider);
     final projectMetrics = ref.watch(projectMetricsProvider);
+    final info = ref.watch(projectInfoControllerProvider);
 
     if (currentProjectPath == null) {
       return const NoProjectPlaceholder();
@@ -393,25 +226,26 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         ),
 
         // Health Indicators, once the project has been analyzed
-        if (projectMetrics.health case final health?) _buildHealthCard(health),
+        if (projectMetrics.health case final health?)
+          _buildHealthCard(health, currentProjectPath),
 
         // Dependencies
-        /// Handles `_buildDependenciesCard`.
-        _buildDependenciesCard(projectMetrics),
+        _buildDependenciesCard(projectMetrics, info),
 
         // Actions
-        _buildActionsCard(),
+        _buildActionsCard(info),
       ],
     );
   }
 
-  /// The project's score with each health issue and how to fix it.
-  Widget _buildHealthCard(HealthIndicators health) {
+  /// The project's score with each health issue and how to fix it, the
+  /// files it names under [projectPath].
+  Widget _buildHealthCard(HealthIndicators health, String projectPath) {
     return IssueSection(
       title: 'Score',
       issues: [
         for (final deduction in health.deductions)
-          if (deduction.count > 0) _healthIssue(deduction, health),
+          if (deduction.count > 0) deduction.toIssue(projectPath),
       ],
       emptyLabel: 'No issues detected',
       rightWidget: Clickable(
@@ -421,57 +255,11 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     );
   }
 
-  /// The issue a failed health [deduction] shows, with how to fix it.
-  QualityIssue _healthIssue(
-    HealthDeduction deduction,
-    HealthIndicators health,
-  ) {
-    final count = deduction.count;
-    switch (deduction.check) {
-      case HealthCheck.missingLock:
-        return const QualityIssue(
-          label: 'Missing pubspec.lock',
-          guidance:
-              'Run `flutter pub get` to resolve the dependencies and write '
-              '`pubspec.lock`; commit it so every build uses the same '
-              'package versions.',
-        );
-      case HealthCheck.buildErrors:
-        return QualityIssue(
-          tone: StatusTone.error,
-          label: '$count build errors',
-          guidance: _fixBuildGuidance,
-        );
-      case HealthCheck.buildWarnings:
-        return QualityIssue(
-          label: '$count build warnings',
-          guidance: _fixBuildGuidance,
-        );
-      case HealthCheck.largeFiles:
-        final projectPath = ref.read(currentProjectPathProvider);
-        return QualityIssue(
-          tone: StatusTone.info,
-          label: '$count large files',
-          guidance:
-              'Files over ${AppMetric.largeFileThresholdMb} MB slow down '
-              'clones and builds: compress images and media, download '
-              'large data at runtime, or track them with Git LFS.',
-          rootPath: projectPath,
-          findings: [
-            if (projectPath != null)
-              for (final file in health.largeFiles)
-                QualityFinding(
-                  path: p.join(projectPath, file),
-                  line: 1,
-                  text: p.basename(file),
-                ),
-          ],
-        );
-    }
-  }
-
   /// Handles `_buildDependenciesCard`.
-  Widget _buildDependenciesCard(ProjectMetrics projectMetrics) {
+  Widget _buildDependenciesCard(
+    ProjectMetrics projectMetrics,
+    ProjectInfoState info,
+  ) {
     final depsDirect = projectMetrics.dependencies;
     final depsDev = projectMetrics.devDependencies;
     final totalDeps = depsDirect.length + depsDev.length;
@@ -486,16 +274,16 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           runSpacing: AppSpacing.medium,
           children: [
             PrimaryButton(
-              busy: _checkingOutdated,
+              busy: info.isCheckingOutdated,
               icon: Icons.update,
               label: 'Outdated',
-              onPressed: _checkOutdated,
+              onPressed: () => _show(_controller.checkOutdated()),
             ),
             PrimaryButton(
-              busy: _upgrading,
+              busy: info.isUpgrading,
               icon: Icons.arrow_upward,
               label: 'Upgrade',
-              onPressed: _upgradePackages,
+              onPressed: () => _show(_controller.upgradePackages()),
             ),
           ],
         ),
@@ -512,6 +300,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                   entry.key,
                   entry.value,
                   projectMetrics,
+                  info,
                 );
               }).toList(),
             ),
@@ -529,6 +318,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                   entry.key,
                   entry.value,
                   projectMetrics,
+                  info,
                 );
               }).toList(),
             ),
@@ -552,21 +342,21 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         ),
 
         // Outdated command output (always visible when present)
-        if (_outdatedCommandOutput != null) ...[
+        if (info.outdatedOutput case final output?) ...[
           const SizedBox(height: AppSpacing.large),
           OutputPanel(
             title: '📄 Package Analysis Output',
-            text: _outdatedCommandOutput!,
+            text: output,
             isExpanded: true,
           ),
         ],
 
         // Dependency conflict output (always visible when present)
-        if (_dependencyConflictError != null) ...[
+        if (info.conflictSummary case final conflict?) ...[
           const SizedBox(height: AppSpacing.large),
           OutputPanel(
             title: '⚠️ Dependency Conflicts',
-            text: _dependencyConflictError!,
+            text: conflict,
             isExpanded: true,
           ),
         ],
@@ -575,7 +365,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   }
 
   /// Handles `_buildActionsCard`.
-  Widget _buildActionsCard() {
+  Widget _buildActionsCard(ProjectInfoState info) {
     return SectionPanel(
       title: 'Actions',
       isExpanded: true,
@@ -584,16 +374,16 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         spacing: AppSpacing.medium,
         children: [
           PrimaryButton(
-            busy: _isRefreshing,
+            busy: info.isAnalyzing,
             icon: Icons.cleaning_services,
             label: 'Full Project Cleanup',
             onPressed: _performFullCleanup,
           ),
           PrimaryButton(
-            busy: _isRefreshing,
+            busy: info.isAnalyzing,
             icon: Icons.refresh,
             label: 'Refresh Analysis',
-            onPressed: _analyzeProject,
+            onPressed: () => _show(_controller.analyze()),
           ),
         ],
       ),

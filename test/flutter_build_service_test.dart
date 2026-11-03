@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fide/models/build_step_event.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/services/flutter_build_service.dart';
 import 'package:fide/services/process_runner.dart';
@@ -43,19 +44,26 @@ class FakeProcessRunner extends ProcessRunner {
 void main() {
   late List<String> output;
   late List<String> errors;
+  late List<BuildStepEvent> steps;
   late int resets;
   late BuildOutput sink;
 
   setUp(() {
     output = [];
     errors = [];
+    steps = [];
     resets = 0;
     sink = BuildOutput(
       onOutput: output.add,
       onError: errors.add,
+      onStep: steps.add,
       onResetErrors: () => resets++,
     );
   });
+
+  /// The steps reported so far as `step/status` names.
+  Iterable<String> stepNames() =>
+      steps.map((e) => '${e.step.name}/${e.status.name}');
 
   group('FlutterBuildService.build', () {
     test(
@@ -77,8 +85,28 @@ void main() {
           'flutter build macos',
         ]);
         expect(resets, 1);
+        expect(stepNames(), [
+          'podRepoRepair/needed',
+          'podRepoRepair/started',
+          'podRepoRepair/succeeded',
+          'flutterBuild/retrying',
+        ]);
+        expect(steps.first.detail, _podRepoError);
       },
     );
+
+    test('reports a repair that fails without retrying', () async {
+      final runner = FakeProcessRunner([
+        const FakeReply(1, stderr: [_podRepoError]),
+        const FakeReply(1),
+      ]);
+
+      final exitCode = await FlutterBuildService(runner)
+          .build('/p', FlutterPlatform.macos, sink);
+
+      expect(exitCode, 1);
+      expect(stepNames().last, 'podRepoRepair/failed');
+    });
 
     test('retries at most once when the repo is still stale', () async {
       final runner = FakeProcessRunner([
@@ -121,7 +149,12 @@ void main() {
 
       expect(
         FlutterBuildService(runner).clean('/p', sink),
-        throwsA(contains('exit code 1')),
+        throwsA(
+          isA<BuildException>()
+              .having((e) => e.step, 'step', BuildStep.flutterClean)
+              .having((e) => e.exitCode, 'exitCode', 1)
+              .having((e) => '$e', 'text', 'flutter clean exited with 1'),
+        ),
       );
     });
   });
@@ -191,6 +224,19 @@ void main() {
         'flutter pub get',
         'flutter build macos',
       ]);
+      expect(stepNames(), [
+        'podRepoUpdate/started',
+        'podRepoUpdate/failed',
+        'podInstall/started',
+        'podInstall/failed',
+        'flutterClean/started',
+        'pubGet/started',
+        'flutterBuild/started',
+        'deepClean/succeeded',
+      ]);
+      expect(steps.last.toString(), contains('deepClean'));
+      expect(steps[3].exitCode, 1);
+      expect(steps[6].detail, 'build macos');
     });
 
     test('stops and names the Flutter step that failed', () async {
@@ -204,7 +250,11 @@ void main() {
       expect(
         FlutterBuildService(runner)
             .deepClean('/p', FlutterPlatform.macos, sink),
-        throwsA(contains('pub get')),
+        throwsA(
+          isA<BuildException>()
+              .having((e) => e.step, 'step', BuildStep.pubGet)
+              .having((e) => e.arguments, 'arguments', 'pub get'),
+        ),
       );
     });
   });

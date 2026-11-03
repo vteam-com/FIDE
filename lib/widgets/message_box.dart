@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/action_outcome.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/message_widget.dart';
@@ -15,22 +16,22 @@ class MessageBox {
 
   /// Shows an error message overlay, with a button to copy the text.
   static void showError(BuildContext context, String message) {
-    _showMessage(context, message, StatusTone.error);
+    show(context, message, StatusTone.error);
   }
 
   /// Shows an informational message overlay.
   static void showInfo(BuildContext context, String message) {
-    _showMessage(context, message, StatusTone.info);
+    show(context, message, StatusTone.info);
   }
 
   /// Shows a success message overlay.
   static void showSuccess(BuildContext context, String message) {
-    _showMessage(context, message, StatusTone.success);
+    show(context, message, StatusTone.success);
   }
 
   /// Shows a warning message overlay.
   static void showWarning(BuildContext context, String message) {
-    _showMessage(context, message, StatusTone.warning);
+    show(context, message, StatusTone.warning);
   }
 
   /// Copies [text] to the clipboard and confirms it with [confirmation].
@@ -139,13 +140,14 @@ class MessageBox {
     return confirmed ?? false;
   }
 
-  /// Presents an overlay message bar of [type]; the bar removes itself
-  /// once closed or after that type's display duration.
-  static void _showMessage(
-    BuildContext context,
-    String message,
-    StatusTone type,
-  ) {
+  /// Tells the user how an action ended, in the tone of [outcome].
+  static void showOutcome(BuildContext context, ActionOutcome outcome) =>
+      show(context, outcome.message, outcome.tone);
+
+  /// Presents an overlay message bar of [tone], the one every message of
+  /// that meaning gets; the bar removes itself once closed or after the
+  /// tone's [StatusTone.messageDuration].
+  static void show(BuildContext context, String message, StatusTone tone) {
     late final OverlayEntry overlayEntry;
     overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
@@ -154,7 +156,7 @@ class MessageBox {
         right: 0,
         child: MessageWidget(
           message: message,
-          type: type,
+          type: tone,
           // Removed rather than left faded out: an invisible bar would
           // still catch the clicks meant for what lies under it
           onClose: () {

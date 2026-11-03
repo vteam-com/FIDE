@@ -1,13 +1,7 @@
-import 'package:fide/models/file_system_item.dart';
-import 'package:fide/panels/left/execute_panel.dart';
-import 'package:fide/panels/left/folder_panel.dart';
-import 'package:fide/panels/left/git_panel.dart';
-import 'package:fide/panels/left/organized_panel.dart';
-import 'package:fide/panels/left/search_panel.dart';
-import 'package:fide/panels/left/test_panel.dart';
+import 'package:fide/panels/left/left_panel_tabs.dart';
+import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/left_panel_tab.dart';
 import 'package:fide/providers/panel_actions.dart';
-import 'package:fide/providers/panel_tab_badges.dart';
 import 'package:fide/providers/side_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/panel_tab_header.dart';
@@ -15,22 +9,11 @@ import 'package:fide/widgets/panel_tabs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Represents `LeftPanel`.
+/// The panel left of the editor: one tab per [LeftPanelTab], each showing
+/// what [leftPanelTabs] builds for it.
 class LeftPanel extends ConsumerStatefulWidget {
-  final FileSystemItem? selectedFile;
-  final String? currentProjectPath;
-  final bool projectLoaded;
-  final Function(FileSystemItem)? onFileSelected;
-  final Function(String, int)? onJumpToLine;
-
-  const LeftPanel({
-    super.key,
-    this.selectedFile,
-    this.currentProjectPath,
-    required this.projectLoaded,
-    this.onFileSelected,
-    this.onJumpToLine,
-  });
+  /// Creates the panel.
+  const LeftPanel({super.key});
 
   @override
   ConsumerState<LeftPanel> createState() => _LeftPanelState();
@@ -43,10 +26,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(
-      length: LeftPanelTab.values.length,
-      vsync: this,
-    );
+    _tabController = TabController(length: leftPanelTabs.length, vsync: this);
     _tabController.addListener(_handleTabChange);
   }
 
@@ -57,28 +37,18 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
     super.dispose();
   }
 
-  /// Handles `_handleTabChange`.
+  /// Shows the tab picked in the tab bar and updates the tab icons.
   void _handleTabChange() {
     if (_tabController.indexIsChanging) {
-      // Update the provider when tab changes
       ref.read(activeLeftPanelTabProvider.notifier).state =
           LeftPanelTab.values[_tabController.index];
-
-      // Trigger rebuild to update tab icons
       setState(() {});
-
-      // Ensure selected file is visible after mode change
-      if (widget.selectedFile != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          // This will trigger the ExplorerScreen to ensure the file is visible
-        });
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Listen for changes to the active left panel tab provider
+    // Show the tab the provider selects, such as one a menu opened
     ref.listen<LeftPanelTab>(activeLeftPanelTabProvider, (_, next) {
       if (_tabController.index != next.index) {
         _tabController.animateTo(next.index);
@@ -87,48 +57,22 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
 
     return PanelTabs(
       controller: _tabController,
-      showTabBar: widget.projectLoaded,
+      showTabBar: ref.watch(projectLoadedProvider),
       onReselect: () => togglePanelExpanded(ref, SidePanel.left),
       tabs: [
-        for (final tab in LeftPanelTab.values)
+        for (final spec in leftPanelTabs)
           PanelTabHeader(
-            key: tab.key,
-            tooltip: tab.tooltip,
-            badgeCount: ref.watch(leftPanelTabBadgeProvider(tab)),
+            key: spec.tab.key,
+            tooltip: spec.tab.tooltip,
+            badgeCount: spec.badgeCount(ref),
             icon: Icon(
-              _tabController.index == tab.index ? tab.selectedIcon : tab.icon,
+              _tabController.index == spec.tab.index
+                  ? spec.tab.selectedIcon
+                  : spec.tab.icon,
             ),
           ),
       ],
-      children: [for (final tab in LeftPanelTab.values) _buildTab(tab)],
+      children: [for (final spec in leftPanelTabs) spec.build()],
     );
-  }
-
-  /// The panel shown under [tab].
-  Widget _buildTab(LeftPanelTab tab) {
-    return switch (tab) {
-      LeftPanelTab.organized => OrganizedPanel(
-        onFileSelected: widget.onFileSelected,
-        selectedFile: widget.selectedFile,
-        initialProjectPath: widget.currentProjectPath,
-      ),
-      LeftPanelTab.folder => FolderPanel(
-        onFileSelected: widget.onFileSelected,
-        selectedFile: widget.selectedFile,
-        initialProjectPath: widget.currentProjectPath,
-      ),
-      LeftPanelTab.git => GitPanel(
-        onFileSelected: widget.onFileSelected,
-        selectedFile: widget.selectedFile,
-        projectPath: widget.currentProjectPath!,
-      ),
-      LeftPanelTab.search => SearchPanel(
-        projectPath: widget.currentProjectPath!,
-        onFileSelected: widget.onFileSelected,
-        onJumpToLine: widget.onJumpToLine,
-      ),
-      LeftPanelTab.run => const ExecutePanel(),
-      LeftPanelTab.test => TestPanel(projectPath: widget.currentProjectPath!),
-    };
   }
 }

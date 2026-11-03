@@ -4,6 +4,7 @@ import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/project_overview.dart';
 import 'package:fide/models/quality_issues.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/providers/app_icon_review_provider.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/widgets/app_icon_image.dart';
@@ -45,8 +46,9 @@ class ProjectOverviewPanel extends ConsumerWidget {
   /// How many app icon problems the platforms have, opening the App Icons
   /// view to review and fix them.
   Widget _appIconsCard(WidgetRef ref) {
-    final issues = ref.watch(appIconIssuesProvider);
-    final platforms = {for (final issue in issues ?? const []) issue.platform};
+    final review = ref.watch(appIconReviewProvider).value;
+    final issues = review?.issues;
+    final platforms = review?.brokenPlatformLabels ?? const <String>{};
     return StatCard(
       icon: Icons.apps,
       title: 'App icons',
@@ -58,10 +60,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
               StatusTone.warning,
               label: issues.length.count('problem'),
             ),
-      details: [
-        if (platforms.isNotEmpty)
-          'On ${platforms.map((platform) => platform.label).join(', ')}',
-      ],
+      details: [if (platforms.isNotEmpty) 'On ${platforms.join(', ')}'],
       action: SecondaryButton(
         icon: Icons.auto_fix_high,
         label: 'Review',

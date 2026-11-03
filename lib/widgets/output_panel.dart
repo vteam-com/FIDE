@@ -1,9 +1,8 @@
-import 'dart:io';
-
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_location.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/copy_button.dart';
 import 'package:fide/widgets/section_panel.dart';
@@ -160,8 +159,10 @@ class _OutputPanelState extends ConsumerState<OutputPanel> {
     final locations = FileLocation.findAll(
       widget.text,
       baseDir: ref.read(currentProjectPathProvider),
-      exists: (path) =>
-          _pathExists.putIfAbsent(path, () => File(path).existsSync()),
+      exists: (path) => _pathExists.putIfAbsent(
+        path,
+        () => ref.read(fileEntryServiceProvider).exists(path),
+      ),
     );
     _links = [
       for (final location in locations)

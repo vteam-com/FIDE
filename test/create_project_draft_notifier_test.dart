@@ -1,5 +1,10 @@
+import 'dart:io';
+
 import 'package:fide/models/create_project_draft.dart';
 import 'package:fide/models/create_project_step.dart';
+import 'package:fide/models/creation_outcome.dart';
+import 'package:fide/models/creation_report.dart';
+import 'package:fide/models/creation_step.dart';
 import 'package:fide/models/project_creation_request.dart';
 import 'package:fide/models/tool_availability.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -8,7 +13,8 @@ import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/tool_availability_provider.dart';
 import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/git_service.dart';
-import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/l10n_generator.dart';
+import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:fide/services/project_creation_service.dart';
@@ -25,7 +31,12 @@ class _RecordingService extends ProjectCreationService {
     : super(
         const ProcessRunner(),
         const GitService(ProcessRunner()),
-        LocalizationService(const ProcessRunner(), const ProjectConfigReader()),
+        const LocalizationSetup(
+          ProcessRunner(),
+          ProjectConfigReader(),
+          L10nGenerator(ProcessRunner()),
+        ),
+        const L10nGenerator(ProcessRunner()),
         ProjectTemplate(FakeChatModel(), const FlutterSdk(ProcessRunner())),
       );
 
@@ -37,7 +48,9 @@ class _RecordingService extends ProjectCreationService {
     CreationProgress onProgress,
   ) async {
     requests.add(request);
-    onProgress(1, 'done', LoadingStatus.success);
+    onProgress(
+      const CreationReport(CreationStep.validate, CreationOutcome.validated),
+    );
     return true;
   }
 }
@@ -74,6 +87,25 @@ void main() {
     await notifier().resolveParentDirectory('/elsewhere');
 
     expect(draft().parentDirectory, '/work');
+  });
+
+  test('falls back to the documents directory', () async {
+    final fallback = ProviderContainer(
+      overrides: [
+        toolAvailabilityProvider.overrideWith((_) async => tools),
+        documentsDirectoryProvider.overrideWithValue(
+          () async => Directory('/docs'),
+        ),
+      ],
+    );
+    addTearDown(fallback.dispose);
+    fallback.listen(createProjectDraftProvider, (_, _) {});
+
+    await fallback
+        .read(createProjectDraftProvider.notifier)
+        .resolveParentDirectory(null);
+
+    expect(fallback.read(createProjectDraftProvider).parentDirectory, '/docs');
   });
 
   test('stays on the details step until it has a name', () async {
@@ -120,9 +152,55 @@ void main() {
     expect(request.initGit, true);
     expect(draft().step, CreateProjectStep.creating);
     expect(draft().created, true);
+    final first = container.read(loadingActionsProvider).first;
+    expect(first.status, LoadingStatus.success);
+    expect(first.text, 'Dependencies validated successfully');
+  });
+
+  test('CreationLabels word every step and outcome', () {
+    final pending = CreationLabels.initialActions();
+    expect(pending.map((a) => a.step), [1, 2, 3, 4, 5, 6]);
     expect(
-      container.read(loadingActionsProvider).first.status,
-      LoadingStatus.success,
+      pending.first.text,
+      'Validating settings and checking dependencies...',
+    );
+    expect(
+      CreationLabels.pending(CreationStep.verification),
+      'Final verification and cleanup...',
+    );
+    for (final outcome in CreationOutcome.values) {
+      expect(
+        CreationLabels.of(
+          CreationReport(CreationStep.codegen, outcome, detail: 'why'),
+        ),
+        isNotEmpty,
+      );
+    }
+    expect(
+      CreationLabels.of(
+        const CreationReport(
+          CreationStep.gitInit,
+          CreationOutcome.error,
+          detail: 'boom',
+        ),
+      ),
+      'Error: boom',
+    );
+    expect(
+      CreationLabels.of(
+        const CreationReport(
+          CreationStep.codegen,
+          CreationOutcome.aiFailed,
+          detail: 'offline',
+        ),
+      ),
+      'AI code generation failed: offline',
+    );
+    expect(
+      CreationLabels.of(
+        const CreationReport(CreationStep.gitInit, CreationOutcome.gitFailed),
+      ),
+      'Git initialization failed',
     );
   });
 

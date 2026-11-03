@@ -6,6 +6,7 @@ import 'package:fide/models/reference_search.dart';
 import 'package:fide/models/search_result.dart';
 import 'package:fide/models/search_result_node.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/app_text_field.dart';
@@ -25,18 +26,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 
-/// Represents `SearchPanel`.
+/// The Search tab: finds text or references across the project at
+/// [projectPath] and opens the matches in the editor.
 class SearchPanel extends ConsumerStatefulWidget {
+  /// The project searched.
   final String projectPath;
-  final Function(FileSystemItem)? onFileSelected;
-  final Function(String, int)? onJumpToLine;
 
-  const SearchPanel({
-    super.key,
-    required this.projectPath,
-    this.onFileSelected,
-    this.onJumpToLine,
-  });
+  /// Creates the panel for the project at [projectPath].
+  const SearchPanel({super.key, required this.projectPath});
 
   @override
   ConsumerState<SearchPanel> createState() => _SearchPanelState();
@@ -333,7 +330,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
           path: node.path,
           rootPath: widget.projectPath,
           showPath: true,
-          onTap: () => widget.onFileSelected?.call(item),
+          onTap: () => openFile(ref, node.path),
         ),
         // Match results
         Padding(
@@ -353,8 +350,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
   /// Handles `_buildMatchResult`.
   Widget _buildMatchResult(SearchResult result) {
     return Clickable(
-      onTap: () =>
-          widget.onJumpToLine?.call(result.filePath, result.lineNumber),
+      onTap: () => openFileAtLine(ref, result.filePath, result.lineNumber),
       child: SurfaceCard(
         padding: SurfacePadding.dense,
         child: Column(

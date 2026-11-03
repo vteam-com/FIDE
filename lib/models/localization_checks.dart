@@ -1,7 +1,7 @@
 import 'package:fide/models/localization_status.dart';
 
 /// Which parts of the localization setup a project already has, read from
-/// its files in one pass by `LocalizationService.inspect`.
+/// its files in one pass by `LocalizationSetup.inspect`.
 class LocalizationChecks {
   /// Result for a folder with no readable project files.
   static const LocalizationChecks none = LocalizationChecks(

@@ -3,8 +3,8 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:fide/app_bootstrap.dart';
 import 'package:fide/constants/constants.dart';
-import 'package:fide/controllers/app_controller.dart';
 import 'package:fide/main.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/providers/ai_chat_notifier.dart';
@@ -80,7 +80,7 @@ void main() {
     );
 
     stepStart('Open $_projectPath');
-    await container.read(appControllerProvider).initializeWindowManager();
+    await initializeWindowManager();
     await tester.pumpWidget(
       RepaintBoundary(
         key: _appKey,

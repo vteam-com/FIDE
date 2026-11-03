@@ -1,3 +1,4 @@
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/ollama_step.dart';
 import 'package:fide/providers/ollama_status_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
@@ -22,7 +23,7 @@ class _FakeInstaller extends OllamaInstaller {
   Future<void> install() async {
     installs++;
     installed = true;
-    ai.downloaded = OllamaInstaller.model;
+    ai.downloaded = AiModel.ollama;
   }
 
   @override

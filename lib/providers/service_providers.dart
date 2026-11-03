@@ -5,6 +5,7 @@ import 'package:fide/services/ai_assistant.dart';
 import 'package:fide/services/app_icon_fixer.dart';
 import 'package:fide/services/arb_key_remover.dart';
 import 'package:fide/services/arb_migrator.dart';
+import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/arb_translator.dart';
 import 'package:fide/services/asset_categorizer.dart';
 import 'package:fide/services/build_artifacts_inspector.dart';
@@ -19,7 +20,8 @@ import 'package:fide/services/file_system_watcher.dart';
 import 'package:fide/services/flutter_build_service.dart';
 import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/git_service.dart';
-import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/l10n_generator.dart';
+import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/ollama_client.dart';
 import 'package:fide/services/ollama_installer.dart';
 import 'package:fide/services/process_runner.dart';
@@ -36,8 +38,16 @@ import 'package:fide/services/project_tree_reader.dart';
 import 'package:fide/services/string_constants_extractor.dart';
 import 'package:fide/services/string_localizer.dart';
 import 'package:fide/services/test_suite_inspector.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+
+/// Asks the user for a folder; null when they cancel.
+typedef FolderPicker = Future<String?> Function();
+
+/// Finds the user's documents directory.
+typedef DocumentsDirectoryFinder = Future<Directory> Function();
 
 /// Provides the [ProcessRunner] every service uses to launch commands;
 /// override in tests to fake external tools.
@@ -45,10 +55,16 @@ final processRunnerProvider = Provider<ProcessRunner>(
   (_) => const ProcessRunner(),
 );
 
+/// The operating system FIDE runs on, as [Platform.operatingSystem]
+/// names it; override in tests to drive another platform's behaviour.
+final hostOperatingSystemProvider = Provider<String>(
+  (_) => Platform.operatingSystem,
+);
+
 /// Provides the [DesktopShell] of the platform FIDE runs on, chosen once.
 final desktopShellProvider = Provider<DesktopShell>(
   (ref) => DesktopShell.forOperatingSystem(
-    Platform.operatingSystem,
+    ref.read(hostOperatingSystemProvider),
     ref.read(processRunnerProvider),
   ),
 );
@@ -62,12 +78,16 @@ final projectConfigReaderProvider = Provider<ProjectConfigReader>(
 /// The desktop platform FIDE runs on, which decides what it can build;
 /// null on an OS Flutter does not target.
 final hostPlatformProvider = Provider<FlutterPlatform?>(
-  (_) => FlutterPlatform.fromId(Platform.operatingSystem),
+  (ref) => FlutterPlatform.fromId(ref.read(hostOperatingSystemProvider)),
 );
 
 /// Provides the shared [GitService]; override in tests to stub Git commands.
 final gitServiceProvider = Provider<GitService>(
-  (ref) => GitService(ref.read(processRunnerProvider)),
+  (ref) => GitService(
+    ref.read(processRunnerProvider),
+    reader: ref.read(fileContentReaderProvider),
+    entries: ref.read(fileEntryServiceProvider),
+  ),
 );
 
 /// Provides the HTTP client network services send requests through;
@@ -117,21 +137,32 @@ final codeReviewProvider = Provider<CodeReview>((_) => const CodeReview());
 
 /// Provides the [OllamaInstaller] that installs and starts the local model.
 final ollamaInstallerProvider = Provider<OllamaInstaller>(
-  (ref) => OllamaInstaller(ref.read(processRunnerProvider)),
+  (ref) => OllamaInstaller(
+    ref.read(processRunnerProvider),
+    operatingSystem: ref.read(hostOperatingSystemProvider),
+  ),
 );
 
-/// Provides the shared [LocalizationService] for project l10n setup.
-final localizationServiceProvider = Provider<LocalizationService>(
-  (ref) => LocalizationService(
+/// Provides the [L10nGenerator] running `flutter gen-l10n` for every
+/// service that rewrites ARB files.
+final l10nGeneratorProvider = Provider<L10nGenerator>(
+  (ref) => L10nGenerator(ref.read(processRunnerProvider)),
+);
+
+/// Provides the shared [LocalizationSetup] for project l10n setup.
+final localizationSetupProvider = Provider<LocalizationSetup>(
+  (ref) => LocalizationSetup(
     ref.read(processRunnerProvider),
     ref.read(projectConfigReaderProvider),
+    ref.read(l10nGeneratorProvider),
   ),
 );
 
 /// Provides the [StringLocalizer] behind the Localize strings quick fix.
 final stringLocalizerProvider = Provider<StringLocalizer>(
   (ref) => StringLocalizer(
-    ref.read(localizationServiceProvider),
+    ref.read(projectConfigReaderProvider),
+    ref.read(l10nGeneratorProvider),
     ref.read(codeFormatterProvider),
   ),
 );
@@ -140,14 +171,18 @@ final stringLocalizerProvider = Provider<StringLocalizer>(
 final arbMigratorProvider = Provider<ArbMigrator>(
   (ref) => ArbMigrator(
     ref.read(processRunnerProvider),
-    ref.read(localizationServiceProvider),
+    ref.read(projectConfigReaderProvider),
+    ref.read(l10nGeneratorProvider),
     ref.read(codeFormatterProvider),
   ),
 );
 
 /// Provides the [ArbKeyRemover] behind the Remove unused keys quick fix.
 final arbKeyRemoverProvider = Provider<ArbKeyRemover>(
-  (ref) => ArbKeyRemover(ref.read(localizationServiceProvider)),
+  (ref) => ArbKeyRemover(
+    ref.read(projectConfigReaderProvider),
+    ref.read(l10nGeneratorProvider),
+  ),
 );
 
 /// Provides the [ArbTranslator] behind Translate with AI and the
@@ -155,7 +190,8 @@ final arbKeyRemoverProvider = Provider<ArbKeyRemover>(
 final arbTranslatorProvider = Provider<ArbTranslator>(
   (ref) => ArbTranslator(
     ref.read(chatModelProvider),
-    ref.read(localizationServiceProvider),
+    ref.read(projectConfigReaderProvider),
+    ref.read(l10nGeneratorProvider),
   ),
 );
 
@@ -216,7 +252,8 @@ final projectCreationServiceProvider = Provider<ProjectCreationService>(
   (ref) => ProjectCreationService(
     ref.read(processRunnerProvider),
     ref.read(gitServiceProvider),
-    ref.read(localizationServiceProvider),
+    ref.read(localizationSetupProvider),
+    ref.read(l10nGeneratorProvider),
     ref.read(projectTemplateProvider),
   ),
 );
@@ -232,7 +269,7 @@ final flutterSdkProvider = Provider<FlutterSdk>(
 );
 
 /// Provides the shared [ArbService] for reading and writing ARB files.
-final arbServiceProvider = Provider<ArbService>((_) => ArbService());
+final arbServiceProvider = Provider<ArbService>((_) => const ArbService());
 
 /// Provides the [ProjectOverviewService] behind the center panel's project
 /// overview.
@@ -254,6 +291,18 @@ final projectTreeLoaderProvider = Provider<ProjectTreeLoader>(
 /// Parent directory the new-project wizard starts in; null means the user's
 /// documents directory.
 final newProjectParentDirectoryProvider = Provider<String?>((_) => null);
+
+/// Provides the [FolderPicker] the Open Project actions ask for a folder
+/// with; override in tests to answer without a dialog.
+final folderPickerProvider = Provider<FolderPicker>(
+  (_) => FilePicker.getDirectoryPath,
+);
+
+/// Provides the [DocumentsDirectoryFinder] the new-project wizard starts
+/// in without a configured parent; override in tests to skip the platform.
+final documentsDirectoryProvider = Provider<DocumentsDirectoryFinder>(
+  (_) => getApplicationDocumentsDirectory,
+);
 
 /// Provides the [ProjectTreeReader] panels and the watcher read folders
 /// with.

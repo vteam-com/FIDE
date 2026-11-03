@@ -2,6 +2,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/dependency_version.dart';
 import 'package:fide/models/health_check.dart';
 import 'package:fide/models/health_indicators.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -17,6 +18,30 @@ void main() {
       ]);
       expect(health.deductions.any((deduction) => deduction.isActive), false);
       expect(health.qualityScore, AppMetric.maxScore);
+    });
+
+    test('a deduction becomes the issue the health card shows', () {
+      const health = HealthIndicators(
+        buildErrors: 2,
+        largeFiles: ['assets/big.bin'],
+      );
+      final issues = {
+        for (final deduction in health.deductions)
+          deduction.check: deduction.toIssue('/demo'),
+      };
+
+      expect(issues[HealthCheck.missingLock]?.label, 'Missing pubspec.lock');
+      expect(issues[HealthCheck.buildErrors]?.label, '2 build errors');
+      expect(issues[HealthCheck.buildErrors]?.tone, StatusTone.error);
+      expect(issues[HealthCheck.buildErrors]?.findings, isEmpty);
+      final large = issues[HealthCheck.largeFiles]!;
+      expect(large.tone, StatusTone.info);
+      expect(large.rootPath, '/demo');
+      expect(large.findings.single.path, '/demo/assets/big.bin');
+      expect(large.findings.single.text, 'big.bin');
+      expect(large.guidance, contains('Git LFS'));
+      // Without a project folder the files can't be located
+      expect(health.deductions.last.toIssue(null).findings, isEmpty);
     });
 
     test('the score subtracts every active deduction, capped', () {

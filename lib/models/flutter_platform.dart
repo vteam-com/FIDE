@@ -1,3 +1,17 @@
+import 'package:flutter/material.dart';
+
+/// A `flutter build` the Execute panel offers for one platform: the action
+/// [id] and how its card reads, and the `flutter build` [target] it
+/// packages, null for the platform's default one.
+typedef BuildAction = ({
+  String id,
+  IconData icon,
+  String title,
+  String description,
+  String details,
+  String? target,
+});
+
 /// The platforms a Flutter project can target, with the metadata each part
 /// of the UI needs. Declaration order is the order platforms are shown in.
 ///
@@ -45,14 +59,71 @@ enum FlutterPlatform {
     };
   }
 
-  /// Why the host OS [hostOs] can't build this platform.
-  String cannotBuildOn(String hostOs) {
+  /// Why [host], the desktop platform the IDE runs on (null for an unknown
+  /// OS), can't build this platform.
+  String cannotBuildOn(FlutterPlatform? host) {
     final requiredHost = switch (this) {
       ios || macos => macos.displayName,
       _ => displayName,
     };
-    return '$displayName builds require a $requiredHost machine.\n\nYou cannot build $displayName apps from $hostOs.';
+    final hostName = host?.displayName ?? 'this operating system';
+    return '$displayName builds require a $requiredHost machine.\n\nYou cannot build $displayName apps from $hostName.';
   }
+
+  /// The `flutter build` actions the Execute panel offers for this
+  /// platform: an APK and an App Bundle for Android, one build for the
+  /// others.
+  List<BuildAction> get buildActions => switch (this) {
+    android => const [
+      (
+        id: 'build_apk',
+        icon: Icons.phone_android_rounded,
+        title: 'Build APK',
+        description: 'Build an installable Android package (APK)',
+        details: '''
+Builds an Android app package (APK) for the selected platform.
+
+• Compiles Dart code to native ARM/x86 binaries
+• Bundles Flutter engine and assets
+• Creates installable .apk file
+• Targets debug or release configurations
+        ''',
+        target: null,
+      ),
+      (
+        id: 'build_aab',
+        icon: Icons.archive_rounded,
+        title: 'Build AAB',
+        description: 'Build Android App Bundle for Play Store',
+        details: '''
+Builds an Android App Bundle (AAB) for Google Play Store.
+
+• Contains optimized app binaries for multiple ABIs
+• Includes assets and Flutter engine
+• Smaller downloads through dynamic feature delivery
+• Required format for Play Store submissions
+        ''',
+        target: appBundleTarget,
+      ),
+    ],
+    _ => [
+      (
+        id: 'build',
+        icon: Icons.build_rounded,
+        title: 'Build $displayName',
+        description: 'Build application for $displayName platform',
+        details: '''
+Builds the Flutter application for the selected platform.
+
+• Compiles Dart code to native platform binaries
+• Bundles Flutter engine and platform-specific files
+• Creates platform-specific application bundle
+• Optimizes for target platform requirements
+        ''',
+        target: null,
+      ),
+    ],
+  };
 
   /// The `flutter build` arguments for [target], one of [buildTargets]
   /// (the first by default), with this platform's extra flags.

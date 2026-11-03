@@ -1,4 +1,21 @@
-part of 'app_providers.dart';
+import 'dart:convert';
+
+import 'package:fide/constants/constants.dart';
+import 'package:fide/models/project_metrics.dart';
+import 'package:fide/providers/persisted_notifier.dart';
+import 'package:fide/providers/project_lifecycle_providers.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// The Info panel's metrics of the current project, starting again from
+/// the cached ones when another project opens.
+final projectMetricsProvider =
+    StateNotifierProvider<ProjectMetricsNotifier, ProjectMetrics>(
+      (ref) => ProjectMetricsNotifier(
+        ref.watch(sharedPreferencesProvider.future),
+        ref.watch(currentProjectPathProvider),
+      ),
+    );
 
 /// The Info panel's metrics for one project, cached per project in
 /// preferences: shown at once, whether or not preferences are loaded yet,

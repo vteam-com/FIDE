@@ -4,7 +4,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/build_artifacts.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/locale_number.dart';
-import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/app_icon_review_provider.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/theme/app_theme.dart';
@@ -186,9 +186,12 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
   /// How many problems the platform's app icons have, opening the App
   /// Icons view to fix them; nothing when they have none.
   Widget _buildIconIssues() {
-    final count = (ref.watch(appIconIssuesProvider) ?? const [])
-        .where((issue) => issue.platform.name == widget.selectedPlatform.name)
-        .length;
+    final count =
+        ref
+            .watch(appIconReviewProvider)
+            .value
+            ?.issueCountOf(widget.selectedPlatform.name) ??
+        0;
     if (count == 0) return const SizedBox();
     return ContainerCounter.warning(
       icon: Icons.apps,

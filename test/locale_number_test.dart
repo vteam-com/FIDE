@@ -16,13 +16,18 @@ void main() {
     expect(2.count('file'), '2 files');
   });
 
-  test('useLocale switches to the locale separators', () {
-    addTearDown(() => LocaleNumber.useLocale('en'));
+  test('NumberLocale formats with the locale separators', () {
+    expect(NumberLocale('de').format(1234.5), '1.234,5');
+    expect(NumberLocale('xx_unknown').format(1234.5), '1,234.5');
+    expect(NumberLocale.fallback.format(1234.567), '1,234.57');
+  });
 
-    LocaleNumber.useLocale('de');
+  test('the locale set once from main formats every number', () {
+    addTearDown(() => LocaleNumber.locale = NumberLocale.fallback);
+
+    LocaleNumber.locale = NumberLocale('de');
+
     expect(1234.5.localized, '1.234,5');
-
-    LocaleNumber.useLocale('xx_unknown');
-    expect(1234.5.localized, '1,234.5');
+    expect(1204.count('issue'), '1.204 issues');
   });
 }

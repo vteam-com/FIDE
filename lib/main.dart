@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:fide/app_bootstrap.dart';
 import 'package:fide/constants/constants.dart';
-import 'package:fide/controllers/app_controller.dart';
 import 'package:fide/models/app_view_state.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -27,16 +27,15 @@ import 'package:logging/logging.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  LocaleNumber.useLocale(Platform.localeName);
+  LocaleNumber.locale = NumberLocale(Platform.localeName);
   // Read the shell PATH in the background: apps opened from the Dock lack it
   unawaited(LoginShellEnvironment.load());
 
   // Setup logging
   Logger.root.level = Level.ALL;
 
-  // Initialize app controller to handle setup
+  await initializeWindowManager();
   final container = ProviderContainer();
-  await container.read(appControllerProvider).initializeWindowManager();
 
   runApp(UncontrolledProviderScope(container: container, child: const FIDE()));
 }
@@ -59,7 +58,9 @@ class _FIDEState extends ConsumerState<FIDE> {
   /// Restores the settings and the recent projects, then reopens the most
   /// recent one.
   Future<void> _initializeApp() async {
-    await ref.read(appControllerProvider).initializeAppServices();
+    await ref.read(themeModeProvider.notifier).load();
+    await ref.read(zoomProvider.notifier).load();
+    await ref.read(mruFoldersProvider.notifier).load();
     if (mounted) await ref.read(appViewProvider.notifier).openRecentProject();
   }
 
@@ -94,7 +95,7 @@ class _FIDEState extends ConsumerState<FIDE> {
         body: CallbackShortcuts(
           bindings: {
             AppShortcut.quickOpenAlias: _quickOpenFile,
-            AppShortcut.zoomInAlias: ref.read(appControllerProvider).zoomIn,
+            AppShortcut.zoomInAlias: ref.read(zoomProvider.notifier).zoomIn,
           },
           child: Focus(
             autofocus: true,

@@ -1,11 +1,15 @@
 import 'dart:io';
 
-import 'package:fide/constants/constants.dart';
+import 'package:fide/models/creation_outcome.dart';
+import 'package:fide/models/creation_report.dart';
+import 'package:fide/models/creation_step.dart';
 import 'package:fide/models/loading_action.dart';
 import 'package:fide/models/project_creation_request.dart';
 import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/git_service.dart';
-import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/arb_service.dart';
+import 'package:fide/services/l10n_generator.dart';
+import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:fide/services/project_creation_service.dart';
@@ -51,7 +55,7 @@ class FakeToolsRunner extends ProcessRunner {
 
 void main() {
   late Directory parent;
-  late List<(int, LoadingStatus)> progress;
+  late List<(CreationStep, LoadingStatus)> progress;
 
   setUp(() {
     parent = Directory.systemTemp.createTempSync('fide_create_');
@@ -66,12 +70,17 @@ void main() {
   ]) => ProjectCreationService(
     runner,
     GitService(runner),
-    LocalizationService(runner, const ProjectConfigReader()),
+    LocalizationSetup(
+      runner,
+      const ProjectConfigReader(),
+      L10nGenerator(runner),
+    ),
+    L10nGenerator(runner),
     ProjectTemplate(model ?? FakeChatModel(), FlutterSdk(runner)),
   );
 
-  void record(int step, String _, LoadingStatus status) =>
-      progress.add((step, status));
+  void record(CreationReport report) =>
+      progress.add((report.step, report.status));
 
   ProjectCreationRequest request({
     bool flutterAvailable = true,
@@ -102,7 +111,7 @@ void main() {
       progress.map((entry) => entry.$2),
       everyElement(LoadingStatus.success),
     );
-    expect(progress.last.$1, AppMetric.projectCreateStepVerification);
+    expect(progress.last.$1, CreationStep.verification);
     expect(File('${parent.path}/demo/lib/l10n/app_fr.arb').existsSync(), true);
     expect(runner.commands, contains('git commit -m Initial commit'));
   });
@@ -114,10 +123,7 @@ void main() {
         .create(request(flutterAvailable: false), record);
 
     expect(created, false);
-    expect(progress.single, (
-      AppMetric.projectCreateStepValidate,
-      LoadingStatus.failed,
-    ));
+    expect(progress.single, (CreationStep.validate, LoadingStatus.failed));
     expect(runner.commands, isEmpty);
   });
 
@@ -130,10 +136,7 @@ void main() {
           .create(request(initGit: true), record);
 
       expect(created, true);
-      expect(
-        progress,
-        contains((AppMetric.projectCreateStepGitInit, LoadingStatus.failed)),
-      );
+      expect(progress, contains((CreationStep.gitInit, LoadingStatus.failed)));
     },
   );
 
@@ -188,5 +191,19 @@ void main() {
       File('$project/README.md').readAsStringSync(),
       startsWith('# demo\n\nA recipe book'),
     );
+  });
+
+  test('outcomes tell failures apart and steps count from one', () {
+    expect(CreationOutcome.gitFailed.status, LoadingStatus.failed);
+    expect(CreationOutcome.error.isFailure, isTrue);
+    expect(CreationOutcome.verified.status, LoadingStatus.success);
+    expect(CreationStep.validate.number, 1);
+    expect(CreationStep.verification.number, CreationStep.values.length);
+    const report = CreationReport(
+      CreationStep.codegen,
+      CreationOutcome.aiFailed,
+      detail: 'offline',
+    );
+    expect((report.status, report.detail), (LoadingStatus.success, 'offline'));
   });
 }

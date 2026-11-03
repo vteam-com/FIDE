@@ -1,16 +1,14 @@
-import 'dart:io';
-
-import 'package:fcheck/fcheck.dart';
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/app_icon_review.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/providers/app_icon_fix_controller.dart';
+import 'package:fide/providers/app_icon_review_provider.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/right_panel_tab.dart';
-import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
-import 'package:fide/services/app_icon_fixer.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/app_icon_slot_tile.dart';
@@ -25,40 +23,25 @@ import 'package:fide/widgets/status_indicator.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart' as p;
 
 /// Shown in the center panel to review the open project's app icons: each
 /// platform's icon and the problems fCheck finds with it, fixed in one
 /// click by regenerating the icons from one master image.
-class AppIconsPanel extends ConsumerStatefulWidget {
+class AppIconsPanel extends ConsumerWidget {
   /// Creates the review of the open project's app icons.
   const AppIconsPanel({super.key});
 
-  @override
-  ConsumerState<AppIconsPanel> createState() => _AppIconsPanelState();
-}
-
-class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
   /// Image formats the fixer reads.
   static const List<String> _masterExtensions = ['png', 'jpg', 'jpeg', 'webp'];
 
-  /// Platforms whose icons are being written.
-  final Set<AppIconPlatform> _fixing = {};
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final projectPath = ref.watch(currentProjectPathProvider);
     if (projectPath == null) return const SizedBox();
-    final report = ref.watch(appIconReportProvider).value;
-    final issues = report?.issues ?? const <AppIconIssue>[];
-    final slots = report?.slots ?? const <AppIconSlot>[];
-    final master = ref.watch(appIconMasterProvider).value;
-    final platforms = [
-      for (final platform in AppIconPlatform.values)
-        if (Directory(p.join(projectPath, platform.name)).existsSync())
-          platform,
-    ];
-    final broken = {for (final issue in issues) issue.platform};
+    final review = ref.watch(appIconReviewProvider).value;
+    final issues = review?.issues ?? const <AppIconProblem>[];
+    final master = review?.master;
+    final fixing = ref.watch(appIconFixControllerProvider);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.huge),
@@ -71,13 +54,13 @@ class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
             subTitle: issues.isEmpty
                 ? 'Every platform icon checks out'
                 : '${issues.length.count('problem')} on '
-                      '${broken.length.count('platform')}',
+                      '${review!.brokenPlatformCount.count('platform')}',
             logo: const Icon(Icons.apps, size: AppSize.heroLogoHeight),
             actions: [
               CompactIconButton(
                 tooltip: 'Check again',
                 icon: Icons.refresh,
-                onPressed: () => ref.invalidate(appIconReportProvider),
+                onPressed: () => ref.invalidate(appIconReviewProvider),
               ),
               CompactIconButton(
                 tooltip: 'Close',
@@ -87,68 +70,61 @@ class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
               ),
             ],
           ),
-          _masterCard(projectPath, master, broken),
-          for (final platform in platforms)
-            _platformCard(
-              projectPath,
-              platform,
-              [
-                for (final issue in issues)
-                  if (issue.platform == platform) issue,
-              ],
-              [
-                for (final slot in slots)
-                  if (slot.platform == platform) slot,
-              ],
-              master,
-            ),
+          _masterCard(
+            context,
+            ref,
+            projectPath,
+            master,
+            review?.brokenPlatforms ?? const [],
+            fixing,
+          ),
+          for (final platform in review?.platforms ?? const [])
+            _platformCard(context, ref, projectPath, platform, master, fixing),
         ],
       ),
     );
   }
 
   /// The image every icon is generated from, how to pick another one, and
-  /// the button fixing every [broken] platform from it.
+  /// the button fixing every [broken] platform from it while nothing is
+  /// [fixing].
   Widget _masterCard(
+    BuildContext context,
+    WidgetRef ref,
     String projectPath,
-    String? master,
-    Set<AppIconPlatform> broken,
+    AppIconMaster? master,
+    List<AppIconPlatformReview> broken,
+    Set<String> fixing,
   ) {
-    final image = master == null ? null : AppIconFileInfo.read(File(master));
-    final tooSmall =
-        image != null &&
-        (image.width < AppIconFixer.recommendedMasterSize ||
-            image.height < AppIconFixer.recommendedMasterSize);
-    final notSquare = image != null && image.width != image.height;
     return ActionCard(
       icon: Icons.image_outlined,
       title: 'Master image',
       description:
           'Fixes generate every icon from this image: at least '
-          '${AppIconFixer.recommendedMasterSize}×'
-          '${AppIconFixer.recommendedMasterSize} px, square, PNG.',
+          '${AppIconMaster.recommendedSize}×'
+          '${AppIconMaster.recommendedSize} px, square, PNG.',
       action: Wrap(
         spacing: AppSpacing.medium,
         children: [
           SecondaryButton(
             icon: Icons.folder_open,
             label: 'Choose…',
-            onPressed: () => _chooseMaster(projectPath),
+            onPressed: () => _chooseMaster(ref, projectPath),
           ),
           PrimaryButton(
             icon: Icons.auto_fix_high,
             label: 'Fix all',
-            busy: _fixing.isNotEmpty,
+            busy: fixing.isNotEmpty,
             onPressed: master == null || broken.isEmpty
                 ? null
-                : () => _fix(projectPath, broken, master),
+                : () => _fix(context, ref, projectPath, broken, master.path),
           ),
         ],
       ),
       child: Row(
         spacing: AppSpacing.large,
         children: [
-          _preview(master),
+          _preview(master?.path),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,18 +133,22 @@ class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
                 if (master == null)
                   const EmptyLabel('No image yet: choose one')
                 else
-                  PathText(master, rootPath: projectPath, selectable: true),
-                if (image != null)
+                  PathText(
+                    master.path,
+                    rootPath: projectPath,
+                    selectable: true,
+                  ),
+                if (master != null && master.isReadable)
                   Text(
-                    '${image.width}×${image.height} px',
+                    '${master.width}×${master.height} px',
                     style: AppTextStyle.secondary(context),
                   ),
-                if (tooSmall)
+                if (master?.isTooSmall ?? false)
                   StatusIndicator.tone(
                     StatusTone.warning,
                     label: 'Smaller than the largest icons: they will blur',
                   ),
-                if (notSquare)
+                if (master?.isNotSquare ?? false)
                   StatusIndicator.tone(
                     StatusTone.warning,
                     label: 'Not square: the center square is used',
@@ -181,54 +161,53 @@ class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
     );
   }
 
-  /// [platform]'s [issues], every one of its [slots] grouped as Xcode
-  /// shows them, and the button fixing the issues from [master].
+  /// [platform]'s issues, every one of its slots grouped as Xcode shows
+  /// them, and the button fixing the issues from [master] while nothing
+  /// is [fixing].
   Widget _platformCard(
+    BuildContext context,
+    WidgetRef ref,
     String projectPath,
-    AppIconPlatform platform,
-    List<AppIconIssue> issues,
-    List<AppIconSlot> slots,
-    String? master,
+    AppIconPlatformReview platform,
+    AppIconMaster? master,
+    Set<String> fixing,
   ) {
     final selection = ref.watch(appIconSelectionProvider);
-    final groups = <String, List<AppIconSlot>>{};
-    for (final slot in slots) {
-      groups.putIfAbsent(slot.group, () => []).add(slot);
-    }
     return ActionCard(
       icon: Icons.apps,
       title: platform.label,
-      action: issues.isEmpty
+      action: !platform.hasIssues
           ? null
           : PrimaryButton(
               icon: Icons.auto_fix_high,
               label: 'Fix',
-              busy: _fixing.contains(platform),
-              onPressed: master == null || _fixing.isNotEmpty
+              busy: fixing.contains(platform.id),
+              onPressed: master == null || fixing.isNotEmpty
                   ? null
-                  : () => _fix(projectPath, {platform}, master),
+                  : () => _fix(context, ref, projectPath, [
+                      platform,
+                    ], master.path),
             ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: AppSpacing.large,
         children: [
-          if (issues.isEmpty)
+          if (!platform.hasIssues)
             StatusIndicator.tone(StatusTone.success, label: 'No issues')
           else
-            for (final issue in issues)
+            for (final issue in platform.issues)
               StatusIndicator.tone(
                 StatusTone.warning,
                 label: '${issue.message}\n${issue.filePath}',
               ),
           for (final MapEntry(key: group, value: groupSlots)
-              in groups.entries) ...[
+              in platform.groups.entries) ...[
             Text(group, style: AppTextStyle.captionStrong),
             Wrap(
               spacing: AppSpacing.large,
               runSpacing: AppSpacing.large,
               children: [
-                for (final slot in groupSlots)
-                  _buildTile(projectPath, slot, issues, selection),
+                for (final slot in groupSlots) _buildTile(ref, slot, selection),
               ],
             ),
           ],
@@ -248,42 +227,26 @@ class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
     );
   }
 
-  /// The tile of [slot] with its [issues], filled when its file is the
-  /// [selection]: a click shows its details, a double-click opens it.
-  Widget _buildTile(
-    String projectPath,
-    AppIconSlot slot,
-    List<AppIconIssue> issues,
-    String? selection,
-  ) {
-    final path = _pathOf(projectPath, slot);
+  /// The tile of [slot], filled when its file is the [selection]: a click
+  /// shows its details, a double-click opens it.
+  Widget _buildTile(WidgetRef ref, AppIconSlotInfo slot, String? selection) {
+    final path = slot.readablePath;
     return AppIconSlotTile(
       slot: slot,
-      projectPath: projectPath,
       isSelected: path != null && path == selection,
-      onTap: path == null ? null : () => _select(path),
+      onTap: path == null ? null : () => _select(ref, path),
       onDoubleTap: path == null ? null : () => openFile(ref, path),
-      problems: [
-        for (final issue in issues)
-          if (issue.filePath == slot.filePath) issue.message,
-      ],
     );
   }
 
-  /// The absolute path of [slot]'s file; null when it has none to show.
-  static String? _pathOf(String projectPath, AppIconSlot slot) {
-    final path = slot.filePath;
-    return path == null || slot.file == null ? null : p.join(projectPath, path);
-  }
-
   /// Shows the details of the icon file at [path] in the Outline tab.
-  void _select(String path) {
+  void _select(WidgetRef ref, String path) {
     ref.read(appIconSelectionProvider.notifier).state = path;
     showRightPanelTab(ref.read, RightPanelTab.outline);
   }
 
   /// Lets the user pick the master image, starting in the project folder.
-  Future<void> _chooseMaster(String projectPath) async {
+  Future<void> _chooseMaster(WidgetRef ref, String projectPath) async {
     final picked = await FilePicker.pickFile(
       dialogTitle: 'Master image for the app icons',
       initialDirectory: projectPath,
@@ -296,37 +259,20 @@ class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
     }
   }
 
-  /// Regenerates the icons of [platforms] from [master], one platform at a
-  /// time, then reloads what changed and reports the outcome.
+  /// Regenerates the icons of [platforms] from the image at [masterPath]
+  /// and reports the outcome.
   Future<void> _fix(
+    BuildContext context,
+    WidgetRef ref,
     String projectPath,
-    Set<AppIconPlatform> platforms,
-    String master,
+    List<AppIconPlatformReview> platforms,
+    String masterPath,
   ) async {
-    setState(() => _fixing.addAll(platforms));
-    final fixer = ref.read(appIconFixerProvider);
-    final written = <String>[];
-    final failures = <String>[];
-    for (final platform in platforms) {
-      try {
-        written.addAll(await fixer.fix(projectPath, platform, master));
-      } catch (e) {
-        failures.add('${platform.label}: $e');
-      }
-      if (mounted) setState(() => _fixing.remove(platform));
-    }
-    // The previews show files rewritten in place
-    imageCache
-      ..clear()
-      ..clearLiveImages();
-    await ref.read(openDocumentsProvider.notifier).reloadWritten([
-      for (final path in written) p.join(projectPath, path),
-    ]);
-    if (!mounted) return;
-    if (failures.isEmpty) {
-      MessageBox.showSuccess(context, 'Wrote ${written.length.count('file')}');
-    } else {
-      MessageBox.showError(context, failures.join('\n'));
+    final outcome = await ref
+        .read(appIconFixControllerProvider.notifier)
+        .fix(projectPath, platforms, masterPath);
+    if (context.mounted) {
+      MessageBox.show(context, outcome.message, outcome.tone);
     }
   }
 }

@@ -1,11 +1,14 @@
 import 'package:fide/models/create_project_draft.dart';
 import 'package:fide/models/create_project_step.dart';
+import 'package:fide/models/creation_outcome.dart';
+import 'package:fide/models/creation_report.dart';
+import 'package:fide/models/creation_step.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/tool_availability_provider.dart';
-import 'package:fide/services/project_creation_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
+
+part 'create_project_draft_notifier.creation_labels.dart';
 
 /// The new-project wizard's draft, fresh on every visit.
 final createProjectDraftProvider =
@@ -37,7 +40,7 @@ class CreateProjectDraftNotifier extends Notifier<CreateProjectDraft> {
     final directory =
         ref.read(newProjectParentDirectoryProvider) ??
         initialDirectory ??
-        (await getApplicationDocumentsDirectory()).path;
+        (await ref.read(documentsDirectoryProvider)()).path;
     if (ref.mounted && state.parentDirectory == null) {
       setParentDirectory(directory);
     }
@@ -97,15 +100,22 @@ class CreateProjectDraftNotifier extends Notifier<CreateProjectDraft> {
   /// [loadingActionsProvider] and marking the draft created on success.
   Future<void> _create() async {
     final actions = ref.read(loadingActionsProvider.notifier);
-    actions.state = ProjectCreationService.initialActions();
+    actions.state = CreationLabels.initialActions();
     final tools = await ref.read(toolAvailabilityProvider.future);
     if (!ref.mounted) return;
     final created = await ref.read(projectCreationServiceProvider).create(
       state.toRequest(tools),
-      (step, text, status) {
+      (report) {
+        final number = report.step.number;
         actions.state = [
           for (final action in actions.state)
-            action.step == step ? LoadingAction(step, text, status) : action,
+            action.step == number
+                ? LoadingAction(
+                    number,
+                    CreationLabels.of(report),
+                    report.status,
+                  )
+                : action,
         ];
       },
     );

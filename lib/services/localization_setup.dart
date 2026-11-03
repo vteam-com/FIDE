@@ -1,31 +1,25 @@
-// ignore_for_file: avoid_print
-// ignore: fcheck_dead_code
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:fide/constants/constants.dart';
-import 'package:fide/models/l10n_config.dart';
 import 'package:fide/models/localization_checks.dart';
-import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/project_paths.dart';
-import 'package:fide/models/text_truncation.dart';
-import 'package:fide/services/code_formatter.dart';
+import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
-part 'localization_service.arb_service.dart';
-part 'localization_service.material_app_title_visitor.dart';
+part 'localization_setup.material_app_title_visitor.dart';
 
-/// Represents `LocalizationService`.
-class LocalizationService {
-  static final Logger _logger = Logger('LocalizationService');
+/// Sets a project's localization up: adds the packages, enables code
+/// generation, writes template ARB files, wires `main.dart` and reports
+/// which of those pieces a project already has.
+class LocalizationSetup {
+  static final Logger _logger = Logger('LocalizationSetup');
 
   /// Package name assumed when the pubspec has none.
   static const String _fallbackPackageName = 'my_app';
@@ -34,24 +28,12 @@ class LocalizationService {
 
   final ProjectConfigReader _config;
 
-  /// Creates a localization service that launches commands through
-  /// [_runner] and reads project settings with [_config].
-  LocalizationService(this._runner, this._config);
+  final L10nGenerator _generator;
 
-  /// The `flutter gen-l10n` settings of the project at [projectPath].
-  Future<L10nConfig> l10nConfig(String projectPath) =>
-      _config.l10nConfig(projectPath);
-
-  /// The package name of the project at [projectPath]; null when unknown.
-  Future<String?> packageName(String projectPath) =>
-      _config.packageName(projectPath);
-
-  /// Runs `flutter gen-l10n`, throwing with the tool's stderr on failure.
-  Future<void> generateClasses(String projectPath) {
-    return _runFlutter(projectPath, [
-      'gen-l10n',
-    ], 'Failed to generate localization classes');
-  }
+  /// Creates a setup that launches `flutter pub` through [_runner], reads
+  /// project settings with [_config] and generates classes with
+  /// [_generator].
+  const LocalizationSetup(this._runner, this._config, this._generator);
 
   /// Sets up localization: adds `flutter_localizations` and `intl`, enables
   /// code generation, writes template ARB files and generates classes.
@@ -64,9 +46,9 @@ class LocalizationService {
     ProcessOutputCallback? onStep,
     bool tolerateToolFailures = false,
   }) async {
-    Future<void> runTool(List<String> arguments, String failure) async {
+    Future<void> runTool(Future<void> Function() tool) async {
       try {
-        await _runFlutter(projectPath, arguments, failure);
+        await tool();
       } catch (e) {
         if (!tolerateToolFailures) rethrow;
         _logger.warning('$e');
@@ -74,13 +56,10 @@ class LocalizationService {
     }
 
     onStep?.call('Adding flutter_localizations and intl packages...');
-    await runTool([
-      'pub',
-      'add',
-      'flutter_localizations',
-      '--sdk=flutter',
-    ], 'Failed to add flutter_localizations');
-    await runTool(['pub', 'add', 'intl'], 'Failed to add intl');
+    await runTool(
+      () => _addPackage(projectPath, 'flutter_localizations', sdk: 'flutter'),
+    );
+    await runTool(() => _addPackage(projectPath, 'intl'));
 
     onStep?.call('Configuring pubspec.yaml...');
     await _enableGenerate(projectPath);
@@ -89,7 +68,7 @@ class LocalizationService {
     await _createTemplateArbFiles(projectPath);
 
     onStep?.call('Generating localization classes...');
-    await runTool(['gen-l10n'], 'Failed to generate localization classes');
+    await runTool(() => _generator.generateClasses(projectPath));
   }
 
   /// Reads which localization pieces the project at [projectPath] has.
@@ -156,7 +135,7 @@ class LocalizationService {
 
     // Replace title with onGenerateTitle
     if (!content.contains('onGenerateTitle')) {
-      content = content.replaceAllMapped(titleRegex, (match) {
+      content = content.replaceAllMapped(titleRegex, (_) {
         return "onGenerateTitle: (BuildContext context) =>\n      AppLocalizations.of(context)?.appTitle ?? '$originalTitle'";
       });
     }
@@ -249,20 +228,21 @@ class LocalizationService {
     return await file.exists() ? file.readAsString() : null;
   }
 
-  /// Runs a `flutter` subcommand in the project, throwing [failure] with the
-  /// tool's stderr when it exits non-zero.
-  Future<void> _runFlutter(
+  /// Adds [package] to the project with `flutter pub add`, from [sdk] when
+  /// it is an SDK package, throwing with the tool's stderr on failure.
+  Future<void> _addPackage(
     String projectPath,
-    List<String> arguments,
-    String failure,
-  ) async {
-    final result = await _runner.run(
-      'flutter',
-      arguments,
-      workingDirectory: projectPath,
-    );
+    String package, {
+    String? sdk,
+  }) async {
+    final result = await _runner.run('flutter', [
+      'pub',
+      'add',
+      package,
+      if (sdk != null) '--sdk=$sdk',
+    ], workingDirectory: projectPath);
     if (result.exitCode != 0) {
-      throw Exception('$failure: ${result.stderr}');
+      throw Exception('Failed to add $package: ${result.stderr}');
     }
   }
 }

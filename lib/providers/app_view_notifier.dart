@@ -1,6 +1,6 @@
 import 'package:fide/models/app_view_state.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
@@ -69,7 +69,7 @@ class AppViewNotifier extends Notifier<AppViewState> {
   /// open sets [projectOpenErrorProvider].
   Future<void> pickAndOpenProject() async {
     try {
-      final folder = await FilePicker.getDirectoryPath();
+      final folder = await ref.read(folderPickerProvider)();
       if (folder == null || await loadProject(folder)) return;
       _reportOpenError(invalidProjectMessage);
     } catch (e) {

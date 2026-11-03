@@ -1,33 +1,55 @@
-import 'dart:io';
-
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/code_edit_agent.dart';
+import 'package:fide/services/project_file_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 import 'fake_chat_model.dart';
 
+/// A project held in memory, keyed by project-relative path, keeping the
+/// real store's path guard.
+class _MemoryFileStore extends ProjectFileStore {
+  _MemoryFileStore(this.files) : super(rootPath);
+
+  /// Root every path resolves under.
+  static const String rootPath = '/project';
+
+  /// The files' content by relative path.
+  final Map<String, String> files;
+
+  @override
+  Future<List<String>> list(String folder, {required int limit}) async {
+    resolve(folder);
+    return files.keys.toList()..sort();
+  }
+
+  @override
+  Future<String> read(String path) async => files[_relative(path)]!;
+
+  @override
+  Future<void> write(String path, String content) async {
+    files[_relative(path)] = content;
+  }
+
+  String _relative(String path) => p.relative(resolve(path), from: rootPath);
+}
+
 void main() {
-  late Directory project;
+  late _MemoryFileStore store;
   late List<String> written;
 
   setUp(() {
-    project = Directory.systemTemp.createTempSync('code_edit_agent');
-    File(p.join(project.path, 'lib', 'main.dart'))
-      ..createSync(recursive: true)
-      ..writeAsStringSync('void main() { print(1) }');
+    store = _MemoryFileStore({'lib/main.dart': 'void main() { print(1) }'});
     written = [];
   });
-
-  tearDown(() => project.deleteSync(recursive: true));
 
   /// An agent whose [model] answers, stopped by [cancelToken], whose build
   /// passes.
   CodeEditAgent agentOf(FakeChatModel model, {AiCancelToken? cancelToken}) =>
       CodeEditAgent(
         model,
-        projectPath: project.path,
+        files: store,
         cancelToken: cancelToken,
         hooks: CodeEditHooks(
           onStep: (_) {},
@@ -58,11 +80,8 @@ void main() {
     final summary = await agentOf(model).fixBuild("Expected ';'", '');
 
     expect(summary, 'Added the missing semicolon.');
-    expect(
-      File(p.join(project.path, 'lib', 'main.dart')).readAsStringSync(),
-      'void main() { print(1); }',
-    );
-    expect(written, [p.join(project.path, 'lib', 'main.dart')]);
+    expect(store.files['lib/main.dart'], 'void main() { print(1); }');
+    expect(written, ['${_MemoryFileStore.rootPath}/lib/main.dart']);
     expect(toolResults(model).last['content'], 'Build succeeded.');
     // Tracing build errors needs the model to think
     expect(model.thinks, everyElement(isTrue));
@@ -75,7 +94,7 @@ void main() {
     late CodeEditAgent agent;
     agent = CodeEditAgent(
       model,
-      projectPath: project.path,
+      files: store,
       hooks: CodeEditHooks(
         onStep: (_) {},
         onFileWritten: (_) async {},
@@ -124,10 +143,7 @@ void main() {
       ]);
 
       expect(summary, 'Changed lib/main.dart.');
-      expect(
-        File(p.join(project.path, 'lib', 'main.dart')).readAsStringSync(),
-        'void main() { print(2); }',
-      );
+      expect(store.files['lib/main.dart'], 'void main() { print(2); }');
       final sent = model.chats.last;
       expect(
         [for (final m in sent) m['role']],
@@ -152,23 +168,38 @@ void main() {
       contains('outside the project'),
     );
     expect(written, isEmpty);
+    expect(store.files.keys, ['lib/main.dart']);
   });
 
-  test('lists project files without build output', () async {
-    File(p.join(project.path, 'build', 'out.txt'))
-      ..createSync(recursive: true)
-      ..writeAsStringSync('');
+  test('lists and reads project files, writing new ones', () async {
+    final model = FakeChatModel(
+      chatReplies: [
+        toolCall('list_files', {'path': '.'}),
+        toolCall('read_file', {'path': 'lib/main.dart'}),
+        toolCall('write_file', {
+          'path': 'lib/new.dart',
+          'content': 'class A {}',
+        }),
+        answer('done'),
+      ],
+    );
+    final agent = agentOf(model);
 
-    final agent = agentOf(FakeChatModel());
+    await agent.edit('add A', const []);
 
-    expect(await agent.listFiles('.'), p.join('lib', 'main.dart'));
+    expect(agent.projectPath, _MemoryFileStore.rootPath);
+    expect(
+      [for (final result in toolResults(model)) result['content']],
+      ['lib/main.dart', 'void main() { print(1) }', 'Saved lib/new.dart.'],
+    );
+    expect(store.files['lib/new.dart'], 'class A {}');
   });
 
   test('runs FIDE quick fixes through run_quick_fix', () async {
     final ran = <QuickFix>[];
     final agent = CodeEditAgent(
       FakeChatModel(),
-      projectPath: project.path,
+      files: store,
       hooks: CodeEditHooks(
         onStep: (_) {},
         onFileWritten: (_) async {},

@@ -1,34 +1,28 @@
-import 'package:fide/constants/constants.dart';
 import 'package:fide/models/image_backdrop.dart';
 import 'package:fide/models/reference_search.dart';
 import 'package:fide/providers/left_panel_tab.dart';
 import 'package:fide/providers/right_panel_tab.dart';
-import 'package:flutter/material.dart';
+import 'package:fide/providers/side_panel.dart';
 import 'package:flutter_riverpod/legacy.dart';
+
+export 'package:fide/providers/theme_mode_notifier.dart';
+export 'package:fide/providers/zoom_notifier.dart';
 
 // UI State Providers - extracted from main.dart for better separation
 
-/// Panel visibility state providers
-final leftPanelVisibleProvider = StateProvider<bool>((_ /*ref*/) => true);
-final bottomPanelVisibleProvider = StateProvider<bool>((_ /*ref*/) => false);
-final rightPanelVisibleProvider = StateProvider<bool>((_ /*ref*/) => true);
+/// Whether each side panel is shown, by name: [SidePanel.visibleProvider].
+final leftPanelVisibleProvider = SidePanel.left.visibleProvider;
+final bottomPanelVisibleProvider = SidePanel.bottom.visibleProvider;
+final rightPanelVisibleProvider = SidePanel.right.visibleProvider;
 
-/// Whether each panel is expanded to its largest size; restoring it brings
-/// back the size it had.
-final leftPanelExpandedProvider = StateProvider<bool>((_ /*ref*/) => false);
-final bottomPanelExpandedProvider = StateProvider<bool>((_ /*ref*/) => false);
-final rightPanelExpandedProvider = StateProvider<bool>((_ /*ref*/) => false);
-
-/// Theme mode provider (moved from app_providers.dart for better organization)
-final themeModeProvider = StateProvider<ThemeMode>(
-  (_ /*ref*/) => ThemeMode.system,
-);
+/// Whether each side panel is expanded to its largest size, by name:
+/// [SidePanel.expandedProvider].
+final leftPanelExpandedProvider = SidePanel.left.expandedProvider;
+final bottomPanelExpandedProvider = SidePanel.bottom.expandedProvider;
+final rightPanelExpandedProvider = SidePanel.right.expandedProvider;
 
 /// Whether the settings screen covers the current view.
 final settingsVisibleProvider = StateProvider<bool>((_ /*ref*/) => false);
-
-/// Zoom of the whole UI, [AppZoom.actualSize] for unscaled.
-final zoomProvider = StateProvider<double>((_ /*ref*/) => AppZoom.actualSize);
 
 /// Whether the center panel shows the App Icons view instead of the
 /// editor or the project overview.

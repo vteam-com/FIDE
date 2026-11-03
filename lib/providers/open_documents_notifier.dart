@@ -1,17 +1,49 @@
-part of 'app_providers.dart';
+import 'dart:math' as math;
+
+import 'package:fide/models/document_state.dart';
+import 'package:fide/models/file_history.dart';
+import 'package:fide/models/open_documents.dart';
+import 'package:fide/providers/active_editor.dart';
+import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/editor_commands.dart';
+import 'package:fide/services/file_content_reader.dart';
+import 'package:fide/services/file_type_utils.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:path/path.dart' as p;
+
+/// The editor's open documents and active tab.
+final openDocumentsProvider =
+    StateNotifierProvider<OpenDocumentsNotifier, OpenDocuments>(
+      (ref) => OpenDocumentsNotifier(
+        onSaved: () => ref.read(savedFilesRevisionProvider.notifier).state++,
+        activeEditor: ref.read(activeEditorProvider),
+        reader: ref.read(fileContentReaderProvider),
+      ),
+    );
+
+/// Bumped each time the editor saves a file, so views derived from file
+/// contents can refresh.
+final savedFilesRevisionProvider = StateProvider<int>((_) => 0);
+
+/// The document showing in the editor, or null.
+final activeDocumentProvider = Provider<DocumentState?>(
+  (ref) => ref.watch(openDocumentsProvider).active,
+);
 
 /// The only writer of the editor's open documents and active tab.
 class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
   /// Starts with no documents open; calls [onSaved] after each [save] and
-  /// saves the showing document through [activeEditor]; reads files with
-  /// [reader].
+  /// saves the showing document through [activeEditor]; reads and writes
+  /// files with [reader].
   OpenDocumentsNotifier({
     this.onSaved,
     this.activeEditor,
     this.reader = const FileContentReader(),
   }) : super(OpenDocuments.empty);
 
-  /// Loads the text of the documents opened.
+  /// Loads the text of the documents opened and writes their saves.
   final FileContentReader reader;
 
   /// Called after each [save] writes its file.
@@ -55,7 +87,7 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
       );
     }
     for (final MapEntry(key: path, value: content) in files.entries) {
-      await File(path).writeAsString(content);
+      await reader.write(path, content);
     }
     if (files.isNotEmpty) await reloadWritten(files.keys);
     return files;
@@ -140,7 +172,7 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
   /// Writes [content] to [filePath] and records it as the clean, saved
   /// content of its document.
   Future<void> save(String filePath, String content) async {
-    await File(filePath).writeAsString(content);
+    await reader.write(filePath, content);
     update(filePath, content: content, isDirty: false);
     onSaved?.call();
   }
@@ -148,7 +180,7 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
   /// Writes [content] to [filePath] immediately without changing state,
   /// for an editor that is closing and can neither wait nor notify.
   void saveOnClose(String filePath, String content) {
-    File(filePath).writeAsStringSync(content);
+    reader.writeSync(filePath, content);
   }
 
   /// Records the editor's latest [content], [selection] and [isDirty] for
@@ -214,8 +246,7 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
   Future<String> _readContent(String filePath) async {
     if (FileTypeUtils.isImageFile(filePath)) return '';
     try {
-      final file = File(filePath);
-      if (!await file.exists()) return '';
+      if (!await reader.exists(filePath)) return '';
       return await reader.read(filePath);
     } catch (_) {
       return '// Error loading file\n';

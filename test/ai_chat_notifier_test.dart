@@ -52,7 +52,7 @@ void main() {
 
     chat.beginTask('Translate with AI');
     chat.addReply('Translating 1–20 of 22 keys into French…', isProgress: true);
-    expect(container.read(aiChatProvider).isBusy, isTrue);
+    expect(chat.isBusy, isTrue);
     chat.endTask('Translated 22 strings in 1 files');
 
     final state = container.read(aiChatProvider);

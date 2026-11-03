@@ -1,33 +1,19 @@
 import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/models/hardcoded_string.dart';
-import 'package:fide/models/localization_plan.dart';
-import 'package:fide/models/lookup_plan.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/string_review.dart';
-import 'package:fide/models/string_rewrite.dart';
-import 'package:fide/services/string_constants_extractor.dart';
-import 'package:fide/services/string_localizer.dart';
-import 'package:fide/services/string_lookup_passer.dart';
+import 'package:fide/services/string_rewriter.dart';
 
 /// Reviews a project's hardcoded strings and rewrites the ones the user
-/// picks with a [StringFix]: localizing them, passing lookups to widget
-/// fields, or making them constants.
+/// picks with a [StringFix], each fix running through its own
+/// [StringRewriter].
 class StringFixer {
-  /// Creates a fixer over the services each [StringFix] uses.
-  const StringFixer({
-    required this.localizer,
-    required this.lookups,
-    required this.extractor,
-  });
+  /// Creates a fixer running each fix with its rewriter in [rewriters].
+  const StringFixer(this.rewriters);
 
-  /// Makes data-id strings constants.
-  final StringConstantsExtractor extractor;
-
-  /// Localizes strings.
-  final StringLocalizer localizer;
-
-  /// Localizes strings through the widget fields they are passed to.
-  final StringLookupPasser lookups;
+  /// The rewriter of each fix; a fix without one cannot run, such as
+  /// passing lookups while no project is open.
+  final Map<StringFix, StringRewriter> rewriters;
 
   /// What each [StringFix] would do to the hardcoded strings of the
   /// project at [projectPath], analyzed as [metrics].
@@ -35,53 +21,28 @@ class StringFixer {
     String projectPath,
     fcheck.ProjectMetrics metrics,
   ) async {
-    LocalizationPlan? localization;
-    String? blocker;
-    try {
-      localization = await localizer.plan(projectPath, metrics);
-    } on Exception catch (e) {
-      blocker = '$e'.replaceFirst('Exception: ', '');
+    var review = StringReview.empty;
+    for (final fix in StringFix.values) {
+      final rewriter = rewriters[fix];
+      if (rewriter == null) continue;
+      review = await rewriter.plan(projectPath, metrics, review);
     }
-    return StringReview(
-      localization: localization,
-      localizationBlocker: blocker,
-      lookups: localization == null
-          ? const LookupPlan()
-          : await lookups.plan(localization),
-      constants: await extractor.plan(projectPath, metrics),
-    );
+    return review;
   }
 
   /// Rewrites the [selected] strings of [strings] with [fix].
   ///
   /// Throws an [Exception] with [StringReview.localizationBlocker] when a
-  /// localizing fix cannot run.
+  /// localizing fix cannot run, and a [StateError] when [fix] has no
+  /// rewriter.
   Future<QuickFixOutcome> apply(
     StringReview strings,
     StringFix fix,
     List<HardcodedString> selected,
   ) async {
-    final StringRewrite result = switch (fix) {
-      StringFix.localizeStrings => await localizer.apply(
-        _localization(strings),
-        selected,
-      ),
-      StringFix.passLookup => await lookups.apply(
-        _localization(strings),
-        strings.lookups,
-        selected,
-      ),
-      StringFix.makeConstants => await extractor.apply(
-        strings.constants,
-        selected,
-      ),
-    };
+    final rewriter = rewriters[fix];
+    if (rewriter == null) throw StateError('${fix.label} has no rewriter');
+    final result = await rewriter.apply(strings, selected);
     return (summary: result.summary, changedFiles: result.changedFiles);
   }
-
-  /// The localization plan of [strings].
-  ///
-  /// Throws an [Exception] saying why when the project cannot be localized.
-  LocalizationPlan _localization(StringReview strings) =>
-      strings.localization ?? (throw Exception(strings.localizationBlocker));
 }

@@ -1,7 +1,9 @@
 part of 'folder_panel.dart';
 
-/// Shared node builder widget.
+/// A row of the Explorer's tree: a directory with its children when
+/// expanded, or a file, highlighted when selected or revealed.
 class NodeBuilder extends StatelessWidget {
+  /// Creates the row of [node].
   const NodeBuilder({
     super.key,
     required this.node,
@@ -12,14 +14,19 @@ class NodeBuilder extends StatelessWidget {
     this.rootPath,
     required this.onNodeTapped,
     required this.onShowContextMenu,
-    this.onFileSelected,
-    this.isFilteredView = false,
   });
+
+  /// Expanded/collapsed state by directory path.
   final Map<String, bool> expandedState;
-  final bool isFilteredView;
+
+  /// The node shown.
   final ProjectNode node;
-  final Function(ProjectNode)? onFileSelected;
+
+  /// Called with the node tapped and whether it is expanded: toggles a
+  /// directory, opens a file.
   final Function(ProjectNode, bool) onNodeTapped;
+
+  /// Shows the node's context menu at the given position.
   final Function(ProjectNode, Offset) onShowContextMenu;
 
   /// Key given to the row of [revealedPath], to scroll it into view.
@@ -27,8 +34,13 @@ class NodeBuilder extends StatelessWidget {
 
   /// A file revealed in the tree, highlighted like [selectedFile].
   final String? revealedPath;
+
+  /// The project folder paths are shown relative to.
   final String? rootPath;
+
+  /// The file open in the editor, highlighted.
   final FileSystemItem? selectedFile;
+
   @override
   Widget build(BuildContext context) {
     if (node.isDirectory) {
@@ -37,7 +49,7 @@ class NodeBuilder extends StatelessWidget {
     return _buildFileNode();
   }
 
-  /// Handles `_buildDirectoryNode`.
+  /// The directory row with, when expanded, one [NodeBuilder] per child.
   Widget _buildDirectoryNode() {
     final isExpanded = expandedState[node.path] ?? false;
     return FolderNode(
@@ -51,7 +63,7 @@ class NodeBuilder extends StatelessWidget {
     );
   }
 
-  /// Handles `_buildFileNode`.
+  /// The file row, highlighted when selected or revealed.
   Widget _buildFileNode() {
     final isRevealed = node.path == revealedPath;
     final isSelected =
@@ -67,7 +79,7 @@ class NodeBuilder extends StatelessWidget {
       fileItem: FileSystemItem.fromNode(node),
       isSelected: isSelected,
       rootPath: rootPath,
-      onTap: _handleFileTap,
+      onTap: () => onNodeTapped(node, false),
       onContextMenu: (offset) => onShowContextMenu(node, offset),
     );
   }
@@ -85,16 +97,8 @@ class NodeBuilder extends StatelessWidget {
             rootPath: rootPath,
             onNodeTapped: onNodeTapped,
             onShowContextMenu: onShowContextMenu,
-            onFileSelected: onFileSelected,
-            isFilteredView: isFilteredView,
           ),
         )
         .toList();
-  }
-
-  void _handleFileTap() {
-    if (onFileSelected != null) {
-      onFileSelected!(node);
-    }
   }
 }

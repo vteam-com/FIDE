@@ -83,6 +83,9 @@ class ImageInspector {
   /// Opaque alpha of an ARGB color.
   static const int _opaque = 0xFF000000;
 
+  /// An ICO directory entry's size byte of zero means this many pixels.
+  static const int _icoZeroSize = 256;
+
   /// The details of the image at [path], read off the UI thread.
   ///
   /// Throws [FileSystemException] when the file can't be read and
@@ -94,6 +97,26 @@ class ImageInspector {
     return FileTypeUtils.extensionOf(path) == _svgExtension
         ? _svg(String.fromCharCodes(bytes), bytes.length, modified)
         : _raster(file, bytes, modified);
+  });
+
+  /// The [size]-pixel image embedded in the ICO file at [path] as PNG,
+  /// decoded off the UI thread; null when the file holds none or can't
+  /// be read.
+  Future<Uint8List?> icoFrame(String path, int size) => Isolate.run(() {
+    try {
+      final decoder = img.IcoDecoder();
+      final info = decoder.startDecode(File(path).readAsBytesSync());
+      if (info is! img.IcoInfo) return null;
+      for (var i = 0; i < info.images.length; i++) {
+        final width = info.images[i].width;
+        if ((width == 0 ? _icoZeroSize : width) != size) continue;
+        final frame = decoder.decodeFrame(i);
+        return frame == null ? null : img.encodePng(frame);
+      }
+    } on FileSystemException {
+      return null;
+    }
+    return null;
   });
 
   /// The details of the raster image in [bytes].

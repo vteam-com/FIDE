@@ -7,9 +7,11 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/arb_translation.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/string_rewrite.dart';
+import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/hardcoded_string_finder.dart';
-import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/l10n_generator.dart';
+import 'package:fide/services/project_config_reader.dart';
 import 'package:path/path.dart' as p;
 
 /// Translates ARB keys with the local model in short batches, FIDE writing
@@ -17,9 +19,9 @@ import 'package:path/path.dart' as p;
 /// translate and returns the list translated, never the files, so it stays
 /// fast and cannot break them.
 class ArbTranslator {
-  /// Creates a translator asking [_model] and regenerating through
-  /// [_localization].
-  const ArbTranslator(this._model, this._localization);
+  /// Creates a translator asking [_model], reading project settings with
+  /// [_config] and regenerating through [_generator].
+  const ArbTranslator(this._model, this._config, this._generator);
 
   /// Reason for translations that lost a placeholder of the template.
   static const String lostPlaceholder = 'that lost a {placeholder}';
@@ -43,7 +45,9 @@ class ArbTranslator {
 
   final ChatModel _model;
 
-  final LocalizationService _localization;
+  final ProjectConfigReader _config;
+
+  final L10nGenerator _generator;
 
   /// The keys fCheck found missing, empty, untranslated or with wrong
   /// placeholders in the project at [projectPath]'s other languages.
@@ -51,7 +55,7 @@ class ArbTranslator {
     String projectPath,
     fcheck.ProjectMetrics metrics,
   ) async {
-    final config = await _localization.l10nConfig(projectPath);
+    final config = await _config.l10nConfig(projectPath);
     final template = config.templateParts;
     final templateFile = File(
       p.join(projectPath, config.arbDir, config.templateArbFile),
@@ -161,7 +165,7 @@ class ArbTranslator {
       await file.writeAsString(ArbService.encode(arb));
     }
     final written = byFile.values.fold(0, (sum, keys) => sum + keys.length);
-    if (written > 0) await _localization.generateClasses(projectPath);
+    if (written > 0) await _generator.generateClasses(projectPath);
     final reviewed = reviewedByFile.values.fold(
       0,
       (sum, keys) => sum + keys.length,

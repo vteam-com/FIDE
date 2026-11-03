@@ -39,6 +39,26 @@ class StringReview {
   /// What passing lookups to widget fields would do.
   final LookupPlan lookups;
 
+  /// The review before any fix planned: nothing to rewrite.
+  static const StringReview empty = StringReview(
+    localization: null,
+    localizationBlocker: null,
+    constants: ConstantsPlan.empty,
+  );
+
+  /// This review with the plans given replaced.
+  StringReview copyWith({
+    LocalizationPlan? localization,
+    String? localizationBlocker,
+    ConstantsPlan? constants,
+    LookupPlan? lookups,
+  }) => StringReview(
+    localization: localization ?? this.localization,
+    localizationBlocker: localizationBlocker ?? this.localizationBlocker,
+    constants: constants ?? this.constants,
+    lookups: lookups ?? this.lookups,
+  );
+
   /// The fixes offered for strings of [role]: those rewriting that role,
   /// and all of them when the role is unknown; none for fragments, which
   /// only the AI can rewrite.

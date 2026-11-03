@@ -1,3 +1,5 @@
+import 'package:fide/constants/core_constants.dart';
+
 /// One row of `flutter pub outdated`: the versions pub knows for a package.
 class OutdatedPackage {
   /// Version currently resolved.
@@ -29,6 +31,31 @@ class OutdatedPackage {
       resolvable: json['resolvable'] as String,
       latest: json['latest'] as String,
     );
+  }
+
+  /// Header and separator rows of the table, which hold no package.
+  static const Set<String> _tableHeadings = {'Package', '---'};
+
+  /// Parses the table `flutter pub outdated` prints into one row per
+  /// package name, skipping the headings.
+  static Map<String, OutdatedPackage> parseTable(String output) {
+    final outdated = <String, OutdatedPackage>{};
+    for (final line in output.split('\n')) {
+      final parts = line.trim().split(RegExp(r'\s+'));
+      if (parts.length < AppMetric.outdatedMinColumns ||
+          _tableHeadings.contains(parts[0])) {
+        continue;
+      }
+      outdated[parts[0]] = OutdatedPackage(
+        current: parts[1],
+        upgradable: parts[AppMetric.outdatedUpgradableColIndex],
+        resolvable: parts[AppMetric.outdatedResolvableColIndex],
+        latest: parts.length > AppMetric.outdatedLatestColIndex
+            ? parts[AppMetric.outdatedLatestColIndex]
+            : '',
+      );
+    }
+    return outdated;
   }
 
   /// Whether pub found no version compatible with the other dependencies.

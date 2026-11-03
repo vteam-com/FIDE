@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:fide/models/code_coverage.dart';
 import 'package:fide/models/project_overview.dart';
 import 'package:fide/models/project_paths.dart';
+import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/build_artifacts_inspector.dart';
 import 'package:fide/services/code_review.dart';
-import 'package:fide/services/localization_service.dart';
 import 'package:fide/services/project_config_reader.dart';
 
 /// Gathers a [ProjectOverview] from the services that already read each

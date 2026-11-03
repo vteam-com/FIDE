@@ -2,19 +2,28 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_status.dart';
+import 'package:fide/models/build_step_event.dart';
 import 'package:fide/models/command_runs.dart';
 import 'package:fide/models/output_log.dart';
-import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/project_lifecycle_providers.dart';
 import 'package:fide/services/flutter_build_service.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+
+part 'command_runner.build_narration.dart';
+
+/// Error output of the last failed Execute panel action; empty once an
+/// action succeeds. The AI panel's Fix Build sends it to the model.
+final lastBuildErrorsProvider = StateProvider<String>((_) => '');
 
 /// The panel actions' runs, which outlive the panels: switching tabs keeps
 /// `flutter run` going and its log visible. Every run stops when the
 /// project changes or closes.
 final commandRunnerProvider = StateNotifierProvider<CommandRunner, CommandRuns>(
   (ref) {
-    final runner = CommandRunner(ref);
+    final runner = CommandRunner(
+      onBuildErrors: (errors) =>
+          ref.read(lastBuildErrorsProvider.notifier).state = errors,
+    );
     ref.listen(currentProjectPathProvider, (_, _) => runner.reset());
     return runner;
   },
@@ -26,15 +35,16 @@ final commandRunnerProvider = StateNotifierProvider<CommandRunner, CommandRuns>(
 ///
 /// Processes are killed only by [stop], [reset] or [dispose].
 class CommandRunner extends StateNotifier<CommandRuns> {
-  /// Creates a runner with no runs, reading providers through [_ref].
-  CommandRunner(this._ref) : super(const CommandRuns());
+  /// Creates a runner with no runs, reporting the errors of each run with
+  /// `reportsBuildErrors` (none after a success) to [onBuildErrors].
+  CommandRunner({required this._onBuildErrors}) : super(const CommandRuns());
 
   /// Bumped by [reset], so runs it ended stop reporting.
   int _generation = 0;
 
-  final Map<String, Process> _processes = {};
+  final void Function(String errors) _onBuildErrors;
 
-  final Ref _ref;
+  final Map<String, Process> _processes = {};
 
   final Set<String> _stopping = {};
 
@@ -110,6 +120,7 @@ class CommandRunner extends StateNotifier<CommandRuns> {
             }
           },
           onError: (text) => write((log) => log.addError(text)),
+          onStep: (event) => write((log) => BuildNarration.log(log, event)),
           onResetErrors: () => write((log) => log.clearErrors()),
           // Later steps of a stopped or ended run don't get to run
           onProcessStarted: (process) {
@@ -133,6 +144,9 @@ class CommandRunner extends StateNotifier<CommandRuns> {
         write((log) => log.addError(failureMessage(exitCode)));
         setStatus(ActionStatus.error);
       }
+    } on BuildException catch (e) {
+      write((log) => log.addError('$errorPrefix${BuildNarration.failed(e)}'));
+      setStatus(ActionStatus.error);
     } catch (e) {
       write((log) => log.addError('$errorPrefix$e'));
       setStatus(ActionStatus.error);
@@ -143,9 +157,7 @@ class CommandRunner extends StateNotifier<CommandRuns> {
       }
     }
     if (reportsBuildErrors && isCurrent()) {
-      _ref.read(lastBuildErrorsProvider.notifier).state = succeeded
-          ? ''
-          : state.logOf(logKey).errors;
+      _onBuildErrors(succeeded ? '' : state.logOf(logKey).errors);
     }
     if (resetWhenDone) {
       Future.delayed(AppDuration.buildStatusResetDelay, () {

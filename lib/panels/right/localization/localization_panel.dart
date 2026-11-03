@@ -1,8 +1,8 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/action_outcome.dart';
 import 'package:fide/models/localization_data.dart';
-import 'package:fide/models/localization_outcome.dart';
 import 'package:fide/models/localization_state.dart';
 import 'package:fide/models/localization_status.dart';
 import 'package:fide/models/status_tone.dart';
@@ -11,7 +11,7 @@ import 'package:fide/panels/right/localization/localization_setup_widget.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/localization_controller.dart';
-import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/arb_service.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/compact_text_button.dart';
@@ -65,14 +65,10 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
   }
 
   /// Waits for [outcome] and tells the user how the action ended.
-  Future<void> _show(Future<LocalizationOutcome?> outcome) async {
+  Future<void> _show(Future<ActionOutcome?> outcome) async {
     final result = await outcome;
     if (result == null || !mounted) return;
-    if (result.succeeded) {
-      MessageBox.showSuccess(context, result.message);
-    } else {
-      MessageBox.showError(context, result.message);
-    }
+    MessageBox.showOutcome(context, result);
   }
 
   /// Sets localization up, showing each step as it starts.

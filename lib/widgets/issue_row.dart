@@ -1,7 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/quality_issue.dart';
 import 'package:fide/models/quality_issue.quality_finding.dart';
-import 'package:fide/models/status_tone.dart';
 import 'package:fide/models/string_review.dart';
 import 'package:fide/providers/ai_request.dart';
 import 'package:fide/providers/editor_navigation.dart';
@@ -79,14 +78,7 @@ class IssueRow extends ConsumerWidget {
 
   /// Shows a quick fix's messages over [context] while the row is there.
   static QuickFixNotice _notify(BuildContext context) => (message, tone) {
-    if (!context.mounted) return;
-    final show = switch (tone) {
-      StatusTone.error => MessageBox.showError,
-      StatusTone.success => MessageBox.showSuccess,
-      StatusTone.warning => MessageBox.showWarning,
-      StatusTone.info || StatusTone.neutral => MessageBox.showInfo,
-    };
-    show(context, message);
+    if (context.mounted) MessageBox.show(context, message, tone);
   };
 
   /// Has the user pick strings of the open project to fix in a

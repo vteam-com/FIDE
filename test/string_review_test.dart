@@ -76,6 +76,26 @@ void main() {
     );
   });
 
+  test('starts empty and copies with the plans a fix adds', () {
+    const empty = StringReview.empty;
+    expect(empty.constants, same(ConstantsPlan.empty));
+    expect(empty.withRole(fcheck.HardcodedStringRole.data), isEmpty);
+
+    final planned = empty.copyWith(
+      constants: review(canLocalize: true).constants,
+    );
+    expect(planned.constants.className, 'DataKeys');
+    expect(planned.localization, isNull);
+    expect(
+      planned.copyWith(localizationBlocker: 'offline').localizationBlocker,
+      'offline',
+    );
+    expect(
+      planned.copyWith(localizationBlocker: 'offline').constants.className,
+      'DataKeys',
+    );
+  });
+
   test('says why when the project cannot be localized', () {
     final strings = review(canLocalize: false);
 

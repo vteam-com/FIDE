@@ -54,6 +54,23 @@ void main() {
     expect(details.formatDetails['Sizes'], '16 px, 32 px');
   });
 
+  test('icoFrame decodes the frame of a size, PNG encoded', () async {
+    final path = write(
+      'app.ico',
+      img.IcoEncoder().encodeImages([
+        img.Image(width: 16, height: 16),
+        img.Image(width: 32, height: 32),
+      ]),
+    );
+
+    final frame = await const ImageInspector().icoFrame(path, 32);
+
+    expect(frame, isNotNull);
+    expect(img.decodePng(frame!)!.width, 32);
+    expect(await const ImageInspector().icoFrame(path, 64), isNull);
+    expect(await const ImageInspector().icoFrame('missing.ico', 16), isNull);
+  });
+
   test('SVG: declared size, view box and the colors it names', () async {
     final path = write(
       'icon.svg',

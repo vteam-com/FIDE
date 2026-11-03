@@ -6,9 +6,13 @@ import 'package:fide/models/dart_imports.dart';
 import 'package:fide/models/dart_translations.dart';
 import 'package:fide/models/hand_written_l10n.dart';
 import 'package:fide/models/project_paths.dart';
+import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/code_formatter.dart';
-import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/dart_translations_parser.dart';
+import 'package:fide/services/hand_written_l10n_parser.dart';
+import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/process_runner.dart';
+import 'package:fide/services/project_config_reader.dart';
 import 'package:path/path.dart' as p;
 
 /// Moves translations written as Dart localizations classes into ARB
@@ -20,8 +24,18 @@ import 'package:path/path.dart' as p;
 /// where it is used, then regenerates the classes. When the project ends
 /// up with more analyzer errors than before, every file is restored.
 class ArbMigrator {
-  /// Creates a migrator running tools through [_runner].
-  const ArbMigrator(this._runner, this._localization, this._formatter);
+  /// Creates a migrator running tools through [_runner], reading project
+  /// settings with [_config], regenerating through [_generator] and
+  /// formatting through [_formatter]; [translations] and [handWritten]
+  /// read the Dart localizations files.
+  const ArbMigrator(
+    this._runner,
+    this._config,
+    this._generator,
+    this._formatter, {
+    this._translations = const DartTranslationsParser(),
+    this._handWritten = const HandWrittenL10nParser(),
+  });
 
   /// Suffix of the file the hand-written code moves to.
   static const String _movedSuffix = '_extensions.dart';
@@ -31,7 +45,13 @@ class ArbMigrator {
 
   final CodeFormatter _formatter;
 
-  final LocalizationService _localization;
+  final ProjectConfigReader _config;
+
+  final L10nGenerator _generator;
+
+  final HandWrittenL10nParser _handWritten;
+
+  final DartTranslationsParser _translations;
 
   final ProcessRunner _runner;
 
@@ -41,8 +61,8 @@ class ArbMigrator {
     String projectPath,
     fcheck.LocalizationSync sync,
   ) async {
-    final config = await _localization.l10nConfig(projectPath);
-    final packageName = await _localization.packageName(projectPath);
+    final config = await _config.l10nConfig(projectPath);
+    final packageName = await _config.packageName(projectPath);
     if (packageName == null) throw Exception('pubspec.yaml has no name');
     final outputDir = p.dirname(sync.generatedFilePath);
     final stem = p.basenameWithoutExtension(sync.generatedFilePath);
@@ -68,7 +88,7 @@ class ArbMigrator {
       );
     }
     final generated = await File(sync.generatedFilePath).readAsString();
-    final moved = HandWrittenL10n.extract(
+    final moved = _handWritten.extract(
       generated,
       sync.outputClass,
       sync.handWrittenMembers,
@@ -120,7 +140,7 @@ class ArbMigrator {
           );
         }
       }
-      await _localization.generateClasses(projectPath);
+      await _generator.generateClasses(projectPath);
       final errorsAfter = await _analyzerErrors(projectPath);
       if (errorsAfter > errorsBefore) {
         throw Exception(
@@ -228,7 +248,7 @@ class ArbMigrator {
     return {
       for (final path in await _filesIn(outputDir, '.dart'))
         if (pattern.firstMatch(p.basename(path)) case final match?)
-          match[1]!: DartTranslations.parse(
+          match[1]!: _translations.parse(
             await File(path).readAsString(),
             outputClass,
           ),

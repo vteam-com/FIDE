@@ -1,3 +1,4 @@
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/ollama_step.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/ollama_installer.dart';
@@ -39,9 +40,9 @@ class OllamaStatusNotifier extends AsyncNotifier<OllamaStep> {
     }
     return switch (step) {
       OllamaStep.notInstalled =>
-        'Ollama installed, ${OllamaInstaller.model} model downloaded, and service started.',
+        'Ollama installed, ${AiModel.ollama} model downloaded, and service started.',
       OllamaStep.notRunning => 'Ollama started.',
-      _ => '${OllamaInstaller.model} model downloaded.',
+      _ => '${AiModel.ollama} model downloaded.',
     };
   }
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:fide/models/project_node.dart';
 import 'package:fide/models/project_paths.dart';
@@ -9,7 +10,6 @@ import 'package:fide/services/loading_progress.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:fide/services/project_state_sink.dart';
 import 'package:fide/services/project_tree_reader.dart';
-import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
@@ -40,9 +40,6 @@ class ProjectService {
     this._config, {
     required this._loadTree,
   });
-
-  /// Get the current project root
-  ProjectNode? get currentProjectRoot => _currentProjectRoot;
 
   /// Check if a directory is a valid Flutter project
   Future<bool> _isFlutterProject(String directoryPath) async {
@@ -199,7 +196,7 @@ typedef ProjectTreeLoader = Future<ProjectNode> Function(String directoryPath);
 /// Default [ProjectTreeLoader]: enumerates the tree in a background isolate
 /// so large projects don't block the UI.
 Future<ProjectNode> loadProjectTreeInIsolate(String directoryPath) {
-  return compute(_enumerateProjectStructureInIsolate, directoryPath);
+  return Isolate.run(() => _enumerateProjectStructureInIsolate(directoryPath));
 }
 
 /// [ProjectTreeLoader] that enumerates on the calling isolate, for tests

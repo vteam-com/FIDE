@@ -33,6 +33,25 @@ class FileEntryService {
         FileSystemEntityType.notFound;
   }
 
+  /// Whether a folder exists at [folderPath].
+  bool folderExists(String folderPath) {
+    return FileSystemEntity.isDirectorySync(folderPath);
+  }
+
+  /// The absolute paths of every file below [directoryPath], at any depth,
+  /// without following links; empty when the folder is missing.
+  Future<List<String>> listFiles(String directoryPath) async {
+    final directory = Directory(directoryPath);
+    if (!await directory.exists()) return const [];
+    return [
+      await for (final entity in directory.list(
+        recursive: true,
+        followLinks: false,
+      ))
+        if (entity is File) entity.path,
+    ];
+  }
+
   /// Moves the file or folder at [entryPath] to [newPath].
   Future<void> rename(
     String entryPath,

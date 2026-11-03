@@ -6,8 +6,8 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/byte_size.dart';
 import 'package:fide/models/image_diff_mode.dart';
 import 'package:fide/models/image_diff_result.dart';
+import 'package:fide/providers/image_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
-import 'package:fide/services/image_differ.dart';
 import 'package:fide/widgets/any_image.dart';
 import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/empty_state.dart';
@@ -107,10 +107,9 @@ class _ImageDiffState extends ConsumerState<ImageDiff> {
     _comparison = null;
     final oldBytes = widget.oldBytes;
     if (oldBytes == null) return;
-    final comparison = await const ImageDiffer().compare(
-      oldBytes,
-      widget.newBytes,
-    );
+    final comparison = await ref
+        .read(imageDifferProvider)
+        .compare(oldBytes, widget.newBytes);
     if (!mounted || comparison == null) return;
     final mask = await _decodeMask(comparison);
     if (!mounted) {

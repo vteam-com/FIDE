@@ -6,6 +6,7 @@ import 'package:fide/providers/ai_request.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/quick_fix_runner.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Tells the user [message], in [tone]'s meaning, such as a fix's outcome.
@@ -13,7 +14,14 @@ typedef QuickFixNotice = void Function(String message, StatusTone tone);
 
 /// Provides the [QuickFixController] the issue rows run quick fixes with.
 final quickFixControllerProvider = Provider<QuickFixController>(
-  (ref) => QuickFixController(ref),
+  (ref) => QuickFixController(
+    projectPath: () => ref.read(currentProjectPathProvider),
+    runner: ref.watch(quickFixRunnerProvider),
+    chat: ref.watch(aiChatProvider.notifier),
+    requests: ref.watch(aiRequestsProvider),
+    documents: ref.watch(openDocumentsProvider.notifier),
+    refreshOverview: () => ref.invalidate(projectOverviewProvider),
+  ),
 );
 
 /// Runs the quick fixes the user picks on the open project: confirms
@@ -21,14 +29,34 @@ final quickFixControllerProvider = Provider<QuickFixController>(
 /// the files they write, refreshes the project overview and reports the
 /// outcome. The caller only provides the dialogs and messages.
 class QuickFixController {
-  /// Creates the controller reading the project and services through
-  /// [_ref].
-  QuickFixController(this._ref);
+  /// Creates the controller running fixes with [_runner] on the project
+  /// [_projectPath] gives, showing those asking the model in [_chat] and
+  /// sending the strings no fix can rewrite through [_requests]; the files
+  /// a fix writes are reloaded in [_documents] and [_refreshOverview]
+  /// re-analyzes the project.
+  QuickFixController({
+    required this._projectPath,
+    required this._runner,
+    required this._chat,
+    required this._requests,
+    required this._documents,
+    required this._refreshOverview,
+  });
 
   /// Label of the action reviewing hardcoded strings.
   static const String reviewStringsLabel = 'Review strings';
 
-  final Ref _ref;
+  final AiChatNotifier _chat;
+
+  final OpenDocumentsNotifier _documents;
+
+  final String? Function() _projectPath;
+
+  final VoidCallback _refreshOverview;
+
+  final AiRequests _requests;
+
+  final QuickFixRunner _runner;
 
   /// Applies [fix] to the open project once the user confirms it through
   /// [confirm], telling [notify] the outcome; a fix asking the model runs
@@ -49,13 +77,12 @@ class QuickFixController {
     required QuickFixConfirmation confirm,
     required QuickFixNotice notify,
   }) async {
-    final projectPath = _ref.read(currentProjectPathProvider);
+    final projectPath = _projectPath();
     if (projectPath == null) return;
-    final runner = _ref.read(quickFixRunnerProvider);
     notify('$reviewStringsLabel…', StatusTone.info);
     final StringReview review;
     try {
-      review = await runner.reviewStrings(projectPath);
+      review = await _runner.reviewStrings(projectPath);
     } catch (e) {
       notify('$reviewStringsLabel: $e', StatusTone.error);
       return;
@@ -64,7 +91,7 @@ class QuickFixController {
     if (choice == null) return;
     final fix = choice.fix;
     if (fix == null) {
-      _ref.read(aiRequestsProvider).ask(review.aiRequest(choice.strings));
+      _requests.ask(review.aiRequest(choice.strings));
       return;
     }
     await _run(
@@ -82,11 +109,9 @@ class QuickFixController {
     required QuickFixNotice notify,
     Future<QuickFixOutcome> Function(QuickFixRunner)? rewrite,
   }) async {
-    final projectPath = _ref.read(currentProjectPathProvider);
+    final projectPath = _projectPath();
     if (projectPath == null) return;
-    final runner = _ref.read(quickFixRunnerProvider);
-    final chat = _ref.read(aiChatProvider.notifier);
-    if (fix.usesAi && _ref.read(aiChatProvider).isBusy) {
+    if (fix.usesAi && _chat.isBusy) {
       notify('The AI is busy: wait for it or stop it', StatusTone.error);
       return;
     }
@@ -98,15 +123,15 @@ class QuickFixController {
     void showInChat() {
       if (!fix.usesAi || inChat) return;
       inChat = true;
-      _ref.read(aiRequestsProvider).showPanel();
-      chat.beginTask(fix.label, cancel: cancel);
+      _requests.showPanel();
+      _chat.beginTask(fix.label, cancel: cancel);
     }
 
     if (!fix.usesAi) notify('${fix.label}…', StatusTone.info);
     try {
       final outcome =
-          await (rewrite?.call(runner) ??
-              runner.run(
+          await (rewrite?.call(_runner) ??
+              _runner.run(
                 projectPath,
                 fix,
                 confirm: (fix, message) async {
@@ -114,22 +139,20 @@ class QuickFixController {
                   if (confirmed) showInChat();
                   return confirmed;
                 },
-                onProgress: (step) => chat.addReply(step, isProgress: true),
+                onProgress: (step) => _chat.addReply(step, isProgress: true),
                 cancel: cancel,
               ));
       if (outcome == null) return;
-      await _ref
-          .read(openDocumentsProvider.notifier)
-          .reloadWritten(outcome.changedFiles);
-      _ref.invalidate(projectOverviewProvider);
+      await _documents.reloadWritten(outcome.changedFiles);
+      _refreshOverview();
       if (inChat) {
-        chat.endTask(outcome.summary);
+        _chat.endTask(outcome.summary);
       } else {
         notify(outcome.summary, StatusTone.success);
       }
     } catch (e) {
       if (inChat) {
-        chat.endTask('Error: $e');
+        _chat.endTask('Error: $e');
       } else {
         notify('${fix.label}: $e', StatusTone.error);
       }

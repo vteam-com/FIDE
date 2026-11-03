@@ -1,8 +1,21 @@
-part of 'localization_service.dart';
+import 'dart:convert';
+import 'dart:io';
 
-/// Represents `ArbService`.
+import 'package:fide/constants/constants.dart';
+import 'package:fide/models/localization_data.dart';
+import 'package:fide/models/text_truncation.dart';
+import 'package:fide/services/code_formatter.dart';
+import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
+
+/// Reads, writes and compares ARB files: decoding and encoding their JSON,
+/// loading a folder of them into [ArbFile] models and comparing the
+/// languages' coverage of each key.
 class ArbService {
   static final Logger _logger = Logger('ArbService');
+
+  /// Creates an ARB service.
+  const ArbService();
 
   /// Byte-order mark some editors put at the start of ARB files.
   static const String _byteOrderMark = '\uFEFF';

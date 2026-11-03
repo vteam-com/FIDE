@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -56,7 +54,8 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
         .watch(projectConfigReaderProvider)
         .platforms(currentProjectPath);
     final isSupported = supportedPlatforms.contains(platform);
-    final canBuild = platform.canBuildOn(ref.watch(hostPlatformProvider));
+    final host = ref.watch(hostPlatformProvider);
+    final canBuild = platform.canBuildOn(host);
 
     return PanelScrollView(
       children: [
@@ -80,7 +79,7 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
             child: StatusIndicator.tone(
               StatusTone.info,
               label: isSupported
-                  ? platform.cannotBuildOn(Platform.operatingSystem)
+                  ? platform.cannotBuildOn(host)
                   : platform.enableInstructions,
             ),
           ),
@@ -106,56 +105,14 @@ Cleans the Flutter build cache and artifacts.
       ''',
       onRun: () => _clean(platform),
     ),
-    if (platform == FlutterPlatform.android) ...[
+    for (final build in platform.buildActions)
       PanelAction(
-        id: 'build_apk',
-        icon: Icons.phone_android_rounded,
-        title: 'Build APK',
-        description: 'Build an installable Android package (APK)',
-        details: '''
-Builds an Android app package (APK) for the selected platform.
-
-• Compiles Dart code to native ARM/x86 binaries
-• Bundles Flutter engine and assets
-• Creates installable .apk file
-• Targets debug or release configurations
-        ''',
-        onRun: () => _build('build_apk', platform),
-      ),
-      PanelAction(
-        id: 'build_aab',
-        icon: Icons.archive_rounded,
-        title: 'Build AAB',
-        description: 'Build Android App Bundle for Play Store',
-        details: '''
-Builds an Android App Bundle (AAB) for Google Play Store.
-
-• Contains optimized app binaries for multiple ABIs
-• Includes assets and Flutter engine
-• Smaller downloads through dynamic feature delivery
-• Required format for Play Store submissions
-        ''',
-        onRun: () => _build(
-          'build_aab',
-          platform,
-          target: FlutterPlatform.appBundleTarget,
-        ),
-      ),
-    ] else
-      PanelAction(
-        id: 'build',
-        icon: Icons.build_rounded,
-        title: 'Build ${platform.displayName}',
-        description: 'Build application for ${platform.displayName} platform',
-        details: '''
-Builds the Flutter application for the selected platform.
-
-• Compiles Dart code to native platform binaries
-• Bundles Flutter engine and platform-specific files
-• Creates platform-specific application bundle
-• Optimizes for target platform requirements
-        ''',
-        onRun: () => _build('build', platform),
+        id: build.id,
+        icon: build.icon,
+        title: build.title,
+        description: build.description,
+        details: build.details,
+        onRun: () => _build(build.id, platform, target: build.target),
       ),
     PanelAction(
       id: 'run',

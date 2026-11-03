@@ -1,13 +1,14 @@
 part of 'app_icon_fixer.dart';
 
 /// Writes icons resized from a master image, and text files, into a
-/// project, recording what it wrote.
-class _IconWriter {
-  _IconWriter._(this.root, this._master);
+/// project, recording what it wrote; each [PlatformIconWriter] writes its
+/// platform's files through it.
+class IconWriter {
+  IconWriter._(this.root, this._master);
 
   /// Reads the master at [masterPath] for the project at [root], cropped
   /// to a centered square.
-  factory _IconWriter.load(String root, String masterPath) {
+  factory IconWriter.load(String root, String masterPath) {
     final img.Image? master;
     try {
       master = img.decodeImage(File(masterPath).readAsBytesSync());
@@ -18,7 +19,7 @@ class _IconWriter {
       throw AppIconFixException('$masterPath is not an image FIDE can read');
     }
     final side = master.width < master.height ? master.width : master.height;
-    return _IconWriter._(
+    return IconWriter._(
       root,
       img.copyCrop(
         master,

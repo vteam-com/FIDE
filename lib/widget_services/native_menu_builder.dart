@@ -1,5 +1,4 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/controllers/app_controller.dart';
 import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/left_panel_tab.dart';
@@ -158,7 +157,7 @@ class NativeMenuBuilder {
 
   /// Builds the View menu with panel-size, panel-tab and zoom items.
   PlatformMenu _buildViewMenu() {
-    final controller = ref.read(appControllerProvider);
+    final controller = ref.read(zoomProvider.notifier);
     return PlatformMenu(
       label: 'View',
       menus: [

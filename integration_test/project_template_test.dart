@@ -262,5 +262,5 @@ Future<ProcessResult> runCommand(
 
 /// Helper function to start Ollama if not running and wait for it to be ready
 Future<bool> startOllamaIfNeeded() async {
-  return const OllamaInstaller(ProcessRunner()).ensureReady();
+  return OllamaInstaller(const ProcessRunner()).ensureReady();
 }

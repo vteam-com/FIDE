@@ -2,27 +2,32 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/creation_outcome.dart';
+import 'package:fide/models/creation_report.dart';
+import 'package:fide/models/creation_step.dart';
 import 'package:fide/models/l10n_config.dart';
-import 'package:fide/models/loading_action.dart';
 import 'package:fide/models/project_creation_request.dart';
 import 'package:fide/models/project_paths.dart';
+import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/git_service.dart';
-import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/l10n_generator.dart';
+import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_template.dart';
 import 'package:path/path.dart' as p;
 
-/// Receives each creation step's progress as it changes.
-typedef CreationProgress = void Function(int, String, LoadingStatus);
+/// Receives each creation step's report as it ends.
+typedef CreationProgress = void Function(CreationReport report);
 
 /// Creates a new Flutter project: `flutter create`, localization, optional AI
-/// starter code, Git and a final check, reporting progress per step.
+/// starter code, Git and a final check, reporting each [CreationStep]'s
+/// [CreationOutcome]; the wizard words them.
 class ProjectCreationService {
   /// Platforms every new project targets.
   static const String _platforms = 'android,ios,web,linux,macos,windows';
 
-  /// Language whose ARB template `LocalizationService` already writes.
+  /// Language whose ARB template `LocalizationSetup` already writes.
   static const String _templateLanguage =
       ProjectCreationRequest.englishLanguage;
 
@@ -42,7 +47,8 @@ class ProjectCreationService {
 
   final ProcessRunner _runner;
   final GitService _git;
-  final LocalizationService _localization;
+  final LocalizationSetup _localization;
+  final L10nGenerator _generator;
   final ProjectTemplate _template;
 
   /// Creates the service from the tools each step needs.
@@ -50,55 +56,22 @@ class ProjectCreationService {
     this._runner,
     this._git,
     this._localization,
+    this._generator,
     this._template,
   );
 
-  /// The creation steps, all pending, for the progress list.
-  static List<LoadingAction> initialActions() => [
-    LoadingAction(
-      AppMetric.projectCreateStepValidate,
-      'Validating settings and checking dependencies...',
-      LoadingStatus.pending,
-    ),
-    LoadingAction(
-      AppMetric.projectCreateStepFlutterCreate,
-      'Creating Flutter project...',
-      LoadingStatus.pending,
-    ),
-    LoadingAction(
-      AppMetric.projectCreateStepLocalization,
-      'Setting up localization...',
-      LoadingStatus.pending,
-    ),
-    LoadingAction(
-      AppMetric.projectCreateStepCodegen,
-      'Generating initial code structure...',
-      LoadingStatus.pending,
-    ),
-    LoadingAction(
-      AppMetric.projectCreateStepGitInit,
-      'Initializing Git repository...',
-      LoadingStatus.pending,
-    ),
-    LoadingAction(
-      AppMetric.projectCreateStepVerification,
-      'Final verification and cleanup...',
-      LoadingStatus.pending,
-    ),
-  ];
-
   /// Runs every step for [request]; true when the project was created.
   ///
-  /// A failing step is reported as failed through [onProgress] and stops
-  /// creation; AI and Git problems are reported but don't stop it.
+  /// A failing step is reported as [CreationOutcome.error] through
+  /// [onProgress] and stops creation; AI and Git problems are reported but
+  /// don't stop it.
   Future<bool> create(
     ProjectCreationRequest request,
     CreationProgress onProgress,
   ) async {
-    var currentStep = AppMetric.projectCreateStepValidate;
-    void report(int step, String text, [LoadingStatus? status]) {
-      currentStep = step;
-      onProgress(step, text, status ?? LoadingStatus.success);
+    var currentStep = CreationStep.validate;
+    void report(CreationOutcome outcome, [String detail = '']) {
+      onProgress(CreationReport(currentStep, outcome, detail: detail));
     }
 
     try {
@@ -107,34 +80,32 @@ class ProjectCreationService {
           'Flutter is not available. Please install Flutter and restart FIDE.',
         );
       }
-      report(
-        AppMetric.projectCreateStepValidate,
-        'Dependencies validated successfully',
-      );
+      report(CreationOutcome.validated);
 
-      currentStep = AppMetric.projectCreateStepFlutterCreate;
+      currentStep = CreationStep.flutterCreate;
       await _flutterCreate(request);
-      report(currentStep, 'Flutter project created successfully');
+      report(CreationOutcome.flutterCreated);
 
-      currentStep = AppMetric.projectCreateStepLocalization;
-      report(currentStep, await _setUpLocalization(request));
+      currentStep = CreationStep.localization;
+      report(await _setUpLocalization(request));
 
-      currentStep = AppMetric.projectCreateStepCodegen;
-      report(currentStep, await _generateCode(request));
+      currentStep = CreationStep.codegen;
+      final (outcome, detail) = await _generateCode(request);
+      report(outcome, detail);
 
-      currentStep = AppMetric.projectCreateStepGitInit;
-      await _initGit(request, report);
+      currentStep = CreationStep.gitInit;
+      report(await _initGit(request));
 
-      currentStep = AppMetric.projectCreateStepVerification;
+      currentStep = CreationStep.verification;
       if (!await _isComplete(request.projectPath)) {
         throw Exception(
           'Project verification failed - missing required files/directories',
         );
       }
-      report(currentStep, 'Project verification completed successfully');
+      report(CreationOutcome.verified);
       return true;
     } catch (e) {
-      report(currentStep, 'Error: $e', LoadingStatus.failed);
+      report(CreationOutcome.error, '$e');
       return false;
     }
   }
@@ -160,9 +131,12 @@ class ProjectCreationService {
     }
   }
 
-  /// Replaces template files with AI-generated ones when requested.
-  Future<String> _generateCode(ProjectCreationRequest request) async {
-    if (!request.useAi) return 'AI not available, using default structure';
+  /// Replaces template files with AI-generated ones when requested; how
+  /// it went, with the AI's error when it failed.
+  Future<(CreationOutcome, String)> _generateCode(
+    ProjectCreationRequest request,
+  ) async {
+    if (!request.useAi) return (CreationOutcome.aiNotUsed, '');
     try {
       final description = request.description.isNotEmpty
           ? request.description
@@ -180,30 +154,23 @@ class ProjectCreationService {
               .writeAsString(content);
         }
       }
-      return 'AI-generated project files completed';
+      return (CreationOutcome.aiGenerated, '');
     } on AiServiceException catch (e) {
-      return 'AI code generation failed: $e';
+      return (CreationOutcome.aiFailed, '$e');
     } on TimeoutException {
-      return 'AI generation timed out';
+      return (CreationOutcome.aiTimedOut, '');
     } catch (_) {
-      return 'AI code generation failed, using defaults';
+      return (CreationOutcome.aiFailedUsingDefaults, '');
     }
   }
 
-  /// Creates the repository when requested, reporting failure without
+  /// Creates the repository when requested; a failure is reported without
   /// stopping creation.
-  Future<void> _initGit(
-    ProjectCreationRequest request,
-    void Function(int, String, [LoadingStatus?]) report,
-  ) async {
-    const step = AppMetric.projectCreateStepGitInit;
-    if (!request.initGit) {
-      report(step, 'Git not available, skipped');
-    } else if (await _git.initWithInitialCommit(request.projectPath)) {
-      report(step, 'Git repository initialized');
-    } else {
-      report(step, 'Git initialization failed', LoadingStatus.failed);
-    }
+  Future<CreationOutcome> _initGit(ProjectCreationRequest request) async {
+    if (!request.initGit) return CreationOutcome.gitSkipped;
+    return await _git.initWithInitialCommit(request.projectPath)
+        ? CreationOutcome.gitInitialized
+        : CreationOutcome.gitFailed;
   }
 
   /// Whether the files and folders every Flutter project has are present.
@@ -221,9 +188,11 @@ class ProjectCreationService {
 
   /// Sets up localization and an empty ARB file for each extra language,
   /// making the default language the template.
-  Future<String> _setUpLocalization(ProjectCreationRequest request) async {
+  Future<CreationOutcome> _setUpLocalization(
+    ProjectCreationRequest request,
+  ) async {
     final languages = request.languages;
-    if (languages == null) return 'Localization skipped';
+    if (languages == null) return CreationOutcome.localizationSkipped;
 
     await _localization.initializeLocalization(
       request.projectPath,
@@ -238,7 +207,7 @@ class ProjectCreationService {
     if (request.defaultLanguage != _templateLanguage) {
       await _makeTemplate(request.projectPath, request.defaultLanguage);
     }
-    return 'Localization setup completed';
+    return CreationOutcome.localized;
   }
 
   /// Makes [language] the template of the project at [projectPath]: gives
@@ -268,7 +237,7 @@ class ProjectCreationService {
     await File(p.join(projectPath, L10nConfig.fileName))
         .writeAsString('template-arb-file: ${_arbFileName(language)}\n');
     try {
-      await _localization.generateClasses(projectPath);
+      await _generator.generateClasses(projectPath);
     } catch (_) {
       // Like the first generation: pub may be offline; the next build
       // generates the classes

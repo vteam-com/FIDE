@@ -1,11 +1,11 @@
-import 'package:fide/models/dart_translations.dart';
-import 'package:fide/models/hand_written_l10n.dart';
+import 'package:fide/services/dart_translations_parser.dart';
+import 'package:fide/services/hand_written_l10n_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('DartTranslations', () {
+  group('DartTranslationsParser', () {
     test('reads getters and methods as ARB messages', () {
-      final translations = DartTranslations.parse(r'''
+      final translations = const DartTranslationsParser().parse(r'''
 class AppLocalizationsEn extends AppLocalizations {
   @override
   String get cancel => 'Cancel';
@@ -33,7 +33,7 @@ class AppLocalizationsEn extends AppLocalizations {
     });
 
     test('flags bodies ARB cannot hold', () {
-      final translations = DartTranslations.parse(r'''
+      final translations = const DartTranslationsParser().parse(r'''
 class AppLocalizationsEn extends AppLocalizations {
   @override
   String items(int count) => intl.Intl.plural(count, one: '1 item', other: '$count items');
@@ -47,7 +47,7 @@ class AppLocalizationsEn extends AppLocalizations {
     });
   });
 
-  group('HandWrittenL10n', () {
+  group('HandWrittenL10nParser', () {
     test('cuts the members fCheck listed out of the generated class', () {
       const content = '''
 abstract class AppLocalizations {
@@ -64,10 +64,11 @@ extension L10nContext on BuildContext {
   AppLocalizations get l10n => AppLocalizations.of(this)!;
 }
 ''';
-      final moved = HandWrittenL10n.extract(content, 'AppLocalizations', [
-        'pick',
-        'extension L10nContext',
-      ]);
+      final moved = const HandWrittenL10nParser().extract(
+        content,
+        'AppLocalizations',
+        ['pick', 'extension L10nContext'],
+      );
 
       expect(moved.staticNames, ['pick']);
       expect(moved.extensionMembers, ['l10n']);

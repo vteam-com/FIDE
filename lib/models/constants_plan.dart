@@ -14,6 +14,16 @@ class ConstantsPlan {
     required this.skipped,
   });
 
+  /// The plan of a project not planned yet: no strings and nowhere to
+  /// put them.
+  static const ConstantsPlan empty = ConstantsPlan(
+    className: '',
+    constantsPath: '',
+    importUri: '',
+    candidates: [],
+    skipped: {},
+  );
+
   /// Strings that can become constants, in file order.
   final List<HardcodedString> candidates;
 

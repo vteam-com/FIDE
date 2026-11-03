@@ -4,13 +4,13 @@ import 'dart:io';
 import 'package:fide/models/arb_translation.dart';
 import 'package:fide/services/arb_translator.dart';
 import 'package:fide/services/chat_model.dart';
-import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 import 'fake_chat_model.dart';
-import 'localization_service_test.dart' show FakeFlutterRunner;
+import 'localization_setup_test.dart' show FakeFlutterRunner;
 
 void main() {
   late Directory project;
@@ -32,7 +32,8 @@ void main() {
     final result =
         await ArbTranslator(
           ai,
-          LocalizationService(runner, const ProjectConfigReader()),
+          const ProjectConfigReader(),
+          L10nGenerator(runner),
         ).apply(project.path, [
           ArbTranslation(
             key: 'deleteMessage',
@@ -83,7 +84,8 @@ void main() {
     final result =
         await ArbTranslator(
           ai,
-          LocalizationService(FakeFlutterRunner(), const ProjectConfigReader()),
+          const ProjectConfigReader(),
+          L10nGenerator(FakeFlutterRunner()),
         ).apply(project.path, [
           ArbTranslation(
             key: 'photos',
@@ -113,7 +115,8 @@ void main() {
     await expectLater(
       ArbTranslator(
         ai,
-        LocalizationService(FakeFlutterRunner(), const ProjectConfigReader()),
+        const ProjectConfigReader(),
+        L10nGenerator(FakeFlutterRunner()),
       ).apply(project.path, [
         ArbTranslation(
           key: 'hello',

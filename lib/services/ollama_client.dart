@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/services/chat_model.dart';
-import 'package:fide/services/ollama_installer.dart';
 import 'package:http/http.dart' as http;
 
 /// The local Ollama model as a [ChatModel]: picks the model among the
@@ -35,7 +34,7 @@ class OllamaClient implements ChatModel {
 
   final http.Client _client;
 
-  String _model = OllamaInstaller.model;
+  String _model = AiModel.ollama;
   bool _isModelResolved = false;
   bool _supportsTools = true;
   bool _supportsThinking = false;
@@ -43,7 +42,7 @@ class OllamaClient implements ChatModel {
   /// Creates a client sending requests through [_client].
   OllamaClient(this._client);
 
-  /// Whether [model] stands in for [OllamaInstaller.model], which isn't
+  /// Whether [model] stands in for [AiModel.ollama], which isn't
   /// downloaded or can't call tools.
   bool get isFallbackModel => !_isPreferred(_model);
 
@@ -54,7 +53,7 @@ class OllamaClient implements ChatModel {
   bool get supportsTools => _supportsTools;
 
   /// Picks the model requests go to among the downloaded ones and returns
-  /// it, or null when none is downloaded: [OllamaInstaller.model] first,
+  /// it, or null when none is downloaded: [AiModel.ollama] first,
   /// then any model that can call tools, then any model.
   ///
   /// Throws an [AiServiceException] when Ollama can't be reached.
@@ -150,10 +149,9 @@ class OllamaClient implements ChatModel {
   static bool _canCallTools(List<Object?>? capabilities) =>
       capabilities == null || capabilities.contains(_toolsCapability);
 
-  /// Whether [name] is [OllamaInstaller.model] under any tag.
+  /// Whether [name] is [AiModel.ollama] under any tag.
   bool _isPreferred(String name) =>
-      name == OllamaInstaller.model ||
-      name.startsWith('${OllamaInstaller.model}:');
+      name == AiModel.ollama || name.startsWith('${AiModel.ollama}:');
 
   /// Sends [body] (plus the model name) to Ollama's [path], resolving the
   /// model first when [resolveModel] hasn't, and returns the reply like

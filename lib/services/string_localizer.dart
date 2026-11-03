@@ -7,9 +7,11 @@ import 'package:fide/models/hardcoded_string.dart';
 import 'package:fide/models/l10n_config.dart';
 import 'package:fide/models/localization_plan.dart';
 import 'package:fide/models/string_rewrite.dart';
+import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/code_formatter.dart';
 import 'package:fide/services/hardcoded_string_finder.dart';
-import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/l10n_generator.dart';
+import 'package:fide/services/project_config_reader.dart';
 import 'package:path/path.dart' as p;
 
 /// Localizes hardcoded strings without AI: [plan] lists the strings
@@ -20,9 +22,10 @@ import 'package:path/path.dart' as p;
 /// fCheck says where each string is and which `BuildContext` and `const`
 /// keywords surround it; this class only edits the text.
 class StringLocalizer {
-  /// Creates a localizer regenerating through [_localization] and
-  /// formatting through [_formatter].
-  const StringLocalizer(this._localization, this._formatter);
+  /// Creates a localizer reading project settings with [_config],
+  /// regenerating through [_generator] and formatting through
+  /// [_formatter].
+  const StringLocalizer(this._config, this._generator, this._formatter);
 
   /// Reason for strings with no `BuildContext` to look them up with.
   static const String noContext = 'without a BuildContext';
@@ -32,7 +35,9 @@ class StringLocalizer {
 
   final CodeFormatter _formatter;
 
-  final LocalizationService _localization;
+  final ProjectConfigReader _config;
+
+  final L10nGenerator _generator;
 
   /// The strings [metrics] found in the project at [projectPath] that can
   /// become lookups, for the user to pick from; throws when the project
@@ -41,10 +46,10 @@ class StringLocalizer {
     String projectPath,
     fcheck.ProjectMetrics metrics,
   ) async {
-    final config = await _localization.l10nConfig(projectPath);
+    final config = await _config.l10nConfig(projectPath);
     // Throws without a valid template ARB file
     await readTemplate(projectPath, config);
-    final packageName = await _localization.packageName(projectPath);
+    final packageName = await _config.packageName(projectPath);
     if (packageName == null) throw Exception('pubspec.yaml has no name');
     final sync = metrics.localizationSync;
     if (sync != null && !sync.isInSync) {
@@ -127,7 +132,7 @@ class StringLocalizer {
       arb.addAll(keys.added);
       await File(templatePath(plan.projectPath, config))
           .writeAsString(ArbService.encode(arb));
-      await _localization.generateClasses(plan.projectPath);
+      await _generator.generateClasses(plan.projectPath);
     }
     return StringRewrite(
       action: 'Localized',

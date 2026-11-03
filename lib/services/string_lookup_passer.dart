@@ -8,8 +8,9 @@ import 'package:fide/models/lookup_field.dart';
 import 'package:fide/models/lookup_plan.dart';
 import 'package:fide/models/lookup_rewrite.dart';
 import 'package:fide/models/string_rewrite.dart';
+import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/code_formatter.dart';
-import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/reference_finder.dart';
 import 'package:fide/services/string_localizer.dart';
 
@@ -21,21 +22,19 @@ import 'package:fide/services/string_localizer.dart';
 /// localizations class, and keeps the change only if it compiles.
 class StringLookupPasser {
   /// Creates a passer resolving through [_finder], regenerating through
-  /// [_localization] and formatting through [_formatter].
-  const StringLookupPasser(this._finder, this._localization, this._formatter);
+  /// [_generator] and formatting through [_formatter].
+  const StringLookupPasser(this._finder, this._generator, this._formatter);
 
-  final ReferenceFinder? _finder;
+  final ReferenceFinder _finder;
 
   final CodeFormatter _formatter;
 
-  final LocalizationService _localization;
+  final L10nGenerator _generator;
 
   /// The strings [localization] cannot look up for lack of a
   /// `BuildContext` that fill a widget's `String` field which can become a
   /// lookup function, and why the others cannot.
   Future<LookupPlan> plan(LocalizationPlan localization) async {
-    final finder = _finder;
-    if (finder == null) return const LookupPlan();
     final candidates = <HardcodedString, LookupField>{};
     final rejected = <HardcodedString, String>{};
     for (final MapEntry(key: string, value: reason)
@@ -46,7 +45,7 @@ class StringLookupPasser {
         continue;
       }
       try {
-        candidates[string] = await finder.lookupField(
+        candidates[string] = await _finder.lookupField(
           filePath: string.path,
           offset: string.site.offset,
         );
@@ -65,8 +64,6 @@ class StringLookupPasser {
     LookupPlan lookups,
     Iterable<HardcodedString> selected,
   ) async {
-    final finder = _finder;
-    if (finder == null) throw Exception('No project is open');
     final fields = [for (final string in selected) lookups.candidates[string]!];
     final paths = {
       for (final field in fields) ...[
@@ -100,12 +97,12 @@ class StringLookupPasser {
     final template = File(StringLocalizer.templatePath(projectPath, config));
     final original = await template.readAsString();
     await template.writeAsString(ArbService.encode({...arb, ...keys.added}));
-    await _localization.generateClasses(projectPath);
+    await _generator.generateClasses(projectPath);
     try {
-      await finder.checkCompiles(contents, 'Passing lookups');
+      await _finder.checkCompiles(contents, 'Passing lookups');
     } catch (_) {
       await template.writeAsString(original);
-      await _localization.generateClasses(projectPath);
+      await _generator.generateClasses(projectPath);
       rethrow;
     }
     for (final MapEntry(key: path, value: content) in contents.entries) {

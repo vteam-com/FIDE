@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fide/services/arb_key_remover.dart';
-import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
-import 'localization_service_test.dart' show FakeFlutterRunner;
+import 'localization_setup_test.dart' show FakeFlutterRunner;
 
 void main() {
   late Directory project;
@@ -38,7 +38,8 @@ void main() {
     final runner = FakeFlutterRunner();
 
     final result = await ArbKeyRemover(
-      LocalizationService(runner, const ProjectConfigReader()),
+      const ProjectConfigReader(),
+      L10nGenerator(runner),
     ).apply(project.path, ['noNote', 'helloWorld']);
 
     expect(result.rewritten, 1);

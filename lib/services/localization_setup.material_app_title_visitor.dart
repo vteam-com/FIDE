@@ -1,4 +1,4 @@
-part of 'localization_service.dart';
+part of 'localization_setup.dart';
 
 /// Finds the string literal passed as `title:` to `MaterialApp`.
 ///

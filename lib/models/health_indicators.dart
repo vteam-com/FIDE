@@ -79,6 +79,7 @@ class HealthIndicators {
       points: largeFiles.length > AppMetric.maxAllowedLargeFiles
           ? AppMetric.largeFilesDeduction
           : 0,
+      files: largeFiles,
     ),
   ];
 

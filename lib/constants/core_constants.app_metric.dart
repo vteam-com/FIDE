@@ -56,15 +56,10 @@ class AppMetric {
   static const int gitStatusFieldOffset = 3;
   static const int regexBaseClassGroupIndex = 2;
   static const int logPreviewChars = 200;
-  static const int projectCreateStepValidate = 1;
-  static const int projectCreateStepFlutterCreate = 2;
-  static const int projectCreateStepLocalization = 3;
-  static const int projectCreateStepCodegen = 4;
-  static const int projectCreateStepGitInit = 5;
-  static const int projectCreateStepVerification = 6;
 
-  /// Steps a loading progress bar spans: the longest flow, project creation.
-  static const int loadingProgressSteps = projectCreateStepVerification;
+  /// Steps a loading progress bar spans: the longest flow, project
+  /// creation, which has as many `CreationStep`s.
+  static const int loadingProgressSteps = 6;
 
   /// Most files the Go to File palette lists.
   static const int quickOpenMaxResults = 50;

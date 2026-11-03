@@ -1,19 +1,26 @@
 import 'dart:io';
 
+import 'package:fide/models/build_step_event.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/services/process_runner.dart';
 
+part 'flutter_build_service.build_exception.dart';
 part 'flutter_build_service.build_output.dart';
 
 /// Runs Flutter and CocoaPods build commands, streaming their output.
 ///
-/// Holds no UI state: callers render whatever arrives through [BuildOutput]
-/// and decide how to present success or failure.
+/// Holds no UI state and no wording: callers render whatever arrives
+/// through [BuildOutput], its [BuildStepEvent]s included, and decide how
+/// to present success or failure. A failed `flutter` step of [clean] or
+/// [deepClean] throws a [BuildException].
 class FlutterBuildService {
   /// Line `flutter run` prints once the app has launched.
   static const String _appLaunchedMarker = 'Flutter run key commands';
   static const String _podOutputPrefix = 'POD: ';
+
+  /// `pod install --repo-update`.
+  static const List<String> _podInstallArguments = ['install', '--repo-update'];
 
   final ProcessRunner _runner;
 
@@ -41,30 +48,33 @@ class FlutterBuildService {
     String? target,
   }) {
     return _runRepairingPods(
-      'flutter',
+      BuildStep.flutterBuild,
       platform.buildArguments(target),
       output,
       workingDirectory: projectPath,
-      retryLabel: 'Flutter build',
       canRepair: platform.usesCocoaPods,
     );
   }
 
   /// Runs `flutter clean`, repairing a stale CocoaPods repo once if needed.
   ///
-  /// Throws a message describing the failure when the clean does not succeed,
-  /// or when the project is the running app ([ProjectPaths.ensureCleanable]).
+  /// Throws a [BuildException] when the clean does not succeed, or refuses
+  /// the running app's own project ([ProjectPaths.ensureCleanable]).
   Future<void> clean(String projectPath, BuildOutput output) async {
     ProjectPaths(projectPath).ensureCleanable(Platform.resolvedExecutable);
+    const arguments = ['clean'];
     final exitCode = await _runRepairingPods(
-      'flutter',
-      ['clean'],
+      BuildStep.flutterClean,
+      arguments,
       output,
       workingDirectory: projectPath,
-      retryLabel: 'Flutter clean',
     );
     if (exitCode != 0) {
-      throw 'Flutter clean failed with exit code $exitCode';
+      throw BuildException(
+        BuildStep.flutterClean,
+        arguments.join(' '),
+        exitCode,
+      );
     }
   }
 
@@ -73,8 +83,8 @@ class FlutterBuildService {
   /// rebuilds it. Refuses the running app's own project
   /// ([ProjectPaths.ensureCleanable]).
   ///
-  /// CocoaPods failures are reported but tolerated; Flutter step failures
-  /// throw a message naming the failed step.
+  /// CocoaPods failures are reported but tolerated; a failed Flutter step
+  /// throws its [BuildException].
   Future<void> deepClean(
     String projectPath,
     FlutterPlatform platform,
@@ -83,48 +93,67 @@ class FlutterBuildService {
     ProjectPaths(projectPath).ensureCleanable(Platform.resolvedExecutable);
     final podsPath = '$projectPath/${platform.name}';
 
-    output.onOutput('📦 Updating CocoaPods repository...');
+    output.onStep(
+      const BuildStepEvent(BuildStep.podRepoUpdate, BuildStepStatus.started),
+    );
     if (!await _updatePodRepo(output, workingDirectory: podsPath)) {
-      output.onOutput(
-        '⚠️ Pod repo update failed, continuing with pod install...',
+      output.onStep(
+        const BuildStepEvent(BuildStep.podRepoUpdate, BuildStepStatus.failed),
       );
     }
 
-    output.onOutput('🔧 Running pod install with repo update...');
+    output.onStep(
+      const BuildStepEvent(BuildStep.podInstall, BuildStepStatus.started),
+    );
     final podExitCode = await _stream(
       'pod',
-      ['install', '--repo-update'],
+      _podInstallArguments,
       output,
       workingDirectory: podsPath,
       prefix: _podOutputPrefix,
     );
-    if (podExitCode != 0) {
-      output.onOutput(
-        '⚠️ Pod install failed with exit code $podExitCode, continuing with Flutter cleanup...',
-      );
-      output.onOutput('🔄 CocoaPods issues will require manual resolution');
-    } else {
-      output.onOutput('✅ CocoaPods dependencies updated successfully');
-    }
+    output.onStep(
+      podExitCode == 0
+          ? const BuildStepEvent(
+              BuildStep.podInstall,
+              BuildStepStatus.succeeded,
+            )
+          : BuildStepEvent(
+              BuildStep.podInstall,
+              BuildStepStatus.failed,
+              exitCode: podExitCode,
+            ),
+    );
 
-    output.onOutput('🧹 Running flutter clean...');
-    await _runFlutterStep(['clean'], projectPath, output);
+    await _runFlutterStep(
+      BuildStep.flutterClean,
+      ['clean'],
+      projectPath,
+      output,
+    );
+    await _runFlutterStep(
+      BuildStep.pubGet,
+      ['pub', 'get'],
+      projectPath,
+      output,
+    );
+    await _runFlutterStep(
+      BuildStep.flutterBuild,
+      platform.buildArguments(),
+      projectPath,
+      output,
+    );
 
-    output.onOutput('📦 Running flutter pub get...');
-    await _runFlutterStep(['pub', 'get'], projectPath, output);
-
-    final buildArguments = platform.buildArguments();
-    output.onOutput('🔨 Running flutter ${buildArguments.join(' ')}...');
-    await _runFlutterStep(buildArguments, projectPath, output);
-
-    output.onOutput('✨ Deep clean and rebuild completed successfully!');
+    output.onStep(
+      const BuildStepEvent(BuildStep.deepClean, BuildStepStatus.succeeded),
+    );
   }
 
   /// Runs `pod install --repo-update` in [directory] and returns the exit code.
   Future<int> podInstall(String directory, BuildOutput output) {
     return _stream(
       'pod',
-      ['install', '--repo-update'],
+      _podInstallArguments,
       output,
       workingDirectory: directory,
     );
@@ -168,12 +197,19 @@ class FlutterBuildService {
     );
   }
 
-  /// Runs one `flutter` step, throwing when it exits non-zero.
+  /// Runs one `flutter` [step] with [arguments], reporting its start.
+  ///
+  /// Throws a [BuildException] when it exits non-zero.
   Future<void> _runFlutterStep(
+    BuildStep step,
     List<String> arguments,
     String projectPath,
     BuildOutput output,
   ) async {
+    final joined = arguments.join(' ');
+    output.onStep(
+      BuildStepEvent(step, BuildStepStatus.started, detail: joined),
+    );
     final exitCode = await _stream(
       'flutter',
       arguments,
@@ -181,31 +217,35 @@ class FlutterBuildService {
       workingDirectory: projectPath,
     );
     if (exitCode != 0) {
-      throw 'Flutter ${arguments.join(' ')} failed with exit code $exitCode';
+      throw BuildException(step, joined, exitCode);
     }
   }
 
-  /// Runs a command and, when it fails on a stale CocoaPods repo and
-  /// [canRepair] is set, updates the repo and retries exactly once.
+  /// Runs `flutter` [arguments] as [step] and, when it fails on a stale
+  /// CocoaPods repo and [canRepair] is set, updates the repo and retries
+  /// exactly once.
   Future<int> _runRepairingPods(
-    String executable,
+    BuildStep step,
     List<String> arguments,
     BuildOutput output, {
     required String workingDirectory,
-    required String retryLabel,
     bool canRepair = true,
   }) async {
     var podRepoOutdated = false;
     final exitCode = await _runner.stream(
-      executable,
+      'flutter',
       arguments,
       workingDirectory: workingDirectory,
       onStdout: output.onOutput,
       onStderr: (text) {
         if (isCocoaPodsRepoError(text)) {
           podRepoOutdated = true;
-          output.onOutput(
-            '🛠️ CocoaPods repository error detected in output line: "$text"',
+          output.onStep(
+            BuildStepEvent(
+              BuildStep.podRepoRepair,
+              BuildStepStatus.needed,
+              detail: text,
+            ),
           );
         }
         output.onError(text);
@@ -216,28 +256,37 @@ class FlutterBuildService {
       return exitCode;
     }
 
-    output.onOutput(
-      '🔧 Detected CocoaPods repository issue. Running pod repo update...',
+    output.onStep(
+      const BuildStepEvent(BuildStep.podRepoRepair, BuildStepStatus.started),
     );
     try {
       if (!await _updatePodRepo(output)) {
-        output.onError('❌ Failed to update CocoaPods repository');
+        output.onStep(
+          const BuildStepEvent(BuildStep.podRepoRepair, BuildStepStatus.failed),
+        );
         return exitCode;
       }
     } catch (e) {
-      output.onError('❌ Error running pod repo update: $e');
+      output.onStep(
+        BuildStepEvent(
+          BuildStep.podRepoRepair,
+          BuildStepStatus.failed,
+          detail: '$e',
+        ),
+      );
       return exitCode;
     }
 
-    output.onOutput('✅ CocoaPods repository updated successfully');
-    output.onOutput('🔄 Retrying $retryLabel...');
+    output.onStep(
+      const BuildStepEvent(BuildStep.podRepoRepair, BuildStepStatus.succeeded),
+    );
+    output.onStep(BuildStepEvent(step, BuildStepStatus.retrying));
     output.onResetErrors();
     return _runRepairingPods(
-      executable,
+      step,
       arguments,
       output,
       workingDirectory: workingDirectory,
-      retryLabel: retryLabel,
       canRepair: false,
     );
   }

@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/l10n_generator.dart';
+import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -44,16 +45,35 @@ void main() {
 
   tearDown(() => project.deleteSync(recursive: true));
 
+  /// A setup running every tool through [runner].
+  LocalizationSetup setupWith(FakeFlutterRunner runner) => LocalizationSetup(
+    runner,
+    const ProjectConfigReader(),
+    L10nGenerator(runner),
+  );
+
+  test('generateClasses runs gen-l10n and throws with its stderr', () async {
+    final runner = FakeFlutterRunner();
+    await L10nGenerator(runner).generateClasses(project.path);
+    expect(runner.commands, ['flutter gen-l10n']);
+
+    await expectLater(
+      L10nGenerator(FakeFlutterRunner(failing: {'flutter gen-l10n'}))
+          .generateClasses(project.path),
+      throwsA(
+        isA<Exception>().having((e) => '$e', 'message', contains('offline')),
+      ),
+    );
+  });
+
   test(
     'initializeLocalization reports each step and writes templates',
     () async {
       final runner = FakeFlutterRunner();
       final steps = <String>[];
 
-      await LocalizationService(
-        runner,
-        const ProjectConfigReader(),
-      ).initializeLocalization(project.path, onStep: steps.add);
+      await setupWith(runner)
+          .initializeLocalization(project.path, onStep: steps.add);
 
       expect(steps, hasLength(4));
       expect(runner.commands, [
@@ -77,10 +97,7 @@ void main() {
     final runner = FakeFlutterRunner(failing: {'flutter pub add intl'});
 
     await expectLater(
-      LocalizationService(
-        runner,
-        const ProjectConfigReader(),
-      ).initializeLocalization(project.path),
+      setupWith(runner).initializeLocalization(project.path),
       throwsA(isA<Exception>()),
     );
     expect(Directory('${project.path}/lib/l10n').existsSync(), false);
@@ -91,10 +108,8 @@ void main() {
       failing: {'flutter pub add intl', 'flutter gen-l10n'},
     );
 
-    await LocalizationService(
-      runner,
-      const ProjectConfigReader(),
-    ).initializeLocalization(project.path, tolerateToolFailures: true);
+    await setupWith(runner)
+        .initializeLocalization(project.path, tolerateToolFailures: true);
 
     expect(File('${project.path}/lib/l10n/app_fr.arb').existsSync(), true);
   });
@@ -106,24 +121,15 @@ void main() {
     test('enables generate when the flutter section is $label', () async {
       File('${project.path}/pubspec.yaml').writeAsStringSync(pubspec);
 
-      await LocalizationService(
-        FakeFlutterRunner(),
-        const ProjectConfigReader(),
-      ).initializeLocalization(project.path);
+      await setupWith(FakeFlutterRunner()).initializeLocalization(project.path);
 
-      final service = LocalizationService(
-        FakeFlutterRunner(),
-        const ProjectConfigReader(),
-      );
+      final service = setupWith(FakeFlutterRunner());
       expect((await service.inspect(project.path)).hasGenerateFlag, true);
     });
   }
 
   test('inspect reports what the project already has', () async {
-    final service = LocalizationService(
-      FakeFlutterRunner(),
-      const ProjectConfigReader(),
-    );
+    final service = setupWith(FakeFlutterRunner());
 
     final before = await service.inspect(project.path);
     expect(before.isFlutterProject, true);

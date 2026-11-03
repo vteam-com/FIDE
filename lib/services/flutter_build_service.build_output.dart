@@ -8,6 +8,9 @@ class BuildOutput {
   /// Receives error output lines.
   final ProcessOutputCallback onError;
 
+  /// Receives each step the command runs beyond its own output.
+  final void Function(BuildStepEvent event) onStep;
+
   /// Clears previously reported errors before an automatic retry.
   final void Function() onResetErrors;
 
@@ -18,6 +21,7 @@ class BuildOutput {
   const BuildOutput({
     required this.onOutput,
     required this.onError,
+    required this.onStep,
     required this.onResetErrors,
     this.onProcessStarted,
   });

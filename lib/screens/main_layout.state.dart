@@ -18,7 +18,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     // that the selection listener in build is about to be registered
     final projectPath = ref.read(currentProjectPathProvider);
     if (projectPath != null) {
-      ref.read(projectManagerProvider).tryReopenLastFile(projectPath);
+      ref.read(lastOpenedFileProvider.notifier).tryReopen(projectPath);
     }
   }
 
@@ -90,15 +90,9 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     _shownOutlineWidth = rightExpanded ? expandedWidth : _outlineWidth;
   }
 
-  /// Opens [filePath] in the editor and scrolls to 1-based [line].
-  Future<void> _jumpToLine(String filePath, int line) =>
-      openFileAtLine(ref, filePath, line);
-
   @override
   Widget build(BuildContext context) {
-    final selectedFile = ref.watch(selectedFileProvider);
     final projectLoaded = ref.watch(projectLoadedProvider);
-    final currentProjectPath = ref.watch(currentProjectPathProvider);
 
     ref.listen<FileSystemItem?>(selectedFileProvider, (_, next) {
       if (next != null && next.path != _lastSelectedFilePath) {
@@ -149,17 +143,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                 if (leftShown) ...[
                   SizedBox(
                     width: _shownExplorerWidth,
-                    child: PanelIsland(
-                      child: LeftPanel(
-                        selectedFile: selectedFile,
-                        currentProjectPath: currentProjectPath,
-                        projectLoaded: projectLoaded,
-                        onFileSelected: (file) {
-                          ref.read(selectedFileProvider.notifier).state = file;
-                        },
-                        onJumpToLine: _jumpToLine,
-                      ),
-                    ),
+                    child: const PanelIsland(child: LeftPanel()),
                   ),
                   ResizableSplitter(onResize: _onResize),
                 ],
@@ -173,9 +157,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                   ResizableSplitter(onResize: _onOutlineResize),
                   SizedBox(
                     width: _shownOutlineWidth,
-                    child: PanelIsland(
-                      child: RightPanel(selectedFile: selectedFile),
-                    ),
+                    child: const PanelIsland(child: RightPanel()),
                   ),
                 ],
               ],
@@ -198,7 +180,7 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   }
 
   Future<void> _handleFileSelection(FileSystemItem file) async {
-    await ref.read(projectManagerProvider).saveLastOpenedFile(file.path);
+    await ref.read(lastOpenedFileProvider.notifier).save(file.path);
     await ref.read(openDocumentsProvider.notifier).open(file.path);
 
     ref.read(rightPanelVisibleProvider.notifier).state = true;

@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/ollama_client.dart';
-import 'package:fide/services/ollama_installer.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -132,14 +131,14 @@ void main() {
   test('uses the preferred model when it is downloaded', () async {
     final requested = <String>[];
     final client = clientWithModels(
-      ['codellama:latest', '${OllamaInstaller.model}:latest'],
-      {'${OllamaInstaller.model}:latest'},
+      ['codellama:latest', '${AiModel.ollama}:latest'],
+      {'${AiModel.ollama}:latest'},
       requested,
     );
 
     await client.generate('tip?', timeout);
 
-    expect(requested, ['${OllamaInstaller.model}:latest']);
+    expect(requested, ['${AiModel.ollama}:latest']);
     expect(client.isFallbackModel, isFalse);
     expect(client.supportsTools, isTrue);
   });

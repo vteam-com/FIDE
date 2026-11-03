@@ -2,7 +2,7 @@
 
 import 'dart:io';
 
-import 'package:fide/controllers/app_controller.dart';
+import 'package:fide/app_bootstrap.dart';
 import 'package:fide/main.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/service_providers.dart';
@@ -158,7 +158,7 @@ void main() {
     stepStart('Welcome screen');
     {
       // Initialize window manager like in main.dart
-      await container.read(appControllerProvider).initializeWindowManager();
+      await initializeWindowManager();
 
       await tester.pumpWidget(
         UncontrolledProviderScope(container: container, child: const FIDE()),

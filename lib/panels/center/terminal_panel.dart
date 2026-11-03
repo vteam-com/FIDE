@@ -1,13 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/services/login_shell_environment.dart';
+import 'package:fide/providers/terminal_providers.dart';
+import 'package:fide/services/terminal_session.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_pty2/flutter_pty2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
 
@@ -20,22 +17,25 @@ class TerminalPanel extends ConsumerStatefulWidget {
 }
 
 class _TerminalPanelState extends ConsumerState<TerminalPanel> {
-  TerminalController? controller;
+  /// Clears the screen and moves the cursor to the top.
+  static const String _clearScreen = '\x1b[2J\x1b[H';
 
-  PtySession? pty;
+  final TerminalController controller = TerminalController();
 
-  /// Incremented on every start/stop so a slow async spawn can tell it is stale.
-  int _shellGeneration = 0;
+  /// The shell shown, whose output feeds [terminal].
+  late final TerminalSession _session = ref.read(terminalSessionProvider);
 
-  late Terminal terminal;
+  late final StreamSubscription<String> _output;
+
+  final Terminal terminal = Terminal(maxLines: AppMetric.terminalMaxLines);
 
   String? _currentProjectPath;
 
   @override
   void initState() {
     super.initState();
-    terminal = Terminal(maxLines: AppMetric.terminalMaxLines);
-    controller = TerminalController();
+    _output = _session.output.listen(terminal.write);
+    terminal.onOutput = (data) => unawaited(_session.write(data));
 
     // Initialize current project path
     _currentProjectPath = ref.read(currentProjectPathProvider);
@@ -45,12 +45,15 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
 
   @override
   void dispose() {
-    _stopShell();
+    unawaited(_output.cancel());
+    _session.stop();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Keeps the session alive while the panel shows
+    ref.watch(terminalSessionProvider);
     // Listen for changes to the current project path
     ref.listen<String?>(currentProjectPathProvider, (_, next) {
       if (next != _currentProjectPath) {
@@ -67,7 +70,7 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
 
     return TerminalView(
       terminal,
-      controller: controller!,
+      controller: controller,
       autofocus: true,
       backgroundOpacity: 1,
       // Keeps the first and last rows and columns clear of the panel edges
@@ -100,93 +103,36 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
     );
   }
 
-  /// Starts a zsh PTY session and wires terminal input/output streams.
+  /// Starts the shell in the project folder, or the app's own folder
+  /// when no project is loaded, and reports how it went.
   Future<void> _startShell() async {
-    final generation = ++_shellGeneration;
     try {
-      // Get the current project path, fallback to app directory if no project loaded
-      final projectPath =
-          ref.read(currentProjectPathProvider) ?? Directory.current.path;
-
-      final session = await Pty.spawn(
-        PtySpawnOptions(
-          executable: '/bin/zsh',
-          workingDirectory: projectPath,
-          environment: PtyEnvironment.inherit(
-            overrides: {
-              ...await LoginShellEnvironment.overrides,
-              'TERM': 'xterm-256color',
-            },
-          ),
-        ),
+      final started = await _session.start(
+        workingDirectory: ref.read(currentProjectPathProvider),
       );
-
       // The panel was disposed, or the shell restarted, while spawning
-      if (!mounted || generation != _shellGeneration) {
-        session.kill();
-        unawaited(session.close());
-        return;
-      }
-      pty = session;
-
-      // Pipe PTY output to terminal with UTF-8 decoding
-      session.output.listen((data) {
-        final str = utf8.decode(data, allowMalformed: true);
-        terminal.write(str);
-      });
-
-      // Pipe user input to PTY
-      terminal.onOutput = (data) {
-        final bytes = Uint8List.fromList(utf8.encode(data));
-        unawaited(session.input.write(bytes).catchError((_) {}));
-      };
-
+      if (!mounted || !started) return;
       terminal.write(
-        'Terminal started (macOS zsh) in project: $projectPath\r\n',
+        'Terminal started (macOS zsh) in project: '
+        '${_session.workingDirectory}\r\n',
       );
       setState(() {});
     } catch (e) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       terminal.write('Failed to start terminal: $e\r\n');
       setState(() {});
     }
   }
 
-  /// Kills the running shell (if any) and releases its PTY session.
-  void _stopShell() {
-    _shellGeneration++;
-    final session = pty;
-    pty = null;
-    if (session == null) {
-      return;
-    }
-    try {
-      session.kill();
-    } catch (_) {
-      // The shell already exited
-    }
-    unawaited(session.close());
-  }
-
   void _restartShell() {
-    // Kill existing PTY
-    _stopShell();
-
-    // Clear terminal with ANSI escape code
-    terminal.write('\x1b[2J\x1b[H'); // Clear screen and move cursor to top
-
-    // Start new shell
+    _session.stop();
+    terminal.write(_clearScreen);
     _startShell();
   }
 
   void _closeTerminal() {
-    // Kill existing PTY
-    _stopShell();
-
-    // Clear terminal and show closed message
-    terminal.write('\x1b[2J\x1b[H'); // Clear screen and move cursor to top
+    _session.stop();
+    terminal.write(_clearScreen);
     terminal.write('Project closed. Terminal stopped.\r\n');
     terminal.write('Load a project to start the terminal.\r\n');
   }

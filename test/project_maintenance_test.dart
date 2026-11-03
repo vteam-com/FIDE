@@ -3,11 +3,14 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/dependency_version.dart';
+import 'package:fide/models/outdated_package.dart';
 import 'package:fide/models/project_metrics.dart';
+import 'package:fide/models/pub_outdated.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_analyzer.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:fide/services/project_maintenance_service.dart';
+import 'package:fide/services/pubspec_upgrader.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const String _pubspec = '''
@@ -91,8 +94,8 @@ void main() {
     });
   });
 
-  test('parseOutdated reads package rows and skips headers', () {
-    final parsed = ProjectMaintenanceService.parseOutdated('''
+  test('OutdatedPackage.parseTable reads package rows and skips headers', () {
+    final parsed = OutdatedPackage.parseTable('''
 Package  Current  Upgradable  Resolvable  Latest
 http     1.0.0    1.1.0       1.1.0       2.0.0
 ''');
@@ -104,6 +107,31 @@ http     1.0.0    1.1.0       1.1.0       2.0.0
       'resolvable': '1.1.0',
       'latest': '2.0.0',
     });
+  });
+
+  test('outdatedReport returns the table as text and rows', () async {
+    const table =
+        'Package  Current  Upgradable  Resolvable  Latest\n'
+        'http     1.0.0    1.1.0       1.1.0       2.0.0\n';
+    final runner = FakeRunRunner({
+      'flutter pub outdated': ProcessResult(0, 0, table, ''),
+    });
+
+    final report = await ProjectMaintenanceService(runner)
+        .outdatedReport(project.path);
+
+    expect(report.output, table);
+    expect(report.packages['http']!.latest, '2.0.0');
+    expect(
+      ProjectMaintenanceService(
+        FakeRunRunner({
+          'flutter pub outdated': ProcessResult(0, 1, '', 'offline'),
+        }),
+      ).outdatedReport(project.path),
+      throwsA(
+        isA<MaintenanceException>().having((e) => '$e', 'message', 'offline'),
+      ),
+    );
   });
 
   test('ProjectMetrics survives the JSON cache round trip', () async {
@@ -119,7 +147,7 @@ http     1.0.0    1.1.0       1.1.0       2.0.0
     expect(restored.health?.qualityScore, metrics.health?.qualityScore);
   });
 
-  test('parseVersionConflict summarizes pub and names the package', () {
+  test('VersionConflictException summarizes pub and names the package', () {
     const error = '''
 Resolving dependencies...
 Because demo depends on both http ^0.13.0 and web ^1.0.0, version solving failed.
@@ -128,14 +156,82 @@ Because demo depends on both http ^0.13.0 and foo any, version solving failed.
 * Consider downgrading your constraint on http
 ''';
 
-    final conflict = ProjectMaintenanceService.parseVersionConflict(error);
+    final conflict = VersionConflictException.fromPubError(error);
 
     expect(conflict.package, 'http');
     expect(conflict.summary, startsWith('Because demo depends on both http'));
+    expect(VersionConflictException.isConflict(error), isTrue);
     expect(
-      ProjectMaintenanceService.parseVersionConflict('boom').summary,
+      VersionConflictException.fromPubError('boom').summary,
       'Dependency conflict detected',
     );
+    expect('${const MaintenanceException('oops')}', 'oops');
+  });
+
+  group('PubOutdated.parse', () {
+    test('reads the packages and which can be upgraded', () {
+      final outdated = PubOutdated.parse(
+        jsonEncode({
+          'packages': [
+            {
+              'package': 'http',
+              'kind': 'direct',
+              'current': {'version': '1.0.0'},
+              'resolvable': {'version': '1.1.0'},
+            },
+            {
+              'package': 'lints',
+              'kind': 'dev',
+              'current': {'version': '2.0.0'},
+              'resolvable': {'version': '2.0.0'},
+            },
+            {
+              'package': 'meta',
+              'kind': 'transitive',
+              'current': {'version': '1.0.0'},
+              'resolvable': {'version': '1.9.0'},
+            },
+            {'kind': 'direct'},
+          ],
+        }),
+      );
+
+      expect(outdated.packages.map((p) => p.name), ['http', 'lints', 'meta']);
+      expect(outdated.upgradable.map((p) => (p.name, p.resolvable)), [
+        ('http', '1.1.0'),
+      ]);
+      expect(outdated.packages[1].pubspecSection, 'dev_dependencies');
+      expect(outdated.packages[2].isDeclared, isFalse);
+    });
+
+    test('rejects JSON of another shape', () {
+      expect(() => PubOutdated.parse('[]'), throwsFormatException);
+      expect(() => PubOutdated.parse('{"packages": 1}'), throwsFormatException);
+    });
+  });
+
+  test('PubspecUpgrader raises declared constraints only', () {
+    final upgrade = PubspecUpgrader.upgrade(
+      _pubspec,
+      const PubOutdated([
+        PubOutdatedPackage(
+          name: 'http',
+          kind: 'direct',
+          current: '1.0.0',
+          resolvable: '1.1.0',
+        ),
+        PubOutdatedPackage(
+          name: 'missing',
+          kind: 'dev',
+          current: '1.0.0',
+          resolvable: '2.0.0',
+        ),
+      ]),
+    );
+
+    expect(upgrade.upgraded.map((p) => p.name), ['http']);
+    expect(upgrade.yaml, contains('http: 1.1.0'));
+    expect(upgrade.yaml, contains('lints: ^2.0.0'));
   });
 
   group('ProjectMaintenanceService.upgradeToResolvable', () {
@@ -167,7 +263,9 @@ Because demo depends on both http ^0.13.0 and foo any, version solving failed.
       final updated = await ProjectMaintenanceService(runner)
           .upgradeToResolvable(project.path);
 
-      expect(updated, ['http: 1.0.0 → 1.1.0']);
+      expect(updated.map((p) => (p.name, p.current, p.resolvable)), [
+        ('http', '1.0.0', '1.1.0'),
+      ]);
       expect(
         File('${project.path}/pubspec.yaml').readAsStringSync(),
         contains('http: 1.1.0'),
@@ -188,7 +286,7 @@ Because demo depends on both http ^0.13.0 and foo any, version solving failed.
 
       expect(
         ProjectMaintenanceService(runner).upgradeToResolvable(project.path),
-        throwsA(contains('version solving failed')),
+        throwsA(isA<VersionConflictException>()),
       );
     });
   });

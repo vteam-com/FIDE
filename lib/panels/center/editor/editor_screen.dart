@@ -3,6 +3,7 @@
 import 'package:code_forge/code_forge.dart';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
+import 'package:fide/models/editor_diff_outcome.dart';
 import 'package:fide/models/editor_search.dart';
 import 'package:fide/models/text_offsets.dart';
 import 'package:fide/panels/center/editor/code_folding.dart';
@@ -13,6 +14,7 @@ import 'package:fide/panels/center/editor/editor_screen_search_bar.dart';
 import 'package:fide/panels/center/editor/editor_screen_status_bar.dart';
 import 'package:fide/panels/center/editor/editor_screen_unsupported_file_view.dart';
 import 'package:fide/panels/center/editor/editor_search_controller.dart';
+import 'package:fide/panels/center/editor/editor_session.dart';
 import 'package:fide/panels/center/editor/quality_diagnostics.dart';
 import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -55,27 +57,13 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     implements EditorCommands {
   late final ActiveEditor _activeEditor;
 
-  /// Where edits, saves and formatting are published for the open tabs.
-  late final OpenDocumentsNotifier _documents = ref.read(
-    openDocumentsProvider.notifier,
-  );
-
   bool _appIsActive = true;
-
-  late CodeForgeController _codeController;
 
   Map<String, TextStyle>? _codeTheme;
 
   ThemeData? _codeThemeSource;
 
-  late String _currentFile;
-
-  /// The sides of the diff view: the committed text and the editor's.
-  ({String oldText, String newText})? _diff;
-
   bool _editorHasFocus = false;
-
-  bool _isDirty = false;
 
   bool _isDisposed = false;
 
@@ -87,11 +75,16 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
   bool _regionsExpanded = true;
 
-  late String _savedText;
+  /// The document's text, dirty state, saves, formatting and diff.
+  late final EditorSession _session = EditorSession(
+    documents: ref.read(openDocumentsProvider.notifier),
+    formatter: ref.read(codeFormatterProvider),
+    git: ref.read(gitServiceProvider),
+  )..addListener(_onSessionChanged);
 
   /// Find and replace in the editor's text.
   late final EditorSearchController _search = EditorSearchController(
-    _codeController,
+    _session.code,
     onMatchSelected: _revealSelectionAfterFrame,
   )..addListener(_onSearchChanged);
 
@@ -100,22 +93,20 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
   bool _showDiffView = false;
 
+  /// The editor's text and selection.
+  CodeForgeController get _codeController => _session.code;
+
+  /// The file loaded, empty while none is.
+  String get _currentFile => _session.filePath;
+
   @override
   void initState() {
     super.initState();
-    _currentFile = widget.documentState?.filePath ?? '';
-
-    _codeController = CodeForgeController();
 
     // Initialize from document state (always provided by CenterPanel)
-    _codeController.text = widget.documentState!.content;
-    _codeController.selection = widget.documentState!.selection;
-    _isDirty = widget.documentState!.isDirty;
-    _savedText = widget.documentState!.content;
+    _session.load(widget.documentState!);
 
-    _codeController
-      ..addListener(_onCodeChanged)
-      ..showFindings(ref.read(qualityIssuesProvider), _currentFile);
+    _codeController.showFindings(ref.read(qualityIssuesProvider), _currentFile);
     ref.listenManual(qualityIssuesProvider, (_, issues) {
       _codeController.showFindings(issues, _currentFile);
       setState(() {}); // The status bar shows the cursor line's findings
@@ -139,29 +130,18 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     // Mark as disposed to prevent further operations
     _isDisposed = true;
 
-    // Remove listener first to prevent notifications during disposal
-    _codeController.removeListener(_onCodeChanged);
-
-    // Auto-save file if there are unsaved changes
-    if (_isDirty && _currentFile.isNotEmpty) {
-      try {
-        _documents.saveOnClose(_currentFile, _codeController.text);
-      } catch (e) {
-        // Silently handle save errors during dispose
-        _logger.warning('Error auto-saving file on close: $e');
-      }
-    }
-
     _activeEditor.detach(this);
 
     _lifecycleListener.dispose();
 
-    // Dispose controller
     _search
       ..removeListener(_onSearchChanged)
       ..dispose();
     _searchKeysFocusNode.dispose();
-    _codeController.dispose();
+    // Auto-saves unsaved changes
+    _session
+      ..removeListener(_onSessionChanged)
+      ..dispose();
     super.dispose();
   }
 
@@ -173,33 +153,18 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     // file means the editor must load new content
     if (widget.documentState?.filePath != oldWidget.documentState?.filePath) {
       if (widget.documentState != null) {
-        // Temporarily remove listener to prevent notifications during programmatic update
-        _codeController.removeListener(_onCodeChanged);
-
-        // Update to new document state
-        _currentFile = widget.documentState!.filePath;
-
-        _codeController
-          ..text = widget.documentState!.content
-          ..showFindings(ref.read(qualityIssuesProvider), _currentFile);
-
-        // Re-add listener after updates
-        _codeController.addListener(_onCodeChanged);
-
-        setState(() {
-          _isDirty = widget.documentState!.isDirty;
-          _savedText = widget.documentState!.content;
-          _isLoading = false;
-        });
+        _session.load(widget.documentState!);
+        _codeController.showFindings(
+          ref.read(qualityIssuesProvider),
+          _currentFile,
+        );
+        setState(() => _isLoading = false);
 
         // Set selection safely after the build cycle, checking mounted status and not disposed
         if (mounted && !_isDisposed) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted && !_isDisposed && widget.documentState != null) {
-              // Remove and re-add listener around selection change to prevent notifications
-              _codeController.removeListener(_onCodeChanged);
-              _codeController.selection = widget.documentState!.selection;
-              _codeController.addListener(_onCodeChanged);
+              _session.restoreSelection(widget.documentState!.selection);
             }
           });
         }
@@ -220,7 +185,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
               openDocuments: openDocuments,
               activeIndex: activeIndex,
               currentFile: _currentFile,
-              isDirty: _isDirty,
+              isDirty: _session.isDirty,
               showDiffView: _showDiffView,
               onDocumentSelected: (newIndex) {
                 ref.read(openDocumentsProvider.notifier).activate(newIndex);
@@ -312,7 +277,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
             findings: _codeController.findingsAt(_getCurrentLineNumber() - 1),
             currentMatchIndex: _search.currentIndex,
             matchCount: _search.matchCount,
-            canFormat: !_showDiffView && CodeFormatter.canFormat(_currentFile),
+            canFormat: !_showDiffView && _session.canFormat,
             fileLanguage: _getFileLanguage(),
             onToggleAllRegions: _toggleAllRegions,
             onFormatFile: () {
@@ -360,7 +325,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   };
 
   Widget _buildDiffView() {
-    final diff = _diff;
+    final diff = _session.diff;
     if (diff == null) {
       return const EmptyState(message: 'No diff data available');
     }
@@ -395,7 +360,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   Future<void> _formatFile() async {
     if (_currentFile.isEmpty) return;
 
-    if (!CodeFormatter.canFormat(_currentFile)) {
+    if (!_session.canFormat) {
       MessageBox.showInfo(
         context,
         'Formatting is currently only supported for ${CodeFormatter.supportedDescription} files',
@@ -406,9 +371,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     try {
       setState(() => _isLoading = true);
 
-      final formattedContent = await ref
-          .read(codeFormatterProvider)
-          .format(_currentFile, _codeController.text);
+      final formattedContent = await _session.format();
 
       if (mounted) {
         // Use addPostFrameCallback to ensure we're not in the middle of a build/layout
@@ -455,10 +418,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   int _getCurrentLineNumber() => _cursorPosition.line;
 
   /// Line and column of the cursor in the editor text.
-  ({int line, int column}) get _cursorPosition => TextOffsets.positionOf(
-    _codeController.text,
-    _codeController.selection.base.offset,
-  );
+  ({int line, int column}) get _cursorPosition => _session.cursor;
 
   /// Human-readable language label from the current file extension.
   String _getFileLanguage() => FileTypeUtils.languageLabel(_currentFile);
@@ -530,29 +490,16 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     if (mounted && !_isDisposed) setState(() {});
   }
 
-  /// Handles editor content changes and syncs document state.
-  void _onCodeChanged() {
-    // Check if widget is still mounted and not disposed before calling setState
+  /// Rebuilds for the session's edits, saves and diff, and publishes the
+  /// cursor line.
+  void _onSessionChanged() {
     if (!mounted || _isDisposed) return;
 
-    final currentText = _codeController.text;
-
     // Always trigger a rebuild when selection or text changes
-    setState(() {
-      // Mark as dirty if current text differs from saved text
-      _isDirty = currentText != _savedText;
-    });
-
-    _documents.update(
-      _currentFile,
-      content: _codeController.text,
-      selection: _codeController.selection,
-      isDirty: _isDirty,
-    );
+    setState(() {});
 
     // Notify cursor position changes
-    final currentLine = _getCurrentLineNumber();
-    ref.read(editorCursorLineProvider.notifier).state = currentLine;
+    ref.read(editorCursorLineProvider.notifier).state = _getCurrentLineNumber();
   }
 
   /// Replaces every search match in one undoable edit and confirms how
@@ -568,15 +515,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     if (_currentFile.isEmpty) return;
 
     try {
-      final text = _codeController.text;
-      await _documents.save(_currentFile, text);
+      await _session.save();
 
       if (mounted) {
-        setState(() {
-          _savedText = text;
-          _isDirty = text != _codeController.text;
-        });
-
         MessageBox.showSuccess(context, 'File saved successfully');
       }
     } catch (e) {
@@ -607,10 +548,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   Future<void> _toggleDiffView() async {
     if (_showDiffView) {
       // Back to editor view
-      setState(() {
-        _showDiffView = false;
-        _diff = null;
-      });
+      setState(() => _showDiffView = false);
+      _session.clearDiff();
       return;
     }
 
@@ -625,24 +564,17 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     }
 
     try {
-      final diff = await ref
-          .read(gitServiceProvider)
-          .diffAgainstHead(_currentFile, newText: _codeController.text);
+      final outcome = await _session.loadDiff();
       if (!mounted) return;
 
-      if (diff == null) {
-        MessageBox.showError(context, 'Not a Git repository');
-        return;
+      switch (outcome) {
+        case EditorDiffOutcome.notGitRepository:
+          MessageBox.showError(context, 'Not a Git repository');
+        case EditorDiffOutcome.unchanged:
+          MessageBox.showInfo(context, 'No changes to show');
+        case EditorDiffOutcome.loaded:
+          setState(() => _showDiffView = true);
       }
-      if (diff.oldText == diff.newText) {
-        MessageBox.showInfo(context, 'No changes to show');
-        return;
-      }
-
-      setState(() {
-        _diff = diff;
-        _showDiffView = true;
-      });
     } catch (e) {
       if (mounted) {
         MessageBox.showError(context, 'Error getting diff: $e');

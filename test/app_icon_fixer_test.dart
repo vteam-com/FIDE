@@ -171,6 +171,37 @@ void main() {
     expect('app_icon.png'.allMatches(read('linux/CMakeLists.txt')).length, 1);
   });
 
+  test('every platform has a writer, iOS and macOS sharing one', () {
+    expect(
+      PlatformIconWriter.byPlatform.keys,
+      unorderedEquals(AppIconPlatform.values),
+    );
+    expect(
+      PlatformIconWriter.byPlatform[AppIconPlatform.android],
+      isA<AndroidIconWriter>(),
+    );
+    expect(
+      PlatformIconWriter.byPlatform[AppIconPlatform.macos],
+      isA<AppleIconWriter>().having(
+        (w) => w.platform,
+        'platform',
+        AppIconPlatform.macos,
+      ),
+    );
+    expect(
+      PlatformIconWriter.byPlatform[AppIconPlatform.web],
+      isA<WebIconWriter>(),
+    );
+    expect(
+      PlatformIconWriter.byPlatform[AppIconPlatform.windows],
+      isA<WindowsIconWriter>(),
+    );
+    expect(
+      PlatformIconWriter.byPlatform[AppIconPlatform.linux],
+      isA<LinuxIconWriter>(),
+    );
+  });
+
   test('refuses a master that is not an image', () async {
     write('master.png', 'text');
     Directory(p.join(project.path, 'ios')).createSync();

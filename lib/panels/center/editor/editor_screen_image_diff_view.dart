@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:fide/providers/service_providers.dart';
@@ -44,7 +43,7 @@ class _EditorScreenImageDiffViewState
     final path = widget.filePath;
     return (
       oldBytes: await ref.read(gitServiceProvider).getBytesAt(path),
-      newBytes: await File(path).readAsBytes(),
+      newBytes: await ref.read(fileContentReaderProvider).readBytes(path),
     );
   }
 

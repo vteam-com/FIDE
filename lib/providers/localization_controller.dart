@@ -1,12 +1,14 @@
+import 'package:fide/models/action_outcome.dart';
 import 'package:fide/models/arb_translation.dart';
 import 'package:fide/models/localization_data.dart';
-import 'package:fide/models/localization_outcome.dart';
 import 'package:fide/models/localization_state.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/arb_translator.dart';
-import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/l10n_generator.dart';
+import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -25,7 +27,8 @@ final localizationControllerProvider =
       );
       final controller = LocalizationController(
         projectPath,
-        localization: ref.read(localizationServiceProvider),
+        setup: ref.read(localizationSetupProvider),
+        generator: ref.read(l10nGeneratorProvider),
         arb: ref.read(arbServiceProvider),
         translator: ref.read(arbTranslatorProvider),
       );
@@ -51,7 +54,9 @@ class LocalizationController extends StateNotifier<LocalizationState> {
 
   final ArbService _arb;
 
-  final LocalizationService _localization;
+  final L10nGenerator _generator;
+
+  final LocalizationSetup _setup;
 
   /// The open project, or null.
   final String? _projectPath;
@@ -61,22 +66,23 @@ class LocalizationController extends StateNotifier<LocalizationState> {
   /// Creates a controller for the project at [_projectPath].
   LocalizationController(
     this._projectPath, {
-    required this._localization,
+    required this._setup,
+    required this._generator,
     required this._arb,
     required this._translator,
   }) : super(LocalizationState.initial);
 
   /// Generates the localization classes with `flutter gen-l10n`, once the
   /// pubspec enables code generation.
-  Future<LocalizationOutcome?> generateClasses() {
+  Future<ActionOutcome?> generateClasses() {
     return _run('Error generating classes', (projectPath) async {
-      final checks = await _localization.inspect(projectPath);
+      final checks = await _setup.inspect(projectPath);
       if (!checks.hasGenerateFlag) {
-        return const LocalizationOutcome.failure(missingGenerateFlag);
+        return const ActionOutcome.failure(missingGenerateFlag);
       }
-      await _localization.generateClasses(projectPath);
+      await _generator.generateClasses(projectPath);
       await reload();
-      return const LocalizationOutcome.success(
+      return const ActionOutcome.success(
         'Localization classes generated successfully!',
       );
     });
@@ -84,13 +90,13 @@ class LocalizationController extends StateNotifier<LocalizationState> {
 
   /// Sets localization up and wires it into `main.dart`; [onStep] is told
   /// about each step.
-  Future<LocalizationOutcome?> initialize({ProcessOutputCallback? onStep}) {
+  Future<ActionOutcome?> initialize({ProcessOutputCallback? onStep}) {
     return _run('Error initializing localization', (projectPath) async {
-      await _localization.initializeLocalization(projectPath, onStep: onStep);
+      await _setup.initializeLocalization(projectPath, onStep: onStep);
       onStep?.call('Updating main.dart...');
-      await _localization.updateMainDartForLocalization(projectPath);
+      await _setup.updateMainDartForLocalization(projectPath);
       await reload();
-      return const LocalizationOutcome.success(
+      return const ActionOutcome.success(
         'Localization system initialized and main.dart updated successfully!',
       );
     });
@@ -101,7 +107,7 @@ class LocalizationController extends StateNotifier<LocalizationState> {
     final projectPath = _projectPath;
     if (projectPath == null) return;
     try {
-      final checks = await _localization.inspect(projectPath);
+      final checks = await _setup.inspect(projectPath);
       _update((state) => state.copyWith(checks: checks, checkFailed: false));
     } catch (e) {
       _logger.severe('Error checking localization status: $e');
@@ -112,17 +118,14 @@ class LocalizationController extends StateNotifier<LocalizationState> {
 
   /// Translates [comparison]'s English value into [language] with the
   /// shared [ArbTranslator], writing it to that language's ARB file.
-  Future<LocalizationOutcome?> translate(
-    ArbComparison comparison,
-    String language,
-  ) {
+  Future<ActionOutcome?> translate(ArbComparison comparison, String language) {
     return _run('Error translating', (projectPath) async {
       final source = comparison.englishValue;
       final target = state.arbFiles
           .where((file) => file.languageCode == language)
           .firstOrNull;
       if (source == null || target == null) {
-        return LocalizationOutcome.failure(
+        return ActionOutcome.failure(
           'Nothing to translate for "${comparison.key}" into $language',
         );
       }
@@ -136,23 +139,17 @@ class LocalizationController extends StateNotifier<LocalizationState> {
       ]);
       await reload();
       return result.rewritten > 0
-          ? LocalizationOutcome.success(
-              'Translated "${comparison.key}" to $language',
-            )
-          : LocalizationOutcome.failure(
-              'Translation failed: ${result.summary}',
-            );
+          ? ActionOutcome.success('Translated "${comparison.key}" to $language')
+          : ActionOutcome.failure('Translation failed: ${result.summary}');
     });
   }
 
   /// Wires the generated localizations into `main.dart`.
-  Future<LocalizationOutcome?> updateMainDart() {
+  Future<ActionOutcome?> updateMainDart() {
     return _run('Error updating main.dart', (projectPath) async {
-      await _localization.updateMainDartForLocalization(projectPath);
+      await _setup.updateMainDartForLocalization(projectPath);
       await reload();
-      return const LocalizationOutcome.success(
-        'main.dart updated successfully!',
-      );
+      return const ActionOutcome.success('main.dart updated successfully!');
     });
   }
 
@@ -180,9 +177,9 @@ class LocalizationController extends StateNotifier<LocalizationState> {
   /// Runs [action] on the open project with the state busy, turning a
   /// thrown error into a failure prefixed by [failurePrefix]; null when no
   /// project is open.
-  Future<LocalizationOutcome?> _run(
+  Future<ActionOutcome?> _run(
     String failurePrefix,
-    Future<LocalizationOutcome> Function(String projectPath) action,
+    Future<ActionOutcome> Function(String projectPath) action,
   ) async {
     final projectPath = _projectPath;
     if (projectPath == null) return null;
@@ -190,7 +187,7 @@ class LocalizationController extends StateNotifier<LocalizationState> {
     try {
       return await action(projectPath);
     } catch (e) {
-      return LocalizationOutcome.failure('$failurePrefix: $e');
+      return ActionOutcome.failure('$failurePrefix: $e');
     } finally {
       _update((state) => state.copyWith(isBusy: false));
     }

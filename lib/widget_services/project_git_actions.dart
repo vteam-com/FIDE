@@ -12,13 +12,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 Future<void> initProjectRepository(BuildContext context, WidgetRef ref) async {
   final projectPath = ref.read(currentProjectPathProvider);
   if (projectPath == null) return;
+  const outcome = GitMessages.initRepository;
   try {
-    final result = await ref
-        .read(gitServiceProvider)
-        .initRepository(projectPath);
-    if (context.mounted) MessageBox.showSuccess(context, result);
+    await ref.read(gitServiceProvider).initRepository(projectPath);
+    if (context.mounted) MessageBox.showSuccess(context, outcome.succeeded);
   } on GitException catch (e) {
-    if (context.mounted) MessageBox.showError(context, '$e');
+    if (context.mounted) {
+      MessageBox.showError(context, e.explain(outcome.failed));
+    }
   }
   refreshProjectGitStatus(ref);
 }

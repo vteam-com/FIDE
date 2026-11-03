@@ -27,4 +27,16 @@ void main() {
     expect(await reader.tryRead(path), isNull);
     expect(await reader.read(path), FileContentReader.tooBigMessage);
   });
+
+  test('writes text, creating folders, and reads bytes back', () async {
+    final path = '${root.path}/a/b/new.dart';
+
+    expect(await reader.exists(path), false);
+    await reader.write(path, 'class A {}');
+    expect(await reader.exists(path), true);
+    expect(await reader.readBytes(path), 'class A {}'.codeUnits);
+
+    reader.writeSync('${root.path}/c/sync.dart', 'class B {}');
+    expect(await reader.read('${root.path}/c/sync.dart'), 'class B {}');
+  });
 }

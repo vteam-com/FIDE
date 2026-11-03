@@ -25,14 +25,15 @@ class FileSystemWatcher {
   final Map<String, StreamSubscription<FileSystemEvent>> _watchers = {};
   final Map<String, ProjectNode> _watchedDirectories = {};
 
-  Function? _onTreeUpdated;
+  void Function()? _onTreeUpdated;
 
   // Debouncing for UI updates
   Timer? _updateDebounceTimer;
   static const Duration _updateDebounceDuration = Duration(milliseconds: 150);
 
-  /// Initialize the watcher with the root project node
-  void initialize(ProjectNode rootNode, Function onTreeUpdated) {
+  /// Watches [rootNode]'s loaded folders, calling [onTreeUpdated] after
+  /// each burst of changes applied to the tree.
+  void initialize(ProjectNode rootNode, void Function() onTreeUpdated) {
     _onTreeUpdated = onTreeUpdated;
 
     if (watchEnabled) {

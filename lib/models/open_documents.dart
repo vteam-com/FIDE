@@ -33,6 +33,12 @@ class OpenDocuments {
       ? documents[activeIndex]
       : null;
 
+  /// The editor's text for [filePath], or null when it isn't open.
+  String? contentOf(String filePath) {
+    final index = indexOf(filePath);
+    return index == noActiveDocument ? null : documents[index].content;
+  }
+
   /// Index of the tab for [filePath], or [noActiveDocument] if not open.
   int indexOf(String filePath) =>
       documents.indexWhere((document) => document.filePath == filePath);

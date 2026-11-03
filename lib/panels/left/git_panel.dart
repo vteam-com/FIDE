@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/relative_time.dart';
+import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/git_repo_controller.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/file_type_utils.dart';
@@ -31,24 +31,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 
-/// Represents `GitPanel`.
+/// The Git tab: the repository of the project at [projectPath], its
+/// changes to stage, commit, push and pull, and their diffs.
 class GitPanel extends ConsumerStatefulWidget {
+  /// The project whose repository is shown.
   final String projectPath;
-  final Function(FileSystemItem)? onFileSelected;
-  final FileSystemItem? selectedFile;
 
-  const GitPanel({
-    super.key,
-    required this.projectPath,
-    required this.onFileSelected,
-    required this.selectedFile,
-  });
+  /// Creates the panel for the project at [projectPath].
+  const GitPanel({super.key, required this.projectPath});
 
   @override
   ConsumerState<GitPanel> createState() => _GitPanelState();
 }
 
 class _GitPanelState extends ConsumerState<GitPanel> {
+  /// Start of the message shown when the AI commit message fails.
+  static const String _aiMessagePrefix = 'AI commit message: ';
+
   final TextEditingController _commitController = TextEditingController();
   bool _isCommitting = false;
   bool _isWritingMessage = false;
@@ -78,28 +77,29 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     if (mounted) await _repo.refresh();
   }
 
-  /// Runs a Git [action] on the repository and shows its success or
-  /// failure; the repository reloads itself.
+  /// Runs a Git [action] on the repository and shows its [outcome] as
+  /// success or failure; the repository reloads itself.
   Future<void> _runGitAction(
-    Future<String> Function(GitRepoController) action,
+    Future<void> Function(GitRepoController) action,
+    GitOutcome outcome,
   ) async {
     try {
-      final result = await action(_repo);
+      await action(_repo);
       if (mounted) {
-        MessageBox.showSuccess(context, result);
+        MessageBox.showSuccess(context, outcome.succeeded);
       }
     } on GitException catch (e) {
       if (mounted) {
-        MessageBox.showError(context, '$e');
+        MessageBox.showError(context, e.explain(outcome.failed));
       }
     }
   }
 
   Future<void> _stageFiles(List<String> files) =>
-      _runGitAction((repo) => repo.stage(files));
+      _runGitAction((repo) => repo.stage(files), GitMessages.stage);
 
   Future<void> _unstageFiles(List<String> files) =>
-      _runGitAction((repo) => repo.unstage(files));
+      _runGitAction((repo) => repo.unstage(files), GitMessages.unstage);
 
   /// Push or Pull: an outline [idleIcon] while there is nothing to move,
   /// a solid [pendingIcon] in the primary color while [pending] commits
@@ -132,8 +132,15 @@ class _GitPanelState extends ConsumerState<GitPanel> {
       final diff = await git.getStagedDiff(widget.projectPath);
       final message = await ai.write(diff);
       if (mounted && message.isNotEmpty) _commitController.text = message;
+    } on GitException catch (e) {
+      if (mounted) {
+        MessageBox.showError(
+          context,
+          '$_aiMessagePrefix${e.explain(GitMessages.stagedDiffFailed)}',
+        );
+      }
     } catch (e) {
-      if (mounted) MessageBox.showError(context, 'AI commit message: $e');
+      if (mounted) MessageBox.showError(context, '$_aiMessagePrefix$e');
     } finally {
       if (mounted) setState(() => _isWritingMessage = false);
     }
@@ -142,24 +149,30 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   /// Commits the staged changes with the entered message.
   Future<void> _commit() async {
     if (_commitController.text.isEmpty) return;
-    await _runCommitAction((repo, message) => repo.commit(message));
+    await _runCommitAction(
+      (repo, message) => repo.commit(message),
+      GitMessages.commit,
+    );
   }
 
   /// Amends the last commit with the staged changes, rewording it when a
   /// message was entered.
-  Future<void> _amend() =>
-      _runCommitAction((repo, message) => repo.amend(message));
+  Future<void> _amend() => _runCommitAction(
+    (repo, message) => repo.amend(message),
+    GitMessages.amend,
+  );
 
   /// Runs a commit-like [action] with the entered message, clearing the
-  /// field and showing the spinner while it runs.
+  /// field and showing the spinner while it runs; shows its [outcome].
   Future<void> _runCommitAction(
-    Future<String> Function(GitRepoController, String) action,
+    Future<void> Function(GitRepoController, String) action,
+    GitOutcome outcome,
   ) async {
     setState(() => _isCommitting = true);
     try {
       final message = _commitController.text;
       _commitController.clear();
-      await _runGitAction((repo) => action(repo, message));
+      await _runGitAction((repo) => action(repo, message), outcome);
     } finally {
       if (mounted) {
         setState(() => _isCommitting = false);
@@ -167,9 +180,11 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     }
   }
 
-  Future<void> _push() => _runGitAction((repo) => repo.push());
+  Future<void> _push() =>
+      _runGitAction((repo) => repo.push(), GitMessages.push);
 
-  Future<void> _pull() => _runGitAction((repo) => repo.pull());
+  Future<void> _pull() =>
+      _runGitAction((repo) => repo.pull(), GitMessages.pull);
 
   /// Handles `_discardChanges`.
   Future<void> _discardChanges(List<String> files) async {
@@ -184,7 +199,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
     if (!confirmed || !mounted) return;
 
-    await _runGitAction((repo) => repo.discard(files));
+    await _runGitAction((repo) => repo.discard(files), GitMessages.discard);
   }
 
   /// Shows the changes to the repository-relative [filePath] since HEAD:
@@ -228,9 +243,9 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   }
 
   /// The bytes of the file at [path], or null when it is missing.
-  static Future<Uint8List?> _readBytes(String path) async {
-    final file = File(path);
-    return await file.exists() ? file.readAsBytes() : null;
+  Future<Uint8List?> _readBytes(String path) async {
+    final reader = ref.read(fileContentReaderProvider);
+    return await reader.exists(path) ? reader.readBytes(path) : null;
   }
 
   @override
@@ -239,7 +254,8 @@ class _GitPanelState extends ConsumerState<GitPanel> {
         .watch(gitRepoControllerProvider(widget.projectPath))
         .when(
           loading: () => const LoadingIndicator(),
-          error: (error, _) => EmptyState.error(message: '$error'),
+          error: (error, _) =>
+              EmptyState.error(message: GitMessages.describeLoadError(error)),
           data: _buildRepo,
         );
   }
@@ -468,7 +484,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
           gitStatus: kindOf(file),
         );
 
-        final isSelected = widget.selectedFile?.path == item.path;
+        final isSelected = ref.watch(selectedFileProvider)?.path == item.path;
 
         return Row(
           children: [
@@ -480,7 +496,8 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                 showPath: true,
                 rootPath: widget.projectPath,
                 trailing: DiffCounter(gitStats: stats[file]),
-                onTap: () => widget.onFileSelected?.call(item),
+                onTap: () =>
+                    ref.read(selectedFileProvider.notifier).state = item,
               ),
             ),
             CompactIconButton(

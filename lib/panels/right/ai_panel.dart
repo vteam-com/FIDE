@@ -5,10 +5,8 @@ import 'package:fide/models/ai_action.dart';
 import 'package:fide/models/ollama_step.dart';
 import 'package:fide/panels/right/ai_panel.ai_transcript_entry.dart';
 import 'package:fide/providers/ai_chat_notifier.dart';
+import 'package:fide/providers/ollama_model_provider.dart';
 import 'package:fide/providers/ollama_status_notifier.dart';
-import 'package:fide/providers/service_providers.dart';
-import 'package:fide/services/ollama_client.dart';
-import 'package:fide/services/ollama_installer.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
@@ -35,7 +33,6 @@ class AIPanel extends ConsumerStatefulWidget {
 }
 
 class _AIPanelState extends ConsumerState<AIPanel> {
-  late final OllamaClient _aiService = ref.read(ollamaClientProvider);
   final TextEditingController _promptController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -137,9 +134,9 @@ class _AIPanelState extends ConsumerState<AIPanel> {
         if (isReady)
           Flexible(
             child: Tooltip(
-              message: _modelLabel,
+              message: ref.watch(ollamaModelProvider).label,
               child: Text(
-                _modelLabel,
+                ref.watch(ollamaModelProvider).label,
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyle.secondary(context),
               ),
@@ -219,11 +216,6 @@ class _AIPanelState extends ConsumerState<AIPanel> {
       if (mounted) MessageBox.showError(context, '${step.errorPrefix}: $e');
     }
   }
-
-  /// The model in use, noting when it stands in for the preferred one.
-  String get _modelLabel => _aiService.isFallbackModel
-      ? '${_aiService.model} (${OllamaInstaller.model} not available)'
-      : _aiService.model;
 
   /// Scrolls the chat to its latest message.
   void _scrollToEnd() {

@@ -1,3 +1,4 @@
+import 'package:fide/models/action_outcome.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/message_widget.dart';
@@ -190,6 +191,44 @@ void main() {
       expect(find.byIcon(Icons.check_circle), findsOneWidget);
 
       // Pump to advance time and allow auto-removal
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('MessageBox.show displays a message in the given tone', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: Placeholder())),
+      );
+      final context = tester.element(find.byType(Placeholder));
+
+      MessageBox.show(context, 'Shown in a tone', StatusTone.warning);
+      await tester.pump();
+
+      expect(find.text('Shown in a tone'), findsOneWidget);
+      expect(
+        tester.widget<MessageWidget>(find.byType(MessageWidget)).type,
+        StatusTone.warning,
+      );
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('MessageBox.showOutcome shows the outcome in its tone', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: Placeholder())),
+      );
+      final context = tester.element(find.byType(Placeholder));
+
+      MessageBox.showOutcome(context, const ActionOutcome.success('Done'));
+      await tester.pump();
+
+      expect(find.text('Done'), findsOneWidget);
+      expect(
+        tester.widget<MessageWidget>(find.byType(MessageWidget)).type,
+        StatusTone.success,
+      );
       await tester.pump(const Duration(seconds: 5));
     });
 

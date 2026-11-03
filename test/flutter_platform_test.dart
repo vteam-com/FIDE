@@ -48,7 +48,26 @@ void main() {
   });
 
   test('iOS builds need a Mac', () {
-    expect(FlutterPlatform.ios.cannotBuildOn('linux'), contains('macOS'));
+    final reason = FlutterPlatform.ios.cannotBuildOn(FlutterPlatform.linux);
+    expect(reason, contains('macOS'));
+    expect(reason, contains('from Linux'));
+    expect(FlutterPlatform.windows.cannotBuildOn(null), contains('Windows'));
+  });
+
+  test('Android builds an APK or an App Bundle, the others one package', () {
+    final android = FlutterPlatform.android.buildActions;
+    expect(android.map((action) => action.id), ['build_apk', 'build_aab']);
+    expect(android.map((action) => action.target), [
+      null,
+      FlutterPlatform.appBundleTarget,
+    ]);
+    for (final platform in FlutterPlatform.values) {
+      if (platform == FlutterPlatform.android) continue;
+      final action = platform.buildActions.single;
+      expect(action.id, 'build');
+      expect(action.title, 'Build ${platform.displayName}');
+      expect(action.target, isNull);
+    }
   });
 
   test('build arguments carry each platform target and its extra flags', () {

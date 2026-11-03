@@ -1,48 +1,61 @@
 part of 'shared_panel_utils.dart';
 
-/// Behaviour shared by the project tree panels: panel state lifecycle,
-/// following the loaded project, file taps, context menus and refresh.
-mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
-  /// Expansion, filter and Git state for this panel.
-  late final PanelStateManager panelState = PanelStateManager(
-    ref.read(projectTreeReaderProvider),
-  );
+/// Behaviour shared by the project tree panels (Folder and Organized):
+/// the tree's expansion state, following the loaded project, file taps,
+/// context menus and refresh. The panel's `build` returns
+/// [buildPanelContent], which shows [buildProjectTree] once a project is
+/// loaded.
+mixin ProjectTreePanelState<T extends ConsumerStatefulWidget>
+    on ConsumerState<T> {
+  /// Expanded/collapsed state by directory path, or by section key.
+  final Map<String, bool> expandedState = {};
+
+  /// Root of the tree the panel is showing, if a project is loaded.
+  ProjectNode? projectRoot;
 
   /// Create, rename and delete flows for the context menu.
   late final FileOperations _fileOperations = FileOperations(
     ref.read(fileEntryServiceProvider),
   );
 
-  /// Expanded/collapsed state by directory path.
-  Map<String, bool> get expandedState => panelState.expandedState;
+  /// Follows the loaded project, rebuilding when its tree changes in
+  /// place (e.g. Git status arriving), and shows [buildProjectTree] once
+  /// there is one, the placeholder until then. Call it from `build`.
+  Widget buildPanelContent() {
+    final root = ref.watch(currentProjectRootProvider);
+    final isProjectLoaded = ref.watch(projectLoadedProvider);
+    ref.watch(projectTreeRevisionProvider);
+    syncProjectRoot(root);
+    return !isProjectLoaded || root == null
+        ? const NoProjectPlaceholder()
+        : buildProjectTree(root);
+  }
 
-  /// Root of the tree the panel is showing, if a project is loaded.
-  ProjectNode? get projectRoot => panelState.projectRoot;
+  /// The panel's tree of [root], the loaded project.
+  Widget buildProjectTree(ProjectNode root);
 
-  @override
-  void dispose() {
-    panelState.dispose();
-    super.dispose();
+  /// Loads [node]'s children if it is a directory that hasn't been loaded.
+  Future<LoadChildrenResult> ensureDirectoryLoaded(ProjectNode node) async {
+    if (!node.isDirectory || node.children.isNotEmpty) {
+      return LoadChildrenResult.success;
+    }
+    return ref.read(projectTreeReaderProvider).loadChildren(node);
   }
 
   /// Opens [node] as the selected file, seeding its Git status first.
   void handleFileTap(ProjectNode node) {
-    if (widget.selectedFile?.path == node.path) return;
+    if (ref.read(selectedFileProvider)?.path == node.path) return;
 
     final root = projectRoot;
     if (node.gitStatus == GitFileStatus.clean && root != null) {
       // The status the Git badge already loaded; no Git process per tap
       final status = ref.read(gitRepoControllerProvider(root.path)).value;
-      setState(() => panelState.seedGitStatusForFile(node, status?.status));
+      setState(() => _seedGitStatusForFile(node, root, status?.status));
     }
 
-    widget.onFileSelected?.call(FileSystemItem.fromNode(node));
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    panelState.initialize();
+    ref.read(selectedFileProvider.notifier).state = FileSystemItem.fromNode(
+      node,
+    );
   }
 
   /// Opens [node] from its context menu: toggles a directory, opens a file.
@@ -56,10 +69,11 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
 
   /// Re-enumerates the whole project tree and rebuilds.
   Future<void> refreshProjectTree() async {
-    if (projectRoot == null) return;
+    final root = projectRoot;
+    if (root == null) return;
 
     try {
-      await ref.read(projectTreeReaderProvider).loadTree(projectRoot!);
+      await ref.read(projectTreeReaderProvider).loadTree(root);
       onProjectTreeChanged();
       if (mounted) {
         setState(() {});
@@ -79,9 +93,9 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
       case NodeAction.copyFullPath:
         _copyPath(node.path, 'Full path copied to clipboard');
       case NodeAction.copyRelativePath:
-        if (projectRoot != null) {
+        if (projectRoot case final root?) {
           _copyPath(
-            p.relative(node.path, from: projectRoot!.path),
+            p.relative(node.path, from: root.path),
             'Relative path copied to clipboard',
           );
         }
@@ -129,6 +143,17 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
     }
   }
 
+  /// Tags [node], under [root], with its change in [status], the
+  /// project's Git status; leaves it as is while the status is unknown.
+  static void _seedGitStatusForFile(
+    ProjectNode node,
+    ProjectNode root,
+    GitStatus? status,
+  ) {
+    if (status == null) return;
+    node.gitStatus = status.statusOf(p.relative(node.path, from: root.path));
+  }
+
   /// Collapses or expands a directory (loading its children on first
   /// expand), or opens a file.
   Future<void> toggleOrOpenNode(ProjectNode node, bool isExpanded) async {
@@ -140,7 +165,7 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
     setState(() => expandedState[node.path] = !isExpanded);
     if (isExpanded) return;
 
-    final result = await panelState.ensureDirectoryLoaded(node);
+    final result = await ensureDirectoryLoaded(node);
     if (!mounted) return;
     switch (result) {
       case LoadChildrenResult.success:
@@ -157,9 +182,9 @@ mixin ProjectTreePanelState<T extends ProjectTreePanel> on ConsumerState<T> {
   /// before reading the tree; it mutates state without `setState` because
   /// the build in progress already uses the new values.
   void syncProjectRoot(ProjectNode? root) {
-    if (root == panelState.projectRoot) return;
-    panelState.projectRoot = root;
-    panelState.expandedState.clear();
+    if (root == projectRoot) return;
+    projectRoot = root;
+    expandedState.clear();
     onProjectTreeChanged();
   }
 }

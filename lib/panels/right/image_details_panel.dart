@@ -4,7 +4,7 @@ import 'package:fide/models/image_details.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/relative_time.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/services/image_inspector.dart';
+import 'package:fide/providers/image_providers.dart';
 import 'package:fide/widgets/detail_row.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/loading_indicator.dart';
@@ -44,17 +44,22 @@ class _ImageDetailsPanelState extends ConsumerState<ImageDetailsPanel> {
 
   /// Mask of an ARGB color's red, green and blue.
   static const int _rgbMask = 0xFFFFFF;
+
+  /// Starts reading the details of [ImageDetailsPanel.path].
+  Future<ImageDetails> _inspect() =>
+      ref.read(imageInspectorProvider).inspect(widget.path);
+
   @override
   void initState() {
     super.initState();
-    _details = const ImageInspector().inspect(widget.path);
+    _details = _inspect();
   }
 
   @override
   void didUpdateWidget(ImageDetailsPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.path != widget.path) {
-      _details = const ImageInspector().inspect(widget.path);
+      _details = _inspect();
     }
   }
 
@@ -63,7 +68,7 @@ class _ImageDetailsPanelState extends ConsumerState<ImageDetailsPanel> {
     // Files rewritten outside the editor, e.g. by an icon fix
     ref.listen(savedFilesRevisionProvider, (_, _) {
       setState(() {
-        _details = const ImageInspector().inspect(widget.path);
+        _details = _inspect();
       });
     });
     return FutureBuilder(

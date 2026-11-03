@@ -1,5 +1,4 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/controllers/app_controller.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/theme/app_theme.dart';
@@ -142,14 +141,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ThemeMode.light => 'Light',
         ThemeMode.dark => 'Dark',
       },
-      onSelected: ref.read(appControllerProvider).setThemeMode,
+      onSelected: ref.read(themeModeProvider.notifier).select,
     );
   }
 
   /// Zoom Out, the current zoom (resetting it on a click) and Zoom In,
   /// as the View menu's zoom items.
   Widget _buildZoomButtons() {
-    final controller = ref.read(appControllerProvider);
+    final controller = ref.read(zoomProvider.notifier);
     final zoom = ref.watch(zoomProvider);
     return Row(
       mainAxisSize: MainAxisSize.min,

@@ -4,6 +4,7 @@ import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+part 'git_repo_controller.git_messages.dart';
 part 'git_repo_controller.git_repo_state.dart';
 
 /// The Git state of the repository at a project path, loaded while
@@ -57,31 +58,31 @@ class GitRepoController extends AsyncNotifier<GitRepoState> {
   }
 
   /// Stages [files].
-  Future<String> stage(List<String> files) =>
+  Future<void> stage(List<String> files) =>
       _mutate((git) => git.stageFiles(projectPath, files));
 
   /// Unstages [files].
-  Future<String> unstage(List<String> files) =>
+  Future<void> unstage(List<String> files) =>
       _mutate((git) => git.unstageFiles(projectPath, files));
 
   /// Discards the changes to [files]; untracked files are deleted.
-  Future<String> discard(List<String> files) =>
+  Future<void> discard(List<String> files) =>
       _mutate((git) => git.discardChanges(projectPath, files));
 
   /// Commits the staged changes with [message].
-  Future<String> commit(String message) =>
+  Future<void> commit(String message) =>
       _mutate((git) => git.commit(projectPath, message));
 
   /// Amends the last commit with the staged changes, rewording it unless
   /// [message] is empty.
-  Future<String> amend(String message) =>
+  Future<void> amend(String message) =>
       _mutate((git) => git.amend(projectPath, message));
 
   /// Pushes local commits.
-  Future<String> push() => _mutate((git) => git.push(projectPath));
+  Future<void> push() => _mutate((git) => git.push(projectPath));
 
   /// Pulls remote commits.
-  Future<String> pull() => _mutate((git) => git.pull(projectPath));
+  Future<void> pull() => _mutate((git) => git.pull(projectPath));
 
   /// Status, then everything derived from it, of the repository.
   Future<GitRepoState> _load(GitService git) async {
@@ -103,12 +104,11 @@ class GitRepoController extends AsyncNotifier<GitRepoState> {
     );
   }
 
-  /// Runs the mutating Git [action] and returns its success message, then
-  /// reloads, also the editor's line counts, whether it succeeded or threw
-  /// its [GitException].
-  Future<String> _mutate(Future<String> Function(GitService) action) async {
+  /// Runs the mutating Git [action], then reloads, also the editor's line
+  /// counts, whether it succeeded or threw its [GitException].
+  Future<void> _mutate(Future<void> Function(GitService) action) async {
     try {
-      return await action(ref.read(gitServiceProvider));
+      await action(ref.read(gitServiceProvider));
     } finally {
       if (ref.mounted) ref.invalidate(gitDiffStatsProvider);
       await reload();

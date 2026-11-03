@@ -8,9 +8,11 @@ import 'package:fide/models/localization_state.dart';
 import 'package:fide/models/localization_status.dart';
 import 'package:fide/models/string_rewrite.dart';
 import 'package:fide/providers/localization_controller.dart';
+import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/arb_translator.dart';
 import 'package:fide/services/chat_model.dart';
-import 'package:fide/services/localization_service.dart';
+import 'package:fide/services/l10n_generator.dart';
+import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,16 +30,31 @@ const LocalizationChecks _complete = LocalizationChecks(
   hasGenerateFlag: true,
 );
 
-/// Answers [inspect] with [checks], counting calls; [gate] holds the
-/// actions until completed, and [failure] makes them throw.
-class FakeLocalizationService extends LocalizationService {
-  FakeLocalizationService()
-    : super(const ProcessRunner(), const ProjectConfigReader());
-
-  LocalizationChecks checks = _complete;
-  int inspections = 0;
+/// Holds the fakes' actions until [gate] completes, and makes them throw
+/// [failure].
+class FakeActions {
   Completer<void>? gate;
   Object? failure;
+
+  Future<void> act() async {
+    await gate?.future;
+    if (failure case final error?) throw error;
+  }
+}
+
+/// Answers [inspect] with [checks], counting calls; its actions run
+/// through [actions].
+class FakeLocalizationSetup extends LocalizationSetup {
+  FakeLocalizationSetup(this.actions)
+    : super(
+        const ProcessRunner(),
+        const ProjectConfigReader(),
+        const L10nGenerator(ProcessRunner()),
+      );
+
+  final FakeActions actions;
+  LocalizationChecks checks = _complete;
+  int inspections = 0;
 
   @override
   Future<LocalizationChecks> inspect(String projectPath) async {
@@ -46,22 +63,25 @@ class FakeLocalizationService extends LocalizationService {
   }
 
   @override
-  Future<void> updateMainDartForLocalization(String projectPath) => _act();
-
-  @override
-  Future<void> generateClasses(String projectPath) => _act();
+  Future<void> updateMainDartForLocalization(String projectPath) =>
+      actions.act();
 
   @override
   Future<void> initializeLocalization(
     String projectPath, {
     ProcessOutputCallback? onStep,
     bool tolerateToolFailures = false,
-  }) => _act();
+  }) => actions.act();
+}
 
-  Future<void> _act() async {
-    await gate?.future;
-    if (failure case final error?) throw error;
-  }
+/// Generates nothing: runs through [actions].
+class FakeL10nGenerator extends L10nGenerator {
+  const FakeL10nGenerator(this.actions) : super(const ProcessRunner());
+
+  final FakeActions actions;
+
+  @override
+  Future<void> generateClasses(String projectPath) => actions.act();
 }
 
 /// Reports every translation as written without asking a model.
@@ -69,7 +89,8 @@ class FakeTranslator extends ArbTranslator {
   FakeTranslator()
     : super(
         FakeChatModel(),
-        LocalizationService(const ProcessRunner(), const ProjectConfigReader()),
+        const ProjectConfigReader(),
+        const L10nGenerator(ProcessRunner()),
       );
 
   final List<ArbTranslation> applied = [];
@@ -93,7 +114,8 @@ class FakeTranslator extends ArbTranslator {
 
 void main() {
   late Directory project;
-  late FakeLocalizationService service;
+  late FakeActions actions;
+  late FakeLocalizationSetup service;
   late FakeTranslator translator;
   late LocalizationController controller;
 
@@ -104,12 +126,14 @@ void main() {
         .writeAsStringSync('{"hello": "Hello", "hi": "Hello"}');
     File('${project.path}/lib/l10n/app_fr.arb')
         .writeAsStringSync('{"hello": "Bonjour"}');
-    service = FakeLocalizationService();
+    actions = FakeActions();
+    service = FakeLocalizationSetup(actions);
     translator = FakeTranslator();
     controller = LocalizationController(
       project.path,
-      localization: service,
-      arb: ArbService(),
+      setup: service,
+      generator: FakeL10nGenerator(actions),
+      arb: const ArbService(),
       translator: translator,
     );
   });
@@ -130,11 +154,11 @@ void main() {
   });
 
   test('an action is busy while running and idle after success', () async {
-    service.gate = Completer<void>();
+    actions.gate = Completer<void>();
     final outcome = controller.updateMainDart();
 
     expect(controller.state.isBusy, true);
-    service.gate!.complete();
+    actions.gate!.complete();
 
     expect((await outcome)!.succeeded, true);
     expect(controller.state.isBusy, false);
@@ -142,7 +166,7 @@ void main() {
   });
 
   test('an action clears busy after a failure', () async {
-    service.failure = Exception('boom');
+    actions.failure = Exception('boom');
 
     final outcome = await controller.generateClasses();
 
@@ -194,8 +218,9 @@ void main() {
   test('without a project, actions do nothing', () async {
     final idle = LocalizationController(
       null,
-      localization: service,
-      arb: ArbService(),
+      setup: service,
+      generator: FakeL10nGenerator(actions),
+      arb: const ArbService(),
       translator: translator,
     );
     addTearDown(idle.dispose);

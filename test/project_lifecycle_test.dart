@@ -82,11 +82,16 @@ void main() {
     late Directory projects;
     late ProviderContainer container;
 
+    // What the folder picker answers; null cancels
+    String? pickedFolder;
+
     setUp(() {
       projects = Directory.systemTemp.createTempSync('fide_lifecycle_');
       SharedPreferences.setMockInitialValues({});
+      pickedFolder = null;
       container = ProviderContainer(
         overrides: [
+          folderPickerProvider.overrideWithValue(() async => pickedFolder),
           projectTreeLoaderProvider.overrideWithValue(loadProjectTreeInline),
           fileSystemWatcherProvider.overrideWith(
             (_) => FileSystemWatcher(watchEnabled: false),
@@ -210,6 +215,27 @@ void main() {
 
       view.showWelcome();
       expect(container.read(appViewProvider), AppViewState.welcome);
+    });
+
+    test('the app view opens the folder picked, or reports why not', () async {
+      final view = container.read(appViewProvider.notifier);
+
+      await view.pickAndOpenProject();
+      expect(container.read(appViewProvider), AppViewState.welcome);
+      expect(container.read(projectOpenErrorProvider), isNull);
+
+      pickedFolder = (Directory(
+        p.join(projects.path, 'plain'),
+      )..createSync()).path;
+      await view.pickAndOpenProject();
+      expect(
+        container.read(projectOpenErrorProvider),
+        AppViewNotifier.invalidProjectMessage,
+      );
+
+      pickedFolder = flutterProject('one');
+      await view.pickAndOpenProject();
+      expect(container.read(appViewProvider), AppViewState.mainLayout);
     });
 
     test('the app view reopens the most recent project', () async {

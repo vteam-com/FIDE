@@ -6,6 +6,7 @@ import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/project_categories.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/panels/left/shared_panel_utils.dart';
+import 'package:fide/providers/app_icon_review_provider.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/service_providers.dart';
@@ -17,7 +18,6 @@ import 'package:fide/widgets/folder_node.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
-import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/panel_scroll_view.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/tree_branch.dart';
@@ -26,14 +26,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 
-/// OrganizedPanel provides a categorized view of the project
-class OrganizedPanel extends ProjectTreePanel {
-  const OrganizedPanel({
-    super.key,
-    super.onFileSelected,
-    super.selectedFile,
-    super.initialProjectPath,
-  });
+/// The Organized tab: the project's files grouped by what they are
+/// (views, models, services, assets...), flagging files with more than
+/// one public class.
+class OrganizedPanel extends ConsumerStatefulWidget {
+  /// Creates the panel.
+  const OrganizedPanel({super.key});
 
   @override
   ConsumerState<OrganizedPanel> createState() => _OrganizedPanelState();
@@ -71,36 +69,18 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
 
   @override
   Widget build(BuildContext context) {
-    // Watch for project data from ProjectService
-    final currentProjectRoot = ref.watch(currentProjectRootProvider);
-    final isProjectLoaded = ref.watch(projectLoadedProvider);
-    // Rebuild when the tree changes in place, e.g. Git status arriving
-    ref.watch(projectTreeRevisionProvider);
-
-    syncProjectRoot(currentProjectRoot);
     ref.listen(savedFilesRevisionProvider, (_, _) => _categorize());
     // Files were added or removed, e.g. by a class split
     ref.listen(projectTreeRevisionProvider, (_, _) => _categorize());
     // Class counts come from fCheck, analyzing again after each save
     ref.listen(projectOverviewProvider, (_, _) => _categorize());
 
-    return !isProjectLoaded
-        ? const NoProjectPlaceholder()
-        : buildPanelContent();
-  }
-
-  /// Handles `_OrganizedPanelState.buildPanelContent`.
-  Widget buildPanelContent() {
-    if (projectRoot == null) {
-      return const NoProjectPlaceholder();
-    }
-
-    /// Handles `_buildOrganizedView`.
-    return _buildOrganizedView();
+    return buildPanelContent();
   }
 
   /// One section per non-empty category, or a spinner while grouping.
-  Widget _buildOrganizedView() {
+  @override
+  Widget buildProjectTree(ProjectNode root) {
     final categories = _categories;
     if (categories == null) {
       return const LoadingIndicator();
@@ -197,16 +177,14 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
   }
 
   /// Whether the project has platforms with app icons or icon problems.
-  bool get _hasAppIcons {
-    final report = ref.watch(appIconReportProvider).value;
-    return report != null &&
-        (report.slots.isNotEmpty || report.issues.isNotEmpty);
-  }
+  bool get _hasAppIcons =>
+      ref.watch(appIconReviewProvider).value?.hasIcons ?? false;
 
   /// The row opening the App Icons view, flagging the icons' problems.
   Widget _buildAppIconsRow() {
     final isVisible = ref.watch(appIconsVisibleProvider);
-    final issueCount = ref.watch(appIconIssuesProvider)?.length ?? 0;
+    final issueCount =
+        ref.watch(appIconReviewProvider).value?.issues.length ?? 0;
     return TreeRow(
       icon: Icon(
         Icons.apps,
@@ -263,7 +241,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
           : null,
     );
 
-    final isSelected = widget.selectedFile?.path == item.path;
+    final isSelected = ref.watch(selectedFileProvider)?.path == item.path;
 
     if (node.isDirectory) {
       final multiClassFileCount = _categories?.multiClassFolders[node.path];

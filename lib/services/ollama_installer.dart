@@ -1,32 +1,41 @@
-// ignore_for_file: avoid_print
-// ignore: fcheck_dead_code
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/services/process_runner.dart';
 
-/// Detects, installs and starts the local Ollama server and its model.
+/// Detects, installs and starts the local Ollama server and its model,
+/// [AiModel.ollama].
 ///
 /// Kept apart from `OllamaClient` so talking to the model and managing the
 /// Ollama installation can change independently.
 class OllamaInstaller {
-  /// The model FIDE uses: a mixture of experts running only about 3B of
-  /// its 30B parameters per token, so it answers fast and spends little
-  /// energy. Fix Build edits files through Ollama tool calling, so a
-  /// replacement must support tools (`llama3.1`, `qwen3`, `mistral`, ...);
-  /// `codellama` does not.
-  static const String model = 'qwen3-coder';
-
   final ProcessRunner _runner;
 
-  /// Creates an installer that launches commands through [_runner].
-  const OllamaInstaller(this._runner);
+  /// Receives each step of [ensureReady] as it happens.
+  final ProcessOutputCallback onStep;
 
-  /// Downloads [model].
+  /// The operating system installed on, as `Platform.operatingSystem`
+  /// names it: macOS and Linux install with Ollama's script, Windows by
+  /// hand.
+  final String operatingSystem;
+
+  /// Creates an installer that launches commands through [_runner] on
+  /// [operatingSystem] (the one FIDE runs on by default), reporting its
+  /// steps to [onStep] (ignored by default).
+  OllamaInstaller(
+    this._runner, {
+    this.onStep = _ignoreStep,
+    String? operatingSystem,
+  }) : operatingSystem = operatingSystem ?? Platform.operatingSystem;
+
+  /// Downloads [AiModel.ollama].
   Future<void> downloadModel() async {
-    final pullResult = await _runner.run('ollama', ['pull', model]);
+    final pullResult = await _runner.run('ollama', ['pull', AiModel.ollama]);
     if (pullResult.exitCode != 0) {
-      throw Exception('Failed to download $model model: ${pullResult.stderr}');
+      throw Exception(
+        'Failed to download ${AiModel.ollama} model: ${pullResult.stderr}',
+      );
     }
   }
 
@@ -34,52 +43,58 @@ class OllamaInstaller {
   Future<bool> ensureReady() async {
     try {
       if (!await isInstalled()) {
-        print('⚠️  Ollama not installed, attempting installation...');
+        onStep('Ollama not installed, attempting installation...');
         await install();
-        print('✅ Ollama installed successfully');
+        onStep('Ollama installed successfully');
       }
 
       if (!await isRunning()) {
-        print('🔄 Starting Ollama service...');
+        onStep('Starting Ollama service...');
         await start();
         if (!await isRunning()) {
           throw Exception('Failed to start Ollama service');
         }
-        print('✅ Ollama service started');
+        onStep('Ollama service started');
       }
 
       if (!await isModelInstalled()) {
-        print('📥 Downloading $model model...');
+        onStep('Downloading ${AiModel.ollama} model...');
         await downloadModel();
-        print('✅ $model model downloaded');
+        onStep('${AiModel.ollama} model downloaded');
       }
 
       return true;
     } catch (e) {
-      print('❌ Failed to ensure Ollama readiness: $e');
+      onStep('Failed to ensure Ollama readiness: $e');
       return false;
     }
   }
 
-  /// Installs Ollama with the official script, then downloads [model].
+  /// Installs Ollama with the official script, then downloads
+  /// [AiModel.ollama].
+  ///
+  /// Throws on an [operatingSystem] the script does not support.
   Future<void> install() async {
-    if (Platform.isMacOS || Platform.isLinux) {
-      final installResult = await _runner.run('sh', [
-        '-c',
-        'curl -fsSL https://ollama.ai/install.sh | sh',
-      ]);
+    switch (FlutterPlatform.fromId(operatingSystem)) {
+      case FlutterPlatform.macos || FlutterPlatform.linux:
+        final installResult = await _runner.run('sh', [
+          '-c',
+          'curl -fsSL https://ollama.ai/install.sh | sh',
+        ]);
 
-      if (installResult.exitCode != 0) {
-        throw Exception('Failed to install Ollama: ${installResult.stderr}');
-      }
+        if (installResult.exitCode != 0) {
+          throw Exception('Failed to install Ollama: ${installResult.stderr}');
+        }
 
-      await downloadModel();
-    } else if (Platform.isWindows) {
-      throw Exception(
-        'Please install Ollama manually from https://ollama.ai/download for Windows.',
-      );
-    } else {
-      throw Exception('Unsupported platform. Please install Ollama manually.');
+        await downloadModel();
+      case FlutterPlatform.windows:
+        throw Exception(
+          'Please install Ollama manually from https://ollama.ai/download for Windows.',
+        );
+      default:
+        throw Exception(
+          'Unsupported platform. Please install Ollama manually.',
+        );
     }
   }
 
@@ -88,10 +103,10 @@ class OllamaInstaller {
     return _runner.succeeds('which', ['ollama']);
   }
 
-  /// Whether [model] has been downloaded.
+  /// Whether [AiModel.ollama] has been downloaded.
   Future<bool> isModelInstalled() async {
     final models = await _runner.outputOf('ollama', ['list']);
-    return models?.contains(model) ?? false;
+    return models?.contains(AiModel.ollama) ?? false;
   }
 
   /// Whether the Ollama server answers.
@@ -104,4 +119,7 @@ class OllamaInstaller {
     await _runner.start('ollama', ['serve'], mode: ProcessStartMode.detached);
     await Future.delayed(AppDuration.ollamaStartupDelay);
   }
+
+  /// The default [onStep], which drops the step.
+  static void _ignoreStep(String _) {}
 }
