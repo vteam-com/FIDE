@@ -7,7 +7,8 @@ import 'package:fide/panels/center/architecture/architecture_role_style.dart';
 import 'package:flutter/material.dart';
 
 /// Paints the imports of an [ArchitectureLayout], each a curve from the
-/// right of the importing file to the left of the imported one: the
+/// importing file to the imported one along the layers' stacking (bottom
+/// to top when top down, right to left when left to right): the
 /// imports of the focused file in its callees' and callers' colors on
 /// top, the others faint, or left out unless [showAll].
 class ArchitectureEdgePainter extends CustomPainter {
@@ -20,8 +21,8 @@ class ArchitectureEdgePainter extends CustomPainter {
     required this.showAll,
   });
 
-  /// Share of the span between two files, or of a column gap when
-  /// shorter, that a curve leaves level before bending toward its end.
+  /// Share of the span between two files, or of a layer gap when shorter,
+  /// that a curve runs straight out before bending toward its end.
   static const double _bendShare = 0.5;
 
   /// What is highlighted.
@@ -46,7 +47,11 @@ class ArchitectureEdgePainter extends CustomPainter {
     final graph = layout.graph;
     for (final MapEntry(key: source, value: targets) in graph.callees.entries) {
       for (final target in targets) {
-        final path = _edge(layout.nodes[source]!, layout.nodes[target]!);
+        final path = _edge(
+          layout.nodes[source]!,
+          layout.nodes[target]!,
+          layout.orientation,
+        );
         if (focus.isHighlighted(source, target)) {
           final role = source == focus.file
               ? ArchitectureRole.callee
@@ -72,22 +77,27 @@ class ArchitectureEdgePainter extends CustomPainter {
       oldDelegate.showAll != showAll ||
       oldDelegate.theme != theme;
 
-  /// The curve from the right middle of [from] to the left middle of [to],
-  /// leaving and arriving level, bent at least [_bendShare] of a column gap
-  /// so an import within one column still loops out and back.
-  static Path _edge(Rect from, Rect to) {
-    final start = from.centerRight;
-    final end = to.centerLeft;
-    final bend =
-        math.max((end.dx - start.dx).abs(), ArchitectureLayout.columnGap) *
-        _bendShare;
+  /// The curve from [from] to [to] across the layers of [orientation]:
+  /// out of the bottom middle of [from] into the top middle of [to] when
+  /// top down, out of its right middle into the left middle of [to] when
+  /// left to right; bent at least [_bendShare] of a layer gap, so an
+  /// import within one layer still loops out and back.
+  static Path _edge(Rect from, Rect to, ArchitectureOrientation orientation) {
+    final isTopDown = orientation == ArchitectureOrientation.topDown;
+    final start = isTopDown ? from.bottomCenter : from.centerRight;
+    final end = isTopDown ? to.topCenter : to.centerLeft;
+    final span = isTopDown ? end.dy - start.dy : end.dx - start.dx;
+    final bend = math.max(span.abs(), ArchitectureLayout.layerGap) * _bendShare;
+    final out = isTopDown ? Offset(0, bend) : Offset(bend, 0);
+    final startControl = start + out;
+    final endControl = end - out;
     return Path()
       ..moveTo(start.dx, start.dy)
       ..cubicTo(
-        start.dx + bend,
-        start.dy,
-        end.dx - bend,
-        end.dy,
+        startControl.dx,
+        startControl.dy,
+        endControl.dx,
+        endControl.dy,
         end.dx,
         end.dy,
       );

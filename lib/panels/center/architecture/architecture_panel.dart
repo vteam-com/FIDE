@@ -7,6 +7,7 @@ import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/panels/center/architecture/architecture_canvas.dart';
 import 'package:fide/panels/center/architecture/architecture_details.dart';
+import 'package:fide/providers/architecture_orientation_notifier.dart';
 import 'package:fide/providers/architecture_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/panel_actions.dart';
@@ -21,15 +22,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Shown in the center panel to explore the open project's architecture
-/// as fCheck layers it: every Dart file in its layer's column, linked to
-/// the files it imports.
+/// as fCheck layers it: every Dart file in its layer, linked to the files
+/// it imports.
 ///
 /// Hovering or selecting a file highlights what it imports and what
 /// imports it; the selected file's details list both, each a jump to that
 /// file in the graph or to its source. Double-clicking a file opens it.
-/// The toolbar finds a file, zooms, fits the graph to the view, and shows
-/// or hides the imports away from the focused file; saving a file lays
-/// the graph out again from the new analysis.
+/// The toolbar stacks the layers top down or left to right, finds a file,
+/// zooms, fits the graph to the view, and shows or hides the imports away
+/// from the focused file; saving a file lays the graph out again from the
+/// new analysis.
 class ArchitecturePanel extends ConsumerStatefulWidget {
   /// Creates the view of the open project's architecture.
   const ArchitecturePanel({super.key});
@@ -49,9 +51,9 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
   /// The zoom and pan [_glide] moves through; null before the first glide.
   Animation<Matrix4>? _glideAnimation;
 
-  /// The project whose graph the view was fitted to, so it fits once per
-  /// project, not after each re-analysis.
-  String? _fittedRoot;
+  /// The project and orientation the view was last framed for, so it
+  /// frames once for each, not after each re-analysis.
+  (String, ArchitectureOrientation)? _framed;
 
   /// The file under the pointer; null for none.
   String? _hovered;
@@ -70,6 +72,12 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
 
   /// Size of the graph's viewport in the last layout.
   Size _viewport = Size.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    ref.read(architectureOrientationProvider.notifier).load();
+  }
 
   @override
   void dispose() {
@@ -139,13 +147,16 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
     if (matches.isNotEmpty) _select(layout, matches.first, reveal: true);
   }
 
-  /// Fits [layout] once its project's graph first shows.
-  void _fitOnce(ArchitectureLayout layout) {
-    final root = layout.graph.rootPath;
-    if (_fittedRoot == root) return;
-    _fittedRoot = root;
+  /// Frames [layout] the first time its project shows in its orientation:
+  /// around the [selected] file, kept in view when the orientation
+  /// changes, else whole.
+  void _frameOnce(ArchitectureLayout layout, String? selected) {
+    final key = (layout.graph.rootPath, layout.orientation);
+    if (_framed == key) return;
+    _framed = key;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _fit(layout);
+      if (!mounted) return;
+      selected == null ? _fit(layout) : _reveal(layout, selected);
     });
   }
 
@@ -169,6 +180,21 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
   /// Opens [file] in the editor; closing it returns to this view.
   void _open(String file) => openFromCenterView(ref, file);
 
+  /// The button switching the layers between top down and left to right,
+  /// showing how they are stacked now.
+  Widget _orientationButton() {
+    final isTopDown =
+        ref.watch(architectureOrientationProvider) ==
+        ArchitectureOrientation.topDown;
+    return CompactIconButton.header(
+      icon: isTopDown ? Icons.view_agenda_outlined : Icons.view_week_outlined,
+      tooltip: isTopDown
+          ? 'Layers top down; stack them left to right'
+          : 'Layers left to right; stack them top down',
+      onPressed: ref.read(architectureOrientationProvider.notifier).toggle,
+    );
+  }
+
   /// Glides to [file] in [layout], centered, at least at actual size.
   void _reveal(ArchitectureLayout layout, String file) {
     final rect = layout.nodes[file];
@@ -189,7 +215,11 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
   /// glides to it.
   void _select(ArchitectureLayout layout, String? file, {bool reveal = false}) {
     setState(() => _selected = file);
-    if (reveal && file != null) _reveal(layout, file);
+    if (!reveal || file == null) return;
+    // After the frame: opening the details narrows the graph's viewport
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _reveal(layout, file);
+    });
   }
 
   /// The project's name and size, the Find File box and the view's
@@ -239,6 +269,7 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
               ),
             ),
           ),
+          _orientationButton(),
           CompactIconButton.header(
             icon: Icons.polyline_outlined,
             tooltip: _showAllImports
@@ -295,7 +326,7 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
                 child: LayoutBuilder(
                   builder: (_ /*context*/, constraints) {
                     _viewport = constraints.biggest;
-                    _fitOnce(layout);
+                    _frameOnce(layout, selected);
                     return ArchitectureCanvas(
                       layout: layout,
                       focus: focus,

@@ -2,6 +2,10 @@ part of 'core_constants.dart';
 
 /// SharedPreferences keys, so each persisted setting is named in one place.
 class PrefKeys {
+  /// Which way the Architecture view stacks its layers: `topDown` or
+  /// `leftToRight`.
+  static const String architectureOrientation = 'architecture_orientation';
+
   /// Absolute path of the file last opened in the editor.
   static const String lastOpenedFile = 'last_opened_file';
 

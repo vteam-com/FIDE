@@ -2,6 +2,7 @@ import 'package:fide/models/architecture_graph.dart';
 import 'package:fide/models/architecture_layout.dart';
 import 'package:fide/panels/center/architecture/architecture_panel.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/architecture_orientation_notifier.dart';
 import 'package:fide/providers/architecture_providers.dart';
 import 'package:fide/providers/center_view.dart';
 import 'package:fide/theme/app_theme.dart';
@@ -87,5 +88,24 @@ void main() {
       view: CenterView.architecture,
       path: '/p/lib/ui/home.dart',
     ));
+  });
+
+  testWidgets('the orientation button stacks the layers the other way', (
+    tester,
+  ) async {
+    final container = await pumpPanel(tester);
+    expect(
+      container.read(architectureOrientationProvider),
+      ArchitectureOrientation.topDown,
+    );
+
+    await tester.tap(find.byIcon(Icons.view_agenda_outlined));
+    await tester.pumpAndSettle();
+
+    expect(
+      container.read(architectureOrientationProvider),
+      ArchitectureOrientation.leftToRight,
+    );
+    expect(find.byIcon(Icons.view_week_outlined), findsOneWidget);
   });
 }

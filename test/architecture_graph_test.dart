@@ -85,7 +85,10 @@ void main() {
 
   group('ArchitectureLayout', () {
     test('puts each layer in its own column, left to right', () {
-      final layout = ArchitectureLayout(_graph());
+      final layout = ArchitectureLayout(
+        _graph(),
+        orientation: ArchitectureOrientation.leftToRight,
+      );
       final main = layout.nodes['/p/lib/main.dart']!;
       final home = layout.nodes['/p/lib/ui/home.dart']!;
       final model = layout.nodes['/p/lib/core/model.dart']!;
@@ -98,7 +101,10 @@ void main() {
     });
 
     test('heads columns with layers and files with their folders', () {
-      final layout = ArchitectureLayout(_graph(layered: false));
+      final layout = ArchitectureLayout(
+        _graph(layered: false),
+        orientation: ArchitectureOrientation.leftToRight,
+      );
       final captions = layout.captions;
 
       expect(
@@ -115,6 +121,50 @@ void main() {
         expect(rects[i].left, rects[i - 1].left);
         expect(rects[i].top, greaterThan(rects[i - 1].bottom));
       }
+    });
+  });
+
+  group('ArchitectureLayout top down', () {
+    test('stacks layers as rows, top down, by default', () {
+      final layout = ArchitectureLayout(_graph());
+      final main = layout.nodes['/p/lib/main.dart']!;
+      final home = layout.nodes['/p/lib/ui/home.dart']!;
+      final model = layout.nodes['/p/lib/core/model.dart']!;
+
+      expect(layout.orientation, ArchitectureOrientation.topDown);
+      expect(main.bottom, lessThan(home.top));
+      expect(home.bottom, lessThan(model.top));
+      expect(main.left, home.left);
+      expect(layout.size.height, greaterThan(model.bottom));
+    });
+
+    test('sets folders side by side, wrapping a big one into columns', () {
+      final many = ArchitectureLayout.folderBlockRows + 1;
+      final files = [
+        for (var i = 0; i < many; i++) '/p/lib/big/f$i.dart',
+        '/p/lib/small/s.dart',
+      ];
+      final layout = ArchitectureLayout(
+        ArchitectureGraph(
+          rootPath: '/p',
+          files: files,
+          callees: const {},
+          layers: const {},
+        ),
+      );
+      final first = layout.nodes['/p/lib/big/f0.dart']!;
+      // Named f0 to f6: sorted by name, the seventh starts a new column
+      final wrapped = layout
+          .nodes['/p/lib/big/f${ArchitectureLayout.folderBlockRows}.dart']!;
+      final small = layout.nodes['/p/lib/small/s.dart']!;
+
+      // The file past the block's rows starts its second column on top
+      expect(wrapped.top, first.top);
+      expect(wrapped.left, greaterThan(first.right));
+      // The next folder sits beside the whole block, level with it
+      expect(small.left, greaterThan(wrapped.right));
+      expect(small.top, first.top);
+      expect(layout.size.width, greaterThan(small.right));
     });
   });
 
