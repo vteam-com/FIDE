@@ -21,6 +21,10 @@ class AppZoom {
     2,
   ];
 
+  /// Factor the zoom buttons of a canvas, such as the architecture graph,
+  /// zoom in or out by.
+  static const double canvasStep = 1.25;
+
   /// Percent in one whole, to show a zoom such as `125%`.
   static const int _percent = 100;
 

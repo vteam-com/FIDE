@@ -1,4 +1,5 @@
 import 'package:fide/providers/active_editor.dart';
+import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/left_panel_tab.dart';
 import 'package:fide/providers/right_panel_tab.dart';
 import 'package:fide/providers/side_panel.dart';
@@ -70,9 +71,14 @@ void revealInExplorer(WidgetRef ref, String path) {
   ref.read(explorerRevealPathProvider.notifier).state = path;
 }
 
-/// Shows the App Icons view in the center panel.
-void showAppIcons(WidgetRef ref) {
-  ref.read(appIconsVisibleProvider.notifier).state = true;
+/// Shows [view] in the center panel.
+void showCenterView(WidgetRef ref, CenterView view) {
+  ref.read(centerViewProvider.notifier).state = view;
+}
+
+/// Closes the center view, showing the editor or the project overview.
+void closeCenterView(WidgetRef ref) {
+  ref.read(centerViewProvider.notifier).state = null;
 }
 
 /// Shows the right panel on [tab], reading its state with [read] (a

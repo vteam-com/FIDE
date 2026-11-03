@@ -24,10 +24,6 @@ final rightPanelExpandedProvider = SidePanel.right.expandedProvider;
 /// Whether the settings screen covers the current view.
 final settingsVisibleProvider = StateProvider<bool>((_ /*ref*/) => false);
 
-/// Whether the center panel shows the App Icons view instead of the
-/// editor or the project overview.
-final appIconsVisibleProvider = StateProvider<bool>((_ /*ref*/) => false);
-
 /// What image previews are drawn on, kept from one image to the next.
 final imageBackdropProvider = StateProvider<ImageBackdrop>(
   (_ /*ref*/) => ImageBackdrop.transparent,

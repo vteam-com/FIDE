@@ -8,7 +8,6 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/right_panel_tab.dart';
-import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/app_icon_slot_tile.dart';
@@ -65,8 +64,7 @@ class AppIconsPanel extends ConsumerWidget {
               CompactIconButton(
                 tooltip: 'Close',
                 icon: Icons.close,
-                onPressed: () =>
-                    ref.read(appIconsVisibleProvider.notifier).state = false,
+                onPressed: () => closeCenterView(ref),
               ),
             ],
           ),
@@ -235,7 +233,7 @@ class AppIconsPanel extends ConsumerWidget {
       slot: slot,
       isSelected: path != null && path == selection,
       onTap: path == null ? null : () => _select(ref, path),
-      onDoubleTap: path == null ? null : () => openFile(ref, path),
+      onDoubleTap: path == null ? null : () => openFromCenterView(ref, path),
     );
   }
 

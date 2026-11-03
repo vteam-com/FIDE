@@ -5,6 +5,7 @@ import 'package:fide/models/build_artifacts.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/providers/app_icon_review_provider.dart';
+import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/theme/app_theme.dart';
@@ -200,7 +201,7 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
           '${count.count('app icon problem')} on '
           '${widget.selectedPlatform.displayName}.'
           '\nClick to review and fix them.',
-      onTap: () => showAppIcons(ref),
+      onTap: () => showCenterView(ref, CenterView.appIcons),
     );
   }
 

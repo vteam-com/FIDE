@@ -8,9 +8,9 @@ import 'package:fide/models/project_node.dart';
 import 'package:fide/panels/left/shared_panel_utils.dart';
 import 'package:fide/providers/app_icon_review_provider.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/service_providers.dart';
-import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/asset_kind_icon.dart';
 import 'package:fide/widgets/container_counter.dart';
@@ -182,7 +182,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
 
   /// The row opening the App Icons view, flagging the icons' problems.
   Widget _buildAppIconsRow() {
-    final isVisible = ref.watch(appIconsVisibleProvider);
+    final isVisible = ref.watch(centerViewProvider) == CenterView.appIcons;
     final issueCount =
         ref.watch(appIconReviewProvider).value?.issues.length ?? 0;
     return TreeRow(
@@ -193,7 +193,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
       ),
       name: 'App Icons',
       highlighted: isVisible,
-      onTap: () => showAppIcons(ref),
+      onTap: () => showCenterView(ref, CenterView.appIcons),
       trailing: [
         if (issueCount > 0)
           ContainerCounter.warning(

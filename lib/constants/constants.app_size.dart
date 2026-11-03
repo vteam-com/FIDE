@@ -98,5 +98,11 @@ class AppSize {
   /// Share of the window's height a file's diff dialog takes.
   static const double diffDialogHeightFactor = 0.6;
 
+  /// Width of the details beside the architecture graph.
+  static const double architectureDetailsWidth = 320;
+
+  /// Width of the architecture view's Find File box.
+  static const double architectureFindWidth = 220;
+
   const AppSize._();
 }

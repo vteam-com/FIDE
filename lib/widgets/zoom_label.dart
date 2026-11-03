@@ -2,13 +2,14 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/compact_text_button.dart';
 import 'package:flutter/material.dart';
 
-/// The zoom of an image preview as a percent, pressed to return to actual
-/// size; disabled while already there.
-class ImageZoomLabel extends StatelessWidget {
+/// The zoom of a zoomable canvas (an image preview, the architecture
+/// graph) as a percent, pressed to return to actual size; disabled while
+/// already there.
+class ZoomLabel extends StatelessWidget {
   /// Creates the label for the zoom in [controller].
-  const ImageZoomLabel({super.key, required this.controller});
+  const ZoomLabel({super.key, required this.controller});
 
-  /// Zoom and pan of the preview.
+  /// Zoom and pan of the canvas.
   final TransformationController controller;
 
   @override

@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/left_panel_tab.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/side_panel.dart';
@@ -183,10 +184,11 @@ class NativeMenuBuilder {
         ),
         PlatformMenuItemGroup(
           members: [
-            PlatformMenuItem(
-              label: 'App Icons',
-              onSelected: () => showAppIcons(ref),
-            ),
+            for (final view in CenterView.values)
+              PlatformMenuItem(
+                label: view.label,
+                onSelected: () => showCenterView(ref, view),
+              ),
           ],
         ),
         PlatformMenuItemGroup(

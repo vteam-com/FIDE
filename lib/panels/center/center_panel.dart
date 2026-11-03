@@ -1,17 +1,20 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/panels/center/app_icons_panel.dart';
+import 'package:fide/panels/center/architecture/architecture_panel.dart';
 import 'package:fide/panels/center/editor/editor_screen.dart';
 import 'package:fide/panels/center/project_overview_panel.dart';
 import 'package:fide/panels/center/terminal_panel.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/panel_island.dart';
 import 'package:fide/widgets/resizable_splitter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// The center panel host widget that displays the active editor, welcome screen, or create-project flow.
+/// The center panel host widget: a center view (App Icons, Architecture),
+/// else the active editor, else the project overview; the terminal below.
 class CenterPanel extends ConsumerStatefulWidget {
   /// Whether the terminal shows below the main content.
   final bool terminalVisible;
@@ -65,36 +68,37 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
   Widget build(BuildContext context) {
     final DocumentState? activeDocument = ref.watch(activeDocumentProvider);
     final terminalExpanded = ref.watch(bottomPanelExpandedProvider);
-    // Opening or switching files leaves the App Icons view; closing a file
+    // Opening or switching files leaves the center view; closing a file
     // opened from it goes back to it
     ref.listen(activeDocumentProvider.select((doc) => doc?.filePath), (
       previous,
       next,
     ) {
-      final visible = ref.read(appIconsVisibleProvider.notifier);
-      final opened = ref.read(appIconsOpenedPathProvider.notifier);
-      final isClosingOpened =
-          next == null && previous != null && previous == opened.state;
-      if (visible.state) {
-        opened.state = next;
-      } else if (isClosingOpened || next != opened.state) {
+      final view = ref.read(centerViewProvider.notifier);
+      final opened = ref.read(centerViewOpenedFileProvider.notifier);
+      final openedFile = opened.state;
+      final returnTo =
+          next == null && previous != null && previous == openedFile?.path
+          ? openedFile?.view
+          : null;
+      if (view.state case final showing?) {
+        opened.state = next == null ? null : (view: showing, path: next);
+      } else if (returnTo != null || next != openedFile?.path) {
         opened.state = null;
       }
-      visible.state = isClosingOpened;
+      view.state = returnTo;
     });
 
     // Determine the main content to display
-    Widget mainContent;
-    if (ref.watch(appIconsVisibleProvider)) {
-      mainContent = const AppIconsPanel();
-    } else if (activeDocument != null) {
-      mainContent = EditorScreen(
+    final Widget mainContent = switch (ref.watch(centerViewProvider)) {
+      CenterView.appIcons => const AppIconsPanel(),
+      CenterView.architecture => const ArchitecturePanel(),
+      null when activeDocument != null => EditorScreen(
         documentState: activeDocument,
         onClose: widget.onClose,
-      );
-    } else {
-      mainContent = const ProjectOverviewPanel();
-    }
+      ),
+      null => const ProjectOverviewPanel(),
+    };
 
     return LayoutBuilder(
       builder: (_ /*context*/, constraints) => Column(

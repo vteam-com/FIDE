@@ -8,7 +8,7 @@ import 'package:fide/widgets/any_image.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/image_backdrop_buttons.dart';
 import 'package:fide/widgets/image_canvas.dart';
-import 'package:fide/widgets/image_zoom_label.dart';
+import 'package:fide/widgets/zoom_label.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -68,7 +68,7 @@ class _EditorScreenImageViewState extends ConsumerState<EditorScreenImageView> {
             children: [
               const ImageBackdropButtons(),
               const Spacer(),
-              ImageZoomLabel(controller: _transformation),
+              ZoomLabel(controller: _transformation),
               FutureBuilder<int>(
                 future: _fileLength,
                 builder: (context, snapshot) => Text(

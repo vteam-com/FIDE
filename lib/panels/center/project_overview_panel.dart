@@ -6,6 +6,7 @@ import 'package:fide/models/quality_issues.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_icon_review_provider.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
@@ -64,7 +65,31 @@ class ProjectOverviewPanel extends ConsumerWidget {
       action: SecondaryButton(
         icon: Icons.auto_fix_high,
         label: 'Review',
-        onPressed: () => showAppIcons(ref),
+        onPressed: () => showCenterView(ref, CenterView.appIcons),
+      ),
+    );
+  }
+
+  /// How fCheck layers the project's files, opening the Architecture view
+  /// to explore their imports.
+  Widget _architectureCard(WidgetRef ref, ProjectOverview overview) {
+    final code = overview.code;
+    final violations = code.layersIssues.length;
+    return StatCard(
+      icon: Icons.account_tree_outlined,
+      title: 'Architecture',
+      value: StatCard.text(code.layersCount.count('layer')),
+      details: [
+        '${code.dependencyGraph.length.count('file')}, '
+            '${code.layersEdgeCount.count('import')}',
+        violations == 0
+            ? 'No layering problems'
+            : violations.count('layering problem'),
+      ],
+      action: SecondaryButton(
+        icon: Icons.travel_explore,
+        label: 'Explore',
+        onPressed: () => showCenterView(ref, CenterView.architecture),
       ),
     );
   }
@@ -234,6 +259,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
               ),
               _localizationCard(overview),
               _appIconsCard(ref),
+              _architectureCard(ref, overview),
             ],
           ),
         ],

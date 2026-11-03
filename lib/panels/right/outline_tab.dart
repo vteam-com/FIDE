@@ -1,7 +1,7 @@
 import 'package:fide/panels/right/image_details_panel.dart';
 import 'package:fide/panels/right/outline_panel.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/providers/center_view.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/file_actions.dart';
@@ -19,7 +19,7 @@ class OutlineTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final file = ref.watch(selectedFileProvider);
-    final iconPath = ref.watch(appIconsVisibleProvider)
+    final iconPath = ref.watch(centerViewProvider) == CenterView.appIcons
         ? ref.watch(appIconSelectionProvider)
         : null;
     final path = iconPath ?? file?.path;
