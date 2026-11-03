@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 /// A strip above a panel's content, such as its tabs, toolbar or search
 /// bar, or below it as a footer, separated from it by a thin divider.
 class HeaderBar extends StatelessWidget {
-  /// Creates the strip around [child].
+  /// Creates the strip around [child], inset by the panels' content
+  /// padding.
   const HeaderBar({super.key, required this.child, this.isFooter = false})
     : height = null;
 
@@ -33,7 +34,9 @@ class HeaderBar extends StatelessWidget {
       decoration: BoxDecoration(
         border: isFooter ? Border(top: divider) : Border(bottom: divider),
       ),
-      child: SizedBox(height: height, child: child),
+      child: height == null
+          ? Padding(padding: AppPadding.panelContent, child: child)
+          : SizedBox(height: height, child: child),
     );
   }
 }

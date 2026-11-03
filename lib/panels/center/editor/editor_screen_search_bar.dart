@@ -34,62 +34,59 @@ class EditorScreenSearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return HeaderBar(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.medium),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SearchReplaceField(
-              searchField: AppTextField(
-                controller: controller.queryController,
-                focusNode: controller.queryFocusNode,
-                hintText: 'Find in file...',
-                icon: Icons.search,
-                onChanged: controller.search,
-                onSubmitted: (_ /* value */) => onNextMatch(),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SearchReplaceField(
+            searchField: AppTextField(
+              controller: controller.queryController,
+              focusNode: controller.queryFocusNode,
+              hintText: 'Find in file...',
+              icon: Icons.search,
+              onChanged: controller.search,
+              onSubmitted: (_ /* value */) => onNextMatch(),
+            ),
+            searchActions: [
+              SearchToggleIcons(
+                caseSensitive: controller.caseSensitive,
+                wholeWord: controller.wholeWord,
+                onCaseSensitiveChanged: controller.setCaseSensitive,
+                onWholeWordChanged: controller.setWholeWord,
               ),
-              searchActions: [
-                SearchToggleIcons(
-                  caseSensitive: controller.caseSensitive,
-                  wholeWord: controller.wholeWord,
-                  onCaseSensitiveChanged: controller.setCaseSensitive,
-                  onWholeWordChanged: controller.setWholeWord,
+              CompactIconButton(
+                icon: Icons.close,
+                onPressed: controller.close,
+                tooltip: 'Close (Esc)',
+              ),
+            ],
+            replaceController: controller.replaceController,
+            onReplace: controller.replace,
+            onReplaceAll: onReplaceAll,
+          ),
+          const SizedBox(height: AppSpacing.tiny),
+          Row(
+            children: [
+              const Spacer(),
+              if (controller.matchCount > 0) ...[
+                CompactIconButton(
+                  icon: Icons.keyboard_arrow_up,
+                  onPressed: onPreviousMatch,
+                  tooltip: 'Previous (Shift+F3)',
                 ),
                 CompactIconButton(
-                  icon: Icons.close,
-                  onPressed: controller.close,
-                  tooltip: 'Close (Esc)',
+                  icon: Icons.keyboard_arrow_down,
+                  onPressed: onNextMatch,
+                  tooltip: 'Next (F3)',
+                ),
+                const SizedBox(width: AppSpacing.medium),
+                Text(
+                  '${controller.currentIndex + 1} of ${controller.matchCount}',
+                  style: AppTextStyle.caption,
                 ),
               ],
-              replaceController: controller.replaceController,
-              onReplace: controller.replace,
-              onReplaceAll: onReplaceAll,
-            ),
-            const SizedBox(height: AppSpacing.tiny),
-            Row(
-              children: [
-                const Spacer(),
-                if (controller.matchCount > 0) ...[
-                  CompactIconButton(
-                    icon: Icons.keyboard_arrow_up,
-                    onPressed: onPreviousMatch,
-                    tooltip: 'Previous (Shift+F3)',
-                  ),
-                  CompactIconButton(
-                    icon: Icons.keyboard_arrow_down,
-                    onPressed: onNextMatch,
-                    tooltip: 'Next (F3)',
-                  ),
-                  const SizedBox(width: AppSpacing.medium),
-                  Text(
-                    '${controller.currentIndex + 1} of ${controller.matchCount}',
-                    style: AppTextStyle.caption,
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }

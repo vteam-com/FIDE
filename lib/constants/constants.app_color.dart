@@ -4,10 +4,6 @@ part of 'constants.dart';
 class AppColor {
   static const Color popupBorderLight = Color(0xFFCCCCCC);
   static const Color popupBorderDark = Color(0xFF4A4A4A);
-  static const Color sidePanelSurfaceLight = Color(0xFFFFFFFF);
-  static const Color sidePanelSurfaceDark = Color(0xFF252526);
-  static const Color sidePanelDividerLight = Color(0xFFE5E5E5);
-  static const Color sidePanelDividerDark = Color(0xFF3E3E42);
 
   /// The two squares of the checkerboard showing an image's transparency.
   static const Color transparencyLight = Color(0xFFFFFFFF);

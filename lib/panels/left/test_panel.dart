@@ -9,6 +9,7 @@ import 'package:fide/widgets/command_output.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/panel_action.dart';
+import 'package:fide/widgets/panel_scroll_view.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,35 +58,28 @@ class TestPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final actions = _actions(context, ref);
     final isRunning = ref.watch(commandRunnerProvider).isAnyRunning(_actionIds);
-    return SingleChildScrollView(
-      child: Padding(
-        padding: AppPadding.panelContent,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: AppSpacing.xLarge,
+    return PanelScrollView(
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SectionTitle('Test Suite'),
-                      Text(
-                        'Run and manage Flutter tests',
-                        style: AppTextStyle.secondary(context),
-                      ),
-                    ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SectionTitle('Test Suite'),
+                  Text(
+                    'Run and manage Flutter tests',
+                    style: AppTextStyle.secondary(context),
                   ),
-                ),
-                if (isRunning) const InlineSpinner(),
-              ],
+                ],
+              ),
             ),
-            CommandActionList(actions: actions),
-            const CommandOutput(logKey: _logKey),
+            if (isRunning) const InlineSpinner(),
           ],
         ),
-      ),
+        CommandActionList(actions: actions),
+        const CommandOutput(logKey: _logKey),
+      ],
     );
   }
 

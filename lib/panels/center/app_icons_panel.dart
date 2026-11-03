@@ -15,6 +15,7 @@ import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/app_icon_slot_tile.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/empty_label.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/page_header.dart';
 import 'package:fide/widgets/path_text.dart';
@@ -154,7 +155,7 @@ class _AppIconsPanelState extends ConsumerState<AppIconsPanel> {
               spacing: AppSpacing.tiny,
               children: [
                 if (master == null)
-                  const Text('No image yet: choose one')
+                  const EmptyLabel('No image yet: choose one')
                 else
                   PathText(master, rootPath: projectPath, selectable: true),
                 if (image != null)

@@ -1,4 +1,6 @@
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/theme/app_theme.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter/material.dart';
 
 /// An orange counter overlaid on the corner of [child], such as a tab icon,
@@ -17,8 +19,8 @@ class CountBadge extends StatelessWidget {
     return Badge.count(
       count: count,
       isLabelVisible: count > 0,
-      backgroundColor: AppTheme.warningColor,
-      textColor: Colors.white,
+      backgroundColor: StatusTone.warning.color,
+      textColor: AppTheme.onStatusColor,
       child: child,
     );
   }

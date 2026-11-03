@@ -1,12 +1,12 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/app_view_notifier.dart';
-import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/widgets/outlined_list_tile.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/primary_button.dart';
+import 'package:fide/widgets/screen_scaffold.dart';
 import 'package:fide/widgets/secondary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,9 +34,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     final view = ref.read(appViewProvider.notifier);
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.huge),
-      decoration: AppTheme.screenBackground(context),
+    return ScreenScaffold(
       child: LayoutBuilder(
         builder: (context, _) {
           return Column(

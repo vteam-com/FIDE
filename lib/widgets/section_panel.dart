@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/surface_header_band.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:flutter/material.dart';
 
@@ -49,7 +50,6 @@ class _SectionPanelState extends State<SectionPanel> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final headerBackgroundColor = colorScheme.surfaceContainerHighest;
     final rightWidget = widget.rightWidget;
     final count = widget.count;
     final child = widget.child;
@@ -64,9 +64,7 @@ class _SectionPanelState extends State<SectionPanel> {
         children: [
           InkWell(
             onTap: _toggle,
-            child: Container(
-              padding: AppPadding.sectionHeader,
-              color: headerBackgroundColor,
+            child: SurfaceHeaderBand(
               child: Row(
                 spacing: AppSpacing.tiny,
                 children: [
@@ -90,7 +88,7 @@ class _SectionPanelState extends State<SectionPanel> {
             ),
           ),
           if (_isExpanded && child != null)
-            Padding(padding: AppPadding.sectionContent, child: child),
+            Padding(padding: AppPadding.panelContent, child: child),
         ],
       ),
     );

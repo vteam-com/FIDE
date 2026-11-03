@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/widgets/empty_folder_label.dart';
+import 'package:fide/widgets/empty_label.dart';
 import 'package:flutter/material.dart';
 
 /// A tree entry that holds others, such as a folder: its [header] row and,
@@ -42,7 +42,7 @@ class TreeBranch extends StatelessWidget {
               left: isEmpty ? AppSize.compactActionButton : AppSpacing.xLarge,
             ),
             child: isEmpty
-                ? const EmptyFolderLabel()
+                ? const EmptyLabel('empty folder')
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: children,

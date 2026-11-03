@@ -104,11 +104,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     }
 
     if (state.loadError case final loadError?) {
-      return EmptyState(
-        message: loadError,
-        isError: true,
-        child: _buildRetryButton(),
-      );
+      return EmptyState.error(message: loadError, child: _buildRetryButton());
     }
 
     final statusView = _buildStatusContent(state);
@@ -158,11 +154,8 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       case LocalizationStatus.complete:
         return _buildCompleteView(state);
       case LocalizationStatus.error:
-        return EmptyState(
-          icon: Icons.error,
-          title: 'Error',
+        return EmptyState.error(
           message: 'An error occurred while checking localization status.',
-          isError: true,
           child: _buildRetryButton(),
         );
     }

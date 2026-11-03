@@ -59,32 +59,29 @@ class _EditorScreenImageViewState extends ConsumerState<EditorScreenImageView> {
     return Column(
       children: [
         HeaderBar(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.medium),
-            child: Row(
-              spacing: AppSpacing.medium,
-              children: [
-                ChoiceButtons(
-                  values: ImageBackdrop.values,
-                  selected: backdrop,
-                  icon: (backdrop) => backdrop.icon,
-                  label: (backdrop) => backdrop.label,
-                  onSelected: (backdrop) =>
-                      ref.read(imageBackdropProvider.notifier).state = backdrop,
+          child: Row(
+            spacing: AppSpacing.medium,
+            children: [
+              ChoiceButtons(
+                values: ImageBackdrop.values,
+                selected: backdrop,
+                icon: (backdrop) => backdrop.icon,
+                label: (backdrop) => backdrop.label,
+                onSelected: (backdrop) =>
+                    ref.read(imageBackdropProvider.notifier).state = backdrop,
+              ),
+              const Spacer(),
+              FutureBuilder<int>(
+                future: _fileLength,
+                builder: (context, snapshot) => Text(
+                  [
+                    ?snapshot.data?.readableSize,
+                    extension.toUpperCase(),
+                  ].join(' • '),
+                  style: AppTextStyle.secondary(context),
                 ),
-                const Spacer(),
-                FutureBuilder<int>(
-                  future: _fileLength,
-                  builder: (context, snapshot) => Text(
-                    [
-                      ?snapshot.data?.readableSize,
-                      extension.toUpperCase(),
-                    ].join(' • '),
-                    style: AppTextStyle.secondary(context),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
         Expanded(
@@ -130,9 +127,7 @@ class _EditorScreenImageViewState extends ConsumerState<EditorScreenImageView> {
 
   /// Shown in place of an image that can't be decoded.
   Widget _buildError() {
-    return const EmptyState(
-      icon: Icons.broken_image,
-      isError: true,
+    return const EmptyState.error(
       title: 'Failed to load image',
       message: 'The image file may be corrupted or unsupported',
     );

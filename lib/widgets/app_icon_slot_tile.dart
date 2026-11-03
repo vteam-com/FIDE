@@ -4,6 +4,7 @@ import 'package:fcheck/fcheck.dart';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/image_backdrop.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/ico_frame_image.dart';
@@ -73,7 +74,6 @@ class AppIconSlotTile extends StatelessWidget {
       color: Theme.of(context).colorScheme.outline,
     );
 
-    final colorScheme = Theme.of(context).colorScheme;
     return Tooltip(
       message: [relativePath ?? 'No file assigned', ...notes].join('\n'),
       child: Clickable(
@@ -83,11 +83,7 @@ class AppIconSlotTile extends StatelessWidget {
           width: AppSize.appIconSlot + SurfacePadding.dense.insets.horizontal,
           // The fill of the picked row in trees
           decoration: BoxDecoration(
-            color: isSelected
-                ? colorScheme.primaryContainer.withValues(
-                    alpha: AppOpacity.divider,
-                  )
-                : null,
+            color: isSelected ? AppTheme.selectedFill(context) : null,
             borderRadius: BorderRadius.circular(AppRadius.medium),
           ),
           child: Column(

@@ -32,7 +32,6 @@ class SearchToggleIcons extends StatelessWidget {
       spacing: AppSpacing.medium,
       children: [
         _toggle(
-          context,
           on: caseSensitive,
           icon: caseSensitive ? Icons.text_fields : Icons.text_fields_outlined,
           tooltip: 'Toggle case sensitivity',
@@ -40,7 +39,6 @@ class SearchToggleIcons extends StatelessWidget {
         ),
         if (showWholeWord)
           _toggle(
-            context,
             on: wholeWord,
             icon: wholeWord ? Icons.format_quote : Icons.format_quote_outlined,
             tooltip: 'Toggle whole word matching',
@@ -51,19 +49,15 @@ class SearchToggleIcons extends StatelessWidget {
   }
 
   /// A button flipping [on], in the primary color while on.
-  Widget _toggle(
-    BuildContext context, {
+  Widget _toggle({
     required bool on,
     required IconData icon,
     required String tooltip,
     required ValueChanged<bool> onChanged,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
     return CompactIconButton(
       icon: icon,
-      color: on
-          ? colorScheme.primary
-          : colorScheme.onSurface.withValues(alpha: AppOpacity.muted),
+      selected: on,
       tooltip: '$tooltip (${on ? 'ON' : 'OFF'})',
       onPressed: () => onChanged(!on),
     );

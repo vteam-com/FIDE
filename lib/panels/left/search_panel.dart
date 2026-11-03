@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart'
-    show AppPadding, AppSpacing, AppIconSize, AppTextStyle;
+    show AppPadding, AppSpacing, AppTextStyle;
 import 'package:fide/models/editor_search.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/reference_search.dart';
@@ -13,6 +13,7 @@ import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
+import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/search_replace_field.dart';
@@ -163,13 +164,11 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     ref.listen<String?>(projectSearchRequestProvider, (_, next) {
       if (next != null) _startSearch(next);
     });
-    return Container(
-      padding: AppPadding.panelContent,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Search input
-          SearchReplaceField(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        HeaderBar(
+          child: SearchReplaceField(
             searchField: AppTextField(
               controller: _searchController,
               focusNode: _searchFocusNode,
@@ -205,24 +204,24 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
             replaceController: _replaceController,
             onReplaceAll: _resultsTree == null ? null : _replaceAll,
           ),
-          const Divider(),
+        ),
 
-          // Results
-          Expanded(
-            child: _resultsTree == null && !_isSearching
-                ? const EmptyState(message: 'No results found')
-                : _resultsTree != null
-                ? SingleChildScrollView(
-                    child: Column(
-                      children: _resultsTree!.children
-                          .map((node) => _buildSearchResultNode(node))
-                          .toList(),
-                    ),
-                  )
-                : const LoadingIndicator(),
-          ),
-        ],
-      ),
+        // Results
+        Expanded(
+          child: _resultsTree == null && !_isSearching
+              ? const EmptyState(message: 'No results found')
+              : _resultsTree != null
+              ? SingleChildScrollView(
+                  padding: AppPadding.panelContent,
+                  child: Column(
+                    children: _resultsTree!.children
+                        .map((node) => _buildSearchResultNode(node))
+                        .toList(),
+                  ),
+                )
+              : const LoadingIndicator(),
+        ),
+      ],
     );
   }
 
@@ -338,7 +337,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
         ),
         // Match results
         Padding(
-          padding: const EdgeInsets.only(left: AppIconSize.xLarge),
+          padding: const EdgeInsets.only(left: AppSpacing.xxLarge),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: AppSpacing.tiny,

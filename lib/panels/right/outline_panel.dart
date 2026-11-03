@@ -14,7 +14,7 @@ import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/services/outline_parser.dart';
 import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/empty_state.dart';
-import 'package:fide/widgets/icon_menu_row.dart';
+import 'package:fide/widgets/icon_menu_item.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
@@ -197,39 +197,29 @@ class _OutlinePanelState extends ConsumerState<OutlinePanel> {
   /// caller (when there is exactly one) and Show all callers.
   void _showNodeMenu(OutlineNode node, Offset position) {
     final consumers = _consumers;
-    showMenu<VoidCallback>(
-      context: context,
-      position: MoreMenuButton.menuPosition(position),
-      items: [
-        PopupMenuItem(
-          value: () => _rename(node),
-          child: const IconMenuRow(
-            icon: Icons.drive_file_rename_outline,
-            label: 'Rename…',
+    showActionMenu(context, position, [
+      IconMenuItem(
+        value: () => _rename(node),
+        icon: Icons.drive_file_rename_outline,
+        label: 'Rename…',
+      ),
+      if (consumers != null && consumers.length == 1)
+        IconMenuItem(
+          value: () => openFileAtLine(
+            ref,
+            consumers.single.filePath,
+            consumers.single.lineNumber,
           ),
+          icon: Icons.call_made,
+          label: 'Jump to caller',
         ),
-        if (consumers != null && consumers.length == 1)
-          PopupMenuItem(
-            value: () => openFileAtLine(
-              ref,
-              consumers.single.filePath,
-              consumers.single.lineNumber,
-            ),
-            child: const IconMenuRow(
-              icon: Icons.call_made,
-              label: 'Jump to caller',
-            ),
-          ),
-        if (consumers != null && consumers.isNotEmpty)
-          PopupMenuItem(
-            value: () => _showConsumers(node, consumers),
-            child: const IconMenuRow(
-              icon: Icons.manage_search,
-              label: 'Show all callers',
-            ),
-          ),
-      ],
-    ).then((action) => action?.call());
+      if (consumers != null && consumers.isNotEmpty)
+        IconMenuItem(
+          value: () => _showConsumers(node, consumers),
+          icon: Icons.manage_search,
+          label: 'Show all callers',
+        ),
+    ]);
   }
 
   /// The name [node] is used by: `Foo<T>` is used as `Foo`.

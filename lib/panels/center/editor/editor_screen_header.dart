@@ -7,11 +7,11 @@ import 'package:fide/services/git_service.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widget_services/diff_counter.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/dropdown_label.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/path_text.dart';
-import 'package:fide/widgets/toggle_experience_mode.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -104,22 +104,14 @@ class EditorScreenHeader extends ConsumerWidget {
                         }).toList();
                       },
                       onSelected: onDocumentSelected,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (activeIndex < openDocuments.length)
-                            Flexible(
-                              child: _documentRow(
+                      child: DropdownLabel(
+                        child: activeIndex < openDocuments.length
+                            ? _documentRow(
                                 openDocuments[activeIndex],
                                 projectPath,
                                 diffStats,
-                              ),
-                            ),
-                          Icon(
-                            Icons.arrow_drop_down,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ],
+                              )
+                            : const SizedBox.shrink(),
                       ),
                     ),
                   ),
@@ -148,14 +140,11 @@ class EditorScreenHeader extends ConsumerWidget {
           ),
           if (ref.watch(gitDiffStatsProvider(currentFile)).value?.hasChanges ??
               false)
-            ToggleExperienceMode(
-              isAlternativeMode: showDiffView,
-              primaryIcon: Icons.difference,
-              alternativeIcon: Icons.edit,
-              primaryTooltip: 'Show Diff View',
-              alternativeTooltip: 'Back to Editor',
+            CompactIconButton.header(
+              key: const Key('keyEditorDiff'),
+              icon: showDiffView ? Icons.edit : Icons.difference,
+              tooltip: showDiffView ? 'Back to Editor' : 'Show Diff View',
               onPressed: onToggleDiffView,
-              iconSize: AppIconSize.panelHeader,
             ),
           CompactIconButton.header(
             key: const Key('keyEditorFind'),

@@ -10,15 +10,18 @@ import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
+import 'package:fide/widgets/empty_label.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/panel_scroll_view.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
+import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -106,7 +109,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     final hasPending = pending > 0;
     return CompactIconButton(
       icon: hasPending ? pendingIcon : idleIcon,
-      color: hasPending ? Theme.of(context).colorScheme.primary : null,
+      selected: hasPending,
       onPressed: onPressed,
       tooltip: hasPending
           ? '$label $pending commit${pending == 1 ? '' : 's'}'
@@ -206,7 +209,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
         .watch(gitRepoControllerProvider(widget.projectPath))
         .when(
           loading: () => const LoadingIndicator(),
-          error: (error, _) => EmptyState(message: 'Error: $error'),
+          error: (error, _) => EmptyState.error(message: '$error'),
           data: _buildRepo,
         );
   }
@@ -221,6 +224,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
         HeaderBar(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: AppSpacing.medium,
             children: [
               Row(
                 children: [
@@ -248,41 +252,38 @@ class _GitPanelState extends ConsumerState<GitPanel> {
               ),
 
               if (status.staged.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(AppSpacing.medium),
-                  child: Column(
-                    spacing: AppSpacing.medium,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppTextField(
-                        controller: _commitController,
-                        hintText: 'Enter commit message...',
-                        maxLines: AppMetric.aiInputMaxLines,
-                        trailing: _isWritingMessage
-                            ? const InlineSpinner()
-                            : CompactIconButton(
-                                icon: Icons.auto_awesome,
-                                onPressed: _writeCommitMessage,
-                                tooltip: 'Write commit message with AI',
-                              ),
-                      ),
-                      Row(
-                        spacing: AppSpacing.medium,
-                        children: [
-                          PrimaryButton(
-                            busy: _isCommitting,
-                            onPressed: _commit,
-                            label: 'Commit',
-                          ),
-                          if (repo.canAmend)
-                            SecondaryButton(
-                              onPressed: _isCommitting ? null : _amend,
-                              label: 'Amend',
+                Column(
+                  spacing: AppSpacing.medium,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppTextField(
+                      controller: _commitController,
+                      hintText: 'Enter commit message...',
+                      maxLines: AppMetric.aiInputMaxLines,
+                      trailing: _isWritingMessage
+                          ? const InlineSpinner()
+                          : CompactIconButton(
+                              icon: Icons.auto_awesome,
+                              onPressed: _writeCommitMessage,
+                              tooltip: 'Write commit message with AI',
                             ),
-                        ],
-                      ),
-                    ],
-                  ),
+                    ),
+                    Row(
+                      spacing: AppSpacing.medium,
+                      children: [
+                        PrimaryButton(
+                          busy: _isCommitting,
+                          onPressed: _commit,
+                          label: 'Commit',
+                        ),
+                        if (repo.canAmend)
+                          SecondaryButton(
+                            onPressed: _isCommitting ? null : _amend,
+                            label: 'Amend',
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
             ],
           ),
@@ -290,72 +291,67 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
         // Content
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.small),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: AppSpacing.small,
-              children: [
-                // Staged files
-                if (status.staged.isNotEmpty) ...[
-                  _buildFileSection(
-                    'STAGED CHANGES',
-                    status.staged,
-                    kindOf: (file) =>
-                        status.stagedKinds[file] ?? GitFileStatus.added,
-                    stats: repo.stagedStats,
-                    staged: true,
-                    onStage: null,
-                    onUnstage: _unstageFiles,
-                    canDiscard: false,
-                    onDiscard: _discardChanges,
-                  ),
-                ],
-
-                // Unstaged files
-                if (status.unstaged.isNotEmpty) ...[
-                  _buildFileSection(
-                    'CHANGES',
-                    status.unstaged,
-                    kindOf: (file) =>
-                        status.unstagedKinds[file] ?? GitFileStatus.modified,
-                    stats: repo.unstagedStats,
-                    onStage: _stageFiles,
-                    onUnstage: null,
-                    canDiscard: true,
-                    onDiscard: _discardChanges,
-                  ),
-                ],
-
-                // Untracked files
-                if (status.untracked.isNotEmpty) ...[
-                  // Untracked files are new, so they read as added
-                  _buildFileSection(
-                    'UNTRACKED',
-                    status.untracked,
-                    kindOf: (_) => GitFileStatus.added,
-                    stats: repo.unstagedStats,
-                    onStage: _stageFiles,
-                    onUnstage: null,
-                    canDiscard: true,
-                    onDiscard: _discardChanges,
-                  ),
-                ],
-
-                // Recent commits
-                SectionPanel(
-                  title: 'Recent Commits',
-                  isExpanded:
-                      true, // Recent commits should be expanded by default
-
-                  child: repo.commits.isEmpty
-                      ? const EmptyState(message: 'No commits yet')
-                      : Column(
-                          children: repo.commits.map(_buildCommitTile).toList(),
-                        ),
+          child: PanelScrollView(
+            children: [
+              // Staged files
+              if (status.staged.isNotEmpty) ...[
+                _buildFileSection(
+                  'STAGED CHANGES',
+                  status.staged,
+                  kindOf: (file) =>
+                      status.stagedKinds[file] ?? GitFileStatus.added,
+                  stats: repo.stagedStats,
+                  staged: true,
+                  onStage: null,
+                  onUnstage: _unstageFiles,
+                  canDiscard: false,
+                  onDiscard: _discardChanges,
                 ),
               ],
-            ),
+
+              // Unstaged files
+              if (status.unstaged.isNotEmpty) ...[
+                _buildFileSection(
+                  'CHANGES',
+                  status.unstaged,
+                  kindOf: (file) =>
+                      status.unstagedKinds[file] ?? GitFileStatus.modified,
+                  stats: repo.unstagedStats,
+                  onStage: _stageFiles,
+                  onUnstage: null,
+                  canDiscard: true,
+                  onDiscard: _discardChanges,
+                ),
+              ],
+
+              // Untracked files
+              if (status.untracked.isNotEmpty) ...[
+                // Untracked files are new, so they read as added
+                _buildFileSection(
+                  'UNTRACKED',
+                  status.untracked,
+                  kindOf: (_) => GitFileStatus.added,
+                  stats: repo.unstagedStats,
+                  onStage: _stageFiles,
+                  onUnstage: null,
+                  canDiscard: true,
+                  onDiscard: _discardChanges,
+                ),
+              ],
+
+              // Recent commits
+              SectionPanel(
+                title: 'Recent Commits',
+                isExpanded:
+                    true, // Recent commits should be expanded by default
+
+                child: repo.commits.isEmpty
+                    ? const EmptyLabel('No commits yet')
+                    : Column(
+                        children: repo.commits.map(_buildCommitTile).toList(),
+                      ),
+              ),
+            ],
           ),
         ),
       ],
@@ -367,34 +363,26 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   /// and age, with the exact date on hover.
   Widget _buildCommitTile(GitCommit commit) {
     final primary = Theme.of(context).colorScheme.primary;
-    return ListTile(
-      dense: true,
-      leading: commit.isUnpushed
-          ? Tooltip(
-              message: 'Not pushed yet',
-              child: Icon(
-                Icons.arrow_circle_up,
-                size: AppIconSize.medium,
-                color: primary,
-              ),
-            )
-          : const Icon(Icons.commit, size: AppIconSize.medium),
-      title: Text(
-        commit.message,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: commit.isUnpushed
-            ? AppTextStyle.label.copyWith(color: primary)
-            : null,
+    return TreeRow(
+      icon: Icon(
+        commit.isUnpushed ? Icons.arrow_circle_up : Icons.commit,
+        size: AppIconSize.medium,
+        color: commit.isUnpushed ? primary : null,
       ),
-      subtitle: Tooltip(
-        message: '${commit.date}',
-        waitDuration: AppDuration.tooltipWait,
-        child: Text(
+      name: commit.message,
+      nameStyle: commit.isUnpushed
+          ? AppTextStyle.body.copyWith(color: primary)
+          : null,
+      note: commit.isUnpushed
+          ? 'Not pushed yet · ${commit.date}'
+          : '${commit.date}',
+      trailing: [
+        Text(
           '${commit.hash.substring(0, AppMetric.gitHashShortLength)}'
           ' · ${commit.date.timeAgo()}',
+          style: AppTextStyle.secondary(context),
         ),
-      ),
+      ],
     );
   }
 

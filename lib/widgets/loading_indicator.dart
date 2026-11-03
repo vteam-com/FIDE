@@ -1,4 +1,6 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/empty_state.dart';
+import 'package:fide/widgets/inline_spinner.dart';
 import 'package:flutter/material.dart';
 
 /// A spinner centered in the space of content that is still loading, with
@@ -13,15 +15,9 @@ class LoadingIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final message = this.message;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        spacing: AppSpacing.large,
-        children: [
-          const CircularProgressIndicator(),
-          if (message != null) Text(message),
-        ],
-      ),
-    );
+    const spinner = InlineSpinner(size: AppIconSize.emptyState);
+    return message == null
+        ? const Center(child: spinner)
+        : EmptyState(message: message, child: spinner);
   }
 }

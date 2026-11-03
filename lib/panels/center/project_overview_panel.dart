@@ -36,8 +36,9 @@ class ProjectOverviewPanel extends ConsumerWidget {
               : _overview(ref, overview),
           loading: () =>
               const LoadingIndicator(message: 'Analyzing project with fCheck…'),
-          error: (error, _) =>
-              EmptyState(message: 'Could not analyze the project: $error'),
+          error: (error, _) => EmptyState.error(
+            message: 'Could not analyze the project: $error',
+          ),
         );
   }
 

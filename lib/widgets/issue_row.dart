@@ -13,7 +13,9 @@ import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/markdown_text.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/path_text.dart';
+import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/quick_fix_icon.dart';
+import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/status_tone_style.dart';
@@ -139,6 +141,13 @@ class IssueRow extends ConsumerWidget {
     );
   }
 
+  /// Closes the details dialog over [context] and sends [request] to the
+  /// AI panel.
+  void _askAi(BuildContext context, WidgetRef ref, String request) {
+    Navigator.of(context).pop();
+    ref.read(aiRequestsProvider).ask(request);
+  }
+
   /// The best practice fixing [issue] and its findings, with its AI
   /// action.
   Future<void> _showDetails(BuildContext context, WidgetRef ref) {
@@ -180,9 +189,9 @@ class IssueRow extends ConsumerWidget {
       actions: [
         // The string fixes are picked per string, grouped by role
         if (quickFixes.any((fix) => StringFix.of(fix) != null))
-          FilledButton.icon(
-            icon: const Icon(Icons.checklist),
-            label: const Text(QuickFixController.reviewStringsLabel),
+          PrimaryButton(
+            icon: Icons.checklist,
+            label: QuickFixController.reviewStringsLabel,
             onPressed: () {
               Navigator.of(context).pop();
               _reviewStrings(context, ref);
@@ -190,9 +199,9 @@ class IssueRow extends ConsumerWidget {
           ),
         for (final quickFix in quickFixes)
           if (StringFix.of(quickFix) == null)
-            FilledButton.icon(
-              icon: Icon(quickFix.icon),
-              label: Text(quickFix.label),
+            PrimaryButton(
+              icon: quickFix.icon,
+              label: quickFix.label,
               onPressed: () {
                 Navigator.of(context).pop();
                 ref
@@ -206,14 +215,17 @@ class IssueRow extends ConsumerWidget {
             ),
         if (fixRequest != null)
           // Secondary to the instant quick fixes
-          (quickFixes.isEmpty ? FilledButton.icon : OutlinedButton.icon)(
-            icon: const Icon(Icons.auto_fix_high),
-            label: Text(issue.aiActionLabel!),
-            onPressed: () {
-              Navigator.of(context).pop();
-              ref.read(aiRequestsProvider).ask(fixRequest);
-            },
-          ),
+          quickFixes.isEmpty
+              ? PrimaryButton(
+                  icon: Icons.auto_fix_high,
+                  label: issue.aiActionLabel!,
+                  onPressed: () => _askAi(context, ref, fixRequest),
+                )
+              : SecondaryButton(
+                  icon: Icons.auto_fix_high,
+                  label: issue.aiActionLabel!,
+                  onPressed: () => _askAi(context, ref, fixRequest),
+                ),
       ],
     );
   }

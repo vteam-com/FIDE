@@ -1,3 +1,4 @@
+import 'package:fide/constants/constants.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,10 @@ class DiffCounter extends StatelessWidget {
       parts.add(BadgeStatus.deletion(count: gitStats!.removed));
     }
 
-    return Row(mainAxisSize: MainAxisSize.min, children: parts);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: AppSpacing.tiny,
+      children: parts,
+    );
   }
 }

@@ -1,7 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_view_notifier.dart';
 import 'package:fide/widget_services/file_open_actions.dart';
-import 'package:fide/widgets/icon_menu_row.dart';
+import 'package:fide/widgets/icon_menu_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -42,9 +42,10 @@ enum AppCommand {
 
   /// The command's item in a popup menu, whose value runs it.
   PopupMenuItem<VoidCallback> popupItem(BuildContext context, WidgetRef ref) {
-    return PopupMenuItem(
+    return IconMenuItem(
       value: () => run(context, ref),
-      child: IconMenuRow(icon: icon, label: label),
+      icon: icon,
+      label: label,
     );
   }
 

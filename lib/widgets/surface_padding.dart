@@ -5,10 +5,10 @@ import 'package:flutter/widgets.dart';
 /// its content.
 enum SurfacePadding {
   /// Cards, notes and summaries.
-  normal(EdgeInsets.all(AppSpacing.xLarge)),
+  normal(AppPadding.pageContent),
 
   /// List entries and details.
-  dense(EdgeInsets.all(AppSpacing.medium)),
+  dense(AppPadding.panelContent),
 
   /// Boxes framing content that brings its own padding, such as a list or
   /// a tile.

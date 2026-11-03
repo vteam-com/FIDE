@@ -3,6 +3,7 @@
 import 'package:diff_match_patch/diff_match_patch.dart';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/surface_header_band.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:flutter/material.dart';
 
@@ -31,19 +32,11 @@ class SideBySideDiff extends StatelessWidget {
       child: Column(
         children: [
           // Header
-          Container(
-            padding: AppPadding.diffHeader,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest
-                  .withValues(alpha: AppOpacity.disabled),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(AppRadius.medium),
-              ),
-            ),
+          SurfaceHeaderBand(
             child: Row(
               children: [
                 _buildHeaderLabel('Original'),
-                _buildColumnDivider(context, AppSize.diffHeaderDividerHeight),
+                _buildColumnDivider(AppSize.diffHeaderDividerHeight),
                 _buildHeaderLabel('Modified'),
               ],
             ),
@@ -72,10 +65,7 @@ class SideBySideDiff extends StatelessWidget {
                             ? Colors.red[AppShade.strong]
                             : null,
                       ),
-                      _buildColumnDivider(
-                        context,
-                        AppSize.diffRowDividerHeight,
-                      ),
+                      _buildColumnDivider(AppSize.diffRowDividerHeight),
                       _buildSide(
                         context,
                         line.newLine,
@@ -156,12 +146,10 @@ class SideBySideDiff extends StatelessWidget {
   }
 
   /// The thin line, [height] tall, between the original and modified sides.
-  Widget _buildColumnDivider(BuildContext context, double height) {
-    return Container(
-      width: AppSize.borderThin,
+  Widget _buildColumnDivider(double height) {
+    return SizedBox(
       height: height,
-      color: Theme.of(context).colorScheme.outline
-          .withValues(alpha: AppOpacity.divider),
+      child: const VerticalDivider(width: AppSize.borderThin),
     );
   }
 
@@ -182,7 +170,7 @@ class SideBySideDiff extends StatelessWidget {
     final style = AppTextStyle.code;
     return Expanded(
       child: Container(
-        padding: AppPadding.diffRow,
+        padding: AppPadding.listItem,
         child: Row(
           children: [
             SizedBox(

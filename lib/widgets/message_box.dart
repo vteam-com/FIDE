@@ -10,6 +10,9 @@ import 'package:flutter/services.dart';
 // Convenience methods for showing messages
 /// Represents `MessageBox`.
 class MessageBox {
+  /// [copyToClipboard]'s confirmation unless it names what was copied.
+  static const String copiedConfirmation = 'Copied to clipboard';
+
   /// Shows an error message overlay, with a button to copy the text.
   static void showError(BuildContext context, String message) {
     _showMessage(context, message, StatusTone.error);
@@ -34,7 +37,7 @@ class MessageBox {
   static void copyToClipboard(
     BuildContext context,
     String text, {
-    String confirmation = 'Copied to clipboard',
+    String confirmation = copiedConfirmation,
   }) {
     Clipboard.setData(ClipboardData(text: text));
     showSuccess(context, confirmation);

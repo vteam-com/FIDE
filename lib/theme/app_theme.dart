@@ -43,6 +43,11 @@ class AppTheme {
       colorScheme: colorScheme,
       useMaterial3: true,
     ).copyWith(
+      // One color for every line: dividers, header strips and box outlines
+      dividerColor: colorScheme.outline.withValues(alpha: AppOpacity.divider),
+      dividerTheme: DividerThemeData(
+        color: colorScheme.outline.withValues(alpha: AppOpacity.divider),
+      ),
       // One look for every TabBar: full-width underline, primary when selected
       tabBarTheme: TabBarThemeData(
         labelColor: colorScheme.primary,
@@ -130,23 +135,10 @@ class AppTheme {
     return la > lb ? la / lb : lb / la;
   }
 
-  /// Returns the side-panel surface color for cards and nested containers.
-  static Color sidePanelSurface(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    return brightness == Brightness.light
-        ? AppColor
-              .sidePanelSurfaceLight // Pure white for light mode
-        : AppColor.sidePanelSurfaceDark; // Slightly lighter than background for dark mode
-  }
-
-  /// Returns the side-panel divider color for the active brightness.
-  static Color sidePanelDivider(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    return brightness == Brightness.light
-        ? AppColor
-              .sidePanelDividerLight // Light gray divider
-        : AppColor.sidePanelDividerDark; // Dark gray divider
-  }
+  /// The fill of the selected entry of a list, tree or grid.
+  static Color selectedFill(BuildContext context) =>
+      Theme.of(context).colorScheme.primaryContainer
+          .withValues(alpha: AppOpacity.divider);
 
   /// Radial gradient the workspace panel islands float on.
   ///

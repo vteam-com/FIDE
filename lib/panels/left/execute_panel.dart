@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:fide/constants/constants.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -12,6 +11,7 @@ import 'package:fide/widgets/command_output.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/panel_action.dart';
+import 'package:fide/widgets/panel_scroll_view.dart';
 import 'package:fide/widgets/platform_info_section.dart';
 import 'package:fide/widgets/platform_selector.dart';
 import 'package:fide/widgets/status_indicator.dart';
@@ -58,41 +58,34 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
     final isSupported = supportedPlatforms.contains(platform);
     final canBuild = platform.canBuildOn(ref.watch(hostPlatformProvider));
 
-    return SingleChildScrollView(
-      child: Padding(
-        padding: AppPadding.panelContent,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: AppSpacing.xLarge,
-          children: [
-            PlatformSelector(
-              supportedPlatforms: supportedPlatforms,
-              selectedPlatform: platform,
-              onPlatformSelected: ref
-                  .read(selectedPlatformProvider.notifier)
-                  .select,
-            ),
-            PlatformInfoSection(
-              selectedPlatform: platform,
-              isSupported: isSupported,
-              canBuild: canBuild,
-              projectPath: currentProjectPath,
-            ),
-            if (isSupported && canBuild)
-              CommandActionList(actions: _actionsFor(platform))
-            else
-              OutlinedSurface(
-                child: StatusIndicator.tone(
-                  StatusTone.info,
-                  label: isSupported
-                      ? platform.cannotBuildOn(Platform.operatingSystem)
-                      : platform.enableInstructions,
-                ),
-              ),
-            CommandOutput(logKey: _logKeyOf(platform)),
-          ],
+    return PanelScrollView(
+      children: [
+        PlatformSelector(
+          supportedPlatforms: supportedPlatforms,
+          selectedPlatform: platform,
+          onPlatformSelected: ref
+              .read(selectedPlatformProvider.notifier)
+              .select,
         ),
-      ),
+        PlatformInfoSection(
+          selectedPlatform: platform,
+          isSupported: isSupported,
+          canBuild: canBuild,
+          projectPath: currentProjectPath,
+        ),
+        if (isSupported && canBuild)
+          CommandActionList(actions: _actionsFor(platform))
+        else
+          OutlinedSurface(
+            child: StatusIndicator.tone(
+              StatusTone.info,
+              label: isSupported
+                  ? platform.cannotBuildOn(Platform.operatingSystem)
+                  : platform.enableInstructions,
+            ),
+          ),
+        CommandOutput(logKey: _logKeyOf(platform)),
+      ],
     );
   }
 

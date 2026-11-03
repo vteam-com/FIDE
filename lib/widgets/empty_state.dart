@@ -1,4 +1,6 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/status_tone.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter/material.dart';
 
 /// A centered message for a panel or screen that has nothing to show, or
@@ -12,13 +14,22 @@ class EmptyState extends StatelessWidget {
     this.icon,
     this.title,
     this.child,
-    this.isError = false,
-  });
+  }) : isError = false;
+
+  /// Creates the placeholder for a failure: [message] under the error
+  /// icon and an optional [title], in the error color.
+  const EmptyState.error({
+    super.key,
+    required this.message,
+    this.title,
+    this.child,
+  }) : icon = null,
+       isError = true;
 
   /// Content under [message], such as an action or a link.
   final Widget? child;
 
-  /// Large glyph shown first; none when null.
+  /// Large glyph shown first; none when null, but for an error's.
   final IconData? icon;
 
   /// Whether the state is a failure, drawing [icon] and [title] in the
@@ -38,6 +49,7 @@ class EmptyState extends StatelessWidget {
     final accent = isError ? theme.colorScheme.error : muted;
     final title = this.title;
     final child = this.child;
+    final icon = isError ? StatusTone.error.icon : this.icon;
     return Center(
       child: SingleChildScrollView(
         padding: AppPadding.panelContent,

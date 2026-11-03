@@ -18,10 +18,10 @@ import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
+import 'package:fide/widgets/panel_scroll_view.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/tree_branch.dart';
 import 'package:fide/widgets/tree_row.dart';
-import 'package:fide/widgets/warning_count.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -121,10 +121,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
         _buildAssetsSection(categories.assets),
     ];
 
-    final content = SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.small),
-      child: Column(spacing: AppSpacing.small, children: sections),
-    );
+    final content = PanelScrollView(children: sections);
 
     return LayoutBuilder(
       builder: (_, constraints) {
@@ -156,10 +153,10 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     final rightWidget =
         sourceFileCount == 0 || sourceFileCount == publicClassCount
         ? null
-        : WarningCount(
+        : ContainerCounter.warning(
             icon: Icons.description,
             count: sourceFileCount,
-            message:
+            tooltip:
                 '$sourceFileCount files define $publicClassCount public '
                 'classes; expected one public class per file',
           );
@@ -221,10 +218,10 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
       onTap: () => showAppIcons(ref),
       trailing: [
         if (issueCount > 0)
-          WarningCount(
+          ContainerCounter.warning(
             icon: Icons.apps,
             count: issueCount,
-            message: '${issueCount.count('app icon problem')}; click to fix',
+            tooltip: '${issueCount.count('app icon problem')}; click to fix',
           ),
       ],
     );
@@ -276,10 +273,10 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
         rootPath: projectRoot!.path,
         trailing: multiClassFileCount == null
             ? null
-            : WarningCount(
+            : ContainerCounter.warning(
                 icon: Icons.description,
                 count: multiClassFileCount,
-                message:
+                tooltip:
                     '$multiClassFileCount files in this folder define more '
                     'than one public class; expected one public class '
                     'per file',
@@ -303,10 +300,10 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
             ? const InlineSpinner(size: AppSize.compactProgressIndicator)
             : classCount == null
             ? null
-            : WarningCount(
+            : ContainerCounter.warning(
                 icon: Icons.data_object,
                 count: classCount,
-                message:
+                tooltip:
                     'Defines $classCount public classes; '
                     'expected one public class per file.\n'
                     'Click to move the others into their own files.',

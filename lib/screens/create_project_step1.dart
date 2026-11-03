@@ -83,7 +83,7 @@ class _CreateProjectStep1State extends ConsumerState<CreateProjectStep1> {
     final ollamaAvailable = tools?.ollamaAvailable ?? false;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: AppIconSize.xLarge,
+      spacing: AppSpacing.xxLarge,
       children: [
         StepHeader(number: _stepNumber, title: 'Project Details'),
 

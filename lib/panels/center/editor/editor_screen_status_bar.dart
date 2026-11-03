@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter/material.dart';
 
@@ -37,11 +38,8 @@ class EditorScreenStatusBar extends StatelessWidget {
   final bool showDiffView;
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.medium,
-        vertical: AppSpacing.micro,
-      ),
+    return HeaderBar(
+      isFooter: true,
       child: Row(
         children: [
           if (showDiffView)

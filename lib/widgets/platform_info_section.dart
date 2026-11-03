@@ -10,13 +10,13 @@ import 'package:fide/providers/service_providers.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/detail_row.dart';
 import 'package:fide/widgets/file_actions.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/surface_padding.dart';
-import 'package:fide/widgets/warning_count.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -190,10 +190,10 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
         .where((issue) => issue.platform.name == widget.selectedPlatform.name)
         .length;
     if (count == 0) return const SizedBox();
-    return WarningCount(
+    return ContainerCounter.warning(
       icon: Icons.apps,
       count: count,
-      message:
+      tooltip:
           '${count.count('app icon problem')} on '
           '${widget.selectedPlatform.displayName}.'
           '\nClick to review and fix them.',

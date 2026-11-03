@@ -5,7 +5,7 @@ import 'package:fide/models/file_location.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
-import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/copy_button.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -76,11 +76,7 @@ class _OutputPanelState extends ConsumerState<OutputPanel> {
       rightWidget: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CompactIconButton(
-            onPressed: _copyToClipboard,
-            icon: Icons.copy,
-            tooltip: 'Copy to clipboard',
-          ),
+          CopyButton(text: widget.text),
           CompactIconButton(
             onPressed: () => setState(() => _wrapText = !_wrapText),
             icon: _wrapText ? Icons.wrap_text : Icons.text_fields,
@@ -151,8 +147,6 @@ class _OutputPanelState extends ConsumerState<OutputPanel> {
     spans.add(TextSpan(text: text.substring(offset)));
     return TextSpan(children: spans);
   }
-
-  void _copyToClipboard() => MessageBox.copyToClipboard(context, widget.text);
 
   void _disposeLinks() {
     for (final (_, recognizer) in _links) {

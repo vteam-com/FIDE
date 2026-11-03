@@ -12,8 +12,10 @@ import 'package:fide/services/ollama_installer.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/dropdown_label.dart';
 import 'package:fide/widgets/empty_state.dart';
-import 'package:fide/widgets/icon_menu_row.dart';
+import 'package:fide/widgets/header_bar.dart';
+import 'package:fide/widgets/icon_menu_item.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
@@ -63,100 +65,87 @@ class _AIPanelState extends ConsumerState<AIPanel> {
       (_, _) =>
           WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToEnd()),
     );
-    return Container(
-      color: Theme.of(context).colorScheme.surfaceContainerLow,
-      child: Column(
-        children: [
-          // Setup instructions if no messages and not all ready
-          if (messages.isEmpty && !isReady)
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.medium),
-              child: ActionCard(
-                title: 'Setup',
-                icon: Icons.info_outline,
-                child: _buildSetupState(setup.value),
-              ),
+    return Column(
+      children: [
+        // Setup instructions if no messages and not all ready
+        if (messages.isEmpty && !isReady)
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.medium),
+            child: ActionCard(
+              title: 'Setup',
+              icon: Icons.info_outline,
+              child: _buildSetupState(setup.value),
             ),
-
-          // Transcript: one selection spans every entry
-          Expanded(
-            child: messages.isEmpty && !chat.isBusy
-                ? const EmptyState(
-                    message: 'Start a conversation with the AI assistant',
-                  )
-                : SelectionArea(
-                    child: ListView.separated(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.all(AppSpacing.large),
-                      itemCount: messages.length + (chat.isBusy ? 1 : 0),
-                      separatorBuilder: (_ /*context*/, _ /*index*/) =>
-                          const SizedBox(height: AppSpacing.large),
-                      itemBuilder: (_ /*context*/, index) =>
-                          index < messages.length
-                          ? AiTranscriptEntry(message: messages[index])
-                          : _buildWorking(),
-                    ),
-                  ),
           ),
-          const Divider(),
-          _buildPrompt(chat.action.hint, chat.isBusy),
-          _buildFooter(chat.action, isReady),
-        ],
-      ),
+
+        // Transcript: one selection spans every entry
+        Expanded(
+          child: messages.isEmpty && !chat.isBusy
+              ? const EmptyState(
+                  message: 'Start a conversation with the AI assistant',
+                )
+              : SelectionArea(
+                  child: ListView.separated(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(AppSpacing.large),
+                    itemCount: messages.length + (chat.isBusy ? 1 : 0),
+                    separatorBuilder: (_ /*context*/, _ /*index*/) =>
+                        const SizedBox(height: AppSpacing.large),
+                    itemBuilder: (_ /*context*/, index) =>
+                        index < messages.length
+                        ? AiTranscriptEntry(message: messages[index])
+                        : _buildWorking(),
+                  ),
+                ),
+        ),
+        HeaderBar(
+          isFooter: true,
+          child: Column(
+            spacing: AppSpacing.tiny,
+            children: [
+              _buildPrompt(chat.action.hint, chat.isBusy),
+              _buildFooter(chat.action, isReady),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
   /// The action new prompts use, as a menu, and the model answering them.
   Widget _buildFooter(AiAction selected, bool isReady) {
     final notifier = ref.read(aiChatProvider.notifier);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.medium,
-        0,
-        AppSpacing.large,
-        AppSpacing.medium,
-      ),
-      child: Row(
-        spacing: AppSpacing.medium,
-        children: [
-          PopupMenuButton<AiAction>(
-            tooltip: 'Action',
-            itemBuilder: (_) => [
-              for (final action in AiAction.values)
-                PopupMenuItem(
-                  value: action,
-                  child: IconMenuRow(
-                    icon: action == selected ? Icons.check : null,
-                    label: action.label,
-                  ),
-                ),
-            ],
-            onSelected: notifier.selectAction,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.tiny),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(selected.label, style: AppTextStyle.caption),
-                  const Icon(Icons.arrow_drop_down, size: AppIconSize.medium),
-                ],
+    return Row(
+      spacing: AppSpacing.medium,
+      children: [
+        PopupMenuButton<AiAction>(
+          tooltip: 'Action',
+          itemBuilder: (_) => [
+            for (final action in AiAction.values)
+              IconMenuItem(
+                value: action,
+                icon: action == selected ? Icons.check : null,
+                label: action.label,
+              ),
+          ],
+          onSelected: notifier.selectAction,
+          child: DropdownLabel(
+            child: Text(selected.label, style: AppTextStyle.caption),
+          ),
+        ),
+        const Spacer(),
+        if (isReady)
+          Flexible(
+            child: Tooltip(
+              message: _modelLabel,
+              child: Text(
+                _modelLabel,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyle.secondary(context),
               ),
             ),
           ),
-          const Spacer(),
-          if (isReady)
-            Flexible(
-              child: Tooltip(
-                message: _modelLabel,
-                child: Text(
-                  _modelLabel,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyle.secondary(context),
-                ),
-              ),
-            ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -164,37 +153,27 @@ class _AIPanelState extends ConsumerState<AIPanel> {
   /// pending.
   Widget _buildPrompt(String hint, bool isBusy) {
     final notifier = ref.read(aiChatProvider.notifier);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.medium,
-        AppSpacing.medium,
-        AppSpacing.medium,
-        AppSpacing.tiny,
-      ),
-      // Enter sends; Shift+Enter, left unbound, starts a new line; Escape
-      // stops the pending reply
-      child: CallbackShortcuts(
-        bindings: {
-          const SingleActivator(LogicalKeyboardKey.enter): _send,
-          const SingleActivator(LogicalKeyboardKey.escape): notifier.cancel,
-        },
-        child: AppTextField(
-          controller: _promptController,
-          hintText: hint,
-          maxLines: AppMetric.aiInputMaxLines,
-          minLines: 1,
-          trailing: isBusy
-              ? CompactIconButton(
-                  onPressed: notifier.cancel,
-                  icon: Icons.stop_circle_outlined,
-                  tooltip: 'Stop (Esc)',
-                )
-              : CompactIconButton(
-                  onPressed: _send,
-                  icon: Icons.arrow_upward,
-                  tooltip: 'Send (Enter)',
-                ),
-        ),
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.enter): _send,
+        const SingleActivator(LogicalKeyboardKey.escape): notifier.cancel,
+      },
+      child: AppTextField(
+        controller: _promptController,
+        hintText: hint,
+        maxLines: AppMetric.aiInputMaxLines,
+        minLines: 1,
+        trailing: isBusy
+            ? CompactIconButton(
+                onPressed: notifier.cancel,
+                icon: Icons.stop_circle_outlined,
+                tooltip: 'Stop (Esc)',
+              )
+            : CompactIconButton(
+                onPressed: _send,
+                icon: Icons.arrow_upward,
+                tooltip: 'Send (Enter)',
+              ),
       ),
     );
   }

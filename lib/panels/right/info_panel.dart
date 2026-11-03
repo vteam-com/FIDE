@@ -19,11 +19,13 @@ import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/empty_label.dart';
 import 'package:fide/widgets/issue_section.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/open_url.dart';
 import 'package:fide/widgets/output_panel.dart';
+import 'package:fide/widgets/panel_scroll_view.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/section_title.dart';
@@ -353,61 +355,53 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       return const NoProjectPlaceholder();
     }
 
-    return Padding(
-      padding: AppPadding.panelContent,
-      child: SingleChildScrollView(
-        child: Column(
+    return PanelScrollView(
+      children: [
+        // Header with project info
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: AppSpacing.medium,
           children: [
-            // Header with project info
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        projectMetrics.name ?? 'Unknown Project',
-                        style: AppTextStyle.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    CompactIconButton(
-                      icon: Icons.edit_note,
-                      tooltip: 'Edit pubspec.yaml',
-                      onPressed: _openPubspecYaml,
-                    ),
-                  ],
-                ),
-                if (projectMetrics.version != null)
-                  Text(
-                    'v${projectMetrics.version}',
-                    style: AppTextStyle.secondary(context),
+                Expanded(
+                  child: Text(
+                    projectMetrics.name ?? 'Unknown Project',
+                    style: AppTextStyle.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
+                ),
+                CompactIconButton(
+                  icon: Icons.edit_note,
+                  tooltip: 'Edit pubspec.yaml',
+                  onPressed: _openPubspecYaml,
+                ),
               ],
             ),
-
-            Text(
-              projectMetrics.description ?? '< no description >',
-              style: AppTextStyle.secondary(context),
-              overflow: TextOverflow.visible,
-            ),
-
-            // Health Indicators, once the project has been analyzed
-            if (projectMetrics.health case final health?)
-              _buildHealthCard(health),
-
-            // Dependencies
-            /// Handles `_buildDependenciesCard`.
-            _buildDependenciesCard(projectMetrics),
-
-            // Actions
-            _buildActionsCard(),
+            if (projectMetrics.version != null)
+              Text(
+                'v${projectMetrics.version}',
+                style: AppTextStyle.secondary(context),
+              ),
           ],
         ),
-      ),
+
+        Text(
+          projectMetrics.description ?? '< no description >',
+          style: AppTextStyle.secondary(context),
+          overflow: TextOverflow.visible,
+        ),
+
+        // Health Indicators, once the project has been analyzed
+        if (projectMetrics.health case final health?) _buildHealthCard(health),
+
+        // Dependencies
+        /// Handles `_buildDependenciesCard`.
+        _buildDependenciesCard(projectMetrics),
+
+        // Actions
+        _buildActionsCard(),
+      ],
     );
   }
 
@@ -541,7 +535,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           ),
 
         if (depsDirect.isEmpty && depsDev.isEmpty)
-          Text('No dependencies', style: AppTextStyle.secondary(context)),
+          const EmptyLabel('No dependencies'),
       ],
     );
 

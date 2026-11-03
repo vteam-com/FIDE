@@ -14,22 +14,16 @@ class ContextMenuHandler {
       context,
       listen: false,
     ).read(desktopShellProvider);
-    showMenu<NodeAction>(
-      context: context,
-      position: MoreMenuButton.menuPosition(position),
-      items: [
-        for (final action in NodeAction.values)
-          if (action.appliesTo(node))
-            PopupMenuItem(
-              value: action,
-              child: IconMenuRow(
-                icon: action.icon,
-                label: action.labelIn(shell),
-                isError: action.isDestructive,
-              ),
-            ),
-      ],
-    ).then((action) {
+    showMenuAt<NodeAction>(context, position, [
+      for (final action in NodeAction.values)
+        if (action.appliesTo(node))
+          IconMenuItem(
+            value: action,
+            icon: action.icon,
+            label: action.labelIn(shell),
+            isError: action.isDestructive,
+          ),
+    ]).then((action) {
       if (action != null) onAction(action, node);
     });
   }

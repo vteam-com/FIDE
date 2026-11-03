@@ -13,11 +13,12 @@ import 'package:fide/providers/side_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widget_services/app_command.dart';
 import 'package:fide/widgets/clickable.dart';
-import 'package:fide/widgets/icon_menu_row.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/dropdown_label.dart';
+import 'package:fide/widgets/icon_menu_item.dart';
 import 'package:fide/widgets/project_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:path/path.dart' as p;
 import 'package:window_manager/window_manager.dart';
 
@@ -106,29 +107,24 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     List<String> mruFolders,
     WidgetRef ref,
   ) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-
     return Clickable(
       onTap: () => _showProjectMenu(context, mruFolders, ref),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: AppSpacing.medium,
-        children: [
-          ProjectIcon(projectPath: currentProjectPath),
-          Flexible(
-            child: Text(
-              p.basename(currentProjectPath),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-              style: AppTextStyle.label,
+      child: DropdownLabel(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: AppSpacing.medium,
+          children: [
+            ProjectIcon(projectPath: currentProjectPath),
+            Flexible(
+              child: Text(
+                p.basename(currentProjectPath),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: AppTextStyle.label,
+              ),
             ),
-          ),
-          Icon(
-            Icons.arrow_drop_down,
-            color: onSurface.withValues(alpha: AppOpacity.secondaryText),
-            size: AppIconSize.medium,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -141,25 +137,14 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
   /// The buttons cycling each [SidePanel] through Hide, Min and Max, each
   /// highlighted while its panel shows.
   Widget _buildPanelToggleButtons() {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         for (final panel in SidePanel.values)
-          IconButton(
+          CompactIconButton.svg(
             key: panel.toggleKey,
-            icon: SvgPicture.asset(
-              panel.asset,
-              width: AppIconSize.mediumLarge,
-              height: AppIconSize.mediumLarge,
-              colorFilter: ColorFilter.mode(
-                ref.watch(panel.visibleProvider)
-                    ? colorScheme.primary
-                    : colorScheme.onSurface,
-                BlendMode.srcIn,
-              ),
-            ),
+            svgAsset: panel.asset,
+            selected: ref.watch(panel.visibleProvider),
             onPressed: () => cyclePanelSize(ref, panel),
             tooltip: panel.tooltip,
           ),
@@ -169,16 +154,12 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
 
   /// Builds the settings gear icon button in the title bar.
   Widget _buildSettingsButton() {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    return IconButton(
-      icon: const Icon(Icons.settings, size: AppIconSize.mediumLarge),
+    return CompactIconButton(
+      icon: Icons.settings,
       onPressed: () => ref
           .read(settingsVisibleProvider.notifier)
           .update((visible) => !visible),
       tooltip: ShortcutHelpEntry.tooltip('Settings', AppShortcut.settings),
-      style: IconButton.styleFrom(
-        foregroundColor: onSurface.withValues(alpha: AppOpacity.prominent),
-      ),
     );
   }
 
@@ -206,21 +187,15 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     bool hasAccess,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
-    return PopupMenuItem(
+    return IconMenuItem(
       value: () => ref.read(appViewProvider.notifier).loadProject(folderPath),
-      child: IconMenuRow(
-        icon: Icons.folder_off,
-        leading: hasAccess ? ProjectIcon(projectPath: folderPath) : null,
-        label: p.basename(folderPath),
-        isError: !hasAccess,
-        trailing: hasAccess
-            ? null
-            : Icon(
-                Icons.lock,
-                color: colorScheme.error,
-                size: AppIconSize.small,
-              ),
-      ),
+      icon: Icons.folder_off,
+      leading: hasAccess ? ProjectIcon(projectPath: folderPath) : null,
+      label: p.basename(folderPath),
+      isError: !hasAccess,
+      trailing: hasAccess
+          ? null
+          : Icon(Icons.lock, color: colorScheme.error, size: AppIconSize.small),
     );
   }
 
@@ -230,21 +205,14 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     List<String> mruFolders,
     WidgetRef ref,
   ) {
-    final RenderBox button = context.findRenderObject() as RenderBox;
-    final Offset offset = button.localToGlobal(Offset.zero);
-
-    showMenu<VoidCallback>(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        offset.dx,
-        offset.dy + button.size.height,
-        offset.dx + button.size.width,
-        offset.dy + button.size.height,
-      ),
-      items: _buildDropdownMenuItems(
+    final button = context.findRenderObject() as RenderBox;
+    showActionMenu(
+      context,
+      button.localToGlobal(button.size.bottomLeft(Offset.zero)),
+      _buildDropdownMenuItems(
         mruFolders,
         ref.read(accessibleMruFoldersProvider),
       ),
-    ).then((choice) => choice?.call());
+    );
   }
 }

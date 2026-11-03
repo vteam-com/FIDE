@@ -112,12 +112,7 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
                 constraints.maxHeight,
                 expanded: terminalExpanded,
               ),
-              child: PanelIsland(
-                child: ColoredBox(
-                  color: Theme.of(context).colorScheme.surfaceContainerLow,
-                  child: const TerminalPanel(),
-                ),
-              ),
+              child: const PanelIsland(child: TerminalPanel()),
             ),
           ],
         ],

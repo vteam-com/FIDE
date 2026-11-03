@@ -5,6 +5,7 @@ import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
+import 'package:fide/widgets/copy_button.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:flutter/material.dart';
@@ -58,14 +59,10 @@ class FileActions extends ConsumerWidget {
                 style: AppTextStyle.caption,
               ),
             ),
-            CompactIconButton(
-              icon: Icons.content_copy,
+            CopyButton(
+              text: path,
               tooltip: 'Copy Full Path',
-              onPressed: () => MessageBox.copyToClipboard(
-                context,
-                path,
-                confirmation: 'Full path copied to clipboard',
-              ),
+              confirmation: 'Full path copied to clipboard',
             ),
             CompactIconButton(
               icon: Icons.insert_drive_file_outlined,

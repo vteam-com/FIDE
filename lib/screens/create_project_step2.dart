@@ -38,7 +38,7 @@ class CreateProjectStep2 extends ConsumerWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: AppIconSize.xLarge,
+      spacing: AppSpacing.xxLarge,
       children: [
         StepHeader(number: _stepNumber, title: 'Localization Settings'),
 

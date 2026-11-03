@@ -13,5 +13,8 @@ class AppSpacing {
   static const double xxLarge = 24;
   static const double huge = 32;
 
+  /// Gap between the sections stacked in a panel.
+  static const double sectionGap = medium;
+
   const AppSpacing._();
 }

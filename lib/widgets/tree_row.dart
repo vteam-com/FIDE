@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/more_menu_button.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:flutter/material.dart';
@@ -40,7 +41,8 @@ class TreeRow extends StatelessWidget {
   /// Style of [name] (color, strike-through…), on top of the row's font.
   final TextStyle? nameStyle;
 
-  /// Extra line shown in the tooltip under the path, such as a warning.
+  /// Extra line shown in the tooltip (under the path, when given), such as
+  /// a warning or a date.
   final String? note;
 
   /// Opens the context menu at the given global position.
@@ -67,11 +69,11 @@ class TreeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final path = this.path;
     final root = rootPath;
     final shownPath = path == null ? null : PathText.shownPath(path, root);
-    final tooltip = note == null ? shownPath : '${shownPath ?? ''}\n\n$note';
+    final tooltipLines = [?shownPath, ?note];
+    final tooltip = tooltipLines.isEmpty ? null : tooltipLines.join('\n\n');
     final style = (highlighted ? AppTextStyle.bodyStrong : AppTextStyle.body)
         .merge(nameStyle);
     final text = showPath && path != null
@@ -88,9 +90,7 @@ class TreeRow extends StatelessWidget {
       onSecondaryTapDown: (details) =>
           onContextMenu?.call(details.globalPosition),
       child: Container(
-        color: highlighted
-            ? colorScheme.primaryContainer.withValues(alpha: AppOpacity.divider)
-            : null,
+        color: highlighted ? AppTheme.selectedFill(context) : null,
         padding: AppPadding.listItem.add(
           EdgeInsets.only(left: AppSpacing.xLarge * depth),
         ),

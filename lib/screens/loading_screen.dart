@@ -7,6 +7,7 @@ import 'package:fide/widgets/loading_actions_log.dart';
 import 'package:fide/widgets/loading_progress_bar.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/primary_button.dart';
+import 'package:fide/widgets/screen_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -29,8 +30,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
   @override
   Widget build(BuildContext context) {
     final projectPath = widget.loadingProjectName!;
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.huge),
+    return ScreenScaffold(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

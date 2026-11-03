@@ -31,7 +31,7 @@ class OutlinedSurface extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.medium),
         border: Border.all(
-          color: colorScheme.outline.withValues(alpha: AppOpacity.divider),
+          color: Theme.of(context).dividerColor,
           width: AppSize.borderThin,
         ),
       ),

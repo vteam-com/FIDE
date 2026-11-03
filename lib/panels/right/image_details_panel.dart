@@ -71,9 +71,7 @@ class _ImageDetailsPanelState extends ConsumerState<ImageDetailsPanel> {
       builder: (_, snapshot) {
         final details = snapshot.data;
         if (snapshot.hasError) {
-          return EmptyState(
-            icon: Icons.broken_image,
-            isError: true,
+          return EmptyState.error(
             message: 'Could not read the image: ${snapshot.error}',
           );
         }

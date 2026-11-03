@@ -84,9 +84,7 @@ class _ActionRowState extends State<_ActionRow> {
                     CompactIconButton(
                       icon: _expanded ? Icons.info : Icons.info_outline,
                       tooltip: _expanded ? 'Hide details' : 'Show details',
-                      color: _expanded
-                          ? colorScheme.primary
-                          : colorScheme.onSurfaceVariant,
+                      selected: _expanded,
                       onPressed: _toggle,
                     ),
                     _buildRunButton(colorScheme),

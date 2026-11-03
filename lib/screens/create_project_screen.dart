@@ -4,11 +4,11 @@ import 'package:fide/providers/create_project_draft_notifier.dart';
 import 'package:fide/screens/create_project_step1.dart';
 import 'package:fide/screens/create_project_step2.dart';
 import 'package:fide/screens/create_project_step3.dart';
-import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/primary_button.dart';
+import 'package:fide/widgets/screen_scaffold.dart';
 import 'package:fide/widgets/secondary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -75,9 +75,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     };
 
     return Scaffold(
-      body: Container(
-        padding: const EdgeInsets.all(AppSpacing.huge),
-        decoration: AppTheme.screenBackground(context),
+      body: ScreenScaffold(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

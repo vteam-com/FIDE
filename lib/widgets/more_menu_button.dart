@@ -26,8 +26,4 @@ class MoreMenuButton extends StatelessWidget {
       ),
     );
   }
-
-  /// Where `showMenu` places a menu opened at global [position].
-  static RelativeRect menuPosition(Offset position) =>
-      RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy);
 }

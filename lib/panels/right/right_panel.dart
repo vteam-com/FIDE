@@ -1,4 +1,3 @@
-import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/panels/right/ai_panel.dart';
 import 'package:fide/panels/right/image_details_panel.dart';
@@ -17,9 +16,9 @@ import 'package:fide/widgets/file_actions.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/panel_tab_header.dart';
 import 'package:fide/widgets/panel_tabs.dart';
+import 'package:fide/widgets/svg_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 /// Represents `RightPanel`.
 class RightPanel extends ConsumerStatefulWidget {
@@ -97,13 +96,7 @@ class _RightPanelState extends ConsumerState<RightPanel>
             FileViewKind.unsupported => OutlinePanel(file: file!),
           },
         ),
-        HeaderBar(
-          isFooter: true,
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.medium),
-            child: FileActions(path: path),
-          ),
-        ),
+        HeaderBar(isFooter: true, child: FileActions(path: path)),
       ],
     );
   }
@@ -129,17 +122,6 @@ class _RightPanelState extends ConsumerState<RightPanel>
   /// [tab]'s icon: its SVG tinted to the tab color, or its Material icon.
   Widget _buildTabIcon(RightPanelTab tab) {
     final svgAsset = tab.svgAsset;
-    if (svgAsset == null) return Icon(tab.icon);
-    return Builder(
-      builder: (context) => SvgPicture.asset(
-        svgAsset,
-        width: AppIconSize.panelHeader,
-        height: AppIconSize.panelHeader,
-        colorFilter: ColorFilter.mode(
-          IconTheme.of(context).color!,
-          BlendMode.srcIn,
-        ),
-      ),
-    );
+    return svgAsset == null ? Icon(tab.icon) : SvgIcon(svgAsset);
   }
 }
