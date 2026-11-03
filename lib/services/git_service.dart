@@ -1,5 +1,6 @@
 // ignore: fcheck_dead_code
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/git_file_status.dart';
@@ -24,6 +25,13 @@ class GitService {
 
   /// What a tracked file's changes compare against: HEAD, or the index
   /// before the first commit, when there is no HEAD.
+  /// The revision of the last commit, as `git show` names it.
+  static const String headRevision = 'HEAD';
+
+  /// The revision of the index (staged content), as `git show` names it:
+  /// an empty name.
+  static const String indexRevision = '';
+
   static const List<List<String>> _headBases = [
     ['HEAD'],
     ['--cached'],
@@ -443,13 +451,26 @@ class GitService {
   /// Returns the committed content of the absolute [filePath] at HEAD, or an
   /// empty string when the file isn't in HEAD (new or untracked).
   Future<String> getHeadContent(String filePath) async {
-    return await _showRelativeToFile(filePath, 'HEAD') ?? '';
+    return await _showRelativeToFile(filePath, headRevision) ?? '';
   }
 
   /// Returns the staged (index) content of the absolute [filePath], or null
   /// when the file isn't in the index.
   Future<String?> getStagedContent(String filePath) {
-    return _showRelativeToFile(filePath, '');
+    return _showRelativeToFile(filePath, indexRevision);
+  }
+
+  /// Returns the raw bytes of the absolute [filePath] at [revision],
+  /// [indexRevision] for the staged copy, or null when it isn't there:
+  /// for binary files such as images, which [getHeadContent] would mangle.
+  Future<Uint8List?> getBytesAt(
+    String filePath, {
+    String revision = headRevision,
+  }) {
+    return _runner.bytesOf('git', [
+      'show',
+      _showSpec(filePath, revision),
+    ], workingDirectory: p.dirname(filePath));
   }
 
   /// Runs `git show <revision>:./<name>` from the file's own directory, so
@@ -458,13 +479,18 @@ class GitService {
     try {
       final result = await _runner.run('git', [
         'show',
-        '$revision:./${p.basename(filePath)}',
+        _showSpec(filePath, revision),
       ], workingDirectory: p.dirname(filePath));
       return result.exitCode == 0 ? result.stdout.toString() : null;
     } catch (_) {
       return null;
     }
   }
+
+  /// The `git show` object name of [filePath] at [revision], relative to
+  /// the file's own directory.
+  static String _showSpec(String filePath, String revision) =>
+      '$revision:./${p.basename(filePath)}';
 
   /// Whether [file] is tracked in the repository at [path].
   ///

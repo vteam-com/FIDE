@@ -50,6 +50,39 @@ void main() {
     expect(await const GitService(ProcessRunner()).getHeadContent(newFile), '');
   });
 
+  test('getBytesAt reads binary content from HEAD and the index', () async {
+    final image = path.join(repo.path, 'lib', 'pixel.bin');
+    File(image).writeAsBytesSync([0, 255, 10, 0, 13, 0]);
+    _git(repo.path, ['add', '.']);
+    _git(repo.path, ['commit', '-q', '-m', 'binary']);
+    File(image).writeAsBytesSync([1, 2]);
+    _git(repo.path, ['add', '.']);
+    File(image).writeAsBytesSync([3]);
+    const git = GitService(ProcessRunner());
+
+    expect(await git.getBytesAt(image), [0, 255, 10, 0, 13, 0]);
+    expect(await git.getBytesAt(image, revision: GitService.indexRevision), [
+      1,
+      2,
+    ]);
+    expect(await git.getBytesAt(path.join(repo.path, 'missing.bin')), isNull);
+  });
+
+  test('a changed binary file has changes without line counts', () async {
+    final image = path.join(repo.path, 'lib', 'pixel.bin');
+    File(image).writeAsBytesSync([0, 255, 10, 0, 13, 0]);
+    _git(repo.path, ['add', '.']);
+    _git(repo.path, ['commit', '-q', '-m', 'binary']);
+    File(image).writeAsBytesSync([0, 255, 10, 0, 13, 1]);
+
+    final stats = await const GitService(ProcessRunner())
+        .getFileDiffStats(repo.path, image);
+
+    expect(stats.isBinary, isTrue);
+    expect(stats.hasChanges, isTrue);
+    expect((stats.added, stats.removed), (0, 0));
+  });
+
   test('getStagedContent reads the index, not the working copy', () async {
     File(nestedFile).writeAsStringSync('staged\n');
     _git(repo.path, ['add', 'lib/main.dart']);
@@ -324,10 +357,12 @@ void main() {
       });
     });
 
-    test('counts binary files as zero lines', () {
+    test('counts binary files as changed without lines', () {
       final stats = GitDiffStats.parseNumstat('-\t-\timage.png');
 
-      expect(stats['image.png']!.hasChanges, isFalse);
+      expect(stats['image.png']!.isBinary, isTrue);
+      expect(stats['image.png']!.hasChanges, isTrue);
+      expect(stats['image.png']!.added, 0);
     });
 
     test('keeps tabs in paths and skips malformed lines', () {

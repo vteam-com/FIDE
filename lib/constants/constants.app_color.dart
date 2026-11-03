@@ -21,5 +21,8 @@ class AppColor {
     Color(0xFFFF00FF),
   ];
 
+  /// Marks the pixels that differ in an image diff's Difference mode.
+  static const Color imageDiffChanged = Color(0xFFFF00FF);
+
   const AppColor._();
 }

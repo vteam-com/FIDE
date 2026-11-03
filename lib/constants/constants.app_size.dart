@@ -88,6 +88,10 @@ class AppSize {
   /// Width of an issue's best practice and findings dialog.
   static const double issueDetailsWidth = 600;
 
+  /// Width of the slider driving an image diff's Swipe divider or Onion
+  /// fade.
+  static const double imageDiffSliderWidth = 160;
+
   /// Share of the window's width a file's diff dialog takes.
   static const double diffDialogWidthFactor = 0.8;
 

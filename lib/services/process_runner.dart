@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:fide/services/login_shell_environment.dart';
 
@@ -55,6 +56,29 @@ class ProcessRunner {
       await stdout,
       await stderr,
     );
+  }
+
+  /// Runs [executable] and returns its raw stdout bytes when it exits 0,
+  /// or null when it fails or can't be started: for binary output such as
+  /// `git show` of an image.
+  Future<Uint8List?> bytesOf(
+    String executable,
+    List<String> arguments, {
+    String? workingDirectory,
+  }) async {
+    try {
+      final result = await Process.run(
+        executable,
+        arguments,
+        workingDirectory: workingDirectory,
+        environment: await LoginShellEnvironment.overrides,
+        stdoutEncoding: null,
+      );
+      if (result.exitCode != 0) return null;
+      return Uint8List.fromList(result.stdout as List<int>);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Runs [executable] and returns its stdout when it exits 0, or null when

@@ -2,7 +2,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:flutter/material.dart';
 
 /// A compact row of joined buttons picking one of [values], each shown by
-/// its [icon] and [label], small enough for a toolbar.
+/// its [icon] with its [label] as a tooltip, small enough for a toolbar.
 class ChoiceButtons<T> extends StatelessWidget {
   /// Creates the buttons for [values], [selected] highlighted.
   const ChoiceButtons({
@@ -17,7 +17,7 @@ class ChoiceButtons<T> extends StatelessWidget {
   /// Glyph of a value.
   final IconData Function(T value) icon;
 
-  /// Name of a value.
+  /// Name of a value, shown as its tooltip.
   final String Function(T value) label;
 
   /// Called with the value picked.
@@ -46,7 +46,7 @@ class ChoiceButtons<T> extends StatelessWidget {
           ButtonSegment(
             value: value,
             icon: Icon(icon(value)),
-            label: Text(label(value)),
+            tooltip: label(value),
           ),
       ],
       selected: {selected},

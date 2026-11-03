@@ -18,5 +18,12 @@ class AppOpacity {
   /// Shadow blended into the workspace gradient's core to deepen contrast.
   static const double workspaceShade = 0.2;
 
+  /// The modified image faded under the changed-pixel mask of an image
+  /// diff's Difference mode, so the mask stands out but keeps its context.
+  static const double imageDiffBase = 0.3;
+
+  /// Where an image diff's Swipe divider and Onion fade start: halfway.
+  static const double imageDiffHalfway = 0.5;
+
   const AppOpacity._();
 }

@@ -1,8 +1,12 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/relative_time.dart';
 import 'package:fide/providers/git_repo_controller.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widget_services/diff_counter.dart';
@@ -13,6 +17,7 @@ import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/empty_label.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/header_bar.dart';
+import 'package:fide/widgets/image_diff.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
@@ -185,10 +190,29 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   /// Shows the changes to the repository-relative [filePath] since HEAD:
   /// its staged content when [staged], else its working copy.
   Future<void> _viewDiff(String filePath, {required bool staged}) async {
-    final diff = await ref
-        .read(gitServiceProvider)
-        .diffAgainstHead(p.join(widget.projectPath, filePath), staged: staged);
-    if (diff == null || !mounted) return;
+    final absolutePath = p.join(widget.projectPath, filePath);
+    final git = ref.read(gitServiceProvider);
+    final Widget diff;
+    if (FileTypeUtils.isImageFile(absolutePath)) {
+      final oldBytes = await git.getBytesAt(absolutePath);
+      final newBytes = staged
+          ? await git.getBytesAt(
+              absolutePath,
+              revision: GitService.indexRevision,
+            )
+          : await _readBytes(absolutePath);
+      if (newBytes == null) return;
+      diff = ImageDiff(
+        path: absolutePath,
+        oldBytes: oldBytes,
+        newBytes: newBytes,
+      );
+    } else {
+      final texts = await git.diffAgainstHead(absolutePath, staged: staged);
+      if (texts == null) return;
+      diff = SideBySideDiff(oldText: texts.oldText, newText: texts.newText);
+    }
+    if (!mounted) return;
     final windowSize = MediaQuery.of(context).size;
     MessageBox.showDetails(
       context,
@@ -198,9 +222,15 @@ class _GitPanelState extends ConsumerState<GitPanel> {
       content: SizedBox(
         width: windowSize.width * AppSize.diffDialogWidthFactor,
         height: windowSize.height * AppSize.diffDialogHeightFactor,
-        child: SideBySideDiff(oldText: diff.oldText, newText: diff.newText),
+        child: diff,
       ),
     );
+  }
+
+  /// The bytes of the file at [path], or null when it is missing.
+  static Future<Uint8List?> _readBytes(String path) async {
+    final file = File(path);
+    return await file.exists() ? file.readAsBytes() : null;
   }
 
   @override
