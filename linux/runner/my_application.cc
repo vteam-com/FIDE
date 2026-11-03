@@ -53,6 +53,14 @@ static void my_application_activate(GApplication* application) {
     gtk_window_set_title(window, "FIDE");
   }
 
+  // An RGBA visual lets window_manager's frameless window draw its shadow in
+  // a transparent gutter around the content; without one the gutter is black.
+  GdkScreen* rgba_screen = gtk_window_get_screen(window);
+  GdkVisual* rgba_visual = gdk_screen_get_rgba_visual(rgba_screen);
+  if (rgba_visual != nullptr && gdk_screen_is_composited(rgba_screen)) {
+    gtk_widget_set_visual(GTK_WIDGET(window), rgba_visual);
+  }
+
   gtk_window_set_default_size(window, 1280, 720);
   // The app icon, installed next to the executable by CMakeLists.txt.
   g_autofree gchar* exe_path = g_file_read_link("/proc/self/exe", nullptr);
@@ -66,8 +74,9 @@ static void my_application_activate(GApplication* application) {
 
   FlView* view = fl_view_new(project);
   GdkRGBA background_color;
-  // Background defaults to black, override it here if necessary, e.g. #00000000 for transparent.
-  gdk_rgba_parse(&background_color, "#000000");
+  // Transparent, so nothing paints over the shadow gutter; the app paints
+  // its own opaque background.
+  gdk_rgba_parse(&background_color, "#00000000");
   fl_view_set_background_color(view, &background_color);
   gtk_widget_show(GTK_WIDGET(view));
   gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));

@@ -12,11 +12,13 @@ import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/side_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widget_services/app_command.dart';
+import 'package:fide/widgets/app_menu_bar.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/dropdown_label.dart';
 import 'package:fide/widgets/icon_menu_item.dart';
 import 'package:fide/widgets/project_icon.dart';
+import 'package:fide/widgets/window_buttons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -24,11 +26,15 @@ import 'package:window_manager/window_manager.dart';
 
 // Widgets
 
-/// The window's title bar: the project menu, the side panel buttons while
-/// a project is open, and the settings button.
+/// The window's title bar: the project menu, the app menus where the
+/// platform has no native menu bar, the side panel buttons while a project
+/// is open, the settings button, and the window buttons on Linux.
 class AppTitleBar extends ConsumerStatefulWidget {
-  /// Creates the title bar.
-  const AppTitleBar({super.key});
+  /// Creates the title bar showing [menus] off macOS.
+  const AppTitleBar({super.key, required this.menus});
+
+  /// The app menus; macOS shows them natively, other platforms in this bar.
+  final List<PlatformMenuItem> menus;
 
   @override
   ConsumerState<AppTitleBar> createState() => _TitleBarState();
@@ -40,63 +46,76 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     // The native window buttons do not zoom: keep their space on screen and
     // the bar no shorter than they need
     final zoom = ref.watch(zoomProvider);
-    // Drags the window, runs the platform's title-bar double-click action and
-    // opens the system window menu on a secondary click.
-    return DragToMoveArea(
-      child: Container(
-        height: AppSize.titleBarHeight / min(zoom, AppZoom.actualSize),
-        // Transparent so the window's workspace gradient runs behind it
-        color: Colors.transparent,
-        child: Row(
-          children: [
-            // Platform-specific spacing for window controls
-            if (Platform.isMacOS)
-              SizedBox(
-                width: AppSize.macWindowControlsSpacing / zoom,
-              ), // Space for macOS traffic lights (left side)
-            // Left section: Project dropdown or app title
-            Consumer(
-              builder: (_, ref, _) {
-                final currentProjectPath = ref.watch(
-                  currentProjectPathProvider,
+    return SizedBox(
+      height: AppSize.titleBarHeight / min(zoom, AppZoom.actualSize),
+      child: Row(
+        children: [
+          // Drags the window, runs the platform's title-bar double-click
+          // action and opens the system window menu on a secondary click.
+          Expanded(child: DragToMoveArea(child: _buildBar())),
+          // The hidden title bar drops Linux's native window buttons
+          if (Platform.isLinux) const WindowButtons(),
+        ],
+      ),
+    );
+  }
+
+  /// The bar's content, dragging the window from its empty space.
+  Widget _buildBar() {
+    final zoom = ref.watch(zoomProvider);
+    return Container(
+      // Transparent so the window's workspace gradient runs behind it
+      color: Colors.transparent,
+      child: Row(
+        children: [
+          // Platform-specific spacing for window controls
+          if (Platform.isMacOS)
+            SizedBox(
+              width: AppSize.macWindowControlsSpacing / zoom,
+            ), // Space for macOS traffic lights (left side)
+          // Left section: Project dropdown or app title
+          Consumer(
+            builder: (_, ref, _) {
+              final currentProjectPath = ref.watch(currentProjectPathProvider);
+              final mruFolders = ref.watch(mruFoldersProvider);
+              // Look up the recent projects' icons ahead of the menu.
+              for (final folder in ref.watch(accessibleMruFoldersProvider)) {
+                ref.read(projectIconPathProvider(folder));
+              }
+
+              if (currentProjectPath != null) {
+                // Show project dropdown
+                return _buildProjectDropdown(
+                  currentProjectPath,
+                  mruFolders,
+                  ref,
                 );
-                final mruFolders = ref.watch(mruFoldersProvider);
-                // Look up the recent projects' icons ahead of the menu.
-                for (final folder in ref.watch(accessibleMruFoldersProvider)) {
-                  ref.read(projectIconPathProvider(folder));
-                }
+              } else {
+                // Show app title when no project is loaded
+                return _buildAppTitle();
+              }
+            },
+          ),
 
-                if (currentProjectPath != null) {
-                  // Show project dropdown
-                  return _buildProjectDropdown(
-                    currentProjectPath,
-                    mruFolders,
-                    ref,
-                  );
-                } else {
-                  // Show app title when no project is loaded
-                  return _buildAppTitle();
-                }
-              },
-            ),
+          // macOS shows these menus natively
+          if (!Platform.isMacOS) AppMenuBar(menus: widget.menus),
 
-            // Center section: Panel toggle buttons (only shown when in main layout)
-            if (ref.watch(appViewProvider) == AppViewState.mainLayout)
-              Expanded(child: Center(child: _buildPanelToggleButtons()))
-            else
-              const Spacer(),
+          // Center section: Panel toggle buttons (only shown when in main layout)
+          if (ref.watch(appViewProvider) == AppViewState.mainLayout)
+            Expanded(child: Center(child: _buildPanelToggleButtons()))
+          else
+            const Spacer(),
 
-            // Right section: Settings button
-            _buildSettingsButton(),
+          // Right section: Settings button
+          _buildSettingsButton(),
 
-            // Spacer to push content away from right-side window controls (Windows/Linux)
-            if (!Platform.isMacOS) const Spacer(),
+          // Spacer to push content away from right-side window controls (Windows/Linux)
+          if (!Platform.isMacOS) const Spacer(),
 
-            // Space for Windows/Linux window controls (right side)
-            if (!Platform.isMacOS)
-              const SizedBox(width: AppSize.desktopWindowControlsSpacing),
-          ],
-        ),
+          // Space for the native window controls on Windows (right side)
+          if (Platform.isWindows)
+            const SizedBox(width: AppSize.desktopWindowControlsSpacing),
+        ],
       ),
     );
   }

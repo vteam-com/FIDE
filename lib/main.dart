@@ -104,7 +104,7 @@ class _FIDEState extends ConsumerState<FIDE> {
                 decoration: AppTheme.workspaceBackground(context),
                 child: Column(
                   children: [
-                    const AppTitleBar(),
+                    AppTitleBar(menus: _buildMenus(context)),
                     // Main content with menu bar
                     Expanded(
                       child: PlatformMenuBar(
