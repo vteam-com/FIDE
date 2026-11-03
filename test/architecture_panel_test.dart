@@ -79,7 +79,7 @@ void main() {
 
     await tester.tap(find.text('home.dart'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Open').first);
+    await tester.tap(find.text('Open in FIDE'));
     await tester.pumpAndSettle();
 
     expect(container.read(selectedFileProvider)?.path, '/p/lib/ui/home.dart');
@@ -108,4 +108,20 @@ void main() {
     );
     expect(find.byIcon(Icons.view_week_outlined), findsOneWidget);
   });
+
+  for (final width in [1600.0, 600.0]) {
+    testWidgets('the toolbar ends with Close at the right edge, $width wide', (
+      tester,
+    ) async {
+      tester.view.physicalSize = Size(width, 600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await pumpPanel(tester);
+
+      final close = tester.getRect(find.byTooltip('Close'));
+      expect(close.right, width);
+      // Nothing overflows: the counts and the Find File box give way
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

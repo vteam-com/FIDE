@@ -12,9 +12,9 @@ import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_state.dart';
-import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/page_header.dart';
 import 'package:fide/widgets/platform_icon.dart';
+import 'package:fide/widgets/project_analysis_view.dart';
 import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/stat_card.dart';
 import 'package:fide/widgets/status_indicator.dart';
@@ -30,18 +30,12 @@ class ProjectOverviewPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ref
-        .watch(projectOverviewProvider)
-        .when(
-          data: (overview) => overview == null
-              ? const EmptyState(message: 'Select a file to start editing')
-              : _overview(ref, overview),
-          loading: () =>
-              const LoadingIndicator(message: 'Analyzing project with fCheck…'),
-          error: (error, _) => EmptyState.error(
-            message: 'Could not analyze the project: $error',
-          ),
-        );
+    return ProjectAnalysisView(
+      analysis: ref.watch(projectOverviewProvider),
+      builder: (overview) => overview == null
+          ? const EmptyState(message: 'Select a file to start editing')
+          : _overview(ref, overview),
+    );
   }
 
   /// How many app icon problems the platforms have, opening the App Icons

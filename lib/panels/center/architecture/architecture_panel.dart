@@ -15,7 +15,7 @@ import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/header_bar.dart';
-import 'package:fide/widgets/loading_indicator.dart';
+import 'package:fide/widgets/project_analysis_view.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/zoom_label.dart';
 import 'package:flutter/material.dart';
@@ -89,30 +89,25 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
 
   @override
   Widget build(BuildContext context) {
-    return ref
-        .watch(architectureLayoutProvider)
-        .when(
-          // Keep showing the graph while a save re-analyzes the project
-          skipLoadingOnReload: true,
-          data: (layout) => layout == null || layout.nodes.isEmpty
-              ? const EmptyState(
-                  icon: Icons.account_tree_outlined,
-                  message: 'No Dart files import one another yet',
-                )
-              : _view(layout),
-          loading: () =>
-              const LoadingIndicator(message: 'Analyzing project with fCheck…'),
-          error: (error, _) => EmptyState.error(
-            message: 'Could not analyze the project: $error',
-          ),
-        );
+    return ProjectAnalysisView(
+      analysis: ref.watch(architectureLayoutProvider),
+      builder: (layout) => layout == null || layout.nodes.isEmpty
+          ? const EmptyState(
+              icon: Icons.account_tree_outlined,
+              message: 'No Dart files import one another yet',
+            )
+          : _view(layout),
+    );
   }
 
-  /// Glides to [target] zoom and pan.
-  void _glideTo(Matrix4 target) {
+  /// Glides to [scale], the graph's top left corner at [offset] in the
+  /// view.
+  void _glideTo(Offset offset, double scale) {
     _glideAnimation = Matrix4Tween(
       begin: _transformation.value,
-      end: target,
+      end: Matrix4.identity()
+        ..translateByDouble(offset.dx, offset.dy, 0, 1)
+        ..scaleByDouble(scale, scale, scale, 1),
     ).animate(CurvedAnimation(parent: _glide, curve: Curves.easeOut));
     _glide.forward(from: 0);
   }
@@ -129,16 +124,7 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
       size * scale,
       Offset.zero & _viewport,
     );
-    _glideTo(
-      Matrix4.identity()
-        ..translateByDouble(
-          math.max(0, fitted.left),
-          math.max(0, fitted.top),
-          0,
-          1,
-        )
-        ..scaleByDouble(scale, scale, scale, 1),
-    );
+    _glideTo(Offset(math.max(0, fitted.left), math.max(0, fitted.top)), scale);
   }
 
   /// Selects the first file matching the Find File box, and shows it.
@@ -203,12 +189,7 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
       _transformation.value.getMaxScaleOnAxis(),
       AppZoom.actualSize,
     );
-    final center = _viewport.center(Offset.zero) - rect.center * scale;
-    _glideTo(
-      Matrix4.identity()
-        ..translateByDouble(center.dx, center.dy, 0, 1)
-        ..scaleByDouble(scale, scale, scale, 1),
-    );
+    _glideTo(_viewport.center(Offset.zero) - rect.center * scale, scale);
   }
 
   /// Selects [file], or clears the selection with null; [reveal] also
@@ -226,46 +207,69 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
   /// buttons.
   Widget _toolbar(ArchitectureLayout layout) {
     final graph = layout.graph;
+    // As the editor's header: inset on the left only, so the last button
+    // ends at the right edge
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.medium),
+      padding: const EdgeInsets.only(left: AppSpacing.medium),
       child: Row(
         spacing: AppSpacing.medium,
         children: [
-          Text('Architecture', style: AppTextStyle.title),
-          // The counts and the Find File box give way on a narrow view
+          // The title with the counts, and the Find File box share the room
+          // left, giving way on a narrow view; the box sits against the
+          // buttons
           Expanded(
-            child: Text(
-              [
-                graph.files.length.count('file'),
-                graph.edgeCount.count('import'),
-                if (graph.isLayered) graph.layerNumbers.length.count('layer'),
-              ].join(' • '),
-              style: AppTextStyle.secondary(context),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
+            child: Row(
+              spacing: AppSpacing.medium,
+              children: [
+                Flexible(
+                  child: Text(
+                    'Architecture',
+                    style: AppTextStyle.title,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+                Flexible(
+                  child: Text(
+                    [
+                      graph.files.length.count('file'),
+                      graph.edgeCount.count('import'),
+                      if (graph.isLayered)
+                        graph.layerNumbers.length.count('layer'),
+                    ].join(' • '),
+                    style: AppTextStyle.secondary(context),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+                if (!graph.isLayered)
+                  Flexible(
+                    child: StatusIndicator.tone(
+                      StatusTone.warning,
+                      label: 'Import cycles: fCheck could not layer the files',
+                    ),
+                  ),
+              ],
             ),
           ),
-          if (!graph.isLayered)
-            Flexible(
-              child: StatusIndicator.tone(
-                StatusTone.warning,
-                label: 'Import cycles: fCheck could not layer the files',
-              ),
-            ),
-          Flexible(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: AppSize.architectureFindWidth,
-              ),
-              child: AppTextField(
-                controller: _query,
-                hintText: 'Find file…',
-                icon: Icons.search,
-                clearable: true,
-                // Typing shows the matches in place of the selection's files
-                onChanged: (_) => setState(() => _selected = null),
-                onCleared: () => setState(() {}),
-                onSubmitted: (_) => _findFirst(layout),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: AppSize.architectureFindWidth,
+                ),
+                child: AppTextField(
+                  controller: _query,
+                  hintText: 'Find file…',
+                  icon: Icons.search,
+                  clearable: true,
+                  // Typing shows the matches in place of the selection's
+                  // files
+                  onChanged: (_) => setState(() => _selected = null),
+                  onCleared: () => setState(() {}),
+                  onSubmitted: (_) => _findFirst(layout),
+                ),
               ),
             ),
           ),
@@ -349,7 +353,6 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
                     graph: layout.graph,
                     file: selected,
                     onSelect: (file) => _select(layout, file, reveal: true),
-                    onOpen: _open,
                   ),
                 ),
               ],
@@ -367,14 +370,10 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
       ArchitectureCanvas.minScale,
       ArchitectureCanvas.maxScale,
     );
-    final step = scale / current;
+    final translation = _transformation.value.getTranslation();
+    final offset = Offset(translation.x, translation.y);
+    // The point of the graph in the middle of the view stays there
     final center = _viewport.center(Offset.zero);
-    _glideTo(
-      Matrix4.identity()
-        ..translateByDouble(center.dx, center.dy, 0, 1)
-        ..scaleByDouble(step, step, step, 1)
-        ..translateByDouble(-center.dx, -center.dy, 0, 1)
-        ..multiply(_transformation.value),
-    );
+    _glideTo(center - (center - offset) * (scale / current), scale);
   }
 }

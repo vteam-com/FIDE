@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/service_providers.dart';
@@ -14,8 +15,9 @@ import 'package:path/path.dart' as p;
 
 /// The full path of a file, buttons copying the path or the file name, and
 /// buttons revealing it in FIDE's Explorer, opening it in FIDE (unless it
-/// is the open tab already) or the OS's default app, and revealing it in
-/// the file manager.
+/// is the open tab already, in view) or the OS's default app, and
+/// revealing it in the file manager. Opened from a center view, closing
+/// the file returns to the view.
 class FileActions extends ConsumerWidget {
   /// Creates the actions of the file at [path].
   const FileActions({super.key, required this.path});
@@ -25,9 +27,11 @@ class FileActions extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isActive = ref.watch(
-      activeDocumentProvider.select((doc) => doc?.filePath == path),
-    );
+    final isShown =
+        ref.watch(
+          activeDocumentProvider.select((doc) => doc?.filePath == path),
+        ) &&
+        ref.watch(centerViewProvider) == null;
     final shell = ref.read(desktopShellProvider);
 
     /// Runs [action], telling the user when it fails to [verb] the file.
@@ -84,11 +88,11 @@ class FileActions extends ConsumerWidget {
               label: 'Reveal in FIDE Explorer',
               onPressed: () => revealInExplorer(ref, path),
             ),
-            if (!isActive)
+            if (!isShown)
               CompactTextButton(
                 icon: Icons.open_in_new,
                 label: 'Open in FIDE',
-                onPressed: () => openFile(ref, path),
+                onPressed: () => openFromCenterView(ref, path),
               ),
             CompactTextButton(
               icon: Icons.launch,

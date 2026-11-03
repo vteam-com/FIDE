@@ -3,23 +3,23 @@ import 'package:fide/models/architecture_focus.dart';
 import 'package:fide/models/architecture_graph.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/panels/center/architecture/architecture_role_style.dart';
-import 'package:fide/providers/panel_actions.dart';
+import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/file_actions.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/panel_scroll_view.dart';
-import 'package:fide/widgets/path_text.dart';
-import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/section_panel.dart';
+import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 
-/// The side of the architecture view about the selected [file]: its path
-/// and layer, fCheck's findings about it, and the files it imports and
-/// those importing it, each a jump to that file in the graph or to its
-/// source.
+/// The side of the architecture view about the selected [file]: its layer,
+/// its path and actions, fCheck's findings about it, and the files it
+/// imports and those importing it, each a jump to that file in the graph
+/// or to its source.
 class ArchitectureDetails extends ConsumerWidget {
   /// Creates the details of [file] in [graph].
   const ArchitectureDetails({
@@ -27,7 +27,6 @@ class ArchitectureDetails extends ConsumerWidget {
     required this.graph,
     required this.file,
     required this.onSelect,
-    required this.onOpen,
   });
 
   /// The selected file.
@@ -35,9 +34,6 @@ class ArchitectureDetails extends ConsumerWidget {
 
   /// The graph [file] is part of.
   final ArchitectureGraph graph;
-
-  /// Opens a file in the editor.
-  final ValueChanged<String> onOpen;
 
   /// Selects a file and shows it in the graph, or clears the selection
   /// with null.
@@ -49,15 +45,10 @@ class ArchitectureDetails extends ConsumerWidget {
     return PanelScrollView(
       children: [
         Row(
-          spacing: AppSpacing.tiny,
           children: [
-            FileIconUtils.ofPath(file),
             Expanded(
-              child: PathText(
-                file,
-                rootPath: graph.rootPath,
-                style: AppTextStyle.bodyStrong,
-                selectable: true,
+              child: SectionTitle(
+                graph.isLayered && layer != null ? 'Layer $layer' : 'Unlayered',
               ),
             ),
             CompactIconButton(
@@ -67,34 +58,19 @@ class ArchitectureDetails extends ConsumerWidget {
             ),
           ],
         ),
-        if (graph.isLayered && layer != null)
-          Text('Layer $layer', style: AppTextStyle.secondary(context)),
-        Wrap(
-          spacing: AppSpacing.medium,
-          runSpacing: AppSpacing.medium,
-          children: [
-            SecondaryButton(
-              icon: Icons.code,
-              label: 'Open',
-              onPressed: () => onOpen(file),
-            ),
-            SecondaryButton(
-              icon: Icons.folder_open,
-              label: 'Reveal in Explorer',
-              onPressed: () => revealInExplorer(ref, file),
-            ),
-          ],
-        ),
+        FileActions(path: file),
         for (final issue in graph.issues[file] ?? const <String>[])
           StatusIndicator.tone(StatusTone.warning, label: issue),
         _section(
           context,
+          ref,
           title: 'Imports',
           role: ArchitectureRole.callee,
           files: graph.callees[file] ?? const [],
         ),
         _section(
           context,
+          ref,
           title: 'Imported by',
           role: ArchitectureRole.caller,
           files: graph.callers[file] ?? const [],
@@ -107,7 +83,8 @@ class ArchitectureDetails extends ConsumerWidget {
   /// the role's color: pressing one shows it in the graph, its button
   /// opens it.
   Widget _section(
-    BuildContext context, {
+    BuildContext context,
+    WidgetRef ref, {
     required String title,
     required ArchitectureRole role,
     required List<String> files,
@@ -134,9 +111,9 @@ class ArchitectureDetails extends ConsumerWidget {
               onTap: () => onSelect(related),
               trailing: [
                 CompactIconButton(
-                  icon: Icons.code,
-                  tooltip: 'Open',
-                  onPressed: () => onOpen(related),
+                  icon: Icons.open_in_new,
+                  tooltip: 'Open in FIDE',
+                  onPressed: () => openFromCenterView(ref, related),
                 ),
               ],
             ),

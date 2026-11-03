@@ -1,4 +1,5 @@
 import 'package:fide/models/architecture_graph.dart';
+import 'package:fide/models/quick_open_matcher.dart';
 
 part 'architecture_focus.architecture_role.dart';
 
@@ -12,7 +13,8 @@ class ArchitectureFocus {
   /// The file hovered or selected; null for none.
   final String? file;
 
-  /// Text the files' paths are filtered by, ignoring case; empty for none.
+  /// Text the files' paths are filtered by, as Go to File matches them;
+  /// blank for none.
   final String query;
 
   /// Focuses [file] of [graph], filtered by [query].
@@ -22,20 +24,30 @@ class ArchitectureFocus {
   bool isHighlighted(String source, String target) =>
       file != null && (source == file || target == file);
 
-  /// Whether [path] matches the non-empty filter [query].
-  bool isMatch(String path) =>
-      query.isNotEmpty &&
-      graph.relativePath(path).toLowerCase().contains(query.toLowerCase());
+  /// Whether a filter is set.
+  bool get _isFiltered => query.trim().isNotEmpty;
 
-  /// The files matching the filter, in the graph's order; none without
-  /// one.
-  List<String> get matches => graph.files.where(isMatch).toList();
+  /// Whether [path] matches the filter [query].
+  bool isMatch(String path) =>
+      _isFiltered &&
+      QuickOpenMatcher.score(graph.relativePath(path), query) != null;
+
+  /// The files matching the filter, best match first as Go to File ranks
+  /// them; none without a filter.
+  List<String> get matches => _isFiltered
+      ? QuickOpenMatcher.rank(
+          graph.files,
+          query,
+          rootPath: graph.rootPath,
+          limit: graph.files.length,
+        )
+      : const [];
 
   /// How to show [path].
   ArchitectureRole roleOf(String path) {
     final focused = file;
     if (focused == null) {
-      return query.isEmpty || isMatch(path)
+      return !_isFiltered || isMatch(path)
           ? ArchitectureRole.plain
           : ArchitectureRole.dimmed;
     }

@@ -19,31 +19,22 @@ final architectureOrientationProvider =
 /// The Architecture view's top down or left to right choice, persisted to
 /// preferences.
 class ArchitectureOrientationNotifier
-    extends PersistedNotifier<ArchitectureOrientation> {
+    extends PersistedEnumNotifier<ArchitectureOrientation> {
   /// Starts top down, as layers of a cake; call [load] to restore the
   /// saved choice.
   ArchitectureOrientationNotifier(Future<SharedPreferences> prefs)
-    : super(prefs, ArchitectureOrientation.topDown);
-
-  @override
-  ArchitectureOrientation? read(SharedPreferences prefs) {
-    final saved = prefs.getString(PrefKeys.architectureOrientation);
-    return saved == null
-        ? null
-        : ArchitectureOrientation.values.asNameMap()[saved];
-  }
+    : super(
+        prefs,
+        ArchitectureOrientation.topDown,
+        PrefKeys.architectureOrientation,
+        ArchitectureOrientation.values,
+      );
 
   /// Switches between top down and left to right, and saves the choice
   /// for the next launch.
-  Future<void> toggle() => persist(
+  Future<void> toggle() => select(
     state == ArchitectureOrientation.topDown
         ? ArchitectureOrientation.leftToRight
         : ArchitectureOrientation.topDown,
   );
-
-  @override
-  Future<void> write(
-    SharedPreferences prefs,
-    ArchitectureOrientation orientation,
-  ) => prefs.setString(PrefKeys.architectureOrientation, orientation.name);
 }

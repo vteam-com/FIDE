@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+part 'persisted_notifier.persisted_enum_notifier.dart';
+
 /// The app's preferences, loaded once; every [PersistedNotifier] is wired
 /// from it, and tests override it to control when they load.
 final sharedPreferencesProvider = FutureProvider<SharedPreferences>(

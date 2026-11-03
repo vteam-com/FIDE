@@ -11,21 +11,8 @@ final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>(
 
 /// The System / Light / Dark choice of the settings screen, persisted to
 /// preferences.
-class ThemeModeNotifier extends PersistedNotifier<ThemeMode> {
+class ThemeModeNotifier extends PersistedEnumNotifier<ThemeMode> {
   /// Starts following the system; call [load] to restore the saved choice.
   ThemeModeNotifier(Future<SharedPreferences> prefs)
-    : super(prefs, ThemeMode.system);
-
-  @override
-  ThemeMode? read(SharedPreferences prefs) {
-    final saved = prefs.getString(PrefKeys.themeMode);
-    return saved == null ? null : ThemeMode.values.asNameMap()[saved];
-  }
-
-  /// Applies [mode] app-wide and saves it for the next launch.
-  Future<void> select(ThemeMode mode) => persist(mode);
-
-  @override
-  Future<void> write(SharedPreferences prefs, ThemeMode mode) =>
-      prefs.setString(PrefKeys.themeMode, mode.name);
+    : super(prefs, ThemeMode.system, PrefKeys.themeMode, ThemeMode.values);
 }

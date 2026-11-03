@@ -96,7 +96,7 @@ class ArchitectureCanvas extends StatelessWidget {
                   rect: rect,
                   child: ArchitectureNode(
                     path: file,
-                    relativePath: graph.relativePath(file),
+                    rootPath: graph.rootPath,
                     role: focus.roleOf(file),
                     isSelected: file == selected,
                     isMatch: focus.isMatch(file),

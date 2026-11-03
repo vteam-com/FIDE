@@ -12,24 +12,16 @@ final selectedPlatformProvider =
     );
 
 /// The build target chosen in the Execute panel, persisted to preferences.
-class SelectedPlatformNotifier extends PersistedNotifier<FlutterPlatform> {
+class SelectedPlatformNotifier extends PersistedEnumNotifier<FlutterPlatform> {
   /// Target used until a saved choice is restored.
   static const FlutterPlatform defaultPlatform = FlutterPlatform.android;
 
   /// Starts at [defaultPlatform]; call [load] to restore the saved choice.
   SelectedPlatformNotifier(Future<SharedPreferences> prefs)
-    : super(prefs, defaultPlatform);
-
-  @override
-  FlutterPlatform? read(SharedPreferences prefs) {
-    final saved = prefs.getString(PrefKeys.selectedPlatform);
-    return saved == null ? null : FlutterPlatform.fromId(saved);
-  }
-
-  /// Selects [platform] and saves it.
-  Future<void> select(FlutterPlatform platform) => persist(platform);
-
-  @override
-  Future<void> write(SharedPreferences prefs, FlutterPlatform platform) =>
-      prefs.setString(PrefKeys.selectedPlatform, platform.name);
+    : super(
+        prefs,
+        defaultPlatform,
+        PrefKeys.selectedPlatform,
+        FlutterPlatform.values,
+      );
 }

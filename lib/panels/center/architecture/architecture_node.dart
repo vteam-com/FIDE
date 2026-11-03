@@ -2,15 +2,18 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/architecture_focus.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/panels/center/architecture/architecture_role_style.dart';
-import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
-import 'package:fide/widgets/status_tone_style.dart';
+import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/status_indicator.dart';
+import 'package:fide/widgets/surface_padding.dart';
+import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
-/// One file of the architecture graph: its icon and name in a box outlined
-/// in its [role]'s color, flagged when fCheck reports [issues] about it.
+/// One file of the architecture graph: its [TreeRow], as the file lists
+/// show it, in an [OutlinedSurface] outlined in its [role]'s color, flagged
+/// when fCheck reports [issues] about it.
 /// Pressing it selects it at once, pressing it again quickly opens it, and
 /// hovering it focuses it.
 class ArchitectureNode extends StatefulWidget {
@@ -18,7 +21,7 @@ class ArchitectureNode extends StatefulWidget {
   const ArchitectureNode({
     super.key,
     required this.path,
-    required this.relativePath,
+    required this.rootPath,
     required this.role,
     this.isSelected = false,
     this.isMatch = false,
@@ -50,11 +53,11 @@ class ArchitectureNode extends StatefulWidget {
   /// Absolute path of the file.
   final String path;
 
-  /// [path] relative to the project, shown as the tooltip.
-  final String relativePath;
-
   /// How the file relates to the focused one.
   final ArchitectureRole role;
+
+  /// The project folder; the tooltip shows [path] relative to it.
+  final String rootPath;
 
   @override
   State<ArchitectureNode> createState() => _ArchitectureNodeState();
@@ -66,69 +69,34 @@ class _ArchitectureNodeState extends State<ArchitectureNode> {
 
   @override
   Widget build(BuildContext context) {
-    final ArchitectureNode(
-      :path,
-      :relativePath,
-      :role,
-      :isSelected,
-      :isMatch,
-      :issues,
-      :onHover,
-    ) = widget;
-    final theme = Theme.of(context);
-    final isStrong = isSelected || role == ArchitectureRole.focused;
-    final outline = isMatch && role == ArchitectureRole.plain
-        ? ArchitectureRole.focused.color(theme)
-        : role.color(theme);
-    final warning = StatusTone.warning;
+    final ArchitectureNode(:path, :rootPath, :role, :isSelected, :issues) =
+        widget;
+    final isPlain =
+        role == ArchitectureRole.plain || role == ArchitectureRole.dimmed;
+    final highlight = !isPlain
+        ? role.color(Theme.of(context))
+        : widget.isMatch && role == ArchitectureRole.plain
+        ? ArchitectureRole.focused.color(Theme.of(context))
+        : null;
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => onHover?.call(true),
-      onExit: (_) => onHover?.call(false),
-      child: GestureDetector(
-        onTap: _onTap,
-        child: Tooltip(
-          message: [relativePath, ...issues].join('\n\n'),
-          waitDuration: AppDuration.tooltipWait,
-          child: Opacity(
-            opacity: role == ArchitectureRole.dimmed ? AppOpacity.faint : 1,
-            child: Container(
-              padding: AppPadding.listItem,
-              decoration: BoxDecoration(
-                color: isStrong
-                    ? AppTheme.selectedFill(context)
-                    : theme.colorScheme.surface,
-                border: Border.all(
-                  color: outline,
-                  width: role == ArchitectureRole.plain && !isMatch
-                      ? AppSize.borderThin
-                      : AppBorderWidth.medium,
-                ),
-                borderRadius: BorderRadius.circular(AppRadius.tiny),
-              ),
-              child: Row(
-                spacing: AppSpacing.tiny,
-                children: [
-                  FileIconUtils.ofPath(path, size: AppIconSize.small),
-                  Expanded(
-                    child: Text(
-                      p.basename(path),
-                      style: isStrong
-                          ? AppTextStyle.bodyStrong
-                          : AppTextStyle.body,
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ),
-                  if (issues.isNotEmpty)
-                    Icon(
-                      warning.icon,
-                      size: AppIconSize.small,
-                      color: warning.color,
-                    ),
-                ],
-              ),
-            ),
+      onEnter: (_) => widget.onHover?.call(true),
+      onExit: (_) => widget.onHover?.call(false),
+      child: Opacity(
+        opacity: role == ArchitectureRole.dimmed ? AppOpacity.faint : 1,
+        child: OutlinedSurface(
+          padding: SurfacePadding.none,
+          highlight: highlight,
+          child: TreeRow(
+            icon: FileIconUtils.ofPath(path),
+            name: p.basename(path),
+            path: path,
+            rootPath: rootPath,
+            note: issues.isEmpty ? null : issues.join('\n\n'),
+            highlighted: isSelected || role == ArchitectureRole.focused,
+            onTap: _onTap,
+            trailing: [
+              if (issues.isNotEmpty) StatusIndicator.tone(StatusTone.warning),
+            ],
           ),
         ),
       ),

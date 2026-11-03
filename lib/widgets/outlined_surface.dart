@@ -12,10 +12,16 @@ class OutlinedSurface extends StatelessWidget {
     super.key,
     required this.child,
     this.padding = SurfacePadding.normal,
+    this.highlight,
   });
 
   /// The content.
   final Widget child;
+
+  /// Color of an outline drawn thicker to pick the box out, such as a
+  /// file related to the focused one in the architecture graph; the thin
+  /// divider-colored outline when null.
+  final Color? highlight;
 
   /// Space between the outline and [child].
   final SurfacePadding padding;
@@ -31,8 +37,8 @@ class OutlinedSurface extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.medium),
         border: Border.all(
-          color: Theme.of(context).dividerColor,
-          width: AppSize.borderThin,
+          color: highlight ?? Theme.of(context).dividerColor,
+          width: highlight == null ? AppSize.borderThin : AppBorderWidth.medium,
         ),
       ),
       child: child,

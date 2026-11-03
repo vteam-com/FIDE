@@ -1,4 +1,5 @@
 import 'package:fcheck/fcheck.dart' as fcheck;
+import 'package:fide/models/tree_order.dart';
 import 'package:path/path.dart' as p;
 
 /// The project's Dart files as fCheck layers them: which files each one
@@ -95,9 +96,12 @@ class ArchitectureGraph {
   /// [file] relative to [rootPath].
   String relativePath(String file) => p.relative(file, from: rootPath);
 
-  /// Orders paths by folder, then by file name within a folder.
+  /// Orders paths by folder, then by file name within a folder, each as
+  /// the project trees order them.
   static int _compareByFolder(String a, String b) {
-    final byFolder = p.dirname(a).compareTo(p.dirname(b));
-    return byFolder != 0 ? byFolder : p.basename(a).compareTo(p.basename(b));
+    final byFolder = TreeOrder.compare(true, p.dirname(a), true, p.dirname(b));
+    return byFolder != 0
+        ? byFolder
+        : TreeOrder.compare(false, p.basename(a), false, p.basename(b));
   }
 }

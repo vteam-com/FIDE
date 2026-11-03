@@ -185,6 +185,15 @@ void main() {
       );
     });
 
+    test('finds files as Go to File does, best match first', () {
+      // Letters in order, not a substring: m-d-l only spells model.dart
+      final focus = ArchitectureFocus(_graph(), query: 'mdl');
+
+      expect(focus.matches, ['/p/lib/core/model.dart']);
+      expect(focus.isMatch('/p/lib/core/model.dart'), isTrue);
+      expect(focus.isMatch('/p/lib/main.dart'), isFalse);
+    });
+
     test('without a focused file, dims the files the query misses', () {
       final focus = ArchitectureFocus(_graph(), query: 'UI/');
 
