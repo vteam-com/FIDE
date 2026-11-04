@@ -81,7 +81,7 @@ class _DiffMinimapPainter extends CustomPainter {
     for (var i = 1; i <= lines.length; i++) {
       final type = lines[runStart].type;
       if (i < lines.length && lines[i].type == type) continue;
-      final color = type.markColor;
+      final color = type.tone?.color;
       if (color != null) {
         canvas.drawRect(
           Rect.fromLTWH(

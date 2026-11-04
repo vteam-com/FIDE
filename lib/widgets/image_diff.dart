@@ -195,10 +195,7 @@ class _ImageDiffState extends ConsumerState<ImageDiff> {
                   : AnyImage.memory(oldBytes, path: widget.path),
             ),
           ),
-          const VerticalDivider(
-            width: AppSize.borderThin,
-            thickness: AppSize.borderThin,
-          ),
+          const VerticalDivider(width: AppSize.borderThin),
           Expanded(
             child: _buildSide(
               'Modified',

@@ -2,8 +2,11 @@
 
 import 'package:diff_match_patch/diff_match_patch.dart';
 import 'package:fide/constants/constants.dart';
-import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/models/status_tone.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/previous_next_buttons.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/surface_header_band.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:flutter/material.dart';
@@ -178,34 +181,25 @@ class _SideBySideDiffState extends State<SideBySideDiff> {
             _contextLines
       : _contextLines;
 
-  /// The previous / next change buttons and the count of changes; the
-  /// buttons enable as the view scrolls past changes.
+  /// The previous / next change buttons and which change is in view, or
+  /// the count of changes above the first; they update as the view
+  /// scrolls.
   Widget _buildChangeNavigation() {
     return ListenableBuilder(
       listenable: _scrollController,
       builder: (_ /* context */, _ /* child */) {
         final previous = _previousChange;
         final next = _nextChange;
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '${_changeStarts.length} '
-              '${_changeStarts.length == 1 ? 'change' : 'changes'}',
-              style: AppTextStyle.caption,
-            ),
-            const SizedBox(width: AppSpacing.small),
-            CompactIconButton(
-              icon: Icons.keyboard_arrow_up,
-              tooltip: 'Previous change',
-              onPressed: previous == null ? null : () => _jumpTo(previous),
-            ),
-            CompactIconButton(
-              icon: Icons.keyboard_arrow_down,
-              tooltip: 'Next change',
-              onPressed: next == null ? null : () => _jumpTo(next),
-            ),
-          ],
+        final count = _changeStarts.length;
+        final reached = _changeStarts.where((s) => s <= _anchorLine).length;
+        return PreviousNextButtons(
+          label: reached == 0
+              ? '$count ${count == 1 ? 'change' : 'changes'}'
+              : '$reached of $count',
+          onPrevious: previous == null ? null : () => _jumpTo(previous),
+          onNext: next == null ? null : () => _jumpTo(next),
+          previousTooltip: 'Previous change',
+          nextTooltip: 'Next change',
         );
       },
     );
@@ -228,19 +222,21 @@ class _SideBySideDiffState extends State<SideBySideDiff> {
   /// tinted when the line was deleted or added.
   Widget _buildRow(DiffLine line) {
     return ColoredBox(
-      color: line.type.rowTint ?? Colors.transparent,
+      color:
+          line.type.tone?.color.withValues(alpha: AppOpacity.subtle) ??
+          Colors.transparent,
       child: Row(
         children: [
           _buildSide(
             line.oldLine,
             line.oldContent,
-            line.type == DiffType.deletion ? line.type.markColor : null,
+            line.type == DiffType.deletion ? line.type.tone : null,
           ),
           _buildColumnDivider(AppSize.diffRowHeight),
           _buildSide(
             line.newLine,
             line.newContent,
-            line.type == DiffType.addition ? line.type.markColor : null,
+            line.type == DiffType.addition ? line.type.tone : null,
           ),
         ],
       ),
@@ -248,10 +244,11 @@ class _SideBySideDiffState extends State<SideBySideDiff> {
   }
 
   /// One side of a diff row: the dimmed [lineNumber], then [content] in
-  /// [contentColor], or the theme's text color when null. Long lines are
-  /// clipped so every row keeps the same height.
-  Widget _buildSide(String lineNumber, String content, Color? contentColor) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
+  /// the color of [tone], or the theme's text color when null. Long lines
+  /// are clipped so every row keeps the same height.
+  Widget _buildSide(String lineNumber, String content, StatusTone? tone) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
     final style = AppTextStyle.code;
     return Expanded(
       child: Container(
@@ -275,7 +272,11 @@ class _SideBySideDiffState extends State<SideBySideDiff> {
                 maxLines: 1,
                 softWrap: false,
                 overflow: TextOverflow.clip,
-                style: style.copyWith(color: contentColor ?? onSurface),
+                style: style.copyWith(
+                  color: tone == null
+                      ? onSurface
+                      : AppTheme.readable(tone.color, colorScheme),
+                ),
               ),
             ),
           ],
@@ -335,18 +336,11 @@ enum DiffType {
   /// The line is only in the original version.
   deletion;
 
-  /// The line's text and minimap color: green when added, red when
-  /// deleted, null when unchanged.
-  Color? get markColor => switch (this) {
+  /// The tone coloring the line, as Git's `+`/`-` badges do: success when
+  /// added, error when deleted, null when unchanged.
+  StatusTone? get tone => switch (this) {
     DiffType.equal => null,
-    DiffType.addition => Colors.green[AppShade.strong],
-    DiffType.deletion => Colors.red[AppShade.strong],
-  };
-
-  /// The faint background behind the whole row, null when unchanged.
-  Color? get rowTint => switch (this) {
-    DiffType.equal => null,
-    DiffType.addition => Colors.green.withValues(alpha: AppOpacity.subtle),
-    DiffType.deletion => Colors.red.withValues(alpha: AppOpacity.subtle),
+    DiffType.addition => StatusTone.success,
+    DiffType.deletion => StatusTone.error,
   };
 }

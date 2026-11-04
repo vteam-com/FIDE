@@ -3,6 +3,7 @@ import 'package:fide/panels/center/editor/editor_search_controller.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/header_bar.dart';
+import 'package:fide/widgets/previous_next_buttons.dart';
 import 'package:fide/widgets/search_replace_field.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
 import 'package:flutter/material.dart';
@@ -67,23 +68,16 @@ class EditorScreenSearchBar extends StatelessWidget {
           Row(
             children: [
               const Spacer(),
-              if (controller.matchCount > 0) ...[
-                CompactIconButton(
-                  icon: Icons.keyboard_arrow_up,
-                  onPressed: onPreviousMatch,
-                  tooltip: 'Previous (Shift+F3)',
+              if (controller.matchCount > 0)
+                PreviousNextButtons(
+                  label:
+                      '${controller.currentIndex + 1} of '
+                      '${controller.matchCount}',
+                  onPrevious: onPreviousMatch,
+                  onNext: onNextMatch,
+                  previousTooltip: 'Previous (Shift+F3)',
+                  nextTooltip: 'Next (F3)',
                 ),
-                CompactIconButton(
-                  icon: Icons.keyboard_arrow_down,
-                  onPressed: onNextMatch,
-                  tooltip: 'Next (F3)',
-                ),
-                const SizedBox(width: AppSpacing.medium),
-                Text(
-                  '${controller.currentIndex + 1} of ${controller.matchCount}',
-                  style: AppTextStyle.caption,
-                ),
-              ],
             ],
           ),
         ],
