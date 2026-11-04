@@ -34,6 +34,18 @@ const int _widthFollowsPanel = 1;
 /// Sizing flag: the preview sets no height and has no natural one.
 const int _heightIsFallback = 2;
 
+/// Sizing flag: FIDE set a height other than the annotation's.
+const int _heightIsAdjusted = 4;
+
+/// Sizing flag: FIDE set a width other than the annotation's.
+const int _widthIsAdjusted = 8;
+
+/// Sizing flag: the width is Auto, set by neither the annotation nor FIDE.
+const int _widthIsAuto = 16;
+
+/// Sizing flag: the height is Auto, set by neither the annotation nor FIDE.
+const int _heightIsAuto = 32;
+
 /// How close to the panel's width a preview's must be to fill it.
 const double _fillTolerance = 0.5;
 
@@ -71,6 +83,8 @@ void _onMessage(Object? data) {
       host?.settingsChanged();
     case 'pointer':
       host?.dispatchPointer(message);
+    case 'size':
+      host?.setSize(message);
   }
 }
 
@@ -113,6 +127,7 @@ class _Entry {
     this.line,
     this.preview,
     this.build,
+    this.id,
     this.key,
   );
 
@@ -123,6 +138,9 @@ class _Entry {
   final int line;
   final Preview preview;
   final Object? Function() build;
+
+  /// Function, annotation and position: the same across hot reloads.
+  final String id;
 
   /// Kept across hot reloads, so the preview keeps its state.
   final GlobalKey key;
@@ -145,6 +163,13 @@ class _PreviewHostState extends State<_PreviewHost> {
   /// Bumped each time the previews are listed again, so FIDE drops the
   /// frames of the previous list.
   int _generation = 0;
+
+  /// The width FIDE set for a preview, by entry id, null for Auto; kept
+  /// across hot reloads, like the previews' state.
+  final Map<String, double?> _widths = {};
+
+  /// The height FIDE set for a preview, like [_widths].
+  final Map<String, double?> _heights = {};
 
   /// The entries to capture after the next frame.
   final Set<int> _dirty = {};
@@ -208,6 +233,7 @@ class _PreviewHostState extends State<_PreviewHost> {
             declaration.line,
             preview,
             declaration.build,
+            id,
             key,
           ),
         );
@@ -215,6 +241,18 @@ class _PreviewHostState extends State<_PreviewHost> {
     }
     _entries = entries;
     _keys = keys;
+    // A size the code now sets, such as after Fix Size, is no longer FIDE's
+    for (final entry in entries) {
+      final size = entry.preview.size;
+      if (_widths.containsKey(entry.id) &&
+          _widths[entry.id] == _finite(size?.width)) {
+        _widths.remove(entry.id);
+      }
+      if (_heights.containsKey(entry.id) &&
+          _heights[entry.id] == _finite(size?.height)) {
+        _heights.remove(entry.id);
+      }
+    }
     _generation++;
     _active = null;
     _send({
@@ -233,6 +271,22 @@ class _PreviewHostState extends State<_PreviewHost> {
     });
     _markAllDirty();
   }
+
+  /// Lays out the preview at the message's index with the message's
+  /// `width` or `height` (its `axis`) at its `value`, Auto when null.
+  void setSize(Map<String, Object?> message) {
+    final index = message['index'] as int;
+    if (index >= _entries.length) return;
+    final sizes = message['axis'] == 'width' ? _widths : _heights;
+    setState(() {
+      sizes[_entries[index].id] = (message['value'] as num?)?.toDouble();
+      _dirty.add(index);
+    });
+  }
+
+  /// [length] when it is finite; null, for Auto, otherwise.
+  static double? _finite(double? length) =>
+      length != null && length.isFinite ? length : null;
 
   void settingsChanged() {
     setState(_markAllDirty);
@@ -437,12 +491,19 @@ class _PreviewHostState extends State<_PreviewHost> {
         child: child,
       );
     }
-    final size = preview.size;
-    final width = size != null && size.width.isFinite ? size.width : null;
-    final height = size != null && size.height.isFinite ? size.height : null;
+    final codeWidth = _finite(preview.size?.width);
+    final codeHeight = _finite(preview.size?.height);
+    final id = entry.id;
+    final width = _widths.containsKey(id) ? _widths[id] : codeWidth;
+    final height = _heights.containsKey(id) ? _heights[id] : codeHeight;
     return _PreviewBox(
       width: width,
       height: height,
+      sizeFlags:
+          (width == codeWidth ? 0 : _widthIsAdjusted) |
+          (height == codeHeight ? 0 : _heightIsAdjusted) |
+          (width == null ? _widthIsAuto : 0) |
+          (height == null ? _heightIsAuto : 0),
       maxWidth: _settings.maxWidth,
       maxHeight: _settings.maxHeight,
       fallbackHeight: _settings.fallbackHeight,
@@ -456,7 +517,9 @@ class _PreviewHostState extends State<_PreviewHost> {
                   ? null
                   : TextScaler.linear(preview.textScaleFactor!),
             ),
-            child: Material(child: child),
+            // Transparent, so the backdrop FIDE draws shows what the
+            // preview leaves unpainted
+            child: Material(type: MaterialType.transparency, child: child),
           ),
         ),
       ),
@@ -464,8 +527,9 @@ class _PreviewHostState extends State<_PreviewHost> {
   }
 }
 
-/// Sizes a preview deterministically: the width its annotation sets, else
-/// up to the panel's; the height its annotation sets, else the child's
+/// Sizes a preview deterministically: the width FIDE or its annotation
+/// sets, else up to the panel's; the height FIDE or its annotation sets,
+/// else the child's
 /// natural height at that width (its max intrinsic height), so widgets that
 /// expand, such as a Column or a stretched Row, don't fill whatever room
 /// the host has; a child without a natural height (a scroll view, a
@@ -474,6 +538,7 @@ class _PreviewBox extends SingleChildRenderObjectWidget {
   const _PreviewBox({
     required this.width,
     required this.height,
+    required this.sizeFlags,
     required this.maxWidth,
     required this.maxHeight,
     required this.fallbackHeight,
@@ -482,6 +547,7 @@ class _PreviewBox extends SingleChildRenderObjectWidget {
 
   final double? width;
   final double? height;
+  final int sizeFlags;
   final double maxWidth;
   final double maxHeight;
   final double fallbackHeight;
@@ -490,6 +556,7 @@ class _PreviewBox extends SingleChildRenderObjectWidget {
   RenderObject createRenderObject(BuildContext context) => _RenderPreviewBox()
     ..width = width
     ..height = height
+    ..sizeFlags = sizeFlags
     ..maxWidth = maxWidth
     ..maxHeight = maxHeight
     ..fallbackHeight = fallbackHeight;
@@ -502,6 +569,7 @@ class _PreviewBox extends SingleChildRenderObjectWidget {
     renderObject
       ..width = width
       ..height = height
+      ..sizeFlags = sizeFlags
       ..maxWidth = maxWidth
       ..maxHeight = maxHeight
       ..fallbackHeight = fallbackHeight
@@ -512,17 +580,21 @@ class _PreviewBox extends SingleChildRenderObjectWidget {
 class _RenderPreviewBox extends RenderProxyBox {
   double? width;
   double? height;
+
+  /// The flags telling who set [width] and [height]: FIDE, the
+  /// annotation or no one (Auto).
+  int sizeFlags = 0;
   double maxWidth = 0;
   double maxHeight = 0;
   double fallbackHeight = 0;
 
-  /// How the last layout sized the preview: [_widthFollowsPanel] and
-  /// [_heightIsFallback] when they apply.
+  /// How the last layout sized the preview: [sizeFlags], and
+  /// [_widthFollowsPanel] and [_heightIsFallback] when they apply.
   int flags = 0;
 
   @override
   void performLayout() {
-    flags = 0;
+    flags = sizeFlags;
     final child = this.child;
     if (child == null) {
       size = constraints.smallest;

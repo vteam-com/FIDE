@@ -17,6 +17,7 @@ import 'package:fide/widgets/expansion_chevron.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/filter_field.dart';
 import 'package:fide/widgets/header_bar.dart';
+import 'package:fide/widgets/image_backdrop_buttons.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/output_panel.dart';
@@ -136,6 +137,7 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
           selected: state.brightness,
           onSelected: _controller.setBrightness,
         ),
+        const ImageBackdropButtons(),
         ZoomButtons(
           controller: _zoom,
           onZoomOut: () => _zoomTo(AppZoom.smaller(_scale)),
@@ -326,9 +328,8 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
   Widget _buildCard(String path, PreviewItem item, int index) {
     final state = ref.read(previewControllerProvider);
     final canFix =
-        (item.frame?.isSizeUndetermined ?? false) &&
-        (state.scan.annotationOf(item.function, item.annotation)?.canSetSize ??
-            false);
+        state.scan.annotationOf(item.function, item.annotation)?.canSetSize ??
+        false;
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.medium),
       child: PreviewCard(

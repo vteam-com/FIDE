@@ -1,15 +1,18 @@
-import 'dart:ui';
-
 import 'package:fide/services/preview_size_fixer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-String? _fix(String content, {int annotation = 0}) =>
-    const PreviewSizeFixer().withSize(
-      content,
-      label: 'cardPreview',
-      annotation: annotation,
-      size: const Size(359.5, 48),
-    );
+String? _fix(
+  String content, {
+  int annotation = 0,
+  double? width = 359.5,
+  double? height = 48,
+}) => const PreviewSizeFixer().withSize(
+  content,
+  label: 'cardPreview',
+  annotation: annotation,
+  width: width,
+  height: height,
+);
 
 void main() {
   test('writes the size, rounded up, into empty arguments', () {
@@ -36,6 +39,30 @@ void main() {
       _fix('@Preview(size: Size.fromWidth(200))\nWidget cardPreview() => x;'),
       '@Preview(size: Size(360, 48))\nWidget cardPreview() => x;',
     );
+  });
+
+  test('leaves the Auto width or height out', () {
+    expect(
+      _fix('@Preview()\nWidget cardPreview() => x;', width: null),
+      '@Preview(size: Size.fromHeight(48))\nWidget cardPreview() => x;',
+    );
+    expect(
+      _fix('@Preview()\nWidget cardPreview() => x;', height: null),
+      '@Preview(size: Size.fromWidth(360))\nWidget cardPreview() => x;',
+    );
+  });
+
+  test('removes the size when both are Auto', () {
+    String? auto(String content) => _fix(content, width: null, height: null);
+    expect(
+      auto("@Preview(name: 'A', size: Size(1, 2))\nWidget cardPreview() => x;"),
+      "@Preview(name: 'A')\nWidget cardPreview() => x;",
+    );
+    expect(
+      auto("@Preview(size: Size(1, 2), name: 'A')\nWidget cardPreview() => x;"),
+      "@Preview(name: 'A')\nWidget cardPreview() => x;",
+    );
+    expect(auto('@Preview()\nWidget cardPreview() => x;'), isNull);
   });
 
   test('edits the annotation at the given position', () {

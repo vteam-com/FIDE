@@ -7,7 +7,9 @@ class ResizableSplitter extends StatefulWidget {
   const ResizableSplitter({
     super.key,
     required this.onResize,
+    this.onResizeEnd,
     this.isHorizontal = false,
+    this.showsGripAtRest = false,
   });
 
   /// Whether the splitter separates stacked panels and drags vertically.
@@ -15,6 +17,13 @@ class ResizableSplitter extends StatefulWidget {
 
   /// Called with the pointer delta, in logical pixels, on each drag update.
   final Function(double) onResize;
+
+  /// Called when a drag ends.
+  final VoidCallback? onResizeEnd;
+
+  /// Whether the grip shows, faintly, while the pointer isn't over it, for
+  /// a resizer the user must find, such as a preview's.
+  final bool showsGripAtRest;
 
   @override
   State<ResizableSplitter> createState() => _ResizableSplitterState();
@@ -55,11 +64,7 @@ class _ResizableSplitterState extends State<ResizableSplitter> {
                   _startPosition = details.globalPosition.dx;
                 }
               },
-        onHorizontalDragEnd: widget.isHorizontal
-            ? null
-            : (_) {
-                setState(() => _isDragging = false);
-              },
+        onHorizontalDragEnd: widget.isHorizontal ? null : (_) => _endDrag(),
         onVerticalDragStart: widget.isHorizontal
             ? (details) {
                 setState(() {
@@ -77,11 +82,7 @@ class _ResizableSplitterState extends State<ResizableSplitter> {
                 }
               }
             : null,
-        onVerticalDragEnd: widget.isHorizontal
-            ? (_) {
-                setState(() => _isDragging = false);
-              }
-            : null,
+        onVerticalDragEnd: widget.isHorizontal ? (_) => _endDrag() : null,
         // The splitter is the gap between two panel islands: it stays
         // transparent so the workspace gradient shows through, and only a
         // pill grip fades in while the pointer is over it
@@ -114,12 +115,21 @@ class _ResizableSplitterState extends State<ResizableSplitter> {
     );
   }
 
-  /// The grip tint: hidden at rest, soft on hover, solid while dragging.
+  /// Ends the drag and tells [ResizableSplitter.onResizeEnd].
+  void _endDrag() {
+    setState(() => _isDragging = false);
+    widget.onResizeEnd?.call();
+  }
+
+  /// The grip tint: hidden at rest unless [ResizableSplitter.showsGripAtRest],
+  /// soft on hover, solid while dragging.
   Color _gripColor(ColorScheme colorScheme) {
     if (_isDragging) return colorScheme.primary;
     if (_isHovering) {
       return colorScheme.primary.withValues(alpha: AppOpacity.muted);
     }
-    return Colors.transparent;
+    return widget.showsGripAtRest
+        ? colorScheme.outlineVariant
+        : Colors.transparent;
   }
 }

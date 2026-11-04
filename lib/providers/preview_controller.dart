@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:fide/models/preview_frame.dart';
+import 'package:fide/models/preview_size_step.dart';
 import 'package:fide/models/preview_item.dart';
 import 'package:fide/models/preview_pointer_phase.dart';
 import 'package:fide/models/preview_scan.dart';
@@ -133,6 +134,16 @@ class PreviewController extends Notifier<PreviewState> {
     );
   }
 
+  /// Lays out the preview at [index] with its width ([Axis.horizontal])
+  /// or height ([Axis.vertical]) at [length], snapped to a
+  /// [PreviewSizeStep], or Auto when [length] is null, until the code sets
+  /// it with [fixSize] or a restart resets it.
+  void resize(int index, Axis axis, double? length) => _host?.resize(
+    index,
+    axis,
+    length == null ? null : PreviewSizeStep.snap(length),
+  );
+
   /// Hot restarts the previews, resetting their state, or starts them
   /// again when they stopped.
   void restart() => _enqueue(() async {
@@ -178,8 +189,8 @@ class PreviewController extends Notifier<PreviewState> {
     return generation;
   }
 
-  /// Writes the size [item] rendered at in its annotation in [path], so
-  /// it no longer follows the panel or the host's default; the saved file
+  /// Writes the size [item] renders at in its annotation in [path]: its
+  /// width and height fixed, or Auto, as the user set them; the saved file
   /// then reloads the previews.
   Future<void> fixSize(String path, PreviewItem item) async {
     final frame = item.frame;
@@ -190,7 +201,8 @@ class PreviewController extends Notifier<PreviewState> {
         content,
         label: item.function,
         annotation: item.annotation,
-        size: frame.size,
+        width: frame.fixedWidth,
+        height: frame.fixedHeight,
       ),
     );
   }

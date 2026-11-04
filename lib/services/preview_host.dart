@@ -8,6 +8,7 @@ import 'package:fide/models/preview_item.dart';
 import 'package:fide/models/preview_settings.dart';
 import 'package:fide/services/preview_registry.dart';
 import 'package:fide/services/process_runner.dart';
+import 'package:flutter/painting.dart';
 
 /// Runs a project's preview host: `flutter run --machine` on the headless
 /// `flutter-tester` device, hot reloaded as files change, talking to FIDE
@@ -133,6 +134,18 @@ class PreviewHost {
       'y': y,
       'dx': dx,
       'dy': dy,
+    });
+  }
+
+  /// Lays out the preview at [index] with its width ([Axis.horizontal])
+  /// or height ([Axis.vertical]) at [length] logical pixels, or Auto when
+  /// [length] is null.
+  void resize(int index, Axis axis, double? length) {
+    _send({
+      'type': 'size',
+      'index': index,
+      'axis': axis == Axis.horizontal ? 'width' : 'height',
+      'value': length,
     });
   }
 

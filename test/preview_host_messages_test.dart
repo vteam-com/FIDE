@@ -67,7 +67,19 @@ void main() {
     expect(frame.png, [7, 8]);
     expect(frame.heightIsFallback, isTrue);
     expect(frame.widthFollowsPanel, isFalse);
-    expect(frame.isSizeUndetermined, isTrue);
+    expect(frame.heightIsAdjusted, isFalse);
     expect(PreviewFrame.decode([1, 2]), isNull);
+  });
+
+  test('a height set by the user differs from the code', () {
+    final frame = PreviewFrame(
+      generation: 0,
+      index: 0,
+      size: const Size(120, 80),
+      png: Uint8List(0),
+      flags: PreviewFrame.heightIsAdjustedFlag,
+    );
+    expect(frame.heightIsAdjusted, isTrue);
+    expect(frame.differsFromCode, isTrue);
   });
 }

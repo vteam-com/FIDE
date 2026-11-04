@@ -23,6 +23,18 @@ class PreviewFrame {
   /// Flag: the preview sets no height and has no natural one.
   static const int heightIsFallbackFlag = 2;
 
+  /// Flag: the user set a height other than the annotation's.
+  static const int heightIsAdjustedFlag = 4;
+
+  /// Flag: the user set a width other than the annotation's.
+  static const int widthIsAdjustedFlag = 8;
+
+  /// Flag: the width is Auto, set by neither the annotation nor the user.
+  static const int widthIsAutoFlag = 16;
+
+  /// Flag: the height is Auto, set by neither the annotation nor the user.
+  static const int heightIsAutoFlag = 32;
+
   static const int _flagsOffset = 16;
 
   static const int _indexOffset = 4;
@@ -42,8 +54,7 @@ class PreviewFrame {
   /// The image, PNG encoded.
   final Uint8List png;
 
-  /// How the host sized the preview: [widthFollowsPanelFlag] and
-  /// [heightIsFallbackFlag] when they apply.
+  /// How the host sized the preview: the `...Flag` constants that apply.
   final int flags;
 
   /// Whether the preview's width depends on the panel's.
@@ -52,9 +63,29 @@ class PreviewFrame {
   /// Whether the preview's height is the host's fallback.
   bool get heightIsFallback => flags & heightIsFallbackFlag != 0;
 
-  /// Whether the code doesn't determine the preview's size, so it changes
-  /// with the panel or the host's defaults.
-  bool get isSizeUndetermined => widthFollowsPanel || heightIsFallback;
+  /// Whether the preview renders at a height the user set, not its code's.
+  bool get heightIsAdjusted => flags & heightIsAdjustedFlag != 0;
+
+  /// Whether the preview renders at a width the user set, not its code's.
+  bool get widthIsAdjusted => flags & widthIsAdjustedFlag != 0;
+
+  /// Whether the preview's width is Auto: sized by its content, up to the
+  /// panel's.
+  bool get widthIsAuto => flags & widthIsAutoFlag != 0;
+
+  /// Whether the preview's height is Auto: its natural height, else the
+  /// host's fallback.
+  bool get heightIsAuto => flags & heightIsAutoFlag != 0;
+
+  /// Whether the code renders the preview at another size than shown: the
+  /// user changed its width or height.
+  bool get differsFromCode => widthIsAdjusted || heightIsAdjusted;
+
+  /// The preview's width when fixed; null when Auto.
+  double? get fixedWidth => widthIsAuto ? null : size.width;
+
+  /// The preview's height when fixed; null when Auto.
+  double? get fixedHeight => heightIsAuto ? null : size.height;
 
   /// The frame in host message [bytes], or null when they are too short to
   /// hold one.
