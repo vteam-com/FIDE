@@ -170,7 +170,8 @@ class _PreviewCardState extends ConsumerState<PreviewCard> {
   Widget _buildLength(PreviewFrame frame, Axis axis) {
     final isWidth = axis == Axis.horizontal;
     final isAuto = isWidth ? frame.widthIsAuto : frame.heightIsAuto;
-    final length = (isWidth ? frame.size.width : frame.size.height).round();
+    final length = isWidth ? frame.size.width : frame.size.height;
+    final fit = PreviewSizeStep.fit(length).round();
     final name = isWidth ? 'Width' : 'Height';
     final String message;
     if (isAuto) {
@@ -179,22 +180,22 @@ class _PreviewCardState extends ConsumerState<PreviewCard> {
           : (frame.heightIsFallback
                 ? 'a default, as it has no natural height'
                 : 'its natural height');
-      message = '$name: Auto, $why. Click to fix it at $length';
+      message = '$name: Auto, $why. Click to fix it at $fit, to fit';
     } else {
       final grip = isWidth ? 'on the right of' : 'under';
       message =
-          '$name: $length. Click for Auto, or drag the grip $grip the '
+          '$name: ${length.round()}. Click for Auto, or drag the grip $grip the '
           'preview';
     }
     return Tooltip(
       message: message,
       child: CompactTextButton(
         icon: isWidth ? Icons.swap_horiz : Icons.swap_vert,
-        label: isAuto ? 'Auto' : '$length',
+        label: isAuto ? 'Auto' : '${length.round()}',
         onPressed: () => _controller.resize(
           widget.index,
           axis,
-          isAuto ? length.toDouble() : null,
+          isAuto ? fit.toDouble() : null,
         ),
       ),
     );

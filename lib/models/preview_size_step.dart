@@ -10,4 +10,9 @@ abstract final class PreviewSizeStep {
   /// [length] rounded to the nearest step, within [step] and [max].
   static double snap(double length) =>
       ((length / step).round() * step).clamp(step, max);
+
+  /// The first step at or above [length], within [step] and [max], so a
+  /// preview fixed at it shows all of its content.
+  static double fit(double length) =>
+      ((length / step).ceil() * step).clamp(step, max);
 }

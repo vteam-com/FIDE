@@ -8,4 +8,11 @@ void main() {
     expect(PreviewSizeStep.snap(2), PreviewSizeStep.step);
     expect(PreviewSizeStep.snap(5000), PreviewSizeStep.max);
   });
+
+  test('fitting rounds up, so no content is cut', () {
+    expect(PreviewSizeStep.fit(41), 50);
+    expect(PreviewSizeStep.fit(8.8), 10);
+    expect(PreviewSizeStep.fit(40), 40);
+    expect(PreviewSizeStep.fit(5000), PreviewSizeStep.max);
+  });
 }
