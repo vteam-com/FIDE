@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 /// position in the tab bar.
 enum RightPanelTab {
   outline(Key('keyTabOutline'), 'Outline', icon: Icons.list),
+  preview(Key('keyTabPreview'), 'Preview', icon: Icons.preview_outlined),
   localize(Key('keyTabLocalize'), 'Localize', icon: Icons.translate),
   ai(Key('keyTabAI'), 'AI', svgAsset: 'assets/ollama.svg'),
   info(Key('keyTabInfo'), 'Info', icon: Icons.info_outline);

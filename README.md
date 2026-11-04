@@ -44,6 +44,7 @@ FIDE holds itself to the same standard: its own code must score 100% with `fchec
   - **Git**: staged, unstaged and untracked files
 - **Code editor** with Dart syntax highlighting, search and replace, go to line, quick open, side-by-side diffs and image preview
 - **Outline** of the current file's classes and members, with their callers
+- **Preview** of the current file's `@Preview` widgets, live as you save: FIDE runs them headless on the Dart VM (so `dart:io` and assets work), streams each frame into the panel and forwards your clicks and scrolls. Switch it to **Project** to list every preview of the project, collapsed and filterable: only the one you expand is rendered, so it scales to any number of previews. A preview whose code sets no size is sized to its content; when its width follows the panel or it has no natural height, **Fix Size** writes the size it rendered at into its `@Preview(size: ...)`. For a file without previews, **Generate Previews** writes them, with sample values picked from each parameter's type; the AI writes those that need model objects
 - **Search** across the project
 - **Terminal** opened in the project folder
 

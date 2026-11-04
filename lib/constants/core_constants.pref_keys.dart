@@ -12,6 +12,9 @@ class PrefKeys {
   /// Recently opened project folders, newest first.
   static const String mruFolders = 'mru_folders';
 
+  /// Which previews the Preview panel lists: `file` or `project`.
+  static const String previewScope = 'preview_scope';
+
   /// Prefix for a project's cached Info panel metrics; the project path follows.
   static const String projectMetricsPrefix = 'project_metrics_';
 

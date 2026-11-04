@@ -85,3 +85,4 @@ flutter:
     - assets/app.png
     - assets/app.svg
     - assets/
+    - assets/preview_host/
