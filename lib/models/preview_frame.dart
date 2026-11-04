@@ -1,5 +1,6 @@
 import 'dart:typed_data';
-import 'dart:ui';
+
+import 'package:flutter/painting.dart';
 
 /// A rendered image of one preview, as the preview host sends it: a
 /// header of [headerBytes] (generation, index, logical width and height,
@@ -80,6 +81,14 @@ class PreviewFrame {
   /// Whether the code renders the preview at another size than shown: the
   /// user changed its width or height.
   bool get differsFromCode => widthIsAdjusted || heightIsAdjusted;
+
+  /// The preview's width ([Axis.horizontal]) or height.
+  double lengthAlong(Axis axis) =>
+      axis == Axis.horizontal ? size.width : size.height;
+
+  /// Whether the preview's width ([Axis.horizontal]) or height is Auto.
+  bool isAutoAlong(Axis axis) =>
+      axis == Axis.horizontal ? widthIsAuto : heightIsAuto;
 
   /// The preview's width when fixed; null when Auto.
   double? get fixedWidth => widthIsAuto ? null : size.width;

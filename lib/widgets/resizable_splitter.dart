@@ -30,11 +30,10 @@ class ResizableSplitter extends StatefulWidget {
 }
 
 class _ResizableSplitterState extends State<ResizableSplitter> {
-  bool _isDragging = false;
-  bool _isHovering = false;
-  double _startPosition = 0.0;
-
-  @override
+bool _isDragging = false;
+bool _isHovering = false;
+double _startPosition = 0.0;
+@override
   Widget build(BuildContext context) {
     return MouseRegion(
       cursor: _isHovering || _isDragging
@@ -47,41 +46,11 @@ class _ResizableSplitterState extends State<ResizableSplitter> {
       child: GestureDetector(
         // The gap is transparent, so claim the whole strip for hit testing
         behavior: HitTestBehavior.opaque,
-        onHorizontalDragStart: widget.isHorizontal
-            ? null
-            : (details) {
-                setState(() {
-                  _isDragging = true;
-                  _startPosition = details.globalPosition.dx;
-                });
-              },
-        onHorizontalDragUpdate: widget.isHorizontal
-            ? null
-            : (details) {
-                if (_isDragging) {
-                  final delta = details.globalPosition.dx - _startPosition;
-                  widget.onResize(delta);
-                  _startPosition = details.globalPosition.dx;
-                }
-              },
+        onHorizontalDragStart: widget.isHorizontal ? null : _startDrag,
+        onHorizontalDragUpdate: widget.isHorizontal ? null : _updateDrag,
         onHorizontalDragEnd: widget.isHorizontal ? null : (_) => _endDrag(),
-        onVerticalDragStart: widget.isHorizontal
-            ? (details) {
-                setState(() {
-                  _isDragging = true;
-                  _startPosition = details.globalPosition.dy;
-                });
-              }
-            : null,
-        onVerticalDragUpdate: widget.isHorizontal
-            ? (details) {
-                if (_isDragging) {
-                  final delta = details.globalPosition.dy - _startPosition;
-                  widget.onResize(delta);
-                  _startPosition = details.globalPosition.dy;
-                }
-              }
-            : null,
+        onVerticalDragStart: widget.isHorizontal ? _startDrag : null,
+        onVerticalDragUpdate: widget.isHorizontal ? _updateDrag : null,
         onVerticalDragEnd: widget.isHorizontal ? (_) => _endDrag() : null,
         // The splitter is the gap between two panel islands: it stays
         // transparent so the workspace gradient shows through, and only a
@@ -114,14 +83,15 @@ class _ResizableSplitterState extends State<ResizableSplitter> {
       ),
     );
   }
-
-  /// Ends the drag and tells [ResizableSplitter.onResizeEnd].
+/// The pointer's position along the axis the splitter drags.
+  double _along(Offset position) =>
+      widget.isHorizontal ? position.dy : position.dx;
+/// Ends the drag and tells [ResizableSplitter.onResizeEnd].
   void _endDrag() {
     setState(() => _isDragging = false);
     widget.onResizeEnd?.call();
   }
-
-  /// The grip tint: hidden at rest unless [ResizableSplitter.showsGripAtRest],
+/// The grip tint: hidden at rest unless [ResizableSplitter.showsGripAtRest],
   /// soft on hover, solid while dragging.
   Color _gripColor(ColorScheme colorScheme) {
     if (_isDragging) return colorScheme.primary;
@@ -131,5 +101,19 @@ class _ResizableSplitterState extends State<ResizableSplitter> {
     return widget.showsGripAtRest
         ? colorScheme.outlineVariant
         : Colors.transparent;
+  }
+/// Starts a drag at [details]' position.
+  void _startDrag(DragStartDetails details) {
+    setState(() {
+      _isDragging = true;
+      _startPosition = _along(details.globalPosition);
+    });
+  }
+/// Reports how far the drag moved since its last update.
+  void _updateDrag(DragUpdateDetails details) {
+    if (!_isDragging) return;
+    final position = _along(details.globalPosition);
+    widget.onResize(position - _startPosition);
+    _startPosition = position;
   }
 }

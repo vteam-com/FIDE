@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:fide/models/preview_frame.dart';
-import 'package:fide/models/preview_size_step.dart';
 import 'package:fide/models/preview_item.dart';
 import 'package:fide/models/preview_pointer_phase.dart';
 import 'package:fide/models/preview_scan.dart';
@@ -135,14 +134,10 @@ class PreviewController extends Notifier<PreviewState> {
   }
 
   /// Lays out the preview at [index] with its width ([Axis.horizontal])
-  /// or height ([Axis.vertical]) at [length], snapped to a
-  /// [PreviewSizeStep], or Auto when [length] is null, until the code sets
-  /// it with [fixSize] or a restart resets it.
-  void resize(int index, Axis axis, double? length) => _host?.resize(
-    index,
-    axis,
-    length == null ? null : PreviewSizeStep.snap(length),
-  );
+  /// or height ([Axis.vertical]) at [length], or Auto when [length] is
+  /// null, until the code sets it with [fixSize] or a restart resets it.
+  void resize(int index, Axis axis, double? length) =>
+      _host?.resize(index, axis, length);
 
   /// Hot restarts the previews, resetting their state, or starts them
   /// again when they stopped.

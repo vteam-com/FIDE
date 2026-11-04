@@ -20,12 +20,17 @@ class PreviewAnnotation {
   /// The offsets of the `size: ...` argument, when the annotation has one.
   final ({int start, int end})? sizeArgument;
 
+  /// The offsets to delete to remove the `size: ...` argument with the
+  /// comma separating it from its neighbor, when the annotation has one.
+  final ({int start, int end})? sizeRemoval;
+
   /// Creates the annotation.
   const PreviewAnnotation(
     this.constant, {
     this.argumentsStart,
     this.argumentsEnd = 0,
     this.sizeArgument,
+    this.sizeRemoval,
   });
 
   /// Whether the annotation is a plain `Preview(...)` whose size can be

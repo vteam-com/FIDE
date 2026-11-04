@@ -10,6 +10,7 @@ class CompactTextButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.icon,
+    this.tooltip,
   });
 
   /// Glyph before [label]; none when null.
@@ -20,6 +21,9 @@ class CompactTextButton extends StatelessWidget {
 
   /// Called when pressed; the button is disabled when null.
   final VoidCallback? onPressed;
+
+  /// Shown while the pointer is over the button; none when null.
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
@@ -33,14 +37,15 @@ class CompactTextButton extends StatelessWidget {
       textStyle: AppTextStyle.caption,
     );
     final icon = this.icon;
-    if (icon == null) {
-      return TextButton(onPressed: onPressed, style: style, child: Text(label));
-    }
-    return TextButton.icon(
-      onPressed: onPressed,
-      style: style,
-      icon: Icon(icon, size: AppIconSize.small),
-      label: Text(label),
-    );
+    final button = icon == null
+        ? TextButton(onPressed: onPressed, style: style, child: Text(label))
+        : TextButton.icon(
+            onPressed: onPressed,
+            style: style,
+            icon: Icon(icon, size: AppIconSize.small),
+            label: Text(label),
+          );
+    final tooltip = this.tooltip;
+    return tooltip == null ? button : Tooltip(message: tooltip, child: button);
   }
 }

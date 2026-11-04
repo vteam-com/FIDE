@@ -244,14 +244,8 @@ class _PreviewHostState extends State<_PreviewHost> {
     // A size the code now sets, such as after Fix Size, is no longer FIDE's
     for (final entry in entries) {
       final size = entry.preview.size;
-      if (_widths.containsKey(entry.id) &&
-          _widths[entry.id] == _finite(size?.width)) {
-        _widths.remove(entry.id);
-      }
-      if (_heights.containsKey(entry.id) &&
-          _heights[entry.id] == _finite(size?.height)) {
-        _heights.remove(entry.id);
-      }
+      _forgetIfCoded(_widths, entry.id, _finite(size?.width));
+      _forgetIfCoded(_heights, entry.id, _finite(size?.height));
     }
     _generation++;
     _active = null;
@@ -283,6 +277,23 @@ class _PreviewHostState extends State<_PreviewHost> {
       _dirty.add(index);
     });
   }
+
+  /// Forgets the length FIDE set in [lengths] for entry [id] once it is
+  /// the [coded] one.
+  static void _forgetIfCoded(
+    Map<String, double?> lengths,
+    String id,
+    double? coded,
+  ) {
+    if (lengths.containsKey(id) && lengths[id] == coded) lengths.remove(id);
+  }
+
+  /// The length FIDE set in [lengths] for entry [id], else the [coded] one.
+  static double? _lengthOf(
+    Map<String, double?> lengths,
+    String id,
+    double? coded,
+  ) => lengths.containsKey(id) ? lengths[id] : coded;
 
   /// [length] when it is finite; null, for Auto, otherwise.
   static double? _finite(double? length) =>
@@ -494,8 +505,8 @@ class _PreviewHostState extends State<_PreviewHost> {
     final codeWidth = _finite(preview.size?.width);
     final codeHeight = _finite(preview.size?.height);
     final id = entry.id;
-    final width = _widths.containsKey(id) ? _widths[id] : codeWidth;
-    final height = _heights.containsKey(id) ? _heights[id] : codeHeight;
+    final width = _lengthOf(_widths, id, codeWidth);
+    final height = _lengthOf(_heights, id, codeHeight);
     return _PreviewBox(
       width: width,
       height: height,

@@ -8,11 +8,12 @@ abstract final class PreviewSizeStep {
   static const double max = 2000;
 
   /// [length] rounded to the nearest step, within [step] and [max].
-  static double snap(double length) =>
-      ((length / step).round() * step).clamp(step, max);
+  static double snap(double length) => _steps((length / step).round());
 
   /// The first step at or above [length], within [step] and [max], so a
   /// preview fixed at it shows all of its content.
-  static double fit(double length) =>
-      ((length / step).ceil() * step).clamp(step, max);
+  static double fit(double length) => _steps((length / step).ceil());
+
+  /// [count] steps, within [step] and [max].
+  static double _steps(int count) => (count * step).clamp(step, max);
 }

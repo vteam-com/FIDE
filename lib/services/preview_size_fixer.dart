@@ -40,7 +40,10 @@ class PreviewSizeFixer {
     final argument = sizeArgumentFor(width: width, height: height);
     final existing = target.sizeArgument;
     if (argument == null) {
-      return existing == null ? null : _without(content, existing);
+      final removal = target.sizeRemoval;
+      return removal == null
+          ? null
+          : content.replaceRange(removal.start, removal.end, '');
     }
     if (existing != null) {
       return content.replaceRange(existing.start, existing.end, argument);
@@ -53,32 +56,5 @@ class PreviewSizeFixer {
         ? ' $argument,'
         : ', $argument';
     return content.replaceRange(at, at, insertion);
-  }
-
-  /// [content] without [argument] and the comma separating it from the
-  /// next argument, or else from the previous one.
-  static String _without(String content, ({int start, int end}) argument) {
-    var start = argument.start;
-    var end = _skipSpaces(content, argument.end, 1);
-    if (end < content.length && content[end] == ',') {
-      end = _skipSpaces(content, end + 1, 1);
-    } else {
-      end = argument.end;
-      final before = _skipSpaces(content, start - 1, -1);
-      if (before >= 0 && content[before] == ',') start = before;
-    }
-    return content.replaceRange(start, end, '');
-  }
-
-  /// The first offset from [at], moving by [direction], that isn't
-  /// whitespace.
-  static int _skipSpaces(String content, int at, int direction) {
-    var offset = at;
-    while (offset >= 0 &&
-        offset < content.length &&
-        content[offset].trim().isEmpty) {
-      offset += direction;
-    }
-    return offset;
   }
 }

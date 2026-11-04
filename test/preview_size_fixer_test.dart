@@ -62,6 +62,16 @@ void main() {
       auto("@Preview(size: Size(1, 2), name: 'A')\nWidget cardPreview() => x;"),
       "@Preview(name: 'A')\nWidget cardPreview() => x;",
     );
+    expect(
+      auto('@Preview(\n  size: Size(1, 2),\n)\nWidget cardPreview() => x;'),
+      '@Preview()\nWidget cardPreview() => x;',
+    );
+    expect(
+      auto(
+        "@Preview(name: 'A', size: Size(1, 2),)\nWidget cardPreview() => x;",
+      ),
+      "@Preview(name: 'A',)\nWidget cardPreview() => x;",
+    );
     expect(auto('@Preview()\nWidget cardPreview() => x;'), isNull);
   });
 

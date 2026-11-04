@@ -261,15 +261,30 @@ class PreviewScanner {
     if (className != previewClass || annotation.constructorName != null) {
       return PreviewAnnotation(constant);
     }
-    final size = arguments.arguments
-        .whereType<NamedArgument>()
-        .where((argument) => argument.name.lexeme == sizeArgument)
-        .firstOrNull;
+    final all = arguments.arguments;
+    final at = all.indexWhere(
+      (argument) =>
+          argument is NamedArgument && argument.name.lexeme == sizeArgument,
+    );
+    final size = at < 0 ? null : all[at];
+    final start = arguments.leftParenthesis.end;
+    final end = arguments.rightParenthesis.offset;
     return PreviewAnnotation(
       constant,
-      argumentsStart: arguments.leftParenthesis.end,
-      argumentsEnd: arguments.rightParenthesis.offset,
+      argumentsStart: start,
+      argumentsEnd: end,
       sizeArgument: size == null ? null : (start: size.offset, end: size.end),
+      sizeRemoval: size == null
+          ? null
+          // Up to the next argument, else from the previous one, else all
+          : switch ((
+              at > 0 ? all[at - 1] : null,
+              all.elementAtOrNull(at + 1),
+            )) {
+              (_, final next?) => (start: size.offset, end: next.offset),
+              (final previous?, null) => (start: previous.end, end: size.end),
+              (null, null) => (start: start, end: end),
+            },
     );
   }
 

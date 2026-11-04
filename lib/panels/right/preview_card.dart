@@ -130,24 +130,24 @@ class _PreviewCardState extends ConsumerState<PreviewCard> {
               ),
               SizedBox(
                 width: size.width,
-                child: _buildGrip(frame.size.height, Axis.vertical),
+                child: _buildGrip(frame, Axis.vertical),
               ),
             ],
           ),
         ),
         SizedBox(
           height: size.height,
-          child: _buildGrip(frame.size.width, Axis.horizontal),
+          child: _buildGrip(frame, Axis.horizontal),
         ),
       ],
     );
   }
 
-  /// The grip dragging the preview's [length] along [axis].
-  Widget _buildGrip(double length, Axis axis) => ResizableSplitter(
+  /// The grip dragging [frame]'s preview along [axis].
+  Widget _buildGrip(PreviewFrame frame, Axis axis) => ResizableSplitter(
     isHorizontal: axis == Axis.vertical,
     showsGripAtRest: true,
-    onResize: (delta) => _drag(axis, length, delta),
+    onResize: (delta) => _drag(axis, frame.lengthAlong(axis), delta),
     onResizeEnd: () {
       _dragged.remove(axis);
       _sent.remove(axis);
@@ -168,37 +168,33 @@ class _PreviewCardState extends ConsumerState<PreviewCard> {
   /// The preview's width ([Axis.horizontal]) or height: Auto or its
   /// length, switching between the two.
   Widget _buildLength(PreviewFrame frame, Axis axis) {
-    final isWidth = axis == Axis.horizontal;
-    final isAuto = isWidth ? frame.widthIsAuto : frame.heightIsAuto;
-    final length = isWidth ? frame.size.width : frame.size.height;
-    final fit = PreviewSizeStep.fit(length).round();
-    final name = isWidth ? 'Width' : 'Height';
-    final String message;
-    if (isAuto) {
-      final why = isWidth
-          ? (frame.widthFollowsPanel ? 'follows the panel' : 'fits its content')
-          : (frame.heightIsFallback
-                ? 'a default, as it has no natural height'
-                : 'its natural height');
-      message = '$name: Auto, $why. Click to fix it at $fit, to fit';
-    } else {
-      final grip = isWidth ? 'on the right of' : 'under';
-      message =
-          '$name: ${length.round()}. Click for Auto, or drag the grip $grip the '
-          'preview';
-    }
-    return Tooltip(
-      message: message,
-      child: CompactTextButton(
-        icon: isWidth ? Icons.swap_horiz : Icons.swap_vert,
-        label: isAuto ? 'Auto' : '${length.round()}',
-        onPressed: () => _controller.resize(
-          widget.index,
-          axis,
-          isAuto ? fit.toDouble() : null,
-        ),
-      ),
+    final isAuto = frame.isAutoAlong(axis);
+    final fit = PreviewSizeStep.fit(frame.lengthAlong(axis));
+    return CompactTextButton(
+      icon: axis == Axis.horizontal ? Icons.swap_horiz : Icons.swap_vert,
+      label: isAuto ? 'Auto' : '${frame.lengthAlong(axis).round()}',
+      tooltip: _lengthTooltip(frame, axis, fit),
+      onPressed: () =>
+          _controller.resize(widget.index, axis, isAuto ? fit : null),
     );
+  }
+
+  /// What [frame]'s width ([Axis.horizontal]) or height is, and what a
+  /// click makes of it: [fit] when Auto.
+  static String _lengthTooltip(PreviewFrame frame, Axis axis, double fit) {
+    final isWidth = axis == Axis.horizontal;
+    final name = isWidth ? 'Width' : 'Height';
+    if (!frame.isAutoAlong(axis)) {
+      final grip = isWidth ? 'on the right of' : 'under';
+      return '$name: ${frame.lengthAlong(axis).round()}. Click for Auto, or '
+          'drag the grip $grip the preview';
+    }
+    final why = isWidth
+        ? (frame.widthFollowsPanel ? 'follows the panel' : 'fits its content')
+        : (frame.heightIsFallback
+              ? 'a default, as it has no natural height'
+              : 'its natural height');
+    return '$name: Auto, $why. Click to fix it at ${fit.round()}, to fit';
   }
 
   /// What Fix Size writes for [frame], or why it has nothing to write.

@@ -18,14 +18,12 @@ class ZoomLabel extends StatelessWidget {
       listenable: controller,
       builder: (_, _) {
         final scale = controller.value.getMaxScaleOnAxis();
-        return Tooltip(
-          message: 'Actual Size',
-          child: CompactTextButton(
-            label: AppZoom.label(scale),
-            onPressed: scale == AppZoom.actualSize
-                ? null
-                : () => controller.value = Matrix4.identity(),
-          ),
+        return CompactTextButton(
+          label: AppZoom.label(scale),
+          tooltip: 'Actual Size',
+          onPressed: scale == AppZoom.actualSize
+              ? null
+              : () => controller.value = Matrix4.identity(),
         );
       },
     );
