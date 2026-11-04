@@ -30,10 +30,10 @@ class ResizableSplitter extends StatefulWidget {
 }
 
 class _ResizableSplitterState extends State<ResizableSplitter> {
-bool _isDragging = false;
-bool _isHovering = false;
-double _startPosition = 0.0;
-@override
+  bool _isDragging = false;
+  bool _isHovering = false;
+  double _startPosition = 0.0;
+  @override
   Widget build(BuildContext context) {
     return MouseRegion(
       cursor: _isHovering || _isDragging
@@ -83,15 +83,18 @@ double _startPosition = 0.0;
       ),
     );
   }
-/// The pointer's position along the axis the splitter drags.
+
+  /// The pointer's position along the axis the splitter drags.
   double _along(Offset position) =>
       widget.isHorizontal ? position.dy : position.dx;
-/// Ends the drag and tells [ResizableSplitter.onResizeEnd].
+
+  /// Ends the drag and tells [ResizableSplitter.onResizeEnd].
   void _endDrag() {
     setState(() => _isDragging = false);
     widget.onResizeEnd?.call();
   }
-/// The grip tint: hidden at rest unless [ResizableSplitter.showsGripAtRest],
+
+  /// The grip tint: hidden at rest unless [ResizableSplitter.showsGripAtRest],
   /// soft on hover, solid while dragging.
   Color _gripColor(ColorScheme colorScheme) {
     if (_isDragging) return colorScheme.primary;
@@ -102,14 +105,16 @@ double _startPosition = 0.0;
         ? colorScheme.outlineVariant
         : Colors.transparent;
   }
-/// Starts a drag at [details]' position.
+
+  /// Starts a drag at [details]' position.
   void _startDrag(DragStartDetails details) {
     setState(() {
       _isDragging = true;
       _startPosition = _along(details.globalPosition);
     });
   }
-/// Reports how far the drag moved since its last update.
+
+  /// Reports how far the drag moved since its last update.
   void _updateDrag(DragUpdateDetails details) {
     if (!_isDragging) return;
     final position = _along(details.globalPosition);

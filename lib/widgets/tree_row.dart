@@ -1,8 +1,10 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/theme/app_theme.dart';
+import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/more_menu_button.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 
 /// One row of a tree (files, folders, outline symbols, search results):
 /// [icon], [name] with its path as a tooltip, then [trailing] indicators.
@@ -24,6 +26,26 @@ class TreeRow extends StatelessWidget {
     this.onTap,
     this.onContextMenu,
   });
+
+  /// The row of the file at [path], with its icon, shown as its path
+  /// relative to [rootPath]: folders dimmed and the file name bold, as
+  /// [PathText] shows every path.
+  TreeRow.filePath(
+    String path, {
+    Key? key,
+    String? rootPath,
+    bool highlighted = false,
+    VoidCallback? onTap,
+  }) : this(
+         key: key,
+         icon: FileIconUtils.ofPath(path),
+         name: p.basename(path),
+         path: path,
+         rootPath: rootPath,
+         highlighted: highlighted,
+         showPath: true,
+         onTap: onTap,
+       );
 
   /// Nesting level; each level indents the row by one step.
   final int depth;

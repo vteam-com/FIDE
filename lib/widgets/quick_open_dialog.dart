@@ -2,11 +2,9 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/quick_open_matcher.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/empty_state.dart';
-import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path/path.dart' as p;
 
 /// The "Go to File" palette: a query box over the project files that best
 /// match it, as in VS Code's Quick Open. Up and Down move the selection,
@@ -159,16 +157,11 @@ class _QuickOpenDialogState extends State<QuickOpenDialog> {
 
   /// The row for result [index]: its icon and relative path.
   Widget _row(int index) {
-    final path = _results[index];
-    final name = p.basename(path);
     final isSelected = index == _selected;
-    return TreeRow(
+    return TreeRow.filePath(
+      _results[index],
       key: isSelected ? _selectedKey : null,
-      icon: FileIconUtils.ofPath(path),
-      name: name,
-      path: path,
       rootPath: widget.rootPath,
-      showPath: true,
       highlighted: isSelected,
       onTap: () => _open(index),
     );

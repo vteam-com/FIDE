@@ -14,13 +14,13 @@ import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/expansion_chevron.dart';
-import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/filter_field.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/image_backdrop_buttons.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/output_panel.dart';
+import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/section_title.dart';
@@ -30,7 +30,6 @@ import 'package:fide/widgets/tree_row.dart';
 import 'package:fide/widgets/zoom_buttons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart' as p;
 
 /// The Preview tab: the live widget previews of the selected Dart file,
 /// rendered by the project's preview host and updated as files are saved,
@@ -256,20 +255,18 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
     String? root,
     String query,
   ) {
-    final relative = root == null
-        ? file.path
-        : p.relative(file.path, from: root);
-    final fileMatches = relative.toLowerCase().contains(query);
+    final fileMatches = PathText.shownPath(
+      file.path,
+      root,
+    ).toLowerCase().contains(query);
     final previews = [
       for (final preview in file.scan.previews)
         if (fileMatches || preview.label.toLowerCase().contains(query)) preview,
     ];
     if (previews.isEmpty) return const [];
     return [
-      TreeRow(
-        icon: FileIconUtils.ofPath(file.path),
-        name: relative,
-        path: file.path,
+      TreeRow.filePath(
+        file.path,
         rootPath: root,
         onTap: () => openFile(ref, file.path),
       ),

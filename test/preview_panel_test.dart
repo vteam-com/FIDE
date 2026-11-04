@@ -88,7 +88,9 @@ Widget darkPreview() => const SizedBox();
   ) async {
     final controller = await _pump(tester, project);
     expect(tester.takeException(), isNull);
-    expect(find.text('lib/cards.dart'), findsOneWidget);
+    // The path as everywhere: its folders dimmed, its name bold
+    expect(find.text('lib/'), findsWidgets);
+    expect(find.text('cards.dart'), findsOneWidget);
     expect(find.text('lightPreview'), findsOneWidget);
     expect(find.text('badgePreview'), findsOneWidget);
     // The expanded preview waits for its first frame; the others render

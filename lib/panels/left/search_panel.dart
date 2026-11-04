@@ -1,7 +1,6 @@
 import 'package:fide/constants/constants.dart'
     show AppPadding, AppSpacing, AppTextStyle;
 import 'package:fide/models/editor_search.dart';
-import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/reference_search.dart';
 import 'package:fide/models/search_result.dart';
 import 'package:fide/models/search_result_node.dart';
@@ -12,7 +11,6 @@ import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/empty_state.dart';
-import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/loading_indicator.dart';
@@ -318,18 +316,13 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
 
   /// Handles `_buildFileResultNode`.
   Widget _buildFileResultNode(SearchResultNode node) {
-    final item = FileSystemItem.fromPath(node.path);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // File header
-        TreeRow(
-          icon: FileIconUtils.getFileIcon(item),
-          name: item.name,
-          path: node.path,
+        TreeRow.filePath(
+          node.path,
           rootPath: widget.projectPath,
-          showPath: true,
           onTap: () => openFile(ref, node.path),
         ),
         // Match results
