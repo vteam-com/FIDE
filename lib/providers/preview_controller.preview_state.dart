@@ -25,36 +25,6 @@ enum PreviewStatus {
   failed,
 }
 
-/// The brightness the Preview panel renders the previews in.
-enum PreviewBrightness {
-  /// Each preview's own brightness, else FIDE's.
-  auto('Brightness: Each Preview', Icons.brightness_auto),
-
-  /// Light, for every preview.
-  light('Brightness: Light', Icons.light_mode_outlined),
-
-  /// Dark, for every preview.
-  dark('Brightness: Dark', Icons.dark_mode_outlined);
-
-  const PreviewBrightness(this.tooltip, this.icon);
-
-  /// The toggle's tooltip.
-  final String tooltip;
-
-  /// The toggle's icon.
-  final IconData icon;
-
-  /// The brightness after this one, as the toggle cycles them.
-  PreviewBrightness get next => values[(index + 1) % values.length];
-
-  /// The brightness forced on the previews; null for [auto].
-  Brightness? get forced => switch (this) {
-    auto => null,
-    light => Brightness.light,
-    dark => Brightness.dark,
-  };
-}
-
 /// A preview of the project's list: its file and its declaration's label.
 typedef PreviewKey = ({String path, String label});
 
@@ -82,8 +52,9 @@ class PreviewState {
   /// The latest errors the previews reported while running.
   final List<String> logs;
 
-  /// The brightness the previews render in.
-  final PreviewBrightness brightness;
+  /// The brightness the previews render in: [ThemeMode.system] for each
+  /// preview's own, else FIDE's.
+  final ThemeMode brightness;
 
   /// Whether previews are being generated for the file's widgets.
   final bool isGenerating;
@@ -110,7 +81,7 @@ class PreviewState {
     this.generation = 0,
     this.message = '',
     this.logs = const [],
-    this.brightness = PreviewBrightness.auto,
+    this.brightness = ThemeMode.system,
     this.isGenerating = false,
     this.scope = PreviewScope.file,
     this.projectFiles = const [],
@@ -133,7 +104,7 @@ class PreviewState {
     int? generation,
     String? message,
     List<String>? logs,
-    PreviewBrightness? brightness,
+    ThemeMode? brightness,
     bool? isGenerating,
     PreviewScope? scope,
     List<PreviewFileScan>? projectFiles,

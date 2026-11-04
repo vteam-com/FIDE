@@ -2,12 +2,12 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/theme/app_theme.dart';
-import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/page_header.dart';
 import 'package:fide/widgets/section_title.dart';
+import 'package:fide/widgets/theme_mode_buttons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -128,19 +128,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   /// The System / Light / Dark choice, applied as soon as it is picked.
   Widget _buildDisplayModeButtons() {
-    return ChoiceButtons(
-      values: const [ThemeMode.system, ThemeMode.light, ThemeMode.dark],
+    return ThemeModeButtons(
       selected: ref.watch(themeModeProvider),
-      icon: (mode) => switch (mode) {
-        ThemeMode.system => Icons.brightness_auto,
-        ThemeMode.light => Icons.light_mode,
-        ThemeMode.dark => Icons.dark_mode,
-      },
-      label: (mode) => switch (mode) {
-        ThemeMode.system => 'System',
-        ThemeMode.light => 'Light',
-        ThemeMode.dark => 'Dark',
-      },
       onSelected: ref.read(themeModeProvider.notifier).select,
     );
   }

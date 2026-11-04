@@ -33,9 +33,6 @@ class PreviewScan {
   /// imported by itself.
   final bool isPart;
 
-  /// The offset just past the file's last directive; 0 without any.
-  final int directivesEnd;
-
   /// Creates the scan.
   const PreviewScan({
     this.previews = const [],
@@ -44,7 +41,6 @@ class PreviewScan {
     this.enumFirstValues = const {},
     this.topLevelNames = const {},
     this.isPart = false,
-    this.directivesEnd = 0,
   });
 
   /// A copy keeping only the preview labeled [label].
@@ -58,7 +54,6 @@ class PreviewScan {
     enumFirstValues: enumFirstValues,
     topLevelNames: topLevelNames,
     isPart: isPart,
-    directivesEnd: directivesEnd,
   );
 
   /// Annotation [position] of the preview labeled [label]; null when

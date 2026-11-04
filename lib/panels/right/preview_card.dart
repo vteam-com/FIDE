@@ -1,9 +1,10 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/preview_frame.dart';
 import 'package:fide/models/preview_item.dart';
 import 'package:fide/models/preview_pointer_phase.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/preview_controller.dart';
-import 'package:fide/models/preview_frame.dart';
+import 'package:fide/services/preview_size_fixer.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/inline_spinner.dart';
@@ -96,9 +97,8 @@ class PreviewCard extends ConsumerWidget {
       if (frame.widthFollowsPanel) 'its width follows the panel',
       if (frame.heightIsFallback) 'its height is a default',
     ].join(' and ');
-    final size = frame.size;
     return 'Fix Size in Code: $reasons; writes '
-        'size: Size(${size.width.ceil()}, ${size.height.ceil()})';
+        '${PreviewSizeFixer.sizeArgumentFor(frame.size)}';
   }
 
   /// The frame's image at [size], forwarding the pointer to the preview.

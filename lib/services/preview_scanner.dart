@@ -15,14 +15,12 @@ class PreviewScanner {
   /// Creates the scanner.
   const PreviewScanner();
 
-  /// Suffix of the annotation classes taken for previews.
-  static const String _previewSuffix = 'Preview';
-
-  /// The class of plain preview annotations, whose arguments FIDE edits.
-  static const String _previewClass = 'Preview';
+  /// The class of plain preview annotations, and the suffix of the
+  /// annotation classes taken for previews.
+  static const String previewClass = 'Preview';
 
   /// The `Preview` argument setting a preview's size.
-  static const String _sizeArgument = 'size';
+  static const String sizeArgument = 'size';
 
   /// Suffix of the superclasses that make a class a widget, such as
   /// `StatelessWidget` or `ConsumerWidget`.
@@ -78,7 +76,6 @@ class PreviewScanner {
       enumFirstValues: enums,
       topLevelNames: names,
       isPart: unit.directives.any((d) => d is PartOfDirective),
-      directivesEnd: unit.directives.lastOrNull?.end ?? 0,
     );
   }
 
@@ -227,8 +224,6 @@ class PreviewScanner {
       for (final configuration in directive.configurations) configuration.uri,
     ];
     return PreviewImport(
-      offset: start,
-      end: directive.end,
       source: content.substring(start, directive.end),
       uris: [
         for (final literal in literals)
@@ -240,14 +235,14 @@ class PreviewScanner {
 
   /// Whether [annotation] names a preview class: its class name, the
   /// last part of a prefixed name or the first of a named constructor,
-  /// ends with [_previewSuffix].
+  /// ends with [previewClass].
   static bool _isPreview(Annotation annotation) {
     final name = annotation.name;
     final parts = switch (name) {
       PrefixedIdentifier() => [name.prefix.name, name.identifier.name],
       _ => [name.name],
     };
-    return parts.any((part) => part.endsWith(_previewSuffix)) &&
+    return parts.any((part) => part.endsWith(previewClass)) &&
         !annotation.toSource().contains(RegExp(r'\b_'));
   }
 
@@ -263,12 +258,12 @@ class PreviewScanner {
     final className = name is PrefixedIdentifier
         ? name.identifier.name
         : name.name;
-    if (className != _previewClass || annotation.constructorName != null) {
+    if (className != previewClass || annotation.constructorName != null) {
       return PreviewAnnotation(constant);
     }
     final size = arguments.arguments
         .whereType<NamedArgument>()
-        .where((argument) => argument.name.lexeme == _sizeArgument)
+        .where((argument) => argument.name.lexeme == sizeArgument)
         .firstOrNull;
     return PreviewAnnotation(
       constant,

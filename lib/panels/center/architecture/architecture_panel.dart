@@ -17,7 +17,7 @@ import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/project_analysis_view.dart';
 import 'package:fide/widgets/status_indicator.dart';
-import 'package:fide/widgets/zoom_label.dart';
+import 'package:fide/widgets/zoom_buttons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -282,16 +282,10 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
             selected: _showAllImports,
             onPressed: () => setState(() => _showAllImports = !_showAllImports),
           ),
-          CompactIconButton.header(
-            icon: Icons.zoom_out,
-            tooltip: 'Zoom Out',
-            onPressed: () => _zoomBy(1 / AppZoom.canvasStep),
-          ),
-          ZoomLabel(controller: _transformation),
-          CompactIconButton.header(
-            icon: Icons.zoom_in,
-            tooltip: 'Zoom In',
-            onPressed: () => _zoomBy(AppZoom.canvasStep),
+          ZoomButtons(
+            controller: _transformation,
+            onZoomOut: () => _zoomBy(1 / AppZoom.canvasStep),
+            onZoomIn: () => _zoomBy(AppZoom.canvasStep),
           ),
           CompactIconButton.header(
             icon: Icons.fit_screen_outlined,

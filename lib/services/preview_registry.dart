@@ -41,24 +41,22 @@ class PreviewRegistry {
   String get _hostPath => p.join(projectPath, folder);
 
   /// Writes the host's entry point from [hostSource].
-  Future<void> writeHost(String hostSource) async {
-    final file = File(p.join(projectPath, entryPoint));
-    await file.parent.create(recursive: true);
-    await file.writeAsString(hostSource);
-  }
+  Future<void> writeHost(String hostSource) =>
+      _write(p.join(projectPath, entryPoint), hostSource);
 
   /// Writes the registry of the previews [scan] found in [filePath].
-  Future<void> writeRegistry(String filePath, PreviewScan scan) async {
-    final file = File(p.join(_hostPath, _registryFile));
-    await file.parent.create(recursive: true);
-    await file.writeAsString(source(filePath, scan));
-  }
+  Future<void> writeRegistry(String filePath, PreviewScan scan) =>
+      _write(p.join(_hostPath, _registryFile), source(filePath, scan));
 
   /// Writes a registry listing no preview, so the host renders nothing.
-  Future<void> writeEmptyRegistry() async {
-    final file = File(p.join(_hostPath, _registryFile));
+  Future<void> writeEmptyRegistry() =>
+      _write(p.join(_hostPath, _registryFile), emptySource);
+
+  /// Writes [content] to the file at absolute [path], creating its folder.
+  static Future<void> _write(String path, String content) async {
+    final file = File(path);
     await file.parent.create(recursive: true);
-    await file.writeAsString(emptySource);
+    await file.writeAsString(content);
   }
 
   /// The source of a registry listing no preview.

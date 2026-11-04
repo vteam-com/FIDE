@@ -1,4 +1,6 @@
+import 'package:fide/models/dart_imports.dart';
 import 'package:fide/models/preview_scan.dart';
+import 'package:fide/services/preview_scanner.dart';
 
 /// A sample argument for a widget parameter: its [code], whether it is a
 /// constant, and whether it needs the `const` keyword outside a constant
@@ -28,9 +30,6 @@ class PreviewGenerator {
 
   /// The library declaring `Colors` and `Icons`.
   static const String _materialImport = 'package:flutter/material.dart';
-
-  static const String _packageScheme = 'package:';
-  static const String _previewSuffix = 'Preview';
 
   /// The number appended to a preview name already taken, as in
   /// `myWidgetPreview2`.
@@ -63,7 +62,7 @@ class PreviewGenerator {
   /// Adds the previews to [content], scanned as [scan].
   PreviewGeneration generate(String content, PreviewScan scan) {
     final names = {...scan.topLevelNames};
-    final hasMaterial = scan.imports.any((i) => i.uri == _materialImport);
+    final hasMaterial = _hasMaterial(scan);
     final functions = <String>[];
     final added = <String>[];
     final skipped = <PreviewWidget>[];
@@ -87,7 +86,11 @@ class PreviewGenerator {
     }
     final withPreviews = '${content.trimRight()}\n\n${functions.join('\n')}';
     return (
-      content: _withImport(withPreviews, scan),
+      content: withImport(
+        withPreviews,
+        previewImport,
+        isImported: (uri) => uri == previewImport,
+      ),
       added: added,
       skipped: skipped,
     );
@@ -96,7 +99,7 @@ class PreviewGenerator {
   /// The widgets of [scan] without a preview whose required arguments
   /// [generate] can't pick.
   List<PreviewWidget> skippedIn(PreviewScan scan) {
-    final hasMaterial = scan.imports.any((i) => i.uri == _materialImport);
+    final hasMaterial = _hasMaterial(scan);
     return [
       for (final widget in scan.widgetsWithoutPreview)
         if (_call(widget, scan, hasMaterial) == null) widget,
@@ -171,35 +174,17 @@ class PreviewGenerator {
     };
   }
 
-  /// [content] importing [previewImport], placed in order among the
-  /// package imports, unless it already does.
-  String _withImport(String content, PreviewScan scan) {
-    if (scan.imports.any((i) => i.uri == previewImport)) return content;
-    const directive = "import '$previewImport';\n";
-    final packages = scan.imports.where(
-      (i) => i.uri.startsWith(_packageScheme),
-    );
-    final after = packages.where((i) => i.uri.compareTo(previewImport) > 0);
-    final before = after.firstOrNull;
-    if (before != null) {
-      return content.replaceRange(before.offset, before.offset, directive);
-    }
-    final last = packages.lastOrNull ?? scan.imports.lastOrNull;
-    if (last != null) {
-      return content.replaceRange(last.end, last.end, '\n$directive');
-    }
-    final end = scan.directivesEnd;
-    return end == 0
-        ? '$directive\n$content'
-        : content.replaceRange(end, end, '\n\n$directive');
-  }
+  /// Whether [scan]'s file imports Material, so samples can use `Colors`
+  /// and `Icons`.
+  static bool _hasMaterial(PreviewScan scan) =>
+      scan.imports.any((i) => i.uri == _materialImport);
 
   /// A preview function name for [className] not in [taken], such as
   /// `myWidgetPreview`.
   static String _uniqueName(String className, Set<String> taken) {
     final base =
         '${className[0].toLowerCase()}${className.substring(1)}'
-        '$_previewSuffix';
+        '${PreviewScanner.previewClass}';
     var name = base;
     for (var suffix = _firstNameSuffix; taken.contains(name); suffix++) {
       name = '$base$suffix';

@@ -108,8 +108,9 @@ class PreviewController extends Notifier<PreviewState> {
     _sendSettings();
   }
 
-  /// Renders the previews in [brightness].
-  void setBrightness(PreviewBrightness brightness) {
+  /// Renders the previews in [brightness]: [ThemeMode.system] for each
+  /// preview's own, else FIDE's.
+  void setBrightness(ThemeMode brightness) {
     state = state.copyWith(brightness: brightness);
     _sendSettings();
   }
@@ -261,25 +262,26 @@ class PreviewController extends Notifier<PreviewState> {
       state = state.copyWith(filePath: path);
       return;
     }
-    if (path == null || p.extension(path) != '.dart') {
-      state = PreviewState(
-        filePath: path,
-        brightness: state.brightness,
-        scope: state.scope,
-      );
+    if (path == null || !_isDart(path)) {
+      state = _fresh(path, PreviewStatus.noFile);
       return;
     }
-    if (path != state.filePath) {
-      state = PreviewState(
-        filePath: path,
-        status: PreviewStatus.reloading,
-        brightness: state.brightness,
-        logs: state.logs,
-        scope: state.scope,
-      );
-    }
+    if (path != state.filePath) state = _fresh(path, PreviewStatus.reloading);
     await _refresh();
   }
+
+  /// A state for [path] at [status], keeping the panel's settings and the
+  /// errors reported.
+  PreviewState _fresh(String? path, PreviewStatus status) => PreviewState(
+    filePath: path,
+    status: status,
+    brightness: state.brightness,
+    logs: state.logs,
+    scope: state.scope,
+  );
+
+  /// Whether [path] is a Dart file, which alone can have previews.
+  static bool _isDart(String path) => p.extension(path) == '.dart';
 
   /// Scans the file, or the project, again and renders its previews as
   /// saved.
@@ -289,7 +291,7 @@ class PreviewController extends Notifier<PreviewState> {
   /// Scans the file shown again and renders its previews.
   Future<void> _refreshFile() async {
     final path = state.filePath;
-    if (path == null || p.extension(path) != '.dart') {
+    if (path == null || !_isDart(path)) {
       state = state.copyWith(status: PreviewStatus.noFile);
       return;
     }
@@ -456,7 +458,11 @@ class PreviewController extends Notifier<PreviewState> {
       ),
       maxHeight: _maxLayoutHeight,
       fallbackHeight: _fallbackLayoutHeight,
-      brightness: state.brightness.forced,
+      brightness: switch (state.brightness) {
+        ThemeMode.system => null,
+        ThemeMode.light => Brightness.light,
+        ThemeMode.dark => Brightness.dark,
+      },
       fallbackBrightness: viewport.app,
     );
     if (settings == _settings) return;

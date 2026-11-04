@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/container_counter.dart';
+import 'package:fide/widgets/expansion_chevron.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/surface_header_band.dart';
 import 'package:fide/widgets/surface_padding.dart';
@@ -68,9 +69,8 @@ class _SectionPanelState extends State<SectionPanel> {
               child: Row(
                 spacing: AppSpacing.tiny,
                 children: [
-                  Icon(
-                    _isExpanded ? Icons.expand_more : Icons.chevron_right,
-                    size: AppIconSize.medium,
+                  ExpansionChevron(
+                    isExpanded: _isExpanded,
                     color: colorScheme.primary,
                   ),
                   Expanded(

@@ -9,12 +9,15 @@ class PreviewSizeFixer {
   /// Creates the fixer.
   const PreviewSizeFixer();
 
-  /// The `Preview` argument setting a preview's size.
-  static const String _sizeArgument = 'size';
+  /// The `size:` argument writing [size], rounded up to whole pixels so
+  /// nothing gets clipped, such as `size: Size(360, 48)`.
+  static String sizeArgumentFor(Size size) =>
+      '${PreviewScanner.sizeArgument}: '
+      'Size(${size.width.ceil()}, ${size.height.ceil()})';
 
   /// [content] with annotation [annotation] of the preview labeled [label]
-  /// set to [size], rounded up to whole pixels so nothing gets clipped;
-  /// null when that annotation isn't a plain `Preview(...)`.
+  /// set to [size], as [sizeArgumentFor] writes it; null when that
+  /// annotation isn't a plain `Preview(...)`.
   String? withSize(
     String content, {
     required String label,
@@ -26,8 +29,7 @@ class PreviewSizeFixer {
         .annotationOf(label, annotation);
     final start = target?.argumentsStart;
     if (target == null || start == null) return null;
-    final argument =
-        '$_sizeArgument: Size(${size.width.ceil()}, ${size.height.ceil()})';
+    final argument = sizeArgumentFor(size);
     final existing = target.sizeArgument;
     if (existing != null) {
       return content.replaceRange(existing.start, existing.end, argument);

@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/expansion_chevron.dart';
 import 'package:flutter/material.dart';
 
 /// A search box with a toggle that reveals the replacement box under it;
@@ -61,7 +62,7 @@ class _SearchReplaceFieldState extends State<SearchReplaceField> {
       spacing: AppSpacing.tiny,
       children: [
         CompactIconButton(
-          icon: _showReplace ? Icons.expand_more : Icons.chevron_right,
+          icon: ExpansionChevron.iconFor(_showReplace),
           tooltip: _showReplace ? 'Hide replace' : 'Show replace',
           onPressed: _toggleReplace,
         ),

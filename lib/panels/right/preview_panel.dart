@@ -1,16 +1,19 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/preview_item.dart';
 import 'package:fide/models/preview_scope.dart';
+import 'package:fide/panels/right/preview_card.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/preview_controller.dart';
 import 'package:fide/providers/preview_scope_notifier.dart';
+import 'package:fide/providers/right_panel_tab.dart';
 import 'package:fide/services/preview_generator.dart';
 import 'package:fide/services/preview_project_scanner.dart';
 import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/empty_state.dart';
+import 'package:fide/widgets/expansion_chevron.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/filter_field.dart';
 import 'package:fide/widgets/header_bar.dart';
@@ -20,10 +23,10 @@ import 'package:fide/widgets/output_panel.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/section_title.dart';
+import 'package:fide/widgets/theme_mode_buttons.dart';
 import 'package:fide/widgets/tree_branch.dart';
 import 'package:fide/widgets/tree_row.dart';
-import 'package:fide/widgets/zoom_label.dart';
-import 'package:fide/panels/right/preview_card.dart';
+import 'package:fide/widgets/zoom_buttons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -62,6 +65,13 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
     _filter.dispose();
     super.dispose();
   }
+
+  /// The panel's icon, as its tab shows it.
+  static final IconData? _icon = RightPanelTab.preview.icon;
+
+  /// The controller running the previews.
+  PreviewController get _controller =>
+      ref.read(previewControllerProvider.notifier);
 
   double get _scale => _zoom.value.getMaxScaleOnAxis();
 
@@ -111,7 +121,6 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
   /// The scope, brightness, zoom and restart controls, wrapping onto a
   /// second line in a narrow panel.
   Widget _buildToolbar(PreviewState state) {
-    final controller = ref.read(previewControllerProvider.notifier);
     return Wrap(
       alignment: WrapAlignment.spaceBetween,
       crossAxisAlignment: WrapCrossAlignment.center,
@@ -123,26 +132,14 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
           label: (scope) => scope.label,
           onSelected: ref.read(previewScopeProvider.notifier).select,
         ),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CompactIconButton.header(
-              icon: state.brightness.icon,
-              tooltip: state.brightness.tooltip,
-              onPressed: () => controller.setBrightness(state.brightness.next),
-            ),
-            CompactIconButton.header(
-              icon: Icons.zoom_out,
-              tooltip: 'Zoom Out',
-              onPressed: () => _zoomTo(AppZoom.smaller(_scale)),
-            ),
-            ZoomLabel(controller: _zoom),
-            CompactIconButton.header(
-              icon: Icons.zoom_in,
-              tooltip: 'Zoom In',
-              onPressed: () => _zoomTo(AppZoom.larger(_scale)),
-            ),
-          ],
+        ThemeModeButtons(
+          selected: state.brightness,
+          onSelected: _controller.setBrightness,
+        ),
+        ZoomButtons(
+          controller: _zoom,
+          onZoomOut: () => _zoomTo(AppZoom.smaller(_scale)),
+          onZoomIn: () => _zoomTo(AppZoom.larger(_scale)),
         ),
         if (state.isBusy)
           const InlineSpinner()
@@ -150,7 +147,7 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
           CompactIconButton.header(
             icon: Icons.restart_alt,
             tooltip: 'Restart Previews',
-            onPressed: controller.restart,
+            onPressed: _controller.restart,
           ),
       ],
     );
@@ -161,13 +158,13 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
     if (state.scope == PreviewScope.project) return _buildProject(state);
     switch (state.status) {
       case PreviewStatus.noFile:
-        return const EmptyState(
-          icon: Icons.preview_outlined,
+        return EmptyState(
+          icon: _icon,
           message: 'Select a Dart file to preview its widgets',
         );
       case PreviewStatus.part:
-        return const EmptyState(
-          icon: Icons.preview_outlined,
+        return EmptyState(
+          icon: _icon,
           message: 'This file is a part: select its library to preview it',
         );
       case PreviewStatus.noPreviews:
@@ -223,8 +220,8 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
     if (files.isEmpty) {
       return state.isScanning
           ? const LoadingIndicator(message: "Finding the project's previews")
-          : const EmptyState(
-              icon: Icons.preview_outlined,
+          : EmptyState(
+              icon: _icon,
               title: 'No Previews',
               message: "The project's lib folder has no widget preview",
             );
@@ -295,15 +292,11 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
   /// The row of preview [label] of [path], toggling it.
   Widget _buildPreviewRow(String path, String label, bool isExpanded) {
     return TreeRow(
-      icon: Icon(
-        isExpanded ? Icons.expand_more : Icons.chevron_right,
-        size: AppIconSize.medium,
-      ),
+      icon: ExpansionChevron(isExpanded: isExpanded),
       name: label,
       depth: 1,
       highlighted: isExpanded,
-      onTap: () =>
-          ref.read(previewControllerProvider.notifier).toggle(path, label),
+      onTap: () => _controller.toggle(path, label),
     );
   }
 
@@ -314,7 +307,7 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
       title: 'Preview Failed',
       text: state.message,
       isExpanded: true,
-      onClear: ref.read(previewControllerProvider.notifier).restart,
+      onClear: _controller.restart,
     );
   }
 
@@ -324,7 +317,7 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
     return OutputPanel(
       title: 'Preview Errors',
       text: state.logs.join('\n\n'),
-      onClear: ref.read(previewControllerProvider.notifier).clearLogs,
+      onClear: _controller.clearLogs,
     );
   }
 
@@ -357,16 +350,15 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
   Widget _buildGenerate(PreviewState state) {
     final widgets = state.scan.widgets;
     if (widgets.isEmpty) {
-      return const EmptyState(
-        icon: Icons.preview_outlined,
+      return EmptyState(
+        icon: _icon,
         message: 'This file has no widget to preview',
       );
     }
     final skipped = const PreviewGenerator().skippedIn(state.scan);
     final generated = widgets.length - skipped.length;
-    final controller = ref.read(previewControllerProvider.notifier);
     return EmptyState(
-      icon: Icons.preview_outlined,
+      icon: _icon,
       title: 'No Previews',
       message: widgets.length == 1
           ? '${widgets.single.name} has no preview yet'
@@ -385,7 +377,7 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
             SecondaryButton(
               label: 'Ask AI for ${skipped.map((w) => w.name).join(', ')}',
               icon: Icons.auto_awesome,
-              onPressed: () => controller.askAiForPreviews(skipped),
+              onPressed: () => _controller.askAiForPreviews(skipped),
             ),
         ],
       ),
@@ -393,6 +385,5 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
   }
 
   /// Generates the previews code can write.
-  void _generate() =>
-      ref.read(previewControllerProvider.notifier).generatePreviews();
+  void _generate() => _controller.generatePreviews();
 }

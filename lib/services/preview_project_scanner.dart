@@ -20,15 +20,12 @@ class PreviewProjectScanner {
   /// The folder scanned, relative to the project.
   static const String _folder = 'lib';
 
-  /// The word every preview annotation contains.
-  static const String _marker = 'Preview';
-
   /// The files of the project at [projectPath] that have previews, by
   /// absolute path, sorted.
   Future<List<PreviewFileScan>> scan(String projectPath) =>
       Isolate.run(() => _scanSync(projectPath));
 
-  /// Lists `lib` and scans each Dart file mentioning [_marker], in the
+  /// Lists `lib` and scans each Dart file mentioning [PreviewScanner.previewClass], in the
   /// calling isolate.
   static List<PreviewFileScan> _scanSync(String projectPath) {
     final folder = Directory(p.join(projectPath, _folder));
@@ -39,7 +36,7 @@ class PreviewProjectScanner {
       final relative = p.relative(entity.path, from: projectPath);
       if (ProjectFiles.isSkippedPath(relative)) continue;
       final content = entity.readAsStringSync();
-      if (!content.contains(_marker)) continue;
+      if (!content.contains(PreviewScanner.previewClass)) continue;
       final scan = const PreviewScanner().scan(content);
       if (scan.isPart || scan.previews.isEmpty) continue;
       files.add((path: entity.path, scan: scan));

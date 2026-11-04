@@ -11,19 +11,8 @@ class PreviewImport {
   /// the offsets of its string literal in [source].
   final List<({int start, int end, String uri})> uris;
 
-  /// The directive's offset in its file.
-  final int offset;
-
-  /// The offset just past the directive in its file.
-  final int end;
-
   /// Creates the import.
-  const PreviewImport({
-    required this.source,
-    required this.uris,
-    this.offset = 0,
-    this.end = 0,
-  });
+  const PreviewImport({required this.source, required this.uris});
 
   /// The directive's main URI.
   String get uri => uris.first.uri;
