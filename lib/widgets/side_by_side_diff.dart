@@ -2,16 +2,20 @@
 
 import 'package:diff_match_patch/diff_match_patch.dart';
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/surface_header_band.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:flutter/material.dart';
 
 part 'side_by_side_diff.diff_line.dart';
+part 'side_by_side_diff.minimap.dart';
 
-// Side-by-side diff widget
-/// Represents `SideBySideDiff`.
-class SideBySideDiff extends StatelessWidget {
+/// Shows two versions of a text side by side, deleted lines in red and
+/// added lines in green, with buttons to jump between changes and a
+/// minimap of where the changes are.
+class SideBySideDiff extends StatefulWidget {
+  /// Creates a diff of [oldText] against [newText].
   const SideBySideDiff({
     super.key,
     required this.oldText,
@@ -21,69 +25,21 @@ class SideBySideDiff extends StatelessWidget {
   /// Character code of the first encoded line; 0 is skipped because some
   /// tools treat the null character as a string terminator.
   static const int _firstLineCode = 1;
-  final String newText;
-  final String oldText;
-  @override
-  Widget build(BuildContext context) {
-    final diffLines = computeLines(oldText, newText);
 
-    return OutlinedSurface(
-      padding: SurfacePadding.none,
-      child: Column(
-        children: [
-          // Header
-          SurfaceHeaderBand(
-            child: Row(
-              children: [
-                _buildHeaderLabel('Original'),
-                _buildColumnDivider(AppSize.diffHeaderDividerHeight),
-                _buildHeaderLabel('Modified'),
-              ],
-            ),
-          ),
-          // Diff content
-          Expanded(
-            child: ListView.builder(
-              itemCount: diffLines.length,
-              itemBuilder: (context, index) {
-                final line = diffLines[index];
-                return Container(
-                  decoration: BoxDecoration(
-                    color: line.type == DiffType.deletion
-                        ? Colors.red.withValues(alpha: AppOpacity.subtle)
-                        : line.type == DiffType.addition
-                        ? Colors.green.withValues(alpha: AppOpacity.subtle)
-                        : null,
-                  ),
-                  child: Row(
-                    children: [
-                      _buildSide(
-                        context,
-                        line.oldLine,
-                        line.oldContent,
-                        line.type == DiffType.deletion
-                            ? Colors.red[AppShade.strong]
-                            : null,
-                      ),
-                      _buildColumnDivider(AppSize.diffRowDividerHeight),
-                      _buildSide(
-                        context,
-                        line.newLine,
-                        line.newContent,
-                        line.type == DiffType.addition
-                            ? Colors.green[AppShade.strong]
-                            : null,
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  /// The modified version, shown on the right.
+  final String newText;
+
+  /// The original version, shown on the left.
+  final String oldText;
+
+  /// Indexes in [lines] where each change starts: a deleted or added line
+  /// that follows an unchanged line or the start of the text.
+  static List<int> changeStarts(List<DiffLine> lines) => [
+    for (var i = 0; i < lines.length; i++)
+      if (lines[i].type != DiffType.equal &&
+          (i == 0 || lines[i - 1].type == DiffType.equal))
+        i,
+  ];
 
   /// Compares [oldText] and [newText] line by line and returns one row per
   /// unchanged, deleted or added line, numbered on each side.
@@ -145,6 +101,116 @@ class SideBySideDiff extends StatelessWidget {
     return diffLines;
   }
 
+  @override
+  State<SideBySideDiff> createState() => _SideBySideDiffState();
+}
+
+class _SideBySideDiffState extends State<SideBySideDiff> {
+  late List<int> _changeStarts;
+
+  /// Unchanged lines kept in view above a change jumped to.
+  static const int _contextLines = 3;
+  late List<DiffLine> _lines;
+  final ScrollController _scrollController = ScrollController();
+  @override
+  void initState() {
+    super.initState();
+    _computeLines();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(SideBySideDiff oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.oldText != widget.oldText ||
+        oldWidget.newText != widget.newText) {
+      _computeLines();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedSurface(
+      padding: SurfacePadding.none,
+      child: Column(
+        children: [
+          SurfaceHeaderBand(
+            child: Row(
+              children: [
+                _buildHeaderLabel('Original'),
+                _buildColumnDivider(AppSize.diffHeaderDividerHeight),
+                _buildHeaderLabel('Modified'),
+                _buildChangeNavigation(),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    itemExtent: AppSize.diffRowHeight,
+                    itemCount: _lines.length,
+                    itemBuilder: (_ /* context */, index) =>
+                        _buildRow(_lines[index]),
+                  ),
+                ),
+                _DiffMinimap(lines: _lines, controller: _scrollController),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The line shown just under the context lines at the top of the view:
+  /// where a jumped-to change sits.
+  int get _anchorLine => _scrollController.hasClients
+      ? (_scrollController.offset / AppSize.diffRowHeight).round() +
+            _contextLines
+      : _contextLines;
+
+  /// The previous / next change buttons and the count of changes; the
+  /// buttons enable as the view scrolls past changes.
+  Widget _buildChangeNavigation() {
+    return ListenableBuilder(
+      listenable: _scrollController,
+      builder: (_ /* context */, _ /* child */) {
+        final previous = _previousChange;
+        final next = _nextChange;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${_changeStarts.length} '
+              '${_changeStarts.length == 1 ? 'change' : 'changes'}',
+              style: AppTextStyle.caption,
+            ),
+            const SizedBox(width: AppSpacing.small),
+            CompactIconButton(
+              icon: Icons.keyboard_arrow_up,
+              tooltip: 'Previous change',
+              onPressed: previous == null ? null : () => _jumpTo(previous),
+            ),
+            CompactIconButton(
+              icon: Icons.keyboard_arrow_down,
+              tooltip: 'Next change',
+              onPressed: next == null ? null : () => _jumpTo(next),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   /// The thin line, [height] tall, between the original and modified sides.
   Widget _buildColumnDivider(double height) {
     return SizedBox(
@@ -158,14 +224,33 @@ class SideBySideDiff extends StatelessWidget {
     return Expanded(child: Text(label, style: AppTextStyle.captionStrong));
   }
 
+  /// One diff row: the original side, a divider and the modified side,
+  /// tinted when the line was deleted or added.
+  Widget _buildRow(DiffLine line) {
+    return ColoredBox(
+      color: line.type.rowTint ?? Colors.transparent,
+      child: Row(
+        children: [
+          _buildSide(
+            line.oldLine,
+            line.oldContent,
+            line.type == DiffType.deletion ? line.type.markColor : null,
+          ),
+          _buildColumnDivider(AppSize.diffRowHeight),
+          _buildSide(
+            line.newLine,
+            line.newContent,
+            line.type == DiffType.addition ? line.type.markColor : null,
+          ),
+        ],
+      ),
+    );
+  }
+
   /// One side of a diff row: the dimmed [lineNumber], then [content] in
-  /// [contentColor], or the theme's text color when null.
-  Widget _buildSide(
-    BuildContext context,
-    String lineNumber,
-    String content,
-    Color? contentColor,
-  ) {
+  /// [contentColor], or the theme's text color when null. Long lines are
+  /// clipped so every row keeps the same height.
+  Widget _buildSide(String lineNumber, String content, Color? contentColor) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     final style = AppTextStyle.code;
     return Expanded(
@@ -187,6 +272,9 @@ class SideBySideDiff extends StatelessWidget {
             Expanded(
               child: Text(
                 content,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.clip,
                 style: style.copyWith(color: contentColor ?? onSurface),
               ),
             ),
@@ -195,6 +283,70 @@ class SideBySideDiff extends StatelessWidget {
       ),
     );
   }
+
+  /// Diffs the texts and finds where each change starts.
+  void _computeLines() {
+    _lines = SideBySideDiff.computeLines(widget.oldText, widget.newText);
+    _changeStarts = SideBySideDiff.changeStarts(_lines);
+  }
+
+  /// Scrolls so the change starting at line [index] shows below a few
+  /// unchanged lines of context.
+  void _jumpTo(int index) {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    _scrollController.animateTo(
+      ((index - _contextLines) * AppSize.diffRowHeight).clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
+      ),
+      duration: AppDuration.editorScroll,
+      curve: Curves.easeOut,
+    );
+  }
+
+  /// The first change below the anchor line, or null at the last one.
+  int? get _nextChange {
+    final anchor = _anchorLine;
+    for (final start in _changeStarts) {
+      if (start > anchor) return start;
+    }
+    return null;
+  }
+
+  /// The last change above the anchor line, or null at the first one.
+  int? get _previousChange {
+    final anchor = _anchorLine;
+    for (final start in _changeStarts.reversed) {
+      if (start < anchor) return start;
+    }
+    return null;
+  }
 }
 
-enum DiffType { equal, addition, deletion }
+/// Whether a diff line is unchanged, added or deleted.
+enum DiffType {
+  /// The line is the same in both versions.
+  equal,
+
+  /// The line is only in the modified version.
+  addition,
+
+  /// The line is only in the original version.
+  deletion;
+
+  /// The line's text and minimap color: green when added, red when
+  /// deleted, null when unchanged.
+  Color? get markColor => switch (this) {
+    DiffType.equal => null,
+    DiffType.addition => Colors.green[AppShade.strong],
+    DiffType.deletion => Colors.red[AppShade.strong],
+  };
+
+  /// The faint background behind the whole row, null when unchanged.
+  Color? get rowTint => switch (this) {
+    DiffType.equal => null,
+    DiffType.addition => Colors.green.withValues(alpha: AppOpacity.subtle),
+    DiffType.deletion => Colors.red.withValues(alpha: AppOpacity.subtle),
+  };
+}

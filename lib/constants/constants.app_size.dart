@@ -46,7 +46,17 @@ class AppSize {
   /// Smallest the main window can be resized to.
   static const Size minWindowSize = Size(800, 600);
   static const double diffHeaderDividerHeight = 16;
-  static const double diffRowDividerHeight = 20;
+
+  /// Height of one diff line; lines never wrap, so a change's line index
+  /// gives its scroll offset.
+  static const double diffRowHeight = 20;
+
+  /// Width of the strip beside a diff that maps its changed lines.
+  static const double diffMinimapWidth = 12;
+
+  /// Least height of a change's mark in the diff minimap, so a one-line
+  /// change in a long file stays visible.
+  static const double diffMinimapMinMark = 2;
   static const double diffLineNumberColumnWidth = 60;
   static const double outlineFallbackHeight = 200;
 

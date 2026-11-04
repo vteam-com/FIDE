@@ -30,4 +30,22 @@ void main() {
       expect(lines.map((l) => l.newLine).toList(), ['1', '2']);
     });
   });
+
+  group('SideBySideDiff.changeStarts', () {
+    test('marks the first line of each run of changes', () {
+      const oldText = 'a\nb\nc\nd\ne';
+      const newText = 'a\nB\nc\nd\nE\nF';
+
+      final lines = SideBySideDiff.computeLines(oldText, newText);
+
+      // Lines: a, -b, +B, c, d, -e, +E, +F.
+      expect(SideBySideDiff.changeStarts(lines), [1, 5]);
+    });
+
+    test('no changes gives no starts', () {
+      final lines = SideBySideDiff.computeLines('a\nb', 'a\nb');
+
+      expect(SideBySideDiff.changeStarts(lines), isEmpty);
+    });
+  });
 }
