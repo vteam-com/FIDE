@@ -22,8 +22,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Shown in the center panel when no file is open: the current project's
-/// icon, version, fCheck quality score, code size, supported platforms,
-/// tests, coverage and translations.
+/// icon, version, fCheck quality score, code size, packages still on
+/// CocoaPods, supported platforms, tests, coverage and translations.
 class ProjectOverviewPanel extends ConsumerWidget {
   /// Creates the overview of the current project.
   const ProjectOverviewPanel({super.key});
@@ -156,6 +156,33 @@ class ProjectOverviewPanel extends ConsumerWidget {
     );
   }
 
+  /// How far the iOS and macOS apps are from Swift Package Manager only:
+  /// the packages and pods still needing CocoaPods, or removing it once
+  /// nothing does.
+  Widget _swiftPackagesCard(ProjectOverview overview) {
+    final migration = overview.cocoaPods;
+    final podPlatforms = migration.podPlatforms;
+    return StatCard(
+      icon: Icons.apple,
+      title: 'Swift packages',
+      value: migration.isDone
+          ? StatusIndicator.tone(StatusTone.success, label: 'No CocoaPods')
+          : StatusIndicator.tone(
+              StatusTone.warning,
+              label: migration.canRemove
+                  ? 'CocoaPods can go'
+                  : 'Still on CocoaPods',
+            ),
+      issues: migration.issues,
+      details: [
+        if (podPlatforms.isNotEmpty)
+          'Podfile in ${podPlatforms.map((platform) => platform.displayName).join(', ')}'
+        else if (migration.isDone)
+          'Every plugin uses Swift Package Manager',
+      ],
+    );
+  }
+
   /// The header and one card per measure.
   Widget _overview(WidgetRef ref, ProjectOverview overview) {
     final code = overview.code;
@@ -224,6 +251,8 @@ class ProjectOverviewPanel extends ConsumerWidget {
                   '${code.devDependencyCount.localized} dev dependencies',
                 ],
               ),
+              if (overview.platforms.any((platform) => platform.isApple))
+                _swiftPackagesCard(overview),
               _platformsCard(overview),
               StatCard(
                 icon: Icons.science_outlined,

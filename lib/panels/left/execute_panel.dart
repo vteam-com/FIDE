@@ -144,24 +144,6 @@ Runs the Flutter application in debug mode.
       ''',
       onRun: () => _runApp('debug', platform, isDebug: true),
     ),
-    if (platform.usesCocoaPods)
-      PanelAction(
-        id: 'cocoapods',
-        icon: Icons.developer_mode,
-        title: 'Update ${platform.displayName} Pods',
-        description:
-            'Update CocoaPods dependencies for ${platform.displayName}',
-        details:
-            '''
-Updates ${platform.displayName} CocoaPods dependencies.
-
-• Updates pod repository
-• Installs/Updates ${platform.displayName} framework dependencies
-• Ensures native ${platform.displayName} code compatibility
-• Required before ${platform.displayName} builds
-        ''',
-        onRun: () => _updateCocoaPods('cocoapods', platform),
-      ),
   ];
 
   /// Builds [platform] as [target] (its default when null) as action [id].
@@ -179,34 +161,21 @@ Updates ${platform.displayName} CocoaPods dependencies.
     );
   }
 
-  /// Cleans the project; CocoaPods platforms get a deep clean that also
-  /// refreshes their pods and rebuilds. The panel only offers it for
-  /// platforms the project has and the host can build.
-  Future<void> _clean(FlutterPlatform platform) {
-    final deep = platform.usesCocoaPods;
-    return _runProjectAction(
-      'clean',
-      platform,
-      startMessages: deep
-          ? [
-              '🧹 Performing deep clean for ${platform.displayName} project...',
-              '📦 This will update CocoaPods and rebuild dependencies',
-            ]
-          : ['🧹 Cleaning Flutter project...'],
-      // Clean steps throw on failure, so reaching the end means success
-      command: (projectPath, output) async {
-        if (deep) {
-          await _buildService.deepClean(projectPath, platform, output);
-        } else {
-          await _buildService.clean(projectPath, output);
-        }
-        return 0;
-      },
-      successMessage: '✓ Project cleaned successfully',
-      failureMessage: (exitCode) => '✗ Clean failed with exit code $exitCode',
-      errorPrefix: '✗ Clean error: ',
-    );
-  }
+  /// Cleans the project. The panel only offers it for platforms the
+  /// project has and the host can build.
+  Future<void> _clean(FlutterPlatform platform) => _runProjectAction(
+    'clean',
+    platform,
+    startMessages: ['🧹 Cleaning Flutter project...'],
+    // A failed clean throws, so reaching the end means success
+    command: (projectPath, output) async {
+      await _buildService.clean(projectPath, output);
+      return 0;
+    },
+    successMessage: '✓ Project cleaned successfully',
+    failureMessage: (exitCode) => '✗ Clean failed with exit code $exitCode',
+    errorPrefix: '✗ Clean error: ',
+  );
 
   /// Key of the log of [platform]'s actions.
   String _logKeyOf(FlutterPlatform platform) =>
@@ -268,23 +237,4 @@ Updates ${platform.displayName} CocoaPods dependencies.
           isLive: isLive,
         );
   }
-
-  /// Runs `pod install --repo-update` for [platform], one that uses
-  /// CocoaPods, as action [id].
-  Future<void> _updateCocoaPods(String id, FlutterPlatform platform) =>
-      _runProjectAction(
-        id,
-        platform,
-        startMessages: [
-          '📦 Updating CocoaPods dependencies...',
-          'Running pod install --repo-update',
-        ],
-        // The platform folder holds the Podfile
-        command: (projectPath, output) =>
-            _buildService.podInstall('$projectPath/${platform.name}', output),
-        successMessage: '✅ CocoaPods update completed successfully',
-        failureMessage: (exitCode) =>
-            '❌ CocoaPods update failed with exit code $exitCode',
-        errorPrefix: '❌ CocoaPods error: ',
-      );
 }

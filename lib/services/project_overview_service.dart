@@ -5,17 +5,20 @@ import 'package:fide/models/project_overview.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/build_artifacts_inspector.dart';
+import 'package:fide/services/cocoa_pods_migrator.dart';
 import 'package:fide/services/code_review.dart';
 import 'package:fide/services/project_config_reader.dart';
 
 /// Gathers a [ProjectOverview] from the services that already read each
-/// part: fCheck through [CodeReview], ARB files through [ArbService] and
-/// the app icon through [BuildArtifactsInspector].
+/// part: fCheck through [CodeReview], ARB files through [ArbService], the
+/// app icon through [BuildArtifactsInspector] and the move off CocoaPods
+/// through [CocoaPodsMigrator].
 class ProjectOverviewService {
   final CodeReview _codeReview;
   final ArbService _arbService;
   final BuildArtifactsInspector _inspector;
   final ProjectConfigReader _config;
+  final CocoaPodsMigrator _cocoaPods;
 
   /// Creates a service reading through the given services.
   const ProjectOverviewService(
@@ -23,6 +26,7 @@ class ProjectOverviewService {
     this._arbService,
     this._inspector,
     this._config,
+    this._cocoaPods,
   );
 
   /// Reads the overview of the project at [projectPath], analyzing it
@@ -35,11 +39,17 @@ class ProjectOverviewService {
       _inspector.projectIconPath(projectPath),
       _readCoverage(paths.coverageLcov),
     ).wait;
+    final platforms = _config.platforms(projectPath);
     return ProjectOverview(
       appIconPath: appIconPath,
       code: code,
       languages: [for (final file in arbFiles.valid) file.languageCode]..sort(),
-      platforms: _config.platforms(projectPath),
+      platforms: platforms,
+      cocoaPods: _cocoaPods.inspect(
+        projectPath,
+        platforms,
+        code.packagePlatformWarnings,
+      ),
       translations: _arbService.compareArbFiles(arbFiles.valid),
       coverage: coverage,
     );

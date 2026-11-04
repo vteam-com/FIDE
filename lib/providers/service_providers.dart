@@ -10,6 +10,7 @@ import 'package:fide/services/arb_translator.dart';
 import 'package:fide/services/asset_categorizer.dart';
 import 'package:fide/services/build_artifacts_inspector.dart';
 import 'package:fide/services/chat_model.dart';
+import 'package:fide/services/cocoa_pods_migrator.dart';
 import 'package:fide/services/code_formatter.dart';
 import 'package:fide/services/code_review.dart';
 import 'package:fide/services/commit_message_writer.dart';
@@ -271,6 +272,12 @@ final flutterSdkProvider = Provider<FlutterSdk>(
 /// Provides the shared [ArbService] for reading and writing ARB files.
 final arbServiceProvider = Provider<ArbService>((_) => const ArbService());
 
+/// Provides the [CocoaPodsMigrator] moving iOS and macOS apps to Swift
+/// Package Manager.
+final cocoaPodsMigratorProvider = Provider<CocoaPodsMigrator>(
+  (ref) => CocoaPodsMigrator(ref.read(processRunnerProvider)),
+);
+
 /// Provides the [ProjectOverviewService] behind the center panel's project
 /// overview.
 final projectOverviewServiceProvider = Provider<ProjectOverviewService>(
@@ -279,6 +286,7 @@ final projectOverviewServiceProvider = Provider<ProjectOverviewService>(
     ref.read(arbServiceProvider),
     ref.read(buildArtifactsInspectorProvider),
     ref.read(projectConfigReaderProvider),
+    ref.read(cocoaPodsMigratorProvider),
   ),
 );
 

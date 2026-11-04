@@ -280,12 +280,7 @@ class AiChatNotifier extends StateNotifier<AiChat> {
           final exitCode = await _builds.build(
             projectPath,
             platform,
-            BuildOutput(
-              onOutput: log.addOutput,
-              onError: log.addError,
-              onStep: (event) => BuildNarration.log(log, event),
-              onResetErrors: log.clearErrors,
-            ),
+            BuildOutput(onOutput: log.addOutput, onError: log.addError),
           );
           final buildErrors = exitCode == 0
               ? ''

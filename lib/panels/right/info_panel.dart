@@ -43,7 +43,11 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   @override
   void initState() {
     super.initState();
-    _show(_controller.analyze());
+    // Analyzing marks the controller busy at once, which Riverpod forbids
+    // while the tree builds
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _show(_controller.analyze());
+    });
   }
 
   /// Shows how an action ended, once it has, while the panel is there.
@@ -102,7 +106,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     final confirmed = await MessageBox.confirm(
       context,
       title: 'Full Project Cleanup',
-      message: 'This will:\n• Flutter clean\n• Remove build artifacts\n• Clear pub cache\n• Reset CocoaPods (if macOS)\n\nContinue?',
+      message: 'This will:\n• Flutter clean\n• Remove build artifacts\n• Clear pub cache\n\nContinue?',
       confirmLabel: 'Continue',
     );
     if (confirmed && mounted) _show(_controller.fullCleanup());

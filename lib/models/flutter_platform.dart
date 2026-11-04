@@ -150,8 +150,9 @@ Builds the Flutter application for the selected platform.
   /// Bundled SVG icon for this platform.
   String get iconAsset => 'assets/platform_$name.svg';
 
-  /// Whether this platform's native dependencies are managed by CocoaPods.
-  bool get usesCocoaPods => this == ios || this == macos;
+  /// Whether this is an Apple platform, whose native dependencies come
+  /// through Swift Package Manager, or the legacy CocoaPods.
+  bool get isApple => this == ios || this == macos;
 
   /// Returns the platform with id [id], or null for an unknown id.
   static FlutterPlatform? fromId(String id) => values.asNameMap()[id];

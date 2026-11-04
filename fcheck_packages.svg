@@ -444,7 +444,7 @@
 </g>
 <g>
   <path d="M 373.0 1990.0 H 298.0 Q 292.0 1990.0 292.0 1996.0 V 4634.0 Q 292.0 4640.0 298.0 4640.0 H 553.0" class="edgeVertical"/>
-  <title>window_manager -> nativeapi v0.5.7</title>
+  <title>window_manager -> nativeapi v0.5.8</title>
 </g>
 <g>
   <path d="M 373.0 758.0 H 295.0 Q 289.0 758.0 289.0 764.0 V 3418.0 Q 289.0 3424.0 295.0 3424.0 H 553.0" class="edgeVertical"/>
@@ -456,7 +456,7 @@
 </g>
 <g>
   <path d="M 373.0 1990.0 H 289.0 Q 283.0 1990.0 283.0 1996.0 V 4698.0 Q 283.0 4704.0 289.0 4704.0 H 553.0" class="edgeVertical"/>
-  <title>window_manager -> nativeapi_flutter v0.5.7</title>
+  <title>window_manager -> nativeapi_flutter v0.5.8</title>
 </g>
 <g>
   <path d="M 373.0 142.0 H 286.0 Q 280.0 142.0 280.0 148.0 V 3034.0 Q 280.0 3040.0 286.0 3040.0 H 553.0" class="edgeVertical"/>
@@ -852,7 +852,7 @@
 </g>
 <g>
   <path d="M 833.0 5472.0 H 872.0 Q 878.0 5472.0 878.0 5478.0 V 8164.0 Q 878.0 8170.0 872.0 8170.0 H 553.0" class="edgeVertical"/>
-  <title>shared_preferences_android -> jni v1.1.1</title>
+  <title>shared_preferences_android -> jni v1.1.2</title>
 </g>
 <g>
   <path d="M 833.0 6368.0 H 875.0 Q 881.0 6368.0 881.0 6374.0 V 9060.0 Q 881.0 9066.0 875.0 9066.0 H 553.0" class="edgeVertical"/>
@@ -876,11 +876,11 @@
 </g>
 <g>
   <path d="M 833.0 4640.0 H 890.0 Q 896.0 4640.0 896.0 4646.0 V 7716.0 Q 896.0 7722.0 890.0 7722.0 H 553.0" class="edgeVertical"/>
-  <title>nativeapi -> cnativeapi v0.5.7</title>
+  <title>nativeapi -> cnativeapi v0.5.8</title>
 </g>
 <g>
   <path d="M 833.0 4960.0 H 893.0 Q 899.0 4960.0 899.0 4966.0 V 8164.0 Q 899.0 8170.0 893.0 8170.0 H 553.0" class="edgeVertical"/>
-  <title>path_provider_android -> jni v1.1.1</title>
+  <title>path_provider_android -> jni v1.1.2</title>
 </g>
 <g>
   <path d="M 833.0 4960.0 H 896.0 Q 902.0 4960.0 902.0 4966.0 V 8228.0 Q 902.0 8234.0 896.0 8234.0 H 553.0" class="edgeVertical"/>
@@ -1736,7 +1736,7 @@
 <g class="platformBadge platformBadge--macos"><title>macOS</title><rect x="703.5" y="4649.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#475569" stroke="#334155" stroke-width="0.6"/><text x="710.0" y="4656.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">M</text></g>
 <g class="platformBadge platformBadge--windows"><title>Windows</title><rect x="720.5" y="4649.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#2563eb" stroke="#1d4ed8" stroke-width="0.6"/><text x="727.0" y="4656.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">W</text></g>
 <text x="561.0" y="4632.0" class="packageLabelDerivedName packageLabelCaption" text-anchor="start">nativeapi</text>
-<text x="825.0" y="4632.0" class="packageLabelDerivedVersion" text-anchor="end">^0.5.7</text>
+<text x="825.0" y="4632.0" class="packageLabelDerivedVersion" text-anchor="end">^0.5.8</text>
 </g>
 <g class="badge incomingBadge">
   <path d="M 559.0,4640.0 L 547.0,4633.0 Q 544.0,4633.0 544.0,4636.0 L 544.0,4644.0 Q 544.0,4647.0 547.0,4647.0 Z" fill="#3b82f6"/>
@@ -1746,7 +1746,7 @@
 <rect x="553.0" y="4678.0" width="280.0" height="52.0" rx="8.0" ry="8.0" fill="#f8fafc" stroke="#64748b" stroke-width="1" stroke-dasharray="4,2"/>
 <g class="packageMetadataPill"><title>Flutter &gt;=3.47.0</title><rect x="654.2" y="4717.0" width="77.6" height="9.0" rx="4.5" ry="4.5" class="packageMetadataPillShape"/><text x="693.0" y="4722" class="packageLabelMetadata" text-anchor="middle" dominant-baseline="middle">Flutter &gt;=3.47.0</text></g>
 <text x="561.0" y="4696.0" class="packageLabelDerivedName packageLabelCaption" text-anchor="start">nativeapi_flutter</text>
-<text x="825.0" y="4696.0" class="packageLabelDerivedVersion" text-anchor="end">^0.5.7</text>
+<text x="825.0" y="4696.0" class="packageLabelDerivedVersion" text-anchor="end">^0.5.8</text>
 </g>
 <g class="badge incomingBadge">
   <path d="M 559.0,4704.0 L 547.0,4697.0 Q 544.0,4697.0 544.0,4700.0 L 544.0,4708.0 Q 544.0,4711.0 547.0,4711.0 Z" fill="#3b82f6"/>
@@ -2223,7 +2223,7 @@
 <g class="platformBadge platformBadge--macos"><title>macOS</title><rect x="703.5" y="7731.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#475569" stroke="#334155" stroke-width="0.6"/><text x="710.0" y="7738.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">M</text></g>
 <g class="platformBadge platformBadge--windows"><title>Windows</title><rect x="720.5" y="7731.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#2563eb" stroke="#1d4ed8" stroke-width="0.6"/><text x="727.0" y="7738.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">W</text></g>
 <text x="561.0" y="7714.0" class="packageLabelDerivedName packageLabelCaption" text-anchor="start">cnativeapi</text>
-<text x="825.0" y="7714.0" class="packageLabelDerivedVersion" text-anchor="end">^0.5.7</text>
+<text x="825.0" y="7714.0" class="packageLabelDerivedVersion" text-anchor="end">^0.5.8</text>
 </g>
 <g class="badge incomingBadge">
   <path d="M 827.0,7722.0 L 839.0,7715.0 Q 842.0,7715.0 842.0,7718.0 L 842.0,7726.0 Q 842.0,7729.0 839.0,7729.0 Z" fill="#3b82f6"/>
@@ -2290,7 +2290,7 @@
 <g class="platformBadge platformBadge--linux"><title>Linux</title><rect x="686.5" y="8167.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#7c3aed" stroke="#6d28d9" stroke-width="0.6"/><text x="693.0" y="8174.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">L</text></g>
 <g class="platformBadge platformBadge--windows"><title>Windows</title><rect x="703.5" y="8167.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#2563eb" stroke="#1d4ed8" stroke-width="0.6"/><text x="710.0" y="8174.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">W</text></g>
 <text x="561.0" y="8162.0" class="packageLabelDerivedName packageLabelCaption" text-anchor="start">jni</text>
-<text x="825.0" y="8162.0" class="packageLabelDerivedVersion" text-anchor="end">^1.1.1</text>
+<text x="825.0" y="8162.0" class="packageLabelDerivedVersion" text-anchor="end">^1.1.2</text>
 </g>
 <g class="badge incomingBadge">
   <path d="M 827.0,8165.0 L 839.0,8158.0 Q 842.0,8158.0 842.0,8161.0 L 842.0,8169.0 Q 842.0,8172.0 839.0,8172.0 Z" fill="#3b82f6"/>

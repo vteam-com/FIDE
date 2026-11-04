@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_status.dart';
-import 'package:fide/models/build_step_event.dart';
 import 'package:fide/models/command_runs.dart';
 import 'package:fide/models/output_log.dart';
 import 'package:fide/providers/project_lifecycle_providers.dart';
@@ -120,8 +119,6 @@ class CommandRunner extends StateNotifier<CommandRuns> {
             }
           },
           onError: (text) => write((log) => log.addError(text)),
-          onStep: (event) => write((log) => BuildNarration.log(log, event)),
-          onResetErrors: () => write((log) => log.clearErrors()),
           // Later steps of a stopped or ended run don't get to run
           onProcessStarted: (process) {
             if (isCurrent() && !_stopping.contains(id)) {

@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/outdated_package.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/pub_outdated.dart';
@@ -22,8 +21,8 @@ class ProjectMaintenanceService {
   const ProjectMaintenanceService(this._runner);
 
   /// Cleans Flutter, removes build artifacts, repairs the pub cache, and
-  /// refreshes Gradle and CocoaPods where those platforms exist. Refuses the
-  /// running app's own project ([ProjectPaths.ensureCleanable]).
+  /// cleans Gradle when the project has Android. Refuses the running app's
+  /// own project ([ProjectPaths.ensureCleanable]).
   Future<void> fullCleanup(String projectPath) async {
     ProjectPaths(projectPath).ensureCleanable(Platform.resolvedExecutable);
     await _runChecked('flutter', ['clean'], workingDirectory: projectPath);
@@ -39,20 +38,6 @@ class ProjectMaintenanceService {
       await _runChecked('./gradlew', [
         'clean',
       ], workingDirectory: '$projectPath/android');
-    }
-
-    if (Platform.isMacOS) {
-      for (final platform in FlutterPlatform.values.where(
-        (platform) => platform.usesCocoaPods,
-      )) {
-        final platformPath = '$projectPath/${platform.name}';
-        if (Directory(platformPath).existsSync()) {
-          await _runChecked('pod', [
-            'install',
-            '--repo-update',
-          ], workingDirectory: platformPath);
-        }
-      }
     }
   }
 

@@ -12,13 +12,15 @@ class WindowButtons extends StatefulWidget {
 }
 
 class _WindowButtonsState extends State<WindowButtons> {
-/// Whether the window fills the screen, the maximize button restoring it.
+  /// Whether the window fills the screen, the maximize button restoring it.
   bool _isMaximized = false;
-/// Follows maximize and restore to swap the maximize button's icon.
+
+  /// Follows maximize and restore to swap the maximize button's icon.
   ListenerId? _listenerId;
-/// The window the buttons act on, when there is one.
+
+  /// The window the buttons act on, when there is one.
   final Window? _window = WindowManager.instance.getCurrent();
-@override
+  @override
   void initState() {
     super.initState();
     _isMaximized = _window?.isMaximized ?? false;
@@ -31,14 +33,16 @@ class _WindowButtonsState extends State<WindowButtons> {
       }
     });
   }
-@override
+
+  @override
   void dispose() {
     if (_listenerId case final id?) {
       _window?.removeListener(id);
     }
     super.dispose();
   }
-@override
+
+  @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     return Row(

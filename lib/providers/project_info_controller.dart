@@ -112,7 +112,7 @@ class ProjectInfoController extends StateNotifier<ProjectInfoState> {
     });
   }
 
-  /// Cleans the project's build artifacts, caches and pods, then measures
+  /// Cleans the project's build artifacts and caches, then measures
   /// it again.
   Future<ActionOutcome?> fullCleanup() {
     return _run('Cleanup failed', _analyzing, (projectPath) async {

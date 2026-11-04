@@ -73,6 +73,13 @@ final quickFixHandlersProvider = Provider<Map<QuickFix, QuickFixHandler>>((
     QuickFix.translateKeys: TranslateKeysHandler(
       ref.read(arbTranslatorProvider),
     ),
+    QuickFix.upgradePackages: UpgradePackagesHandler(
+      ref.read(projectMaintenanceServiceProvider),
+    ),
+    QuickFix.removeCocoaPods: RemoveCocoaPodsHandler(
+      ref.read(cocoaPodsMigratorProvider),
+      ref.read(projectConfigReaderProvider),
+    ),
   };
 });
 

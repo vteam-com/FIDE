@@ -30,9 +30,9 @@ void main() {
     expect(FlutterPlatform.android.canBuildOn(FlutterPlatform.windows), isTrue);
   });
 
-  test('web runs on Chrome and CocoaPods covers only Apple platforms', () {
+  test('web runs on Chrome and only iOS and macOS are Apple platforms', () {
     expect(FlutterPlatform.web.deviceTarget, 'chrome');
-    expect(FlutterPlatform.values.where((platform) => platform.usesCocoaPods), [
+    expect(FlutterPlatform.values.where((platform) => platform.isApple), [
       FlutterPlatform.ios,
       FlutterPlatform.macos,
     ]);

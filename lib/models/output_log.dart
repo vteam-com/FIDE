@@ -27,7 +27,4 @@ class OutputLog {
     _errors.clear();
     _output.clear();
   }
-
-  /// Discards captured errors, e.g. before an automatic retry.
-  void clearErrors() => _errors.clear();
 }

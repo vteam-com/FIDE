@@ -66,6 +66,23 @@ enum QuickFix {
     domain: fcheck.AnalyzerDomain.sourceSorting,
   ),
 
+  /// Raise the dependency constraints to their latest resolvable
+  /// versions, which often bring Swift Package Manager support.
+  upgradePackages(
+    'Upgrade packages',
+    'raises every dependency constraint in pubspec.yaml to its latest '
+        'resolvable version and runs flutter pub get',
+  ),
+
+  /// Remove CocoaPods from the iOS and macOS projects once no plugin
+  /// needs it, leaving Swift Package Manager alone.
+  removeCocoaPods(
+    'Remove CocoaPods',
+    'runs pod deintegrate and deletes the Podfiles, Pods folders and '
+        'CocoaPods xcconfig includes of the iOS and macOS projects, once '
+        'every plugin supports Swift Package Manager',
+  ),
+
   /// Translate missing, empty or untranslated ARB keys one short prompt at
   /// a time, FIDE writing the ARB files.
   translateKeys(

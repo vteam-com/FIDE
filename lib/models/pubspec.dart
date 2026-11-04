@@ -2,6 +2,9 @@ import 'package:yaml/yaml.dart';
 
 /// The parts of a `pubspec.yaml` the IDE reads.
 class Pubspec {
+  /// The `flutter: config:` key turning Swift Package Manager on or off.
+  static const String _swiftPackageManagerKey = 'enable-swift-package-manager';
+
   /// Package name.
   final String? name;
 
@@ -26,6 +29,13 @@ class Pubspec {
   /// The `flutter_launcher_icons:` section; empty when absent.
   final Map<String, Object?> launcherIconsSection;
 
+  /// The 1-based line declaring each direct and dev dependency.
+  final Map<String, int> dependencyLines;
+
+  /// The 1-based line of `flutter: config: enable-swift-package-manager`;
+  /// null when the project doesn't set it.
+  final int? swiftPackageManagerLine;
+
   const Pubspec._({
     required this.name,
     required this.version,
@@ -35,6 +45,8 @@ class Pubspec {
     required this.flutterSection,
     required this.hasFlutterSection,
     required this.launcherIconsSection,
+    required this.dependencyLines,
+    required this.swiftPackageManagerLine,
   });
 
   /// Parses pubspec [content]; content that isn't a YAML map yields an
@@ -56,6 +68,15 @@ class Pubspec {
       flutterSection: _section(map['flutter']),
       hasFlutterSection: map.containsKey('flutter'),
       launcherIconsSection: _section(map['flutter_launcher_icons']),
+      dependencyLines: {
+        ..._keyLines(map.nodes['dependencies']),
+        ..._keyLines(map.nodes['dev_dependencies']),
+      },
+      swiftPackageManagerLine: _keyLines(
+        map.nodes['flutter'] is YamlMap
+            ? (map.nodes['flutter']! as YamlMap).nodes['config']
+            : null,
+      )[_swiftPackageManagerKey],
     );
   }
 
@@ -79,8 +100,23 @@ class Pubspec {
       if (section['image_path'] case final String path) path,
   ];
 
+  /// Whether `flutter: config: enable-swift-package-manager: false` keeps
+  /// the project on CocoaPods.
+  bool get disablesSwiftPackageManager =>
+      _section(flutterSection['config'])[_swiftPackageManagerKey] == false;
+
   /// Whether [package] is a direct dependency.
   bool dependsOn(String package) => dependencies.containsKey(package);
+
+  /// The 1-based line of each key of [node], a YAML map; empty when it
+  /// isn't one.
+  static Map<String, int> _keyLines(YamlNode? node) {
+    if (node is! YamlMap) return const {};
+    return {
+      for (final key in node.nodes.keys)
+        if (key is YamlNode) '${key.value}': key.span.start.line + 1,
+    };
+  }
 
   /// [value] as a string-keyed map, or empty when it isn't a map.
   static Map<String, Object?> _section(Object? value) {

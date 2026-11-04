@@ -1,5 +1,6 @@
 import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/constants/core_constants.dart';
+import 'package:fide/models/cocoa_pods_migration.dart';
 import 'package:fide/models/code_coverage.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/localization_data.dart';
@@ -19,6 +20,9 @@ class ProjectOverview {
   /// Platforms the project has a folder for.
   final Set<FlutterPlatform> platforms;
 
+  /// How far its iOS and macOS apps are from Swift Package Manager only.
+  final CocoaPodsMigration cocoaPods;
+
   /// Every translation key compared across [languages].
   final List<ArbComparison> translations;
 
@@ -32,6 +36,7 @@ class ProjectOverview {
     required this.code,
     required this.languages,
     required this.platforms,
+    required this.cocoaPods,
     required this.translations,
     required this.coverage,
   });
