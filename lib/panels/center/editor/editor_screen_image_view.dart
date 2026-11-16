@@ -1,10 +1,9 @@
-import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/any_image.dart';
 import 'package:fide/widgets/file_facts_label.dart';
-import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/image_backdrop_buttons.dart';
 import 'package:fide/widgets/image_canvas.dart';
+import 'package:fide/widgets/viewer_toolbar.dart';
 import 'package:fide/widgets/zoom_label.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -48,16 +47,12 @@ class _EditorScreenImageViewState extends ConsumerState<EditorScreenImageView> {
     final filePath = widget.filePath;
     return Column(
       children: [
-        HeaderBar(
-          child: Row(
-            spacing: AppSpacing.medium,
-            children: [
-              const ImageBackdropButtons(),
-              const Spacer(),
-              ZoomLabel(controller: _transformation),
-              FileFactsLabel(filePath: filePath),
-            ],
-          ),
+        ViewerToolbar(
+          leading: const [ImageBackdropButtons()],
+          trailing: [
+            ZoomLabel(controller: _transformation),
+            FileFactsLabel(filePath: filePath),
+          ],
         ),
         Expanded(
           child: ImageCanvas(

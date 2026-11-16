@@ -36,4 +36,24 @@ void main() {
     await tester.pump();
     expect(find.text('100%'), findsOneWidget);
   });
+
+  testWidgets('a narrow editor wraps the header instead of overflowing', (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(300, 800)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: EditorScreenImageView(filePath: 'assets/app.png'),
+          ),
+        ),
+      ),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text('100%'), findsOneWidget);
+  });
 }

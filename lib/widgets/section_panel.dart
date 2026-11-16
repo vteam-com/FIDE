@@ -1,7 +1,9 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/expansion_chevron.dart';
+import 'package:fide/widgets/icon_only_labels.dart';
 import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/priority_row.dart';
 import 'package:fide/widgets/surface_header_band.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:material_ui/material_ui.dart';
@@ -54,6 +56,17 @@ class _SectionPanelState extends State<SectionPanel> {
     final rightWidget = widget.rightWidget;
     final count = widget.count;
     final child = widget.child;
+    final extras = [
+      ?rightWidget,
+      if (count != null) ContainerCounter(count: count),
+    ];
+    final trailing = extras.isEmpty
+        ? null
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: AppSpacing.tiny,
+            children: extras,
+          );
 
     // One outlined box per section: the filled header band and the content
     // share a rounded outline, so the content reads as the header's own and
@@ -66,24 +79,26 @@ class _SectionPanelState extends State<SectionPanel> {
           InkWell(
             onTap: _toggle,
             child: SurfaceHeaderBand(
-              child: Row(
+              // In a narrow panel the title keeps its room: the actions
+              // drop their labels, then hide
+              child: PriorityRow(
                 spacing: AppSpacing.tiny,
-                children: [
-                  ExpansionChevron(
-                    isExpanded: _isExpanded,
+                leading: ExpansionChevron(
+                  isExpanded: _isExpanded,
+                  color: colorScheme.primary,
+                ),
+                title: Text(
+                  widget.title.toUpperCase(),
+                  style: AppTextStyle.captionStrong.copyWith(
                     color: colorScheme.primary,
                   ),
-                  Expanded(
-                    child: Text(
-                      widget.title.toUpperCase(),
-                      style: AppTextStyle.captionStrong.copyWith(
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                  ?rightWidget,
-                  if (count != null) ContainerCounter(count: count),
-                ],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: trailing,
+                compactTrailing: trailing == null
+                    ? null
+                    : IconOnlyLabels(child: trailing),
               ),
             ),
           ),

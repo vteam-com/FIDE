@@ -3,6 +3,7 @@ import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/more_menu_button.dart';
 import 'package:fide/widgets/path_text.dart';
+import 'package:fide/widgets/priority_row.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
@@ -107,6 +108,11 @@ class TreeRow extends StatelessWidget {
             maxLines: 1,
           );
     final onContextMenu = this.onContextMenu;
+    final extras = [
+      ...trailing,
+      if (showMenuButton && onContextMenu != null)
+        MoreMenuButton(onPressed: onContextMenu),
+    ];
     return InkWell(
       onTap: onTap,
       onSecondaryTapDown: (details) =>
@@ -116,23 +122,24 @@ class TreeRow extends StatelessWidget {
         padding: AppPadding.listItem.add(
           EdgeInsets.only(left: AppSpacing.xLarge * depth),
         ),
-        child: Row(
+        // In a narrow panel the name keeps its room; the indicators hide
+        child: PriorityRow(
           spacing: AppSpacing.tiny,
-          children: [
-            icon,
-            Expanded(
-              child: tooltip == null
-                  ? text
-                  : Tooltip(
-                      message: tooltip,
-                      waitDuration: AppDuration.tooltipWait,
-                      child: text,
-                    ),
-            ),
-            ...trailing,
-            if (showMenuButton && onContextMenu != null)
-              MoreMenuButton(onPressed: onContextMenu),
-          ],
+          leading: icon,
+          title: tooltip == null
+              ? text
+              : Tooltip(
+                  message: tooltip,
+                  waitDuration: AppDuration.tooltipWait,
+                  child: text,
+                ),
+          trailing: extras.isEmpty
+              ? null
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: AppSpacing.tiny,
+                  children: extras,
+                ),
         ),
       ),
     );

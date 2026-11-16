@@ -20,6 +20,7 @@ import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/viewer_toolbar.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -141,29 +142,27 @@ class _EditorScreenAudioViewState extends ConsumerState<EditorScreenAudioView>
     final hasChanges = canEdit && !edit.isNone;
     return Column(
       children: [
-        HeaderBar(
-          child: Row(
-            spacing: AppSpacing.medium,
-            children: [
-              CompactIconButton(
-                key: const Key('keyAudioPlay'),
-                icon: _playing ? Icons.stop : Icons.play_arrow,
-                tooltip: _playing ? 'Stop' : 'Play',
-                onPressed: _playing || canEdit ? _togglePlay : null,
-              ),
-              Text(
-                edit.lengthOf(clip.duration).clockLabel,
-                style: AppTextStyle.monospace,
-              ),
-              if (_busy) const InlineSpinner(size: AppIconSize.medium),
-              const Spacer(),
-              FileFactsLabel(
-                key: ObjectKey(audio),
-                filePath: widget.filePath,
-                facts: [_sampleRateLabel(clip), _channelsLabel(clip)],
-              ),
-            ],
-          ),
+        ViewerToolbar(
+          leading: [
+            CompactIconButton(
+              key: const Key('keyAudioPlay'),
+              icon: _playing ? Icons.stop : Icons.play_arrow,
+              tooltip: _playing ? 'Stop' : 'Play',
+              onPressed: _playing || canEdit ? _togglePlay : null,
+            ),
+            Text(
+              edit.lengthOf(clip.duration).clockLabel,
+              style: AppTextStyle.monospace,
+            ),
+            if (_busy) const InlineSpinner(size: AppIconSize.medium),
+          ],
+          trailing: [
+            FileFactsLabel(
+              key: ObjectKey(audio),
+              filePath: widget.filePath,
+              facts: [_sampleRateLabel(clip), _channelsLabel(clip)],
+            ),
+          ],
         ),
         Expanded(
           child: Padding(

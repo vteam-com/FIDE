@@ -12,10 +12,10 @@ import 'package:fide/widgets/any_image.dart';
 import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/compact_slider.dart';
 import 'package:fide/widgets/empty_state.dart';
-import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/image_backdrop_buttons.dart';
 import 'package:fide/widgets/image_canvas.dart';
 import 'package:fide/widgets/image_diff_mode_icon.dart';
+import 'package:fide/widgets/viewer_toolbar.dart';
 import 'package:fide/widgets/zoom_label.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -142,32 +142,28 @@ class _ImageDiffState extends ConsumerState<ImageDiff> {
     final mode = modes.contains(_mode) ? _mode : ImageDiffMode.twoUp;
     return Column(
       children: [
-        HeaderBar(
-          child: Row(
-            spacing: AppSpacing.medium,
-            children: [
-              ChoiceButtons(
-                values: modes,
-                selected: mode,
-                icon: (mode) => mode.icon,
-                label: (mode) => mode.label,
-                onSelected: (mode) => setState(() => _mode = mode),
+        ViewerToolbar(
+          leading: [
+            ChoiceButtons(
+              values: modes,
+              selected: mode,
+              icon: (mode) => mode.icon,
+              label: (mode) => mode.label,
+              onSelected: (mode) => setState(() => _mode = mode),
+            ),
+            const ImageBackdropButtons(),
+            if (mode == ImageDiffMode.swipe)
+              CompactSlider(
+                value: _swipe,
+                onChanged: (value) => setState(() => _swipe = value),
               ),
-              const ImageBackdropButtons(),
-              if (mode == ImageDiffMode.swipe)
-                CompactSlider(
-                  value: _swipe,
-                  onChanged: (value) => setState(() => _swipe = value),
-                ),
-              if (mode == ImageDiffMode.onion)
-                CompactSlider(
-                  value: _onion,
-                  onChanged: (value) => setState(() => _onion = value),
-                ),
-              const Spacer(),
-              ZoomLabel(controller: _transformation),
-            ],
-          ),
+            if (mode == ImageDiffMode.onion)
+              CompactSlider(
+                value: _onion,
+                onChanged: (value) => setState(() => _onion = value),
+              ),
+          ],
+          trailing: [ZoomLabel(controller: _transformation)],
         ),
         Expanded(child: _buildMode(mode)),
       ],
