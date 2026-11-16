@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fide/models/preview_scan.dart';
+import 'package:fide/models/project_paths.dart';
 import 'package:path/path.dart' as p;
 
 /// The files of the preview host in a project's `.dart_tool` folder: the
@@ -112,7 +113,7 @@ class PreviewRegistry {
 
   /// How the host imports the file at absolute [path].
   String _uriOfFile(String path) {
-    final lib = p.join(projectPath, 'lib');
+    final lib = ProjectPaths(projectPath).libDir;
     if (p.isWithin(lib, path)) {
       final relative = p.split(p.relative(path, from: lib));
       return '$_packageScheme$packageName/${p.url.joinAll(relative)}';

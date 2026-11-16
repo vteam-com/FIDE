@@ -19,9 +19,7 @@ class LocalizeStringsRewriter implements StringRewriter {
         localization: await _localizer.plan(projectPath, metrics),
       );
     } on Exception catch (e) {
-      return review.copyWith(
-        localizationBlocker: '$e'.replaceFirst('Exception: ', ''),
-      );
+      return review.copyWith(localizationBlocker: ReadableError.describe(e));
     }
   }
 

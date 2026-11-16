@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/dart_string_literal.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/flutter_sdk.dart';
 
@@ -135,11 +136,6 @@ dev_dependencies:
   static String _yamlLine(String text) =>
       jsonEncode(text.replaceAll(_lineBreaks, ' ').trim());
 
-  /// [text] as a Dart string literal: JSON strings are valid Dart once
-  /// `$` can't start an interpolation.
-  static String _dartString(String text) =>
-      jsonEncode(text).replaceAll(r'$', r'\$');
-
   /// The `README.md` of [projectName] described by [description].
   static String _readme(String projectName, String description) =>
       '''
@@ -208,7 +204,7 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
-              ${_dartString(description)},
+              ${DartStringLiteral.quote(description)},
             ),
           ],
         ),

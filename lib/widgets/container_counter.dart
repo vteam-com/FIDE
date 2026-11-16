@@ -1,6 +1,7 @@
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/clickable.dart';
+import 'package:fide/widgets/optional_tooltip.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -44,11 +45,12 @@ class ContainerCounter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tooltip = this.tooltip;
-    final pill = Clickable(
-      onTap: onTap,
-      child: BadgeStatus(text: '$count', color: tone.color, icon: icon),
+    return OptionalTooltip(
+      message: tooltip,
+      child: Clickable(
+        onTap: onTap,
+        child: BadgeStatus(text: '$count', color: tone.color, icon: icon),
+      ),
     );
-    return tooltip == null ? pill : Tooltip(message: tooltip, child: pill);
   }
 }

@@ -17,4 +17,15 @@ void main() {
     expect(TextOffsets.offsetOf(text, 5), isNull);
     expect(TextOffsets.offsetOf(text, 0), isNull);
   });
+
+  test('applyEdits replaces from the end so offsets stay valid', () {
+    expect(
+      TextOffsets.applyEdits('const a = 1;', {
+        0: (6, ''),
+        6: (1, 'b'),
+        12: (0, '!'),
+      }),
+      'b = 1;!',
+    );
+  });
 }

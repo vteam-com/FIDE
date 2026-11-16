@@ -277,12 +277,17 @@ final flutterSdkProvider = Provider<FlutterSdk>(
 );
 
 /// Provides the shared [ArbService] for reading and writing ARB files.
-final arbServiceProvider = Provider<ArbService>((_) => const ArbService());
+final arbServiceProvider = Provider<ArbService>(
+  (ref) => ArbService(ref.read(projectConfigReaderProvider)),
+);
 
 /// Provides the [CocoaPodsMigrator] moving iOS and macOS apps to Swift
 /// Package Manager.
 final cocoaPodsMigratorProvider = Provider<CocoaPodsMigrator>(
-  (ref) => CocoaPodsMigrator(ref.read(processRunnerProvider)),
+  (ref) => CocoaPodsMigrator(
+    ref.read(processRunnerProvider),
+    ref.read(projectConfigReaderProvider),
+  ),
 );
 
 /// Provides the [ProjectOverviewService] behind the center panel's project

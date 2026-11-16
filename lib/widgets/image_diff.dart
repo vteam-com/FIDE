@@ -15,6 +15,7 @@ import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/image_backdrop_buttons.dart';
 import 'package:fide/widgets/image_canvas.dart';
 import 'package:fide/widgets/image_diff_mode_icon.dart';
+import 'package:fide/widgets/pane_divider.dart';
 import 'package:fide/widgets/viewer_toolbar.dart';
 import 'package:fide/widgets/zoom_label.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -163,7 +164,7 @@ class _ImageDiffState extends ConsumerState<ImageDiff> {
                 onChanged: (value) => setState(() => _onion = value),
               ),
           ],
-          trailing: [ZoomLabel(controller: _transformation)],
+          trailing: [ZoomLabel.canvas(controller: _transformation)],
         ),
         Expanded(child: _buildMode(mode)),
       ],
@@ -187,7 +188,7 @@ class _ImageDiffState extends ConsumerState<ImageDiff> {
                   : AnyImage.memory(oldBytes, path: widget.path),
             ),
           ),
-          const VerticalDivider(width: AppSize.borderThin),
+          const PaneDivider(),
           Expanded(
             child: _buildSide(
               'Modified',

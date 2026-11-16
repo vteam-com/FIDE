@@ -13,6 +13,7 @@ import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/page_header.dart';
+import 'package:fide/widgets/page_scroll_view.dart';
 import 'package:fide/widgets/platform_icon.dart';
 import 'package:fide/widgets/project_analysis_view.dart';
 import 'package:fide/widgets/secondary_button.dart';
@@ -189,104 +190,94 @@ class ProjectOverviewPanel extends ConsumerWidget {
     final coverage = overview.coverage;
     final issues = code.qualityIssues;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.huge),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: AppSpacing.xxLarge,
-        children: [
-          PageHeader(
-            title: code.projectName,
-            subTitle: 'Version ${code.version}',
-            logo: AppIconImage(
-              path: overview.appIconPath,
-              size: AppSize.heroLogoHeight,
-              fallback: const Icon(
-                Icons.flutter_dash,
-                size: AppSize.heroLogoHeight,
-              ),
+    return PageScrollView(
+      children: [
+        PageHeader(
+          title: code.projectName,
+          subTitle: 'Version ${code.version}',
+          logo: AppIconImage(
+            path: overview.appIconPath,
+            size: AppSize.heroLogoHeight,
+            fallback: const Icon(Icons.flutter_dash),
+          ),
+          actions: [
+            CompactIconButton(
+              tooltip: 'Analyze again',
+              icon: Icons.refresh,
+              onPressed: () => ref.invalidate(projectOverviewProvider),
             ),
-            actions: [
-              CompactIconButton(
-                tooltip: 'Analyze again',
-                icon: Icons.refresh,
-                onPressed: () => ref.invalidate(projectOverviewProvider),
+          ],
+        ),
+        Wrap(
+          spacing: AppSpacing.xLarge,
+          runSpacing: AppSpacing.xLarge,
+          children: [
+            StatCard(
+              icon: Icons.verified_outlined,
+              title: 'Quality',
+              value: BadgeStatus.score(code.complianceScore, large: true),
+              issues: issues,
+              details: [if (issues.isEmpty) 'Every fCheck analyzer at 100%'],
+            ),
+            StatCard(
+              icon: Icons.code,
+              title: 'Sources',
+              value: StatCard.text('${code.totalLinesOfCode.localized} lines'),
+              details: [
+                '${code.totalFolders.localized} folders, ${code.totalFiles.localized} files',
+                '${code.totalDartFiles.localized} Dart files',
+                '${code.codeSizeClassArtifacts.length.localized} classes, '
+                    '${code.totalFunctionCount.localized} functions',
+                '${code.totalCommentLines.localized} comment lines '
+                    '(${(code.commentRatio * AppMetric.maxScore).round()}%)',
+              ],
+            ),
+            StatCard(
+              icon: Icons.inventory_2_outlined,
+              title: 'Packages',
+              value: StatCard.text(
+                (code.dependencyCount + code.devDependencyCount).localized,
               ),
-            ],
-          ),
-          Wrap(
-            spacing: AppSpacing.xLarge,
-            runSpacing: AppSpacing.xLarge,
-            children: [
-              StatCard(
-                icon: Icons.verified_outlined,
-                title: 'Quality',
-                value: BadgeStatus.score(code.complianceScore, large: true),
-                issues: issues,
-                details: [if (issues.isEmpty) 'Every fCheck analyzer at 100%'],
-              ),
-              StatCard(
-                icon: Icons.code,
-                title: 'Sources',
-                value: StatCard.text(
-                  '${code.totalLinesOfCode.localized} lines',
-                ),
-                details: [
-                  '${code.totalFolders.localized} folders, ${code.totalFiles.localized} files',
-                  '${code.totalDartFiles.localized} Dart files',
-                  '${code.codeSizeClassArtifacts.length.localized} classes, '
-                      '${code.totalFunctionCount.localized} functions',
-                  '${code.totalCommentLines.localized} comment lines '
-                      '(${(code.commentRatio * AppMetric.maxScore).round()}%)',
-                ],
-              ),
-              StatCard(
-                icon: Icons.inventory_2_outlined,
-                title: 'Packages',
-                value: StatCard.text(
-                  (code.dependencyCount + code.devDependencyCount).localized,
-                ),
-                details: [
-                  '${code.dependencyCount.localized} dependencies',
-                  '${code.devDependencyCount.localized} dev dependencies',
-                ],
-              ),
-              if (overview.platforms.any((platform) => platform.isApple))
-                _swiftPackagesCard(overview),
-              _platformsCard(overview),
-              StatCard(
-                icon: Icons.science_outlined,
-                title: 'Tests',
-                value: StatCard.text(code.testCaseCount.localized),
-                details: code.hasTests
-                    ? [
-                        '${code.testDartFilesCount.localized} test files',
-                        '${code.testConsumedFilesCount.localized} of '
-                            '${code.totalDartFiles.localized} files reached',
-                      ]
-                    : ['No tests yet'],
-              ),
-              StatCard(
-                icon: Icons.track_changes,
-                title: 'Code coverage',
-                value: coverage == null
-                    ? StatCard.text('No report')
-                    : BadgeStatus.score(coverage.percent, large: true),
-                details: [
-                  if (coverage == null)
-                    'Run tests with coverage in the Test panel'
-                  else
-                    '${coverage.linesHit.localized} of ${coverage.linesFound.localized} lines hit',
-                  'Reachable from tests: ${overview.testReachPercent}%',
-                ],
-              ),
-              _localizationCard(overview),
-              _appIconsCard(ref),
-              _architectureCard(ref, overview),
-            ],
-          ),
-        ],
-      ),
+              details: [
+                '${code.dependencyCount.localized} dependencies',
+                '${code.devDependencyCount.localized} dev dependencies',
+              ],
+            ),
+            if (overview.platforms.any((platform) => platform.isApple))
+              _swiftPackagesCard(overview),
+            _platformsCard(overview),
+            StatCard(
+              icon: Icons.science_outlined,
+              title: 'Tests',
+              value: StatCard.text(code.testCaseCount.localized),
+              details: code.hasTests
+                  ? [
+                      '${code.testDartFilesCount.localized} test files',
+                      '${code.testConsumedFilesCount.localized} of '
+                          '${code.totalDartFiles.localized} files reached',
+                    ]
+                  : ['No tests yet'],
+            ),
+            StatCard(
+              icon: Icons.track_changes,
+              title: 'Code coverage',
+              value: coverage == null
+                  ? StatCard.text('No report')
+                  : BadgeStatus.score(coverage.percent, large: true),
+              details: [
+                if (coverage == null)
+                  'Run tests with coverage in the Test panel'
+                else
+                  '${coverage.linesHit.localized} of ${coverage.linesFound.localized} lines hit',
+                'Reachable from tests: ${overview.testReachPercent}%',
+              ],
+            ),
+            _localizationCard(overview),
+            _appIconsCard(ref),
+            _architectureCard(ref, overview),
+          ],
+        ),
+      ],
     );
   }
 }

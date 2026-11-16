@@ -3,7 +3,7 @@ import 'package:fide/models/dart_imports.dart';
 import 'package:fide/models/hardcoded_string.dart';
 import 'package:fide/models/l10n_config.dart';
 import 'package:fide/models/lookup_field.dart';
-import 'package:path/path.dart' as p;
+import 'package:fide/models/text_offsets.dart';
 
 /// Parameter name of the lookup functions passed to a [LookupField].
 const String _l10n = 'l10n';
@@ -116,18 +116,10 @@ class LookupRewrite {
 
     final changed = <String, String>{};
     for (final MapEntry(key: path, value: fileEdits) in edits.entries) {
-      var result = contents[path]!;
-      for (final offset in fileEdits.keys.toList()..sort((a, b) => b - a)) {
-        final (length, text) = fileEdits[offset]!;
-        result = result.replaceRange(offset, offset + length, text);
-      }
+      final result = TextOffsets.applyEdits(contents[path]!, fileEdits);
       final declares = fields.any((field) => field.path == path);
       changed[path] = declares
-          ? withImport(
-              result,
-              importUri,
-              isImported: (uri) => p.url.basename(uri) == config.outputFile,
-            )
+          ? withImport(result, importUri, isImported: config.isOutputImport)
           : result;
     }
     return (contents: changed, localized: localized);

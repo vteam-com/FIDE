@@ -1,4 +1,6 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/status_tone.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The content of every popup menu entry: an icon, its label, then an
@@ -40,7 +42,7 @@ class IconMenuRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final color = isError ? colorScheme.error : null;
+    final color = isError ? StatusTone.error.readableIn(colorScheme) : null;
     return Row(
       mainAxisSize: MainAxisSize.min,
       spacing: AppSpacing.medium,

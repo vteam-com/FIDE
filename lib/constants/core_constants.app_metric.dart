@@ -5,6 +5,10 @@ class AppMetric {
   static const int terminalMaxLines = 1000;
   static const int colorChannelMax = 255;
   static const int fileSizeDivisor = 1024;
+
+  /// Bytes in a megabyte, each unit [fileSizeDivisor] times the previous.
+  static const int bytesPerMegabyte = fileSizeDivisor * fileSizeDivisor;
+
   static const int mruFolderLimit = 5;
   static const int aiContextPreviewChars = 2000;
   static const int aiMaxToolRounds = 25;
@@ -44,7 +48,6 @@ class AppMetric {
   static const int buildErrorDeductionMax = 50;
   static const int buildWarningDeductionPer = 2;
   static const int buildWarningDeductionMax = 20;
-  static const int minDirPathDepth = 2;
   static const int outdatedMinColumns = 5;
   static const int outdatedUpgradableColIndex = 2;
   static const int outdatedResolvableColIndex = 3;

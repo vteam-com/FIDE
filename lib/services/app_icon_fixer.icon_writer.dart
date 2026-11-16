@@ -85,7 +85,7 @@ class IconWriter {
 
   /// Writes [content] as indented JSON at project-relative [path].
   void json(String path, Map<String, Object?> content) {
-    text(path, '${const JsonEncoder.withIndent('  ').convert(content)}\n');
+    text(path, CodeFormatter.encodeJson(content));
   }
 
   /// The text of project-relative [path], or null when it can't be read.

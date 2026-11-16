@@ -12,15 +12,6 @@ class ArbFile {
     required this.entries,
   });
 
-  /// Handles `ArbFile.extractLanguageCode`.
-  static String extractLanguageCode(String filename) {
-    final parts = filename.split('_');
-    if (parts.length >= AppMetric.minDirPathDepth) {
-      final lastPart = parts.last;
-      if (lastPart.endsWith('.arb')) {
-        return lastPart.replaceAll('.arb', '');
-      }
-    }
-    return 'unknown';
-  }
+  /// [languageCode] of a file whose name has no `_<locale>` suffix.
+  static const String unknownLanguageCode = 'unknown';
 }

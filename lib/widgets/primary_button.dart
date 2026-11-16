@@ -1,5 +1,8 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/status_tone.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/inline_spinner.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The filled button for the main action of a card, dialog or screen; pair
@@ -35,11 +38,10 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final style = destructive
         ? FilledButton.styleFrom(
-            backgroundColor: colorScheme.error,
-            foregroundColor: colorScheme.onError,
+            backgroundColor: StatusTone.error.color,
+            foregroundColor: AppTheme.onStatusColor,
           )
         : null;
     final onPressed = busy ? null : this.onPressed;
@@ -55,7 +57,7 @@ class PrimaryButton extends StatelessWidget {
       onPressed: onPressed,
       style: style,
       icon: busy
-          ? const InlineSpinner(size: AppIconSize.medium)
+          ? const InlineSpinner.small()
           : Icon(icon, size: AppIconSize.medium),
       label: Text(label),
     );

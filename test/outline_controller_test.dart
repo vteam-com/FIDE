@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fide/constants/core_constants.dart';
 import 'package:fide/models/outline_kind.dart';
 import 'package:fide/models/outline_node.dart';
 import 'package:fide/models/search_result.dart';
@@ -53,7 +54,7 @@ class _FakeFinder extends ReferenceFinder {
 }
 
 /// Past the outline's debounce.
-Future<void> _settle() => Future<void>.delayed(OutlineController.debounce * 2);
+Future<void> _settle() => Future<void>.delayed(AppDuration.updateDebounce * 2);
 
 void main() {
   late Directory folder;

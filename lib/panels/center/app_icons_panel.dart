@@ -15,6 +15,7 @@ import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_label.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/page_header.dart';
+import 'package:fide/widgets/page_scroll_view.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/secondary_button.dart';
@@ -42,44 +43,39 @@ class AppIconsPanel extends ConsumerWidget {
     final master = review?.master;
     final fixing = ref.watch(appIconFixControllerProvider);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.huge),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: AppSpacing.xxLarge,
-        children: [
-          PageHeader(
-            title: 'App Icons',
-            subTitle: issues.isEmpty
-                ? 'Every platform icon checks out'
-                : '${issues.length.count('problem')} on '
-                      '${review!.brokenPlatformCount.count('platform')}',
-            logo: const Icon(Icons.apps, size: AppSize.heroLogoHeight),
-            actions: [
-              CompactIconButton(
-                tooltip: 'Check again',
-                icon: Icons.refresh,
-                onPressed: () => ref.invalidate(appIconReviewProvider),
-              ),
-              CompactIconButton(
-                tooltip: 'Close',
-                icon: Icons.close,
-                onPressed: () => closeCenterView(ref),
-              ),
-            ],
-          ),
-          _masterCard(
-            context,
-            ref,
-            projectPath,
-            master,
-            review?.brokenPlatforms ?? const [],
-            fixing,
-          ),
-          for (final platform in review?.platforms ?? const [])
-            _platformCard(context, ref, projectPath, platform, master, fixing),
-        ],
-      ),
+    return PageScrollView(
+      children: [
+        PageHeader(
+          title: 'App Icons',
+          subTitle: issues.isEmpty
+              ? 'Every platform icon checks out'
+              : '${issues.length.count('problem')} on '
+                    '${review!.brokenPlatformCount.count('platform')}',
+          logo: const Icon(Icons.apps),
+          actions: [
+            CompactIconButton(
+              tooltip: 'Check again',
+              icon: Icons.refresh,
+              onPressed: () => ref.invalidate(appIconReviewProvider),
+            ),
+            CompactIconButton(
+              tooltip: 'Close',
+              icon: Icons.close,
+              onPressed: () => closeCenterView(ref),
+            ),
+          ],
+        ),
+        _masterCard(
+          context,
+          ref,
+          projectPath,
+          master,
+          review?.brokenPlatforms ?? const [],
+          fixing,
+        ),
+        for (final platform in review?.platforms ?? const [])
+          _platformCard(context, ref, projectPath, platform, master, fixing),
+      ],
     );
   }
 

@@ -7,8 +7,8 @@ import 'package:fide/models/localization_plan.dart';
 import 'package:fide/models/lookup_field.dart';
 import 'package:fide/models/lookup_plan.dart';
 import 'package:fide/models/lookup_rewrite.dart';
+import 'package:fide/models/readable_error.dart';
 import 'package:fide/models/string_rewrite.dart';
-import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/code_formatter.dart';
 import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/reference_finder.dart';
@@ -50,7 +50,7 @@ class StringLookupPasser {
           offset: string.site.offset,
         );
       } on Exception catch (e) {
-        rejected[string] = _reason(e);
+        rejected[string] = ReadableError.describe(e);
       }
     }
     return LookupPlan(candidates: candidates, rejected: rejected);
@@ -94,10 +94,12 @@ class StringLookupPasser {
     };
 
     // The lookups compile only once the keys are generated
-    final template = File(StringLocalizer.templatePath(projectPath, config));
+    final template = File(config.templatePathIn(projectPath));
     final original = await template.readAsString();
-    await template.writeAsString(ArbService.encode({...arb, ...keys.added}));
-    await _generator.generateClasses(projectPath);
+    await _generator.writeTemplate(projectPath, config, {
+      ...arb,
+      ...keys.added,
+    });
     try {
       await _finder.checkCompiles(contents, 'Passing lookups');
     } catch (_) {
@@ -115,8 +117,4 @@ class StringLookupPasser {
       skipped: const {},
     );
   }
-
-  /// The reason in the error [e] the analysis answered with.
-  static String _reason(Exception e) =>
-      '$e'.replaceFirst('Exception: ', '').replaceFirst('Bad state: ', '');
 }

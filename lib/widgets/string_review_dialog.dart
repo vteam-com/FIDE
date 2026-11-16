@@ -5,23 +5,24 @@ import 'package:fide/models/hardcoded_string_role.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/models/string_review.dart';
-import 'package:fide/theme/app_theme.dart';
+import 'package:fide/widgets/check_list_tile.dart';
 import 'package:fide/widgets/compact_text_button.dart';
+import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/quick_fix_icon.dart';
-import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
-/// Shows a project's hardcoded strings grouped by role, each string with
+/// The body of the dialog showing a project's hardcoded strings grouped
+/// by role, each string with
 /// the use that decided it and a link to its code, and each group with
 /// its actions: FIDE's fixes matching the role for the strings they can
 /// take, checked one by one, and the AI for the others, such as
 /// fragments or strings without a `BuildContext`.
 class StringReviewDialog extends StatefulWidget {
-  /// Creates the dialog reviewing [review], opening a string's code
+  /// Creates the body reviewing [review], opening a string's code
   /// through [onOpen].
   const StringReviewDialog({
     super.key,
@@ -44,11 +45,18 @@ class StringReviewDialog extends StatefulWidget {
     BuildContext context,
     StringReview review, {
     required void Function(HardcodedString) onOpen,
-  }) => showDialog<StringReviewChoice>(
-    context: context,
-    builder: (_ /*context*/) =>
-        StringReviewDialog(review: review, onOpen: onOpen),
-  );
+  }) {
+    final total = fcheck.HardcodedStringRole.values.fold(
+      0,
+      (sum, role) => sum + review.withRole(role).length,
+    );
+    return MessageBox.showDetails<StringReviewChoice>(
+      context,
+      title: Text('Hardcoded strings (${total.localized})'),
+      content: StringReviewDialog(review: review, onOpen: onOpen),
+      scrollable: false,
+    );
+  }
 }
 
 class _StringReviewDialogState extends State<StringReviewDialog> {
@@ -73,31 +81,21 @@ class _StringReviewDialogState extends State<StringReviewDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final total = _byRole.values.fold(0, (sum, list) => sum + list.length);
-    return AlertDialog(
-      title: Text('Hardcoded strings (${total.localized})'),
-      content: SizedBox(
-        width: AppSize.issueDetailsWidth,
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            Text(
-              'Grouped by how the code uses each string, shown under it. '
-              'FIDE fixes the checked strings at once; the AI fixes the '
-              'others. Open a string to check it in the code.',
-              style: AppTextStyle.secondary(context),
-            ),
-            for (final MapEntry(key: role, value: strings) in _byRole.entries)
-              _section(context, role, strings),
-          ],
-        ),
+    return SizedBox(
+      width: AppSize.issueDetailsWidth,
+      child: ListView(
+        shrinkWrap: true,
+        children: [
+          Text(
+            'Grouped by how the code uses each string, shown under it. '
+            'FIDE fixes the checked strings at once; the AI fixes the '
+            'others. Open a string to check it in the code.',
+            style: AppTextStyle.secondary(context),
+          ),
+          for (final MapEntry(key: role, value: strings) in _byRole.entries)
+            _section(context, role, strings),
+        ],
       ),
-      actions: [
-        SecondaryButton(
-          onPressed: () => Navigator.of(context).pop(),
-          label: 'Close',
-        ),
-      ],
     );
   }
 
@@ -146,8 +144,7 @@ class _StringReviewDialogState extends State<StringReviewDialog> {
           Text(
             reason,
             style: secondary.copyWith(
-              color: AppTheme.readable(
-                StatusTone.warning.color,
+              color: StatusTone.warning.readableIn(
                 Theme.of(context).colorScheme,
               ),
             ),
@@ -172,17 +169,14 @@ class _StringReviewDialogState extends State<StringReviewDialog> {
         trailing: open,
       );
     }
-    return CheckboxListTile(
-      dense: true,
-      controlAffinity: ListTileControlAffinity.leading,
+    return CheckListTile(
       value: _selected.contains(string),
       onChanged: (checked) => setState(
-        () =>
-            checked == true ? _selected.add(string) : _selected.remove(string),
+        () => checked ? _selected.add(string) : _selected.remove(string),
       ),
       title: title,
       subtitle: subtitle,
-      secondary: open,
+      trailing: open,
     );
   }
 

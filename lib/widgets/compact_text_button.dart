@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/icon_only_labels.dart';
+import 'package:fide/widgets/optional_tooltip.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// A small text button that fits inside a row of caption text, such as
@@ -34,7 +35,7 @@ class CompactTextButton extends StatelessWidget {
     if (icon != null && IconOnlyLabels.of(context)) {
       return CompactIconButton(
         icon: icon,
-        tooltip: this.tooltip ?? label,
+        tooltip: tooltip ?? label,
         onPressed: onPressed,
         color: Theme.of(context).colorScheme.primary,
       );
@@ -56,7 +57,6 @@ class CompactTextButton extends StatelessWidget {
             icon: Icon(icon, size: AppIconSize.small),
             label: Text(label),
           );
-    final tooltip = this.tooltip;
-    return tooltip == null ? button : Tooltip(message: tooltip, child: button);
+    return OptionalTooltip(message: tooltip, child: button);
   }
 }

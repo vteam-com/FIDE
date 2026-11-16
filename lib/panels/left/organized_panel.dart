@@ -275,7 +275,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
         onTap: () => handleFileTap(node),
         onContextMenu: (position) => showNodeContextMenu(node, position),
         trailing: _splittingPath == node.path
-            ? const InlineSpinner(size: AppSize.compactProgressIndicator)
+            ? const InlineSpinner.small()
             : classCount == null
             ? null
             : ContainerCounter.warning(

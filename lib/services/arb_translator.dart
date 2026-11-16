@@ -12,7 +12,6 @@ import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/hardcoded_string_finder.dart';
 import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/project_config_reader.dart';
-import 'package:path/path.dart' as p;
 
 /// Translates ARB keys with the local model in short batches, FIDE writing
 /// the ARB files itself: the model only ever sees a list of texts to
@@ -57,9 +56,7 @@ class ArbTranslator {
   ) async {
     final config = await _config.l10nConfig(projectPath);
     final template = config.templateParts;
-    final templateFile = File(
-      p.join(projectPath, config.arbDir, config.templateArbFile),
-    );
+    final templateFile = File(config.templatePathIn(projectPath));
     if (template == null || !await templateFile.exists()) return [];
     final source =
         ArbService.decode(await templateFile.readAsString()) ?? const {};
@@ -76,11 +73,7 @@ class ArbTranslator {
                 source: source[detail.key] as String,
                 description: _description(source['@${detail.key}']),
                 language: issue.languageName,
-                arbPath: p.join(
-                  projectPath,
-                  config.arbDir,
-                  '${template.prefix}${issue.languageCode}.arb',
-                ),
+                arbPath: config.arbPathFor(projectPath, issue.languageCode),
               ),
     ];
   }

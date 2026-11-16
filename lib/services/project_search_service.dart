@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fide/models/editor_search.dart';
+import 'package:fide/models/project_files.dart';
 import 'package:fide/models/search_result.dart';
 import 'package:fide/models/search_result_node.dart';
 import 'package:fide/models/tree_order.dart';
@@ -12,7 +13,8 @@ class ProjectSearchService {
   const ProjectSearchService();
 
   /// Every match of [query] in the files under [directoryPath], in no
-  /// particular file order; unreadable files are skipped.
+  /// particular file order; unreadable files, and the tool output and
+  /// hidden folders [ProjectFiles] leaves out, are skipped.
   Future<List<SearchResult>> search(
     String directoryPath,
     String query, {
@@ -23,11 +25,7 @@ class ProjectSearchService {
     if (query.isEmpty || !await directory.exists()) return const [];
 
     final results = <SearchResult>[];
-    await for (final entity in directory.list(
-      recursive: true,
-      followLinks: false,
-    )) {
-      if (entity is! File) continue;
+    await for (final entity in ProjectFiles.walk(directoryPath)) {
       final String content;
       try {
         content = await entity.readAsString();

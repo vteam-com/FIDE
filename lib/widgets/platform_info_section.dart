@@ -4,11 +4,11 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/build_artifacts.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/locale_number.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_icon_review_provider.dart';
 import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/service_providers.dart';
-import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/container_counter.dart';
@@ -17,6 +17,7 @@ import 'package:fide/widgets/file_actions.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/section_title.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -82,11 +83,10 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
             color: widget.isSupported
                 ? widget.canBuild
                       ? Theme.of(context).colorScheme.primary
-                      : AppTheme.readable(
-                          AppTheme.warningColor,
+                      : StatusTone.warning.readableIn(
                           Theme.of(context).colorScheme,
                         )
-                : Theme.of(context).colorScheme.error,
+                : StatusTone.error.readableIn(Theme.of(context).colorScheme),
           ),
         ],
       ),

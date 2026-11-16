@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer/dart/analysis/utilities.dart';
@@ -6,6 +5,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:fide/models/localization_checks.dart';
 import 'package:fide/models/project_paths.dart';
+import 'package:fide/services/arb_service.dart';
+import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_config_reader.dart';
@@ -73,19 +74,22 @@ class LocalizationSetup {
 
   /// Reads which localization pieces the project at [projectPath] has.
   Future<LocalizationChecks> inspect(String projectPath) async {
-    final paths = ProjectPaths(projectPath);
     final pubspec = await _config.pubspec(projectPath);
-    final mainDart = await _readIfExists(paths.mainDart);
-    final l10nDir = Directory(paths.l10nDir);
+    final config = await _config.l10nConfig(projectPath);
+    final mainDart = await ProjectConfigReader.readIfExists(
+      ProjectPaths(projectPath).mainDart,
+    );
+    final arbDir = Directory(config.arbDirIn(projectPath));
     final hasArbFiles =
-        await l10nDir.exists() &&
-        await l10nDir.list().any((entity) => entity.path.endsWith('.arb'));
+        await arbDir.exists() &&
+        await arbDir.list().any((entity) => entity.path.endsWith('.arb'));
 
     return LocalizationChecks(
       hasPubspec: pubspec != null,
       isFlutterProject: pubspec?.isFlutter ?? false,
       hasArbFiles: hasArbFiles,
-      hasGeneratedClasses: await File(paths.generatedLocalizations).exists(),
+      hasGeneratedClasses: await File(config.generatedPathIn(projectPath))
+          .exists(),
       hasAppIntegration:
           mainDart != null &&
           mainDart.contains('AppLocalizations') &&
@@ -111,10 +115,10 @@ class LocalizationSetup {
 
     final packageName =
         await _config.packageName(projectPath) ?? _fallbackPackageName;
+    final config = await _config.l10nConfig(projectPath);
 
     // Add import if missing
-    final importPath =
-        "import 'package:$packageName/l10n/app_localizations.dart';";
+    final importPath = "import '${config.importUri(packageName)}';";
     if (!content.contains(importPath)) {
       // Find the first import statement and add after it
       final importMatch = RegExp(r'import .+;').firstMatch(content);
@@ -156,14 +160,15 @@ class LocalizationSetup {
     await mainFile.writeAsString(content);
   }
 
-  /// Writes English and French template ARB files into `lib/l10n`, using
-  /// the app title from `main.dart` when one is set.
+  /// Writes English and French template ARB files into the project's ARB
+  /// folder, using the app title from `main.dart` when one is set.
   Future<void> _createTemplateArbFiles(String projectPath) async {
-    final paths = ProjectPaths(projectPath);
-    final l10nDir = Directory(paths.l10nDir);
-    await l10nDir.create(recursive: true);
+    final config = await _config.l10nConfig(projectPath);
+    await Directory(config.arbDirIn(projectPath)).create(recursive: true);
 
-    final mainDart = await _readIfExists(paths.mainDart);
+    final mainDart = await ProjectConfigReader.readIfExists(
+      ProjectPaths(projectPath).mainDart,
+    );
     final extractedTitle = mainDart == null
         ? null
         : _extractAppTitleFromMainDart(mainDart);
@@ -171,25 +176,20 @@ class LocalizationSetup {
         ? 'My App'
         : extractedTitle;
 
-    final englishArbContent = {
-      '@@locale': 'en',
-      'appTitle': appTitle,
-      '@appTitle': {'description': 'The title of the application'},
-      'helloWorld': 'Hello World',
-      '@helloWorld': {'description': 'A greeting message'},
-    };
-    final frenchArbContent = {
-      '@@locale': 'fr',
-      'appTitle': 'Mon Application',
-      '@appTitle': {'description': 'The title of the application'},
-      'helloWorld': 'Bonjour le monde',
-      '@helloWorld': {'description': 'A greeting message'},
-    };
-
-    await File('${l10nDir.path}/app_en.arb')
-        .writeAsString(jsonEncode(englishArbContent));
-    await File('${l10nDir.path}/app_fr.arb')
-        .writeAsString(jsonEncode(frenchArbContent));
+    for (final (locale, title, greeting) in [
+      ('en', appTitle, 'Hello World'),
+      ('fr', 'Mon Application', 'Bonjour le monde'),
+    ]) {
+      await File(config.arbPathFor(projectPath, locale)).writeAsString(
+        ArbService.encode({
+          ArbService.localeKey: locale,
+          'appTitle': title,
+          '@appTitle': {'description': 'The title of the application'},
+          'helloWorld': greeting,
+          '@helloWorld': {'description': 'A greeting message'},
+        }),
+      );
+    }
   }
 
   /// Turns on `flutter: generate: true` in the project's pubspec, creating
@@ -222,12 +222,6 @@ class LocalizationSetup {
     }
   }
 
-  /// Returns the file's contents, or null when it doesn't exist.
-  Future<String?> _readIfExists(String filePath) async {
-    final file = File(filePath);
-    return await file.exists() ? file.readAsString() : null;
-  }
-
   /// Adds [package] to the project with `flutter pub add`, from [sdk] when
   /// it is an SDK package, throwing with the tool's stderr on failure.
   Future<void> _addPackage(
@@ -235,14 +229,11 @@ class LocalizationSetup {
     String package, {
     String? sdk,
   }) async {
-    final result = await _runner.run('flutter', [
-      'pub',
-      'add',
-      package,
-      if (sdk != null) '--sdk=$sdk',
-    ], workingDirectory: projectPath);
-    if (result.exitCode != 0) {
-      throw Exception('Failed to add $package: ${result.stderr}');
-    }
+    await _runner.runChecked(
+      FlutterSdk.executable,
+      ['pub', 'add', package, if (sdk != null) '--sdk=$sdk'],
+      workingDirectory: projectPath,
+      error: (result) => Exception('Failed to add $package: ${result.stderr}'),
+    );
   }
 }

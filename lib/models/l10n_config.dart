@@ -21,10 +21,11 @@ class L10nConfig {
   static const String _defaultOutputClass = 'AppLocalizations';
   static const String _defaultOutputFile = 'app_localizations.dart';
 
-  /// An ARB file name: a prefix ending with `_`, then a locale such as
-  /// `en`, `pt_BR`, `zh_Hant_TW` or `es_419`.
-  static final RegExp _arbFileName = RegExp(
-    r'^(?<prefix>.*_)(?<locale>[a-z]{2,3}(?:_(?:[A-Z][a-z]{3}|[A-Z]{2}|[0-9]{3}))*)\.arb$',
+  /// A localized file name, such as `app_pt_BR.arb` or
+  /// `app_localizations_en.dart`: a prefix ending with `_`, then a locale
+  /// such as `en`, `pt_BR`, `zh_Hant_TW` or `es_419`, then an extension.
+  static final RegExp _localizedFileName = RegExp(
+    r'^(?<prefix>.*_)(?<locale>[a-z]{2,3}(?:_(?:[A-Z][a-z]{3}|[A-Z]{2}|[0-9]{3}))*)\.[a-z]+$',
   );
 
   /// The settings file `flutter gen-l10n` reads.
@@ -75,6 +76,22 @@ class L10nConfig {
     );
   }
 
+  /// The ARB folder of the project at [root].
+  String arbDirIn(String root) => p.join(root, arbDir);
+
+  /// File name of the ARB file of [locale], such as `app_fr.arb`, sharing
+  /// the template's prefix.
+  String arbFileName(String locale) =>
+      '${templateParts?.prefix ?? ''}$locale.arb';
+
+  /// Path of the ARB file of [locale] in the project at [root].
+  String arbPathFor(String root, String locale) =>
+      p.join(arbDirIn(root), arbFileName(locale));
+
+  /// Path of the generated class's file in the project at [root].
+  String generatedPathIn(String root) =>
+      p.join(root, outputDir ?? arbDir, outputFile);
+
   /// The import of the generated class for the package [packageName].
   String importUri(String packageName) {
     if (syntheticPackage) return 'package:flutter_gen/gen_l10n/$outputFile';
@@ -85,8 +102,24 @@ class L10nConfig {
   /// [templateArbFile] split into the file prefix every ARB file shares
   /// and the template's locale (`app_en.arb` → `app_`, `en`); null for a
   /// name without a `_<locale>.arb` suffix.
-  ({String prefix, String locale})? get templateParts {
-    final match = _arbFileName.firstMatch(templateArbFile);
+  ({String prefix, String locale})? get templateParts =>
+      localeParts(templateArbFile);
+
+  /// Path of the template ARB file of the project at [root].
+  String templatePathIn(String root) => p.join(arbDirIn(root), templateArbFile);
+
+  /// Whether the import [uri] is the generated class's.
+  bool isOutputImport(String uri) => p.url.basename(uri) == outputFile;
+
+  /// The locale of a localized [fileName], such as `pt_BR` for
+  /// `app_pt_BR.arb`; null for a name without a `_<locale>` suffix.
+  static String? localeOf(String fileName) => localeParts(fileName)?.locale;
+
+  /// A localized [fileName] split into its prefix and locale
+  /// (`app_pt_BR.arb` → `app_`, `pt_BR`); null for a name without a
+  /// `_<locale>` suffix.
+  static ({String prefix, String locale})? localeParts(String fileName) {
+    final match = _localizedFileName.firstMatch(fileName);
     if (match == null) return null;
     return (
       prefix: match.namedGroup('prefix')!,

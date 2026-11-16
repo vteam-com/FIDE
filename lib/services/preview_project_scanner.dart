@@ -3,8 +3,8 @@ import 'dart:isolate';
 
 import 'package:fide/models/preview_scan.dart';
 import 'package:fide/models/project_files.dart';
+import 'package:fide/models/project_paths.dart';
 import 'package:fide/services/preview_scanner.dart';
-import 'package:path/path.dart' as p;
 
 /// A Dart file of the project and its scan.
 typedef PreviewFileScan = ({String path, PreviewScan scan});
@@ -17,24 +17,18 @@ class PreviewProjectScanner {
   /// Creates the scanner.
   const PreviewProjectScanner();
 
-  /// The folder scanned, relative to the project.
-  static const String _folder = 'lib';
-
   /// The files of the project at [projectPath] that have previews, by
   /// absolute path, sorted.
   Future<List<PreviewFileScan>> scan(String projectPath) =>
-      Isolate.run(() => _scanSync(projectPath));
+      Isolate.run(() => _scanHere(projectPath));
 
-  /// Lists `lib` and scans each Dart file mentioning [PreviewScanner.previewClass], in the
-  /// calling isolate.
-  static List<PreviewFileScan> _scanSync(String projectPath) {
-    final folder = Directory(p.join(projectPath, _folder));
-    if (!folder.existsSync()) return const [];
+  /// Lists `lib` and scans each Dart file mentioning
+  /// [PreviewScanner.previewClass], in the calling isolate.
+  static Future<List<PreviewFileScan>> _scanHere(String projectPath) async {
+    final folder = ProjectPaths(projectPath).libDir;
+    if (!Directory(folder).existsSync()) return const [];
     final files = <PreviewFileScan>[];
-    for (final entity in folder.listSync(recursive: true, followLinks: false)) {
-      if (entity is! File || p.extension(entity.path) != '.dart') continue;
-      final relative = p.relative(entity.path, from: projectPath);
-      if (ProjectFiles.isSkippedPath(relative)) continue;
+    await for (final entity in ProjectFiles.walk(folder, extension: '.dart')) {
       final content = entity.readAsStringSync();
       if (!content.contains(PreviewScanner.previewClass)) continue;
       final scan = const PreviewScanner().scan(content);

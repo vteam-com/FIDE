@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:fide/constants/core_constants.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/services/project_tree_reader.dart';
 import 'package:logging/logging.dart';
@@ -29,7 +30,6 @@ class FileSystemWatcher {
 
   // Debouncing for UI updates
   Timer? _updateDebounceTimer;
-  static const Duration _updateDebounceDuration = Duration(milliseconds: 150);
 
   /// Watches [rootNode]'s loaded folders, calling [onTreeUpdated] after
   /// each burst of changes applied to the tree.
@@ -126,7 +126,7 @@ class FileSystemWatcher {
   /// Schedule a debounced tree update to prevent UI spamming
   void _scheduleTreeUpdate() {
     _updateDebounceTimer?.cancel();
-    _updateDebounceTimer = Timer(_updateDebounceDuration, () {
+    _updateDebounceTimer = Timer(AppDuration.updateDebounce, () {
       _onTreeUpdated?.call();
       _updateDebounceTimer = null;
     });

@@ -3,11 +3,13 @@ import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
-import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/page_header.dart';
+import 'package:fide/widgets/page_scroll_view.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/theme_mode_buttons.dart';
+import 'package:fide/widgets/zoom_buttons.dart';
+import 'package:fide/widgets/zoom_label.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -62,66 +64,53 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         focusNode: _focusNode,
         child: DecoratedBox(
           decoration: AppTheme.workspaceBackground(context),
-          // Padding inside the scroll view, so content scrolls to the edges
-          child: SingleChildScrollView(
-            padding: AppPadding.pageContent,
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: AppSize.welcomeContentWidth,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: AppSpacing.xLarge,
-                  children: [
-                    PageHeader(
-                      title: 'Settings',
-                      logo: const Icon(
-                        Icons.settings,
-                        size: AppSize.heroLogoHeight,
-                      ),
-                      actions: [
-                        CompactIconButton(
-                          icon: Icons.close,
-                          tooltip: 'Close (Esc)',
-                          onPressed: widget.onClose,
-                        ),
-                      ],
-                    ),
-                    const SectionTitle('Appearance'),
-                    OutlinedSurface(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Display mode',
-                              style: AppTextStyle.body,
-                            ),
-                          ),
-                          _buildDisplayModeButtons(),
-                        ],
-                      ),
-                    ),
-                    OutlinedSurface(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text('Zoom', style: AppTextStyle.body),
-                          ),
-                          _buildZoomButtons(),
-                        ],
-                      ),
-                    ),
-                    const SectionTitle('Keyboard Shortcuts'),
-                    for (final MapEntry(key: menu, value: entries)
-                        in byMenu.entries)
-                      _buildShortcutGroup(menu, entries),
-                  ],
-                ),
+          child: PageScrollView(
+            maxWidth: AppSize.welcomeContentWidth,
+            children: [
+              PageHeader(
+                title: 'Settings',
+                logo: const Icon(Icons.settings),
+                actions: [
+                  CompactIconButton(
+                    icon: Icons.close,
+                    tooltip: 'Close (Esc)',
+                    onPressed: widget.onClose,
+                  ),
+                ],
               ),
-            ),
+              _buildSection('Appearance', [
+                _buildSettingRow('Display mode', _buildDisplayModeButtons()),
+                _buildSettingRow('Zoom', _buildZoomButtons()),
+              ]),
+              _buildSection('Keyboard Shortcuts', [
+                for (final MapEntry(key: menu, value: entries)
+                    in byMenu.entries)
+                  _buildShortcutGroup(menu, entries),
+              ]),
+            ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// The section [title] over its [children].
+  Widget _buildSection(String title, List<Widget> children) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: AppSpacing.xLarge,
+      children: [SectionTitle(title), ...children],
+    );
+  }
+
+  /// The box naming a setting by [label], its [control] at the end.
+  Widget _buildSettingRow(String label, Widget control) {
+    return OutlinedSurface(
+      child: Row(
+        children: [
+          Expanded(child: Text(label, style: AppTextStyle.body)),
+          control,
+        ],
       ),
     );
   }
@@ -139,31 +128,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _buildZoomButtons() {
     final controller = ref.read(zoomProvider.notifier);
     final zoom = ref.watch(zoomProvider);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      spacing: AppSpacing.small,
-      children: [
-        CompactIconButton(
-          icon: Icons.remove,
-          tooltip: ShortcutHelpEntry.tooltip('Zoom Out', AppShortcut.zoomOut),
-          onPressed: zoom > AppZoom.levels.first ? controller.zoomOut : null,
+    return ZoomButtons(
+      label: ZoomLabel(
+        scale: zoom,
+        onReset: controller.resetZoom,
+        tooltip: ShortcutHelpEntry.tooltip(
+          ZoomLabel.defaultTooltip,
+          AppShortcut.actualSize,
         ),
-        Tooltip(
-          message: ShortcutHelpEntry.tooltip(
-            'Actual Size',
-            AppShortcut.actualSize,
-          ),
-          child: CompactTextButton(
-            label: AppZoom.label(zoom),
-            onPressed: zoom == AppZoom.actualSize ? null : controller.resetZoom,
-          ),
-        ),
-        CompactIconButton(
-          icon: Icons.add,
-          tooltip: ShortcutHelpEntry.tooltip('Zoom In', AppShortcut.zoomIn),
-          onPressed: zoom < AppZoom.levels.last ? controller.zoomIn : null,
-        ),
-      ],
+      ),
+      zoomOutTooltip: ShortcutHelpEntry.tooltip(
+        'Zoom Out',
+        AppShortcut.zoomOut,
+      ),
+      zoomInTooltip: ShortcutHelpEntry.tooltip('Zoom In', AppShortcut.zoomIn),
+      onZoomOut: zoom > AppZoom.levels.first ? controller.zoomOut : null,
+      onZoomIn: zoom < AppZoom.levels.last ? controller.zoomIn : null,
     );
   }
 

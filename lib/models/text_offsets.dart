@@ -1,6 +1,17 @@
 /// Converts between character offsets in a text and 1-based line and
-/// column positions.
+/// column positions, and edits a text at offsets.
 class TextOffsets {
+  /// [text] with each of [edits], offset → (length, replacement), applied
+  /// from the end of the text so the offsets before it stay valid.
+  static String applyEdits(String text, Map<int, (int, String)> edits) {
+    var result = text;
+    for (final offset in edits.keys.toList()..sort((a, b) => b - a)) {
+      final (length, replacement) = edits[offset]!;
+      result = result.replaceRange(offset, offset + length, replacement);
+    }
+    return result;
+  }
+
   /// The 1-based line and column of [offset] in [text]; offsets past the
   /// end count as the end.
   static ({int line, int column}) positionOf(String text, int offset) {

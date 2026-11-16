@@ -543,12 +543,10 @@ class _Planner {
     List<_Removal> removals,
     List<_Insertion> insertions,
   ) {
-    var result = content;
-    for (final removal in [
-      ...removals,
-    ]..sort((a, b) => b.offset.compareTo(a.offset))) {
-      result = result.replaceRange(removal.offset, removal.end, '');
-    }
+    var result = TextOffsets.applyEdits(content, {
+      for (final removal in removals)
+        removal.offset: (removal.end - removal.offset, ''),
+    });
     for (final insertion in insertions) {
       result = _withDirective(result, insertion);
     }

@@ -8,11 +8,15 @@ class ArbKeys {
   /// Starts from the entries of the template ARB file [arb].
   ArbKeys(Map<String, dynamic> arb) {
     for (final MapEntry(:key, :value) in arb.entries) {
-      if (key.startsWith('@') || value is! String) continue;
+      if (!isMessageKey(key) || value is! String) continue;
       _keys.add(key);
       _keyByMessage.putIfAbsent(value, () => key);
     }
   }
+
+  /// Prefix of the ARB keys holding metadata, such as `@key` or
+  /// `@@locale`, rather than a message.
+  static const String metadataPrefix = '@';
 
   /// Members of the generated localizations class a key would hide.
   static const Set<String> _generatedMembers = {
@@ -33,6 +37,9 @@ class ArbKeys {
   final Map<String, String> _keyByMessage = {};
 
   final Set<String> _keys = {};
+
+  /// Whether the ARB [key] names a message, not metadata.
+  static bool isMessageKey(String key) => !key.startsWith(metadataPrefix);
 
   /// The key of [message], added to [added] when new.
   String keyFor(ArbMessage message) {

@@ -2,10 +2,11 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
-import 'package:fide/theme/app_theme.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/git_file_status_style.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -63,7 +64,7 @@ class FileNameWidget extends StatelessWidget {
           .textStyle(colorScheme, AppTextStyle.body)
           .copyWith(
             color: warning != null
-                ? AppTheme.readable(AppTheme.warningColor, colorScheme)
+                ? StatusTone.warning.readableIn(colorScheme)
                 : isSelected
                 ? colorScheme.primary
                 : null,

@@ -5,6 +5,10 @@ import 'package:path/path.dart' as p;
 
 /// Versions of the installed Flutter SDK, read from `flutter --version`.
 class FlutterSdk {
+  /// The command running the Flutter tool, found on the login shell's
+  /// `PATH`.
+  static const String executable = 'flutter';
+
   final ProcessRunner _runner;
 
   /// Creates an SDK probe that launches `flutter` through [_runner].
@@ -14,7 +18,7 @@ class FlutterSdk {
   /// `flutter --version --machine`; null when Flutter isn't available or
   /// doesn't report its root.
   Future<String?> dartSdkPath() async {
-    final output = await _runner.outputOf('flutter', [
+    final output = await _runner.outputOf(executable, [
       '--version',
       '--machine',
     ], runInShell: true);
@@ -31,7 +35,7 @@ class FlutterSdk {
   /// Flutter and Dart versions (e.g. `3.24.0`), or null when Flutter isn't
   /// available. Either version is null when the output doesn't show it.
   Future<({String? flutter, String? dart})?> versions() async {
-    final output = await _runner.outputOf('flutter', [
+    final output = await _runner.outputOf(executable, [
       '--version',
     ], runInShell: true);
     if (output == null) return null;

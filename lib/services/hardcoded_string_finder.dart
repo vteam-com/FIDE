@@ -82,6 +82,25 @@ class HardcodedStringFinder {
     skipped.update(reason, (sum) => sum + amount, ifAbsent: () => amount);
   }
 
+  /// The [selected] strings of the [candidates] grouped by file, with the
+  /// [skipped] counts plus the candidates left [unchecked].
+  static ({Map<String, List<HardcodedString>> byFile, Map<String, int> skipped})
+  selection(
+    List<HardcodedString> candidates,
+    Map<String, int> skipped,
+    Iterable<HardcodedString> selected,
+  ) {
+    final counts = {...skipped};
+    final chosen = selected.toSet();
+    final uncheckedCount = candidates.length - chosen.length;
+    if (uncheckedCount > 0) count(counts, unchecked, uncheckedCount);
+    final byFile = <String, List<HardcodedString>>{};
+    for (final string in chosen) {
+      (byFile[string.path] ??= []).add(string);
+    }
+    return (byFile: byFile, skipped: counts);
+  }
+
   /// Whether [content] still holds a string literal where [site] says.
   static bool isStringAt(String content, fcheck.HardcodedStringSite site) {
     final end = site.offset + site.length;

@@ -22,6 +22,7 @@ import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -152,18 +153,18 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             label,
             style: AppTextStyle.badge.copyWith(
               color: isProblematic || hasIncompatibleVersion
-                  ? AppTheme.readable(AppTheme.errorColor, colorScheme)
+                  ? StatusTone.error.readableIn(colorScheme)
                   : (isOutdated
-                        ? AppTheme.readable(AppTheme.warningColor, colorScheme)
+                        ? StatusTone.warning.readableIn(colorScheme)
                         : null),
             ),
           ),
           if (isProblematic || hasIncompatibleVersion) ...[
             const SizedBox(width: AppSpacing.tiny),
             Icon(
-              Icons.warning,
+              StatusTone.error.icon,
               size: AppIconSize.tiny,
-              color: AppTheme.readable(AppTheme.errorColor, colorScheme),
+              color: StatusTone.error.readableIn(colorScheme),
             ),
           ],
         ],

@@ -1,3 +1,4 @@
+import 'package:fide/models/text_offsets.dart';
 import 'package:flutter/foundation.dart';
 
 part 'preview_scan.preview_annotation.dart';

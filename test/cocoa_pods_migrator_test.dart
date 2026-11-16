@@ -92,11 +92,11 @@ void main() {
   });
 
   group('inspect', () {
-    test('lists what blocks the move, at the line to change', () {
+    test('lists what blocks the move, at the line to change', () async {
       write('pubspec.yaml', _pubspec);
       write('ios/Podfile', _podfile);
 
-      final migration = CocoaPodsMigrator(_FakeRunner()).inspect(
+      final migration = await CocoaPodsMigrator(_FakeRunner()).inspect(
         project.path,
         {FlutterPlatform.ios, FlutterPlatform.android},
         const [
@@ -126,28 +126,33 @@ void main() {
       ]);
     });
 
-    test('offers removal once nothing needs CocoaPods', () {
+    test('offers removal once nothing needs CocoaPods', () async {
       write('pubspec.yaml', 'name: app');
       write('macos/Podfile', 'flutter_install_all_macos_pods');
 
-      final migration = CocoaPodsMigrator(_FakeRunner())
+      final migration = await CocoaPodsMigrator(_FakeRunner())
           .inspect(project.path, {FlutterPlatform.macos}, const []);
 
       expect(migration.canRemove, isTrue);
       expect(migration.issues.single.quickFixes, [QuickFix.removeCocoaPods]);
     });
 
-    test('is done without Podfiles or blockers, and for non-Apple apps', () {
-      final migrator = CocoaPodsMigrator(_FakeRunner());
-      expect(
-        migrator.inspect(project.path, {FlutterPlatform.ios}, const []).isDone,
-        isTrue,
-      );
-      expect(
-        migrator.inspect(project.path, {FlutterPlatform.web}, const []),
-        same(CocoaPodsMigration.none),
-      );
-    });
+    test(
+      'is done without Podfiles or blockers, and for non-Apple apps',
+      () async {
+        final migrator = CocoaPodsMigrator(_FakeRunner());
+        expect(
+          (await migrator.inspect(project.path, {
+            FlutterPlatform.ios,
+          }, const [])).isDone,
+          isTrue,
+        );
+        expect(
+          await migrator.inspect(project.path, {FlutterPlatform.web}, const []),
+          same(CocoaPodsMigration.none),
+        );
+      },
+    );
   });
 
   group('remove', () {
@@ -161,7 +166,7 @@ void main() {
       final migrator = CocoaPodsMigrator(runner);
 
       final changed = await migrator.remove(
-        migrator.inspect(project.path, {FlutterPlatform.ios}, const []),
+        await migrator.inspect(project.path, {FlutterPlatform.ios}, const []),
       );
 
       expect(runner.commands, ['ios: pod deintegrate']);
@@ -178,10 +183,11 @@ void main() {
       write('ios/Podfile', 'flutter_install_all_ios_pods');
       final migrator = CocoaPodsMigrator(_FakeRunner(1));
 
+      final migration = await migrator.inspect(project.path, {
+        FlutterPlatform.ios,
+      }, const []);
       await expectLater(
-        migrator.remove(
-          migrator.inspect(project.path, {FlutterPlatform.ios}, const []),
-        ),
+        migrator.remove(migration),
         throwsA(isA<MaintenanceException>()),
       );
       expect(File(p.join(project.path, 'ios/Podfile')).existsSync(), isTrue);

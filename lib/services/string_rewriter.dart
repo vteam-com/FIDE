@@ -1,6 +1,7 @@
 import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/models/hardcoded_string.dart';
 import 'package:fide/models/localization_plan.dart';
+import 'package:fide/models/readable_error.dart';
 import 'package:fide/models/string_review.dart';
 import 'package:fide/models/string_rewrite.dart';
 import 'package:fide/services/string_constants_extractor.dart';

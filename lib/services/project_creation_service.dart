@@ -2,14 +2,17 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/arb_keys.dart';
 import 'package:fide/models/creation_outcome.dart';
 import 'package:fide/models/creation_report.dart';
 import 'package:fide/models/creation_step.dart';
+import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/l10n_config.dart';
 import 'package:fide/models/project_creation_request.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/chat_model.dart';
+import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/localization_setup.dart';
@@ -24,26 +27,20 @@ typedef CreationProgress = void Function(CreationReport report);
 /// starter code, Git and a final check, reporting each [CreationStep]'s
 /// [CreationOutcome]; the wizard words them.
 class ProjectCreationService {
-  /// Platforms every new project targets.
-  static const String _platforms = 'android,ios,web,linux,macos,windows';
-
   /// Language whose ARB template `LocalizationSetup` already writes.
   static const String _templateLanguage =
       ProjectCreationRequest.englishLanguage;
 
-  /// ARB key naming the file's locale.
-  static const String _arbLocaleKey = '@@locale';
+  /// gen-l10n settings of a new project, whose ARB files stay in Flutter's
+  /// default folder.
+  static const L10nConfig _l10n = L10nConfig();
 
-  /// Generated files copied into the project, relative to its root.
-  static const List<String> _generatedFiles = [
-    'pubspec.yaml',
-    'lib/main.dart',
-    'README.md',
+  /// Platform folders every created project must have to pass
+  /// verification.
+  static const List<FlutterPlatform> _requiredPlatforms = [
+    FlutterPlatform.android,
+    FlutterPlatform.ios,
   ];
-
-  /// Entries every created project must have to pass verification.
-  static const List<String> _requiredFiles = ['pubspec.yaml', 'lib/main.dart'];
-  static const List<String> _requiredDirectories = ['android', 'ios'];
 
   final ProcessRunner _runner;
   final GitService _git;
@@ -112,23 +109,27 @@ class ProjectCreationService {
 
   /// Runs `flutter create`, throwing with its stderr on failure.
   Future<void> _flutterCreate(ProjectCreationRequest request) async {
-    final result = await _runner
-        .run('flutter', [
-          'create',
-          '--project-name',
-          request.name,
-          '--platforms',
-          _platforms,
-          request.projectPath,
-        ], workingDirectory: request.parentDirectory)
+    Exception failure(Object reason) =>
+        Exception('Failed to create Flutter project: $reason');
+    await _runner
+        .runChecked(
+          FlutterSdk.executable,
+          [
+            'create',
+            '--project-name',
+            request.name,
+            '--platforms',
+            [for (final platform in FlutterPlatform.values) platform.name]
+                .join(','),
+            request.projectPath,
+          ],
+          workingDirectory: request.parentDirectory,
+          error: (result) => failure(result.stderr),
+        )
         .timeout(
           AppDuration.projectCreateTimeout,
-          onTimeout: () =>
-              ProcessResult(0, -1, '', 'Flutter create command timed out'),
+          onTimeout: () => throw failure('Flutter create command timed out'),
         );
-    if (result.exitCode != 0) {
-      throw Exception('Failed to create Flutter project: ${result.stderr}');
-    }
   }
 
   /// Replaces template files with AI-generated ones when requested; how
@@ -147,12 +148,10 @@ class ProjectCreationService {
       final generated = await _template
           .generate(request.name, description)
           .timeout(AppDuration.aiProjectCreateTimeout);
-      for (final relativePath in _generatedFiles) {
-        final content = generated[relativePath];
-        if (content != null) {
-          await File(p.join(request.projectPath, relativePath))
-              .writeAsString(content);
-        }
+      for (final MapEntry(key: relativePath, value: content)
+          in generated.entries) {
+        await File(p.join(request.projectPath, relativePath))
+            .writeAsString(content);
       }
       return (CreationOutcome.aiGenerated, '');
     } on AiServiceException catch (e) {
@@ -175,11 +174,12 @@ class ProjectCreationService {
 
   /// Whether the files and folders every Flutter project has are present.
   Future<bool> _isComplete(String projectPath) async {
-    for (final file in _requiredFiles) {
-      if (!await File(p.join(projectPath, file)).exists()) return false;
+    final paths = ProjectPaths(projectPath);
+    for (final file in [paths.pubspec, paths.mainDart]) {
+      if (!await File(file).exists()) return false;
     }
-    for (final directory in _requiredDirectories) {
-      if (!await Directory(p.join(projectPath, directory)).exists()) {
+    for (final platform in _requiredPlatforms) {
+      if (!await Directory(paths.platformDir(platform)).exists()) {
         return false;
       }
     }
@@ -198,10 +198,9 @@ class ProjectCreationService {
       request.projectPath,
       tolerateToolFailures: true,
     );
-    final l10nDir = ProjectPaths(request.projectPath).l10nDir;
     for (final language in languages) {
       if (language == _templateLanguage) continue;
-      final arb = File(p.join(l10nDir, _arbFileName(language)));
+      final arb = File(_l10n.arbPathFor(request.projectPath, language));
       if (!await arb.exists()) await arb.writeAsString('{}\n');
     }
     if (request.defaultLanguage != _templateLanguage) {
@@ -215,27 +214,25 @@ class ProjectCreationService {
   /// `l10n.yaml` at it and generates the classes again, so it is the
   /// first supported locale.
   Future<void> _makeTemplate(String projectPath, String language) async {
-    final l10nDir = ProjectPaths(projectPath).l10nDir;
-    final arb = File(p.join(l10nDir, _arbFileName(language)));
+    final arb = File(_l10n.arbPathFor(projectPath, language));
     final messages = await arb.exists()
         ? ArbService.decode(await arb.readAsString())
         : null;
-    final hasMessages =
-        messages?.keys.any((key) => !key.startsWith('@')) ?? false;
+    final hasMessages = messages?.keys.any(ArbKeys.isMessageKey) ?? false;
     if (!hasMessages) {
       final starter =
           ArbService.decode(
-            await File(p.join(l10nDir, _arbFileName(_templateLanguage)))
+            await File(_l10n.arbPathFor(projectPath, _templateLanguage))
                 .readAsString(),
           ) ??
           {};
       await arb.writeAsString(
-        ArbService.encode({...starter, _arbLocaleKey: language}),
+        ArbService.encode({...starter, ArbService.localeKey: language}),
       );
     }
     // The ARB files stay in Flutter's default folder, where they are
     await File(p.join(projectPath, L10nConfig.fileName))
-        .writeAsString('template-arb-file: ${_arbFileName(language)}\n');
+        .writeAsString('template-arb-file: ${_l10n.arbFileName(language)}\n');
     try {
       await _generator.generateClasses(projectPath);
     } catch (_) {
@@ -243,7 +240,4 @@ class ProjectCreationService {
       // generates the classes
     }
   }
-
-  /// File name of the ARB file of [language], such as `app_fr.arb`.
-  static String _arbFileName(String language) => 'app_$language.arb';
 }

@@ -4,6 +4,7 @@ import 'package:fide/providers/create_project_draft_notifier.dart';
 import 'package:fide/screens/create_project_step1.dart';
 import 'package:fide/screens/create_project_step2.dart';
 import 'package:fide/screens/create_project_step3.dart';
+import 'package:fide/widgets/centered_scroll_view.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/path_text.dart';
@@ -119,13 +120,6 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
       case CreateProjectStep.creating:
         return const Center(child: CreateProjectStep3());
     }
-    return SingleChildScrollView(
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: AppSize.wizardMaxWidth),
-          child: form,
-        ),
-      ),
-    );
+    return CenteredScrollView(maxWidth: AppSize.wizardMaxWidth, child: form);
   }
 }

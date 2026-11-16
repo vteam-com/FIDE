@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fide/constants/core_constants.dart';
 import 'package:fide/models/outline_node.dart';
 import 'package:fide/models/search_result.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -22,9 +23,6 @@ final outlineControllerProvider = NotifierProvider.autoDispose
 class OutlineController extends Notifier<OutlineState> {
   /// Creates the controller outlining [filePath].
   OutlineController(this.filePath);
-
-  /// How long edits must pause before the file is outlined again.
-  static const Duration debounce = Duration(milliseconds: 150);
 
   /// The file outlined.
   final String filePath;
@@ -109,10 +107,11 @@ class OutlineController extends Notifier<OutlineState> {
     }
   }
 
-  /// Outlines the file again once edits pause for [debounce].
+  /// Outlines the file again once edits pause for
+  /// [AppDuration.updateDebounce].
   void scheduleParse() {
     _debounce?.cancel();
-    _debounce = Timer(debounce, () {
+    _debounce = Timer(AppDuration.updateDebounce, () {
       if (ref.mounted) unawaited(parse());
     });
   }

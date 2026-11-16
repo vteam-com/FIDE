@@ -46,7 +46,9 @@ class EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
-    final accent = isError ? theme.colorScheme.error : muted;
+    final accent = isError
+        ? StatusTone.error.readableIn(theme.colorScheme)
+        : muted;
     final title = this.title;
     final child = this.child;
     final icon = isError ? StatusTone.error.icon : this.icon;

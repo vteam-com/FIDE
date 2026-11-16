@@ -33,6 +33,32 @@ class ProcessRunner {
     );
   }
 
+  /// Runs [executable] like [run] and returns its result when it exits
+  /// with [expectedExitCode].
+  ///
+  /// Otherwise throws what [error] builds from the result, by default an
+  /// [Exception] naming the command, with its stderr.
+  Future<ProcessResult> runChecked(
+    String executable,
+    List<String> arguments, {
+    String? workingDirectory,
+    bool runInShell = false,
+    int expectedExitCode = 0,
+    Object Function(ProcessResult result)? error,
+  }) async {
+    final result = await run(
+      executable,
+      arguments,
+      workingDirectory: workingDirectory,
+      runInShell: runInShell,
+    );
+    if (result.exitCode == expectedExitCode) return result;
+    throw error?.call(result) ??
+        Exception(
+          '$executable ${arguments.join(' ')} failed: ${result.stderr}',
+        );
+  }
+
   /// Runs [executable] with [input] written to its stdin, then collects its
   /// UTF-8 output like [run].
   Future<ProcessResult> runWithInput(

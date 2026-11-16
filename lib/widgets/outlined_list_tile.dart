@@ -39,44 +39,41 @@ class OutlinedListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.medium),
-      child: OutlinedSurface(
-        padding: SurfacePadding.none,
-        // Transparent Material so the ListTile's ink effects paint above
-        // the surface's background color.
-        child: Material(
-          type: MaterialType.transparency,
-          child: ListTile(
-            enabled: onTap != null,
-            dense: true,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.medium),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.xLarge,
-              vertical: AppSpacing.tiny,
-            ),
-            leading: Icon(
-              icon,
-              color: iconColor ?? theme.colorScheme.primary,
-              size: AppIconSize.large,
-            ),
-            title: Text(
-              title,
-              style: AppTextStyle.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Text(
-              subtitle,
-              style: AppTextStyle.secondary(context),
-              maxLines: AppMetric.doubleLineLimit,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: trailing,
-            onTap: onTap,
+    return OutlinedSurface(
+      padding: SurfacePadding.none,
+      // Transparent Material so the ListTile's ink effects paint above
+      // the surface's background color.
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
+          enabled: onTap != null,
+          dense: true,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.medium),
           ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xLarge,
+            vertical: AppSpacing.tiny,
+          ),
+          leading: Icon(
+            icon,
+            color: iconColor ?? theme.colorScheme.primary,
+            size: AppIconSize.large,
+          ),
+          title: Text(
+            title,
+            style: AppTextStyle.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            subtitle,
+            style: AppTextStyle.secondary(context),
+            maxLines: AppMetric.doubleLineLimit,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: trailing,
+          onTap: onTap,
         ),
       ),
     );

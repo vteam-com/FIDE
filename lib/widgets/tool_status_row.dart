@@ -31,22 +31,19 @@ class ToolStatusRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.medium),
-      child: Row(
-        spacing: AppSpacing.medium,
-        children: [
-          StatusIndicator.tone(
-            available ? StatusTone.success : StatusTone.error,
-            label: '$name: ${available ? version ?? 'Unknown' : 'Not Found'}',
+    return Row(
+      spacing: AppSpacing.medium,
+      children: [
+        StatusIndicator.tone(
+          available ? StatusTone.success : StatusTone.error,
+          label: '$name: ${available ? version ?? 'Unknown' : 'Not Found'}',
+        ),
+        if (!available)
+          CompactTextButton(
+            label: 'Install',
+            onPressed: () => _showInstructions(context),
           ),
-          if (!available)
-            CompactTextButton(
-              label: 'Install',
-              onPressed: () => _showInstructions(context),
-            ),
-        ],
-      ),
+      ],
     );
   }
 

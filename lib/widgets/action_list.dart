@@ -1,8 +1,10 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_status.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/inline_spinner.dart';
+import 'package:fide/widgets/optional_tooltip.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/panel_action.dart';
 import 'package:fide/widgets/status_tone_style.dart';
@@ -87,7 +89,7 @@ class _ActionRowState extends State<_ActionRow> {
                       selected: _expanded,
                       onPressed: _toggle,
                     ),
-                    _buildRunButton(colorScheme),
+                    _buildRunButton(),
                   ],
                 ),
               ),
@@ -122,14 +124,13 @@ class _ActionRowState extends State<_ActionRow> {
       size: AppIconSize.large,
       color: AppTheme.readable(tone?.color ?? colorScheme.primary, colorScheme),
     );
-    final label = action.status.resultLabel;
-    return label == null ? icon : Tooltip(message: label, child: icon);
+    return OptionalTooltip(message: action.status.resultLabel, child: icon);
   }
 
   /// Runs the action, or stops it while it runs. A ring spins around the
   /// button while the task works, and stops once it is
   /// [ActionStatus.live], such as an app that has launched.
-  Widget _buildRunButton(ColorScheme colorScheme) {
+  Widget _buildRunButton() {
     final action = widget.action;
     const constraints = BoxConstraints.tightFor(
       width: AppSize.compactActionButton,
@@ -144,8 +145,8 @@ class _ActionRowState extends State<_ActionRow> {
         constraints: constraints,
         padding: EdgeInsets.zero,
         style: IconButton.styleFrom(
-          backgroundColor: colorScheme.error,
-          foregroundColor: colorScheme.onError,
+          backgroundColor: StatusTone.error.color,
+          foregroundColor: AppTheme.onStatusColor,
         ),
         icon: const Icon(Icons.stop_rounded, size: AppIconSize.mediumLarge),
       );

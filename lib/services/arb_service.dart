@@ -2,9 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/arb_keys.dart';
+import 'package:fide/models/l10n_config.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/text_truncation.dart';
 import 'package:fide/services/code_formatter.dart';
+import 'package:fide/services/project_config_reader.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
@@ -14,11 +17,16 @@ import 'package:path/path.dart' as p;
 class ArbService {
   static final Logger _logger = Logger('ArbService');
 
-  /// Creates an ARB service.
-  const ArbService();
+  /// Creates an ARB service finding a project's ARB files with [_config].
+  const ArbService([this._config = const ProjectConfigReader()]);
+
+  /// ARB key naming the file's locale.
+  static const String localeKey = '@@locale';
 
   /// Byte-order mark some editors put at the start of ARB files.
   static const String _byteOrderMark = '\uFEFF';
+
+  final ProjectConfigReader _config;
 
   /// Decodes ARB [content] (ignoring a leading byte-order mark), or null
   /// when it isn't a JSON object.
@@ -36,12 +44,12 @@ class ArbService {
 
   /// [json] as ARB file content, indented like the editor's Format.
   static String encode(Map<String, dynamic> json) =>
-      '${const JsonEncoder.withIndent(CodeFormatter.jsonIndent).convert(json)}\n';
+      CodeFormatter.encodeJson(json);
 
   /// Number of translatable entries (keys not starting with `@`) in ARB
   /// [content], or null when it isn't valid.
   static int? countEntries(String content) {
-    return decode(content)?.keys.where((key) => !key.startsWith('@')).length;
+    return decode(content)?.keys.where(ArbKeys.isMessageKey).length;
   }
 
   /// English values shared by at least [AppMetric.duplicateThreshold] of
@@ -109,8 +117,8 @@ class ArbService {
     final metadata = <String, Map<String, dynamic>>{};
 
     for (final key in json.keys) {
-      if (key.startsWith('@')) {
-        final originalKey = key.substring(1);
+      if (!ArbKeys.isMessageKey(key)) {
+        final originalKey = key.substring(ArbKeys.metadataPrefix.length);
         final meta = json[key];
         if (meta is Map<String, dynamic>) {
           metadata[originalKey] = meta;
@@ -123,63 +131,69 @@ class ArbService {
     }
 
     for (final key in json.keys) {
-      if (!key.startsWith('@')) {
+      if (ArbKeys.isMessageKey(key)) {
         final value = json[key];
         final entryMetadata = metadata[key];
         entries[key] = ArbEntry.fromJson(key, value, entryMetadata);
       }
     }
 
-    final filename = p.basename(path);
-    final languageCode = ArbFile.extractLanguageCode(filename);
+    final languageCode =
+        L10nConfig.localeOf(p.basename(path)) ?? ArbFile.unknownLanguageCode;
 
     return ArbFile(path: path, languageCode: languageCode, entries: entries);
   }
 
-  /// Compares ARB files and returns per-key coverage and missing-language data.
-  List<ArbComparison> compareArbFiles(List<ArbFile> arbFiles) {
-    final comparisons = <ArbComparison>[];
-
-    if (arbFiles.isEmpty) {
-      return comparisons;
-    }
-
-    final englishFile = arbFiles.firstWhere(
-      (file) => file.languageCode.toLowerCase() == 'en',
+  /// Compares [arbFiles] against the one of [templateLocale] (the first
+  /// when none is, or when it is null), returning each key's values and
+  /// the languages missing it.
+  List<ArbComparison> compareArbFiles(
+    List<ArbFile> arbFiles,
+    String? templateLocale,
+  ) {
+    if (arbFiles.isEmpty) return [];
+    final template = arbFiles.firstWhere(
+      (file) => file.languageCode == templateLocale,
       orElse: () => arbFiles.first,
     );
+    final otherFiles = arbFiles.where((file) => file != template).toList();
+    final allKeys = {for (final file in arbFiles) ...file.entries.keys};
 
-    final otherFiles = arbFiles.where((file) => file != englishFile).toList();
-
-    final allKeys = <String>{};
-    for (final file in arbFiles) {
-      allKeys.addAll(file.entries.keys);
-    }
-
-    for (final key in allKeys) {
-      final englishValue = englishFile.entries[key]?.value;
-      final otherValues = <String, String?>{};
-
-      for (final file in otherFiles) {
-        otherValues[file.languageCode] = file.entries[key]?.value;
-      }
-
-      final missingInLanguages = otherFiles
-          .where((file) => !file.entries.containsKey(key))
-          .map((file) => file.languageCode)
-          .toList();
-
-      comparisons.add(
+    return [
+      for (final key in allKeys)
         ArbComparison(
           key: key,
-          englishValue: englishValue,
-          otherValues: otherValues,
-          isMissingInEnglish: englishValue == null,
-          missingInLanguages: missingInLanguages,
+          englishValue: template.entries[key]?.value,
+          otherValues: {
+            for (final file in otherFiles)
+              file.languageCode: file.entries[key]?.value,
+          },
+          isMissingInEnglish: template.entries[key]?.value == null,
+          missingInLanguages: [
+            for (final file in otherFiles)
+              if (!file.entries.containsKey(key)) file.languageCode,
+          ],
         ),
-      );
-    }
+    ];
+  }
 
-    return comparisons;
+  /// The ARB files of the project at [projectPath], from the folder its
+  /// `l10n.yaml` names, split like [loadArbFiles] and compared against its
+  /// template locale like [compareArbFiles].
+  Future<
+    ({
+      List<ArbFile> valid,
+      List<String> malformed,
+      List<ArbComparison> comparisons,
+    })
+  >
+  loadProject(String projectPath) async {
+    final config = await _config.l10nConfig(projectPath);
+    final files = await loadArbFiles(config.arbDirIn(projectPath));
+    return (
+      valid: files.valid,
+      malformed: files.malformed,
+      comparisons: compareArbFiles(files.valid, config.templateParts?.locale),
+    );
   }
 }

@@ -2,7 +2,6 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_outcome.dart';
-import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/localization_state.dart';
 import 'package:fide/models/localization_status.dart';
 import 'package:fide/models/status_tone.dart';
@@ -21,11 +20,12 @@ import 'package:fide/widgets/issue_section.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
-import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/panel_scroll_view.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -171,105 +171,92 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     final hasGeneratedClasses = checks.hasGeneratedClasses;
     final hasAppIntegration = checks.hasAppIntegration;
 
-    return SingleChildScrollView(
-      padding: AppPadding.panelContent,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SectionTitle('Localization Partially Set Up'),
-          const SizedBox(height: AppSpacing.xLarge),
-          Text(
-            'Your Flutter project has some localization components set up, but others are missing. Localization requires three main components:',
-            style: AppTextStyle.label,
+    return PanelScrollView(
+      children: [
+        const SectionTitle('Localization Partially Set Up'),
+        Text(
+          'Your Flutter project has some localization components set up, but others are missing. Localization requires three main components:',
+          style: AppTextStyle.label,
+        ),
+        Text(
+          '• ARB files (translation files in lib/l10n/)\n• Generated AppLocalizations class\n• Integration in main.dart',
+          style: AppTextStyle.secondary(context),
+        ),
+        Text('Here\'s the current status:', style: AppTextStyle.label),
+
+        // Status checks
+        _buildStatusCheck(
+          'Localization dependencies configured',
+          checks.hasDependencies,
+        ),
+        _buildStatusCheck(
+          'Flutter generate flag configured',
+          checks.hasGenerateFlag,
+        ),
+        _buildStatusCheck('ARB files exist', hasArbFiles),
+        if (hasArbFiles) ...[
+          hasValidArbFiles
+              ? _buildStatusCheck('ARB files are valid JSON', true)
+              : _buildStatusCheckWithMalformedFiles(
+                  'ARB files are valid JSON',
+                  state.malformedArbFiles,
+                ),
+        ],
+        _buildStatusCheck('Generated classes exist', hasGeneratedClasses),
+        _buildStatusCheck('App integration complete', hasAppIntegration),
+
+        // Next Steps section
+        const SectionTitle('Next Steps'),
+
+        // Show specific actions based on what's missing
+        if (!hasArbFiles) ...[
+          _buildActionItem(
+            'Create ARB files',
+            'Set up localization files with template content',
+            Icons.file_copy,
+            _initializeLocalization,
           ),
-          const SizedBox(height: AppSpacing.medium),
-          Text(
-            '• ARB files (translation files in lib/l10n/)\n• Generated AppLocalizations class\n• Integration in main.dart',
-            style: AppTextStyle.secondary(context),
+        ] else if (!hasValidArbFiles) ...[
+          _buildActionItem(
+            'Fix malformed ARB files',
+            'ARB files exist but contain invalid JSON. Check and repair the files in lib/l10n/',
+            Icons.warning,
+            () {
+              MessageBox.showError(
+                context,
+                'ARB files are malformed. Please check the files in lib/l10n/ and ensure they contain valid JSON. You may need to recreate them using the Initialize Localization action.',
+              );
+            },
           ),
-          const SizedBox(height: AppSpacing.xLarge),
-          Text('Here\'s the current status:', style: AppTextStyle.label),
-          const SizedBox(height: AppSpacing.xLarge),
-
-          // Status checks
-          _buildStatusCheck(
-            'Localization dependencies configured',
-            checks.hasDependencies,
+        ] else if (!hasGeneratedClasses) ...[
+          _buildActionItem(
+            'Generate localization classes',
+            'Run flutter gen-l10n to create AppLocalizations class',
+            Icons.build,
+            _generateLocalizationClasses,
           ),
-          _buildStatusCheck(
-            'Flutter generate flag configured',
-            checks.hasGenerateFlag,
+        ] else if (!hasAppIntegration) ...[
+          _buildActionItem(
+            'Update main.dart',
+            'Add localization delegates and supported locales to MaterialApp',
+            Icons.code,
+            _updateMainDart,
           ),
-          _buildStatusCheck('ARB files exist', hasArbFiles),
-          if (hasArbFiles) ...[
-            hasValidArbFiles
-                ? _buildStatusCheck('ARB files are valid JSON', true)
-                : _buildStatusCheckWithMalformedFiles(
-                    'ARB files are valid JSON',
-                    state.malformedArbFiles,
-                  ),
-          ],
-          _buildStatusCheck('Generated classes exist', hasGeneratedClasses),
-          _buildStatusCheck('App integration complete', hasAppIntegration),
+        ],
 
-          const SizedBox(height: AppSpacing.xxLarge),
-
-          // Next Steps section
-          const SectionTitle('Next Steps'),
-          const SizedBox(height: AppSpacing.large),
-
-          // Show specific actions based on what's missing
-          if (!hasArbFiles) ...[
-            _buildActionItem(
-              'Create ARB files',
-              'Set up localization files with template content',
-              Icons.file_copy,
-              _initializeLocalization,
-            ),
-          ] else if (!hasValidArbFiles) ...[
-            _buildActionItem(
-              'Fix malformed ARB files',
-              'ARB files exist but contain invalid JSON. Check and repair the files in lib/l10n/',
-              Icons.warning,
-              () {
-                MessageBox.showError(
-                  context,
-                  'ARB files are malformed. Please check the files in lib/l10n/ and ensure they contain valid JSON. You may need to recreate them using the Initialize Localization action.',
-                );
-              },
-            ),
-          ] else if (!hasGeneratedClasses) ...[
-            _buildActionItem(
-              'Generate localization classes',
-              'Run flutter gen-l10n to create AppLocalizations class',
-              Icons.build,
-              _generateLocalizationClasses,
-            ),
-          ] else if (!hasAppIntegration) ...[
-            _buildActionItem(
-              'Update main.dart',
-              'Add localization delegates and supported locales to MaterialApp',
-              Icons.code,
-              _updateMainDart,
-            ),
-          ],
-
-          const SizedBox(height: AppSpacing.xxLarge),
-
-          // Show ARB file management if files are loaded
-          if (state.arbFiles.isNotEmpty) ...[
-            const SectionTitle('ARB File Management'),
-            const SizedBox(height: AppSpacing.large),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: state.comparisons.length,
-              itemBuilder: (_ /*context*/, index) =>
-                  _buildComparisonTile(state.comparisons[index]),
+        // Show ARB file management if files are loaded
+        if (state.arbFiles.isNotEmpty) ...[
+          const SectionTitle('ARB File Management'),
+          for (final (index, comparison) in state.comparisons.indexed) ...[
+            if (index > 0) const Divider(),
+            LocalizationEntryWidget(
+              comparison: comparison,
+              onTranslate: (language) =>
+                  _show(_controller.translate(comparison, language)),
             ),
           ],
         ],
-      ),
+      ],
     );
   }
 
@@ -287,8 +274,8 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       children: [
         // Duplicate warning banner
         if (duplicatedValues.isNotEmpty)
-          Container(
-            margin: AppPadding.panelContent,
+          Padding(
+            padding: AppPadding.panelContent,
             child: BadgeStatus.warning(
               text:
                   '${duplicatedValues.length} English ${duplicatedValues.length == 1 ? 'string is' : 'strings are'} duplicated',
@@ -324,12 +311,9 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
 
   /// Handles `_buildStatusCheck`.
   Widget _buildStatusCheck(String label, bool isComplete) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.medium),
-      child: StatusIndicator.tone(
-        isComplete ? StatusTone.success : StatusTone.warning,
-        label: label,
-      ),
+    return StatusIndicator.tone(
+      isComplete ? StatusTone.success : StatusTone.warning,
+      label: label,
     );
   }
 
@@ -338,53 +322,54 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     String label,
     List<String> malformedFiles,
   ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.medium),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          StatusIndicator.tone(StatusTone.error, label: label),
-          const SizedBox(height: AppSpacing.tiny),
-          Padding(
-            padding: const EdgeInsets.only(left: AppSpacing.huge),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'The following ARB files contain invalid JSON:',
-                  style: AppTextStyle.caption.copyWith(
-                    color: Theme.of(context).colorScheme.error,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        StatusIndicator.tone(StatusTone.error, label: label),
+        const SizedBox(height: AppSpacing.tiny),
+        Padding(
+          padding: const EdgeInsets.only(left: AppSpacing.huge),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'The following ARB files contain invalid JSON:',
+                style: AppTextStyle.caption.copyWith(
+                  color: StatusTone.error.readableIn(
+                    Theme.of(context).colorScheme,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.tiny),
-                ...malformedFiles.map((filePath) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.micro),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: PathText(
-                            filePath,
-                            showFolder: false,
-                            style: AppTextStyle.caption.copyWith(
-                              color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(height: AppSpacing.tiny),
+              ...malformedFiles.map((filePath) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.micro),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: PathText(
+                          filePath,
+                          showFolder: false,
+                          style: AppTextStyle.caption.copyWith(
+                            color: StatusTone.error.readableIn(
+                              Theme.of(context).colorScheme,
                             ),
                           ),
                         ),
-                        CompactTextButton(
-                          icon: Icons.edit,
-                          label: 'Edit',
-                          onPressed: () => openFile(ref, filePath),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ],
-            ),
+                      ),
+                      CompactTextButton(
+                        icon: Icons.edit,
+                        label: 'Edit',
+                        onPressed: () => openFile(ref, filePath),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -395,52 +380,14 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     IconData icon,
     VoidCallback onPressed,
   ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.large),
-      child: ActionCard(
-        title: title,
-        icon: icon,
-        description: description,
-        action: PrimaryButton(
-          icon: Icons.arrow_forward,
-          label: 'Execute',
-          onPressed: onPressed,
-        ),
-      ),
-    );
-  }
-
-  /// One key with a Translate button per language it is missing in.
-  Widget _buildComparisonTile(ArbComparison comparison) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.medium),
-      child: OutlinedSurface(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(comparison.key, style: AppTextStyle.title),
-            const SizedBox(height: AppSpacing.tiny),
-            if (comparison.englishValue != null)
-              Text(
-                'EN: ${comparison.englishValue}',
-                style: AppTextStyle.secondary(context),
-              ),
-            const SizedBox(height: AppSpacing.medium),
-            Wrap(
-              spacing: AppSpacing.medium,
-              runSpacing: AppSpacing.tiny,
-              children: comparison.missingInLanguages.map((lang) {
-                return PrimaryButton(
-                  icon: Icons.translate,
-                  label: 'Translate to $lang',
-                  onPressed: comparison.englishValue != null
-                      ? () => _show(_controller.translate(comparison, lang))
-                      : null,
-                );
-              }).toList(),
-            ),
-          ],
-        ),
+    return ActionCard(
+      title: title,
+      icon: icon,
+      description: description,
+      action: PrimaryButton(
+        icon: Icons.arrow_forward,
+        label: 'Execute',
+        onPressed: onPressed,
       ),
     );
   }

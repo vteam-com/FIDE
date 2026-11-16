@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:fide/constants/core_constants.dart';
+
 /// Reads and writes the content of project files: text, refusing files
 /// too big to edit, and bytes.
 ///
@@ -13,7 +15,7 @@ class FileContentReader {
   const FileContentReader();
 
   /// The largest file read as text, in bytes.
-  static const int maxFileSize = 1 * 1024 * 1024; // 1MB
+  static const int maxFileSize = AppMetric.bytesPerMegabyte;
 
   /// What [read] returns in place of a file over [maxFileSize].
   static const String tooBigMessage = '// file too big to load';

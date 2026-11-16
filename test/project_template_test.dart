@@ -43,6 +43,6 @@ void main() {
       files['pubspec.yaml'],
       contains(r'''description: "It's $5 per \"month\""'''),
     );
-    expect(files['lib/main.dart'], contains(r'''"It's \$5\nper \"month\""'''));
+    expect(files['lib/main.dart'], contains(r"""'It\'s \$5\nper "month"'"""));
   });
 }

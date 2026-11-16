@@ -33,7 +33,6 @@ class AppSize {
       compactActionButton + AppSpacing.medium;
   static const double panelFallbackHeight = 600;
   static const double compactContextButton = 20;
-  static const double compactProgressIndicator = 18;
   static const double regularProgressIndicator = 20;
   static const double expandedProgressIndicator = 24;
   static const double platformSelectorLabelBreakpoint = 300;

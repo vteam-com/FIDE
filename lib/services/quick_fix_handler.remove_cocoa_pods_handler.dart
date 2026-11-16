@@ -13,7 +13,7 @@ class RemoveCocoaPodsHandler implements QuickFixHandler {
 
   @override
   Future<QuickFixOutcome?> run(QuickFixRequest request) async {
-    final migration = _migrator.inspect(
+    final migration = await _migrator.inspect(
       request.projectPath,
       _config.platforms(request.projectPath),
       request.metrics.packagePlatformWarnings,

@@ -2,8 +2,8 @@ import 'package:fide/models/action_outcome.dart';
 import 'package:fide/models/arb_translation.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/localization_state.dart';
-import 'package:fide/models/project_paths.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/project_actions.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/arb_translator.dart';
@@ -42,7 +42,8 @@ final localizationControllerProvider =
 /// Inspects a project's localization setup, loads its ARB files and runs
 /// the Localization panel's actions, each marking the state busy until it
 /// ends, whether it succeeds or fails.
-class LocalizationController extends StateNotifier<LocalizationState> {
+class LocalizationController extends StateNotifier<LocalizationState>
+    with ProjectActions<LocalizationState> {
   static final Logger _logger = Logger('LocalizationController');
 
   /// Message for a generation attempted without `generate: true`.
@@ -58,14 +59,14 @@ class LocalizationController extends StateNotifier<LocalizationState> {
 
   final LocalizationSetup _setup;
 
-  /// The open project, or null.
-  final String? _projectPath;
+  @override
+  final String? projectPath;
 
   final ArbTranslator _translator;
 
-  /// Creates a controller for the project at [_projectPath].
+  /// Creates a controller for the project at [projectPath].
   LocalizationController(
-    this._projectPath, {
+    this.projectPath, {
     required this._setup,
     required this._generator,
     required this._arb,
@@ -75,7 +76,7 @@ class LocalizationController extends StateNotifier<LocalizationState> {
   /// Generates the localization classes with `flutter gen-l10n`, once the
   /// pubspec enables code generation.
   Future<ActionOutcome?> generateClasses() {
-    return _run('Error generating classes', (projectPath) async {
+    return runAction('Error generating classes', _busy, (projectPath) async {
       final checks = await _setup.inspect(projectPath);
       if (!checks.hasGenerateFlag) {
         return const ActionOutcome.failure(missingGenerateFlag);
@@ -91,7 +92,9 @@ class LocalizationController extends StateNotifier<LocalizationState> {
   /// Sets localization up and wires it into `main.dart`; [onStep] is told
   /// about each step.
   Future<ActionOutcome?> initialize({ProcessOutputCallback? onStep}) {
-    return _run('Error initializing localization', (projectPath) async {
+    return runAction('Error initializing localization', _busy, (
+      projectPath,
+    ) async {
       await _setup.initializeLocalization(projectPath, onStep: onStep);
       onStep?.call('Updating main.dart...');
       await _setup.updateMainDartForLocalization(projectPath);
@@ -104,14 +107,16 @@ class LocalizationController extends StateNotifier<LocalizationState> {
 
   /// Inspects the project's localization setup, then loads its ARB files.
   Future<void> reload() async {
-    final projectPath = _projectPath;
+    final projectPath = this.projectPath;
     if (projectPath == null) return;
     try {
       final checks = await _setup.inspect(projectPath);
-      _update((state) => state.copyWith(checks: checks, checkFailed: false));
+      updateState(
+        (state) => state.copyWith(checks: checks, checkFailed: false),
+      );
     } catch (e) {
       _logger.severe('Error checking localization status: $e');
-      _update((state) => state.copyWith(checkFailed: true));
+      updateState((state) => state.copyWith(checkFailed: true));
     }
     await _loadArbFiles(projectPath);
   }
@@ -119,7 +124,7 @@ class LocalizationController extends StateNotifier<LocalizationState> {
   /// Translates [comparison]'s English value into [language] with the
   /// shared [ArbTranslator], writing it to that language's ARB file.
   Future<ActionOutcome?> translate(ArbComparison comparison, String language) {
-    return _run('Error translating', (projectPath) async {
+    return runAction('Error translating', _busy, (projectPath) async {
       final source = comparison.englishValue;
       final target = state.arbFiles
           .where((file) => file.languageCode == language)
@@ -146,7 +151,7 @@ class LocalizationController extends StateNotifier<LocalizationState> {
 
   /// Wires the generated localizations into `main.dart`.
   Future<ActionOutcome?> updateMainDart() {
-    return _run('Error updating main.dart', (projectPath) async {
+    return runAction('Error updating main.dart', _busy, (projectPath) async {
       await _setup.updateMainDartForLocalization(projectPath);
       await reload();
       return const ActionOutcome.success('main.dart updated successfully!');
@@ -156,46 +161,23 @@ class LocalizationController extends StateNotifier<LocalizationState> {
   /// Loads and compares the ARB files of the project at [projectPath].
   Future<void> _loadArbFiles(String projectPath) async {
     try {
-      final arbFiles = await _arb.loadArbFiles(
-        ProjectPaths(projectPath).l10nDir,
-      );
-      _update(
+      final arbFiles = await _arb.loadProject(projectPath);
+      updateState(
         (state) => state.copyWith(
           arbFiles: arbFiles.valid,
-          comparisons: _arb.compareArbFiles(arbFiles.valid),
+          comparisons: arbFiles.comparisons,
           malformedArbFiles: arbFiles.malformed,
           clearLoadError: true,
         ),
       );
     } catch (e) {
-      _update(
+      updateState(
         (state) => state.copyWith(loadError: 'Error loading ARB files: $e'),
       );
     }
   }
 
-  /// Runs [action] on the open project with the state busy, turning a
-  /// thrown error into a failure prefixed by [failurePrefix]; null when no
-  /// project is open.
-  Future<ActionOutcome?> _run(
-    String failurePrefix,
-    Future<ActionOutcome> Function(String projectPath) action,
-  ) async {
-    final projectPath = _projectPath;
-    if (projectPath == null) return null;
-    _update((state) => state.copyWith(isBusy: true));
-    try {
-      return await action(projectPath);
-    } catch (e) {
-      return ActionOutcome.failure('$failurePrefix: $e');
-    } finally {
-      _update((state) => state.copyWith(isBusy: false));
-    }
-  }
-
-  /// Applies [change] to the state, unless the controller was disposed
-  /// while an operation was pending.
-  void _update(LocalizationState Function(LocalizationState state) change) {
-    if (mounted) state = change(state);
-  }
+  /// Marks the state busy or idle.
+  static LocalizationState _busy(LocalizationState state, bool busy) =>
+      state.copyWith(isBusy: busy);
 }

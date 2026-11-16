@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/truncated_text.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// One fact as a line: a fixed-width [label] column, then [value] in
@@ -29,16 +30,10 @@ class DetailRow extends StatelessWidget {
           child: Text(label, style: AppTextStyle.secondary(context)),
         ),
         Expanded(
-          child: Tooltip(
-            message: value,
-            waitDuration: AppDuration.tooltipWait,
-            child: Text(
-              value,
-              style: AppTextStyle.code.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          child: TruncatedText(
+            value,
+            style: AppTextStyle.code.copyWith(
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
         ),

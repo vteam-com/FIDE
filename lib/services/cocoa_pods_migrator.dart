@@ -6,6 +6,7 @@ import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/pubspec.dart';
 import 'package:fide/services/process_runner.dart';
+import 'package:fide/services/project_config_reader.dart';
 import 'package:fide/services/project_maintenance_service.dart';
 import 'package:path/path.dart' as p;
 
@@ -35,22 +36,25 @@ class CocoaPodsMigrator {
 
   final ProcessRunner _runner;
 
-  /// Creates a migrator running `pod` through [_runner].
-  const CocoaPodsMigrator(this._runner);
+  final ProjectConfigReader _config;
+
+  /// Creates a migrator running `pod` through [_runner] and reading the
+  /// project's pubspec with [_config].
+  const CocoaPodsMigrator(
+    this._runner, [
+    this._config = const ProjectConfigReader(),
+  ]);
 
   /// Where the project at [projectPath] stands, reading its pubspec, the
   /// Podfiles of its Apple [platforms] and fCheck's [warnings].
-  CocoaPodsMigration inspect(
+  Future<CocoaPodsMigration> inspect(
     String projectPath,
     Set<FlutterPlatform> platforms,
     List<fcheck.PackagePlatformWarning> warnings,
-  ) {
+  ) async {
     final applePlatforms = platforms.where((platform) => platform.isApple);
     if (applePlatforms.isEmpty) return CocoaPodsMigration.none;
-    final pubspecFile = File(ProjectPaths(projectPath).pubspec);
-    final pubspec = Pubspec.parse(
-      pubspecFile.existsSync() ? pubspecFile.readAsStringSync() : '',
-    );
+    final pubspec = await _config.pubspec(projectPath) ?? Pubspec.parse('');
     final podfiles = {
       for (final platform in applePlatforms)
         if (File(_podfile(projectPath, platform)) case final podfile
@@ -95,19 +99,17 @@ class CocoaPodsMigrator {
   Future<List<String>> remove(CocoaPodsMigration migration) async {
     final changed = <String>[];
     for (final platform in migration.podPlatforms) {
-      final folder = p.join(migration.projectPath, platform.name);
-      final result = await _runner.run(
+      final folder = ProjectPaths(migration.projectPath).platformDir(platform);
+      await _runner.runChecked(
         'pod',
         ['deintegrate'],
         workingDirectory: folder,
         runInShell: true,
-      );
-      if (result.exitCode != 0) {
-        throw MaintenanceException(
+        error: (result) => MaintenanceException(
           'pod deintegrate failed for ${platform.displayName}: '
           '${result.stderr}',
-        );
-      }
+        ),
+      );
       for (final name in _podArtifacts) {
         final path = p.join(folder, name);
         final type = FileSystemEntity.typeSync(path, followLinks: false);
@@ -150,5 +152,8 @@ class CocoaPodsMigrator {
 
   /// The Podfile of [platform] in the project at [projectPath].
   static String _podfile(String projectPath, FlutterPlatform platform) =>
-      p.join(projectPath, platform.name, CocoaPodsMigration.podfileName);
+      p.join(
+        ProjectPaths(projectPath).platformDir(platform),
+        CocoaPodsMigration.podfileName,
+      );
 }

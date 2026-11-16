@@ -1,6 +1,8 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/app_view_notifier.dart';
+import 'package:fide/widgets/centered_scroll_view.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/widgets/outlined_list_tile.dart';
@@ -8,6 +10,7 @@ import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/screen_scaffold.dart';
 import 'package:fide/widgets/secondary_button.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -63,33 +66,30 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               ),
               // Scrollable content taking remaining space
               Expanded(
-                child: SingleChildScrollView(
-                  child: Center(
-                    child: SizedBox(
-                      width: AppSize.welcomeContentWidth,
-                      child: OutlinedSurface(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          spacing: AppSpacing.xLarge,
-                          children: [
-                            PrimaryButton(
-                              onPressed: view.pickAndOpenProject,
-                              icon: Icons.folder_open,
-                              label: 'Open Flutter Project',
-                            ),
-                            SecondaryButton(
-                              onPressed: view.showCreateProject,
-                              icon: Icons.add,
-                              label: 'Create New Project',
-                            ),
-                            // Recent Projects Section
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: _buildRecentProjectsList(),
-                            ),
-                          ],
+                child: CenteredScrollView(
+                  maxWidth: AppSize.welcomeContentWidth,
+                  child: OutlinedSurface(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: AppSpacing.xLarge,
+                      children: [
+                        PrimaryButton(
+                          onPressed: view.pickAndOpenProject,
+                          icon: Icons.folder_open,
+                          label: 'Open Flutter Project',
                         ),
-                      ),
+                        SecondaryButton(
+                          onPressed: view.showCreateProject,
+                          icon: Icons.add,
+                          label: 'Create New Project',
+                        ),
+                        // Recent Projects Section
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          spacing: AppSpacing.medium,
+                          children: _buildRecentProjectsList(),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -116,7 +116,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
       return OutlinedListTile(
         icon: hasAccess ? Icons.folder : Icons.folder_off,
-        iconColor: hasAccess ? null : Theme.of(context).colorScheme.error,
+        iconColor: hasAccess
+            ? null
+            : StatusTone.error.readableIn(Theme.of(context).colorScheme),
         title: projectName,
         subtitle: path,
         trailing: CompactIconButton(

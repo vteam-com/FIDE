@@ -3,8 +3,8 @@
 import 'package:diff_match_patch/diff_match_patch.dart';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/status_tone.dart';
-import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/pane_divider.dart';
 import 'package:fide/widgets/previous_next_buttons.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/surface_header_band.dart';
@@ -207,10 +207,7 @@ class _SideBySideDiffState extends State<SideBySideDiff> {
 
   /// The thin line, [height] tall, between the original and modified sides.
   Widget _buildColumnDivider(double height) {
-    return SizedBox(
-      height: height,
-      child: const VerticalDivider(width: AppSize.borderThin),
-    );
+    return SizedBox(height: height, child: const PaneDivider());
   }
 
   /// The bold title above one side of the diff.
@@ -275,7 +272,7 @@ class _SideBySideDiffState extends State<SideBySideDiff> {
                 style: style.copyWith(
                   color: tone == null
                       ? onSurface
-                      : AppTheme.readable(tone.color, colorScheme),
+                      : tone.readableIn(colorScheme),
                 ),
               ),
             ),

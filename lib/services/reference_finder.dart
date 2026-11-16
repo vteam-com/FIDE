@@ -12,6 +12,7 @@ import 'package:analyzer/file_system/overlay_file_system.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:fide/models/lookup_field.dart';
 import 'package:fide/models/search_result.dart';
+import 'package:fide/models/text_offsets.dart';
 import 'package:fide/services/compile_errors.dart';
 import 'package:fide/services/flutter_sdk.dart';
 import 'package:path/path.dart' as p;

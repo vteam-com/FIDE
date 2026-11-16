@@ -145,11 +145,9 @@ class _ReferenceWorker {
     int length,
     String replacement,
   ) {
-    var result = content;
-    for (final offset in offsets.toList()..sort((a, b) => b.compareTo(a))) {
-      result = result.replaceRange(offset, offset + length, replacement);
-    }
-    return result;
+    return TextOffsets.applyEdits(content, {
+      for (final offset in offsets) offset: (length, replacement),
+    });
   }
 
   /// Where [declaration]'s name starts.

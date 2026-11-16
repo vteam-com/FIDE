@@ -15,6 +15,7 @@ import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/header_bar.dart';
+import 'package:fide/widgets/pane_divider.dart';
 import 'package:fide/widgets/project_analysis_view.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/zoom_buttons.dart';
@@ -282,7 +283,7 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
             selected: _showAllImports,
             onPressed: () => setState(() => _showAllImports = !_showAllImports),
           ),
-          ZoomButtons(
+          ZoomButtons.canvas(
             controller: _transformation,
             onZoomOut: () => _zoomBy(1 / AppZoom.canvasStep),
             onZoomIn: () => _zoomBy(AppZoom.canvasStep),
@@ -340,7 +341,7 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
                 ),
               ),
               if (selected != null) ...[
-                const VerticalDivider(width: AppSize.borderThin),
+                const PaneDivider(),
                 SizedBox(
                   width: AppSize.architectureDetailsWidth,
                   child: ArchitectureDetails(

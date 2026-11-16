@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/widgets/loading_actions_log.dart';
@@ -8,6 +9,7 @@ import 'package:fide/widgets/loading_progress_bar.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/screen_scaffold.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
@@ -75,7 +77,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
                               Text(
                                 'Project loading failed. Please check the errors above.',
                                 style: AppTextStyle.label.copyWith(
-                                  color: Theme.of(context).colorScheme.error,
+                                  color: StatusTone.error.readableIn(
+                                    Theme.of(context).colorScheme,
+                                  ),
                                 ),
                                 textAlign: TextAlign.center,
                               ),

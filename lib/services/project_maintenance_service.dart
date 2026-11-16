@@ -1,8 +1,10 @@
 import 'dart:io';
 
+import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/outdated_package.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/pub_outdated.dart';
+import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/pubspec_upgrader.dart';
 
@@ -24,20 +26,22 @@ class ProjectMaintenanceService {
   /// cleans Gradle when the project has Android. Refuses the running app's
   /// own project ([ProjectPaths.ensureCleanable]).
   Future<void> fullCleanup(String projectPath) async {
-    ProjectPaths(projectPath).ensureCleanable(Platform.resolvedExecutable);
-    await _runChecked('flutter', ['clean'], workingDirectory: projectPath);
+    final paths = ProjectPaths(projectPath)
+      ..ensureCleanable(Platform.resolvedExecutable);
+    await _runChecked(FlutterSdk.executable, [
+      'clean',
+    ], workingDirectory: projectPath);
 
-    final buildDir = Directory(ProjectPaths(projectPath).buildDir);
+    final buildDir = Directory(paths.buildDir);
     if (buildDir.existsSync()) {
       await buildDir.delete(recursive: true);
     }
 
-    await _runChecked('flutter', ['pub', 'cache', 'repair']);
+    await _runChecked(FlutterSdk.executable, ['pub', 'cache', 'repair']);
 
-    if (Directory('$projectPath/android').existsSync()) {
-      await _runChecked('./gradlew', [
-        'clean',
-      ], workingDirectory: '$projectPath/android');
+    final androidDir = paths.platformDir(FlutterPlatform.android);
+    if (Directory(androidDir).existsSync()) {
+      await _runChecked('./gradlew', ['clean'], workingDirectory: androidDir);
     }
   }
 
@@ -48,13 +52,12 @@ class ProjectMaintenanceService {
   /// fails.
   Future<({String output, Map<String, OutdatedPackage> packages})>
   outdatedReport(String projectPath) async {
-    final result = await _runner.run('flutter', [
-      'pub',
-      'outdated',
-    ], workingDirectory: projectPath);
-    if (result.exitCode != 0) {
-      throw MaintenanceException('${result.stderr}');
-    }
+    final result = await _runner.runChecked(
+      FlutterSdk.executable,
+      ['pub', 'outdated'],
+      workingDirectory: projectPath,
+      error: (result) => MaintenanceException('${result.stderr}'),
+    );
     final output = result.stdout.toString();
     return (output: output, packages: OutdatedPackage.parseTable(output));
   }
@@ -69,14 +72,13 @@ class ProjectMaintenanceService {
   Future<List<PubOutdatedPackage>> upgradeToResolvable(
     String projectPath,
   ) async {
-    final result = await _runner.run('flutter', [
-      'pub',
-      'outdated',
-      '--json',
-    ], workingDirectory: projectPath);
-    if (result.exitCode != 0) {
-      throw MaintenanceException('Failed to check outdated: ${result.stderr}');
-    }
+    final result = await _runner.runChecked(
+      FlutterSdk.executable,
+      ['pub', 'outdated', '--json'],
+      workingDirectory: projectPath,
+      error: (result) =>
+          MaintenanceException('Failed to check outdated: ${result.stderr}'),
+    );
 
     final PubOutdated outdated;
     try {
@@ -99,7 +101,10 @@ class ProjectMaintenanceService {
       await pubspecFile.writeAsString(upgrade.yaml);
     }
 
-    await _runChecked('flutter', ['pub', 'get'], workingDirectory: projectPath);
+    await _runChecked(FlutterSdk.executable, [
+      'pub',
+      'get',
+    ], workingDirectory: projectPath);
     return upgrade.upgraded;
   }
 
@@ -112,19 +117,19 @@ class ProjectMaintenanceService {
     List<String> arguments, {
     String? workingDirectory,
   }) async {
-    final result = await _runner.run(
+    await _runner.runChecked(
       executable,
       arguments,
       workingDirectory: workingDirectory,
       runInShell: true,
-    );
-    if (result.exitCode == 0) return;
-    final error = '${result.stderr}';
-    if (VersionConflictException.isConflict(error)) {
-      throw VersionConflictException.fromPubError(error);
-    }
-    throw MaintenanceException(
-      'Command failed with exit code ${result.exitCode}\n$error',
+      error: (result) {
+        final error = '${result.stderr}';
+        return VersionConflictException.isConflict(error)
+            ? VersionConflictException.fromPubError(error)
+            : MaintenanceException(
+                'Command failed with exit code ${result.exitCode}\n$error',
+              );
+      },
     );
   }
 }

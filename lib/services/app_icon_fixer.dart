@@ -4,6 +4,7 @@ import 'dart:isolate';
 
 import 'package:fcheck/fcheck.dart';
 import 'package:fide/constants/constants.dart';
+import 'package:fide/services/code_formatter.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;

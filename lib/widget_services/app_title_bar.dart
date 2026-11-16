@@ -6,6 +6,7 @@ import 'dart:math';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_view_state.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/app_view_notifier.dart';
 import 'package:fide/providers/panel_actions.dart';
@@ -18,6 +19,7 @@ import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/dropdown_label.dart';
 import 'package:fide/widgets/icon_menu_item.dart';
 import 'package:fide/widgets/project_icon.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/window_buttons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -216,7 +218,11 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
       isError: !hasAccess,
       trailing: hasAccess
           ? null
-          : Icon(Icons.lock, color: colorScheme.error, size: AppIconSize.small),
+          : Icon(
+              Icons.lock,
+              color: StatusTone.error.readableIn(colorScheme),
+              size: AppIconSize.small,
+            ),
     );
   }
 

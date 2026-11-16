@@ -18,15 +18,12 @@ class PreviewImport {
   String get uri => uris.first.uri;
 
   /// [source] with each URI replaced by what [resolve] returns for it.
-  String rewritten(String Function(String uri) resolve) {
-    var result = source;
-    for (final literal in uris.reversed) {
-      result = result.replaceRange(
-        literal.start,
-        literal.end,
-        "'${resolve(literal.uri)}'",
-      );
-    }
-    return result;
-  }
+  String rewritten(String Function(String uri) resolve) =>
+      TextOffsets.applyEdits(source, {
+        for (final literal in uris)
+          literal.start: (
+            literal.end - literal.start,
+            "'${resolve(literal.uri)}'",
+          ),
+      });
 }

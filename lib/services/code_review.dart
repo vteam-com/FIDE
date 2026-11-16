@@ -4,7 +4,6 @@ import 'dart:isolate';
 import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/project_files.dart';
-import 'package:path/path.dart' as p;
 
 /// Runs fcheck on a project, on a background isolate: the analysis behind
 /// the AI reviews, the overview and the quick fixes, and fcheck's member
@@ -40,19 +39,14 @@ class CodeReview {
   ///
   /// Only the sorting analyzer runs, so fcheck's other fixes, such as
   /// rewriting ARB files, don't.
-  Future<List<String>> sortMembers(String projectPath) => Isolate.run(() {
+  Future<List<String>> sortMembers(String projectPath) => Isolate.run(() async {
     final config = fcheck.FcheckConfig.loadForInputDirectory(
       Directory(projectPath),
     );
     final root = config.analysisDirectory;
     final before = {
-      for (final entity in root.listSync(recursive: true, followLinks: false))
-        if (entity is File &&
-            p.extension(entity.path) == '.dart' &&
-            !ProjectFiles.isSkippedPath(
-              p.relative(entity.path, from: root.path),
-            ))
-          entity.path: entity.readAsStringSync(),
+      await for (final file in ProjectFiles.walk(root.path, extension: '.dart'))
+        file.path: file.readAsStringSync(),
     };
     fcheck.AnalyzeFolder(
       root,

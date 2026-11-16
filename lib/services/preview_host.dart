@@ -6,6 +6,7 @@ import 'package:fide/models/flutter_daemon_message.dart';
 import 'package:fide/models/preview_frame.dart';
 import 'package:fide/models/preview_item.dart';
 import 'package:fide/models/preview_settings.dart';
+import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/preview_registry.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:flutter/painting.dart';
@@ -74,7 +75,7 @@ class PreviewHost {
       0,
     );
     server.listen(_accept);
-    final process = _process = await _runner.start('flutter', [
+    final process = _process = await _runner.start(FlutterSdk.executable, [
       'run',
       '--machine',
       '--show-test-device',

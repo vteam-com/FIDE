@@ -2,27 +2,49 @@ import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/zoom_label.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Zoom Out, the zoom in [controller] (resetting it on a click) and Zoom
-/// In, for the header of a zoomable view such as the architecture graph or
-/// the widget previews.
+/// Zoom Out, the current zoom (resetting it on a click) and Zoom In.
+///
+/// The one set of zoom controls of the app: the UI zoom in Settings and
+/// the zoomable views (architecture graph, widget previews) all use it.
 class ZoomButtons extends StatelessWidget {
-  /// Creates the buttons for the zoom in [controller], calling [onZoomOut]
-  /// and [onZoomIn].
+  /// Creates the buttons around [label], calling [onZoomOut] and
+  /// [onZoomIn]; a null callback disables its button, such as at the last
+  /// zoom level.
   const ZoomButtons({
     super.key,
-    required this.controller,
+    required this.label,
     required this.onZoomOut,
     required this.onZoomIn,
+    this.zoomOutTooltip = 'Zoom Out',
+    this.zoomInTooltip = 'Zoom In',
   });
 
-  /// Zoom and pan of the view.
-  final TransformationController controller;
+  /// Creates the buttons for the zoom in [controller], calling
+  /// [onZoomOut] and [onZoomIn].
+  ZoomButtons.canvas({
+    super.key,
+    required TransformationController controller,
+    required this.onZoomOut,
+    required this.onZoomIn,
+  }) : label = ZoomLabel.canvas(controller: controller),
+       zoomOutTooltip = 'Zoom Out',
+       zoomInTooltip = 'Zoom In';
 
-  /// Zooms the view in.
-  final VoidCallback onZoomIn;
+  /// The current zoom between the buttons.
+  final ZoomLabel label;
 
-  /// Zooms the view out.
-  final VoidCallback onZoomOut;
+  /// Zooms in; the button is disabled when null.
+  final VoidCallback? onZoomIn;
+
+  /// Zooms out; the button is disabled when null.
+  final VoidCallback? onZoomOut;
+
+  /// Hover text of Zoom In, such as the action and its shortcut.
+  final String zoomInTooltip;
+
+  /// Hover text of Zoom Out, such as the action and its shortcut.
+  final String zoomOutTooltip;
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -30,13 +52,13 @@ class ZoomButtons extends StatelessWidget {
       children: [
         CompactIconButton.header(
           icon: Icons.zoom_out,
-          tooltip: 'Zoom Out',
+          tooltip: zoomOutTooltip,
           onPressed: onZoomOut,
         ),
-        ZoomLabel(controller: controller),
+        label,
         CompactIconButton.header(
           icon: Icons.zoom_in,
-          tooltip: 'Zoom In',
+          tooltip: zoomInTooltip,
           onPressed: onZoomIn,
         ),
       ],

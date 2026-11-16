@@ -8,6 +8,8 @@ import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/compact_toggle_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/file_facts_label.dart';
+import 'package:fide/widgets/image_backdrop_box.dart';
+import 'package:fide/widgets/image_backdrop_icon.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/viewer_toolbar.dart';
 import 'package:material_ui/material_ui.dart';
@@ -103,7 +105,7 @@ class _EditorScreenFontViewState extends State<EditorScreenFontView> {
             ChoiceButtons(
               values: FontSampleColors.values,
               selected: _colors,
-              icon: (colors) => colors.icon,
+              icon: (colors) => colors.paper.icon,
               label: (colors) => colors.label,
               onSelected: (colors) => setState(() => _colors = colors),
             ),
@@ -147,8 +149,8 @@ class _EditorScreenFontViewState extends State<EditorScreenFontView> {
       underline: _underline,
       strikethrough: _strikethrough,
     );
-    return ColoredBox(
-      color: _colors.background,
+    return ImageBackdropBox(
+      backdrop: _colors.paper,
       child: SizedBox.expand(
         child: SingleChildScrollView(
           padding: AppPadding.pageContent,

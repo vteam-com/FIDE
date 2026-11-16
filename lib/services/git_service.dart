@@ -60,22 +60,31 @@ class GitService {
   static const String _directorySuffix = '/';
 
   /// Runs `git` with [args] in [path] and returns its result when it
-  /// exits 0.
+  /// exits with [expectedExitCode].
   ///
-  /// Throws a [GitException] with git's stderr when it fails, or the
-  /// error when it can't be started.
-  Future<ProcessResult> _runChecked(String path, List<String> args) async {
-    final command = 'git ${args.join(' ')}';
-    final ProcessResult result;
+  /// Throws a [GitException] naming [command] (by default the whole
+  /// command) with git's stderr when it fails, or the error when it can't
+  /// be started.
+  Future<ProcessResult> _runChecked(
+    String path,
+    List<String> args, {
+    String? command,
+    int expectedExitCode = 0,
+  }) async {
+    final name = command ?? 'git ${args.join(' ')}';
     try {
-      result = await _runner.run('git', args, workingDirectory: path);
+      return await _runner.runChecked(
+        'git',
+        args,
+        workingDirectory: path,
+        expectedExitCode: expectedExitCode,
+        error: (result) => GitException(name, '${result.stderr}'),
+      );
+    } on GitException {
+      rethrow;
     } catch (e) {
-      throw GitException(command, '$e');
+      throw GitException(name, '$e');
     }
-    if (result.exitCode != 0) {
-      throw GitException(command, '${result.stderr}');
-    }
-    return result;
   }
 
   /// Runs a mutating `git` command with [args] in [path].
@@ -295,19 +304,12 @@ class GitService {
   Future<String> getFileDiff(String path, String filePath) async {
     if (!await _isTracked(path, filePath)) {
       const args = ['diff', '--no-index', '--', '/dev/null'];
-      final command = 'git ${args.join(' ')}';
-      final ProcessResult result;
-      try {
-        result = await _runner.run('git', [
-          ...args,
-          filePath,
-        ], workingDirectory: path);
-      } catch (e) {
-        throw GitException(command, '$e');
-      }
-      if (result.exitCode != _noIndexDiffFoundExitCode) {
-        throw GitException(command, '${result.stderr}');
-      }
+      final result = await _runChecked(
+        path,
+        [...args, filePath],
+        command: 'git ${args.join(' ')}',
+        expectedExitCode: _noIndexDiffFoundExitCode,
+      );
       return result.stdout.toString();
     }
 

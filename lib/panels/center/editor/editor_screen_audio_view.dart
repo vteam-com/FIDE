@@ -154,7 +154,7 @@ class _EditorScreenAudioViewState extends ConsumerState<EditorScreenAudioView>
               edit.lengthOf(clip.duration).clockLabel,
               style: AppTextStyle.monospace,
             ),
-            if (_busy) const InlineSpinner(size: AppIconSize.medium),
+            if (_busy) const InlineSpinner.small(),
           ],
           trailing: [
             FileFactsLabel(

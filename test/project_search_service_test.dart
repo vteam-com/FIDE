@@ -30,6 +30,18 @@ void main() {
     expect(results, hasLength(3));
   });
 
+  test('skips tool output and hidden folders', () async {
+    for (final folder in ['build', '.dart_tool', '.git']) {
+      File(p.join(lib.path, folder, 'c.dart'))
+        ..createSync(recursive: true)
+        ..writeAsStringSync('foo\n');
+    }
+
+    final results = await service.search(lib.path, 'foo', caseSensitive: true);
+
+    expect(results, hasLength(3));
+  });
+
   test('whole word skips longer words', () async {
     final results = await service.search(lib.path, 'foo', wholeWord: true);
 

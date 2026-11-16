@@ -44,17 +44,18 @@ class MessageBox {
     showSuccess(context, confirmation);
   }
 
-  /// Shows read-only [content] under [title] with a Close button before
-  /// any extra [actions]; [content] scrolls unless [scrollable] is false, for
-  /// content that sizes and scrolls itself.
-  static Future<void> showDetails(
+  /// Shows [content] under [title] with a Close button before any extra
+  /// [actions]; [content] scrolls unless [scrollable] is false, for
+  /// content that sizes and scrolls itself. Resolves to what [content]
+  /// pops the dialog with, null when closed.
+  static Future<T?> showDetails<T>(
     BuildContext context, {
     required Widget title,
     required Widget content,
     List<Widget> actions = const [],
     bool scrollable = true,
   }) {
-    return showDialog<void>(
+    return showDialog<T>(
       context: context,
       builder: (context) => AlertDialog(
         title: title,

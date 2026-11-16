@@ -83,10 +83,5 @@ void main() {
       ]);
       expect(ProjectFiles.under(tree), ['/p/lib/main.dart', '/p/pubspec.yaml']);
     });
-
-    test('skips paths inside skipped folders', () {
-      expect(ProjectFiles.isSkippedPath('.dart_tool/x.json'), isTrue);
-      expect(ProjectFiles.isSkippedPath('lib/build_helper.dart'), isFalse);
-    });
   });
 }

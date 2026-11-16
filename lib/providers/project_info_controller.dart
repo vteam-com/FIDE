@@ -3,6 +3,7 @@ import 'package:fide/models/project_info_state.dart';
 import 'package:fide/models/project_metrics.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/project_actions.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/file_entry_service.dart';
 import 'package:fide/services/project_analyzer.dart';
@@ -26,13 +27,11 @@ final projectInfoControllerProvider =
 /// Reads the metrics the Info panel shows now.
 typedef MetricsReader = ProjectMetrics Function();
 
-/// Marks a state busy or idle for one of the Info panel's actions.
-typedef _Busy = ProjectInfoState Function(ProjectInfoState state, bool busy);
-
 /// Analyzes, cleans up and upgrades the open project for the Info panel,
 /// writing the metrics it measures and keeping what pub reported; each
 /// action marks the state busy until it ends, whether it succeeds or fails.
-class ProjectInfoController extends StateNotifier<ProjectInfoState> {
+class ProjectInfoController extends StateNotifier<ProjectInfoState>
+    with ProjectActions<ProjectInfoState> {
   final ProjectAnalyzer _analyzer;
 
   final MetricsReader _currentMetrics;
@@ -43,10 +42,10 @@ class ProjectInfoController extends StateNotifier<ProjectInfoState> {
 
   final ProjectMetricsNotifier _metrics;
 
-  /// The open project, or null.
-  final String? _projectPath;
+  @override
+  final String? projectPath;
 
-  /// Creates a controller for the project at [_projectPath], measuring it
+  /// Creates a controller for the project at [projectPath], measuring it
   /// with [analyzer], maintaining it with [maintenance], checking its
   /// files with [entries], and showing what it measures through
   /// [metrics], whose current value [currentMetrics] reads.
@@ -67,7 +66,7 @@ class ProjectInfoController extends StateNotifier<ProjectInfoState> {
        );
 
   ProjectInfoController._(
-    this._projectPath,
+    this.projectPath,
     this._analyzer,
     this._maintenance,
     this._entries,
@@ -77,7 +76,7 @@ class ProjectInfoController extends StateNotifier<ProjectInfoState> {
 
   /// The project's `pubspec.yaml`; null when there is none to open.
   String? get pubspecPath {
-    final projectPath = _projectPath;
+    final projectPath = this.projectPath;
     if (projectPath == null) return null;
     final path = ProjectPaths(projectPath).pubspec;
     return _entries.exists(path) ? path : null;
@@ -86,7 +85,9 @@ class ProjectInfoController extends StateNotifier<ProjectInfoState> {
   /// Measures the project again and shows the result; null when it
   /// worked, as there is nothing to tell.
   Future<ActionOutcome?> analyze() {
-    return _run('Failed to analyze project', _analyzing, (projectPath) async {
+    return runAction('Failed to analyze project', _analyzing, (
+      projectPath,
+    ) async {
       final metrics = await _analyzer.analyze(projectPath);
       await _metrics.updateMetrics(projectPath, metrics);
       return null;
@@ -96,11 +97,11 @@ class ProjectInfoController extends StateNotifier<ProjectInfoState> {
   /// Runs `flutter pub outdated`, keeping what it printed and showing the
   /// outdated packages in the metrics.
   Future<ActionOutcome?> checkOutdated() {
-    return _run('Failed to check outdated', _checkingOutdated, (
+    return runAction('Failed to check outdated', _checkingOutdated, (
       projectPath,
     ) async {
       final report = await _maintenance.outdatedReport(projectPath);
-      _update(
+      updateState(
         (state) =>
             state.copyWith(outdatedOutput: report.output, clearConflict: true),
       );
@@ -115,7 +116,7 @@ class ProjectInfoController extends StateNotifier<ProjectInfoState> {
   /// Cleans the project's build artifacts and caches, then measures
   /// it again.
   Future<ActionOutcome?> fullCleanup() {
-    return _run('Cleanup failed', _analyzing, (projectPath) async {
+    return runAction('Cleanup failed', _analyzing, (projectPath) async {
       await _maintenance.fullCleanup(projectPath);
       return await analyze() ??
           const ActionOutcome.success('Full project cleanup completed!');
@@ -126,8 +127,10 @@ class ProjectInfoController extends StateNotifier<ProjectInfoState> {
   /// versions and measures the project again; a resolution pub cannot
   /// make is kept as the conflict to show, blaming the package it names.
   Future<ActionOutcome?> upgradePackages() {
-    return _run('Error upgrading packages', _upgrading, (projectPath) async {
-      _update(
+    return runAction('Error upgrading packages', _upgrading, (
+      projectPath,
+    ) async {
+      updateState(
         (state) =>
             state.copyWith(clearConflict: true, problematicPackages: const {}),
       );
@@ -143,7 +146,7 @@ class ProjectInfoController extends StateNotifier<ProjectInfoState> {
                 'All packages already up to date with compatible versions.',
               );
       } on VersionConflictException catch (conflict) {
-        _update(
+        updateState(
           (state) => state.copyWith(
             conflictSummary: conflict.summary,
             problematicPackages: {
@@ -157,32 +160,6 @@ class ProjectInfoController extends StateNotifier<ProjectInfoState> {
         );
       }
     });
-  }
-
-  /// Runs [action] on the open project with the state marked busy by
-  /// [busy], turning a thrown error into a failure prefixed by
-  /// [failurePrefix]; null when no project is open.
-  Future<ActionOutcome?> _run(
-    String failurePrefix,
-    _Busy busy,
-    Future<ActionOutcome?> Function(String projectPath) action,
-  ) async {
-    final projectPath = _projectPath;
-    if (projectPath == null) return null;
-    _update((state) => busy(state, true));
-    try {
-      return await action(projectPath);
-    } catch (e) {
-      return ActionOutcome.failure('$failurePrefix: $e');
-    } finally {
-      _update((state) => busy(state, false));
-    }
-  }
-
-  /// Applies [change] to the state, unless the controller was disposed
-  /// while an action was pending.
-  void _update(ProjectInfoState Function(ProjectInfoState state) change) {
-    if (mounted) state = change(state);
   }
 
   /// Marks the analysis running or done.

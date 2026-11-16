@@ -7,6 +7,7 @@ import 'package:fide/models/hardcoded_string.dart';
 import 'package:fide/models/l10n_config.dart';
 import 'package:fide/models/localization_plan.dart';
 import 'package:fide/models/string_rewrite.dart';
+import 'package:fide/models/text_offsets.dart';
 import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/code_formatter.dart';
 import 'package:fide/services/hardcoded_string_finder.dart';
@@ -87,21 +88,11 @@ class StringLocalizer {
     final config = plan.config;
     final arb = await readTemplate(plan.projectPath, config);
     final keys = ArbKeys(arb);
-    final skipped = {...plan.skipped};
-    final chosen = selected.toSet();
-    final uncheckedCount = plan.candidates.length - chosen.length;
-    if (uncheckedCount > 0) {
-      HardcodedStringFinder.count(
-        skipped,
-        HardcodedStringFinder.unchecked,
-        uncheckedCount,
-      );
-    }
-
-    final byFile = <String, List<HardcodedString>>{};
-    for (final string in chosen) {
-      (byFile[string.path] ??= []).add(string);
-    }
+    final (:byFile, :skipped) = HardcodedStringFinder.selection(
+      plan.candidates,
+      plan.skipped,
+      selected,
+    );
     var localized = 0;
     final changedFiles = <String>[];
     for (final MapEntry(key: path, value: strings) in byFile.entries) {
@@ -129,10 +120,10 @@ class StringLocalizer {
     }
 
     if (keys.added.isNotEmpty) {
-      arb.addAll(keys.added);
-      await File(templatePath(plan.projectPath, config))
-          .writeAsString(ArbService.encode(arb));
-      await _generator.generateClasses(plan.projectPath);
+      await _generator.writeTemplate(plan.projectPath, config, {
+        ...arb,
+        ...keys.added,
+      });
     }
     return StringRewrite(
       action: 'Localized',
@@ -177,16 +168,11 @@ class StringLocalizer {
       return (content: content, localized: 0, changed: changed);
     }
 
-    var result = content;
-    for (final offset in edits.keys.toList()..sort((a, b) => b - a)) {
-      final (length, text) = edits[offset]!;
-      result = result.replaceRange(offset, offset + length, text);
-    }
     return (
       content: withImport(
-        result,
+        TextOffsets.applyEdits(content, edits),
         importUri,
-        isImported: (uri) => p.url.basename(uri) == config.outputFile,
+        isImported: config.isOutputImport,
       ),
       localized: localized,
       changed: changed,
@@ -206,7 +192,7 @@ class StringLocalizer {
     String projectPath,
     L10nConfig config,
   ) async {
-    final template = File(templatePath(projectPath, config));
+    final template = File(config.templatePathIn(projectPath));
     final arb = await template.exists()
         ? ArbService.decode(await template.readAsString())
         : null;
@@ -218,8 +204,4 @@ class StringLocalizer {
     }
     return arb;
   }
-
-  /// Path of the template ARB file of the project at [projectPath].
-  static String templatePath(String projectPath, L10nConfig config) =>
-      p.join(projectPath, config.arbDir, config.templateArbFile);
 }

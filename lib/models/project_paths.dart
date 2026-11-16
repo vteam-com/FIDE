@@ -1,3 +1,4 @@
+import 'package:fide/models/flutter_platform.dart';
 import 'package:path/path.dart' as p;
 
 /// Well-known file and folder locations inside a Flutter project.
@@ -23,15 +24,11 @@ class ProjectPaths {
     }
   }
 
-  /// Generated localizations class written by `flutter gen-l10n`.
-  String get generatedLocalizations =>
-      p.join(l10nDir, 'app_localizations.dart');
-
-  /// Folder holding the ARB translation files.
-  String get l10nDir => p.join(libDir, 'l10n');
-
   /// The `lib/` source directory.
   String get libDir => p.join(root, 'lib');
+
+  /// The folder of [platform]'s native project, such as `ios/`.
+  String platformDir(FlutterPlatform platform) => p.join(root, platform.name);
 
   /// The app entry point.
   String get mainDart => p.join(libDir, 'main.dart');

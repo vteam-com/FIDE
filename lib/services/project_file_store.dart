@@ -27,12 +27,8 @@ class ProjectFileStore {
   /// Throws a [FormatException] when [folder] is outside the project.
   Future<List<String>> list(String folder, {required int limit}) async {
     final files = <String>[];
-    await for (final entity in Directory(
-      resolve(folder),
-    ).list(recursive: true)) {
-      final relative = p.relative(entity.path, from: root);
-      if (entity is! File || ProjectFiles.isSkippedPath(relative)) continue;
-      files.add(relative);
+    await for (final file in ProjectFiles.walk(resolve(folder))) {
+      files.add(p.relative(file.path, from: root));
       if (files.length >= limit) break;
     }
     return files..sort();

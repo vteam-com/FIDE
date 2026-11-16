@@ -18,6 +18,7 @@ import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/primary_button.dart';
+import 'package:fide/widgets/truncated_text.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -133,13 +134,9 @@ class _AIPanelState extends ConsumerState<AIPanel> {
         const Spacer(),
         if (isReady)
           Flexible(
-            child: Tooltip(
-              message: ref.watch(ollamaModelProvider).label,
-              child: Text(
-                ref.watch(ollamaModelProvider).label,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyle.secondary(context),
-              ),
+            child: TruncatedText(
+              ref.watch(ollamaModelProvider).label,
+              style: AppTextStyle.secondary(context),
             ),
           ),
       ],
@@ -181,7 +178,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
       child: Row(
         spacing: AppSpacing.medium,
         children: [
-          const InlineSpinner(size: AppIconSize.tiny),
+          const InlineSpinner.small(),
           Text('Working… Esc to stop', style: AppTextStyle.secondary(context)),
         ],
       ),

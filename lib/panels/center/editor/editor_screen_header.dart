@@ -1,11 +1,11 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/git_diff_stats_provider.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/git_service.dart';
-import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widget_services/diff_counter.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/dropdown_label.dart';
@@ -13,6 +13,7 @@ import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/path_text.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -128,8 +129,7 @@ class EditorScreenHeader extends ConsumerWidget {
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                         style: AppTextStyle.caption.copyWith(
-                          color: AppTheme.readable(
-                            AppTheme.warningColor,
+                          color: StatusTone.warning.readableIn(
                             Theme.of(context).colorScheme,
                           ),
                         ),

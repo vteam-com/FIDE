@@ -1,6 +1,6 @@
-import 'package:fide/constants/constants.dart'
-    show AppPadding, AppSpacing, AppTextStyle;
+import 'package:fide/constants/constants.dart' show AppSpacing, AppTextStyle;
 import 'package:fide/models/editor_search.dart';
+import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/reference_search.dart';
 import 'package:fide/models/search_result.dart';
 import 'package:fide/models/search_result_node.dart';
@@ -22,7 +22,6 @@ import 'package:fide/widgets/surface_padding.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:path/path.dart' as p;
 
 /// The Search tab: finds text or references across the project at
 /// [projectPath] and opens the matches in the editor.
@@ -128,7 +127,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     });
 
     try {
-      final libPath = p.join(widget.projectPath, 'lib');
+      final libPath = ProjectPaths(widget.projectPath).libDir;
       final search = ref.read(projectSearchServiceProvider);
       final results = await search.search(
         libPath,
@@ -207,7 +206,6 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
               ? const EmptyState(message: 'No results found')
               : _resultsTree != null
               ? SingleChildScrollView(
-                  padding: AppPadding.panelContent,
                   child: Column(
                     children: _resultsTree!.children
                         .map((node) => _buildSearchResultNode(node))

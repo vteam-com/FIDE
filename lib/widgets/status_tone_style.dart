@@ -14,6 +14,11 @@ extension StatusToneStyle on StatusTone {
     StatusTone.neutral => AppTheme.neutralColor,
   };
 
+  /// [color] made readable as text or a glyph drawn straight on a surface
+  /// of [colorScheme]; fills such as badges keep [color] itself.
+  Color readableIn(ColorScheme colorScheme) =>
+      AppTheme.readable(color, colorScheme);
+
   /// The glyph marking this tone.
   IconData get icon => switch (this) {
     StatusTone.success => Icons.check_circle,

@@ -35,7 +35,7 @@ class ArbKeyRemover {
   Future<StringRewrite> apply(String projectPath, List<String> keys) async {
     final config = await _config.l10nConfig(projectPath);
     final prefix = config.templateParts?.prefix ?? '';
-    final folder = Directory(p.join(projectPath, config.arbDir));
+    final folder = Directory(config.arbDirIn(projectPath));
     final files = await folder.exists()
         ? folder
               .listSync()

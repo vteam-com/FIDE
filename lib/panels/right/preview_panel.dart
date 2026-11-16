@@ -137,7 +137,7 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
           onSelected: _controller.setBrightness,
         ),
         const ImageBackdropButtons(),
-        ZoomButtons(
+        ZoomButtons.canvas(
           controller: _zoom,
           onZoomOut: () => _zoomTo(AppZoom.smaller(_scale)),
           onZoomIn: () => _zoomTo(AppZoom.larger(_scale)),

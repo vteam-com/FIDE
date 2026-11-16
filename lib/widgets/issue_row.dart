@@ -6,7 +6,6 @@ import 'package:fide/providers/ai_request.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/quick_fix_controller.dart';
 import 'package:fide/services/quick_fix_runner.dart';
-import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/markdown_text.dart';
@@ -110,10 +109,7 @@ class IssueRow extends ConsumerWidget {
       icon: Icon(
         issue.tone.icon,
         size: AppIconSize.small,
-        color: AppTheme.readable(
-          issue.tone.color,
-          Theme.of(context).colorScheme,
-        ),
+        color: issue.tone.readableIn(Theme.of(context).colorScheme),
       ),
       name: finding.text,
       path: finding.path,

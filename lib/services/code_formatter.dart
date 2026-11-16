@@ -23,6 +23,11 @@ class CodeFormatter {
   /// Creates a formatter that runs `dart format` through [_runner].
   const CodeFormatter(this._runner);
 
+  /// [json] as the content of a JSON file, indented like [format], with a
+  /// final line break.
+  static String encodeJson(Object? json) =>
+      '${const JsonEncoder.withIndent(jsonIndent).convert(json)}\n';
+
   /// Whether [filePath] is a Dart, JSON or ARB file.
   static bool canFormat(String filePath) {
     final extension = FileTypeUtils.extensionOf(filePath);

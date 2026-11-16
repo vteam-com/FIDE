@@ -123,7 +123,7 @@ class OutlinePanel extends ConsumerWidget {
   ) {
     final consumers = outline.consumersOf(node);
     if (consumers == null || outline.isRenaming) {
-      return const InlineSpinner(size: AppSize.compactProgressIndicator);
+      return const InlineSpinner.small();
     }
     return ContainerCounter(
       count: consumers.length,

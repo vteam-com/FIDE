@@ -8,7 +8,6 @@ import 'package:fide/providers/git_repo_controller.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/git_service.dart';
-import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widget_services/diff_counter.dart';
 import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/app_text_field.dart';
@@ -47,6 +46,9 @@ class GitPanel extends ConsumerStatefulWidget {
 class _GitPanelState extends ConsumerState<GitPanel> {
   /// Start of the message shown when the AI commit message fails.
   static const String _aiMessagePrefix = 'AI commit message: ';
+
+  /// Glyph of Discard, for one file and for a whole section alike.
+  static const IconData _discardIcon = Icons.undo;
 
   final TextEditingController _commitController = TextEditingController();
   bool _isCommitting = false;
@@ -465,7 +467,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
           ),
         if (canDiscard && onDiscard != null)
           CompactTextButton(
-            icon: Icons.delete_outline,
+            icon: _discardIcon,
             onPressed: () => onDiscard(files),
             label: 'Discard All',
           ),
@@ -519,11 +521,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
               ),
             if (canDiscard && onDiscard != null)
               CompactIconButton(
-                icon: Icons.undo,
-                color: AppTheme.readable(
-                  AppTheme.errorColor,
-                  Theme.of(context).colorScheme,
-                ),
+                icon: _discardIcon,
                 onPressed: () => onDiscard([file]),
                 tooltip: 'Discard Changes',
               ),

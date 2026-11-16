@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/project_paths.dart';
+import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/process_runner.dart';
 
 part 'flutter_build_service.build_exception.dart';
@@ -31,7 +32,7 @@ class FlutterBuildService {
     String? target,
   }) {
     return _stream(
-      'flutter',
+      FlutterSdk.executable,
       platform.buildArguments(target),
       output,
       workingDirectory: projectPath,
@@ -46,7 +47,7 @@ class FlutterBuildService {
     ProjectPaths(projectPath).ensureCleanable(Platform.resolvedExecutable);
     const arguments = ['clean'];
     final exitCode = await _stream(
-      'flutter',
+      FlutterSdk.executable,
       arguments,
       output,
       workingDirectory: projectPath,
@@ -70,7 +71,7 @@ class FlutterBuildService {
     required bool isDebug,
   }) {
     return _stream(
-      'flutter',
+      FlutterSdk.executable,
       ['run', if (!isDebug) '--release', '-d', device],
       output,
       workingDirectory: projectPath,
@@ -87,7 +88,7 @@ class FlutterBuildService {
     bool coverage = false,
   }) {
     return _stream(
-      'flutter',
+      FlutterSdk.executable,
       ['test', if (coverage) '--coverage', ...paths],
       output,
       workingDirectory: projectPath,

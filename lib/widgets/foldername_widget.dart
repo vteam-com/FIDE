@@ -3,8 +3,10 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/git_file_status.dart';
 import 'package:fide/models/project_node.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/git_file_status_style.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -45,8 +47,8 @@ class FolderNameWidget extends StatelessWidget {
     final Color? nameColor;
     final Color iconColor;
     if (hasError) {
-      nameColor = colorScheme.error;
-      iconColor = colorScheme.error;
+      nameColor = StatusTone.error.readableIn(colorScheme);
+      iconColor = StatusTone.error.readableIn(colorScheme);
     } else if (node.isHidden) {
       nameColor = colorScheme.onSurface.withValues(alpha: AppOpacity.disabled);
       iconColor = colorScheme.primary.withValues(alpha: AppOpacity.disabled);
@@ -83,7 +85,7 @@ class FolderNameWidget extends StatelessWidget {
             node.loadResult == LoadChildrenResult.accessDenied
                 ? Icons.lock
                 : Icons.error,
-            color: colorScheme.error,
+            color: StatusTone.error.readableIn(colorScheme),
             size: AppIconSize.small,
           ),
         if (node.gitStatus != GitFileStatus.clean) _buildGitStatusIcon(context),

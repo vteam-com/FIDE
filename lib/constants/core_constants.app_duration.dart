@@ -33,5 +33,9 @@ class AppDuration {
   static const Duration loginShellTimeout = Duration(seconds: 30);
   static const Duration projectLoadDelay = Duration(milliseconds: 150);
 
+  /// How long a burst of edits or file system events must pause before
+  /// the views depending on them update.
+  static const Duration updateDebounce = Duration(milliseconds: 150);
+
   const AppDuration._();
 }

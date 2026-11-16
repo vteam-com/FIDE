@@ -3,9 +3,11 @@ import 'dart:io';
 import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/models/constants_plan.dart';
 import 'package:fide/models/dart_imports.dart';
+import 'package:fide/models/dart_string_literal.dart';
 import 'package:fide/models/hardcoded_string.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/string_rewrite.dart';
+import 'package:fide/models/text_offsets.dart';
 import 'package:fide/models/unique_name.dart';
 import 'package:fide/services/code_formatter.dart';
 import 'package:fide/services/hardcoded_string_finder.dart';
@@ -87,7 +89,9 @@ class StringConstantsExtractor {
         : null;
     final nameByValue = {
       for (final match in _declaration.allMatches(existing ?? ''))
-        _unquoted(match.namedGroup('value')!): match.namedGroup('name')!,
+        DartStringLiteral.valueOf(match.namedGroup('value')!): match.namedGroup(
+          'name',
+        )!,
     };
     final names = nameByValue.values.toSet();
     final added = <String, String>{};
@@ -107,30 +111,21 @@ class StringConstantsExtractor {
       return nameByValue[value] = added[value] = name;
     }
 
-    final skipped = {...plan.skipped};
-    final chosen = selected.toSet();
-    final uncheckedCount = plan.candidates.length - chosen.length;
-    if (uncheckedCount > 0) {
-      HardcodedStringFinder.count(
-        skipped,
-        HardcodedStringFinder.unchecked,
-        uncheckedCount,
-      );
-    }
-    final byFile = <String, List<HardcodedString>>{};
-    for (final string in chosen) {
-      (byFile[string.path] ??= []).add(string);
-    }
+    final (:byFile, :skipped) = HardcodedStringFinder.selection(
+      plan.candidates,
+      plan.skipped,
+      selected,
+    );
 
     var rewritten = 0;
     final changedFiles = <String>[];
     for (final MapEntry(key: path, value: strings) in byFile.entries) {
       final file = File(path);
-      var content = await file.readAsString();
-      final edits = <HardcodedString>[];
+      final original = await file.readAsString();
+      final kept = <HardcodedString>[];
       for (final string in strings) {
-        if (HardcodedStringFinder.isStringAt(content, string.site)) {
-          edits.add(string);
+        if (HardcodedStringFinder.isStringAt(original, string.site)) {
+          kept.add(string);
         } else {
           HardcodedStringFinder.count(
             skipped,
@@ -138,23 +133,23 @@ class StringConstantsExtractor {
           );
         }
       }
-      if (edits.isEmpty) continue;
-      edits.sort((a, b) => b.site.offset - a.site.offset);
-      for (final string in edits) {
-        content = content.replaceRange(
-          string.site.offset,
-          string.site.offset + string.site.length,
-          '${plan.className}.${nameFor(string)}',
-        );
-      }
-      content = withImport(
-        content,
+      if (kept.isEmpty) continue;
+      // Named from the end of the file, so the names are the same each run
+      kept.sort((a, b) => b.site.offset - a.site.offset);
+      final content = withImport(
+        TextOffsets.applyEdits(original, {
+          for (final string in kept)
+            string.site.offset: (
+              string.site.length,
+              '${plan.className}.${nameFor(string)}',
+            ),
+        }),
         plan.importUri,
         isImported: (uri) => p.url.basename(uri) == p.basename(_fileInLib),
       );
       await file.writeAsString(await _formatter.formatOrKeep(path, content));
       changedFiles.add(path);
-      rewritten += edits.length;
+      rewritten += kept.length;
     }
 
     if (added.isNotEmpty) {
@@ -185,7 +180,7 @@ class StringConstantsExtractor {
       for (final MapEntry(key: value, value: name)
           in added.entries.toList()..sort((a, b) => a.value.compareTo(b.value)))
         "  /// The `${value.replaceAll('`', "'")}` data id.\n"
-            "  static const String $name = '${_quoted(value)}';",
+            '  static const String $name = ${DartStringLiteral.quote(value)};',
     ].join('\n\n');
     if (existing == null) {
       return '/// Identifiers the app uses as data, such as Firestore '
@@ -195,17 +190,4 @@ class StringConstantsExtractor {
     final end = existing.lastIndexOf('}');
     return '${existing.substring(0, end).trimRight()}\n\n$fields\n}\n';
   }
-
-  /// [value] escaped for a single-quoted Dart string.
-  static String _quoted(String value) => value
-      .replaceAll(r'\', r'\\')
-      .replaceAll("'", r"\'")
-      .replaceAll(r'$', r'\$')
-      .replaceAll('\n', r'\n');
-
-  /// The value of the single-quoted Dart string body [quoted].
-  static String _unquoted(String quoted) => quoted.replaceAllMapped(
-    RegExp(r'\\(.)'),
-    (match) => match[1] == 'n' ? '\n' : match[1]!,
-  );
 }

@@ -4,6 +4,7 @@ import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/status_indicator.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -47,7 +48,7 @@ class LoadingActionsLog extends StatelessWidget {
                     action.text,
                     style: AppTextStyle.label.copyWith(
                       color: action.status == LoadingStatus.failed
-                          ? colorScheme.error
+                          ? StatusTone.error.readableIn(colorScheme)
                           : null,
                     ),
                   ),
@@ -66,7 +67,7 @@ class LoadingActionsLog extends StatelessWidget {
   /// Returns a spinner while [status] is pending, else a success or
   /// error mark.
   Widget _buildStatusIcon(LoadingStatus status) => switch (status) {
-    LoadingStatus.pending => const InlineSpinner(size: AppIconSize.medium),
+    LoadingStatus.pending => const InlineSpinner.small(),
     LoadingStatus.success => StatusIndicator.tone(StatusTone.success),
     LoadingStatus.failed => StatusIndicator.tone(StatusTone.error),
   };

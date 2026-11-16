@@ -50,7 +50,7 @@ class _EditorScreenImageViewState extends ConsumerState<EditorScreenImageView> {
         ViewerToolbar(
           leading: const [ImageBackdropButtons()],
           trailing: [
-            ZoomLabel(controller: _transformation),
+            ZoomLabel.canvas(controller: _transformation),
             FileFactsLabel(filePath: filePath),
           ],
         ),

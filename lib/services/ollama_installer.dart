@@ -31,12 +31,13 @@ class OllamaInstaller {
 
   /// Downloads [AiModel.ollama].
   Future<void> downloadModel() async {
-    final pullResult = await _runner.run('ollama', ['pull', AiModel.ollama]);
-    if (pullResult.exitCode != 0) {
-      throw Exception(
-        'Failed to download ${AiModel.ollama} model: ${pullResult.stderr}',
-      );
-    }
+    await _runner.runChecked(
+      'ollama',
+      ['pull', AiModel.ollama],
+      error: (result) => Exception(
+        'Failed to download ${AiModel.ollama} model: ${result.stderr}',
+      ),
+    );
   }
 
   /// Installs, starts and downloads whatever is missing; true when ready.
@@ -77,14 +78,12 @@ class OllamaInstaller {
   Future<void> install() async {
     switch (FlutterPlatform.fromId(operatingSystem)) {
       case FlutterPlatform.macos || FlutterPlatform.linux:
-        final installResult = await _runner.run('sh', [
-          '-c',
-          'curl -fsSL https://ollama.ai/install.sh | sh',
-        ]);
-
-        if (installResult.exitCode != 0) {
-          throw Exception('Failed to install Ollama: ${installResult.stderr}');
-        }
+        await _runner.runChecked(
+          'sh',
+          ['-c', 'curl -fsSL https://ollama.ai/install.sh | sh'],
+          error: (result) =>
+              Exception('Failed to install Ollama: ${result.stderr}'),
+        );
 
         await downloadModel();
       case FlutterPlatform.windows:

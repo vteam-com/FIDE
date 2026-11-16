@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/create_project_draft_notifier.dart';
+import 'package:fide/widgets/check_list_tile.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/step_header.dart';
 import 'package:fide/widgets/surface_card.dart';
@@ -90,13 +91,11 @@ class CreateProjectStep2 extends ConsumerWidget {
           Column(
             children: _languages.entries
                 .map(
-                  (entry) => CheckboxListTile(
+                  (entry) => CheckListTile(
                     title: Text(entry.value),
                     value: draft.languages.contains(entry.key),
-                    onChanged: (bool? value) => notifier.setLanguage(
-                      entry.key,
-                      selected: value == true,
-                    ),
+                    onChanged: (selected) =>
+                        notifier.setLanguage(entry.key, selected: selected),
                   ),
                 )
                 .toList(),

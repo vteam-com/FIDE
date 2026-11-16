@@ -1,3 +1,4 @@
+import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -24,5 +25,12 @@ void main() {
         returnsNormally,
       );
     });
+  });
+
+  test('platformDir is the platform folder in the project', () {
+    expect(
+      const ProjectPaths('/src/app').platformDir(FlutterPlatform.ios),
+      '/src/app/ios',
+    );
   });
 }

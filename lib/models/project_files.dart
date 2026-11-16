@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:fide/models/project_node.dart';
 import 'package:path/path.dart' as p;
 
@@ -18,9 +20,27 @@ class ProjectFiles {
   static bool isSkipped(String name) =>
       skippedFolders.contains(name) || name.startsWith('.');
 
-  /// Whether [relativePath] lies in, or is, an entry that is left out.
-  static bool isSkippedPath(String relativePath) =>
-      p.split(relativePath).any(isSkipped);
+  /// The files and folders under the folder [root], without going into
+  /// the ones left out; throws when [root] can't be listed.
+  static Stream<FileSystemEntity> entities(String root) async* {
+    await for (final entity in Directory(root).list(followLinks: false)) {
+      if (isSkipped(p.basename(entity.path))) continue;
+      yield entity;
+      if (entity is Directory) yield* entities(entity.path);
+    }
+  }
+
+  /// The files under the folder [root], only those ending with
+  /// [extension] when given, without going into the folders left out;
+  /// throws when [root] can't be listed.
+  static Stream<File> walk(String root, {String? extension}) =>
+      entities(root)
+          .where(
+            (entity) =>
+                entity is File &&
+                (extension == null || p.extension(entity.path) == extension),
+          )
+          .cast<File>();
 
   /// Paths of the files in the loaded tree under [root], in tree order.
   static List<String> under(ProjectNode root) {

@@ -2,21 +2,36 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/localization_data.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/primary_button.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/surface_card.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Represents `LocalizationEntryWidget`.
+/// One ARB key: its name, its value in every language that has it, the
+/// languages missing it and, given [onTranslate], a Translate button per
+/// missing language.
+///
+/// The one rendering of an ARB key in the localization panel.
 class LocalizationEntryWidget extends StatelessWidget {
+  /// Creates the entry for [comparison].
   const LocalizationEntryWidget({
     super.key,
     required this.comparison,
     this.showWarning = false,
+    this.onTranslate,
   });
 
+  /// The key and its value per language.
   final ArbComparison comparison;
 
+  /// Called with a language the key is missing in to translate it there;
+  /// no Translate buttons when null.
+  final ValueChanged<String>? onTranslate;
+
+  /// Whether to flag the key's English value as duplicated.
   final bool showWarning;
 
   @override
@@ -78,10 +93,27 @@ class LocalizationEntryWidget extends StatelessWidget {
                 child: Text(
                   'Missing in: ${comparison.isMissingInEnglish ? 'EN, ' : ''}${comparison.missingInLanguages.join(', ')}',
                   style: AppTextStyle.caption.copyWith(
-                    color: Theme.of(context).colorScheme.error,
+                    color: StatusTone.error.readableIn(
+                      Theme.of(context).colorScheme,
+                    ),
                   ),
                 ),
               ),
+              if (onTranslate case final translate?)
+                Wrap(
+                  spacing: AppSpacing.medium,
+                  runSpacing: AppSpacing.tiny,
+                  children: [
+                    for (final language in comparison.missingInLanguages)
+                      PrimaryButton(
+                        icon: Icons.translate,
+                        label: 'Translate to $language',
+                        onPressed: comparison.englishValue == null
+                            ? null
+                            : () => translate(language),
+                      ),
+                  ],
+                ),
             ],
           ],
         ),

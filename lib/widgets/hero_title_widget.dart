@@ -13,7 +13,8 @@ class HeroTitleWidget extends StatelessWidget {
     this.logo,
   });
 
-  /// Shown left of [title]; FIDE's own logo when null.
+  /// Shown left of [title], an [Icon] at the logo height; FIDE's own
+  /// logo when null.
   final Widget? logo;
 
   /// Text line under [title]; none when null.
@@ -35,7 +36,11 @@ class HeroTitleWidget extends StatelessWidget {
       children: [
         SizedBox(
           height: AppSize.heroLogoHeight,
-          child: logo ?? Image.asset('assets/app.png'),
+          // A plain Icon logo takes the logo height too
+          child: IconTheme.merge(
+            data: const IconThemeData(size: AppSize.heroLogoHeight),
+            child: logo ?? Image.asset('assets/app.png'),
+          ),
         ),
         Flexible(
           child: Column(

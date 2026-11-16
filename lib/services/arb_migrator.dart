@@ -5,10 +5,13 @@ import 'package:fide/models/arb_migration.dart';
 import 'package:fide/models/dart_imports.dart';
 import 'package:fide/models/dart_translations.dart';
 import 'package:fide/models/hand_written_l10n.dart';
+import 'package:fide/models/l10n_config.dart';
+import 'package:fide/models/project_files.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/code_formatter.dart';
 import 'package:fide/services/dart_translations_parser.dart';
+import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/hand_written_l10n_parser.dart';
 import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/process_runner.dart';
@@ -70,7 +73,7 @@ class ArbMigrator {
     if (template == null) {
       throw Exception('Unexpected template ARB name ${config.templateArbFile}');
     }
-    final (prefix: arbPrefix, locale: templateLocale) = template;
+    final templateLocale = template.locale;
 
     // Read everything first: nothing is written if a key cannot move
     final translations = await _readLocales(outputDir, stem, sync.outputClass);
@@ -94,7 +97,7 @@ class ArbMigrator {
       sync.handWrittenMembers,
     );
 
-    final arbDir = p.join(projectPath, config.arbDir);
+    final arbDir = config.arbDirIn(projectPath);
     final movedPath = p.join(outputDir, '$stem$_movedSuffix');
     final callers = await _callers(
       projectPath,
@@ -112,9 +115,8 @@ class ArbMigrator {
     final errorsBefore = await _analyzerErrors(projectPath);
     try {
       for (final MapEntry(key: locale, value: dart) in translations.entries) {
-        final path = p.join(arbDir, '$arbPrefix$locale.arb');
         await _writeArb(
-          path,
+          config.arbPathFor(projectPath, locale),
           locale,
           dart,
           withPlaceholders: locale == templateLocale,
@@ -162,7 +164,7 @@ class ArbMigrator {
 
   /// Number of errors `flutter analyze` reports in the project.
   Future<int> _analyzerErrors(String projectPath) async {
-    final result = await _runner.run('flutter', [
+    final result = await _runner.run(FlutterSdk.executable, [
       'analyze',
       '--no-pub',
     ], workingDirectory: projectPath);
@@ -196,15 +198,15 @@ class ArbMigrator {
       multiLine: true,
     );
     final classUse = RegExp('\\b$outputClass\\b');
-    for (final path in await _filesIn(
+    await for (final file in ProjectFiles.walk(
       ProjectPaths(projectPath).libDir,
-      '.dart',
-      recursive: true,
+      extension: '.dart',
     )) {
+      final path = file.path;
       if (p.isWithin(outputDir, path) || p.equals(p.dirname(path), outputDir)) {
         continue;
       }
-      final content = await File(path).readAsString();
+      final content = await file.readAsString();
       if (!imports.hasMatch(content)) continue;
       var updated = statics?.hasMatch(content) == true
           ? content.replaceAllMapped(statics!, (match) => match[1]!)
@@ -222,17 +224,13 @@ class ArbMigrator {
     return callers;
   }
 
-  /// Files directly in (or, when [recursive], under) [directory] ending
-  /// with [extension]; none when it does not exist.
-  Future<List<String>> _filesIn(
-    String directory,
-    String extension, {
-    bool recursive = false,
-  }) async {
+  /// Files directly in [directory] ending with [extension]; none when it
+  /// does not exist.
+  Future<List<String>> _filesIn(String directory, String extension) async {
     final folder = Directory(directory);
     if (!await folder.exists()) return [];
     return [
-      await for (final entity in folder.list(recursive: recursive))
+      await for (final entity in folder.list())
         if (entity is File && entity.path.endsWith(extension)) entity.path,
     ];
   }
@@ -244,11 +242,11 @@ class ArbMigrator {
     String stem,
     String outputClass,
   ) async {
-    final pattern = RegExp('^${stem}_([a-z]{2,3}(?:_[A-Za-z0-9]+)?)\\.dart\$');
     return {
       for (final path in await _filesIn(outputDir, '.dart'))
-        if (pattern.firstMatch(p.basename(path)) case final match?)
-          match[1]!: _translations.parse(
+        if (L10nConfig.localeParts(p.basename(path))
+            case (:final prefix, :final locale) when prefix == '${stem}_')
+          locale: _translations.parse(
             await File(path).readAsString(),
             outputClass,
           ),
@@ -291,7 +289,7 @@ class ArbMigrator {
         (await file.exists()
             ? ArbService.decode(await file.readAsString())
             : null) ??
-        <String, dynamic>{'@@locale': locale};
+        <String, dynamic>{ArbService.localeKey: locale};
     arb.addAll(dart.messages);
     if (withPlaceholders) {
       for (final MapEntry(:key, value: types) in dart.placeholders.entries) {

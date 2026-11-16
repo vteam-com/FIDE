@@ -4,10 +4,12 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/dependency_version.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/health_indicators.dart';
+import 'package:fide/models/project_files.dart';
 import 'package:fide/models/project_metrics.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/project_config_reader.dart';
+import 'package:path/path.dart' as p;
 
 /// Gathers project metrics (pubspec info, file and directory statistics,
 /// health indicators) and derives a quality score from them.
@@ -92,35 +94,25 @@ class ProjectAnalyzer {
   >
   _walkProjectTree(String projectPath) async {
     const largeFileBytes =
-        AppMetric.largeFileThresholdMb *
-        AppMetric.fileSizeDivisor *
-        AppMetric.fileSizeDivisor;
+        AppMetric.largeFileThresholdMb * AppMetric.bytesPerMegabyte;
     final fileStats = <String, int>{};
     final structure = <String, int>{};
     final largeFiles = <String>[];
 
-    await for (final entity in Directory(
-      projectPath,
-    ).list(recursive: true, followLinks: false)) {
+    await for (final entity in ProjectFiles.entities(projectPath)) {
+      final relative = p.relative(entity.path, from: projectPath);
       if (entity is File) {
         final extension = FileTypeUtils.extensionOf(entity.path);
         fileStats[extension] = (fileStats[extension] ?? 0) + 1;
         try {
-          if (await entity.length() > largeFileBytes) {
-            largeFiles.add(entity.path.replaceFirst(projectPath, ''));
-          }
+          if (await entity.length() > largeFileBytes) largeFiles.add(relative);
         } catch (_) {
           // Skip files we can't read (like broken symlinks)
         }
       } else if (entity is Directory) {
-        final pathSegments = entity.path
-            .replaceFirst(projectPath, '')
-            .split('/');
-        if (pathSegments.length >= AppMetric.minDirPathDepth) {
-          final category = pathSegments[1];
-          if (_trackedTopLevelDirectories.contains(category)) {
-            structure[category] = (structure[category] ?? 0) + 1;
-          }
+        final category = p.split(relative).first;
+        if (_trackedTopLevelDirectories.contains(category)) {
+          structure[category] = (structure[category] ?? 0) + 1;
         }
       }
     }

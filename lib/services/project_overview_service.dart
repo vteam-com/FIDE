@@ -35,7 +35,7 @@ class ProjectOverviewService {
     final paths = ProjectPaths(projectPath);
     final (code, arbFiles, appIconPath, coverage) = await (
       _codeReview.analyze(projectPath),
-      _arbService.loadArbFiles(paths.l10nDir),
+      _arbService.loadProject(projectPath),
       _inspector.projectIconPath(projectPath),
       _readCoverage(paths.coverageLcov),
     ).wait;
@@ -45,12 +45,12 @@ class ProjectOverviewService {
       code: code,
       languages: [for (final file in arbFiles.valid) file.languageCode]..sort(),
       platforms: platforms,
-      cocoaPods: _cocoaPods.inspect(
+      cocoaPods: await _cocoaPods.inspect(
         projectPath,
         platforms,
         code.packagePlatformWarnings,
       ),
-      translations: _arbService.compareArbFiles(arbFiles.valid),
+      translations: arbFiles.comparisons,
       coverage: coverage,
     );
   }
