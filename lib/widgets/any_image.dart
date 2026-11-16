@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:fide/services/file_type_utils.dart';
+import 'package:fide/widgets/any_image.styled_svg_loader.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_ui/material_ui.dart';
@@ -20,7 +21,8 @@ class AnyImage extends StatelessWidget {
     : file = null,
       isVector = _isVector(path);
 
-  /// Extension of vector images, drawn by `flutter_svg`.
+  /// Extension of vector images, drawn by `flutter_svg` once their style
+  /// sheet is inlined by [StyledSvgLoader].
   static const String _svgExtension = 'svg';
 
   /// The encoded image; null when read from [file].
@@ -36,9 +38,13 @@ class AnyImage extends StatelessWidget {
     final bytes = this.bytes;
     final file = this.file;
     if (isVector) {
-      return bytes != null
-          ? SvgPicture.memory(bytes, fit: BoxFit.contain, errorBuilder: _error)
-          : SvgPicture.file(file!, fit: BoxFit.contain, errorBuilder: _error);
+      return SvgPicture(
+        bytes != null
+            ? StyledSvgLoader.memory(bytes)
+            : StyledSvgLoader.file(file!),
+        fit: BoxFit.contain,
+        errorBuilder: _error,
+      );
     }
     return bytes != null
         ? Image.memory(bytes, fit: BoxFit.contain, errorBuilder: _error)
