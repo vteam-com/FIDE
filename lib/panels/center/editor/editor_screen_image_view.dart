@@ -1,10 +1,7 @@
-import 'dart:io';
-
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/byte_size.dart';
 import 'package:fide/providers/ui_state_providers.dart';
-import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/widgets/any_image.dart';
+import 'package:fide/widgets/file_facts_label.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/image_backdrop_buttons.dart';
 import 'package:fide/widgets/image_canvas.dart';
@@ -29,23 +26,13 @@ class EditorScreenImageView extends ConsumerStatefulWidget {
 }
 
 class _EditorScreenImageViewState extends ConsumerState<EditorScreenImageView> {
-  /// Size of [EditorScreenImageView.filePath] on disk, read once per file.
-  late Future<int> _fileLength;
-
   /// Zoom and pan of the image, pinched and dragged by the user.
   final TransformationController _transformation = TransformationController();
-
-  @override
-  void initState() {
-    super.initState();
-    _fileLength = File(widget.filePath).length();
-  }
 
   @override
   void didUpdateWidget(EditorScreenImageView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.filePath != widget.filePath) {
-      _fileLength = File(widget.filePath).length();
       _transformation.value = Matrix4.identity();
     }
   }
@@ -59,7 +46,6 @@ class _EditorScreenImageViewState extends ConsumerState<EditorScreenImageView> {
   @override
   Widget build(BuildContext context) {
     final filePath = widget.filePath;
-    final extension = FileTypeUtils.extensionOf(filePath);
     return Column(
       children: [
         HeaderBar(
@@ -69,16 +55,7 @@ class _EditorScreenImageViewState extends ConsumerState<EditorScreenImageView> {
               const ImageBackdropButtons(),
               const Spacer(),
               ZoomLabel(controller: _transformation),
-              FutureBuilder<int>(
-                future: _fileLength,
-                builder: (context, snapshot) => Text(
-                  [
-                    ?snapshot.data?.readableSize,
-                    extension.toUpperCase(),
-                  ].join(' • '),
-                  style: AppTextStyle.secondary(context),
-                ),
-              ),
+              FileFactsLabel(filePath: filePath),
             ],
           ),
         ),

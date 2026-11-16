@@ -15,6 +15,7 @@ enum FileCategory {
   script,
   text,
   image,
+  audio,
   pdf,
   archive,
   other,

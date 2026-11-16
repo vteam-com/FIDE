@@ -25,9 +25,6 @@ class AppZoom {
   /// zoom in or out by.
   static const double canvasStep = 1.25;
 
-  /// Percent in one whole, to show a zoom such as `125%`.
-  static const int _percent = 100;
-
   /// The next level above [zoom], or the largest level.
   static double larger(double zoom) =>
       levels.firstWhere((level) => level > zoom, orElse: () => levels.last);
@@ -37,7 +34,7 @@ class AppZoom {
       levels.lastWhere((level) => level < zoom, orElse: () => levels.first);
 
   /// [zoom] as a whole percent, such as `125%`.
-  static String label(double zoom) => '${(zoom * _percent).round()}%';
+  static String label(double zoom) => '${(zoom * AppMetric.percent).round()}%';
 
   const AppZoom._();
 }

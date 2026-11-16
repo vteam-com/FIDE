@@ -10,6 +10,7 @@ import 'package:fide/providers/image_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/any_image.dart';
 import 'package:fide/widgets/choice_buttons.dart';
+import 'package:fide/widgets/compact_slider.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/image_backdrop_buttons.dart';
@@ -154,9 +155,15 @@ class _ImageDiffState extends ConsumerState<ImageDiff> {
               ),
               const ImageBackdropButtons(),
               if (mode == ImageDiffMode.swipe)
-                _buildSlider(_swipe, (value) => _swipe = value),
+                CompactSlider(
+                  value: _swipe,
+                  onChanged: (value) => setState(() => _swipe = value),
+                ),
               if (mode == ImageDiffMode.onion)
-                _buildSlider(_onion, (value) => _onion = value),
+                CompactSlider(
+                  value: _onion,
+                  onChanged: (value) => setState(() => _onion = value),
+                ),
               const Spacer(),
               ZoomLabel(controller: _transformation),
             ],
@@ -164,17 +171,6 @@ class _ImageDiffState extends ConsumerState<ImageDiff> {
         ),
         Expanded(child: _buildMode(mode)),
       ],
-    );
-  }
-
-  /// The slider setting a mode's [value], a share from 0 to 1.
-  Widget _buildSlider(double value, ValueChanged<double> onChanged) {
-    return SizedBox(
-      width: AppSize.imageDiffSliderWidth,
-      child: Slider(
-        value: value,
-        onChanged: (value) => setState(() => onChanged(value)),
-      ),
     );
   }
 

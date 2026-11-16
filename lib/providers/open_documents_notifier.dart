@@ -242,9 +242,10 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
     }
   }
 
-  /// Text content of [filePath]; empty for images and missing files.
+  /// Text content of [filePath]; empty for images, sounds and missing
+  /// files.
   Future<String> _readContent(String filePath) async {
-    if (FileTypeUtils.isImageFile(filePath)) return '';
+    if (FileTypeUtils.viewKindOf(filePath).isMedia) return '';
     try {
       if (!await reader.exists(filePath)) return '';
       return await reader.read(filePath);

@@ -18,6 +18,24 @@ class RecordingRunner extends ProcessRunner {
     commands.add([executable, ...arguments].join(' '));
     return ProcessResult(0, 0, '', '');
   }
+
+  @override
+  Future<Process> start(
+    String executable,
+    List<String> arguments, {
+    String? workingDirectory,
+    bool runInShell = false,
+    ProcessStartMode mode = ProcessStartMode.normal,
+  }) async {
+    if (missing.contains(executable)) {
+      throw ProcessException(executable, arguments, 'No such file');
+    }
+    commands.add([executable, ...arguments].join(' '));
+    return Process.start('true', const []);
+  }
+
+  /// Executables [start] fails to find.
+  final Set<String> missing = {};
 }
 
 void main() {
@@ -31,6 +49,7 @@ void main() {
     await shell.openWithDefaultApp('/p/a.png');
     await shell.revealFile('/p/a.png');
     await shell.revealInFileManager('/p');
+    await shell.playSound("/p/it's.wav");
     return shell;
   }
 
@@ -38,7 +57,12 @@ void main() {
     final shell = await exercise('macos');
     expect(shell, isA<MacDesktopShell>());
     expect(shell.fileManagerName, 'Finder');
-    expect(runner.commands, ['open /p/a.png', 'open -R /p/a.png', 'open /p']);
+    expect(runner.commands, [
+      'open /p/a.png',
+      'open -R /p/a.png',
+      'open /p',
+      "afplay /p/it's.wav",
+    ]);
   });
 
   test('Windows uses Explorer and start', () async {
@@ -49,6 +73,8 @@ void main() {
       'cmd /c start  /p/a.png',
       'explorer /select,/p/a.png',
       'explorer /p',
+      'powershell -NoProfile -NonInteractive -Command '
+          "(New-Object Media.SoundPlayer '/p/it''s.wav').PlaySync()",
     ]);
   });
 
@@ -62,7 +88,14 @@ void main() {
         'xdg-open /p/a.png',
         'xdg-open /p',
         'xdg-open /p',
+        "paplay /p/it's.wav",
       ]);
     }
+  });
+
+  test('Linux plays with aplay without PulseAudio', () async {
+    runner.missing.add('paplay');
+    await DesktopShell.forOperatingSystem('linux', runner).playSound('/a.wav');
+    expect(runner.commands, ['aplay /a.wav']);
   });
 }

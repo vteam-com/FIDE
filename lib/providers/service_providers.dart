@@ -8,6 +8,7 @@ import 'package:fide/services/arb_migrator.dart';
 import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/arb_translator.dart';
 import 'package:fide/services/asset_categorizer.dart';
+import 'package:fide/services/audio_file_service.dart';
 import 'package:fide/services/build_artifacts_inspector.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/cocoa_pods_migrator.dart';
@@ -229,6 +230,12 @@ final appIconFixerProvider = Provider<AppIconFixer>(
 /// Provides the [CodeFormatter] behind the editor's Format action.
 final codeFormatterProvider = Provider<CodeFormatter>(
   (ref) => CodeFormatter(ref.read(processRunnerProvider)),
+);
+
+/// Provides the [AudioFileService] the audio editor loads and saves sounds
+/// with.
+final audioFileServiceProvider = Provider<AudioFileService>(
+  (ref) => AudioFileService(ref.read(processRunnerProvider)),
 );
 
 /// Provides the [FileContentReader] that loads files as text for the

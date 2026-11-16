@@ -33,6 +33,9 @@ class AppMetric {
   static const int largeFileThresholdMb = 10;
   static const int maxAllowedLargeFiles = 3;
   static const int maxScore = 100;
+
+  /// Percent in one whole, to show a factor such as `125%`.
+  static const int percent = 100;
   static const int warningScoreThreshold = 80;
   static const int criticalScoreThreshold = 50;
   static const int missingLockDeduction = 20;

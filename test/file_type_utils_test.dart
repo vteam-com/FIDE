@@ -46,6 +46,16 @@ void main() {
         expect(FileTypeUtils.viewKindOf('logo.PNG'), FileViewKind.image);
       });
 
+      test('shows sounds in the audio editor, as media', () {
+        expect(FileTypeUtils.viewKindOf('jump.MP3'), FileViewKind.audio);
+        expect(FileTypeUtils.viewKindOf('loop.ogg'), FileViewKind.audio);
+        expect(FileTypeUtils.categoryOf('wav'), FileCategory.audio);
+        expect(FileViewKind.audio.isMedia, true);
+        expect(FileViewKind.image.isMedia, true);
+        expect(FileViewKind.code.isMedia, false);
+        expect(FileIconUtils.iconOf(FileCategory.audio), Icons.audiotrack);
+      });
+
       test('is unsupported for recognized-only, unknown and empty paths', () {
         expect(FileTypeUtils.viewKindOf('doc.pdf'), FileViewKind.unsupported);
         expect(FileTypeUtils.viewKindOf('a.xyz'), FileViewKind.unsupported);

@@ -1,6 +1,7 @@
 // Utility functions for file type detection
 // ignore: fcheck_dead_code
 
+import 'package:fide/models/asset_kind.dart';
 import 'package:path/path.dart' as p;
 import 'package:re_highlight/languages/bash.dart';
 import 'package:re_highlight/languages/c.dart';
@@ -123,6 +124,9 @@ class FileTypeUtils {
     'tiff': const FileTypeInfo.image(),
     'tif': const FileTypeInfo.image(),
     'svg': const FileTypeInfo.image(),
+    // Sounds shown in the audio editor
+    for (final extension in AssetKind.audio.extensions)
+      extension: const FileTypeInfo.audio(),
     // Recognized but not opened
     'ora': const FileTypeInfo.other(FileCategory.image),
     'pdf': const FileTypeInfo.other(FileCategory.pdf),
@@ -133,8 +137,8 @@ class FileTypeUtils {
     'gz': const FileTypeInfo.other(FileCategory.archive),
   };
 
-  /// How the editor shows [filePath]: as code, as an image, or not at all
-  /// when its type is unknown or only recognized.
+  /// How the editor shows [filePath]: as code, an image, a sound, or not
+  /// at all when its type is unknown or only recognized.
   static FileViewKind viewKindOf(String filePath) {
     return _typeOf(filePath)?.opensAs ?? FileViewKind.unsupported;
   }

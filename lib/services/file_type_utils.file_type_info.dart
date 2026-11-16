@@ -25,6 +25,13 @@ class FileTypeInfo {
       language = null,
       label = null;
 
+  /// A sound the audio editor opens.
+  const FileTypeInfo.audio()
+    : category = FileCategory.audio,
+      opensAs = FileViewKind.audio,
+      language = null,
+      label = null;
+
   /// A recognized file FIDE only shows an icon for.
   const FileTypeInfo.other(this.category)
     : opensAs = FileViewKind.unsupported,

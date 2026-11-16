@@ -1,6 +1,7 @@
 part of 'desktop_shell.dart';
 
-/// The Windows [DesktopShell]: Explorer, and `start` for default apps.
+/// The Windows [DesktopShell]: Explorer, `start` for default apps, and
+/// PowerShell's `SoundPlayer` for sounds.
 class WindowsDesktopShell extends DesktopShell {
   /// Creates the Windows shell launching its commands with [runner].
   const WindowsDesktopShell(super.runner);
@@ -12,6 +13,16 @@ class WindowsDesktopShell extends DesktopShell {
   @override
   Future<void> openWithDefaultApp(String file) =>
       runner.run('cmd', ['/c', 'start', '', file]);
+
+  // A single quote is doubled inside a PowerShell single-quoted string
+  @override
+  Future<Process> playSound(String file) => runner.start('powershell', [
+    '-NoProfile',
+    '-NonInteractive',
+    '-Command',
+    "(New-Object Media.SoundPlayer '${file.replaceAll("'", "''")}')"
+        '.PlaySync()',
+  ]);
 
   @override
   Future<void> revealFile(String file) =>

@@ -3,6 +3,7 @@ import 'package:fide/models/document_state.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/git_diff_stats_provider.dart';
+import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widget_services/diff_counter.dart';
@@ -138,8 +139,10 @@ class EditorScreenHeader extends ConsumerWidget {
               ],
             ),
           ),
-          if (ref.watch(gitDiffStatsProvider(currentFile)).value?.hasChanges ??
-              false)
+          // Sounds have no diff view
+          if (FileTypeUtils.viewKindOf(currentFile) != FileViewKind.audio &&
+              (ref.watch(gitDiffStatsProvider(currentFile)).value?.hasChanges ??
+                  false))
             CompactIconButton.header(
               key: const Key('keyEditorDiff'),
               icon: showDiffView ? Icons.edit : Icons.difference,

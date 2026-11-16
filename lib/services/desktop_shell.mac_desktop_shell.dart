@@ -1,6 +1,6 @@
 part of 'desktop_shell.dart';
 
-/// The macOS [DesktopShell]: Finder, through `open`.
+/// The macOS [DesktopShell]: Finder, through `open`, and `afplay`.
 class MacDesktopShell extends DesktopShell {
   /// Creates the macOS shell launching `open` with [runner].
   const MacDesktopShell(super.runner);
@@ -10,6 +10,9 @@ class MacDesktopShell extends DesktopShell {
 
   @override
   Future<void> openWithDefaultApp(String file) => runner.run('open', [file]);
+
+  @override
+  Future<Process> playSound(String file) => runner.start('afplay', [file]);
 
   @override
   Future<void> revealFile(String file) => runner.run('open', ['-R', file]);
