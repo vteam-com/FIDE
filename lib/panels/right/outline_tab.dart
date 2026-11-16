@@ -36,6 +36,7 @@ class OutlineTab extends ConsumerWidget {
             FileViewKind.image => ImageDetailsPanel(path: path),
             FileViewKind.code ||
             FileViewKind.audio ||
+            FileViewKind.font ||
             FileViewKind.unsupported => OutlinePanel(file: file!),
           },
         ),

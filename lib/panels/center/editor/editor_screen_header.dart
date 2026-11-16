@@ -139,8 +139,7 @@ class EditorScreenHeader extends ConsumerWidget {
               ],
             ),
           ),
-          // Sounds have no diff view
-          if (FileTypeUtils.viewKindOf(currentFile) != FileViewKind.audio &&
+          if (FileTypeUtils.viewKindOf(currentFile).hasDiffView &&
               (ref.watch(gitDiffStatsProvider(currentFile)).value?.hasChanges ??
                   false))
             CompactIconButton.header(

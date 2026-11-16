@@ -8,6 +8,7 @@ import 'package:fide/models/editor_search.dart';
 import 'package:fide/models/text_offsets.dart';
 import 'package:fide/panels/center/editor/code_folding.dart';
 import 'package:fide/panels/center/editor/editor_screen_audio_view.dart';
+import 'package:fide/panels/center/editor/editor_screen_font_view.dart';
 import 'package:fide/panels/center/editor/editor_screen_header.dart';
 import 'package:fide/panels/center/editor/editor_screen_image_diff_view.dart';
 import 'package:fide/panels/center/editor/editor_screen_image_view.dart';
@@ -224,6 +225,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
             ? EditorScreenImageDiffView(filePath: _currentFile)
             : EditorScreenImageView(filePath: _currentFile),
       FileViewKind.audio => EditorScreenAudioView(filePath: _currentFile),
+      FileViewKind.font => EditorScreenFontView(filePath: _currentFile),
       FileViewKind.code => _showDiffView ? _buildDiffView() : _buildCodeView(),
     };
   }

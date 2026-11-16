@@ -32,6 +32,13 @@ class FileTypeInfo {
       language = null,
       label = null;
 
+  /// A font file the font viewer opens.
+  const FileTypeInfo.font()
+    : category = FileCategory.font,
+      opensAs = FileViewKind.font,
+      language = null,
+      label = null;
+
   /// A recognized file FIDE only shows an icon for.
   const FileTypeInfo.other(this.category)
     : opensAs = FileViewKind.unsupported,

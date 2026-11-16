@@ -56,6 +56,19 @@ void main() {
         expect(FileIconUtils.iconOf(FileCategory.audio), Icons.audiotrack);
       });
 
+      test('shows fonts in the font viewer, as media without a diff', () {
+        expect(FileTypeUtils.viewKindOf('Roboto.TTF'), FileViewKind.font);
+        expect(FileTypeUtils.viewKindOf('Inter.otf'), FileViewKind.font);
+        expect(FileTypeUtils.viewKindOf('web.woff2'), FileViewKind.unsupported);
+        expect(FileTypeUtils.categoryOf('woff'), FileCategory.font);
+        expect(FileViewKind.font.isMedia, true);
+        expect(FileViewKind.font.hasDiffView, false);
+        expect(FileViewKind.audio.hasDiffView, false);
+        expect(FileViewKind.image.hasDiffView, true);
+        expect(FileViewKind.code.hasDiffView, true);
+        expect(FileIconUtils.iconOf(FileCategory.font), Icons.font_download);
+      });
+
       test('is unsupported for recognized-only, unknown and empty paths', () {
         expect(FileTypeUtils.viewKindOf('doc.pdf'), FileViewKind.unsupported);
         expect(FileTypeUtils.viewKindOf('a.xyz'), FileViewKind.unsupported);

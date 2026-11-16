@@ -49,6 +49,7 @@ class FileIconUtils {
     FileCategory.text => Icons.article,
     FileCategory.image => Icons.image,
     FileCategory.audio => Icons.audiotrack,
+    FileCategory.font => Icons.font_download,
     FileCategory.pdf => Icons.picture_as_pdf,
     FileCategory.archive => Icons.archive,
     FileCategory.other => Icons.insert_drive_file,

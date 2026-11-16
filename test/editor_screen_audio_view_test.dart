@@ -11,6 +11,8 @@ import 'package:path/path.dart' as p;
 
 import 'audio_test_support.dart';
 
+import 'widget_test_support.dart';
+
 void main() {
   late Directory folder;
   late FakeShell shell;
@@ -124,16 +126,4 @@ void main() {
     expect(find.text("Can't open this sound"), findsOneWidget);
     expect(find.textContaining('needs ffmpeg'), findsOneWidget);
   });
-}
-
-/// Lets real file and isolate work run, frame by frame, until [until]
-/// holds or a while has passed.
-Future<void> settle(WidgetTester tester, {bool Function()? until}) async {
-  for (var attempt = 0; attempt < 100; attempt++) {
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 20)),
-    );
-    await tester.pump();
-    if (until?.call() ?? attempt > 10) return;
-  }
 }

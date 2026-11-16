@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:isolate';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/audio_clip.dart';
 import 'package:fide/models/audio_edit.dart';
 import 'package:fide/models/clock_time.dart';
+import 'package:fide/models/readable_error.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/audio_effects.dart';
 import 'package:fide/services/audio_file_service.dart';
@@ -131,7 +131,7 @@ class _EditorScreenAudioViewState extends ConsumerState<EditorScreenAudioView>
     if (error != null) {
       return EmptyState.error(
         title: "Can't open this sound",
-        message: _describe(error),
+        message: ReadableError.describe(error),
       );
     }
     final audio = _audio;
@@ -273,14 +273,6 @@ class _EditorScreenAudioViewState extends ConsumerState<EditorScreenAudioView>
         final count => '$count channels',
       };
 
-  /// What went wrong, for people to read.
-  static String _describe(Object error) => switch (error) {
-    ProcessException(:final message) => message,
-    FormatException(:final message) => message,
-    FileSystemException(:final message, :final path) => '$message: $path',
-    _ => '$error',
-  };
-
   /// Loads [EditorScreenAudioView.filePath], dropping the edit once
   /// loaded; the sound shown, if any, stays until then.
   Future<void> _load() async {
@@ -340,7 +332,10 @@ class _EditorScreenAudioViewState extends ConsumerState<EditorScreenAudioView>
       await _load();
     } catch (error) {
       if (mounted) {
-        MessageBox.showError(context, "Couldn't save: ${_describe(error)}");
+        MessageBox.showError(
+          context,
+          "Couldn't save: ${ReadableError.describe(error)}",
+        );
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -397,7 +392,10 @@ class _EditorScreenAudioViewState extends ConsumerState<EditorScreenAudioView>
       );
     } catch (error) {
       if (mounted) {
-        MessageBox.showError(context, "Couldn't play: ${_describe(error)}");
+        MessageBox.showError(
+          context,
+          "Couldn't play: ${ReadableError.describe(error)}",
+        );
       }
     } finally {
       if (mounted) setState(() => _busy = false);

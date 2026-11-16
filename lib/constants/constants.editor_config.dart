@@ -28,6 +28,16 @@ class EditorConfig {
   /// an octave.
   static const int audioMaxSemitones = 12;
 
+  /// Sizes the font viewer draws its sample sentence at, smallest first.
+  static const List<double> fontSampleSizes = [
+    AppFontSize.caption,
+    AppFontSize.label,
+    AppFontSize.title,
+    AppFontSize.headline,
+    AppFontSize.display,
+    AppFontSize.specimen,
+  ];
+
   static const double scrollableExtentMax = 1000000;
   static const double scrollableExtentMin = 100;
   static const double lineHeight = 20;

@@ -127,7 +127,13 @@ class FileTypeUtils {
     // Sounds shown in the audio editor
     for (final extension in AssetKind.audio.extensions)
       extension: const FileTypeInfo.audio(),
+    // Fonts shown in the font viewer
+    'ttf': const FileTypeInfo.font(),
+    'otf': const FileTypeInfo.font(),
+    'ttc': const FileTypeInfo.font(),
     // Recognized but not opened
+    'woff': const FileTypeInfo.other(FileCategory.font),
+    'woff2': const FileTypeInfo.other(FileCategory.font),
     'ora': const FileTypeInfo.other(FileCategory.image),
     'pdf': const FileTypeInfo.other(FileCategory.pdf),
     'zip': const FileTypeInfo.other(FileCategory.archive),
@@ -137,8 +143,8 @@ class FileTypeUtils {
     'gz': const FileTypeInfo.other(FileCategory.archive),
   };
 
-  /// How the editor shows [filePath]: as code, an image, a sound, or not
-  /// at all when its type is unknown or only recognized.
+  /// How the editor shows [filePath]: as code, an image, a sound, a font,
+  /// or not at all when its type is unknown or only recognized.
   static FileViewKind viewKindOf(String filePath) {
     return _typeOf(filePath)?.opensAs ?? FileViewKind.unsupported;
   }

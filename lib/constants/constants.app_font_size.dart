@@ -10,5 +10,8 @@ class AppFontSize {
   static const double headline = 24;
   static const double display = 32;
 
+  /// The largest sample of a font in the font viewer.
+  static const double specimen = 64;
+
   const AppFontSize._();
 }

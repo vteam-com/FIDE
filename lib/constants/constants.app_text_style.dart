@@ -90,6 +90,30 @@ class AppTextStyle {
     height: AppLineHeight.compact,
   );
 
+  /// Text drawn in a font file's own [family] at [fontSize] by the font
+  /// viewer, in its [bold] and [italic] faces, [underline]d and
+  /// [strikethrough] as toggled, in [color].
+  static TextStyle fontSample({
+    required String family,
+    required double fontSize,
+    required Color color,
+    bool bold = false,
+    bool italic = false,
+    bool underline = false,
+    bool strikethrough = false,
+  }) => TextStyle(
+    fontFamily: family,
+    fontSize: fontSize,
+    color: color,
+    fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+    fontStyle: italic ? FontStyle.italic : FontStyle.normal,
+    decoration: TextDecoration.combine([
+      if (underline) TextDecoration.underline,
+      if (strikethrough) TextDecoration.lineThrough,
+    ]),
+    decorationColor: color,
+  );
+
   /// Secondary lines: descriptions, details, metadata.
   static TextStyle secondary(BuildContext context) =>
       caption.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
