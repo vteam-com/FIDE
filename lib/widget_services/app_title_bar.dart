@@ -66,57 +66,55 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     return Container(
       // Transparent so the window's workspace gradient runs behind it
       color: Colors.transparent,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.medium),
+      // The two sides share the width left by the panel buttons equally,
+      // so those buttons sit at the bar's center whatever the sides hold
       child: Row(
         children: [
-          // Platform-specific spacing for window controls
-          if (Platform.isMacOS)
-            SizedBox(
-              width: AppSize.macWindowControlsSpacing / zoom,
-            ), // Space for macOS traffic lights (left side)
-          // Left section: Project dropdown or app title
-          Consumer(
-            builder: (_, ref, _) {
-              final currentProjectPath = ref.watch(currentProjectPathProvider);
-              final mruFolders = ref.watch(mruFoldersProvider);
-              // Look up the recent projects' icons ahead of the menu.
-              for (final folder in ref.watch(accessibleMruFoldersProvider)) {
-                ref.read(projectIconPathProvider(folder));
-              }
-
-              if (currentProjectPath != null) {
-                // Show project dropdown
-                return _buildProjectDropdown(
-                  currentProjectPath,
-                  mruFolders,
-                  ref,
-                );
-              } else {
-                // Show app title when no project is loaded
-                return _buildAppTitle();
-              }
-            },
+          Expanded(
+            child: Row(
+              children: [
+                // Space for the macOS traffic lights
+                if (Platform.isMacOS)
+                  SizedBox(width: AppSize.macWindowControlsSpacing / zoom),
+                Flexible(child: _buildProjectTitle()),
+                // macOS shows these menus natively
+                if (!Platform.isMacOS) AppMenuBar(menus: widget.menus),
+              ],
+            ),
           ),
-
-          // macOS shows these menus natively
-          if (!Platform.isMacOS) AppMenuBar(menus: widget.menus),
-
-          // Center section: Panel toggle buttons (only shown when in main layout)
           if (ref.watch(appViewProvider) == AppViewState.mainLayout)
-            Expanded(child: Center(child: _buildPanelToggleButtons()))
-          else
-            const Spacer(),
-
-          // Right section: Settings button
-          _buildSettingsButton(),
-
-          // Spacer to push content away from right-side window controls (Windows/Linux)
-          if (!Platform.isMacOS) const Spacer(),
-
-          // Space for the native window controls on Windows (right side)
-          if (Platform.isWindows)
-            const SizedBox(width: AppSize.desktopWindowControlsSpacing),
+            _buildPanelToggleButtons(),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                _buildSettingsButton(),
+                // Space for the native window controls on Windows
+                if (Platform.isWindows)
+                  const SizedBox(width: AppSize.desktopWindowControlsSpacing),
+              ],
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  /// The project dropdown, or the app title while no project is open.
+  Widget _buildProjectTitle() {
+    return Consumer(
+      builder: (_, ref, _) {
+        final currentProjectPath = ref.watch(currentProjectPathProvider);
+        final mruFolders = ref.watch(mruFoldersProvider);
+        // Look up the recent projects' icons ahead of the menu.
+        for (final folder in ref.watch(accessibleMruFoldersProvider)) {
+          ref.read(projectIconPathProvider(folder));
+        }
+        return currentProjectPath == null
+            ? _buildAppTitle()
+            : _buildProjectDropdown(currentProjectPath, mruFolders, ref);
+      },
     );
   }
 
@@ -156,18 +154,22 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
   /// The buttons cycling each [SidePanel] through Hide, Min and Max, each
   /// highlighted while its panel shows.
   Widget _buildPanelToggleButtons() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final panel in SidePanel.values)
-          CompactIconButton.svg(
-            key: panel.toggleKey,
-            svgAsset: panel.asset,
-            selected: ref.watch(panel.visibleProvider),
-            onPressed: () => cyclePanelSize(ref, panel),
-            tooltip: panel.tooltip,
-          ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.medium),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: AppSpacing.medium,
+        children: [
+          for (final panel in SidePanel.values)
+            CompactIconButton.svg(
+              key: panel.toggleKey,
+              svgAsset: panel.asset,
+              selected: ref.watch(panel.visibleProvider),
+              onPressed: () => cyclePanelSize(ref, panel),
+              tooltip: panel.tooltip,
+            ),
+        ],
+      ),
     );
   }
 
