@@ -13,7 +13,12 @@ class FakeFixer extends AppIconFixer {
   const FakeFixer() : super(const ProjectConfigReader());
 
   static final List<AppIconPlatform> fixed = [];
+  static final List<String> sources = [];
   static Set<AppIconPlatform> failing = {};
+
+  @override
+  Future<String> fixMaster(String masterPath) async =>
+      '/demo/assets/master.png';
 
   @override
   Future<List<String>> fix(
@@ -22,6 +27,7 @@ class FakeFixer extends AppIconFixer {
     String masterPath,
   ) async {
     fixed.add(platform);
+    sources.add(masterPath);
     if (failing.contains(platform)) throw StateError('no icon set');
     return ['${platform.name}/icon.png'];
   }
@@ -37,15 +43,19 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late List<Iterable<String>> reloaded;
+  late List<String> used;
   late AppIconFixController controller;
 
   setUp(() {
     FakeFixer.fixed.clear();
+    FakeFixer.sources.clear();
     FakeFixer.failing = {};
     reloaded = [];
+    used = [];
     controller = AppIconFixController(
       fixer: const FakeFixer(),
       reloadWritten: (paths) async => reloaded.add(paths),
+      useMaster: used.add,
     );
   });
   tearDown(() => controller.dispose());
@@ -78,5 +88,27 @@ void main() {
     expect(outcome.message, startsWith('iOS: '));
     expect(reloaded.single, ['/demo/web/icon.png']);
     expect(controller.state, isEmpty);
+  });
+
+  test('fixes the master first, then the platforms from it', () async {
+    final states = <Set<String>>[];
+    controller.addListener(states.add, fireImmediately: false);
+
+    final outcome = await controller.fix(
+      '/demo',
+      _platforms.take(1),
+      '/demo/assets/master.jpg',
+      fixMaster: true,
+    );
+
+    expect(outcome.message, 'Wrote 2 files');
+    expect(used, ['/demo/assets/master.png']);
+    expect(FakeFixer.sources, ['/demo/assets/master.png']);
+    expect(reloaded.single, ['/demo/assets/master.png', '/demo/ios/icon.png']);
+    expect(states, [
+      {AppIconFixController.masterId, 'ios'},
+      {'ios'},
+      <String>{},
+    ]);
   });
 }

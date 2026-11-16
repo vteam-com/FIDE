@@ -16,6 +16,7 @@ import 'package:fide/widgets/image_backdrop_buttons.dart';
 import 'package:fide/widgets/image_canvas.dart';
 import 'package:fide/widgets/image_diff_mode_icon.dart';
 import 'package:fide/widgets/pane_divider.dart';
+import 'package:fide/widgets/pixel_image.dart';
 import 'package:fide/widgets/viewer_toolbar.dart';
 import 'package:fide/widgets/zoom_label.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -244,7 +245,7 @@ class _ImageDiffState extends ConsumerState<ImageDiff> {
                 alignment: Alignment.center,
                 children: [
                   Opacity(opacity: AppOpacity.imageDiffBase, child: newImage),
-                  RawImage(image: _mask, fit: BoxFit.contain),
+                  PixelRawImage(image: _mask),
                 ],
               ),
             ),

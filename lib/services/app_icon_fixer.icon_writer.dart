@@ -43,6 +43,9 @@ class IconWriter {
   /// Project-relative paths written, in order.
   final List<String> written = [];
 
+  /// Width and height in pixels of the square master.
+  int get masterSide => _master.width;
+
   /// The master at [size] pixels, flattened onto white when [opaque].
   img.Image _resized(int size, {bool opaque = false}) {
     final resized = img.copyResize(

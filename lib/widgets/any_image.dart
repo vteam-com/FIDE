@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/widgets/any_image.styled_svg_loader.dart';
 import 'package:fide/widgets/empty_state.dart';
+import 'package:fide/widgets/pixel_image.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -43,16 +44,17 @@ class AnyImage extends StatelessWidget {
             ? StyledSvgLoader.memory(bytes)
             : StyledSvgLoader.file(file!),
         fit: BoxFit.contain,
-        errorBuilder: _error,
+        errorBuilder: (context, _, _) => _error(context),
       );
     }
-    return bytes != null
-        ? Image.memory(bytes, fit: BoxFit.contain, errorBuilder: _error)
-        : Image.file(file!, fit: BoxFit.contain, errorBuilder: _error);
+    return PixelImage(
+      bytes != null ? MemoryImage(bytes) : FileImage(file!),
+      errorBuilder: _error,
+    );
   }
 
   /// Shown in place of an image that can't be decoded.
-  Widget _error(BuildContext _, Object _, StackTrace? _) {
+  Widget _error(BuildContext _) {
     return const EmptyState.error(
       title: 'Failed to load image',
       message: 'The image file may be corrupted or unsupported',

@@ -16,49 +16,81 @@ final appIconFixControllerProvider =
       (ref) => AppIconFixController(
         fixer: ref.read(appIconFixerProvider),
         reloadWritten: ref.read(openDocumentsProvider.notifier).reloadWritten,
+        useMaster: (path) =>
+            ref.read(appIconMasterChoiceProvider.notifier).state = path,
       ),
     );
 
 /// Reloads the files at the given absolute paths in the editor.
 typedef ReloadWritten = Future<void> Function(Iterable<String> paths);
 
+/// Makes the master image at the given absolute path the one icons are
+/// generated from.
+typedef UseMaster = void Function(String path);
+
 /// Regenerates platforms' app icons from a master image, one platform at
-/// a time; its state is the ids of the platforms being written.
+/// a time; its state is the ids of the platforms being written, and
+/// [masterId] while the master itself is.
 class AppIconFixController extends StateNotifier<Set<String>> {
+  /// The state's entry while the master image is being rewritten.
+  static const String masterId = 'master';
+
   final AppIconFixer _fixer;
 
   final ReloadWritten _reloadWritten;
 
-  /// Creates a controller writing icons with [fixer] and reloading the
-  /// files it rewrote with [reloadWritten].
+  final UseMaster _useMaster;
+
+  /// Creates a controller writing icons with [fixer], reloading the files
+  /// it rewrote with [reloadWritten] and switching to a rewritten master
+  /// with [useMaster].
   AppIconFixController({
     required AppIconFixer fixer,
     required ReloadWritten reloadWritten,
-  }) : this._(fixer, reloadWritten);
+    required UseMaster useMaster,
+  }) : this._(fixer, reloadWritten, useMaster);
 
-  AppIconFixController._(this._fixer, this._reloadWritten) : super(const {});
+  AppIconFixController._(this._fixer, this._reloadWritten, this._useMaster)
+    : super(const {});
 
   /// Writes the icons of [platforms] in the project at [projectPath] from
-  /// the image at [masterPath], then drops the cached previews and reloads
-  /// the files rewritten in the editor; the outcome counts the files
-  /// written, or lists the platforms that failed.
+  /// the image at [masterPath], first rewriting that image as a square
+  /// PNG large enough when [fixMaster], then drops the cached previews
+  /// and reloads the files rewritten in the editor; the outcome counts
+  /// the files written, or lists what failed.
   Future<ActionOutcome> fix(
     String projectPath,
     Iterable<AppIconPlatformReview> platforms,
-    String masterPath,
-  ) async {
-    _update({...state, for (final platform in platforms) platform.id});
+    String masterPath, {
+    bool fixMaster = false,
+  }) async {
+    _update({
+      ...state,
+      if (fixMaster) masterId,
+      for (final platform in platforms) platform.id,
+    });
+    // Absolute paths: the master may live outside the project
     final written = <String>[];
     final failures = <String>[];
+    var source = masterPath;
+    if (fixMaster) {
+      try {
+        source = await _fixer.fixMaster(masterPath);
+        written.add(source);
+        _useMaster(source);
+      } catch (e) {
+        failures.add('Master image: $e');
+      }
+      _update({...state}..remove(masterId));
+    }
     for (final platform in platforms) {
       try {
-        written.addAll(
-          await _fixer.fix(
-            projectPath,
-            fcheck.AppIconPlatform.values.byName(platform.id),
-            masterPath,
-          ),
+        final files = await _fixer.fix(
+          projectPath,
+          fcheck.AppIconPlatform.values.byName(platform.id),
+          source,
         );
+        written.addAll([for (final path in files) p.join(projectPath, path)]);
       } catch (e) {
         failures.add('${platform.label}: $e');
       }
@@ -68,9 +100,7 @@ class AppIconFixController extends StateNotifier<Set<String>> {
     PaintingBinding.instance.imageCache
       ..clear()
       ..clearLiveImages();
-    await _reloadWritten([
-      for (final path in written) p.join(projectPath, path),
-    ]);
+    await _reloadWritten(written);
     return failures.isEmpty
         ? ActionOutcome.success('Wrote ${written.length.count('file')}')
         : ActionOutcome.failure(failures.join('\n'));

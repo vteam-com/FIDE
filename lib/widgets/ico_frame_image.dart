@@ -1,11 +1,13 @@
 import 'dart:typed_data';
 
 import 'package:fide/providers/image_providers.dart';
+import 'package:fide/widgets/pixel_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The image of one [size] embedded in the ICO file at [path], drawn
-/// [drawnSize] wide, or [fallback] when the file holds no such image.
+/// [drawnSize] wide, its pixels sharp when enlarged, or [fallback] when the
+/// file holds no such image.
 class IcoFrameImage extends ConsumerStatefulWidget {
   /// Creates the image of [path]'s [size]-pixel frame.
   const IcoFrameImage({
@@ -57,11 +59,10 @@ class _IcoFrameImageState extends ConsumerState<IcoFrameImage> {
       builder: (_, snapshot) {
         final bytes = snapshot.data;
         if (bytes == null) return widget.fallback;
-        return Image.memory(
-          bytes,
+        return PixelImage(
+          MemoryImage(bytes),
           width: widget.drawnSize,
           height: widget.drawnSize,
-          fit: BoxFit.contain,
         );
       },
     );

@@ -202,6 +202,29 @@ void main() {
     );
   });
 
+  test('fixes the master: centered square, upscaled, as a PNG', () async {
+    final jpeg = p.join(project.path, 'small.jpg');
+    File(jpeg)
+        .writeAsBytesSync(img.encodeJpg(img.Image(width: 623, height: 629)));
+
+    final written = await const AppIconFixer(ProjectConfigReader())
+        .fixMaster(jpeg);
+
+    expect(written, p.join(project.path, 'small.png'));
+    final fixed = img.decodePng(File(written).readAsBytesSync())!;
+    expect(fixed.width, AppIconChecker.appStoreIconSize);
+    expect(fixed.height, AppIconChecker.appStoreIconSize);
+  });
+
+  test('fixes a large master in place, only cropping it', () async {
+    expect(
+      await const AppIconFixer(ProjectConfigReader()).fixMaster(master),
+      master,
+    );
+    final fixed = img.decodePng(File(master).readAsBytesSync())!;
+    expect([fixed.width, fixed.height], [1024, 1024]);
+  });
+
   test('refuses a master that is not an image', () async {
     write('master.png', 'text');
     Directory(p.join(project.path, 'ios')).createSync();

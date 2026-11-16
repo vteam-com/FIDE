@@ -1,9 +1,10 @@
 import 'dart:io';
 
+import 'package:fide/widgets/pixel_image.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// A project's app icon file at [size], or [fallback] when there is none or
-/// it fails to load.
+/// A project's app icon file at [size], its pixels sharp when enlarged, or
+/// [fallback] when there is none or it fails to load.
 class AppIconImage extends StatelessWidget {
   /// Creates the icon for the image at [path].
   const AppIconImage({
@@ -28,14 +29,15 @@ class AppIconImage extends StatelessWidget {
     if (iconPath == null) return fallback;
     // Decode at display size: app icons are often 1024px.
     final decodedSize = (size * MediaQuery.devicePixelRatioOf(context)).round();
-    return Image.file(
-      File(iconPath),
+    return PixelImage(
+      ResizeImage.resizeIfNeeded(
+        decodedSize,
+        decodedSize,
+        FileImage(File(iconPath)),
+      ),
       width: size,
       height: size,
-      cacheWidth: decodedSize,
-      cacheHeight: decodedSize,
-      fit: BoxFit.contain,
-      errorBuilder: (_, _, _) => fallback,
+      errorBuilder: (_) => fallback,
     );
   }
 }

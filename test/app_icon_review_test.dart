@@ -94,16 +94,18 @@ void main() {
       expect(master.isReadable, isTrue);
       expect(master.isNotSquare, isTrue);
       expect(master.isTooSmall, isTrue);
+      expect(master.needsFix, isTrue);
       const unreadable = AppIconMaster('/demo/missing.png');
       expect(unreadable.isReadable, isFalse);
       expect(unreadable.isNotSquare, isFalse);
       expect(unreadable.isTooSmall, isFalse);
+      expect(unreadable.needsFix, isFalse);
       const good = AppIconMaster(
         '/demo/good.png',
         width: AppIconMaster.recommendedSize,
         height: AppIconMaster.recommendedSize,
       );
-      expect(good.isNotSquare || good.isTooSmall, isFalse);
+      expect(good.needsFix, isFalse);
     });
 
     test('a project without icons has nothing to show', () {

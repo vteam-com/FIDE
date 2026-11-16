@@ -11,6 +11,7 @@ import 'package:fide/providers/right_panel_tab.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/app_icon_slot_tile.dart';
+import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_label.dart';
 import 'package:fide/widgets/message_box.dart';
@@ -80,7 +81,7 @@ class AppIconsPanel extends ConsumerWidget {
   }
 
   /// The image every icon is generated from, how to pick another one, and
-  /// the button fixing every [broken] platform from it while nothing is
+  /// the button fixing it and every [broken] platform while nothing is
   /// [fixing].
   Widget _masterCard(
     BuildContext context,
@@ -90,6 +91,7 @@ class AppIconsPanel extends ConsumerWidget {
     List<AppIconPlatformReview> broken,
     Set<String> fixing,
   ) {
+    final readable = master != null && master.isReadable ? master.path : null;
     return ActionCard(
       icon: Icons.image_outlined,
       title: 'Master image',
@@ -109,16 +111,30 @@ class AppIconsPanel extends ConsumerWidget {
             icon: Icons.auto_fix_high,
             label: 'Fix all',
             busy: fixing.isNotEmpty,
-            onPressed: master == null || broken.isEmpty
+            onPressed:
+                master == null ||
+                    fixing.isNotEmpty ||
+                    (broken.isEmpty && !master.needsFix)
                 ? null
-                : () => _fix(context, ref, projectPath, broken, master.path),
+                : () => _fix(
+                    context,
+                    ref,
+                    projectPath,
+                    broken,
+                    master.path,
+                    fixMaster: master.needsFix,
+                  ),
           ),
         ],
       ),
       child: Row(
         spacing: AppSpacing.large,
         children: [
-          _preview(master?.path),
+          Clickable(
+            onTap: _onTap(ref, readable),
+            onDoubleTap: _onDoubleTap(ref, readable),
+            child: _preview(master?.path),
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,10 +244,18 @@ class AppIconsPanel extends ConsumerWidget {
     return AppIconSlotTile(
       slot: slot,
       isSelected: path != null && path == selection,
-      onTap: path == null ? null : () => _select(ref, path),
-      onDoubleTap: path == null ? null : () => openFromCenterView(ref, path),
+      onTap: _onTap(ref, path),
+      onDoubleTap: _onDoubleTap(ref, path),
     );
   }
+
+  /// Shows the details of the image at [path] on click; null without one.
+  VoidCallback? _onTap(WidgetRef ref, String? path) =>
+      path == null ? null : () => _select(ref, path);
+
+  /// Opens the image at [path] on double-click; null without one.
+  VoidCallback? _onDoubleTap(WidgetRef ref, String? path) =>
+      path == null ? null : () => openFromCenterView(ref, path);
 
   /// Shows the details of the icon file at [path] in the Outline tab.
   void _select(WidgetRef ref, String path) {
@@ -253,18 +277,19 @@ class AppIconsPanel extends ConsumerWidget {
     }
   }
 
-  /// Regenerates the icons of [platforms] from the image at [masterPath]
-  /// and reports the outcome.
+  /// Regenerates the icons of [platforms] from the image at [masterPath],
+  /// rewriting that image first when [fixMaster], and reports the outcome.
   Future<void> _fix(
     BuildContext context,
     WidgetRef ref,
     String projectPath,
     List<AppIconPlatformReview> platforms,
-    String masterPath,
-  ) async {
+    String masterPath, {
+    bool fixMaster = false,
+  }) async {
     final outcome = await ref
         .read(appIconFixControllerProvider.notifier)
-        .fix(projectPath, platforms, masterPath);
+        .fix(projectPath, platforms, masterPath, fixMaster: fixMaster);
     if (context.mounted) {
       MessageBox.show(context, outcome.message, outcome.tone);
     }

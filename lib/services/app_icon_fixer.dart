@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math' as math;
 
 import 'package:fcheck/fcheck.dart';
 import 'package:fide/constants/constants.dart';
@@ -51,6 +52,29 @@ class AppIconFixer {
     final path = best?.filePath;
     return path == null ? null : p.join(projectPath, path);
   }
+
+  /// Rewrites the image at [masterPath] as the master fCheck expects: its
+  /// centered square, the part icons are generated from, upscaled to at
+  /// least [AppIconChecker.appStoreIconSize] pixels, as a PNG; off the UI
+  /// thread. A PNG is replaced, another format gets a PNG beside it.
+  /// Returns the absolute path written.
+  ///
+  /// Throws [AppIconFixException] when the image can't be read.
+  Future<String> fixMaster(String masterPath) {
+    return Isolate.run(() {
+      final folder = p.dirname(masterPath);
+      final writer = IconWriter.load(folder, masterPath);
+      final name = p.setExtension(p.basename(masterPath), _pngExtension);
+      writer.png(
+        name,
+        math.max(writer.masterSide, AppIconChecker.appStoreIconSize),
+      );
+      return p.join(folder, name);
+    });
+  }
+
+  /// Extension of the master [fixMaster] writes.
+  static const String _pngExtension = '.png';
 
   /// Writes [platform]'s icons in the project at [projectPath] from the
   /// image at [masterPath] with its [PlatformIconWriter], off the UI
