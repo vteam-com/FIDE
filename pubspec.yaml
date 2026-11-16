@@ -20,6 +20,7 @@ version: 1.0.0+1
 
 environment:
   sdk: ^3.14.0
+  flutter: ">=3.50.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -31,7 +32,7 @@ dependencies:
   analyzer: 14.7.0
   code_forge: 11.8.0
   diff_match_patch: 0.4.1
-  fcheck: 1.6.3
+  fcheck: 1.6.4
   flutter:
     sdk: flutter
   flutter_markdown_plus: 1.0.12
