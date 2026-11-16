@@ -8,9 +8,9 @@ import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/page_header.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/theme_mode_buttons.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The full-screen settings: the display mode and zoom, then the keyboard shortcuts
 /// of the app's menus. Escape or the close button leaves it.

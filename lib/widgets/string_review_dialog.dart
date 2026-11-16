@@ -12,7 +12,7 @@ import 'package:fide/widgets/quick_fix_icon.dart';
 import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_tone_style.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
 /// Shows a project's hardcoded strings grouped by role, each string with

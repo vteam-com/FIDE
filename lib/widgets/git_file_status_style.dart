@@ -3,7 +3,7 @@ import 'package:fide/models/git_file_status.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/status_tone_style.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// How a Git status looks in the trees: its color, folder icon and name
 /// style.

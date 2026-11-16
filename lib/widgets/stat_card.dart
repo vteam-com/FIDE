@@ -2,7 +2,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/quality_issue.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/issue_row.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A fixed-width [ActionCard] headed by [icon] and [title], showing one
 /// headline [value] over [issues], then [details].

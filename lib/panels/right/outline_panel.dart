@@ -19,8 +19,8 @@ import 'package:fide/widgets/more_menu_button.dart';
 import 'package:fide/widgets/outline_kind_style.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:fide/widgets/tree_row.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The outline of a file: its declarations, headings or keys, the one
 /// under the editor's cursor highlighted with its consumers counted.

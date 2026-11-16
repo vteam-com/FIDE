@@ -1,7 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/surface_padding.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A list entry in an outlined box: [icon], [title] over [subtitle], an
 /// optional [trailing] widget, and a tap action; disabled when [onTap] is

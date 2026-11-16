@@ -2,8 +2,8 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/flutter_platform.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The bundled SVG icon of [platform], tinted by state: primary when
 /// [isSelected], muted when [isSupported], faint otherwise.

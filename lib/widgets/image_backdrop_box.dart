@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/image_backdrop.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Draws [child], an image, on [backdrop].
 class ImageBackdropBox extends StatelessWidget {

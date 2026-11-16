@@ -5,7 +5,7 @@ import 'package:fide/models/localization_data.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/surface_card.dart';
 import 'package:fide/widgets/surface_padding.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Represents `LocalizationEntryWidget`.
 class LocalizationEntryWidget extends StatelessWidget {

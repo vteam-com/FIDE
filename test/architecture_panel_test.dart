@@ -6,7 +6,7 @@ import 'package:fide/providers/architecture_orientation_notifier.dart';
 import 'package:fide/providers/architecture_providers.dart';
 import 'package:fide/providers/center_view.dart';
 import 'package:fide/theme/app_theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 

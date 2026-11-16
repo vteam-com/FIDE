@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A rounded, softly outlined surface that floats a workspace panel above
 /// the `AppTheme.workspaceBackground` gradient.

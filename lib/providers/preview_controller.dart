@@ -17,9 +17,9 @@ import 'package:fide/services/preview_project_scanner.dart';
 import 'package:fide/services/preview_registry.dart';
 import 'package:fide/services/preview_scanner.dart';
 import 'package:fide/services/preview_size_fixer.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
 part 'preview_controller.preview_state.dart';

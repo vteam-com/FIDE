@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The line saying a section, folder or list has nothing in it, such as
 /// "empty folder"; a whole panel with nothing to show uses `EmptyState`.

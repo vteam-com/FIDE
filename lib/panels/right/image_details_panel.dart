@@ -9,8 +9,8 @@ import 'package:fide/widgets/detail_row.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/section_title.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Shown in the Outline tab for an image file: everything FIDE reads from
 /// it, from its size on disk to its dimensions, color mode, transparency,

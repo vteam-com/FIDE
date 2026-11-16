@@ -27,8 +27,8 @@ import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
 import 'package:fide/widgets/tree_row.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
 /// The Git tab: the repository of the project at [projectPath], its

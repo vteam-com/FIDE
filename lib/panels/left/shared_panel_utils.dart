@@ -11,8 +11,8 @@ import 'package:fide/services/git_service.dart';
 import 'package:fide/widgets/icon_menu_item.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
 part 'shared_panel_utils.file_operations.dart';

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/panels/right/outline_panel.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 

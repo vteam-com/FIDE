@@ -3,7 +3,7 @@ import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/status_indicator.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Renders the editor status bar with cursor, search, and formatting controls.
 class EditorScreenStatusBar extends StatelessWidget {

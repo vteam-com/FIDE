@@ -5,7 +5,7 @@ import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/surface_padding.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Scrollable list of load steps, each with a pending, success or failure
 /// icon; failed steps are shown in the error color.

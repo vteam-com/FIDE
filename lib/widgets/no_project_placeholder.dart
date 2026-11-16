@@ -1,5 +1,5 @@
 import 'package:fide/widgets/empty_state.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Centered "No project loaded" message for panels that need an open project.
 class NoProjectPlaceholder extends StatelessWidget {

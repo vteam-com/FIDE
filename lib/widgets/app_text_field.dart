@@ -1,6 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The outlined text box used by every panel (search, find, filter, AI
 /// prompt, commit message), form and prompt dialog, so they share one

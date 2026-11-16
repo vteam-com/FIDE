@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A compact row of joined buttons picking one of [values], each shown by
 /// its [icon] with its [label] as a tooltip, small enough for a toolbar.

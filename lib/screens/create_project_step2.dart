@@ -3,8 +3,8 @@ import 'package:fide/providers/create_project_draft_notifier.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/step_header.dart';
 import 'package:fide/widgets/surface_card.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The wizard's second step: whether to localize, which languages and the
 /// default one, kept in [createProjectDraftProvider].

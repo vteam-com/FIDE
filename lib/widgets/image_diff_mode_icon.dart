@@ -1,5 +1,5 @@
 import 'package:fide/models/image_diff_mode.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The glyph of an [ImageDiffMode] in the mode picker.
 extension ImageDiffModeIcon on ImageDiffMode {

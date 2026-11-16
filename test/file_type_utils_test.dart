@@ -2,7 +2,7 @@ import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // Helper class for test cases

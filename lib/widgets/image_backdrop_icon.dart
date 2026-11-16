@@ -1,5 +1,5 @@
 import 'package:fide/models/image_backdrop.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The glyph of an [ImageBackdrop] in the backdrop picker.
 extension ImageBackdropIcon on ImageBackdrop {

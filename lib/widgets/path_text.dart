@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
 /// A file path as FIDE shows it everywhere: its folders dimmed, then the

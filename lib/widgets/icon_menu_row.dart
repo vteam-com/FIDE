@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The content of every popup menu entry: an icon, its label, then an
 /// optional [trailing] widget.

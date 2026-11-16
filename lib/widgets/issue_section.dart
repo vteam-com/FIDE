@@ -4,7 +4,7 @@ import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/issue_row.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/status_indicator.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// An expanded [SectionPanel] titled [title] listing [issues] as
 /// [IssueRow]s, or [emptyLabel] as a success when there are none.

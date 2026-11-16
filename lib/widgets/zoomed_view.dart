@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Scales [child] by [zoom], as a browser zooms a page: the child lays out
 /// in the space divided by [zoom] and is painted (and hit-tested) enlarged

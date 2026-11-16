@@ -1,7 +1,7 @@
 import 'package:fide/models/project_node.dart';
 import 'package:fide/widgets/foldername_widget.dart';
 import 'package:fide/widgets/tree_branch.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A directory in a project tree: its name row and, when expanded, its
 /// indented [children], or an empty-folder label when the directory has

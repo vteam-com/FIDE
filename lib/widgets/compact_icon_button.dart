@@ -1,6 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/svg_icon.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A small, unpadded icon button for toolbars and panel headers; a
 /// [selected] one, such as a toggle that is on, shows in the primary color.

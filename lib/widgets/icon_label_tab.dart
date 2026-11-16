@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A [Tab] showing [icon] above [label], or just [icon] with a tooltip when
 /// there is no room for the label.

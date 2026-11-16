@@ -10,8 +10,8 @@ import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/panel_island.dart';
 import 'package:fide/widgets/resizable_splitter.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The center panel host widget: a center view (App Icons, Architecture),
 /// else the active editor, else the project overview; the terminal below.

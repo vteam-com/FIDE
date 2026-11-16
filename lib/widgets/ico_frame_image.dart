@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:fide/providers/image_providers.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The image of one [size] embedded in the ICO file at [path], drawn
 /// [drawnSize] wide, or [fallback] when the file holds no such image.

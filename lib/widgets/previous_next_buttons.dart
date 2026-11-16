@@ -1,6 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Up and down arrows stepping through a list of places, such as find
 /// matches or a diff's changes, followed by a caption such as "2 of 5".

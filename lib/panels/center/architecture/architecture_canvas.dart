@@ -3,7 +3,7 @@ import 'package:fide/models/architecture_focus.dart';
 import 'package:fide/models/architecture_layout.dart';
 import 'package:fide/panels/center/architecture/architecture_edge_painter.dart';
 import 'package:fide/panels/center/architecture/architecture_node.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The architecture graph of [layout], zoomed by a trackpad pinch or the
 /// mouse wheel and panned by dragging: the layer and folder captions, the

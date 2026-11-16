@@ -6,8 +6,8 @@ import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/panel_tab_header.dart';
 import 'package:fide/widgets/panel_tabs.dart';
 import 'package:fide/widgets/svg_icon.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The panel right of the editor: one tab per [RightPanelTab], each
 /// showing what [rightPanelTabs] builds for it.

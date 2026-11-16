@@ -16,8 +16,8 @@ import 'package:fide/widgets/image_backdrop_buttons.dart';
 import 'package:fide/widgets/image_canvas.dart';
 import 'package:fide/widgets/image_diff_mode_icon.dart';
 import 'package:fide/widgets/zoom_label.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Compares the committed and modified versions of an image under a strip
 /// picking the [ImageDiffMode], the backdrop and, in Swipe and Onion

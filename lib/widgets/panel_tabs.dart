@@ -1,5 +1,5 @@
 import 'package:fide/widgets/header_bar.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The tabbed shell shared by the side panels: an icon [TabBar] above a
 /// divider, and the selected tab's content filling the rest.

@@ -6,7 +6,7 @@ import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/previous_next_buttons.dart';
 import 'package:fide/widgets/search_replace_field.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Renders the inline editor search and replace controls and match
 /// navigation actions.

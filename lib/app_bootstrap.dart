@@ -1,6 +1,6 @@
 // ignore: fcheck_dead_code
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:window_manager/window_manager.dart';
 
 /// Sizes, centres and shows the main window with a hidden title bar; for

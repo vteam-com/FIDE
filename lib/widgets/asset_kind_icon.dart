@@ -1,5 +1,5 @@
 import 'package:fide/models/asset_kind.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The glyph of an [AssetKind]'s group in the Organized view.
 extension AssetKindIcon on AssetKind {

@@ -9,8 +9,8 @@ import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/copy_button.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/path_text.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
 /// The full path of a file, buttons copying the path or the file name, and

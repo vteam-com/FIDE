@@ -8,8 +8,8 @@ import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/step_header.dart';
 import 'package:fide/widgets/tool_status_row.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The wizard's first step: project name, parent folder, the installed
 /// tools and AI generation, all kept in [createProjectDraftProvider].

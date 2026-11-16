@@ -4,7 +4,7 @@ import 'package:fide/models/status_tone.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/git_file_status_style.dart';
 import 'package:fide/widgets/status_tone_style.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

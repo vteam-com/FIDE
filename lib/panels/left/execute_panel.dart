@@ -13,8 +13,8 @@ import 'package:fide/widgets/panel_scroll_view.dart';
 import 'package:fide/widgets/platform_info_section.dart';
 import 'package:fide/widgets/platform_selector.dart';
 import 'package:fide/widgets/status_indicator.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Panel providing one-click build, run, and clean actions for the loaded
 /// Flutter project. The runs belong to [commandRunnerProvider], so they

@@ -1,6 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/inline_spinner.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The filled button for the main action of a card, dialog or screen; pair
 /// it with `SecondaryButton` for the other choices.

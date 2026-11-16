@@ -4,7 +4,7 @@ import 'package:fide/widgets/expansion_chevron.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/surface_header_band.dart';
 import 'package:fide/widgets/surface_padding.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A collapsible section drawn as one outlined card: a header band over its
 /// content; stack sections with spacing between the cards.

@@ -3,8 +3,8 @@ import 'dart:typed_data';
 
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/widgets/empty_state.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// An image of any supported format, vector (SVG) or raster, fitted inside
 /// its box; a decoding failure shows an error state instead.

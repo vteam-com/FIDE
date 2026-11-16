@@ -22,8 +22,8 @@ import 'package:fide/widgets/panel_scroll_view.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/tree_branch.dart';
 import 'package:fide/widgets/tree_row.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
 /// The Organized tab: the project's files grouped by what they are

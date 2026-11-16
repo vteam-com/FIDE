@@ -8,7 +8,7 @@ import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
 /// One file of the architecture graph: its [TreeRow], as the file lists

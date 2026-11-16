@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The SVG [asset] drawn as an icon: sized and tinted by the ambient
 /// [IconTheme], as an [Icon] is, so it fits wherever an icon goes.

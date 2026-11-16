@@ -20,8 +20,8 @@ import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/string_review_dialog.dart';
 import 'package:fide/widgets/tree_row.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A [QualityIssue] as one line, the same in every panel: its label in
 /// its tone's color and a How to fix button opening the best practice, the

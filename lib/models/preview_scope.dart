@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Which previews the Preview panel lists; each value's `name` is how the
 /// choice is saved.

@@ -1,6 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/surface_padding.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A filled, rounded card on the highest surface tone, setting a summary,
 /// note, details or list entry apart from what surrounds it.

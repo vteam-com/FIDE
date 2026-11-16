@@ -3,7 +3,7 @@ import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/status_indicator.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Whether a required tool (Flutter, Git...) was found, with its version,
 /// or an Install button opening [installInstructions] when it wasn't.

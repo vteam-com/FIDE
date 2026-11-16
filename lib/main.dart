@@ -20,10 +20,10 @@ import 'package:fide/widget_services/app_title_bar.dart';
 import 'package:fide/widget_services/native_menu_builder.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/zoomed_view.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:logging/logging.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

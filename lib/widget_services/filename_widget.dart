@@ -7,7 +7,7 @@ import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/git_file_status_style.dart';
 import 'package:fide/widgets/tree_row.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Widget for rendering FileSystemItem with icon, text, Git status, and interactions
 class FileNameWidget extends StatelessWidget {

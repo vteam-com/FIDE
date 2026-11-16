@@ -10,9 +10,9 @@ import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/panel_island.dart';
 import 'package:fide/widgets/resizable_splitter.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:material_ui/material_ui.dart';
 
 part 'main_layout.state.dart';
 

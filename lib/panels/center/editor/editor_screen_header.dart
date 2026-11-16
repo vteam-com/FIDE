@@ -12,8 +12,8 @@ import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
 import 'package:fide/widgets/path_text.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Renders the editor header with document switching and primary editor actions.
 class EditorScreenHeader extends ConsumerWidget {

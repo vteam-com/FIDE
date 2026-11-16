@@ -3,8 +3,8 @@ import 'package:fide/models/quick_open_matcher.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/tree_row.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The "Go to File" palette: a query box over the project files that best
 /// match it, as in VS Code's Quick Open. Up and Down move the selection,

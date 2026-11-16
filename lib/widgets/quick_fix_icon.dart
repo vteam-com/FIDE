@@ -1,5 +1,5 @@
 import 'package:fide/models/quick_fix.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The glyph of a [QuickFix]'s button.
 extension QuickFixIcon on QuickFix {

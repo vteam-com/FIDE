@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The outlined button for the other choices next to a `PrimaryButton`,
 /// such as Cancel or Close, or for an optional action of a card.

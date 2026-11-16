@@ -1,7 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/status_tone_style.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A centered message for a panel or screen that has nothing to show, or
 /// can't show what was asked: an optional [icon] and [title], the

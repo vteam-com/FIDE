@@ -12,7 +12,7 @@ import 'package:fide/widgets/image_backdrop_box.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/surface_padding.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// One app icon slot as Xcode's icon set editor shows it: the image at its
 /// own size (up to the tile's), its label and pixel size, and a warning

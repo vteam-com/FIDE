@@ -1,5 +1,5 @@
 import 'package:fide/widgets/hero_title_widget.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The top row of a full page in the center area or a screen: its hero
 /// title filling the width, then compact [actions] such as refresh and

@@ -1,5 +1,5 @@
 import 'package:fide/widgets/choice_buttons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The System / Light / Dark choice, for FIDE's theme in the settings and
 /// for the widget previews' brightness.

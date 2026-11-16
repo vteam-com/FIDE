@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A small text button that fits inside a row of caption text, such as
 /// "Edit" next to a file name or "Install" next to a missing tool.

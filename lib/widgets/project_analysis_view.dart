@@ -1,7 +1,7 @@
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/loading_indicator.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// What a view shows of [analysis], built from fCheck's analysis of the
 /// open project: [builder]'s widget once analyzed, still showing the last

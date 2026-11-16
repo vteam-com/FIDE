@@ -18,8 +18,8 @@ import 'package:fide/widgets/project_analysis_view.dart';
 import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/stat_card.dart';
 import 'package:fide/widgets/status_indicator.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Shown in the center panel when no file is open: the current project's
 /// icon, version, fCheck quality score, code size, packages still on

@@ -3,8 +3,8 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/widgets/quick_open_dialog.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Go to File: shows the palette over the loaded project's files, open
 /// tabs first, and opens the chosen one; does nothing without a project.

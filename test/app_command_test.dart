@@ -2,7 +2,7 @@ import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/widget_services/app_command.dart';
 import 'package:fide/widget_services/native_menu_builder.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 

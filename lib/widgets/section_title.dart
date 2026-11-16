@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The heading of a section of a panel, card or form step.
 class SectionTitle extends StatelessWidget {

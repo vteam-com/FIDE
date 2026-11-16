@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// [child] with a pointer cursor that calls [onTap] when clicked and
 /// [onDoubleTap] when double-clicked; just [child] when both are null.

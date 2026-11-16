@@ -1,5 +1,5 @@
 import 'package:fide/models/outline_kind.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// How an [OutlineKind] looks in the Outline panel: its icon and the theme
 /// color tinting it.

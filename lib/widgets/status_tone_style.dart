@@ -1,6 +1,6 @@
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/theme/app_theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// How a [StatusTone] looks, giving every badge, toast and indicator of
 /// that meaning the same icon and color.

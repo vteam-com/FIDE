@@ -2,8 +2,8 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_view_notifier.dart';
 import 'package:fide/widget_services/file_open_actions.dart';
 import 'package:fide/widgets/icon_menu_item.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// What an [AppCommand] does; [context] shows the dialogs it opens.
 typedef AppCommandAction = void Function(BuildContext context, WidgetRef ref);

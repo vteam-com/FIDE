@@ -166,7 +166,7 @@ This Flutter app was generated with AI assistance.
   /// model wrote no usable code.
   static String _basicMain(String projectName, String description) =>
       '''
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   runApp(const MyApp());

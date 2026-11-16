@@ -1,6 +1,6 @@
 import 'package:fide/services/editor_commands.dart';
 import 'package:fide/widgets/message_box.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// "Go to Line" dialog for the active editor.
 class GotoLineDialog {

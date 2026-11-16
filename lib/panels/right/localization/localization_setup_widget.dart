@@ -2,7 +2,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/section_title.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Represents `LocalizationSetupWidget`.
 class LocalizationSetupWidget extends StatelessWidget {

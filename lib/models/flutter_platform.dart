@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A `flutter build` the Execute panel offers for one platform: the action
 /// [id] and how its card reads, and the `flutter build` [target] it

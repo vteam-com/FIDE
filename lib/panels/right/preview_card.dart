@@ -17,8 +17,8 @@ import 'package:fide/widgets/resizable_splitter.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// One preview in the Preview panel: its title, which shows its code, and
 /// its latest frame, which takes clicks, drags and scrolls as the widget

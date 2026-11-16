@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The face of a menu button: the current value [child] then a drop-down
 /// arrow, so every "pick one" menu reads alike.

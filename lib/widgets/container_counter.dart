@@ -2,7 +2,7 @@ import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/status_tone_style.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The one count pill: a [BadgeStatus] showing [count], explained by
 /// [tooltip] on hover and acting on [onTap]; neutral for a plain count of

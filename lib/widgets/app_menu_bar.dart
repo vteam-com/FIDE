@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The app's menus drawn by Flutter, for platforms without a native menu bar
 /// (Linux, Windows); built from the same [menus] macOS shows natively.

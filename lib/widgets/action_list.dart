@@ -7,7 +7,7 @@ import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/panel_action.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/surface_padding.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Panel actions as one compact row each: the action's status-aware icon,
 /// its title, an info toggle revealing its details, and a round run (or

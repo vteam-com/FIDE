@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A draggable gap between two panel islands that reports resize deltas.
 class ResizableSplitter extends StatefulWidget {

@@ -5,7 +5,7 @@ import 'package:fide/widgets/copy_button.dart';
 import 'package:fide/widgets/markdown_text.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/surface_padding.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// One full-width entry of the AI panel's transcript, laid out like a
 /// terminal session: the user's prompt in an outlined box, model replies

@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The filled band heading an outlined box (a section, a diff), its
 /// [child] inset by the section header padding.

@@ -1,7 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/image_backdrop.dart';
 import 'package:fide/widgets/image_backdrop_box.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The surface an image preview is drawn on: [child] on [backdrop], at
 /// most a share of the screen, zoomed by a trackpad pinch or the mouse

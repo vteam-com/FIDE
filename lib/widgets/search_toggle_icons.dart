@@ -2,7 +2,7 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Represents `SearchToggleIcons`.
 class SearchToggleIcons extends StatelessWidget {

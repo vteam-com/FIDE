@@ -9,9 +9,9 @@ import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widget_services/app_command.dart';
 import 'package:fide/widget_services/project_git_actions.dart';
 import 'package:fide/widgets/goto_line_dialog.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Builds the app's native menus; every item runs its command through
 /// [ref], showing any dialog over [context].

@@ -5,8 +5,8 @@ import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/message_widget.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/secondary_button.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
 
 // Convenience methods for showing messages
 /// Represents `MessageBox`.

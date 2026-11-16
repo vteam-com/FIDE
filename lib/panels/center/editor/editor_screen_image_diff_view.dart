@@ -4,8 +4,8 @@ import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/image_diff.dart';
 import 'package:fide/widgets/loading_indicator.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The editor's diff view of an image: its committed version against its
 /// working copy.

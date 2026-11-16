@@ -18,8 +18,8 @@ import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/project_analysis_view.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/zoom_buttons.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Shown in the center panel to explore the open project's architecture
 /// as fCheck layers it: every Dart file in its layer, linked to the files

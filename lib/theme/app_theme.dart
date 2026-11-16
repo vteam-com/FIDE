@@ -1,7 +1,7 @@
 // ignore: fcheck_dead_code
 
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Represents `AppTheme`.
 class AppTheme {

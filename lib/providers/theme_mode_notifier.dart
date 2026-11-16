@@ -1,7 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/persisted_notifier.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// The app's theme mode, persisted; see [ThemeModeNotifier].

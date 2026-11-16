@@ -11,8 +11,8 @@ import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/panel_action.dart';
 import 'package:fide/widgets/panel_scroll_view.dart';
 import 'package:fide/widgets/section_title.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Runs the project's tests, or a kind of them, and checks how they are
 /// organized. The runs belong to [commandRunnerProvider], so they keep

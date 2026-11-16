@@ -1,6 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/empty_label.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A tree entry that holds others, such as a folder: its [header] row and,
 /// when expanded, its indented [children], or an empty-folder label when

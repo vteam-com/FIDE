@@ -1,5 +1,5 @@
 import 'package:fide/widgets/icon_menu_row.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A popup menu entry worth [value], showing an [IconMenuRow] of [icon]
 /// and [label]; every menu builds its entries from it.

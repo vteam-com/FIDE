@@ -4,8 +4,8 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/terminal_providers.dart';
 import 'package:fide/services/terminal_session.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:xterm/xterm.dart';
 
 /// Embedded terminal panel powered by xterm, launching a shell inside the current project directory.

@@ -1,6 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/loading_action.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Progress bar for a multi-step load, filled to the furthest step reached.
 class LoadingProgressBar extends StatelessWidget {

@@ -1,7 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/inline_spinner.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A spinner centered in the space of content that is still loading, with
 /// an optional [message] under it.

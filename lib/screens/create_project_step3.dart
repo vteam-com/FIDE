@@ -6,8 +6,8 @@ import 'package:fide/widgets/loading_progress_bar.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/surface_card.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The wizard's last step: the project being created and each creation
 /// step's progress.

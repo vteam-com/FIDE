@@ -9,7 +9,7 @@ import 'package:fide/widgets/previous_next_buttons.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/surface_header_band.dart';
 import 'package:fide/widgets/surface_padding.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 part 'side_by_side_diff.diff_line.dart';
 part 'side_by_side_diff.minimap.dart';

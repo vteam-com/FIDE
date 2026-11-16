@@ -7,8 +7,8 @@ import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/copy_button.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Command output in a collapsible section; `path:line:column` references
 /// to existing files, relative ones resolved against the open project, are

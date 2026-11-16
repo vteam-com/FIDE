@@ -1,7 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/open_url.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Renders Markdown [data] as selectable rich text in [color]; inside a
 /// `SelectionArea` it is part of that area's selection.
@@ -27,19 +27,31 @@ class MarkdownText extends StatelessWidget {
       color: color,
       backgroundColor: codeBackground,
     );
+    final headingStyle = AppTextStyle.title.copyWith(color: color);
+    final divider = BorderSide(color: theme.dividerColor);
+    // The package's own fallback reads the SDK material Theme, which a
+    // material_ui app doesn't provide: every theme-colored field is set here
     final body = MarkdownBody(
       data: data,
       onTapLink: (_, href, _) {
         if (href != null) openUrl(context, href);
       },
-      styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+      styleSheet: MarkdownStyleSheet(
         p: baseStyle,
+        blockquote: baseStyle,
+        img: baseStyle,
+        checkbox: baseStyle.copyWith(color: theme.colorScheme.primary),
         listBullet: baseStyle,
         tableBody: baseStyle,
         tableHead: baseStyle.merge(AppTextStyle.strong),
+        tableBorder: TableBorder.all(color: divider.color),
+        horizontalRuleDecoration: BoxDecoration(border: Border(top: divider)),
         h1: AppTextStyle.headline.copyWith(color: color),
-        h2: AppTextStyle.title.copyWith(color: color),
-        h3: AppTextStyle.title.copyWith(color: color),
+        h2: headingStyle,
+        h3: headingStyle,
+        h4: headingStyle,
+        h5: headingStyle,
+        h6: headingStyle,
         strong: AppTextStyle.strong,
         code: codeStyle,
         codeblockPadding: const EdgeInsets.all(AppSpacing.medium),

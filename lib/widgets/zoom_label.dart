@@ -1,6 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/compact_text_button.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The zoom of a zoomable canvas (an image preview, the architecture
 /// graph) as a percent, pressed to return to actual size; disabled while

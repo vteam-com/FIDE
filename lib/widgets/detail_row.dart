@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// One fact as a line: a fixed-width [label] column, then [value] in
 /// monospace, truncated to one line, with an optional [leading] mark such

@@ -1,6 +1,6 @@
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/zoom_label.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Zoom Out, the zoom in [controller] (resetting it on a click) and Zoom
 /// In, for the header of a zoomable view such as the architecture graph or

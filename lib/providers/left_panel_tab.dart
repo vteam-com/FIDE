@@ -1,6 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The left panel's tabs, in display order; each value's `index` is its
 /// position in the tab bar.

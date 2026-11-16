@@ -1,6 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/count_badge.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A side panel's tab header: [icon] with a [CountBadge] of [badgeCount],
 /// and [tooltip] on hover. Shared by the left and right panels so their

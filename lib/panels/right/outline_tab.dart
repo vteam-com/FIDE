@@ -6,8 +6,8 @@ import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/file_actions.dart';
 import 'package:fide/widgets/header_bar.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The Outline tab: the details of the icon picked in the App Icons view
 /// while it is open, else of the selected image, else the selected file's

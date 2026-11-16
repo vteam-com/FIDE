@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A project's app icon file at [size], or [fallback] when there is none or
 /// it fails to load.

@@ -1,5 +1,5 @@
 import 'package:fide/models/architecture_focus.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// How an [ArchitectureRole] looks, giving a file's box and the imports
 /// drawn to it the same color.

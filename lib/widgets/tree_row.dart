@@ -3,7 +3,7 @@ import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/more_menu_button.dart';
 import 'package:fide/widgets/path_text.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
 /// One row of a tree (files, folders, outline symbols, search results):

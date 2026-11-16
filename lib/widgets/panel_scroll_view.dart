@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A side panel's scrolling content: [children] stacked full width, one
 /// section gap apart, inset by the panels' content padding (inside the

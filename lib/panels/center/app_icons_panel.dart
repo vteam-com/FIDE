@@ -20,8 +20,8 @@ import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Shown in the center panel to review the open project's app icons: each
 /// platform's icon and the problems fCheck finds with it, fixed in one

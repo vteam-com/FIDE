@@ -28,8 +28,8 @@ import 'package:fide/widgets/theme_mode_buttons.dart';
 import 'package:fide/widgets/tree_branch.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:fide/widgets/zoom_buttons.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The Preview tab: the live widget previews of the selected Dart file,
 /// rendered by the project's preview host and updated as files are saved,

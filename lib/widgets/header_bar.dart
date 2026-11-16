@@ -1,5 +1,5 @@
 import 'package:fide/constants/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A strip above a panel's content, such as its tabs, toolbar or search
 /// bar, or below it as a footer, separated from it by a thin divider.

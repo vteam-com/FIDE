@@ -3,8 +3,8 @@ import 'package:fide/providers/git_repo_controller.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/widgets/message_box.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Initialize Repository: makes the open project a Git repository, shows
 /// Git's answer or error over [context], then reloads the project's Git

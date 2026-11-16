@@ -2,7 +2,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/widgets/icon_label_tab.dart';
 import 'package:fide/widgets/platform_icon.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Represents `PlatformSelector`.
 class PlatformSelector extends StatefulWidget {
