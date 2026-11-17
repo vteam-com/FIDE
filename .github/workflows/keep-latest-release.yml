@@ -1,0 +1,32 @@
+name: Keep Latest Release
+
+# Publishing a release (the draft the Release workflow builds from
+# tool/release.sh's tag) makes its builds the README's downloads, so the
+# older releases are deleted: GitHub then stores only the latest build.
+# Their tags stay, to keep the history. Drafts stay too: they are releases
+# still being tried, and a pre-release leaves the latest release in place.
+on:
+  release:
+    types: [ published ]
+
+jobs:
+  prune:
+    if: ${{ !github.event.release.prerelease }}
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+
+    steps:
+    - name: Delete the older releases
+      env:
+        GH_TOKEN: ${{ github.token }}
+        LATEST: ${{ github.event.release.tag_name }}
+      run: |
+        gh release list --repo "$GITHUB_REPOSITORY" --json tagName,isDraft --jq '
+          .[]
+          | select(.isDraft | not)
+          | select(.tagName != env.LATEST)
+          | .tagName' |
+        while read -r tag; do
+          gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes
+        done

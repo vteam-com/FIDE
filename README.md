@@ -8,6 +8,18 @@ FIDE is an open-source, opinionated IDE for Flutter development, built in Flutte
 
 ![FIDE showing a project overview with its fCheck score](docs/screenshots/overview.png)
 
+## Download
+
+[![Latest release](https://img.shields.io/github/v/release/vteam-com/FIDE)](https://github.com/vteam-com/FIDE/releases/latest)
+
+| Platform | Latest build |
+| --- | --- |
+| macOS | [FIDE-macos.zip](https://github.com/vteam-com/FIDE/releases/latest/download/FIDE-macos.zip) |
+| Windows | [FIDE-windows.zip](https://github.com/vteam-com/FIDE/releases/latest/download/FIDE-windows.zip) |
+| Linux | [FIDE-linux.tar.gz](https://github.com/vteam-com/FIDE/releases/latest/download/FIDE-linux.tar.gz) |
+
+The builds are not signed: on macOS, allow the first launch in **System Settings › Privacy & Security › Open Anyway**; on Windows, pick **More info › Run anyway**. To run FIDE from its source code instead, see [Getting Started](#getting-started).
+
 ## Philosophy
 
 - **Flutter first**: the project tree, run targets, tests, localization and quality checks all understand Flutter projects
@@ -125,7 +137,7 @@ tool/release.sh patch   # or minor, major, or an exact version such as 1.2.0
 
 The script sets the new version in `pubspec.yaml` (the build number goes up by one), runs the analyzer, the tests, `fcheck --strict` and a macOS build, then commits the version, tags it `v1.2.0` and pushes both. If any step fails, `pubspec.yaml` is put back and nothing is committed.
 
-The pushed tag starts the Release workflow, which checks that the tag matches `pubspec.yaml`, tests the code, builds it for macOS, Windows and Linux, and attaches the three builds to a **draft** GitHub Release; publish the draft once the builds are tried. To try a release first, run the Release workflow from the Actions tab: it builds any branch and keeps the builds as workflow artifacts, without making a release.
+The pushed tag starts the Release workflow, which checks that the tag matches `pubspec.yaml`, tests the code, builds it for macOS, Windows and Linux, and attaches the three builds to a **draft** GitHub Release; publish the draft once the builds are tried. Publishing it makes its builds the [Download](#download) links and deletes the older releases (their tags stay), so GitHub stores only the latest build. To try a release first, run the Release workflow from the Actions tab: it builds any branch and keeps the builds as workflow artifacts, without making a release. Each Release run deletes the build artifacts of the runs before it.
 
 ## Requirements
 

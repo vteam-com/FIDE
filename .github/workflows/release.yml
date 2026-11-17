@@ -4,9 +4,12 @@ name: Release
 # ready, never on a plain push to main:
 #   - tool/release.sh sets pubspec's version and pushes its tag (v1.2.0),
 #     which tests, builds and attaches the three builds to a draft GitHub
-#     Release
+#     Release; publishing the draft makes its builds the README's downloads
+#     and deletes the older releases (keep-latest-release.yml)
 #   - "Run workflow" on the Actions tab tests and builds any branch, the
 #     builds kept as workflow artifacts only, to try a release out
+# Only the latest build is kept, to save GitHub storage: each run deletes
+# the build artifacts of the runs before it (the prune job).
 on:
   push:
     tags: [ 'v*.*.*' ]
@@ -17,32 +20,25 @@ jobs:
   # a tag that names another version stops the release before it tests
   version:
     runs-on: ubuntu-26.04
-    outputs:
-      name: ${{ steps.version.outputs.name }}
 
     steps:
     - uses: actions/checkout@v7
 
-    - id: version
+    - name: Check the tag matches pubspec.yaml
+      if: github.ref_type == 'tag'
       run: |
         version="$(sed -n 's/^version: *\([^+]*\).*/\1/p' pubspec.yaml)"
-        if [[ "$GITHUB_REF_TYPE" == tag ]]; then
-          if [[ "$GITHUB_REF_NAME" != "v$version" ]]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match pubspec.yaml's version $version; release with tool/release.sh"
-            exit 1
-          fi
-        else
-          # A manual run names its files after the commit
-          version="$version-dev-${GITHUB_SHA::7}"
+        if [[ "$GITHUB_REF_NAME" != "v$version" ]]; then
+          echo "::error::Tag $GITHUB_REF_NAME does not match pubspec.yaml's version $version; release with tool/release.sh"
+          exit 1
         fi
-        echo "name=$version" >> "$GITHUB_OUTPUT"
 
   test:
     needs: version
     uses: ./.github/workflows/ci.yml
 
   build:
-    needs: [ version, test ]
+    needs: test
     strategy:
       fail-fast: false
       matrix:
@@ -60,14 +56,16 @@ jobs:
     defaults:
       run:
         shell: bash
+    env:
+      # No version in the name, so the README's links to the latest
+      # release's files (releases/latest/download/FIDE-macos.zip) always
+      # find them; the release itself names the version
+      ASSET: FIDE-${{ matrix.platform }}.${{ matrix.asset }}
 
     steps:
     - uses: actions/checkout@v7
 
     - uses: ./.github/actions/setup-flutter
-
-    - name: Name the build
-      run: echo "ASSET=FIDE-${{ needs.version.outputs.name }}-${{ matrix.platform }}.${{ matrix.asset }}" >> "$GITHUB_ENV"
 
     - name: Build
       run: flutter build ${{ matrix.platform }} --release
@@ -84,9 +82,10 @@ jobs:
       if: matrix.platform == 'linux'
       run: tar -czf "$ASSET" -C build/linux/x64/release bundle
 
+    # Named after the build, so the prune job only deletes FIDE builds
     - uses: actions/upload-artifact@v7
       with:
-        name: ${{ matrix.platform }}
+        name: FIDE-${{ matrix.platform }}
         path: ${{ env.ASSET }}
         if-no-files-found: error
 
@@ -113,3 +112,30 @@ jobs:
         --draft
         --generate-notes
         --verify-tag
+
+  # Only the latest build is kept: a tag run's builds now live in its draft
+  # release, so it deletes every FIDE build artifact; a manual run keeps its
+  # own builds and deletes those of the runs before it. A failed release
+  # keeps its builds.
+  prune:
+    needs: [ build, release ]
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs.release.result != 'failure' }}
+    runs-on: ubuntu-26.04
+    permissions:
+      actions: write
+
+    steps:
+    - name: Delete the older builds
+      env:
+        GH_TOKEN: ${{ github.token }}
+        KEEP_RUN: ${{ github.ref_type == 'tag' && 'none' || github.run_id }}
+      run: |
+        gh api --paginate "repos/$GITHUB_REPOSITORY/actions/artifacts" --jq '
+          .artifacts[]
+          | select(.name | startswith("FIDE-"))
+          | select(.expired | not)
+          | select((.workflow_run.id | tostring) != env.KEEP_RUN)
+          | .id' |
+        while read -r id; do
+          gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$id"
+        done
