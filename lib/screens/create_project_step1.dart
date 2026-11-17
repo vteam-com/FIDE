@@ -3,6 +3,7 @@ import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/create_project_draft_notifier.dart';
 import 'package:fide/providers/tool_availability_provider.dart';
 import 'package:fide/widgets/app_text_field.dart';
+import 'package:fide/widgets/check_list_tile.dart';
 import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/step_header.dart';
@@ -134,19 +135,13 @@ class _CreateProjectStep1State extends ConsumerState<CreateProjectStep1> {
         ],
 
         // AI-powered generation toggle
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'Use AI-powered app generation (requires Ollama)',
-                style: AppTextStyle.label,
-              ),
-            ),
-            Switch(
-              value: draft.useAi,
-              onChanged: ollamaAvailable ? _notifier.setUseAi : null,
-            ),
-          ],
+        CheckListTile(
+          title: Text(
+            'Use AI-powered app generation (requires Ollama)',
+            style: AppTextStyle.label,
+          ),
+          value: draft.useAi,
+          onChanged: ollamaAvailable ? _notifier.setUseAi : null,
         ),
 
         // Description field only if AI is enabled AND Ollama is available

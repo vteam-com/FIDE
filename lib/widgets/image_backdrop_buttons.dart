@@ -15,7 +15,7 @@ class ImageBackdropButtons extends ConsumerWidget {
     return ChoiceButtons(
       values: ImageBackdrop.values,
       selected: ref.watch(imageBackdropProvider),
-      icon: (backdrop) => backdrop.icon,
+      icon: (backdrop) => Icon(backdrop.icon),
       label: (backdrop) => backdrop.label,
       onSelected: (backdrop) =>
           ref.read(imageBackdropProvider.notifier).state = backdrop,

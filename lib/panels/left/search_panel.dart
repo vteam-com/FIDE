@@ -1,4 +1,3 @@
-import 'package:fide/constants/constants.dart' show AppSpacing, AppTextStyle;
 import 'package:fide/models/editor_search.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/reference_search.dart';
@@ -9,16 +8,16 @@ import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/app_text_field.dart';
-import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/empty_state.dart';
+import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/loading_indicator.dart';
+import 'package:fide/widgets/location_row.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/search_replace_field.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
-import 'package:fide/widgets/surface_card.dart';
-import 'package:fide/widgets/surface_padding.dart';
+import 'package:fide/widgets/tree_branch.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -273,125 +272,56 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
 
   /// Builds the row for a results folder or file.
   Widget _buildSearchResultNode(SearchResultNode node) {
-    if (node.isDirectory) {
-      /// Handles `_buildDirectoryResultNode`.
-      return _buildDirectoryResultNode(node);
-    } else {
-      /// Handles `_buildFileResultNode`.
-      return _buildFileResultNode(node);
-    }
+    return node.isDirectory
+        ? _buildDirectoryResultNode(node)
+        : _buildFileResultNode(node);
   }
 
-  /// Handles `_buildDirectoryResultNode`.
+  /// The folder [node] of the results, expanding to its results.
   Widget _buildDirectoryResultNode(SearchResultNode node) {
     final isExpanded = _expandedState[node.path] ?? false;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return TreeBranch(
+      header: FolderNameWidget(
+        node: node.folderNode,
+        isExpanded: isExpanded,
+        onTap: () => setState(() => _expandedState[node.path] = !isExpanded),
+      ),
+      isExpanded: isExpanded,
       children: [
-        FolderNameWidget(
-          node: node.folderNode,
-          isExpanded: isExpanded,
-          onTap: () {
-            setState(() {
-              _expandedState[node.path] = !isExpanded;
-            });
-          },
-        ),
-        if (isExpanded)
-          Padding(
-            padding: const EdgeInsets.only(left: AppSpacing.xLarge),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: node.children
-                  .map((child) => _buildSearchResultNode(child))
-                  .toList(),
-            ),
-          ),
+        for (final child in node.children) _buildSearchResultNode(child),
       ],
     );
   }
 
-  /// Handles `_buildFileResultNode`.
+  /// The file [node] of the results, opening the file, over its matches.
   Widget _buildFileResultNode(SearchResultNode node) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // File header
-        TreeRow.filePath(
-          node.path,
-          rootPath: widget.projectPath,
-          onTap: () => openFile(ref, node.path),
-        ),
-        // Match results
-        Padding(
-          padding: const EdgeInsets.only(left: AppSpacing.xxLarge),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: AppSpacing.tiny,
-            children: node.matches
-                .map((match) => _buildMatchResult(match))
-                .toList(),
-          ),
-        ),
-      ],
+    return TreeBranch(
+      header: TreeRow.filePath(
+        node.path,
+        rootPath: widget.projectPath,
+        onTap: () => openFile(ref, node.path),
+      ),
+      isExpanded: true,
+      children: [for (final match in node.matches) _buildMatchResult(match)],
     );
   }
 
-  /// Handles `_buildMatchResult`.
+  /// The line of [result], its match highlighted, opening the file there:
+  /// a place in the code like every other.
   Widget _buildMatchResult(SearchResult result) {
-    return Clickable(
+    final line = result.lineContent;
+    final indent = line.length - line.trimLeft().length;
+    return LocationRow(
+      icon: FileIconUtils.ofPath(result.filePath),
+      name: line.trim(),
+      match: TextRange(
+        start: result.matchStart - indent,
+        end: result.matchEnd - indent,
+      ),
+      path: result.filePath,
+      line: result.lineNumber,
+      rootPath: widget.projectPath,
       onTap: () => openFileAtLine(ref, result.filePath, result.lineNumber),
-      child: SurfaceCard(
-        padding: SurfacePadding.dense,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Line ${result.lineNumber}',
-              style: AppTextStyle.secondary(context),
-            ),
-            const SizedBox(height: AppSpacing.micro),
-            RichText(
-              text: TextSpan(
-                /// Handles `_buildHighlightedText`.
-                children: _buildHighlightedText(
-                  result.lineContent,
-                  result.matchStart,
-                  result.matchEnd,
-                ),
-                style: AppTextStyle.code,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
-  }
-
-  /// Handles `_buildHighlightedText`.
-  List<TextSpan> _buildHighlightedText(
-    String text,
-    int matchStart,
-    int matchEnd,
-  ) {
-    final spans = <TextSpan>[];
-
-    if (matchStart > 0) {
-      spans.add(TextSpan(text: text.substring(0, matchStart)));
-    }
-
-    spans.add(
-      TextSpan(
-        text: text.substring(matchStart, matchEnd),
-        style: AppTextStyle.match(context),
-      ),
-    );
-
-    if (matchEnd < text.length) {
-      spans.add(TextSpan(text: text.substring(matchEnd)));
-    }
-
-    return spans;
   }
 }

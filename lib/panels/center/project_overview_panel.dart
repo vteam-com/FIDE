@@ -10,12 +10,12 @@ import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
-import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/page_header.dart';
 import 'package:fide/widgets/page_scroll_view.dart';
 import 'package:fide/widgets/platform_icon.dart';
 import 'package:fide/widgets/project_analysis_view.dart';
+import 'package:fide/widgets/refresh_button.dart';
 import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/stat_card.dart';
 import 'package:fide/widgets/status_indicator.dart';
@@ -201,9 +201,8 @@ class ProjectOverviewPanel extends ConsumerWidget {
             fallback: const Icon(Icons.flutter_dash),
           ),
           actions: [
-            CompactIconButton(
-              tooltip: 'Analyze again',
-              icon: Icons.refresh,
+            RefreshButton(
+              busy: ref.watch(projectOverviewProvider).isLoading,
               onPressed: () => ref.invalidate(projectOverviewProvider),
             ),
           ],

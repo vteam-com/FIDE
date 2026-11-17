@@ -9,6 +9,7 @@ import 'package:fide/providers/preview_scope_notifier.dart';
 import 'package:fide/providers/right_panel_tab.dart';
 import 'package:fide/services/preview_generator.dart';
 import 'package:fide/services/preview_project_scanner.dart';
+import 'package:fide/widgets/busy_bar.dart';
 import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
@@ -17,8 +18,6 @@ import 'package:fide/widgets/expansion_chevron.dart';
 import 'package:fide/widgets/filter_field.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/image_backdrop_buttons.dart';
-import 'package:fide/widgets/inline_spinner.dart';
-import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/output_panel.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/primary_button.dart';
@@ -91,7 +90,7 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               _configure(context, constraints.maxWidth);
-              return _buildBody(state);
+              return BusyBar.over(busy: state.isBusy, child: _buildBody(state));
             },
           ),
         ),
@@ -128,7 +127,7 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
         ChoiceButtons<PreviewScope>(
           values: PreviewScope.values,
           selected: ref.watch(previewScopeProvider),
-          icon: (scope) => scope.icon,
+          icon: (scope) => Icon(scope.icon),
           label: (scope) => scope.label,
           onSelected: ref.read(previewScopeProvider.notifier).select,
         ),
@@ -142,14 +141,11 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
           onZoomOut: () => _zoomTo(AppZoom.smaller(_scale)),
           onZoomIn: () => _zoomTo(AppZoom.larger(_scale)),
         ),
-        if (state.isBusy)
-          const InlineSpinner()
-        else
-          CompactIconButton.header(
-            icon: Icons.restart_alt,
-            tooltip: 'Restart Previews',
-            onPressed: _controller.restart,
-          ),
+        CompactIconButton.header(
+          icon: Icons.restart_alt,
+          tooltip: 'Restart Previews',
+          onPressed: state.isBusy ? null : _controller.restart,
+        ),
       ],
     );
   }
@@ -171,7 +167,7 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
       case PreviewStatus.noPreviews:
         return _buildGenerate(state);
       case PreviewStatus.starting when state.items.isEmpty:
-        return const LoadingIndicator(
+        return const EmptyState(
           message:
               'Starting the previews: the first start compiles the '
               'project',
@@ -220,7 +216,7 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
     final files = state.projectFiles;
     if (files.isEmpty) {
       return state.isScanning
-          ? const LoadingIndicator(message: "Finding the project's previews")
+          ? const EmptyState(message: "Finding the project's previews")
           : EmptyState(
               icon: _icon,
               title: 'No Previews',
@@ -275,12 +271,10 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
           TreeBranch(
             header: _buildPreviewRow(file.path, preview.label, true),
             isExpanded: true,
+            // The busy bar tells while its previews start
             children: [
-              if (state.items.isEmpty)
-                const InlineSpinner()
-              else
-                for (final (index, item) in state.items.indexed)
-                  _buildCard(file.path, item, index),
+              for (final (index, item) in state.items.indexed)
+                _buildCard(file.path, item, index),
             ],
           )
         else

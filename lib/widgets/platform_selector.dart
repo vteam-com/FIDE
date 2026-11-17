@@ -1,11 +1,14 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/flutter_platform.dart';
-import 'package:fide/widgets/icon_label_tab.dart';
+import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/platform_icon.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Represents `PlatformSelector`.
-class PlatformSelector extends StatefulWidget {
+/// Picks the platform the Execute panel builds and runs for, as every
+/// one-of-N choice is picked: [ChoiceButtons], one per platform, those
+/// the project doesn't configure dimmed.
+class PlatformSelector extends StatelessWidget {
+  /// Creates the picker, [selectedPlatform] highlighted.
   const PlatformSelector({
     super.key,
     required this.supportedPlatforms,
@@ -13,109 +16,30 @@ class PlatformSelector extends StatefulWidget {
     required this.onPlatformSelected,
   });
 
-  /// Called when the user picks a configured platform.
+  /// Called with the platform picked.
   final ValueChanged<FlutterPlatform> onPlatformSelected;
 
-  /// The platform currently selected.
+  /// The platform highlighted.
   final FlutterPlatform selectedPlatform;
 
-  /// Platforms the project has a folder for; only these can be picked.
+  /// The platforms the project configures.
   final Set<FlutterPlatform> supportedPlatforms;
 
   @override
-  State<PlatformSelector> createState() => _PlatformSelectorState();
-}
-
-class _PlatformSelectorState extends State<PlatformSelector>
-    with TickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _setupTabController();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(PlatformSelector oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedPlatform != widget.selectedPlatform ||
-        oldWidget.supportedPlatforms != widget.supportedPlatforms) {
-      _updateTabController();
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    const platforms = FlutterPlatform.values;
-
-    // Icons only while the bar is too narrow for the platform names
-    return LayoutBuilder(
-      builder: (_, constraints) {
-        final showLabels =
-            constraints.maxWidth > AppSize.platformSelectorLabelBreakpoint;
-        return TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabAlignment: TabAlignment.start,
-          labelPadding: showLabels
-              ? AppPadding.tabLabelExpanded
-              : AppPadding.tabLabelCompact,
-          tabs: [
-            for (final p in platforms) _buildTab(p, showLabels: showLabels),
-          ],
-        );
-      },
-    );
-  }
-
-  /// The tab of [p], named when [showLabels].
-  Widget _buildTab(FlutterPlatform p, {required bool showLabels}) {
-    final isSupported = widget.supportedPlatforms.contains(p);
-    return IconLabelTab(
-      height: showLabels ? AppIconSize.emptyState : AppSize.titleBarHeight,
-      showLabel: showLabels,
-      label: p.displayName,
-      tooltip: isSupported
-          ? p.displayName
-          : '${p.displayName} (not configured)',
-      icon: PlatformIcon(
-        platform: p,
-        size: showLabels ? AppIconSize.large : AppIconSize.mediumLarge,
-        isSupported: isSupported,
-        isSelected: widget.selectedPlatform == p,
+    return ChoiceButtons<FlutterPlatform>(
+      values: FlutterPlatform.values,
+      selected: selectedPlatform,
+      icon: (platform) => PlatformIcon(
+        platform: platform,
+        size: AppIconSize.small,
+        isSupported: supportedPlatforms.contains(platform),
+        isSelected: platform == selectedPlatform,
       ),
+      label: (platform) => supportedPlatforms.contains(platform)
+          ? platform.displayName
+          : '${platform.displayName} (not configured)',
+      onSelected: onPlatformSelected,
     );
-  }
-
-  /// Creates and configures the [TabController] based on the ordered list of supported platforms.
-  void _setupTabController() {
-    _tabController = TabController(
-      length: FlutterPlatform.values.length,
-      vsync: this,
-      initialIndex: widget.selectedPlatform.index,
-    );
-
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) return;
-      final platform = FlutterPlatform.values[_tabController.index];
-      if (widget.supportedPlatforms.contains(platform)) {
-        widget.onPlatformSelected(platform);
-      }
-    });
-  }
-
-  /// Recreates the [TabController] when the set of supported platforms changes.
-  void _updateTabController() {
-    final targetIndex = widget.selectedPlatform.index;
-    if (_tabController.index != targetIndex) {
-      _tabController.animateTo(targetIndex);
-    }
   }
 }

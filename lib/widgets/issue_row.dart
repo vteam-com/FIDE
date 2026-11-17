@@ -8,9 +8,9 @@ import 'package:fide/providers/quick_fix_controller.dart';
 import 'package:fide/services/quick_fix_runner.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/location_row.dart';
 import 'package:fide/widgets/markdown_text.dart';
 import 'package:fide/widgets/message_box.dart';
-import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/quick_fix_icon.dart';
 import 'package:fide/widgets/secondary_button.dart';
@@ -18,7 +18,6 @@ import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/string_review_dialog.dart';
-import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -105,7 +104,7 @@ class IssueRow extends ConsumerWidget {
     WidgetRef ref,
     QualityFinding finding,
   ) {
-    return TreeRow(
+    return LocationRow(
       icon: Icon(
         issue.tone.icon,
         size: AppIconSize.small,
@@ -113,15 +112,8 @@ class IssueRow extends ConsumerWidget {
       ),
       name: finding.text,
       path: finding.path,
+      line: finding.line,
       rootPath: issue.rootPath,
-      trailing: [
-        PathText(
-          finding.path,
-          line: finding.line,
-          showFolder: false,
-          style: AppTextStyle.secondary(context),
-        ),
-      ],
       onTap: () {
         Navigator.of(context).pop();
         openFileAtLine(ref, finding.path, finding.line);

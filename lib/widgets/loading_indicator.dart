@@ -1,23 +1,29 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/busy_bar.dart';
 import 'package:fide/widgets/empty_state.dart';
-import 'package:fide/widgets/inline_spinner.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// A spinner centered in the space of content that is still loading, with
-/// an optional [message] under it.
+/// The space of content that is still loading: a [BusyBar] across its top
+/// with an optional [message] centered under it.
 class LoadingIndicator extends StatelessWidget {
-  /// Creates a centered spinner.
+  /// Creates the placeholder of loading content.
   const LoadingIndicator({super.key, this.message});
 
-  /// What is loading; just the spinner when null.
+  /// What is loading; just the bar when null.
   final String? message;
 
   @override
   Widget build(BuildContext context) {
     final message = this.message;
-    const spinner = InlineSpinner(size: AppIconSize.emptyState);
-    return message == null
-        ? const Center(child: spinner)
-        : EmptyState(message: message, child: spinner);
+    return BusyBar.over(
+      busy: true,
+      child: message == null
+          // As tall as the bar where the space is unbounded
+          ? const SizedBox(
+              width: double.infinity,
+              height: AppBorderWidth.medium,
+            )
+          : EmptyState(message: message),
+    );
   }
 }

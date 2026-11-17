@@ -1,4 +1,5 @@
 import 'package:fide/panels/right/ai_panel.dart';
+import 'package:fide/panels/right/analyzer_panel.dart';
 import 'package:fide/panels/right/info_panel.dart';
 import 'package:fide/panels/right/localization/localization_panel.dart';
 import 'package:fide/panels/right/outline_tab.dart';
@@ -16,6 +17,7 @@ final List<PanelTabSpec<RightPanelTab>> rightPanelTabs = [
     build: LocalizationPanel.new,
     badge: stringIssueCountProvider,
   ),
+  PanelTabSpec(RightPanelTab.analyzer, build: AnalyzerPanel.new),
   PanelTabSpec(RightPanelTab.ai, build: AIPanel.new),
   PanelTabSpec(RightPanelTab.info, build: InfoPanel.new),
 ];

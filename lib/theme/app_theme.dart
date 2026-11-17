@@ -47,6 +47,7 @@ class AppTheme {
       dividerColor: colorScheme.outline.withValues(alpha: AppOpacity.divider),
       dividerTheme: DividerThemeData(
         color: colorScheme.outline.withValues(alpha: AppOpacity.divider),
+        thickness: AppSize.borderThin,
       ),
       // One look for every TabBar: full-width underline, primary when selected
       tabBarTheme: TabBarThemeData(

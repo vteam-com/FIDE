@@ -13,6 +13,7 @@ import 'package:fide/providers/localization_controller.dart';
 import 'package:fide/services/arb_service.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/bullet_list.dart';
 import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/filter_field.dart';
@@ -178,10 +179,11 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           'Your Flutter project has some localization components set up, but others are missing. Localization requires three main components:',
           style: AppTextStyle.label,
         ),
-        Text(
-          '• ARB files (translation files in lib/l10n/)\n• Generated AppLocalizations class\n• Integration in main.dart',
-          style: AppTextStyle.secondary(context),
-        ),
+        const BulletList([
+          'ARB files (translation files in lib/l10n/)',
+          'Generated AppLocalizations class',
+          'Integration in main.dart',
+        ]),
         Text('Here\'s the current status:', style: AppTextStyle.label),
 
         // Status checks

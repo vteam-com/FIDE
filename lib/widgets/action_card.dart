@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/bullet_list.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:material_ui/material_ui.dart';
@@ -54,8 +55,7 @@ class ActionCard extends StatelessWidget {
             ],
           ),
           if (description != null) Text(description, style: AppTextStyle.label),
-          for (final step in steps)
-            Text('• $step', style: AppTextStyle.secondary(context)),
+          if (steps.isNotEmpty) BulletList(steps),
           ?child,
           if (action != null)
             Align(alignment: Alignment.centerRight, child: action),

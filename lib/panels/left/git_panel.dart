@@ -11,6 +11,7 @@ import 'package:fide/services/git_service.dart';
 import 'package:fide/widget_services/diff_counter.dart';
 import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/app_text_field.dart';
+import 'package:fide/widgets/busy_bar.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/empty_label.dart';
@@ -22,6 +23,7 @@ import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/panel_scroll_view.dart';
 import 'package:fide/widgets/primary_button.dart';
+import 'package:fide/widgets/refresh_button.dart';
 import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
@@ -52,6 +54,9 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
   final TextEditingController _commitController = TextEditingController();
   bool _isCommitting = false;
+
+  /// Whether Check again is reloading and fetching the repository.
+  bool _isRefreshing = false;
   bool _isWritingMessage = false;
 
   /// The repository the panel shows and acts on.
@@ -76,7 +81,13 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   /// commits that arrived there; stops once the panel is gone, as
   /// switching tabs disposes it.
   Future<void> _refresh() async {
-    if (mounted) await _repo.refresh();
+    if (!mounted) return;
+    setState(() => _isRefreshing = true);
+    try {
+      await _repo.refresh();
+    } finally {
+      if (mounted) setState(() => _isRefreshing = false);
+    }
   }
 
   /// Runs a Git [action] on the repository and shows its [outcome] as
@@ -276,12 +287,6 @@ class _GitPanelState extends ConsumerState<GitPanel> {
             children: [
               Row(
                 children: [
-                  CompactIconButton(
-                    icon: Icons.refresh,
-                    onPressed: _refresh,
-                    tooltip: 'Refresh',
-                  ),
-
                   _buildSyncButton(
                     label: 'Push',
                     pending: repo.ahead,
@@ -296,6 +301,8 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                     pendingIcon: Icons.cloud_download,
                     onPressed: _pull,
                   ),
+                  const Spacer(),
+                  RefreshButton(busy: _isRefreshing, onPressed: _refresh),
                 ],
               ),
 
@@ -339,67 +346,70 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
         // Content
         Expanded(
-          child: PanelScrollView(
-            children: [
-              // Staged files
-              if (status.staged.isNotEmpty) ...[
-                _buildFileSection(
-                  'STAGED CHANGES',
-                  status.staged,
-                  kindOf: (file) =>
-                      status.stagedKinds[file] ?? GitFileStatus.added,
-                  stats: repo.stagedStats,
-                  staged: true,
-                  onStage: null,
-                  onUnstage: _unstageFiles,
-                  canDiscard: false,
-                  onDiscard: _discardChanges,
+          child: BusyBar.over(
+            busy: _isRefreshing,
+            child: PanelScrollView(
+              children: [
+                // Staged files
+                if (status.staged.isNotEmpty) ...[
+                  _buildFileSection(
+                    'Staged Changes',
+                    status.staged,
+                    kindOf: (file) =>
+                        status.stagedKinds[file] ?? GitFileStatus.added,
+                    stats: repo.stagedStats,
+                    staged: true,
+                    onStage: null,
+                    onUnstage: _unstageFiles,
+                    canDiscard: false,
+                    onDiscard: _discardChanges,
+                  ),
+                ],
+
+                // Unstaged files
+                if (status.unstaged.isNotEmpty) ...[
+                  _buildFileSection(
+                    'Changes',
+                    status.unstaged,
+                    kindOf: (file) =>
+                        status.unstagedKinds[file] ?? GitFileStatus.modified,
+                    stats: repo.unstagedStats,
+                    onStage: _stageFiles,
+                    onUnstage: null,
+                    canDiscard: true,
+                    onDiscard: _discardChanges,
+                  ),
+                ],
+
+                // Untracked files
+                if (status.untracked.isNotEmpty) ...[
+                  // Untracked files are new, so they read as added
+                  _buildFileSection(
+                    'Untracked',
+                    status.untracked,
+                    kindOf: (_) => GitFileStatus.added,
+                    stats: repo.unstagedStats,
+                    onStage: _stageFiles,
+                    onUnstage: null,
+                    canDiscard: true,
+                    onDiscard: _discardChanges,
+                  ),
+                ],
+
+                // Recent commits
+                SectionPanel(
+                  title: 'Recent Commits',
+                  isExpanded:
+                      true, // Recent commits should be expanded by default
+
+                  child: repo.commits.isEmpty
+                      ? const EmptyLabel('No commits yet')
+                      : Column(
+                          children: repo.commits.map(_buildCommitTile).toList(),
+                        ),
                 ),
               ],
-
-              // Unstaged files
-              if (status.unstaged.isNotEmpty) ...[
-                _buildFileSection(
-                  'CHANGES',
-                  status.unstaged,
-                  kindOf: (file) =>
-                      status.unstagedKinds[file] ?? GitFileStatus.modified,
-                  stats: repo.unstagedStats,
-                  onStage: _stageFiles,
-                  onUnstage: null,
-                  canDiscard: true,
-                  onDiscard: _discardChanges,
-                ),
-              ],
-
-              // Untracked files
-              if (status.untracked.isNotEmpty) ...[
-                // Untracked files are new, so they read as added
-                _buildFileSection(
-                  'UNTRACKED',
-                  status.untracked,
-                  kindOf: (_) => GitFileStatus.added,
-                  stats: repo.unstagedStats,
-                  onStage: _stageFiles,
-                  onUnstage: null,
-                  canDiscard: true,
-                  onDiscard: _discardChanges,
-                ),
-              ],
-
-              // Recent commits
-              SectionPanel(
-                title: 'Recent Commits',
-                isExpanded:
-                    true, // Recent commits should be expanded by default
-
-                child: repo.commits.isEmpty
-                    ? const EmptyLabel('No commits yet')
-                    : Column(
-                        children: repo.commits.map(_buildCommitTile).toList(),
-                      ),
-              ),
-            ],
+            ),
           ),
         ),
       ],

@@ -1,9 +1,9 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/create_project_draft_notifier.dart';
 import 'package:fide/widgets/check_list_tile.dart';
+import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/step_header.dart';
-import 'package:fide/widgets/surface_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -46,7 +46,7 @@ class CreateProjectStep2 extends ConsumerWidget {
         const SizedBox(height: AppSpacing.xLarge),
 
         // Project summary
-        SurfaceCard(
+        OutlinedSurface(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: AppSpacing.medium,
@@ -120,7 +120,7 @@ class CreateProjectStep2 extends ConsumerWidget {
             ),
           ),
         ] else ...[
-          SurfaceCard(
+          OutlinedSurface(
             child: Text(
               'Localization can be added later in your project settings.',
               style: AppTextStyle.secondary(context),

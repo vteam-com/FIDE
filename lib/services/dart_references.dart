@@ -1,4 +1,6 @@
-part of 'class_splitter.dart';
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/dart/element/element.dart';
 
 /// A resolved name used in source: the [element] it names, the top-level
 /// declaration holding it, and the import prefix it was written with.
@@ -6,29 +8,37 @@ part of 'class_splitter.dart';
 /// [needsImport] is true when the name resolves through the library's
 /// import scope (a top-level declaration or an extension member) rather
 /// than through an object's members.
-typedef _Reference = ({
+typedef DartReference = ({
   Element element,
   Element top,
   String? prefix,
   bool needsImport,
 });
 
-/// Collects every resolved [_Reference] under a node, skipping doc comments
+/// Whether [names], a namespace's names, include [element], as itself or
+/// as the same-named declaration of its library.
+bool defines(Map<String, Element> names, Element element) => names.values.any(
+  (named) =>
+      named == element ||
+      (named.name == element.name && named.library == element.library),
+);
+
+/// Collects every resolved [DartReference] under a node, skipping doc comments
 /// and, optionally, some declarations.
-class _ReferenceCollector extends GeneralizingAstVisitor<void> {
-  _ReferenceCollector._(this._skip);
+class DartReferenceCollector extends GeneralizingAstVisitor<void> {
+  DartReferenceCollector._(this._skip);
 
   /// The declarations whose references are left out.
   final Set<AstNode> _skip;
 
-  final List<_Reference> _references = [];
+  final List<DartReference> _references = [];
 
   /// References made under [node], except under [skip].
-  static List<_Reference> collect(
+  static List<DartReference> collect(
     AstNode node, {
     Set<AstNode> skip = const {},
   }) {
-    final collector = _ReferenceCollector._(skip);
+    final collector = DartReferenceCollector._(skip);
     node.accept(collector);
     return collector._references;
   }

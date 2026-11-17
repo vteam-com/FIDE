@@ -91,7 +91,7 @@ Context: $context
 Request: $request
 
 Please provide a helpful response focused on the coding request.''',
-      think ? AppDuration.aiToolStepTimeout : AppDuration.aiSuggestionTimeout,
+      think ? AppDuration.aiToolStepTimeout : AppDuration.aiGenerateTimeout,
       think: think,
       cancel: cancel,
     );

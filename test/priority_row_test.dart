@@ -49,7 +49,7 @@ SectionPanel _section() => SectionPanel(
 void main() {
   testWidgets('a section header keeps its title on one line as it narrows: '
       'labeled actions, then icons, then none', (tester) async {
-    final title = find.text('CHANGES');
+    final title = find.text('Changes');
     final label = find.text('Stage All').hitTestable();
     final icon = find.byIcon(Icons.add).hitTestable();
 

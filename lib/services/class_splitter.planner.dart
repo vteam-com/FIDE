@@ -98,7 +98,7 @@ class _Planner {
     final group = <CompilationUnitMember>{declaration};
     final pending = <CompilationUnitMember>[declaration];
     while (pending.isNotEmpty) {
-      for (final reference in _ReferenceCollector.collect(
+      for (final reference in DartReferenceCollector.collect(
         pending.removeLast(),
       )) {
         if (reference.top.library != library.element ||
@@ -114,7 +114,7 @@ class _Planner {
     final usedOutside =
         [
           for (final libraryUnit in library.units)
-            ..._ReferenceCollector.collect(libraryUnit.unit, skip: group),
+            ...DartReferenceCollector.collect(libraryUnit.unit, skip: group),
         ].any(
           (r) => r.top.isPrivate && group.contains(_declarationOf(unit, r.top)),
         );
@@ -157,11 +157,14 @@ class _Planner {
     final rootPath = libraryElement.firstFragment.source.fullName;
     final directory = p.dirname(unit.path);
     final inner = [
-      for (final member in group) ..._ReferenceCollector.collect(member),
+      for (final member in group) ...DartReferenceCollector.collect(member),
     ];
     final outer = [
       for (final libraryUnit in library.units)
-        ..._ReferenceCollector.collect(libraryUnit.unit, skip: group.toSet()),
+        ...DartReferenceCollector.collect(
+          libraryUnit.unit,
+          skip: group.toSet(),
+        ),
     ];
 
     bool isMoving(Element top) =>
@@ -169,7 +172,7 @@ class _Planner {
         (top.library == libraryElement &&
             group.contains(_declarationOf(unit, top)));
 
-    bool isOwnPrivate(_Reference r) =>
+    bool isOwnPrivate(DartReference r) =>
         r.top.library == libraryElement &&
         !isMoving(r.top) &&
         (r.top.isPrivate || r.element.isPrivate);
@@ -323,7 +326,7 @@ class _Planner {
 
       final references = [
         for (final unit in library.units)
-          ..._ReferenceCollector.collect(unit.unit),
+          ...DartReferenceCollector.collect(unit.unit),
       ];
       final usesMoved = references.any((r) => r.top == moved);
       for (final unit in library.units) {
@@ -431,7 +434,7 @@ class _Planner {
   /// unit declaring it, or null when none does.
   static (ResolvedUnitResult, ImportDirective)? _importProviding(
     ResolvedLibraryResult library,
-    _Reference reference,
+    DartReference reference,
   ) {
     for (final unit in library.units) {
       for (final directive in unit.unit.directives) {
@@ -445,7 +448,7 @@ class _Planner {
 
   /// Whether [directive] brings [reference]'s declaration into scope under
   /// the prefix it was written with.
-  static bool _provides(ImportDirective directive, _Reference reference) {
+  static bool _provides(ImportDirective directive, DartReference reference) {
     return directive.prefix?.name == reference.prefix &&
         _namespaceHas(directive, reference.top);
   }
@@ -459,12 +462,7 @@ class _Planner {
             ? libraryExport.exportedLibrary?.exportNamespace
             : null,
     };
-    if (namespace == null) return false;
-    return namespace.definedNames2.values.any(
-      (e) =>
-          e == element ||
-          (e.name == element.name && e.library == element.library),
-    );
+    return namespace != null && defines(namespace.definedNames2, element);
   }
 
   /// Whether [export]'s `show` and `hide` combinators let [name] through.

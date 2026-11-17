@@ -35,7 +35,6 @@ class AppSize {
   static const double compactContextButton = 20;
   static const double regularProgressIndicator = 20;
   static const double expandedProgressIndicator = 24;
-  static const double platformSelectorLabelBreakpoint = 300;
   static const double macWindowControlsSpacing = 80;
   static const double desktopWindowControlsSpacing = 120;
 

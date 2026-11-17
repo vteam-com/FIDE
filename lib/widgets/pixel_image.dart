@@ -32,33 +32,38 @@ class PixelImage extends StatefulWidget {
 }
 
 class _PixelImageState extends State<PixelImage> {
-/// Why the image failed to load; null when it didn't.
+  /// Why the image failed to load; null when it didn't.
   Object? _error;
-/// The last frame loaded; null while loading.
+
+  /// The last frame loaded; null while loading.
   ImageInfo? _info;
-late final ImageStreamListener _listener = ImageStreamListener(
+  late final ImageStreamListener _listener = ImageStreamListener(
     _onFrame,
     onError: (error, _) => setState(() => _error = error),
   );
-/// The stream the image loads from.
+
+  /// The stream the image loads from.
   ImageStream? _stream;
-@override
+  @override
   void dispose() {
     _stream?.removeListener(_listener);
     _info?.dispose();
     super.dispose();
   }
-@override
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _resolve();
   }
-@override
+
+  @override
   void didUpdateWidget(PixelImage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.image != widget.image) _resolve();
   }
-@override
+
+  @override
   Widget build(BuildContext context) {
     if (_error != null) {
       return widget.errorBuilder?.call(context) ?? const SizedBox();
@@ -71,14 +76,16 @@ late final ImageStreamListener _listener = ImageStreamListener(
       height: widget.height,
     );
   }
-/// Shows [info], a new frame of the image.
+
+  /// Shows [info], a new frame of the image.
   void _onFrame(ImageInfo info, bool _) {
     setState(() {
       _info?.dispose();
       _info = info;
     });
   }
-/// Listens to the stream of [PixelImage.image], forgetting the previous
+
+  /// Listens to the stream of [PixelImage.image], forgetting the previous
   /// image's frame and error.
   void _resolve() {
     final stream = widget.image.resolve(createLocalImageConfiguration(context));

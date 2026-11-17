@@ -22,11 +22,11 @@ class ThemeModeButtons extends StatelessWidget {
     return ChoiceButtons(
       values: const [ThemeMode.system, ThemeMode.light, ThemeMode.dark],
       selected: selected,
-      icon: (mode) => switch (mode) {
+      icon: (mode) => Icon(switch (mode) {
         ThemeMode.system => Icons.brightness_auto,
         ThemeMode.light => Icons.light_mode,
         ThemeMode.dark => Icons.dark_mode,
-      },
+      }),
       label: (mode) => switch (mode) {
         ThemeMode.system => 'System',
         ThemeMode.light => 'Light',

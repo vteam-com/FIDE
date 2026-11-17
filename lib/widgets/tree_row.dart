@@ -21,6 +21,7 @@ class TreeRow extends StatelessWidget {
     this.note,
     this.nameStyle,
     this.highlighted = false,
+    this.match,
     this.showMenuButton = false,
     this.showPath = false,
     this.trailing = const [],
@@ -58,6 +59,9 @@ class TreeRow extends StatelessWidget {
   /// The entry's glyph.
   final Widget icon;
 
+  /// The part of [name] matching a search, highlighted; none when null.
+  final TextRange? match;
+
   /// The entry's name.
   final String name;
 
@@ -89,7 +93,6 @@ class TreeRow extends StatelessWidget {
 
   /// Indicators after the name, such as counts, badges or status icons.
   final List<Widget> trailing;
-
   @override
   Widget build(BuildContext context) {
     final path = this.path;
@@ -101,8 +104,8 @@ class TreeRow extends StatelessWidget {
         .merge(nameStyle);
     final text = showPath && path != null
         ? PathText(path, rootPath: root, style: style)
-        : Text(
-            name,
+        : Text.rich(
+            _highlighted(context, match),
             style: style,
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
@@ -142,6 +145,23 @@ class TreeRow extends StatelessWidget {
                 ),
         ),
       ),
+    );
+  }
+
+  /// [name] with the part in [match] highlighted as a search match.
+  TextSpan _highlighted(BuildContext context, TextRange? match) {
+    if (match == null || !match.isValid || match.end > name.length) {
+      return TextSpan(text: name);
+    }
+    return TextSpan(
+      children: [
+        TextSpan(text: match.textBefore(name)),
+        TextSpan(
+          text: match.textInside(name),
+          style: AppTextStyle.match(context),
+        ),
+        TextSpan(text: match.textAfter(name)),
+      ],
     );
   }
 }

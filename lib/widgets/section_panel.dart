@@ -6,6 +6,7 @@ import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/priority_row.dart';
 import 'package:fide/widgets/surface_header_band.dart';
 import 'package:fide/widgets/surface_padding.dart';
+import 'package:fide/widgets/truncated_text.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// A collapsible section drawn as one outlined card: a header band over its
@@ -52,7 +53,6 @@ class _SectionPanelState extends State<SectionPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final rightWidget = widget.rightWidget;
     final count = widget.count;
     final child = widget.child;
@@ -83,18 +83,9 @@ class _SectionPanelState extends State<SectionPanel> {
               // drop their labels, then hide
               child: PriorityRow(
                 spacing: AppSpacing.tiny,
-                leading: ExpansionChevron(
-                  isExpanded: _isExpanded,
-                  color: colorScheme.primary,
-                ),
-                title: Text(
-                  widget.title.toUpperCase(),
-                  style: AppTextStyle.captionStrong.copyWith(
-                    color: colorScheme.primary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                leading: ExpansionChevron(isExpanded: _isExpanded),
+                // A section's heading style, kept on one line
+                title: TruncatedText(widget.title, style: AppTextStyle.title),
                 trailing: trailing,
                 compactTrailing: trailing == null
                     ? null

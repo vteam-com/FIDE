@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -197,8 +198,9 @@ class OllamaClient implements ChatModel {
   /// Posts [body] to Ollama's [path], or gets it when [body] is null, and
   /// returns the decoded JSON reply, or null when it isn't a JSON object.
   ///
-  /// Throws an [AiServiceException] when Ollama can't be reached within
-  /// [timeout] or answers with an error status, and an
+  /// Throws an [AiServiceException] when Ollama can't be reached or
+  /// doesn't answer in full within [timeout] (the request is then aborted,
+  /// so Ollama stops generating) or answers with an error status, and an
   /// [AiCancelledException] when [cancel] stops it.
   Future<Map<String, dynamic>?> _send(
     String path,
@@ -207,10 +209,14 @@ class OllamaClient implements ChatModel {
     AiCancelToken? cancel,
   }) async {
     cancel?.throwIfCancelled();
+    // Ollama answers a request only once generated: the deadline covers
+    // the wait for the answer, not just reading it
+    final deadline = Completer<void>();
+    final timer = Timer(timeout, deadline.complete);
     final request = http.AbortableRequest(
       body == null ? 'GET' : 'POST',
       Uri.http(ollamaHost, path),
-      abortTrigger: cancel?.whenCancelled,
+      abortTrigger: Future.any([?cancel?.whenCancelled, deadline.future]),
     );
     if (body != null) {
       request.headers['Content-Type'] = 'application/json';
@@ -218,14 +224,19 @@ class OllamaClient implements ChatModel {
     }
     final http.Response response;
     try {
-      response = await http.Response.fromStream(await _client.send(request))
-          .timeout(timeout);
+      response = await http.Response.fromStream(await _client.send(request));
     } on http.RequestAbortedException {
-      throw const AiCancelledException();
+      if (cancel?.isCancelled ?? false) throw const AiCancelledException();
+      throw AiServiceException(
+        'Ollama gave no answer within ${timeout.inSeconds} s: the model may '
+        'be too large for the memory free, or the prompt too long.',
+      );
     } catch (e) {
       throw AiServiceException(
         '$e\n\nMake sure Ollama is installed and running on $ollamaHost',
       );
+    } finally {
+      timer.cancel();
     }
     if (response.statusCode != HttpStatus.ok) {
       throw AiServiceException(

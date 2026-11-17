@@ -87,6 +87,31 @@ void main() {
     expect(await client.generate('tip?', timeout), 'ok');
   });
 
+  test('a model answering too late is aborted, and says so', () async {
+    var aborted = false;
+    final client = OllamaClient(
+      MockClient.streaming((request, _) async {
+        if (request.method == 'GET') return reply('');
+        // Answers only once aborted, as a stalled model never does
+        await (request as http.Abortable).abortTrigger;
+        aborted = true;
+        throw http.RequestAbortedException(request.url);
+      }),
+    );
+
+    await expectLater(
+      client.generate('tip?', const Duration(milliseconds: 1)),
+      throwsA(
+        isA<AiServiceException>().having(
+          (e) => e.toString(),
+          'message',
+          contains('no answer within'),
+        ),
+      ),
+    );
+    expect(aborted, isTrue);
+  });
+
   /// A client whose Ollama lists [models], of which [toolModels] can call
   /// tools and [thinkingModels] think, and records the model each generate
   /// request names, and its whole body in [bodies].

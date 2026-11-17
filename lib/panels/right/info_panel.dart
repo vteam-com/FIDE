@@ -9,6 +9,8 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/project_info_controller.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/bullet_list.dart';
+import 'package:fide/widgets/busy_bar.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_label.dart';
@@ -17,8 +19,10 @@ import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/open_url.dart';
 import 'package:fide/widgets/output_panel.dart';
+import 'package:fide/widgets/panel_header.dart';
 import 'package:fide/widgets/panel_scroll_view.dart';
 import 'package:fide/widgets/primary_button.dart';
+import 'package:fide/widgets/refresh_button.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
@@ -89,14 +93,13 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           const SizedBox(height: AppSpacing.medium),
           const Text('Score ranges:', style: AppTextStyle.captionStrong),
           const SizedBox(height: AppSpacing.tiny),
-          Text(
-            '• Green (${AppMetric.warningScoreThreshold}-${AppMetric.maxScore}): '
-            'Good project health\n'
-            '• Orange (${AppMetric.criticalScoreThreshold}-'
-            '${AppMetric.warningScoreThreshold - 1}): Needs attention\n'
-            '• Red (0-${AppMetric.criticalScoreThreshold - 1}): Critical issues',
-            style: AppTextStyle.secondary(context),
-          ),
+          const BulletList([
+            'Green (${AppMetric.warningScoreThreshold}-${AppMetric.maxScore}): '
+                'Good project health',
+            'Orange (${AppMetric.criticalScoreThreshold}-'
+                '${AppMetric.warningScoreThreshold - 1}): Needs attention',
+            'Red (0-${AppMetric.criticalScoreThreshold - 1}): Critical issues',
+          ]),
         ],
       ),
     );
@@ -107,7 +110,10 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     final confirmed = await MessageBox.confirm(
       context,
       title: 'Full Project Cleanup',
-      message: 'This will:\n• Flutter clean\n• Remove build artifacts\n• Clear pub cache\n\nContinue?',
+      message:
+          'This will:\n'
+          '${BulletList.text(['Flutter clean', 'Remove build artifacts', 'Clear pub cache'])}'
+          '\n\nContinue?',
       confirmLabel: 'Continue',
     );
     if (confirmed && mounted) _show(_controller.fullCleanup());
@@ -193,37 +199,44 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       return const NoProjectPlaceholder();
     }
 
-    return PanelScrollView(
+    final version = projectMetrics.version;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Header with project info
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    projectMetrics.name ?? 'Unknown Project',
-                    style: AppTextStyle.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                CompactIconButton(
-                  icon: Icons.edit_note,
-                  tooltip: 'Edit pubspec.yaml',
-                  onPressed: _openPubspecYaml,
-                ),
-              ],
+        PanelHeader(
+          title: projectMetrics.name ?? 'Unknown Project',
+          subtitle: version == null ? null : 'v$version',
+          actions: [
+            CompactIconButton(
+              icon: Icons.edit_note,
+              tooltip: 'Edit pubspec.yaml',
+              onPressed: _openPubspecYaml,
             ),
-            if (projectMetrics.version != null)
-              Text(
-                'v${projectMetrics.version}',
-                style: AppTextStyle.secondary(context),
-              ),
+            RefreshButton(
+              busy: info.isAnalyzing,
+              onPressed: () => _show(_controller.analyze()),
+            ),
           ],
         ),
+        Expanded(
+          // The cleanup's button tells it runs, analysis included
+          child: BusyBar.over(
+            busy: info.isAnalyzing && !info.isCleaning,
+            child: _buildContent(currentProjectPath, projectMetrics, info),
+          ),
+        ),
+      ],
+    );
+  }
 
+  /// The project's description, health, dependencies and actions.
+  Widget _buildContent(
+    String currentProjectPath,
+    ProjectMetrics projectMetrics,
+    ProjectInfoState info,
+  ) {
+    return PanelScrollView(
+      children: [
         Text(
           projectMetrics.description ?? '< no description >',
           style: AppTextStyle.secondary(context),
@@ -379,16 +392,10 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         spacing: AppSpacing.medium,
         children: [
           PrimaryButton(
-            busy: info.isAnalyzing,
+            busy: info.isCleaning,
             icon: Icons.cleaning_services,
             label: 'Full Project Cleanup',
             onPressed: _performFullCleanup,
-          ),
-          PrimaryButton(
-            busy: info.isAnalyzing,
-            icon: Icons.refresh,
-            label: 'Refresh Analysis',
-            onPressed: () => _show(_controller.analyze()),
           ),
         ],
       ),

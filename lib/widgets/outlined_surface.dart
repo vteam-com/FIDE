@@ -3,9 +3,7 @@ import 'package:fide/widgets/surface_padding.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// A rounded box on the surface color with a thin outline, grouping related
-/// controls or a notice inside a panel.
-///
-/// The one outlined box of the app; filled boxes use `SurfaceCard`.
+/// controls, a notice or a value inside a panel: the one box of the app.
 class OutlinedSurface extends StatelessWidget {
   /// Creates the box around [child], inset by [padding].
   const OutlinedSurface({

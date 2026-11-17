@@ -14,8 +14,8 @@ class ChoiceButtons<T> extends StatelessWidget {
     required this.onSelected,
   });
 
-  /// Glyph of a value.
-  final IconData Function(T value) icon;
+  /// Glyph of a value, such as an `Icon`.
+  final Widget Function(T value) icon;
 
   /// Name of a value, shown as its tooltip.
   final String Function(T value) label;
@@ -43,11 +43,7 @@ class ChoiceButtons<T> extends StatelessWidget {
       ),
       segments: [
         for (final value in values)
-          ButtonSegment(
-            value: value,
-            icon: Icon(icon(value)),
-            tooltip: label(value),
-          ),
+          ButtonSegment(value: value, icon: icon(value), tooltip: label(value)),
       ],
       selected: {selected},
       onSelectionChanged: (selection) => onSelected(selection.first),

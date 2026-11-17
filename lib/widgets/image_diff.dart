@@ -149,7 +149,7 @@ class _ImageDiffState extends ConsumerState<ImageDiff> {
             ChoiceButtons(
               values: modes,
               selected: mode,
-              icon: (mode) => mode.icon,
+              icon: (mode) => Icon(mode.icon),
               label: (mode) => mode.label,
               onSelected: (mode) => setState(() => _mode = mode),
             ),

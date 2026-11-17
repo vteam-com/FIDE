@@ -9,6 +9,8 @@
   - UI elements that should look alike but render differently are a sign of duplicated code that has drifted
   - DRY aims at consistent code and consistent rendering: when UI code is almost the same and differs only by a few attributes (color, radius, padding, icon size, divider color, …), remove the differences rather than adding parameters to keep them
   - keep the base building blocks simple and few; avoid snowflake UI elements and one-off variants
+- one visible progress indicator per task: a panel's work shows as a `BusyBar` (thin horizontal bar atop its content, `LoadingIndicator` while nothing is shown yet); a spinner only on the button that started the task, the others just disabled
+- the shared UI blocks: `PanelHeader` atop a side panel, `RefreshButton` to run a check again (end of the header), `OutlinedSurface` for any box, `SectionTitle` style for section headings, `LocationRow` for a place in the code, `TreeBranch` for tree levels, `ChoiceButtons` for one-of-N picks, `BulletList` for bulleted lines
 - every text style lives in `AppTextStyle` (`lib/constants/constants.app_text_style.dart`), built on the `AppFontSize` scale; never write `TextStyle(...)`, `textTheme.*`, `fontSize:`, `fontWeight:` or line heights elsewhere — pick a style there and only add a state color with `copyWith(color: …)`; a missing style is added to that file
 - never use the floppy disk icon (`Icons.save*`) for Save, Commit, Apply or Persist actions: use `Icons.download`, as the editor's Save does (Apple's `square.and.arrow.down`), or a plain text label as Apple's UX does
 - `fcheck --fix` can reformat unrelated files; revert changes it makes outside the task

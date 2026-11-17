@@ -65,8 +65,8 @@ void main() {
     await tester.tap(find.text('home.dart'));
     await tester.pumpAndSettle();
 
-    expect(find.text('IMPORTS'), findsOneWidget);
-    expect(find.text('IMPORTED BY'), findsOneWidget);
+    expect(find.text('Imports'), findsOneWidget);
+    expect(find.text('Imported by'), findsOneWidget);
     // The graph's box and the details' row of each related file
     expect(find.text('model.dart'), findsNWidgets(2));
     expect(find.text('main.dart'), findsNWidgets(2));

@@ -21,18 +21,6 @@ class AppPadding {
   /// Inset of a full page's or overlay's content from its edges.
   static const EdgeInsets pageContent = EdgeInsets.all(AppSpacing.xLarge);
 
-  /// Insets of a tab that shows only its icon.
-  static const EdgeInsets tabLabelCompact = EdgeInsets.symmetric(
-    horizontal: AppSpacing.medium,
-    vertical: AppSpacing.medium,
-  );
-
-  /// Insets of a tab that shows its icon and name.
-  static const EdgeInsets tabLabelExpanded = EdgeInsets.symmetric(
-    horizontal: AppSpacing.medium,
-    vertical: AppSpacing.tiny,
-  );
-
   /// Insets of one action's row in an action list.
   static const EdgeInsets actionRow = EdgeInsets.symmetric(
     horizontal: AppSpacing.medium,

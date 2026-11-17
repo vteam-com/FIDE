@@ -1,8 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:flutter/widgets.dart';
 
-/// The only insets a box (`SurfaceCard`, `OutlinedSurface`) puts around
-/// its content.
+/// The only insets an `OutlinedSurface` puts around its content.
 enum SurfacePadding {
   /// Cards, notes and summaries.
   normal(AppPadding.pageContent),

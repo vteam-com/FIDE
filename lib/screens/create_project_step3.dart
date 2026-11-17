@@ -4,10 +4,10 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/create_project_draft_notifier.dart';
 import 'package:fide/widgets/loading_actions_log.dart';
 import 'package:fide/widgets/loading_progress_bar.dart';
+import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_tone_style.dart';
-import 'package:fide/widgets/surface_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -32,7 +32,7 @@ class CreateProjectStep3 extends ConsumerWidget {
         spacing: AppSpacing.xLarge,
         children: [
           // Project info
-          SurfaceCard(
+          OutlinedSurface(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: AppSpacing.medium,

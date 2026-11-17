@@ -1,4 +1,3 @@
-import 'package:fide/constants/constants.dart';
 import 'package:fide/models/test_suite.dart';
 import 'package:fide/providers/command_runner.dart';
 import 'package:fide/providers/service_providers.dart';
@@ -6,11 +5,10 @@ import 'package:fide/services/flutter_build_service.dart';
 import 'package:fide/services/test_suite_inspector.dart';
 import 'package:fide/widgets/command_action_list.dart';
 import 'package:fide/widgets/command_output.dart';
-import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/panel_action.dart';
+import 'package:fide/widgets/panel_header.dart';
 import 'package:fide/widgets/panel_scroll_view.dart';
-import 'package:fide/widgets/section_title.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -57,28 +55,21 @@ class TestPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final actions = _actions(context, ref);
-    final isRunning = ref.watch(commandRunnerProvider).isAnyRunning(_actionIds);
-    return PanelScrollView(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SectionTitle('Test Suite'),
-                  Text(
-                    'Run and manage Flutter tests',
-                    style: AppTextStyle.secondary(context),
-                  ),
-                ],
-              ),
-            ),
-            if (isRunning) const InlineSpinner(),
-          ],
+        const PanelHeader(
+          title: 'Test Suite',
+          subtitle: 'Run and manage Flutter tests',
         ),
-        CommandActionList(actions: actions),
-        const CommandOutput(logKey: _logKey),
+        Expanded(
+          child: PanelScrollView(
+            children: [
+              CommandActionList(actions: actions),
+              const CommandOutput(logKey: _logKey),
+            ],
+          ),
+        ),
       ],
     );
   }

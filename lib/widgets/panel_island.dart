@@ -1,8 +1,9 @@
 import 'package:fide/constants/constants.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// A rounded, softly outlined surface that floats a workspace panel above
-/// the `AppTheme.workspaceBackground` gradient.
+/// A rounded, borderless surface that floats a workspace panel above the
+/// `AppTheme.workspaceBackground` gradient; the contrast with the gradient
+/// alone separates the panels.
 class PanelIsland extends StatelessWidget {
   /// Creates an island around [child].
   const PanelIsland({super.key, required this.child});
@@ -14,20 +15,11 @@ class PanelIsland extends StatelessWidget {
   final Widget child;
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return DecoratedBox(
-      // Drawn over the content so scrolled children never hide the edge
-      position: DecorationPosition.foreground,
-      decoration: BoxDecoration(
-        borderRadius: _radius,
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: AppOpacity.muted),
-          width: AppSize.borderThin,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: _radius,
-        child: ColoredBox(color: colorScheme.surface, child: child),
+    return ClipRRect(
+      borderRadius: _radius,
+      child: ColoredBox(
+        color: Theme.of(context).colorScheme.surface,
+        child: child,
       ),
     );
   }

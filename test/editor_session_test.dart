@@ -3,48 +3,13 @@ import 'dart:io';
 import 'package:fide/models/editor_diff_outcome.dart';
 import 'package:fide/panels/center/editor/editor_session.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/services/code_formatter.dart';
-import 'package:fide/services/file_content_reader.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Keeps the files written in memory.
-class _FakeReader extends FileContentReader {
-  final Map<String, String> files = {};
-
-  int syncWrites = 0;
-
-  bool failWrites = false;
-
-  @override
-  Future<bool> exists(String filePath) async => files.containsKey(filePath);
-
-  @override
-  Future<String> read(String filePath) async => files[filePath]!;
-
-  @override
-  Future<void> write(String filePath, String content) async {
-    if (failWrites) throw const FileSystemException('read only');
-    files[filePath] = content;
-  }
-
-  @override
-  void writeSync(String filePath, String content) {
-    syncWrites++;
-    files[filePath] = content;
-  }
-}
-
-/// Formats by trimming trailing blank lines.
-class _FakeFormatter extends CodeFormatter {
-  const _FakeFormatter() : super(const ProcessRunner());
-
-  @override
-  Future<String> format(String filePath, String content) async =>
-      '${content.trimRight()}\n';
-}
+import 'fake_code_formatter.dart';
+import 'fake_file_content_reader.dart';
 
 /// A git whose HEAD content is set by the test.
 class _FakeGit extends GitService {
@@ -68,21 +33,21 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   const path = '/project/lib/main.dart';
-  late _FakeReader reader;
+  late FakeFileContentReader reader;
   late _FakeGit git;
   late OpenDocumentsNotifier documents;
   late EditorSession session;
   late int changes;
 
   setUp(() async {
-    reader = _FakeReader()..files[path] = 'void main() {}\n';
+    reader = FakeFileContentReader()..files[path] = 'void main() {}\n';
     git = _FakeGit();
     documents = OpenDocumentsNotifier(reader: reader);
     await documents.open(path);
     changes = 0;
     session = EditorSession(
       documents: documents,
-      formatter: const _FakeFormatter(),
+      formatter: const FakeCodeFormatter(),
       git: git,
     )..addListener(() => changes++);
     session.load(documents.state.active!);

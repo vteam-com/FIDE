@@ -105,7 +105,7 @@ class _EditorScreenFontViewState extends State<EditorScreenFontView> {
             ChoiceButtons(
               values: FontSampleColors.values,
               selected: _colors,
-              icon: (colors) => colors.paper.icon,
+              icon: (colors) => Icon(colors.paper.icon),
               label: (colors) => colors.label,
               onSelected: (colors) => setState(() => _colors = colors),
             ),
