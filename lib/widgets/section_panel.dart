@@ -4,6 +4,7 @@ import 'package:fide/widgets/expansion_chevron.dart';
 import 'package:fide/widgets/icon_only_labels.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/priority_row.dart';
+import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/surface_header_band.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:fide/widgets/truncated_text.dart';
@@ -85,7 +86,7 @@ class _SectionPanelState extends State<SectionPanel> {
                 spacing: AppSpacing.tiny,
                 leading: ExpansionChevron(isExpanded: _isExpanded),
                 // A section's heading style, kept on one line
-                title: TruncatedText(widget.title, style: AppTextStyle.title),
+                title: TruncatedText(widget.title, style: SectionTitle.style),
                 trailing: trailing,
                 compactTrailing: trailing == null
                     ? null

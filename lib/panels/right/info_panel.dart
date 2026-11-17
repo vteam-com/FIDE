@@ -158,9 +158,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               onPressed: _openPubspecYaml,
             ),
             RefreshButton(
-              busy:
-                  info.isAnalyzing ||
-                  ref.watch(projectQualityBusyProvider),
+              busy: info.isAnalyzing || ref.watch(projectQualityBusyProvider),
               onPressed: () {
                 refreshProjectQuality(ref.invalidate);
                 _show(_controller.analyze());

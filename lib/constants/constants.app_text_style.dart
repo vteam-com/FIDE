@@ -46,7 +46,8 @@ class AppTextStyle {
   /// Tree rows and text fields.
   static const TextStyle body = TextStyle(fontSize: AppFontSize.body);
 
-  /// [body] emphasized, such as the selected tree row.
+  /// [body] emphasized, such as the selected tree row or a section
+  /// heading.
   static const TextStyle bodyStrong = TextStyle(
     fontSize: AppFontSize.body,
     fontWeight: _strong,
@@ -55,7 +56,7 @@ class AppTextStyle {
   /// Regular reading text: paragraphs, menu entries, list titles.
   static const TextStyle label = TextStyle(fontSize: AppFontSize.label);
 
-  /// Section and card headings.
+  /// Dialog titles and headings inside text, such as markdown's.
   static const TextStyle title = TextStyle(
     fontSize: AppFontSize.title,
     fontWeight: _strong,
