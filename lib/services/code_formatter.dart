@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:fide/services/file_type_utils.dart';
+import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/process_runner.dart';
 
 /// Formats source text: Dart with `dart format`, JSON and ARB by
@@ -43,7 +44,7 @@ class CodeFormatter {
     if (_jsonExtensions.contains(FileTypeUtils.extensionOf(filePath))) {
       return JsonEncoder.withIndent(jsonIndent).convert(jsonDecode(content));
     }
-    final result = await _runner.runWithInput('dart', [
+    final result = await _runner.runWithInput(FlutterSdk.dartExecutable, [
       'format',
       '--stdin-name=$filePath',
     ], content);

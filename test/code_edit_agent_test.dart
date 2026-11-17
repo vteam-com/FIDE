@@ -64,6 +64,33 @@ void main() {
       if (message['role'] == 'tool') message,
   ];
 
+  test('runs a tool call the model wrote as text', () async {
+    // qwen3-coder's call without its opening tag, which Ollama leaves as
+    // text
+    final model = FakeChatModel(
+      chatReplies: [
+        {
+          'role': 'assistant',
+          'content':
+              'Let me check the file:\n\n<function=read_file>\n'
+              '<parameter=path>\nlib/main.dart\n</parameter>\n</function>\n'
+              '</tool_call>',
+        },
+        answer('Nothing to fix.'),
+      ],
+    );
+
+    final summary = await agentOf(model).edit('Fix main', const []);
+
+    expect(summary, 'Nothing to fix.');
+    expect(toolResults(model).single['content'], 'void main() { print(1) }');
+    final reply = model.chats.last.firstWhere(
+      (message) => message['role'] == 'assistant',
+    );
+    expect(reply['content'], 'Let me check the file:');
+    expect(reply['tool_calls'], hasLength(1));
+  });
+
   test('edits files through skills and checks the build', () async {
     final model = FakeChatModel(
       chatReplies: [

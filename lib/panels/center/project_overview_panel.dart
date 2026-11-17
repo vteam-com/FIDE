@@ -11,6 +11,7 @@ import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/card_grid.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/page_header.dart';
 import 'package:fide/widgets/page_scroll_view.dart';
@@ -23,8 +24,10 @@ import 'package:fide/widgets/status_indicator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Shown in the center panel when no file is open: the current project's
-/// icon, version, fCheck quality score, code size, packages still on
+/// Shown in the center panel when no file is open, or over open files as
+/// [CenterView.overview]: the current project's icon, version, quality
+/// (fCheck's score over the issues of fCheck, `dart analyze` and the
+/// health checks), code size, packages still on
 /// CocoaPods, supported platforms, tests, coverage and translations.
 class ProjectOverviewPanel extends ConsumerWidget {
   /// Creates the overview of the current project.
@@ -189,7 +192,8 @@ class ProjectOverviewPanel extends ConsumerWidget {
   Widget _overview(WidgetRef ref, ProjectOverview overview) {
     final code = overview.code;
     final coverage = overview.coverage;
-    final issues = code.qualityIssues;
+    final quality = ref.watch(projectQualityProvider);
+    final issues = quality?.issues ?? const [];
 
     return PageScrollView(
       children: [
@@ -203,9 +207,16 @@ class ProjectOverviewPanel extends ConsumerWidget {
           ),
           actions: [
             RefreshButton(
-              busy: ref.watch(projectOverviewProvider).isLoading,
-              onPressed: () => ref.invalidate(projectOverviewProvider),
+              busy: ref.watch(projectQualityBusyProvider),
+              onPressed: () => refreshProjectQuality(ref),
             ),
+            // Shown over open files: closing returns to them
+            if (ref.watch(centerViewProvider) == CenterView.overview)
+              CompactIconButton(
+                tooltip: 'Close',
+                icon: Icons.close,
+                onPressed: () => closeCenterView(ref),
+              ),
           ],
         ),
         CardGrid(
@@ -213,9 +224,15 @@ class ProjectOverviewPanel extends ConsumerWidget {
             StatCard(
               icon: Icons.verified_outlined,
               title: 'Quality',
-              value: BadgeStatus.score(code.complianceScore, large: true),
+              value: BadgeStatus.score(
+                quality?.score ?? code.complianceScore,
+                large: true,
+              ),
               issues: issues,
-              details: [if (issues.isEmpty) 'Every fCheck analyzer at 100%'],
+              details: [
+                if (issues.isEmpty)
+                  'Every fCheck analyzer at 100%, nothing from dart analyze',
+              ],
             ),
             StatCard(
               icon: Icons.code,

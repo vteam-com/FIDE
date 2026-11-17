@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fide/constants/constants.dart';
 import 'package:fide/models/dependency_version.dart';
 import 'package:fide/models/outdated_package.dart';
 import 'package:fide/models/project_metrics.dart';
@@ -82,14 +81,14 @@ void main() {
       expect(metrics.directoryStructure, {'lib': 1});
     });
 
-    test('deducts for a missing pubspec.lock', () async {
+    test('reports a missing pubspec.lock', () async {
       final metrics = await const ProjectAnalyzer(ProjectConfigReader())
           .analyze(project.path);
 
       expect(metrics.health?.hasPubspecLock, false);
       expect(
-        metrics.health?.qualityScore,
-        AppMetric.maxScore - AppMetric.missingLockDeduction,
+        metrics.health?.issues(project.path).single.label,
+        'Missing pubspec.lock',
       );
     });
   });
@@ -144,7 +143,7 @@ http     1.0.0    1.1.0       1.1.0       2.0.0
 
     expect(restored.toJson(), metrics.toJson());
     expect(restored.dependencies, metrics.dependencies);
-    expect(restored.health?.qualityScore, metrics.health?.qualityScore);
+    expect(restored.health?.toJson(), metrics.health?.toJson());
   });
 
   test('VersionConflictException summarizes pub and names the package', () {

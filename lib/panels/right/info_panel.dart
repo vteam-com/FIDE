@@ -1,7 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_outcome.dart';
 import 'package:fide/models/dependency_version.dart';
-import 'package:fide/models/health_indicators.dart';
 import 'package:fide/models/project_info_state.dart';
 import 'package:fide/models/project_metrics.dart';
 import 'package:fide/models/status_tone.dart';
@@ -10,7 +9,6 @@ import 'package:fide/providers/project_info_controller.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/bullet_list.dart';
-import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_label.dart';
 import 'package:fide/widgets/issue_section.dart';
@@ -23,14 +21,13 @@ import 'package:fide/widgets/panel_scroll_view.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/refresh_button.dart';
 import 'package:fide/widgets/section_panel.dart';
-import 'package:fide/widgets/section_title.dart';
-import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// The Info tab: the open project's name, version, health score,
-/// dependencies and maintenance actions, run by [ProjectInfoController].
+/// The Info tab: the open project's name, version, quality (the same as
+/// the overview's), dependencies and maintenance actions, run by
+/// [ProjectInfoController].
 class InfoPanel extends ConsumerStatefulWidget {
   /// Creates the panel.
   const InfoPanel({super.key});
@@ -60,48 +57,6 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     if (mounted && result != null) {
       MessageBox.showOutcome(context, result);
     }
-  }
-
-  /// Handles `_showScoreDetails`.
-  void _showScoreDetails(BuildContext context, HealthIndicators health) {
-    MessageBox.showDetails(
-      context,
-      title: const Text('Quality Score Breakdown'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Starting Score: ${AppMetric.maxScore} points',
-            style: AppTextStyle.captionStrong,
-          ),
-          const SizedBox(height: AppSpacing.large),
-          const SectionTitle('Deductions'),
-          const SizedBox(height: AppSpacing.medium),
-          for (final deduction in health.deductions)
-            StatusIndicator.tone(
-              deduction.isActive ? StatusTone.error : StatusTone.success,
-              label: deduction.isActive
-                  ? '${deduction.label}: -${deduction.points} pts'
-                  : '${deduction.label}: no deduction',
-            ),
-          const Divider(),
-          SectionTitle(
-            'Final Score: ${health.qualityScore}/${AppMetric.maxScore}',
-          ),
-          const SizedBox(height: AppSpacing.medium),
-          const Text('Score ranges:', style: AppTextStyle.captionStrong),
-          const SizedBox(height: AppSpacing.tiny),
-          const BulletList([
-            'Green (${AppMetric.warningScoreThreshold}-${AppMetric.maxScore}): '
-                'Good project health',
-            'Orange (${AppMetric.criticalScoreThreshold}-'
-                '${AppMetric.warningScoreThreshold - 1}): Needs attention',
-            'Red (0-${AppMetric.criticalScoreThreshold - 1}): Critical issues',
-          ]),
-        ],
-      ),
-    );
   }
 
   /// Cleans the project up once the user confirms what it involves.
@@ -213,24 +168,23 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
             ),
             // The cleanup's button tells it runs, analysis included
             RefreshButton(
-              busy: info.isAnalyzing && !info.isCleaning,
-              onPressed: () => _show(_controller.analyze()),
+              busy:
+                  (info.isAnalyzing && !info.isCleaning) ||
+                  ref.watch(projectQualityBusyProvider),
+              onPressed: () {
+                refreshProjectQuality(ref);
+                _show(_controller.analyze());
+              },
             ),
           ],
         ),
-        Expanded(
-          child: _buildContent(currentProjectPath, projectMetrics, info),
-        ),
+        Expanded(child: _buildContent(projectMetrics, info)),
       ],
     );
   }
 
-  /// The project's description, health, dependencies and actions.
-  Widget _buildContent(
-    String currentProjectPath,
-    ProjectMetrics projectMetrics,
-    ProjectInfoState info,
-  ) {
+  /// The project's description, quality, dependencies and actions.
+  Widget _buildContent(ProjectMetrics projectMetrics, ProjectInfoState info) {
     return PanelScrollView(
       children: [
         Text(
@@ -239,9 +193,18 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           overflow: TextOverflow.visible,
         ),
 
-        // Health Indicators, once the project has been analyzed
-        if (projectMetrics.health case final health?)
-          _buildHealthCard(health, currentProjectPath),
+        // The project's quality, once fCheck has analyzed it
+        if (ref.watch(projectQualityProvider) case final quality?)
+          IssueSection(
+            title: 'Quality',
+            issues: quality.issues,
+            emptyLabel: 'No issues detected',
+            rightWidget: BadgeStatus.score(quality.score),
+          ),
+
+        // What dart analyze printed, links opening each place it names
+        if (ref.watch(dartAnalysisProvider).value case final analysis?)
+          OutputPanel(title: 'dart analyze', text: analysis.output),
 
         // Dependencies
         _buildDependenciesCard(projectMetrics, info),
@@ -249,23 +212,6 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         // Actions
         _buildActionsCard(info),
       ],
-    );
-  }
-
-  /// The project's score with each health issue and how to fix it, the
-  /// files it names under [projectPath].
-  Widget _buildHealthCard(HealthIndicators health, String projectPath) {
-    return IssueSection(
-      title: 'Score',
-      issues: [
-        for (final deduction in health.deductions)
-          if (deduction.count > 0) deduction.toIssue(projectPath),
-      ],
-      emptyLabel: 'No issues detected',
-      rightWidget: Clickable(
-        onTap: () => _showScoreDetails(context, health),
-        child: BadgeStatus.score(health.qualityScore),
-      ),
     );
   }
 

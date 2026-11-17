@@ -107,7 +107,6 @@ class ProjectMetrics {
     'totalFiles': totalFiles,
     'directoryStructure': directoryStructure,
     if (health != null) 'healthIndicators': health!.toJson(),
-    'qualityScore': ?health?.qualityScore,
     'outdated': outdated.map((package, row) => MapEntry(package, row.toJson())),
   };
 

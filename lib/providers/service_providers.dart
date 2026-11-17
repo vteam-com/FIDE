@@ -15,6 +15,7 @@ import 'package:fide/services/cocoa_pods_migrator.dart';
 import 'package:fide/services/code_formatter.dart';
 import 'package:fide/services/code_review.dart';
 import 'package:fide/services/commit_message_writer.dart';
+import 'package:fide/services/dart_analyzer.dart';
 import 'package:fide/services/desktop_shell.dart';
 import 'package:fide/services/file_content_reader.dart';
 import 'package:fide/services/file_entry_service.dart';
@@ -136,6 +137,12 @@ final projectTemplateProvider = Provider<ProjectTemplate>(
 /// Provides the [CodeReview] that runs fcheck for the AI reviews, the
 /// overview and the quick fixes.
 final codeReviewProvider = Provider<CodeReview>((_) => const CodeReview());
+
+/// Provides the [DartAnalyzer] running `dart analyze` for the project's
+/// quality.
+final dartAnalyzerProvider = Provider<DartAnalyzer>(
+  (ref) => DartAnalyzer(ref.read(processRunnerProvider)),
+);
 
 /// Provides the [OllamaInstaller] that installs and starts the local model.
 final ollamaInstallerProvider = Provider<OllamaInstaller>(

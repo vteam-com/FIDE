@@ -1,11 +1,10 @@
 import 'package:fide/constants/core_constants.dart';
 import 'package:fide/models/health_check.dart';
-import 'package:fide/models/health_deduction.dart';
+import 'package:fide/models/quality_issue.dart';
 
-/// Project health checks and the quality score derived from them.
-///
-/// [deductions] lists every check, so the score breakdown dialog and the
-/// health card show exactly what [qualityScore] subtracted.
+/// Project health checks: the lock file, build logs and large files. A
+/// failed check is one of the project's quality [issues]; none changes
+/// fCheck's quality score.
 class HealthIndicators {
   /// Whether `pubspec.lock` exists.
   final bool hasPubspecLock;
@@ -42,55 +41,21 @@ class HealthIndicators {
     );
   }
 
-  /// Every health check with what it found and the points it costs, in
-  /// the order the score breakdown lists them.
-  List<HealthDeduction> get deductions => [
-    HealthDeduction(
-      check: HealthCheck.missingLock,
-      label: 'Missing pubspec.lock',
-      count: hasPubspecLock ? 0 : 1,
-      points: hasPubspecLock ? 0 : AppMetric.missingLockDeduction,
-    ),
-    HealthDeduction(
-      check: HealthCheck.buildErrors,
-      label: 'Build errors (max ${AppMetric.buildErrorDeductionMax} points)',
-      count: buildErrors,
-      points: (buildErrors * AppMetric.buildErrorDeductionPer).clamp(
-        0,
-        AppMetric.buildErrorDeductionMax,
+  /// The failed checks as the issues the project's quality lists, the
+  /// files they name located under [rootPath] (the project folder) when
+  /// known.
+  List<QualityIssue> issues(String? rootPath) => [
+    if (!hasPubspecLock) HealthCheck.missingLock.issue(1, rootPath),
+    if (buildErrors > 0) HealthCheck.buildErrors.issue(buildErrors, rootPath),
+    if (buildWarnings > 0)
+      HealthCheck.buildWarnings.issue(buildWarnings, rootPath),
+    if (largeFiles.length > AppMetric.maxAllowedLargeFiles)
+      HealthCheck.largeFiles.issue(
+        largeFiles.length,
+        rootPath,
+        files: largeFiles,
       ),
-    ),
-    HealthDeduction(
-      check: HealthCheck.buildWarnings,
-      label:
-          'Build warnings (max ${AppMetric.buildWarningDeductionMax} points)',
-      count: buildWarnings,
-      points: (buildWarnings * AppMetric.buildWarningDeductionPer).clamp(
-        0,
-        AppMetric.buildWarningDeductionMax,
-      ),
-    ),
-    HealthDeduction(
-      check: HealthCheck.largeFiles,
-      label:
-          'Large files (>${AppMetric.maxAllowedLargeFiles} files over '
-          '${AppMetric.largeFileThresholdMb}MB)',
-      count: largeFiles.length,
-      points: largeFiles.length > AppMetric.maxAllowedLargeFiles
-          ? AppMetric.largeFilesDeduction
-          : 0,
-      files: largeFiles,
-    ),
   ];
-
-  /// `AppMetric.maxScore` minus every deduction, never below zero.
-  int get qualityScore =>
-      (AppMetric.maxScore -
-              deductions.fold<int>(
-                0,
-                (sum, deduction) => sum + deduction.points,
-              ))
-          .clamp(0, AppMetric.maxScore);
 
   /// The indicators as JSON for the metrics cache.
   Map<String, dynamic> toJson() => {

@@ -42,12 +42,24 @@ class AppMetric {
   static const int percent = 100;
   static const int warningScoreThreshold = 80;
   static const int criticalScoreThreshold = 50;
-  static const int missingLockDeduction = 20;
-  static const int largeFilesDeduction = 10;
-  static const int buildErrorDeductionPer = 10;
-  static const int buildErrorDeductionMax = 50;
-  static const int buildWarningDeductionPer = 2;
-  static const int buildWarningDeductionMax = 20;
+
+  /// Quality-score points each `dart analyze` error costs.
+  static const int dartErrorPoints = 10;
+
+  /// Most quality-score points `dart analyze` errors cost together.
+  static const int dartErrorPointsMax = 50;
+
+  /// Quality-score points each `dart analyze` warning costs.
+  static const int dartWarningPoints = 2;
+
+  /// Most quality-score points `dart analyze` warnings cost together.
+  static const int dartWarningPointsMax = 20;
+
+  /// Quality-score points each `dart analyze` info costs.
+  static const int dartInfoPoints = 1;
+
+  /// Most quality-score points `dart analyze` infos cost together.
+  static const int dartInfoPointsMax = 10;
   static const int outdatedMinColumns = 5;
   static const int outdatedUpgradableColIndex = 2;
   static const int outdatedResolvableColIndex = 3;

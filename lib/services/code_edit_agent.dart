@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/quick_fix.dart';
+import 'package:fide/models/text_tool_calls.dart';
 import 'package:fide/models/text_truncation.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/project_file_store.dart';
@@ -221,11 +222,8 @@ class CodeEditAgent {
     ];
     for (var round = 0; round < AppMetric.aiMaxToolRounds; round++) {
       _cancelToken.throwIfCancelled();
-      final reply = await _model.chat(
-        messages,
-        tools,
-        think: think,
-        cancel: _cancelToken,
+      final reply = _withWrittenCalls(
+        await _model.chat(messages, tools, think: think, cancel: _cancelToken),
       );
       messages.add(reply);
       final calls = reply['tool_calls'];
@@ -249,6 +247,22 @@ class CodeEditAgent {
       }
     }
     return stoppedMessage;
+  }
+
+  /// [reply], with the tool calls the model wrote in its text as its
+  /// `tool_calls` when Ollama found none, so they run, and so the history
+  /// shows the model proper calls rather than text it would imitate.
+  static Map<String, dynamic> _withWrittenCalls(Map<String, dynamic> reply) {
+    final calls = reply['tool_calls'];
+    if (calls is List && calls.isNotEmpty) return reply;
+    final content = reply['content']?.toString() ?? '';
+    final written = TextToolCalls.parse(content);
+    if (written.isEmpty) return reply;
+    return {
+      ...reply,
+      'content': TextToolCalls.textBefore(content),
+      'tool_calls': written,
+    };
   }
 
   /// The string argument [name] of a skill call.

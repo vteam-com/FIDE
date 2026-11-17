@@ -5,6 +5,7 @@ import 'dart:math';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_view_state.dart';
+import 'package:fide/models/project_quality.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -30,8 +31,9 @@ import 'package:window_manager/window_manager.dart';
 
 /// The window's title bar: the project menu, the app menus where the
 /// platform has no native menu bar, the side panel buttons while a project
-/// is open, the settings button, and the window buttons on Linux. While the
-/// settings screen shows, it holds only the button closing it.
+/// is open, a light bulb while the project's quality needs attention, the
+/// settings button, and the window buttons on Linux. While the settings
+/// screen shows, it holds only the button closing it.
 class AppTitleBar extends ConsumerStatefulWidget {
   /// Creates the title bar showing [menus] off macOS.
   const AppTitleBar({super.key, required this.menus});
@@ -67,6 +69,10 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
   Widget _buildBar() {
     final zoom = ref.watch(zoomProvider);
     final settingsVisible = ref.watch(settingsVisibleProvider);
+    final showsWorkspace =
+        !settingsVisible &&
+        ref.watch(appViewProvider) == AppViewState.mainLayout;
+    final quality = showsWorkspace ? ref.watch(projectQualityProvider) : null;
     return Container(
       // Transparent so the window's workspace gradient runs behind it
       color: Colors.transparent,
@@ -89,13 +95,14 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
               ],
             ),
           ),
-          if (!settingsVisible &&
-              ref.watch(appViewProvider) == AppViewState.mainLayout)
-            _buildPanelToggleButtons(),
+          if (showsWorkspace) _buildPanelToggleButtons(),
           Expanded(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                // Centered between the panel buttons and the settings one
+                if (quality != null && quality.needsAttention)
+                  Expanded(child: Center(child: _buildQualityButton(quality))),
                 settingsVisible
                     ? _buildCloseSettingsButton()
                     : _buildSettingsButton(),
@@ -158,6 +165,19 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
   /// Builds the centred app title text widget.
   Widget _buildAppTitle() {
     return Text('The Flutter IDE', style: AppTextStyle.label);
+  }
+
+  /// The light bulb telling the project's [quality] needs attention, its
+  /// score and most pressing issue as tooltip, showing the overview and
+  /// the Info tab when pressed.
+  Widget _buildQualityButton(ProjectQuality quality) {
+    return CompactIconButton(
+      key: const Key('keyQualityBulb'),
+      icon: Icons.lightbulb,
+      color: StatusTone.warning.readableIn(Theme.of(context).colorScheme),
+      tooltip: quality.summary,
+      onPressed: () => showProjectQuality(ref),
+    );
   }
 
   /// The buttons cycling each [SidePanel] through Hide, Min and Max, each

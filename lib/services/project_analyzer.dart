@@ -11,8 +11,8 @@ import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:path/path.dart' as p;
 
-/// Gathers project metrics (pubspec info, file and directory statistics,
-/// health indicators) and derives a quality score from them.
+/// Gathers project metrics: pubspec info, file and directory statistics
+/// and the health indicators listed among the project's quality issues.
 ///
 /// Produces the [ProjectMetrics] persisted by `ProjectMetricsNotifier` and
 /// rendered by the Info panel.

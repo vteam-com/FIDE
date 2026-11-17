@@ -1,5 +1,8 @@
 import 'package:fide/constants/core_constants.dart';
+import 'package:fide/models/quality_issue.dart';
+import 'package:fide/models/quality_issue.quality_finding.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:path/path.dart' as p;
 
 /// How to clear build errors and warnings.
 const String _fixBuildGuidance =
@@ -7,8 +10,9 @@ const String _fixBuildGuidance =
     '**Fix Build** in the AI panel to have the errors of the last build '
     'fixed in the files.';
 
-/// One project health check that can cost quality-score points, with how
-/// serious a failure is and the best practice that fixes it.
+/// One project health check, with how serious a failure is and the best
+/// practice that fixes it; a failure is listed among the project's quality
+/// issues.
 enum HealthCheck {
   /// `pubspec.lock` is missing.
   missingLock(
@@ -42,12 +46,34 @@ enum HealthCheck {
   /// How serious a failed check is.
   final StatusTone tone;
 
-  /// What is wrong when the check found [count] occurrences, as the
-  /// health card reads.
+  /// What is wrong when the check found [count] occurrences.
   String issueLabel(int count) => switch (this) {
     missingLock => 'Missing pubspec.lock',
     buildErrors => '$count build errors',
     buildWarnings => '$count build warnings',
     largeFiles => '$count large files',
   };
+
+  /// The issue of the check failing [count] times, with how to fix it
+  /// and, when [rootPath] (the project folder) is known, where each of
+  /// the project-relative [files] it found is.
+  QualityIssue issue(
+    int count,
+    String? rootPath, {
+    List<String> files = const [],
+  }) => QualityIssue(
+    tone: tone,
+    label: issueLabel(count),
+    guidance: guidance,
+    rootPath: rootPath,
+    findings: [
+      if (rootPath != null)
+        for (final file in files)
+          QualityFinding(
+            path: p.join(rootPath, file),
+            line: 1,
+            text: p.basename(file),
+          ),
+    ],
+  );
 }

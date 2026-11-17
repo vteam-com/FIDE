@@ -83,6 +83,13 @@ void showCenterView(WidgetRef ref, CenterView view) {
   ref.read(centerViewProvider.notifier).state = view;
 }
 
+/// Shows the project's quality: the overview in the center panel and the
+/// Info tab in the right panel, as the title bar's light bulb does.
+void showProjectQuality(WidgetRef ref) {
+  showCenterView(ref, CenterView.overview);
+  showRightPanelTab(ref.read, RightPanelTab.info);
+}
+
 /// Closes the center view, showing the editor or the project overview.
 void closeCenterView(WidgetRef ref) {
   ref.read(centerViewProvider.notifier).state = null;

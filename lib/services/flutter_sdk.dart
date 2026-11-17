@@ -9,6 +9,10 @@ class FlutterSdk {
   /// `PATH`.
   static const String executable = 'flutter';
 
+  /// The command running the Dart tool (`dart format`, `dart analyze`),
+  /// found on the login shell's `PATH` next to Flutter's.
+  static const String dartExecutable = 'dart';
+
   final ProcessRunner _runner;
 
   /// Creates an SDK probe that launches `flutter` through [_runner].

@@ -14,7 +14,8 @@ import 'package:fide/widgets/resizable_splitter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// The center panel host widget: a center view (App Icons, Architecture),
+/// The center panel host widget: a center view (Project Overview, App
+/// Icons, Architecture),
 /// else the active editor, else the project overview; the terminal below.
 class CenterPanel extends ConsumerStatefulWidget {
   /// Whether the terminal shows below the main content.
@@ -92,6 +93,7 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
 
     // Determine the main content to display
     final Widget mainContent = switch (ref.watch(centerViewProvider)) {
+      CenterView.overview => const ProjectOverviewPanel(),
       CenterView.appIcons => const AppIconsPanel(),
       CenterView.architecture => const ArchitecturePanel(),
       null when activeDocument != null => EditorScreen(

@@ -6,76 +6,47 @@ import 'package:fide/models/status_tone.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('HealthIndicators.deductions', () {
-    test('a healthy project loses nothing', () {
+  group('HealthIndicators.issues', () {
+    test('a healthy project has none', () {
       const health = HealthIndicators(hasPubspecLock: true);
 
-      expect(health.deductions.map((deduction) => deduction.check), [
-        HealthCheck.missingLock,
-        HealthCheck.buildErrors,
-        HealthCheck.buildWarnings,
-        HealthCheck.largeFiles,
-      ]);
-      expect(health.deductions.any((deduction) => deduction.isActive), false);
-      expect(health.qualityScore, AppMetric.maxScore);
+      expect(health.issues('/demo'), isEmpty);
     });
 
-    test('a deduction becomes the issue the health card shows', () {
-      const health = HealthIndicators(
+    test('each failed check becomes an issue with how to fix it', () {
+      final health = HealthIndicators(
         buildErrors: 2,
-        largeFiles: ['assets/big.bin'],
+        largeFiles: [
+          for (var i = 0; i <= AppMetric.maxAllowedLargeFiles; i++)
+            'assets/big$i.bin',
+        ],
       );
-      final issues = {
-        for (final deduction in health.deductions)
-          deduction.check: deduction.toIssue('/demo'),
-      };
+      final issues = health.issues('/demo');
 
-      expect(issues[HealthCheck.missingLock]?.label, 'Missing pubspec.lock');
-      expect(issues[HealthCheck.buildErrors]?.label, '2 build errors');
-      expect(issues[HealthCheck.buildErrors]?.tone, StatusTone.error);
-      expect(issues[HealthCheck.buildErrors]?.findings, isEmpty);
-      final large = issues[HealthCheck.largeFiles]!;
+      expect(issues.map((issue) => issue.label), [
+        HealthCheck.missingLock.issueLabel(1),
+        '2 build errors',
+        '${AppMetric.maxAllowedLargeFiles + 1} large files',
+      ]);
+      expect(issues[1].tone, StatusTone.error);
+      expect(issues[1].findings, isEmpty);
+      final large = issues.last;
       expect(large.tone, StatusTone.info);
       expect(large.rootPath, '/demo');
-      expect(large.findings.single.path, '/demo/assets/big.bin');
-      expect(large.findings.single.text, 'big.bin');
+      expect(large.findings.first.path, '/demo/assets/big0.bin');
+      expect(large.findings.first.text, 'big0.bin');
       expect(large.guidance, contains('Git LFS'));
       // Without a project folder the files can't be located
-      expect(health.deductions.last.toIssue(null).findings, isEmpty);
+      expect(health.issues(null).last.findings, isEmpty);
     });
 
-    test('the score subtracts every active deduction, capped', () {
-      final health = HealthIndicators(
-        buildErrors: 100,
-        buildWarnings: 1,
-        largeFiles: List.filled(AppMetric.maxAllowedLargeFiles + 1, 'big'),
-      );
-      final points = {
-        for (final deduction in health.deductions)
-          deduction.check: deduction.points,
-      };
-
-      expect(points, {
-        HealthCheck.missingLock: AppMetric.missingLockDeduction,
-        HealthCheck.buildErrors: AppMetric.buildErrorDeductionMax,
-        HealthCheck.buildWarnings: AppMetric.buildWarningDeductionPer,
-        HealthCheck.largeFiles: AppMetric.largeFilesDeduction,
-      });
-      expect(
-        health.qualityScore,
-        AppMetric.maxScore - points.values.reduce((a, b) => a + b),
-      );
-    });
-
-    test('a few large files are counted but cost nothing', () {
+    test('a few large files are no issue', () {
       const health = HealthIndicators(
         hasPubspecLock: true,
         largeFiles: ['big'],
       );
-      final largeFiles = health.deductions.last;
 
-      expect(largeFiles.count, 1);
-      expect(largeFiles.isActive, false);
+      expect(health.issues('/demo'), isEmpty);
     });
   });
 

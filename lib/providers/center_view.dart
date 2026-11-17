@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/legacy.dart';
 /// A full view the center panel shows instead of the editor or the project
 /// overview.
 enum CenterView {
+  /// The project's overview and quality, shown even while files are open.
+  overview('Project Overview'),
+
   /// The review of the project's app icons.
   appIcons('App Icons'),
 
