@@ -65,6 +65,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel>
             key: spec.tab.key,
             tooltip: spec.tab.tooltip,
             badgeCount: spec.badgeCount(ref),
+            busy: spec.isBusy(ref),
             icon: Icon(
               _tabController.index == spec.tab.index
                   ? spec.tab.selectedIcon

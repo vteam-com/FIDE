@@ -83,17 +83,25 @@ void main() {
   test('fix runs the step, shows it in progress, then checks again', () async {
     await container.read(ollamaStatusProvider.future);
     final steps = <OllamaStep?>[];
-    container.listen(
-      ollamaStatusProvider,
-      (_, next) => steps.add(next.value),
-      fireImmediately: false,
-    );
+    final running = <bool>[];
+    container
+      ..listen(
+        ollamaStatusProvider,
+        (_, next) => steps.add(next.value),
+        fireImmediately: false,
+      )
+      ..listen(
+        ollamaSetupRunningProvider,
+        (_, next) => running.add(next),
+        fireImmediately: false,
+      );
 
     final done = await container.read(ollamaStatusProvider.notifier).fix();
 
     expect(installer.installs, 1);
     expect(done, contains('installed'));
-    expect(steps, [OllamaStep.installing, OllamaStep.notRunning]);
+    expect(steps, [OllamaStep.notRunning]);
+    expect(running, [true, false]);
 
     await container.read(ollamaStatusProvider.notifier).fix();
     expect(container.read(ollamaStatusProvider).value, OllamaStep.ready);

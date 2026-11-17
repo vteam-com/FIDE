@@ -185,12 +185,16 @@ class _AIPanelState extends ConsumerState<AIPanel> {
   Widget _buildSetupState(OllamaStep? step) {
     if (step == null) return const LoadingIndicator();
     final actionLabel = step.actionLabel;
+    final isFixing = ref.watch(ollamaSetupRunningProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: AppSpacing.medium,
       children: [
-        Text(step.message, style: AppTextStyle.caption),
-        if (step == OllamaStep.installing)
+        Text(
+          isFixing ? 'Setting up Ollama…' : step.message,
+          style: AppTextStyle.caption,
+        ),
+        if (isFixing)
           const InlineSpinner()
         else if (actionLabel != null)
           PrimaryButton(onPressed: () => _fixSetup(step), label: actionLabel),

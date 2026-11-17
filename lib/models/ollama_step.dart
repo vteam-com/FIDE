@@ -1,5 +1,5 @@
-/// Where the local Ollama setup stands: the first missing piece, an
-/// install step in progress, or ready.
+/// Where the local Ollama setup stands: the first missing piece, or
+/// ready.
 enum OllamaStep {
   /// The `ollama` executable is missing.
   notInstalled(
@@ -21,9 +21,6 @@ enum OllamaStep {
     'Download Model',
     'Error downloading model',
   ),
-
-  /// An install, start or download is in progress.
-  installing('Setting up Ollama…'),
 
   /// Ollama and a model are ready.
   ready('Ollama is ready to use!');

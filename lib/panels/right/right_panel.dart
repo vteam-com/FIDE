@@ -55,6 +55,7 @@ class _RightPanelState extends ConsumerState<RightPanel>
             key: spec.tab.key,
             tooltip: spec.tab.tooltip,
             badgeCount: spec.badgeCount(ref),
+            busy: spec.isBusy(ref),
             icon: _buildTabIcon(spec.tab),
           ),
       ],

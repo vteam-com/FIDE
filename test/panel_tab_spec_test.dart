@@ -4,12 +4,16 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/left_panel_tab.dart';
 import 'package:fide/providers/right_panel_tab.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
+import 'package:fide/widgets/panel_tab_header.dart';
 import 'package:fide/widgets/panel_tab_spec.dart';
 import 'package:fide/widget_services/project_scoped.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+/// A busy flag the ring tests read.
+final _busyProvider = StateProvider<bool>((_) => true);
 
 /// A count the badge tests read.
 final _countProvider = StateProvider<int>((_) => 3);
@@ -42,6 +46,62 @@ void main() {
     );
 
     expect(counts, [3, 0]);
+  });
+
+  testWidgets('busy is read from its provider, false without one', (
+    tester,
+  ) async {
+    final withBusy = PanelTabSpec(
+      RightPanelTab.ai,
+      build: SizedBox.new,
+      busy: _busyProvider,
+    );
+    const noBusy = PanelTabSpec(RightPanelTab.info, build: SizedBox.new);
+    late List<bool> busy;
+    await tester.pumpWidget(
+      ProviderScope(
+        child: Consumer(
+          builder: (_, ref, _) {
+            busy = [withBusy.isBusy(ref), noBusy.isBusy(ref)];
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
+
+    expect(busy, [true, false]);
+  });
+
+  testWidgets('a busy tab rings its icon, an idle one does not', (
+    tester,
+  ) async {
+    Future<void> pumpHeader({required bool busy}) => tester.pumpWidget(
+      MaterialApp(
+        home: DefaultTabController(
+          length: 1,
+          child: Scaffold(
+            body: TabBar(
+              tabs: [
+                PanelTabHeader(
+                  icon: const Icon(Icons.auto_awesome),
+                  tooltip: 'AI',
+                  badgeCount: 0,
+                  busy: busy,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    final ring = find.byType(CircularProgressIndicator);
+
+    await pumpHeader(busy: false);
+    expect(ring, findsNothing);
+
+    await pumpHeader(busy: true);
+    expect(ring, findsOneWidget);
+    expect(find.byIcon(Icons.auto_awesome), findsOneWidget);
   });
 
   testWidgets('a project panel gets the open project, else the placeholder', (

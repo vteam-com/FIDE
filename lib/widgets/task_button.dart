@@ -1,8 +1,8 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/theme/app_theme.dart';
-import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/status_tone_style.dart';
+import 'package:fide/widgets/task_ring.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The one button for a task the user starts with a click, such as Build,
@@ -76,17 +76,10 @@ class TaskButton extends StatelessWidget {
             padding: EdgeInsets.zero,
             icon: Icon(icon, size: AppIconSize.mediumLarge),
           );
-    // The slot keeps the ring's size, so nothing moves when it shows
-    return SizedBox.square(
-      dimension: AppSize.actionButtonRing,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          if (running && !live)
-            const InlineSpinner(size: AppSize.actionButtonRing),
-          button,
-        ],
-      ),
+    return TaskRing(
+      size: AppSize.actionButtonRing,
+      spinning: running && !live,
+      child: button,
     );
   }
 }

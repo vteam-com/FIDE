@@ -1,5 +1,7 @@
 import 'package:fide/models/ai_action.dart';
 import 'package:fide/providers/ai_chat_notifier.dart';
+import 'package:fide/providers/ai_panel_busy_provider.dart';
+import 'package:fide/providers/ollama_status_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,6 +47,23 @@ void main() {
       'Open a project to review it.',
     );
     expect(model.prompts, isEmpty);
+  });
+
+  test('the AI panel is busy during a task or an Ollama setup step', () {
+    bool busy() => container.read(aiPanelBusyProvider);
+    final chat = container.read(aiChatProvider.notifier);
+    final setup = container.read(ollamaSetupRunningProvider.notifier);
+    expect(busy(), isFalse);
+
+    chat.beginTask('Translate with AI');
+    expect(busy(), isTrue);
+    chat.endTask('Translated');
+    expect(busy(), isFalse);
+
+    setup.state = true;
+    expect(busy(), isTrue);
+    setup.state = false;
+    expect(busy(), isFalse);
   });
 
   test('shows a task with its progress until it ends', () {

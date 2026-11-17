@@ -31,6 +31,11 @@ class AppSize {
   /// Size of the progress ring around an action's run button.
   static const double actionButtonRing =
       compactActionButton + AppSpacing.medium;
+
+  /// Size of the progress ring around a side panel tab's icon while the
+  /// panel's work runs.
+  static const double panelTabRing =
+      AppIconSize.panelHeader + AppSpacing.medium;
   static const double panelFallbackHeight = 600;
   static const double compactContextButton = 20;
   static const double regularProgressIndicator = 20;
