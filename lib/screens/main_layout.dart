@@ -2,6 +2,7 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/side_panel_widths.dart';
 import 'package:fide/panels/center/center_panel.dart';
 import 'package:fide/panels/left/left_panel.dart';
 import 'package:fide/panels/right/right_panel.dart';

@@ -26,7 +26,6 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   void _onResize(double delta) {
     setState(() {
       _explorerWidth = _dragged(
-        _explorerWidth,
         _shownExplorerWidth,
         leftPanelExpandedProvider,
         delta,
@@ -38,7 +37,6 @@ class MainLayoutState extends ConsumerState<MainLayout> {
   void _onOutlineResize(double delta) {
     setState(() {
       _outlineWidth = _dragged(
-        _outlineWidth,
         _shownOutlineWidth,
         rightPanelExpandedProvider,
         -delta,
@@ -46,30 +44,26 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     });
   }
 
-  /// A side panel's [width] after its splitter moves [delta] wider; an
-  /// [expanded] panel, [shownWidth] wide, stops being expanded and grows
-  /// from that width.
+  /// A side panel's width after its splitter moves [delta] wider: it
+  /// grows from the [shownWidth] it had in the last layout, and an
+  /// [expanded] panel stops being expanded.
   double _dragged(
-    double width,
     double shownWidth,
     StateProvider<bool> expanded,
     double delta,
   ) {
-    var start = width;
     if (ref.read(expanded)) {
       ref.read(expanded.notifier).state = false;
-      start = shownWidth;
     }
-    return (start + delta).clamp(
+    return (shownWidth + delta).clamp(
       AppSize.minSidePanelWidth,
       AppSize.maxSidePanelWidth,
     );
   }
 
-  /// Lays out the side panels in [availableWidth]: expanded ones share
-  /// what the others leave, keeping [AppSize.editorMinWidth] for the
-  /// editor, up to [AppSize.maxSidePanelWidth] each. A hidden panel is
-  /// neither shown nor expanded.
+  /// Lays out the side panels in [availableWidth] with
+  /// [SidePanelWidths.fit], keeping [AppSize.editorMinWidth] for the
+  /// editor. A hidden panel is neither shown nor expanded.
   void _fitSidePanels(
     double availableWidth, {
     required bool leftShown,
@@ -77,17 +71,13 @@ class MainLayoutState extends ConsumerState<MainLayout> {
     required bool leftExpanded,
     required bool rightExpanded,
   }) {
-    final fixedWidth =
-        (leftShown && !leftExpanded ? _explorerWidth : 0) +
-        (rightShown && !rightExpanded ? _outlineWidth : 0);
-    final expandedCount = (leftExpanded ? 1 : 0) + (rightExpanded ? 1 : 0);
-    final expandedWidth = expandedCount == 0
-        ? 0.0
-        : ((availableWidth - AppSize.editorMinWidth - fixedWidth) /
-                  expandedCount)
-              .clamp(AppSize.minSidePanelWidth, AppSize.maxSidePanelWidth);
-    _shownExplorerWidth = leftExpanded ? expandedWidth : _explorerWidth;
-    _shownOutlineWidth = rightExpanded ? expandedWidth : _outlineWidth;
+    final widths = SidePanelWidths.fit(
+      availableWidth,
+      left: (shown: leftShown, expanded: leftExpanded, width: _explorerWidth),
+      right: (shown: rightShown, expanded: rightExpanded, width: _outlineWidth),
+    );
+    _shownExplorerWidth = widths.left;
+    _shownOutlineWidth = widths.right;
   }
 
   @override
