@@ -1,105 +1,66 @@
-import 'dart:math' as math;
-
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/architecture_focus.dart';
 import 'package:fide/models/architecture_layout.dart';
+import 'package:fide/panels/center/architecture/architecture_edge_paths.dart';
 import 'package:fide/panels/center/architecture/architecture_role_style.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Paints the imports of an [ArchitectureLayout], each a curve from the
-/// importing file to the imported one along the layers' stacking (bottom
-/// to top when top down, right to left when left to right): the
-/// imports of the focused file in its callees' and callers' colors on
-/// top, the others faint, or left out unless [showAll].
+/// Paints the imports of an [ArchitectureLayout] from their
+/// [ArchitectureEdgePaths], built once per layout: every import faint
+/// ([ArchitectureEdgePainter.all]), or only the focused file's in its
+/// callees' and callers' colors ([ArchitectureEdgePainter.focused]),
+/// drawn on top, so hovering a file repaints only its few imports.
 class ArchitectureEdgePainter extends CustomPainter {
-  /// Creates the painter of [layout]'s imports around [focus], colored
-  /// from [theme].
-  ArchitectureEdgePainter({
+  /// Creates the painter of every import of [layout], faint, colored from
+  /// [theme].
+  ArchitectureEdgePainter.all({required this.layout, required this.theme})
+    : focus = null;
+
+  /// Creates the painter of the imports of [focus]'s file in [layout],
+  /// colored from [theme]; nothing when no file is in focus.
+  ArchitectureEdgePainter.focused({
     required this.layout,
-    required this.focus,
+    required ArchitectureFocus this.focus,
     required this.theme,
-    required this.showAll,
   });
 
-  /// Share of the span between two files, or of a layer gap when shorter,
-  /// that a curve runs straight out before bending toward its end.
-  static const double _bendShare = 0.5;
-
-  /// What is highlighted.
-  final ArchitectureFocus focus;
+  /// What is highlighted; null to paint every import faint.
+  final ArchitectureFocus? focus;
 
   /// Where each file is.
   final ArchitectureLayout layout;
-
-  /// Whether the imports away from the focused file are drawn, faint.
-  final bool showAll;
 
   /// The theme the colors come from.
   final ThemeData theme;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final faint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = AppSize.borderThin
-      ..color = theme.dividerColor;
-    final highlighted = <(Path, Color)>[];
-    final graph = layout.graph;
-    for (final MapEntry(key: source, value: targets) in graph.callees.entries) {
-      for (final target in targets) {
-        final path = _edge(
-          layout.nodes[source]!,
-          layout.nodes[target]!,
-          layout.orientation,
-        );
-        if (focus.isHighlighted(source, target)) {
-          final role = source == focus.file
-              ? ArchitectureRole.callee
-              : ArchitectureRole.caller;
-          highlighted.add((path, role.color(theme)));
-        } else if (showAll) {
-          canvas.drawPath(path, faint);
-        }
+    final edges = ArchitectureEdgePaths.of(layout);
+    final paint = Paint()..style = PaintingStyle.stroke;
+    final focus = this.focus;
+    if (focus == null) {
+      paint
+        ..strokeWidth = AppSize.borderThin
+        ..color = theme.dividerColor;
+      for (final edge in edges.all) {
+        canvas.drawPath(edge.path, paint);
       }
+      return;
     }
-    final strong = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = AppBorderWidth.medium;
-    for (final (path, color) in highlighted) {
-      canvas.drawPath(path, strong..color = color);
+    final file = focus.file;
+    if (file == null) return;
+    paint.strokeWidth = AppBorderWidth.medium;
+    for (final edge in edges.touching(file)) {
+      final role = edge.source == file
+          ? ArchitectureRole.callee
+          : ArchitectureRole.caller;
+      canvas.drawPath(edge.path, paint..color = role.color(theme));
     }
   }
 
   @override
   bool shouldRepaint(ArchitectureEdgePainter oldDelegate) =>
       oldDelegate.layout != layout ||
-      oldDelegate.focus.file != focus.file ||
-      oldDelegate.showAll != showAll ||
+      oldDelegate.focus?.file != focus?.file ||
       oldDelegate.theme != theme;
-
-  /// The curve from [from] to [to] across the layers of [orientation]:
-  /// out of the bottom middle of [from] into the top middle of [to] when
-  /// top down, out of its right middle into the left middle of [to] when
-  /// left to right; bent at least [_bendShare] of a layer gap, so an
-  /// import within one layer still loops out and back.
-  static Path _edge(Rect from, Rect to, ArchitectureOrientation orientation) {
-    final isTopDown = orientation == ArchitectureOrientation.topDown;
-    final start = isTopDown ? from.bottomCenter : from.centerRight;
-    final end = isTopDown ? to.topCenter : to.centerLeft;
-    final span = isTopDown ? end.dy - start.dy : end.dx - start.dx;
-    final bend = math.max(span.abs(), ArchitectureLayout.layerGap) * _bendShare;
-    final out = isTopDown ? Offset(0, bend) : Offset(bend, 0);
-    final startControl = start + out;
-    final endControl = end - out;
-    return Path()
-      ..moveTo(start.dx, start.dy)
-      ..cubicTo(
-        startControl.dx,
-        startControl.dy,
-        endControl.dx,
-        endControl.dy,
-        end.dx,
-        end.dy,
-      );
-  }
 }

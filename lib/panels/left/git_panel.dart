@@ -8,6 +8,7 @@ import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/widget_services/image_diff.dart';
+import 'package:fide/widget_services/selected_file_builder.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
@@ -506,20 +507,23 @@ class _GitPanelState extends ConsumerState<GitPanel> {
           gitStatus: kindOf(file),
         );
 
-        final isSelected = ref.watch(selectedFileProvider)?.path == item.path;
-
         return Row(
           children: [
             Expanded(
-              child: FileNameWidget(
-                fileItem: item,
-                isSelected: isSelected,
-                showGitBadge: false,
-                showPath: true,
-                rootPath: widget.projectPath,
-                trailing: DiffCounter(gitStats: stats[file]),
-                onTap: () =>
-                    ref.read(selectedFileProvider.notifier).state = item,
+              // Selecting a file rebuilds its row and the one it leaves,
+              // not the whole list
+              child: SelectedFileBuilder(
+                path: item.path,
+                builder: (_, isSelected) => FileNameWidget(
+                  fileItem: item,
+                  isSelected: isSelected,
+                  showGitBadge: false,
+                  showPath: true,
+                  rootPath: widget.projectPath,
+                  trailing: DiffCounter(gitStats: stats[file]),
+                  onTap: () =>
+                      ref.read(selectedFileProvider.notifier).state = item,
+                ),
               ),
             ),
             CompactIconButton(

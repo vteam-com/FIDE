@@ -2,6 +2,19 @@ import 'package:fide/models/project_node.dart';
 import 'package:fide/panels/left/tree_filter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// A filter counting the names it tests.
+class _CountingFilter extends TreeFilter {
+  _CountingFilter() : super(onChanged: () {});
+
+  int tests = 0;
+
+  @override
+  bool matches(ProjectNode node) {
+    tests++;
+    return super.matches(node);
+  }
+}
+
 /// A folder node at [path] holding [children].
 ProjectNode _folder(String path, List<ProjectNode> children) => ProjectNode(
   name: path.split('/').last,
@@ -47,10 +60,11 @@ void main() {
 
     expect(changes, 1);
     expect(filter.isActive, isTrue);
+    final kept = filter.keptPaths(root);
     expect(
       [
         for (final node in root.children)
-          if (filter.hasMatchingDescendant(node)) node.name,
+          if (kept.contains(node.path)) node.name,
       ],
       ['lib', 'test'],
     );
@@ -69,5 +83,31 @@ void main() {
 
     expect(changes, 2);
     expect(filter.isActive, isFalse);
+  });
+
+  test('a query tests each name once, however deep the tree', () {
+    // A chain of folders, each holding one file, the match at the bottom
+    const depth = 200;
+    var node = _folder('/p/d$depth', [_file('/p/d$depth/needle.dart')]);
+    for (var level = depth - 1; level >= 0; level--) {
+      node = _folder('/p/d$level', [node, _file('/p/d$level/f.dart')]);
+    }
+    final deep = _CountingFilter();
+    addTearDown(deep.dispose);
+    deep.controller.text = 'needle';
+    deep.tests = 0;
+
+    final kept = deep.keptPaths(node);
+    final folders = deep.foldersToExpand(node).toList();
+
+    // depth + 1 folders, each holding one file; one test per node in each
+    // of the two calls, where walking the subtree again at each level
+    // would test about nodeCount * depth / 2 names
+    const nodeCount = (depth + 1) * 2;
+    const calls = 2;
+    expect(deep.tests, nodeCount * calls);
+    expect(folders, hasLength(depth + 1));
+    expect(kept, hasLength(depth + 2));
+    expect(kept, isNot(contains('/p/d0/f.dart')));
   });
 }

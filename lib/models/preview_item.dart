@@ -1,7 +1,7 @@
-import 'package:fide/models/preview_frame.dart';
 import 'package:flutter/foundation.dart';
 
-/// One preview the host renders, and its latest frame.
+/// One preview the host renders; its frames stream in separately, see
+/// `previewFramesProvider`.
 @immutable
 class PreviewItem {
   /// Creates the item.
@@ -11,7 +11,6 @@ class PreviewItem {
     required this.group,
     this.annotation = 0,
     this.name,
-    this.frame,
   });
 
   /// The item the host describes in [json].
@@ -38,20 +37,7 @@ class PreviewItem {
   /// The preview's name, from its annotation.
   final String? name;
 
-  /// The preview's latest frame; null until the first one arrives.
-  final PreviewFrame? frame;
-
   /// What the Preview panel titles the preview: its name, else its
   /// function.
   String get title => name ?? function;
-
-  /// A copy showing [frame].
-  PreviewItem withFrame(PreviewFrame frame) => PreviewItem(
-    function: function,
-    line: line,
-    group: group,
-    annotation: annotation,
-    name: name,
-    frame: frame,
-  );
 }

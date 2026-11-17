@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:fcheck/fcheck.dart' as fcheck;
+
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/string_review.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -21,6 +23,20 @@ class _RecordingHandler implements QuickFixHandler {
     requests.add(request);
     if (!await request.confirm(message)) return null;
     return (summary: 'Done', changedFiles: const <String>[]);
+  }
+}
+
+/// An fCheck run counting its analyses.
+class _CountingReview extends CodeReview {
+  int analyses = 0;
+
+  @override
+  Future<fcheck.ProjectMetrics> analyze(
+    String projectPath, {
+    bool nearDuplicates = false,
+  }) {
+    analyses++;
+    return super.analyze(projectPath, nearDuplicates: nearDuplicates);
   }
 }
 
@@ -87,5 +103,31 @@ void main() {
       runner.run(project.path, QuickFix.migrateToArb),
       throwsStateError,
     );
+  });
+
+  test('reuses the latest analysis of the current files', () async {
+    final handler = _RecordingHandler('Sort every file?');
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final review = _CountingReview();
+    final metrics = await const CodeReview().analyze(project.path);
+    fcheck.ProjectMetrics? latest;
+    final runner = QuickFixRunner(
+      review: review,
+      strings: container.read(stringFixerProvider),
+      handlers: {QuickFix.sortMembers: handler},
+      latest: (_) async => latest,
+    );
+
+    latest = metrics;
+    await runner.run(project.path, QuickFix.sortMembers);
+    expect(handler.requests.last.metrics, same(metrics));
+    expect(review.analyses, 0);
+
+    // None for the current files: a fresh analysis
+    latest = null;
+    await runner.run(project.path, QuickFix.sortMembers);
+    expect(handler.requests.last.metrics, isNot(same(metrics)));
+    expect(review.analyses, 1);
   });
 }

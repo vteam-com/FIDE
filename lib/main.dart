@@ -99,15 +99,21 @@ class _FIDEState extends ConsumerState<FIDE> {
           },
           child: Focus(
             autofocus: true,
+            // Only the gradient follows the active panel: the menus and the
+            // views are built once, as the Consumer's child
             child: Consumer(
-              builder: (context, ref, _) => AnimatedContainer(
+              builder: (context, ref, child) => AnimatedContainer(
                 duration: AppDuration.gradientMove,
                 curve: Curves.easeInOut,
                 decoration: AppTheme.workspaceBackground(
                   context,
                   center: ref.watch(workspaceGradientCenterProvider),
                 ),
-                child: Column(
+                child: child,
+              ),
+              // Builder so the menus get a context under the navigator
+              child: Builder(
+                builder: (context) => Column(
                   children: [
                     AppTitleBar(menus: _buildMenus(context)),
                     // Main content with menu bar

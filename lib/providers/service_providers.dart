@@ -305,7 +305,13 @@ final flutterSdkProvider = Provider<FlutterSdk>(
 /// The Dart tool bundled with Flutter, resolved once for every tool that
 /// launches `dart`.
 final bundledDartProvider = FutureProvider<String>(
-  (ref) => ref.read(flutterSdkProvider).bundledDart(),
+  (ref) async => FlutterSdk.dartIn(await ref.read(dartSdkPathProvider.future)),
+);
+
+/// Root of the Dart SDK bundled with Flutter, looked up once per session
+/// (each lookup runs `flutter --version`); null when Flutter isn't found.
+final dartSdkPathProvider = FutureProvider<String?>(
+  (ref) => ref.read(flutterSdkProvider).dartSdkPath(),
 );
 
 /// Provides the shared [ArbService] for reading and writing ARB files.

@@ -1,3 +1,4 @@
+import 'package:fide/models/preview_frame.dart';
 import 'package:fide/models/preview_item.dart';
 import 'package:fide/models/preview_scan.dart';
 import 'package:fide/models/preview_scope.dart';
@@ -5,7 +6,9 @@ import 'package:fide/panels/right/preview_panel.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/preview_controller.dart';
 import 'package:fide/services/preview_scanner.dart';
+import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/inline_spinner.dart';
+import 'package:image/image.dart' as img;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -101,6 +104,44 @@ Widget darkPreview() => const SizedBox();
 
     await tester.tap(find.text('badgePreview'));
     expect(controller.toggled, ['badgePreview']);
+  });
+
+  testWidgets('a frame repaints its card, not the panel', (tester) async {
+    await _pump(
+      tester,
+      PreviewState(
+        filePath: '$_project/lib/cards.dart',
+        status: PreviewStatus.ready,
+        scan: cards,
+        items: const [
+          PreviewItem(function: 'lightPreview', line: 2, group: 'G'),
+          PreviewItem(function: 'darkPreview', line: 5, group: 'G'),
+        ],
+      ),
+    );
+    expect(find.byType(InlineSpinner), findsNWidgets(2));
+    final header = tester.widget(find.byType(HeaderBar));
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(PreviewPanel)),
+    );
+
+    container
+        .read(previewFramesProvider.notifier)
+        .show(
+          PreviewFrame(
+            generation: 0,
+            index: 1,
+            size: const Size(1, 1),
+            png: img.encodePng(img.Image(width: 1, height: 1)),
+          ),
+          2,
+        );
+    await tester.pump();
+
+    expect(find.byType(Image), findsOneWidget);
+    expect(find.byType(InlineSpinner), findsOneWidget);
+    // The panel didn't build again: its header is the same widget
+    expect(identical(tester.widget(find.byType(HeaderBar)), header), isTrue);
   });
 
   testWidgets('filters the project previews', (tester) async {

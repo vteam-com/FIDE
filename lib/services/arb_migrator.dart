@@ -119,8 +119,7 @@ class ArbMigrator {
         );
       }
       if (moved.source.isNotEmpty) {
-        await _writeFormatted(
-          movedPath,
+        await File(movedPath).writeAsString(
           "import 'package:flutter/widgets.dart';\n\n"
           "import '$stem.dart';\n\n${moved.source}\n",
         );
@@ -128,8 +127,7 @@ class ArbMigrator {
             'package:$packageName/'
             '${p.posix.relative(p.relative(movedPath, from: projectPath), from: 'lib')}';
         for (final MapEntry(key: path, value: content) in callers.entries) {
-          await _writeFormatted(
-            path,
+          await File(path).writeAsString(
             withImport(
               content,
               movedUri,
@@ -137,6 +135,8 @@ class ArbMigrator {
             ),
           );
         }
+        // Once for all files, rather than a formatter run per file
+        await _formatter.formatFiles([movedPath, ...callers.keys]);
       }
       await _generator.generateClasses(projectPath);
       final errorsAfter = await _analyzerErrors(projectPath);
@@ -292,11 +292,5 @@ class ArbMigrator {
         }
       },
     );
-  }
-
-  /// Writes Dart [content] to [path], formatted when the formatter can.
-  Future<void> _writeFormatted(String path, String content) async {
-    await File(path)
-        .writeAsString(await _formatter.formatOrKeep(path, content));
   }
 }

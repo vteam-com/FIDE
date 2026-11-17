@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:fide/services/code_formatter.dart';
 import 'package:fide/services/process_runner.dart';
 
@@ -10,4 +12,20 @@ class FakeCodeFormatter extends CodeFormatter {
   @override
   Future<String> format(String filePath, String content) async =>
       '${content.trimRight()}\n';
+
+  @override
+  Future<void> formatFiles(Iterable<String> paths) async {
+    for (final path in paths) {
+      final file = File(path);
+      await file.writeAsString(await format(path, await file.readAsString()));
+    }
+  }
+
+  @override
+  Future<Map<String, String>> formatAllOrKeep(
+    Map<String, String> contents,
+  ) async => {
+    for (final MapEntry(key: path, value: content) in contents.entries)
+      path: await format(path, content),
+  };
 }

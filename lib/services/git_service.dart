@@ -13,7 +13,9 @@ part 'git_service.git_status.dart';
 part 'git_service.git_commit.dart';
 part 'git_service.git_diff_stats.dart';
 part 'git_service.git_exception.dart';
+part 'git_service.git_head_changes.dart';
 part 'git_service.git_porcelain.dart';
+part 'git_service.git_repo_location.dart';
 
 /// Runs Git on a repository: reads its status, diffs and history, and
 /// stages, commits, syncs and discards changes.
@@ -56,8 +58,17 @@ class GitService {
   /// `git diff --no-index` exit code meaning "the files differ".
   static const int _noIndexDiffFoundExitCode = 1;
 
-  /// The porcelain suffix of a wholly new directory.
+  /// The suffix git gives a wholly untracked directory it lists.
   static const String _directorySuffix = '/';
+
+  /// The separator of `-z` output records.
+  static const String _nul = '\x00';
+
+  /// Line counts of untracked files already read, by absolute path, with
+  /// the modification time and size they were read at: a reload reads
+  /// only the files that changed since.
+  static final Map<String, ({DateTime modified, int size, int lines})>
+  _lineCounts = {};
 
   /// Runs `git` with [args] in [path] and returns its result when it
   /// exits with [expectedExitCode].
@@ -92,16 +103,6 @@ class GitService {
   /// Throws a [GitException] when git fails.
   Future<void> _mutate(String path, List<String> args) async {
     await _runChecked(path, args);
-  }
-
-  /// The repository-relative paths of every file below [dirPath], itself
-  /// relative to [projectPath].
-  Future<List<String>> _expandDirectoryToFiles(
-    String projectPath,
-    String dirPath,
-  ) async {
-    final files = await _entries.listFiles(p.join(projectPath, dirPath));
-    return [for (final file in files) p.relative(file, from: projectPath)];
   }
 
   /// Installed Git version (e.g. `2.39.3`); null when Git isn't available,
@@ -146,24 +147,20 @@ class GitService {
 
   /// Reads Git porcelain status and groups files into staged/unstaged/untracked.
   ///
+  /// A wholly new folder's files are listed one by one, as git would add
+  /// them: git walks the folder itself, leaving out what `.gitignore`
+  /// ignores, such as a new package's `build/` and `.dart_tool/`.
+  ///
   /// Throws a [GitException] when git fails.
   Future<GitStatus> getStatus(String path) async {
-    final result = await _runChecked(path, ['status', '--porcelain']);
+    final result = await _runChecked(path, [
+      'status',
+      '--porcelain',
+      '--untracked-files=all',
+    ]);
     final status = GitStatus(staged: [], unstaged: [], untracked: []);
     for (final entry in GitPorcelain.parseStatus(result.stdout.toString())) {
-      // Porcelain reports a wholly new directory as `dir/`; list its files
-      final files = entry.path.endsWith(_directorySuffix)
-          ? await _expandDirectoryToFiles(
-              path,
-              entry.path.substring(
-                0,
-                entry.path.length - _directorySuffix.length,
-              ),
-            )
-          : [entry.path];
-      for (final file in files) {
-        GitPorcelain.classify(entry.code, file, status);
-      }
+      GitPorcelain.classify(entry.code, entry.path, status);
     }
     return status;
   }
@@ -441,48 +438,115 @@ class GitService {
   /// Counts every line of the untracked file at [filePath] as added; zero
   /// lines when it is missing, too big to load or binary, as
   /// `git diff --numstat` counts binary files.
+  ///
+  /// A file unchanged since it was last counted (same modification time and
+  /// size) isn't read again.
   Future<GitDiffStats> _newFileStats(String filePath) async {
-    if (!_entries.exists(filePath)) return _wholeNewFile(0);
-    final String? content;
+    final stat = await File(filePath).stat();
+    if (stat.type != FileSystemEntityType.file) return _wholeNewFile(0);
+    final cached = _lineCounts[filePath];
+    if (cached != null &&
+        cached.modified == stat.modified &&
+        cached.size == stat.size) {
+      return _wholeNewFile(cached.lines);
+    }
+    final lines = await _countLines(filePath);
+    if (_lineCounts.length >= AppMetric.gitLineCountCacheLimit) {
+      _lineCounts.clear();
+    }
+    _lineCounts[filePath] = (
+      modified: stat.modified,
+      size: stat.size,
+      lines: lines,
+    );
+    return _wholeNewFile(lines);
+  }
+
+  /// Lines of the text file at [filePath]; zero when it is too big to load
+  /// or isn't text.
+  Future<int> _countLines(String filePath) async {
     try {
-      content = await _reader.tryRead(filePath);
+      return (await _reader.tryRead(filePath))?.split('\n').length ?? 0;
     } on FileSystemException {
       // Not UTF-8 text, such as an image
-      return _wholeNewFile(0);
+      return 0;
     }
-    if (content == null) return _wholeNewFile(0);
-    return _wholeNewFile(content.split('\n').length);
   }
 
   /// Line counts of a file not in HEAD with [added] lines.
   static GitDiffStats _wholeNewFile(int added) =>
       GitDiffStats(added: added, removed: 0, isNewFile: true);
 
-  /// Added/removed line counts of [filePath] against HEAD (staged and
-  /// unstaged changes together, as [getFileDiff] shows them); an untracked
-  /// file counts as wholly added. Zero when git fails.
-  Future<GitDiffStats> getFileDiffStats(String path, String filePath) async {
-    try {
-      if (!await _isTracked(path, filePath)) {
-        return await _newFileStats(filePath);
-      }
-      for (final base in _headBases) {
-        final output = await _runner.outputOf('git', [
-          'diff',
-          ...base,
-          '--numstat',
-          '--no-renames',
-          '--',
-          filePath,
-        ], workingDirectory: path);
-        if (output == null) continue;
-        return GitDiffStats.parseNumstat(output).values.firstOrNull ??
-            _noChanges;
-      }
-    } catch (_) {
-      // Counted as unchanged below
+  /// Added/removed line counts of the absolute [filePath] against HEAD
+  /// (staged and unstaged changes together, as [getFileDiff] shows them);
+  /// an untracked file counts as wholly added. Null outside a repository.
+  ///
+  /// Reads the whole repository's changes: to count several files, read
+  /// [repoLocation] and [headChanges] once and ask [diffStatsIn].
+  Future<GitDiffStats?> getFileDiffStats(String filePath) async {
+    final location = await repoLocation(p.dirname(filePath));
+    if (location == null) return null;
+    return diffStatsIn(await headChanges(location.root), location, filePath);
+  }
+
+  /// Where the folder [path] sits in its repository; null when it isn't
+  /// in one.
+  Future<GitRepoLocation?> repoLocation(String path) async {
+    final output = await _runner.outputOf('git', [
+      'rev-parse',
+      '--show-toplevel',
+      '--show-prefix',
+    ], workingDirectory: path);
+    return switch (output?.split('\n')) {
+      [final root, final prefix, ...] => GitRepoLocation(
+        root: root,
+        prefix: prefix,
+      ),
+      _ => null,
+    };
+  }
+
+  /// The changes of the working copy of the repository at [root] against
+  /// HEAD, for every file at once; nothing changed when git fails.
+  Future<GitHeadChanges> headChanges(String root) async {
+    final untracked = await _runner.outputOf('git', [
+      'ls-files',
+      '--others',
+      '--directory',
+      '-z',
+    ], workingDirectory: root);
+    for (final base in _headBases) {
+      final output = await _runner.outputOf('git', [
+        'diff',
+        ...base,
+        '--numstat',
+        '--no-renames',
+        '-z',
+      ], workingDirectory: root);
+      if (output == null) continue;
+      return GitHeadChanges(
+        stats: GitDiffStats.parseNumstat(output, recordSeparator: _nul),
+        untracked: _records(untracked),
+      );
     }
-    return _noChanges;
+    return GitHeadChanges(stats: const {}, untracked: _records(untracked));
+  }
+
+  /// The non-empty records of `-z` [output].
+  static Set<String> _records(String? output) =>
+      (output ?? '').split(_nul).where((record) => record.isNotEmpty).toSet();
+
+  /// Added/removed line counts against HEAD of the absolute [filePath],
+  /// in the folder at [location], from its repository's [changes]; an
+  /// untracked file counts as wholly added.
+  Future<GitDiffStats> diffStatsIn(
+    GitHeadChanges changes,
+    GitRepoLocation location,
+    String filePath,
+  ) async {
+    final repoPath = location.pathOf(p.basename(filePath));
+    if (changes.isUntracked(repoPath)) return _newFileStats(filePath);
+    return changes.stats[repoPath] ?? _noChanges;
   }
 
   /// Line counts of a tracked file without changes.

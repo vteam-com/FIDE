@@ -28,16 +28,4 @@ void main() {
     expect(files.exists(folder), false);
     expect(files.folderExists(folder), false);
   });
-
-  test('lists every file below a folder, none for a missing one', () async {
-    final folder = '${root.path}/tree';
-    await files.create('$folder/a.dart', isDirectory: false);
-    await files.create('$folder/sub/b.dart', isDirectory: false);
-    await files.create('$folder/sub/empty', isDirectory: true);
-
-    final listed = await files.listFiles(folder);
-
-    expect(listed..sort(), ['$folder/a.dart', '$folder/sub/b.dart']);
-    expect(await files.listFiles('${root.path}/missing'), isEmpty);
-  });
 }

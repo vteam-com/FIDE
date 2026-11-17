@@ -52,13 +52,19 @@ class _OutputPanelState extends ConsumerState<OutputPanel> {
   @override
   void initState() {
     super.initState();
-    _findLinks();
+    _findLinks(from: 0);
   }
 
   @override
   void didUpdateWidget(OutputPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.text != widget.text) _findLinks();
+    final old = oldWidget.text;
+    if (old == widget.text) return;
+    // Streaming output only appends: scan from the old text's last,
+    // unfinished line rather than the whole text again
+    _findLinks(
+      from: widget.text.startsWith(old) ? old.lastIndexOf('\n') + 1 : 0,
+    );
   }
 
   @override
@@ -153,11 +159,22 @@ class _OutputPanelState extends ConsumerState<OutputPanel> {
     }
   }
 
-  /// Rebuilds [_links] for the current text.
-  void _findLinks() {
-    _disposeLinks();
-    final locations = FileLocation.findAll(
-      widget.text,
+  /// Updates [_links] for the current text, which is unchanged before
+  /// offset [from]: links before it stay, the text after it is scanned
+  /// again, and the recognizers of links found again are reused.
+  void _findLinks({required int from}) {
+    final kept = <(FileLocation, TapGestureRecognizer)>[];
+    final spare = <(String, int, int), List<TapGestureRecognizer>>{};
+    for (final link in _links) {
+      final (location, recognizer) = link;
+      if (location.end <= from) {
+        kept.add(link);
+      } else {
+        spare.putIfAbsent(_target(location), () => []).add(recognizer);
+      }
+    }
+    final found = FileLocation.findAll(
+      widget.text.substring(from),
       baseDir: ref.read(currentProjectPathProvider),
       exists: (path) => _pathExists.putIfAbsent(
         path,
@@ -165,17 +182,43 @@ class _OutputPanelState extends ConsumerState<OutputPanel> {
       ),
     );
     _links = [
-      for (final location in locations)
+      ...kept,
+      for (final location in found)
         (
-          location,
-          TapGestureRecognizer()
-            ..onTap = () => openFileAtLine(
-              ref,
-              location.path,
-              location.line,
-              column: location.column,
-            ),
+          FileLocation(
+            start: from + location.start,
+            end: from + location.end,
+            path: location.path,
+            line: location.line,
+            column: location.column,
+          ),
+          _recognizerFor(location, spare[_target(location)]),
         ),
     ];
+    for (final recognizers in spare.values) {
+      for (final recognizer in recognizers) {
+        recognizer.dispose();
+      }
+    }
   }
+
+  /// A recognizer opening [location]: one taken from [spare], which open
+  /// the same place, or a new one.
+  TapGestureRecognizer _recognizerFor(
+    FileLocation location,
+    List<TapGestureRecognizer>? spare,
+  ) {
+    if (spare != null && spare.isNotEmpty) return spare.removeLast();
+    return TapGestureRecognizer()
+      ..onTap = () => openFileAtLine(
+        ref,
+        location.path,
+        location.line,
+        column: location.column,
+      );
+  }
+
+  /// The place [location] opens, the same for every reference to it.
+  static (String, int, int) _target(FileLocation location) =>
+      (location.path, location.line, location.column);
 }

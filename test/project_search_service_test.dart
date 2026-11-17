@@ -20,7 +20,11 @@ void main() {
   const service = ProjectSearchService();
 
   test('finds matches with line numbers and offsets', () async {
-    final results = await service.search(lib.path, 'foo', caseSensitive: true);
+    final (:results, files: _, total: _) = await service.search(
+      lib.path,
+      'foo',
+      caseSensitive: true,
+    );
 
     final inA = results.where((r) => r.filePath.endsWith('a.dart')).toList();
     expect(
@@ -37,20 +41,31 @@ void main() {
         ..writeAsStringSync('foo\n');
     }
 
-    final results = await service.search(lib.path, 'foo', caseSensitive: true);
+    final (:results, files: _, total: _) = await service.search(
+      lib.path,
+      'foo',
+      caseSensitive: true,
+    );
 
     expect(results, hasLength(3));
   });
 
   test('whole word skips longer words', () async {
-    final results = await service.search(lib.path, 'foo', wholeWord: true);
+    final (:results, files: _, total: _) = await service.search(
+      lib.path,
+      'foo',
+      wholeWord: true,
+    );
 
     expect(results.map((r) => r.lineContent), isNot(contains('food')));
     expect(results, hasLength(3));
   });
 
   test('groups results into a sorted folder tree', () async {
-    final results = await service.search(lib.path, 'foo');
+    final (:results, files: _, total: _) = await service.search(
+      lib.path,
+      'foo',
+    );
 
     final tree = service.toTree(results, lib.path)!;
 
@@ -73,6 +88,25 @@ void main() {
     expect(replaced.files, {a: 'bar\nfood bar\n', b: 'unsaved bar'});
     expect(replaced.count, 3);
     expect(File(a).readAsStringSync(), 'foo\nfood Foo\n');
+  });
+
+  test('lists matches up to the limit, counting the rest', () async {
+    const lines = 30;
+    const limit = 10;
+    File(p.join(lib.path, 'many.dart')).writeAsStringSync('foo\n' * lines);
+
+    final hits = await service.search(
+      lib.path,
+      'foo',
+      caseSensitive: true,
+      limit: limit,
+    );
+
+    // The 3 matches of setUp's files besides the many ones
+    const total = lines + 3;
+    expect(hits.results, hasLength(limit));
+    expect(hits.total, total);
+    expect(hits.files, hasLength(3));
   });
 
   test('no results give no tree', () {

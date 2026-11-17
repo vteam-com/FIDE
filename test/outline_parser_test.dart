@@ -26,6 +26,25 @@ void main() {
     expect(nodes.last.column, 3);
   });
 
+  test('Dart outline positions follow the lines, CRLF ones included', () {
+    const source =
+        '/// Doc\nint a = 1, b = 2;\n\nclass A {\n  int f = 0;\n'
+        '  void run() {}\n\n    void deep() {}\n}\n\nvoid main() {}\n';
+    final expected = [
+      ('a', 2, 5),
+      ('b', 2, 12),
+      ('A', 4, 1),
+      ('run', 6, 3),
+      ('deep', 8, 5),
+      ('main', 11, 1),
+    ];
+
+    for (final text in [source, source.replaceAll('\n', '\r\n')]) {
+      final nodes = const DartOutlineParser().parse(text);
+      expect([for (final n in nodes) (n.name, n.line, n.column)], expected);
+    }
+  });
+
   test('Dart outlines mark @override methods', () {
     final nodes = const DartOutlineParser().parse(
       'class A {\n  @override\n  String toString() => "";\n  void run() {}\n}\n',

@@ -147,7 +147,7 @@ class StringConstantsExtractor {
         plan.importUri,
         isImported: (uri) => p.url.basename(uri) == p.basename(_fileInLib),
       );
-      await file.writeAsString(await _formatter.formatOrKeep(path, content));
+      await file.writeAsString(content);
       changedFiles.add(path);
       rewritten += kept.length;
     }
@@ -155,16 +155,16 @@ class StringConstantsExtractor {
     if (added.isNotEmpty) {
       await constantsFile.parent.create(recursive: true);
       await constantsFile.writeAsString(
-        await _formatter.formatOrKeep(
-          constantsFile.path,
-          _declare(existing, plan.className, added),
-        ),
+        _declare(existing, plan.className, added),
       );
+      changedFiles.add(plan.constantsPath);
     }
+    // Once for all files, rather than a formatter run per file
+    await _formatter.formatFiles(changedFiles);
     return StringRewrite(
       action: 'Made constants of',
       rewritten: rewritten,
-      changedFiles: [...changedFiles, if (added.isNotEmpty) plan.constantsPath],
+      changedFiles: changedFiles,
       skipped: skipped,
     );
   }

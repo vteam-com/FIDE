@@ -11,6 +11,7 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/project_categories_provider.dart';
+import 'package:fide/widget_services/selected_file_builder.dart';
 import 'package:fide/widgets/asset_kind_icon.dart';
 import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/filename_widget.dart';
@@ -114,17 +115,16 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
                 'classes; expected one public class per file',
           );
 
-    final contentWidget = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [for (final node in nodes) _buildNode(node, category)],
-    );
-
     return SectionPanel(
       title: category.label,
       isExpanded: isExpanded,
       rightWidget: rightWidget,
       count: elementCount,
-      child: contentWidget,
+      // Built only while the section is open
+      builder: (_) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [for (final node in nodes) _buildNode(node, category)],
+      ),
       onExpansionChanged: (expanded) => expandedState[expansionKey] = expanded,
     );
   }
@@ -137,7 +137,8 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
       title: 'Assets',
       isExpanded: isExpanded,
       count: assets.values.fold<int>(0, (sum, files) => sum + files.length),
-      child: Column(
+      // Built only while the section is open
+      builder: (_) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (_hasAppIcons) _buildAppIconsRow(),
@@ -155,26 +156,33 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
 
   /// The row opening the App Icons view, flagging the icons' problems.
   Widget _buildAppIconsRow() {
-    final isVisible = ref.watch(centerViewProvider) == CenterView.appIcons;
-    final issueCount =
-        ref.watch(appIconReviewProvider).value?.issues.length ?? 0;
-    return TreeRow(
-      icon: Icon(
-        Icons.apps,
-        color: Theme.of(context).colorScheme.primary,
-        size: AppIconSize.medium,
-      ),
-      name: 'App Icons',
-      highlighted: isVisible,
-      onTap: () => showCenterView(ref, CenterView.appIcons),
-      trailing: [
-        if (issueCount > 0)
-          ContainerCounter.warning(
-            icon: Icons.apps,
-            count: issueCount,
-            tooltip: '${issueCount.count('app icon problem')}; click to fix',
+    // The row watches what it shows itself: it builds inside its section,
+    // after the panel
+    return Consumer(
+      builder: (context, ref, _) {
+        final isVisible = ref.watch(centerViewProvider) == CenterView.appIcons;
+        final issueCount =
+            ref.watch(appIconReviewProvider).value?.issues.length ?? 0;
+        return TreeRow(
+          icon: Icon(
+            Icons.apps,
+            color: Theme.of(context).colorScheme.primary,
+            size: AppIconSize.medium,
           ),
-      ],
+          name: 'App Icons',
+          highlighted: isVisible,
+          onTap: () => showCenterView(ref, CenterView.appIcons),
+          trailing: [
+            if (issueCount > 0)
+              ContainerCounter.warning(
+                icon: Icons.apps,
+                count: issueCount,
+                tooltip:
+                    '${issueCount.count('app icon problem')}; click to fix',
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -214,8 +222,6 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
           : null,
     );
 
-    final isSelected = ref.watch(selectedFileProvider)?.path == item.path;
-
     if (node.isDirectory) {
       final multiClassFileCount = _categories?.multiClassFolders[node.path];
       return FolderNode(
@@ -241,27 +247,32 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
       );
     } else {
       final classCount = _categories?.multiClassFiles[node.path];
-      return FileNameWidget(
-        fileItem: item,
-        isSelected: isSelected,
-        rootPath: projectRoot!.path,
-        onTap: () => handleFileTap(node),
-        onContextMenu: (position) => showNodeContextMenu(node, position),
-        trailing: _splittingPath == node.path
-            ? const InlineSpinner.small()
-            : classCount == null
-            ? null
-            : ContainerCounter.warning(
-                icon: Icons.data_object,
-                count: classCount,
-                tooltip:
-                    'Defines $classCount public classes; '
-                    'expected one public class per file.\n'
-                    'Click to move the others into their own files.',
-                onTap: _splittingPath == null
-                    ? () => _splitClasses(node, classCount)
-                    : null,
-              ),
+      // Selecting a file rebuilds its row and the one it leaves, not the
+      // whole section
+      return SelectedFileBuilder(
+        path: item.path,
+        builder: (_, isSelected) => FileNameWidget(
+          fileItem: item,
+          isSelected: isSelected,
+          rootPath: projectRoot!.path,
+          onTap: () => handleFileTap(node),
+          onContextMenu: (position) => showNodeContextMenu(node, position),
+          trailing: _splittingPath == node.path
+              ? const InlineSpinner.small()
+              : classCount == null
+              ? null
+              : ContainerCounter.warning(
+                  icon: Icons.data_object,
+                  count: classCount,
+                  tooltip:
+                      'Defines $classCount public classes; '
+                      'expected one public class per file.\n'
+                      'Click to move the others into their own files.',
+                  onTap: _splittingPath == null
+                      ? () => _splitClasses(node, classCount)
+                      : null,
+                ),
+        ),
       );
     }
   }

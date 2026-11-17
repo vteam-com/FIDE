@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/architecture_focus.dart';
+import 'package:fide/models/architecture_graph.dart';
 import 'package:fide/models/architecture_layout.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/status_tone.dart';
@@ -58,8 +60,17 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
   /// frames once for each, not after each re-analysis.
   (String, ArchitectureOrientation)? _framed;
 
-  /// The file under the pointer; null for none.
-  String? _hovered;
+  /// The files matching the Find File box, kept while the graph and the
+  /// box's text stay the same so each file is matched once.
+  ArchitectureFocus? _filter;
+
+  /// The file under the pointer, null for none; only the graph listens,
+  /// so hovering rebuilds neither the toolbar nor the details.
+  final ValueNotifier<String?> _hovered = ValueNotifier(null);
+
+  /// The file the pointer is in as the hover events come, handed to
+  /// [_hovered] once they are all in.
+  String? _pointed;
 
   /// The Find File box's text, filtering the files.
   final TextEditingController _query = TextEditingController();
@@ -85,6 +96,7 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
   @override
   void dispose() {
     _glide.dispose();
+    _hovered.dispose();
     _query.dispose();
     _transformation.dispose();
     super.dispose();
@@ -132,8 +144,17 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
 
   /// Selects the first file matching the Find File box, and shows it.
   void _findFirst(ArchitectureLayout layout) {
-    final matches = ArchitectureFocus(layout.graph, query: _query.text).matches;
+    final matches = _filterOf(layout.graph).matches;
     if (matches.isNotEmpty) _select(layout, matches.first, reveal: true);
+  }
+
+  /// The files of [graph] matching the Find File box.
+  ArchitectureFocus _filterOf(ArchitectureGraph graph) {
+    if (_filter case final filter?
+        when filter.graph == graph && filter.query == _query.text) {
+      return filter;
+    }
+    return _filter = ArchitectureFocus(graph, query: _query.text);
   }
 
   /// Frames [layout] the first time its project shows in its orientation:
@@ -160,10 +181,15 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
   /// when the pointer leaves it.
   void _onHover(String file, bool isInside) {
     if (isInside) {
-      setState(() => _hovered = file);
-    } else if (_hovered == file) {
-      setState(() => _hovered = null);
+      _pointed = file;
+    } else if (_pointed == file) {
+      _pointed = null;
     }
+    // Moving from one file to the next leaves one and enters the other in
+    // a row: focus the next file at once, not nothing in between
+    scheduleMicrotask(() {
+      if (mounted) _hovered.value = _pointed;
+    });
   }
 
   /// Opens [file] in the editor; closing it returns to this view.
@@ -313,14 +339,8 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
   /// The toolbar over the graph of [layout], the selected file's details
   /// beside it.
   Widget _view(ArchitectureLayout layout) {
-    // A file gone after a re-analysis is no longer selected or hovered
+    // A file gone after a re-analysis is no longer selected
     final selected = layout.nodes.containsKey(_selected) ? _selected : null;
-    final hovered = layout.nodes.containsKey(_hovered) ? _hovered : null;
-    final focus = ArchitectureFocus(
-      layout.graph,
-      file: hovered ?? selected,
-      query: _query.text,
-    );
     return Column(
       children: [
         HeaderBar.top(child: _toolbar(layout)),
@@ -335,7 +355,8 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
                     _frameOnce(layout, selected);
                     return ArchitectureCanvas(
                       layout: layout,
-                      focus: focus,
+                      filter: _filterOf(layout.graph),
+                      hovered: _hovered,
                       controller: _transformation,
                       selected: selected,
                       showAllImports: _showAllImports,

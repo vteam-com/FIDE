@@ -4,6 +4,9 @@ import 'package:material_ui/material_ui.dart';
 /// A thin indeterminate horizontal bar telling that a panel is working:
 /// the one progress indicator of a panel busy with a single task, drawn
 /// across the top edge of its content, right under its header.
+///
+/// The bar moves on its own layer, so each frame repaints the bar alone,
+/// not the content under it.
 class BusyBar extends StatelessWidget {
   /// Creates the bar alone.
   const BusyBar({super.key}) : busy = true, child = null;
@@ -23,9 +26,11 @@ class BusyBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const bar = LinearProgressIndicator(
-      minHeight: AppBorderWidth.medium,
-      backgroundColor: Colors.transparent,
+    const bar = RepaintBoundary(
+      child: LinearProgressIndicator(
+        minHeight: AppBorderWidth.medium,
+        backgroundColor: Colors.transparent,
+      ),
     );
     final child = this.child;
     if (child == null) return bar;

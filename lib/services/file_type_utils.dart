@@ -42,6 +42,9 @@ part 'file_type_utils.file_view_kind.dart';
 /// Everything comes from the [_types] table, or [_namedTypes] for files
 /// known by their whole name, so supporting a new type is a single entry.
 class FileTypeUtils {
+  /// The extension of Dart source files, as [extensionOf] gives it.
+  static const String _dartExtension = 'dart';
+
   /// Files typed by their whole name rather than their extension, such as
   /// extensionless scripts.
   static final Map<String, FileTypeInfo> _namedTypes = {
@@ -161,6 +164,10 @@ class FileTypeUtils {
   static bool isFileSupportedInEditor(String filePath) {
     return viewKindOf(filePath) != FileViewKind.unsupported;
   }
+
+  /// Whether [filePath] is Dart source, by its extension.
+  static bool isDartFile(String filePath) =>
+      extensionOf(filePath) == _dartExtension;
 
   /// Check if a file is a supported image file
   static bool isImageFile(String filePath) {

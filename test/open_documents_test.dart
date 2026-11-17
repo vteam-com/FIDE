@@ -1,8 +1,11 @@
 import 'dart:io';
 
+import 'package:fide/models/document_state.dart';
 import 'package:fide/models/file_history.dart';
 import 'package:fide/models/open_documents.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -156,6 +159,84 @@ void main() {
       expect(await documents.openAsPlainText(path), isFalse);
 
       expect(current.active!.asPlainText, isFalse);
+    });
+  });
+
+  group('DocumentState equality', () {
+    const document = DocumentState(filePath: 'a.dart', content: 'abc');
+
+    test('equal by value, the text compared once not identical', () {
+      final sameText = DocumentState(
+        filePath: 'a.dart',
+        content: ['a', 'b', 'c'].join(),
+      );
+
+      expect(sameText, document);
+      expect(sameText.hashCode, document.hashCode);
+      expect(document.copyWith(content: 'abd'), isNot(document));
+      expect(document.copyWith(isDirty: true), isNot(document));
+      expect(
+        document.copyWith(selection: const TextSelection.collapsed(offset: 1)),
+        isNot(document),
+      );
+      expect(document.toPlainText(), isNot(document));
+    });
+  });
+
+  group('Watching the open documents', () {
+    late Directory project;
+    late ProviderContainer container;
+    late String a;
+    late String b;
+
+    setUp(() async {
+      project = Directory.systemTemp.createTempSync('fide_watch_');
+      a = p.join(project.path, 'a.dart');
+      b = p.join(project.path, 'b.dart');
+      File(a).writeAsStringSync('// a');
+      File(b).writeAsStringSync('// b');
+      container = ProviderContainer();
+      final documents = container.read(openDocumentsProvider.notifier);
+      await documents.open(a);
+      await documents.open(b);
+    });
+    tearDown(() {
+      container.dispose();
+      project.deleteSync(recursive: true);
+    });
+
+    test('an update changing nothing publishes no state', () {
+      final states = <OpenDocuments>[];
+      container.listen(openDocumentsProvider, (_, next) => states.add(next));
+      final documents = container.read(openDocumentsProvider.notifier);
+
+      documents.update(b, content: ['// ', 'b'].join(), isDirty: false);
+
+      expect(states, isEmpty);
+    });
+
+    test('tabs change with the files open, not with their text', () {
+      final tabs = <OpenDocumentTabs>[];
+      container.listen(
+        openDocumentsProvider.select((d) => d.tabs),
+        (_, next) => tabs.add(next),
+      );
+      final documents = container.read(openDocumentsProvider.notifier);
+
+      documents.update(b, content: '// edited', isDirty: true);
+      expect(tabs, isEmpty);
+
+      documents.activate(0);
+      expect(tabs, [
+        OpenDocumentTabs(filePaths: [a, b], activeIndex: 0),
+      ]);
+    });
+
+    test('documentOf finds an open document by path', () {
+      final state = container.read(openDocumentsProvider);
+
+      expect(state.documentOf(a)?.content, '// a');
+      expect(state.documentOf('missing.dart'), isNull);
     });
   });
 }

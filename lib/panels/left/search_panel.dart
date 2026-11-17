@@ -1,4 +1,6 @@
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/editor_search.dart';
+import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/reference_search.dart';
 import 'package:fide/models/search_result.dart';
@@ -8,6 +10,7 @@ import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/app_text_field.dart';
+import 'package:fide/widgets/empty_label.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
@@ -17,7 +20,7 @@ import 'package:fide/widgets/location_row.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/search_replace_field.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
-import 'package:fide/widgets/tree_branch.dart';
+import 'package:fide/widgets/tree_list_view.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -47,8 +50,21 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
   bool _matchCase = false;
   bool _wholeWord = false;
   SearchResultNode? _resultsTree;
+
+  /// Every file holding a match, listed or past the results' limit:
+  /// the files Replace All changes.
+  List<String> _matchingFiles = const [];
+
+  /// Matches found past [AppMetric.projectSearchMaxResults], counted but
+  /// not listed.
+  int _unlistedCount = 0;
+
   bool _isSearching = false;
   final Map<String, bool> _expandedState = {};
+
+  /// Counts the searches started, so a slow one finishing after a newer
+  /// one, or after the results were cleared, shows nothing.
+  int _searchGeneration = 0;
 
   @override
   void initState() {
@@ -78,12 +94,15 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     final tree = ref
         .read(projectSearchServiceProvider)
         .toTree(search.results, widget.projectPath);
+    _searchGeneration++;
     setState(() {
       _matchCase = true;
       _wholeWord = true;
       _isSearching = false;
       _resultsQuery = search.name;
       _resultsTree = tree;
+      _matchingFiles = tree == null ? const [] : _filePaths(tree);
+      _unlistedCount = 0;
       if (tree != null) _expandFolders(tree);
     });
   }
@@ -110,16 +129,25 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     node.children.forEach(_expandFolders);
   }
 
-  /// Handles `_performSearch`.
+  /// Drops the results, and those of any search still running.
+  void _clearResults() {
+    _searchGeneration++;
+    setState(() {
+      _resultsTree = null;
+      _isSearching = false;
+    });
+  }
+
+  /// Searches lib/ for the query typed, showing the matches once found,
+  /// unless a newer search or a clear came meanwhile.
   Future<void> _performSearch() async {
     final query = _searchController.text.trim();
     if (query.isEmpty) {
-      setState(() {
-        _resultsTree = null;
-      });
+      _clearResults();
       return;
     }
 
+    final generation = ++_searchGeneration;
     setState(() {
       _isSearching = true;
       _resultsTree = null;
@@ -128,24 +156,25 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     try {
       final libPath = ProjectPaths(widget.projectPath).libDir;
       final search = ref.read(projectSearchServiceProvider);
-      final results = await search.search(
+      final hits = await search.search(
         libPath,
         query,
         caseSensitive: _matchCase,
         wholeWord: _wholeWord,
       );
-      if (!mounted) return;
+      if (!mounted || generation != _searchGeneration) return;
       setState(() {
         _resultsQuery = query;
-        _resultsTree = search.toTree(results, libPath);
+        _resultsTree = search.toTree(hits.results, libPath);
+        _matchingFiles = hits.files;
+        _unlistedCount = hits.total - hits.results.length;
         _isSearching = false;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || generation != _searchGeneration) return;
       setState(() {
         _isSearching = false;
       });
-      // Handle error - could show a snackbar
     }
   }
 
@@ -168,7 +197,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
               hintText: 'Search in lib/',
               icon: Icons.search,
               clearable: true,
-              onCleared: () => setState(() => _resultsTree = null),
+              onCleared: _clearResults,
               onSubmitted: (_) => _performSearch(),
             ),
             searchActions: [
@@ -201,17 +230,11 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
 
         // Results
         Expanded(
-          child: _resultsTree == null && !_isSearching
-              ? const EmptyState(message: 'No results found')
-              : _resultsTree != null
-              ? SingleChildScrollView(
-                  child: Column(
-                    children: _resultsTree!.children
-                        .map((node) => _buildSearchResultNode(node))
-                        .toList(),
-                  ),
-                )
-              : const LoadingIndicator(),
+          child: switch (_resultsTree) {
+            final tree? => _buildResults(tree),
+            null when _isSearching => const LoadingIndicator(),
+            null => const EmptyState(message: 'No results found'),
+          },
         ),
       ],
     );
@@ -225,7 +248,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     if (tree == null) return;
     final query = _resultsQuery;
     final replacement = _replaceController.text;
-    final filePaths = _filePaths(tree);
+    final filePaths = _matchingFiles;
     final confirmed = await MessageBox.confirm(
       context,
       title: 'Replace All',
@@ -270,39 +293,66 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
       ? [for (final child in node.children) ..._filePaths(child)]
       : [node.path];
 
-  /// Builds the row for a results folder or file.
-  Widget _buildSearchResultNode(SearchResultNode node) {
-    return node.isDirectory
-        ? _buildDirectoryResultNode(node)
-        : _buildFileResultNode(node);
-  }
-
-  /// The folder [node] of the results, expanding to its results.
-  Widget _buildDirectoryResultNode(SearchResultNode node) {
-    final isExpanded = _expandedState[node.path] ?? false;
-    return TreeBranch(
-      header: FolderNameWidget(
-        node: node.folderNode,
-        isExpanded: isExpanded,
-        onTap: () => setState(() => _expandedState[node.path] = !isExpanded),
-      ),
-      isExpanded: isExpanded,
-      children: [
-        for (final child in node.children) _buildSearchResultNode(child),
+  /// The results [tree], built a screenful at a time: its folders, its
+  /// files each over its matches, then how many matches are not listed.
+  Widget _buildResults(SearchResultNode tree) {
+    final rows = TreeListView.flatten<Object>(
+      [
+        ...tree.children,
+        // The count of unlisted matches is the last row
+        if (_unlistedCount > 0) _unlistedCount,
       ],
+      childrenOf: (node) => switch (node) {
+        // A file always shows its matches
+        SearchResultNode(isDirectory: false, :final matches) => matches,
+        final SearchResultNode folder when _isExpanded(folder) =>
+          folder.children,
+        _ => const [],
+      },
+    );
+    return TreeListView<Object>(
+      rows: rows,
+      rowBuilder: (_, node) => switch (node) {
+        final SearchResultNode folder when folder.isDirectory =>
+          _buildDirectoryResultNode(folder),
+        final SearchResultNode file => _buildFileResultNode(file),
+        final SearchResult match => _buildMatchResult(match),
+        _ => _buildUnlistedCount(),
+      },
     );
   }
 
-  /// The file [node] of the results, opening the file, over its matches.
+  /// Whether the results folder [node] is open.
+  bool _isExpanded(SearchResultNode node) => _expandedState[node.path] ?? false;
+
+  /// The folder [node] of the results, expanding to its results.
+  Widget _buildDirectoryResultNode(SearchResultNode node) {
+    final isExpanded = _isExpanded(node);
+    return FolderNameWidget(
+      node: node.folderNode,
+      isExpanded: isExpanded,
+      onTap: () => setState(() => _expandedState[node.path] = !isExpanded),
+    );
+  }
+
+  /// The file [node] of the results, opening the file; its matches follow
+  /// in rows of their own.
   Widget _buildFileResultNode(SearchResultNode node) {
-    return TreeBranch(
-      header: TreeRow.filePath(
-        node.path,
-        rootPath: widget.projectPath,
-        onTap: () => openFile(ref, node.path),
+    return TreeRow.filePath(
+      node.path,
+      rootPath: widget.projectPath,
+      onTap: () => openFile(ref, node.path),
+    );
+  }
+
+  /// The line telling how many matches past the limit are not listed.
+  Widget _buildUnlistedCount() {
+    return Padding(
+      padding: AppPadding.listItem,
+      child: EmptyLabel(
+        '${_unlistedCount.localized} more not listed; '
+        'narrow the search to see them',
       ),
-      isExpanded: true,
-      children: [for (final match in node.matches) _buildMatchResult(match)],
     );
   }
 

@@ -24,8 +24,14 @@ class SectionPanel extends StatefulWidget {
     this.onExpansionChanged,
     this.rightWidget,
     this.child,
+    this.builder,
     this.count,
-  });
+  }) : assert(child == null || builder == null);
+
+  /// Builds the content each time the expanded section builds, instead of
+  /// [child]: a collapsed section, or one never opened, builds none of
+  /// it, for content costly to build such as a long list.
+  final WidgetBuilder? builder;
 
   /// The content shown while the section is expanded.
   final Widget? child;
@@ -56,7 +62,8 @@ class _SectionPanelState extends State<SectionPanel> {
   Widget build(BuildContext context) {
     final rightWidget = widget.rightWidget;
     final count = widget.count;
-    final child = widget.child;
+    final builder = widget.builder;
+    final content = builder == null ? widget.child : Builder(builder: builder);
     final extras = [
       ?rightWidget,
       if (count != null) ContainerCounter(count: count),
@@ -94,8 +101,8 @@ class _SectionPanelState extends State<SectionPanel> {
               ),
             ),
           ),
-          if (_isExpanded && child != null)
-            Padding(padding: AppPadding.panelContent, child: child),
+          if (_isExpanded && content != null)
+            Padding(padding: AppPadding.panelContent, child: content),
         ],
       ),
     );

@@ -33,11 +33,18 @@ part 'class_splitter.planner.dart';
 /// would add compile errors is rejected.
 class ClassSplitter {
   /// Creates a splitter resolving code against the Dart SDK at
-  /// [dartSdkPath].
-  const ClassSplitter({required this.dartSdkPath});
+  /// [dartSdkPath], reading the project's files through [readFile].
+  const ClassSplitter({
+    required this.dartSdkPath,
+    this.readFile = _readFromDisk,
+  });
 
   /// Root of the Dart SDK (the folder holding `lib/core`).
   final String dartSdkPath;
+
+  /// Reads the text of the file at a path, by default from disk; the plan
+  /// reads each file at most once. Runs in the background isolate.
+  final String Function(String path) readFile;
 
   /// Plans the split of [filePath], analyzing [projectPath] in a background
   /// isolate; throws a [ClassSplitException] when it can't be done safely.
@@ -46,12 +53,17 @@ class ClassSplitter {
     required String filePath,
   }) {
     final sdkPath = dartSdkPath;
+    final read = readFile;
     return Isolate.run(
       () => _Planner(
         sdkPath: sdkPath,
         projectPath: projectPath,
         filePath: filePath,
+        readFile: read,
       ).run(),
     );
   }
+
+  /// [path]'s text, read from disk.
+  static String _readFromDisk(String path) => File(path).readAsStringSync();
 }

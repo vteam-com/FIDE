@@ -99,6 +99,15 @@ class ImageInspector {
         : _raster(file, bytes, modified);
   });
 
+  /// Whether [details], read from the image at [path], still describe it:
+  /// its date and size on disk are the same; false when it can't be read.
+  Future<bool> isCurrent(String path, ImageDetails details) async {
+    final stat = await File(path).stat();
+    return stat.type != FileSystemEntityType.notFound &&
+        stat.modified == details.modified &&
+        stat.size == details.fileBytes;
+  }
+
   /// The [size]-pixel image embedded in the ICO file at [path] as PNG,
   /// decoded off the UI thread; null when the file holds none or can't
   /// be read.
@@ -129,6 +138,7 @@ class ImageInspector {
     final format = img.findFormatForData(bytes);
     final palette = image.palette;
     final hasAlpha = _alphaChannelCounts.contains(image.numChannels);
+    final colors = _sampleColors(image);
     return ImageDetails(
       format: format.name.toUpperCase(),
       fileBytes: bytes.length,
@@ -142,9 +152,9 @@ class ImageInspector {
       frames: image.numFrames,
       transparentShare:
           hasAlpha || _alphaChannelCounts.contains(palette?.numChannels)
-          ? _transparentShare(image)
+          ? colors.transparentShare
           : null,
-      dominantColors: _dominantColors(image),
+      dominantColors: colors.dominant,
       formatDetails: {
         ..._pngDetails(decoder),
         ..._icoDetails(decoder, file),
@@ -153,34 +163,32 @@ class ImageInspector {
     );
   }
 
-  /// Every [stride]-th pixel of [image], so at most about [_maxSamples].
+  /// Every [stride]-th pixel of [image], row by row, so at most about
+  /// [_maxSamples]; read by index rather than walking every pixel.
   static Iterable<img.Pixel> _samples(img.Image image) sync* {
-    final stride = (image.width * image.height / _maxSamples).ceil();
-    var index = 0;
-    for (final pixel in image) {
-      if (index++ % stride == 0) yield pixel;
+    final width = image.width;
+    final count = width * image.height;
+    final stride = (count / _maxSamples).ceil();
+    for (var index = 0; index < count; index += stride) {
+      yield image.getPixel(index % width, index ~/ width);
     }
   }
 
-  /// Share of sampled pixels that are not fully opaque.
-  static double _transparentShare(img.Image image) {
+  /// In one pass over [image]'s sampled pixels: the share that is not
+  /// fully opaque, and the [maxDominantColors] commonest colors of the
+  /// visible ones, similar colors grouped and averaged.
+  static ({double transparentShare, List<DominantColor> dominant})
+  _sampleColors(img.Image image) {
     var total = 0;
     var transparent = 0;
-    for (final pixel in _samples(image)) {
-      total++;
-      if (pixel.aNormalized < 1) transparent++;
-    }
-    return total == 0 ? 0 : transparent / total;
-  }
-
-  /// The [maxDominantColors] commonest colors of [image]'s visible pixels,
-  /// similar colors grouped and averaged.
-  static List<DominantColor> _dominantColors(img.Image image) {
     final counts = <int, int>{};
     final sums = <int, List<int>>{};
     var visible = 0;
     for (final pixel in _samples(image)) {
-      if (pixel.aNormalized == 0) continue;
+      total++;
+      final alpha = pixel.aNormalized;
+      if (alpha < 1) transparent++;
+      if (alpha == 0) continue;
       final r = (pixel.rNormalized * AppMetric.colorChannelMax).round();
       final g = (pixel.gNormalized * AppMetric.colorChannelMax).round();
       final b = (pixel.bNormalized * AppMetric.colorChannelMax).round();
@@ -197,15 +205,18 @@ class ImageInspector {
     }
     final keys = counts.keys.toList()
       ..sort((a, b) => counts[b]!.compareTo(counts[a]!));
-    return [
-      for (final key in keys.take(maxDominantColors))
-        (
-          argb: _argb([
-            for (final channel in sums[key]!) channel ~/ counts[key]!,
-          ]),
-          share: counts[key]! / visible,
-        ),
-    ];
+    return (
+      transparentShare: total == 0 ? 0 : transparent / total,
+      dominant: [
+        for (final key in keys.take(maxDominantColors))
+          (
+            argb: _argb([
+              for (final channel in sums[key]!) channel ~/ counts[key]!,
+            ]),
+            share: counts[key]! / visible,
+          ),
+      ],
+    );
   }
 
   /// The opaque color of red, green and blue [channels].

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:fide/constants/core_constants.dart';
 import 'package:fide/models/action_status.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/command_runner.dart';
@@ -96,7 +97,7 @@ void main() {
 
     final runs = container.read(commandRunnerProvider);
     expect(runs.statusOf('build'), ActionStatus.idle);
-    expect(runs.logOf(_log).hasOutput, isFalse);
+    expect(runs.logOf(_log).output, isEmpty);
   });
 
   test('turns live at the output marking the launch', () async {
@@ -126,6 +127,47 @@ void main() {
     exit.complete(0);
     await done;
     expect(status(), ActionStatus.success);
+  });
+
+  test('shows a burst of log lines in one update', () async {
+    const lines = 500;
+    final exit = Completer<int>();
+    late BuildOutput output;
+    final done = runner.run(
+      'run',
+      logKey: _log,
+      startMessages: const [],
+      command: (o) {
+        output = o;
+        return exit.future;
+      },
+      successMessage: 'ok',
+      failureMessage: (code) => 'failed $code',
+      errorPrefix: 'error: ',
+    );
+    var publications = 0;
+    final removeListener = runner.addListener(
+      (_) => publications++,
+      fireImmediately: false,
+    );
+    addTearDown(removeListener);
+
+    for (var i = 0; i < lines; i++) {
+      output.onOutput('line $i');
+    }
+    expect(publications, 0);
+    // Written at once, shown with the next update
+    expect(stateOf(runner).logOf(_log).output, contains('line ${lines - 1}'));
+
+    await Future<void>.delayed(AppDuration.outputLogPublish * 2);
+    expect(publications, 1);
+
+    output.onOutput('last line');
+    exit.complete(0);
+    await done;
+    // The end of the run shows its last lines at once
+    expect(publications, 2);
+    expect(stateOf(runner).logOf(_log).output, endsWith('last line\nok\n'));
   });
 
   test('narrates a failed flutter command in the log', () async {

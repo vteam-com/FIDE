@@ -13,6 +13,7 @@ class _Planner {
     required String sdkPath,
     required String projectPath,
     required String filePath,
+    required this._readFile,
   }) : _filePath = filePath {
     _context = AnalysisContextCollection(
       includedPaths: [projectPath],
@@ -25,6 +26,18 @@ class _Planner {
   static final Uri _dartCore = Uri.parse('dart:core');
 
   final String _filePath;
+
+  /// Reads a file's text from disk; see [ClassSplitter.readFile].
+  final String Function(String path) _readFile;
+
+  /// Text of each project file read from disk so far, each read once.
+  final Map<String, String> _onDisk = {};
+
+  /// The project's Dart files on disk, listed once, on first use.
+  late final List<String> _dartFiles = [
+    for (final path in _context.contextRoot.analyzedFiles())
+      if (path.endsWith('.dart')) path,
+  ];
 
   final OverlayResourceProvider _provider = OverlayResourceProvider(
     PhysicalResourceProvider.INSTANCE,
@@ -287,7 +300,7 @@ class _Planner {
       _write(
         path,
         _edited(
-          _changed[path] ?? File(path).readAsStringSync(),
+          _textOf(path),
           removals[path] ?? const [],
           insertions[path] ?? const [],
         ),
@@ -313,9 +326,10 @@ class _Planner {
     final visited = <String>{
       for (final fragment in libraryElement.fragments) fragment.source.fullName,
     };
-    for (final path in _context.contextRoot.analyzedFiles()) {
-      if (!path.endsWith('.dart') || visited.contains(path)) continue;
-      final content = _changed[path] ?? File(path).readAsStringSync();
+    // Files created by earlier moves may use the class too
+    for (final path in {..._dartFiles, ..._created}) {
+      if (visited.contains(path)) continue;
+      final content = _textOf(path);
       if (!content.contains(rootName) && !content.contains(moved.name!)) {
         continue;
       }
@@ -399,6 +413,10 @@ class _Planner {
   /// Compile errors currently reported for [path].
   Future<List<String>> _errorsIn(String path) =>
       compileErrors(_context.currentSession, path);
+
+  /// [path]'s planned content, else its text on disk, read at most once.
+  String _textOf(String path) =>
+      _changed[path] ?? _onDisk.putIfAbsent(path, () => _readFile(path));
 
   /// Overlays [content] at [path] for the next analysis.
   void _write(String path, String content) {

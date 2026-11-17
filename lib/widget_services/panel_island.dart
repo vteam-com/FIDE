@@ -9,6 +9,10 @@ import 'package:material_ui/material_ui.dart';
 ///
 /// A click or the focus inside makes its [panel] the
 /// [activePanelProvider], which the gradient centers on.
+///
+/// Each island paints on its own layer, so a spinner, progress bar or
+/// hover fade in one panel repaints that panel alone, not the editor
+/// text and the other panels beside it.
 class PanelIsland extends ConsumerWidget {
   /// Creates an island around [child], holding [panel] or, when null, the
   /// editor area.
@@ -35,11 +39,13 @@ class PanelIsland extends ConsumerWidget {
       },
       child: Listener(
         onPointerDown: (_) => activate(),
-        child: ClipRRect(
-          borderRadius: _radius,
-          child: ColoredBox(
-            color: Theme.of(context).colorScheme.surface,
-            child: child,
+        child: RepaintBoundary(
+          child: ClipRRect(
+            borderRadius: _radius,
+            child: ColoredBox(
+              color: Theme.of(context).colorScheme.surface,
+              child: child,
+            ),
           ),
         ),
       ),

@@ -36,7 +36,7 @@ void main() {
     editor = _SavingEditor();
     savedCount = 0;
     documents = OpenDocumentsNotifier(
-      onSaved: () => savedCount++,
+      onSaved: (_) => savedCount++,
       activeEditor: editor,
     );
     editor.documents = documents;

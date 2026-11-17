@@ -18,7 +18,19 @@ class ArchitectureFocus {
   final String query;
 
   /// Focuses [file] of [graph], filtered by [query].
-  const ArchitectureFocus(this.graph, {this.file, this.query = ''});
+  ArchitectureFocus(this.graph, {this.file, this.query = ''}) : _matched = {};
+
+  /// Focuses [file] of [graph], filtered by [query], sharing [_matched].
+  ArchitectureFocus._(this.graph, this.file, this.query, this._matched);
+
+  /// Whether each file asked about matches [query], scored once for this
+  /// filter and every [focusing] copy of it.
+  final Map<String, bool> _matched;
+
+  /// This filter focusing [file] instead, null for none; the files' match
+  /// results are shared, so they are scored once whatever the focus.
+  ArchitectureFocus focusing(String? file) =>
+      ArchitectureFocus._(graph, file, query, _matched);
 
   /// Whether the import of [target] by [source] touches the focused file.
   bool isHighlighted(String source, String target) =>
@@ -30,7 +42,10 @@ class ArchitectureFocus {
   /// Whether [path] matches the filter [query].
   bool isMatch(String path) =>
       _isFiltered &&
-      QuickOpenMatcher.score(graph.relativePath(path), query) != null;
+      _matched.putIfAbsent(
+        path,
+        () => QuickOpenMatcher.score(graph.relativePath(path), query) != null,
+      );
 
   /// The files matching the filter, best match first as Go to File ranks
   /// them; none without a filter.

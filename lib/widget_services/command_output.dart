@@ -14,23 +14,29 @@ class CommandOutput extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final log = ref.watch(commandRunnerProvider).logOf(logKey);
+    // Only this log's text: other logs and status changes don't rebuild it
+    final (:errors, :output) = ref.watch(
+      commandRunnerProvider.select((runs) {
+        final log = runs.logOf(logKey);
+        return (errors: log.errors, output: log.output);
+      }),
+    );
     void clear() => ref.read(commandRunnerProvider.notifier).clearLog(logKey);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (log.hasErrors)
+        if (errors.isNotEmpty)
           OutputPanel(
             title: 'Errors',
             isExpanded: true,
-            text: log.errors,
+            text: errors,
             onClear: clear,
           ),
-        if (log.hasOutput)
+        if (output.isNotEmpty)
           OutputPanel(
             title: 'Output',
             isExpanded: true,
-            text: log.output,
+            text: output,
             onClear: clear,
           ),
       ],

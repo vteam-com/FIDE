@@ -1,3 +1,4 @@
+import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/models/hardcoded_string.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/string_review.dart';
@@ -12,24 +13,36 @@ typedef QuickFixConfirmation = Future<bool> Function(
   String message,
 );
 
-/// Runs a [QuickFix] on a project from a fresh fCheck analysis, for the
-/// issue dialogs and for the AI, which calls it through a hook; each fix
-/// runs through its own [QuickFixHandler].
+/// fCheck's analysis of the project at [projectPath] as its files are
+/// now, made earlier with the same settings; null when there is none.
+typedef LatestCodeMetrics = Future<fcheck.ProjectMetrics?> Function(
+  String projectPath,
+);
+
+/// Runs a [QuickFix] on a project from an fCheck analysis of its current
+/// files, for the issue dialogs and for the AI, which calls it through a
+/// hook; each fix runs through its own [QuickFixHandler].
 ///
 /// The dialogs pass a [QuickFixConfirmation] and review hardcoded strings
 /// through [reviewStrings] and [applyStrings]; without them, a fix runs
 /// unasked and rewrites only the strings of its [StringFix.role].
 class QuickFixRunner {
-  /// Creates a runner analyzing through [review] and running each fix
-  /// with its handler in [handlers].
+  /// Creates a runner analyzing through [review], unless [latest] has an
+  /// analysis of the current files, and running each fix with its
+  /// handler in [handlers].
   const QuickFixRunner({
     required this.review,
     required this.strings,
     required this.handlers,
+    this.latest,
   });
 
   /// Analyzes the project with fCheck.
   final CodeReview review;
+
+  /// An analysis of the project's current files made earlier, such as the
+  /// overview's, reused instead of analyzing again.
+  final LatestCodeMetrics? latest;
 
   /// Reviews and rewrites hardcoded strings.
   final StringFixer strings;
@@ -38,9 +51,15 @@ class QuickFixRunner {
   final Map<QuickFix, QuickFixHandler> handlers;
 
   /// What localizing and making constants would do to the hardcoded
-  /// strings of the project at [projectPath], from a fresh analysis.
+  /// strings of the project at [projectPath], from an analysis of its
+  /// current files.
   Future<StringReview> reviewStrings(String projectPath) async =>
-      strings.review(projectPath, await review.analyze(projectPath));
+      strings.review(projectPath, await _analyze(projectPath));
+
+  /// fCheck's analysis of the project at [projectPath] as its files are
+  /// now: [latest]'s when it has one, else a fresh one.
+  Future<fcheck.ProjectMetrics> _analyze(String projectPath) async =>
+      await latest?.call(projectPath) ?? await review.analyze(projectPath);
 
   /// Rewrites the [selected] strings of [review] with [fix].
   Future<QuickFixOutcome> applyStrings(
@@ -66,8 +85,7 @@ class QuickFixRunner {
     return handler.run(
       QuickFixRequest(
         projectPath: projectPath,
-        // Fresh analysis: the files may have changed since the overview
-        metrics: await review.analyze(projectPath),
+        metrics: await _analyze(projectPath),
         confirm: (message) async => await confirm?.call(fix, message) ?? true,
         onProgress: onProgress,
         cancel: cancel,

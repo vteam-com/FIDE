@@ -8,6 +8,7 @@ import 'package:fide/models/quick_fix.dart';
 import 'package:path/path.dart' as p;
 
 part 'string_review.string_fix.dart';
+part 'string_review.string_verdict.dart';
 
 /// The fix the user picked in a review and the strings it rewrites; a
 /// null [fix] has the AI fix them.
@@ -86,8 +87,51 @@ class StringReview {
 
   /// Why [fix] cannot rewrite [string], such as "skips strings without a
   /// BuildContext"; null when it can.
-  String? whyNot(StringFix fix, HardcodedString string) {
-    if (candidatesOf(fix).contains(string)) return null;
+  String? whyNot(StringFix fix, HardcodedString string) =>
+      _whyNot(fix, string, isCandidate: candidatesOf(fix).contains(string));
+
+  /// What the fixes offered for each of [strings]' roles make of it, the
+  /// fixes' candidates gathered once for all of them rather than searched
+  /// for each string.
+  Map<HardcodedString, StringVerdict> verdictsOn(
+    Iterable<HardcodedString> strings,
+  ) {
+    final candidates = {
+      for (final fix in StringFix.values) fix: candidatesOf(fix).toSet(),
+    };
+    return {
+      for (final string in strings)
+        string: StringVerdict({
+          for (final fix in fixesFor(string.role))
+            fix: _whyNot(
+              fix,
+              string,
+              isCandidate: candidates[fix]!.contains(string),
+            ),
+        }),
+    };
+  }
+
+  /// The request asking the AI to fix [strings], which FIDE's own fixes
+  /// cannot rewrite: for each, where it is, its role and the use that
+  /// decided it, what to do and why FIDE could not.
+  String aiRequest(List<HardcodedString> strings) {
+    final verdicts = verdictsOn(strings);
+    final items = [
+      for (final string in strings) _aiItem(string, verdicts[string]!.reasons),
+    ];
+    return 'Fix these hardcoded strings, which FIDE could not rewrite itself:\n'
+        '${items.join('\n')}';
+  }
+
+  /// Why [fix] cannot rewrite [string]; null when [isCandidate], one of
+  /// the strings it rewrites.
+  String? _whyNot(
+    StringFix fix,
+    HardcodedString string, {
+    required bool isCandidate,
+  }) {
+    if (isCandidate) return null;
     if (localizationBlocker case final blocker?
         when fix.role == fcheck.HardcodedStringRole.presentation) {
       return 'cannot run: $blocker';
@@ -95,19 +139,9 @@ class StringReview {
     return fix.rejectionIn(this, string);
   }
 
-  /// The request asking the AI to fix [strings], which FIDE's own fixes
-  /// cannot rewrite: for each, where it is, its role and the use that
-  /// decided it, what to do and why FIDE could not.
-  String aiRequest(List<HardcodedString> strings) =>
-      'Fix these hardcoded strings, which FIDE could not rewrite itself:\n'
-      '${[for (final string in strings) _aiItem(string)].join('\n')}';
-
-  /// One line of [aiRequest] for [string].
-  String _aiItem(HardcodedString string) {
-    final reasons = [
-      for (final fix in fixesFor(string.role))
-        if (whyNot(fix, string) case final reason?) '${fix.label} $reason',
-    ];
+  /// One line of [aiRequest] for [string], which the fixes offered for
+  /// its role cannot rewrite for [reasons].
+  static String _aiItem(HardcodedString string, List<String> reasons) {
     return '- "${string.message.text}" at ${p.basename(string.path)}:'
         '${string.line}, ${string.role.label.toLowerCase()}'
         '${string.evidence.isEmpty ? '' : ' (${string.evidence})'}: '

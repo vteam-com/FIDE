@@ -18,9 +18,11 @@ import 'package:fide/services/flutter_sdk.dart';
 import 'package:path/path.dart' as p;
 
 part 'reference_finder.check_compiles_request.dart';
+part 'reference_finder.file_texts.dart';
 part 'reference_finder.find_references_request.dart';
 part 'reference_finder.lookup_field_request.dart';
 part 'reference_finder.lookup_fields.dart';
+part 'reference_finder.lookup_fields_request.dart';
 part 'reference_finder.reference_request.dart';
 part 'reference_finder.reference_worker.dart';
 part 'reference_finder.rename_request.dart';
@@ -33,6 +35,9 @@ part 'reference_finder.usage_visitor.dart';
 /// The analysis lives in a background isolate started on first use and kept
 /// for later lookups, which then only re-read files changed on disk.
 class ReferenceFinder {
+  /// The error message of a [find] a newer one replaced before it started.
+  static const String superseded = 'A newer lookup replaced this one';
+
   /// Creates a finder for the project at `projectPath`, resolving against
   /// the Dart SDK `flutterSdk` bundles.
   ReferenceFinder({required this._projectPath, required this._flutterSdk});
@@ -52,7 +57,9 @@ class ReferenceFinder {
   /// [filePath], outside the declaration itself, in file then source order.
   ///
   /// Throws when the analysis can't start, the file can't be analyzed or
-  /// no declaration starts there (e.g. unsaved edits moved it).
+  /// no declaration starts there (e.g. unsaved edits moved it), and with
+  /// [superseded] when a newer [find] is asked before this one starts:
+  /// only the latest find is worth computing.
   Future<List<SearchResult>> find({
     required String filePath,
     required int line,
@@ -69,6 +76,15 @@ class ReferenceFinder {
     required String filePath,
     required int offset,
   }) => _request(LookupFieldRequest(filePath, offset));
+
+  /// [lookupField] for each of [sites], in their order, answered in one
+  /// request: the project is checked for changes once and a field filled
+  /// at several sites is looked up once. Each answer holds the field, or
+  /// the message saying why there is none.
+  ///
+  /// Throws when the analysis can't start or the project can't be read.
+  Future<List<LookupSiteField>> lookupFields(List<LookupSite> sites) =>
+      _request(LookupFieldsRequest(sites));
 
   /// Throws, saying what breaks, when [contents] would give any of their
   /// files more compile errors than it has now; [action] names the change,

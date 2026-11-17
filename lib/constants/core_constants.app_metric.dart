@@ -10,6 +10,11 @@ class AppMetric {
   static const int bytesPerMegabyte = fileSizeDivisor * fileSizeDivisor;
 
   static const int mruFolderLimit = 5;
+
+  /// Most matches a project search lists; past it they are only counted,
+  /// so a common word can't fill the Search tab with tens of thousands of
+  /// rows.
+  static const int projectSearchMaxResults = 2000;
   static const int aiContextPreviewChars = 2000;
   static const int aiMaxToolRounds = 25;
   static const int aiChatHistoryMessages = 6;
@@ -81,6 +86,15 @@ class AppMetric {
 
   /// Most files the Go to File palette lists.
   static const int quickOpenMaxResults = 50;
+
+  /// Newest lines a command output log keeps, as many as the terminal:
+  /// a long `flutter run` would otherwise grow it, and the work to show
+  /// it, without limit.
+  static const int outputLogMaxLines = terminalMaxLines;
+
+  /// Most untracked files whose line counts Git remembers between reloads;
+  /// past it the counts are forgotten and read again.
+  static const int gitLineCountCacheLimit = 4096;
 
   const AppMetric._();
 }

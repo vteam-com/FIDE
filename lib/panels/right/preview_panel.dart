@@ -186,29 +186,37 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
     final groups = {for (final item in state.items) item.group};
     final missing = state.scan.widgetsWithoutPreview.length;
     final path = state.filePath ?? '';
-    return ListView(
-      padding: AppPadding.panelContent,
-      children: [
-        ?_buildFailure(state),
-        for (final group in groups) ...[
-          if (groups.length > 1) SectionTitle(group),
-          for (final (index, item) in state.items.indexed)
-            if (item.group == group) _buildCard(path, item, index),
-        ],
-        if (missing > 0 && !state.isGenerating)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: CompactTextButton(
-              label: missing == 1
-                  ? 'Generate a preview for 1 more widget'
-                  : 'Generate previews for $missing more widgets',
-              onPressed: _generate,
-            ),
-          ),
-        ?_buildLogs(state),
+    final failure = _buildFailure(state);
+    final logs = _buildLogs(state);
+    return _buildLazyList([
+      if (failure != null) () => failure,
+      for (final group in groups) ...[
+        if (groups.length > 1) () => SectionTitle(group),
+        for (final (index, item) in state.items.indexed)
+          if (item.group == group) () => _buildCard(path, item, index),
       ],
-    );
+      if (missing > 0 && !state.isGenerating)
+        () => Align(
+          alignment: Alignment.centerLeft,
+          child: CompactTextButton(
+            label: missing == 1
+                ? 'Generate a preview for 1 more widget'
+                : 'Generate previews for $missing more widgets',
+            onPressed: _generate,
+          ),
+        ),
+      if (logs != null) () => logs,
+    ]);
   }
+
+  /// The panel's scrolling list, building each of [rows] only once it
+  /// scrolls into view.
+  static Widget _buildLazyList(List<Widget Function()> rows) =>
+      ListView.builder(
+        padding: AppPadding.panelContent,
+        itemCount: rows.length,
+        itemBuilder: (_ /* context */, index) => rows[index](),
+      );
 
   /// Every preview of the project by file, collapsed but the one expanded,
   /// which alone is rendered, over the filter.
@@ -225,27 +233,26 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
     }
     final root = ref.watch(currentProjectPathProvider);
     final query = _filter.text.trim().toLowerCase();
+    final failure = _buildFailure(state);
+    final logs = _buildLogs(state);
     return Column(
       children: [
         Expanded(
-          child: ListView(
-            padding: AppPadding.panelContent,
-            children: [
-              ?_buildFailure(state),
-              for (final file in files)
-                ..._buildProjectFile(state, file, root, query),
-              ?_buildLogs(state),
-            ],
-          ),
+          child: _buildLazyList([
+            if (failure != null) () => failure,
+            for (final file in files)
+              ..._buildProjectFile(state, file, root, query),
+            if (logs != null) () => logs,
+          ]),
         ),
         FilterField(controller: _filter, hintText: 'Filter previews...'),
       ],
     );
   }
 
-  /// [file]'s row, which opens it, then a row per preview matching
-  /// [query], the one expanded showing its frames.
-  List<Widget> _buildProjectFile(
+  /// Builders of [file]'s row, which opens it, then of a row per preview
+  /// matching [query], the one expanded showing its frames.
+  List<Widget Function()> _buildProjectFile(
     PreviewState state,
     PreviewFileScan file,
     String? root,
@@ -261,14 +268,14 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
     ];
     if (previews.isEmpty) return const [];
     return [
-      TreeRow.filePath(
+      () => TreeRow.filePath(
         file.path,
         rootPath: root,
         onTap: () => openFile(ref, file.path),
       ),
       for (final preview in previews)
         if (state.expanded == (path: file.path, label: preview.label))
-          TreeBranch(
+          () => TreeBranch(
             header: _buildPreviewRow(file.path, preview.label, true),
             isExpanded: true,
             // The busy bar tells while its previews start
@@ -278,7 +285,7 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
             ],
           )
         else
-          _buildPreviewRow(file.path, preview.label, false),
+          () => _buildPreviewRow(file.path, preview.label, false),
     ];
   }
 
@@ -329,9 +336,7 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
         index: index,
         zoom: _scale,
         onFixSize: canFix
-            ? () => ref
-                  .read(previewControllerProvider.notifier)
-                  .fixSize(path, item)
+            ? (frame) => _controller.fixSize(path, item, frame)
             : null,
       ),
     );

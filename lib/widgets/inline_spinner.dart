@@ -6,6 +6,9 @@ import 'package:material_ui/material_ui.dart';
 ///
 /// Two sizes cover them: the default for a header or toolbar, [small]
 /// beside a line of text, in a button or in a tree row.
+///
+/// It spins on its own layer, so each frame repaints the spinner alone,
+/// not the row, panel or window around it.
 class InlineSpinner extends StatelessWidget {
   /// Creates a spinner [size] wide.
   const InlineSpinner({super.key, this.size = AppIconSize.large, this.color});
@@ -22,12 +25,14 @@ class InlineSpinner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: CircularProgressIndicator(
-        strokeWidth: AppBorderWidth.medium,
-        valueColor: color == null ? null : AlwaysStoppedAnimation(color!),
+    return RepaintBoundary(
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: CircularProgressIndicator(
+          strokeWidth: AppBorderWidth.medium,
+          valueColor: color == null ? null : AlwaysStoppedAnimation(color!),
+        ),
       ),
     );
   }

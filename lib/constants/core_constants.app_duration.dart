@@ -34,6 +34,10 @@ class AppDuration {
   static const Duration gitInitTimeout = Duration(seconds: 10);
   static const Duration gitOperationTimeout = Duration(seconds: 30);
   static const Duration loginShellTimeout = Duration(seconds: 30);
+
+  /// How long after the login shell's `PATH` failed to read it is read
+  /// again, in the background.
+  static const Duration loginShellRetryInterval = Duration(minutes: 1);
   static const Duration projectLoadDelay = Duration(milliseconds: 150);
 
   /// How long a burst of edits or file system events must pause before
@@ -43,6 +47,15 @@ class AppDuration {
   /// How long saves must pause, as when the AI agent writes file after
   /// file, before the project's quality is analyzed again.
   static const Duration saveBurstPause = Duration(milliseconds: 500);
+
+  /// Longest a command's new output lines wait before they are shown, so
+  /// a burst of lines updates the view a few times, not once per line.
+  static const Duration outputLogPublish = Duration(milliseconds: 50);
+
+  /// How long saves and file changes must pause before Git reads the
+  /// repository again: longer than [updateDebounce], so a save and the
+  /// tree update it causes read it once.
+  static const Duration gitReloadDebounce = Duration(milliseconds: 300);
 
   const AppDuration._();
 }

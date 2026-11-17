@@ -7,8 +7,26 @@ const Set<String> _contextlessStateMethods = {'initState', 'dispose'};
 /// Finds, in the background analysis, the `String` field a string argument
 /// fills, with everything passed to it and every read of it.
 extension _LookupFields on _ReferenceWorker {
-  /// See [ReferenceFinder.lookupField].
-  Future<LookupField> _lookupField(String filePath, int offset) async {
+  /// See [ReferenceFinder.lookupFields]: a field filled at several sites
+  /// is looked up once.
+  Future<List<LookupSiteField>> _lookupFields(List<LookupSite> sites) async {
+    final found = <String, Future<LookupField>>{};
+    return [
+      for (final (:filePath, :offset) in sites)
+        await _lookupField(filePath, offset, found).then<LookupSiteField>(
+          (field) => (field: field, error: null),
+          onError: (Object e) => (field: null, error: '$e'),
+        ),
+    ];
+  }
+
+  /// See [ReferenceFinder.lookupField]; [found] holds the fields already
+  /// looked up, keyed by [_fieldKey], and takes this one.
+  Future<LookupField> _lookupField(
+    String filePath,
+    int offset,
+    Map<String, Future<LookupField>> found,
+  ) async {
     final unit = await _resolvedUnit(filePath);
     if (unit == null) throw StateError('Can\'t analyze $filePath');
     final argument = _argumentAt(unit.unit, offset);
@@ -16,6 +34,12 @@ extension _LookupFields on _ReferenceWorker {
     if (field == null) {
       throw StateError('it is not passed to a field of a class');
     }
+    return found.putIfAbsent(_fieldKey(field), () => _lookupOf(field));
+  }
+
+  /// [field], with every value passed to it and every read of it; throws,
+  /// saying why, when it can't become a lookup function.
+  Future<LookupField> _lookupOf(FieldElement field) async {
     final name = field.name ?? '';
     if (!field.isFinal || field.isStatic) {
       throw StateError('$name is not a final instance field');
@@ -64,6 +88,11 @@ extension _LookupFields on _ReferenceWorker {
       reads: reads,
     );
   }
+
+  /// [field] as one key: its file, class and name.
+  static String _fieldKey(FieldElement field) =>
+      '${field.firstFragment.libraryFragment.source.fullName}#'
+      '${field.enclosingElement.name}.${field.name}';
 
   /// The argument expression starting at [offset] of [unit], looking
   /// through parentheses; throws when there is none.

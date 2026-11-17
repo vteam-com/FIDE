@@ -35,22 +35,40 @@ class StringLookupPasser {
   /// `BuildContext` that fill a widget's `String` field which can become a
   /// lookup function, and why the others cannot.
   Future<LookupPlan> plan(LocalizationPlan localization) async {
+    final strings = [
+      for (final MapEntry(key: string, value: reason)
+          in localization.rejected.entries)
+        if (reason == StringLocalizer.noContext &&
+            string.role != fcheck.HardcodedStringRole.data &&
+            string.role != fcheck.HardcodedStringRole.fragment)
+          string,
+    ];
     final candidates = <HardcodedString, LookupField>{};
     final rejected = <HardcodedString, String>{};
-    for (final MapEntry(key: string, value: reason)
-        in localization.rejected.entries) {
-      if (reason != StringLocalizer.noContext ||
-          string.role == fcheck.HardcodedStringRole.data ||
-          string.role == fcheck.HardcodedStringRole.fragment) {
-        continue;
-      }
-      try {
-        candidates[string] = await _finder.lookupField(
-          filePath: string.path,
-          offset: string.site.offset,
-        );
-      } on Exception catch (e) {
-        rejected[string] = ReadableError.describe(e);
+    if (strings.isEmpty) {
+      return LookupPlan(candidates: candidates, rejected: rejected);
+    }
+    final List<LookupSiteField> found;
+    try {
+      // One request for all, so a field filled by many strings is looked
+      // up once
+      found = await _finder.lookupFields([
+        for (final string in strings)
+          (filePath: string.path, offset: string.site.offset),
+      ]);
+    } on Exception catch (e) {
+      final reason = ReadableError.describe(e);
+      return LookupPlan(
+        candidates: candidates,
+        rejected: {for (final string in strings) string: reason},
+      );
+    }
+    for (final (index, string) in strings.indexed) {
+      final (:field, :error) = found[index];
+      if (field != null) {
+        candidates[string] = field;
+      } else {
+        rejected[string] = ReadableError.describe(Exception(error));
       }
     }
     return LookupPlan(candidates: candidates, rejected: rejected);
@@ -88,10 +106,7 @@ class StringLookupPasser {
       ...localization.candidates,
       ...localization.rejected.keys,
     ], keys);
-    final contents = {
-      for (final MapEntry(key: path, value: content) in result.contents.entries)
-        path: await _formatter.formatOrKeep(path, content),
-    };
+    final contents = await _formatter.formatAllOrKeep(result.contents);
 
     // The lookups compile only once the keys are generated
     final template = File(config.templatePathIn(projectPath));

@@ -101,4 +101,28 @@ void main() {
       expect(folder.modified, isNotNull);
     }
   });
+
+  test('addChild replaces the child at the same path, in tree order', () {
+    final node = ProjectNode(
+      name: 'p',
+      path: '/p',
+      type: ProjectNodeType.directory,
+    );
+    ProjectNode file(String name, int size) => ProjectNode(
+      name: name,
+      path: '/p/$name',
+      type: ProjectNodeType.file,
+      size: size,
+    );
+
+    node
+      ..addChild(file('b.txt', 1))
+      ..addChild(file('a.txt', 1))
+      ..addChild(file('b.txt', 2));
+
+    expect(node.children.map((c) => (c.name, c.size)), [
+      ('a.txt', 1),
+      ('b.txt', 2),
+    ]);
+  });
 }

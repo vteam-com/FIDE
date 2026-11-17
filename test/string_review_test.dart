@@ -118,4 +118,38 @@ void main() {
       ),
     );
   });
+
+  test('verdicts say what whyNot says for every string and fix', () {
+    for (final canLocalize in [true, false]) {
+      final strings = review(canLocalize: canLocalize);
+      final all = [
+        for (final role in fcheck.HardcodedStringRole.values)
+          ...strings.withRole(role),
+      ];
+
+      final verdicts = strings.verdictsOn(all);
+
+      for (final string in all) {
+        final verdict = verdicts[string]!;
+        final fixes = StringReview.fixesFor(string.role);
+        expect(verdict.whyNot.keys, fixes);
+        for (final fix in fixes) {
+          expect(verdict.whyNot[fix], strings.whyNot(fix, string));
+          expect(verdict.canTake(fix), strings.whyNot(fix, string) == null);
+        }
+        expect(
+          verdict.isFixable,
+          fixes.any((fix) => strings.whyNot(fix, string) == null),
+        );
+      }
+    }
+    final verdict = review(canLocalize: false).verdictsOn([shown])[shown]!;
+    // Only the presentation fixes are offered for it, and neither can run
+    expect(verdict.isFixable, isFalse);
+    expect(verdict.canTake(StringFix.makeConstants), isFalse);
+    expect(verdict.reasons, [
+      '${StringFix.localizeStrings.label} cannot run: no template ARB file',
+      '${StringFix.passLookup.label} cannot run: no template ARB file',
+    ]);
+  });
 }

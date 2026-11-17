@@ -36,10 +36,14 @@ class GitDiffStats {
 
   /// Line counts per file of `git diff --numstat` [output], keyed by the
   /// path git printed; binary files (`-` counts) are [isBinary] with zero
-  /// lines and lines of another shape are skipped.
-  static Map<String, GitDiffStats> parseNumstat(String output) {
+  /// lines and lines of another shape are skipped. Records end with
+  /// [recordSeparator]: a NUL for `-z` output, whose paths aren't quoted.
+  static Map<String, GitDiffStats> parseNumstat(
+    String output, {
+    String recordSeparator = '\n',
+  }) {
     final stats = <String, GitDiffStats>{};
-    for (final line in output.split('\n')) {
+    for (final line in output.split(recordSeparator)) {
       final fields = line.split('\t');
       if (fields.length < _numstatFields) continue;
       // A path may itself hold tabs

@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:path/path.dart' as p;
 import 'package:re_highlight/languages/plaintext.dart';
 import 'package:re_highlight/re_highlight.dart';
 
 /// An open document in the editor: its path, content, cursor and dirty flag.
 ///
 /// Immutable; `OpenDocumentsNotifier` replaces it through [copyWith] so
-/// everything watching the open documents sees each change.
+/// everything watching the open documents sees each change. Equal by
+/// value, so a provider deriving one notifies only when it changes.
 @immutable
 class DocumentState {
   final String filePath;
@@ -61,8 +61,29 @@ class DocumentState {
     );
   }
 
-  /// The file name without its directory.
-  String get fileName {
-    return p.basename(filePath);
+  /// Whether [other] is the same document in the same state; the texts
+  /// are compared by identity first, as an unchanged document keeps its
+  /// text object.
+  @override
+  bool operator ==(Object other) {
+    return other is DocumentState &&
+        other.filePath == filePath &&
+        other.selection == selection &&
+        other.isDirty == isDirty &&
+        other.language == language &&
+        other.asPlainText == asPlainText &&
+        (identical(other.content, content) || other.content == content);
   }
+
+  /// Hashes the text by its length, so equal documents hash alike without
+  /// a pass over the text.
+  @override
+  int get hashCode => Object.hash(
+    filePath,
+    content.length,
+    selection,
+    isDirty,
+    language,
+    asPlainText,
+  );
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
@@ -32,7 +33,10 @@ final commandRunnerProvider = StateNotifierProvider<CommandRunner, CommandRuns>(
 /// status and one live process per action id, so actions run side by side
 /// and each can be stopped, and their output in logs keyed by the caller.
 ///
-/// Processes are killed only by [stop], [reset] or [dispose].
+/// Processes are killed only by [stop], [reset] or [dispose]. Log lines
+/// are shown at most every [AppDuration.outputLogPublish], so a burst of
+/// output doesn't rebuild its views once per line; status changes, and
+/// the lines written before them, are shown at once.
 class CommandRunner extends StateNotifier<CommandRuns> {
   /// Creates a runner with no runs, reporting the errors of each run with
   /// `reportsBuildErrors` (none after a success) to [onBuildErrors].
@@ -47,11 +51,18 @@ class CommandRunner extends StateNotifier<CommandRuns> {
 
   final Set<String> _stopping = {};
 
+  /// Pending publication of log lines written since the last one.
+  Timer? _publishTimer;
+
   /// Discards the text of log [logKey].
-  void clearLog(String logKey) => _write(logKey, (log) => log.clear());
+  void clearLog(String logKey) {
+    _write(logKey, (log) => log.clear());
+    _publish(state.statuses);
+  }
 
   @override
   void dispose() {
+    _publishTimer?.cancel();
     _killAll();
     super.dispose();
   }
@@ -61,6 +72,8 @@ class CommandRunner extends StateNotifier<CommandRuns> {
   void reset() {
     _generation++;
     _killAll();
+    _publishTimer?.cancel();
+    _publishTimer = null;
     state = const CommandRuns();
   }
 
@@ -183,19 +196,36 @@ class CommandRunner extends StateNotifier<CommandRuns> {
     _stopping.clear();
   }
 
-  /// Sets the status of action [id].
-  void _setStatus(String id, ActionStatus status) => state = CommandRuns(
-    statuses: {...state.statuses, id: status},
-    logs: state.logs,
-  );
+  /// Publishes [statuses] with the logs as they are now, including lines
+  /// still waiting for [_publishTimer].
+  void _publish(
+    Map<String, ActionStatus> statuses, [
+    Map<String, OutputLog>? logs,
+  ]) {
+    _publishTimer?.cancel();
+    _publishTimer = null;
+    state = CommandRuns(statuses: statuses, logs: logs ?? state.logs);
+  }
 
-  /// Applies [change] to log [logKey] and publishes it.
+  /// Sets the status of action [id].
+  void _setStatus(String id, ActionStatus status) =>
+      _publish({...state.statuses, id: status});
+
+  /// Applies [change] to log [logKey], kept in place, so the current state
+  /// holds it at once; a new log is published at once, more lines within
+  /// [AppDuration.outputLogPublish].
   void _write(String logKey, void Function(OutputLog log) change) {
-    final log = state.logs[logKey] ?? OutputLog();
+    final log = state.logs[logKey];
+    if (log == null) {
+      final created = OutputLog();
+      change(created);
+      _publish(state.statuses, {...state.logs, logKey: created});
+      return;
+    }
     change(log);
-    state = CommandRuns(
-      statuses: state.statuses,
-      logs: {...state.logs, logKey: log},
+    _publishTimer ??= Timer(
+      AppDuration.outputLogPublish,
+      () => _publish(state.statuses),
     );
   }
 }

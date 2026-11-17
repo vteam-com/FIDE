@@ -33,6 +33,9 @@ class OutlineController extends Notifier<OutlineState> {
   /// The pending parse, while edits are debounced.
   Timer? _debounce;
 
+  /// The pending consumer lookup, while cursor moves are debounced.
+  Timer? _consumersDebounce;
+
   /// The text last parsed and its outline, so an unchanged text isn't
   /// parsed again.
   ({String content, List<OutlineNode> nodes})? _parsed;
@@ -47,7 +50,10 @@ class OutlineController extends Notifier<OutlineState> {
       (_, _) => scheduleParse(),
     );
     ref.listen(editorCursorLineProvider, (_, line) => setCursorLine(line));
-    ref.onDispose(() => _debounce?.cancel());
+    ref.onDispose(() {
+      _debounce?.cancel();
+      _consumersDebounce?.cancel();
+    });
     // The first parse runs once the state exists
     unawaited(Future.microtask(parse));
     return OutlineState.loading;
@@ -116,11 +122,16 @@ class OutlineController extends Notifier<OutlineState> {
     });
   }
 
-  /// Highlights the entry at the editor's cursor [line] and finds its
-  /// consumers.
+  /// Highlights the entry at the editor's cursor [line] at once, then
+  /// finds its consumers once the cursor rests for
+  /// [AppDuration.updateDebounce], so moving through the file doesn't
+  /// search the project for each entry passed.
   void setCursorLine(int line) {
     state = state.copyWith(cursorLine: line);
-    _updateConsumers();
+    _consumersDebounce?.cancel();
+    _consumersDebounce = Timer(AppDuration.updateDebounce, () {
+      if (ref.mounted) _updateConsumers();
+    });
   }
 
   /// The text to outline: the editor's, unsaved edits included, when the

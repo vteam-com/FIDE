@@ -4,10 +4,12 @@ part of 'outline_parser.dart';
 /// their class.
 class _OutlineVisitor extends RecursiveAstVisitor<void> {
   final List<OutlineNode> nodes = [];
-  final String fileContent;
+
+  /// Where each line of the parsed text starts, to place the nodes.
+  final LineInfo lineInfo;
   int _currentLevel = 0;
 
-  _OutlineVisitor(this.fileContent);
+  _OutlineVisitor(this.lineInfo);
 
   @override
   void visitClassDeclaration(ClassDeclaration node) {
@@ -53,13 +55,13 @@ class _OutlineVisitor extends RecursiveAstVisitor<void> {
     int offset, {
     bool isOverride = false,
   }) {
-    final position = TextOffsets.positionOf(fileContent, offset);
+    final position = lineInfo.getLocation(offset);
     nodes.add(
       OutlineNode(
         name: name,
         kind: kind,
-        line: position.line,
-        column: position.column,
+        line: position.lineNumber,
+        column: position.columnNumber,
         level: _currentLevel,
         isOverride: isOverride,
       ),

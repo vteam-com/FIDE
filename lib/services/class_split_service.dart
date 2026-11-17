@@ -28,20 +28,8 @@ class ClassSplitService {
     final planned = await ClassSplitter(dartSdkPath: sdkPath)
         .plan(projectPath: projectPath, filePath: filePath);
     return ClassSplitResult(
-      files: {
-        for (final MapEntry(key: path, value: content) in planned.files.entries)
-          path: await _formatted(path, content),
-      },
+      files: await _formatter.formatAllOrKeep(planned.files),
       createdFiles: planned.createdFiles,
     );
-  }
-
-  /// [content] of [path] formatted, or as is when formatting fails.
-  Future<String> _formatted(String path, String content) async {
-    try {
-      return await _formatter.format(path, content);
-    } catch (_) {
-      return content;
-    }
   }
 }

@@ -1,5 +1,4 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/document_state.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -16,13 +15,14 @@ import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:path/path.dart' as p;
 
 /// Renders the editor header with document switching and primary editor actions.
 class EditorScreenHeader extends ConsumerWidget {
   /// Creates the editor header.
   const EditorScreenHeader({
     super.key,
-    required this.openDocuments,
+    required this.filePaths,
     required this.activeIndex,
     required this.currentFile,
     required this.viewKind,
@@ -42,7 +42,9 @@ class EditorScreenHeader extends ConsumerWidget {
   final VoidCallback onSave;
   final VoidCallback onToggleDiffView;
   final VoidCallback onToggleSearch;
-  final List<DocumentState> openDocuments;
+
+  /// Paths of the open files in tab order.
+  final List<String> filePaths;
   final bool showDiffView;
 
   /// How the editor shows [currentFile].
@@ -52,10 +54,8 @@ class EditorScreenHeader extends ConsumerWidget {
     final projectPath = ref.watch(currentProjectPathProvider);
     // Watched here, as the menu builds its entries outside of build
     final diffStats = {
-      for (final document in openDocuments)
-        document.filePath: ref
-            .watch(gitDiffStatsProvider(document.filePath))
-            .value,
+      for (final filePath in filePaths)
+        filePath: ref.watch(gitDiffStatsProvider(filePath)).value,
     };
     final history = ref.watch(
       openDocumentsProvider.select((documents) => documents.history),
@@ -87,13 +87,13 @@ class EditorScreenHeader extends ConsumerWidget {
           Expanded(
             child: Row(
               children: [
-                if (openDocuments.isNotEmpty)
+                if (filePaths.isNotEmpty)
                   Flexible(
                     child: PopupMenuButton<int>(
                       key: const Key('keyMruForFiles'),
                       initialValue: activeIndex,
                       itemBuilder: (_ /*context*/) {
-                        return openDocuments.asMap().entries.map((entry) {
+                        return filePaths.asMap().entries.map((entry) {
                           return PopupMenuItem<int>(
                             value: entry.key,
                             // A fixed width: menus measure their
@@ -111,9 +111,9 @@ class EditorScreenHeader extends ConsumerWidget {
                       },
                       onSelected: onDocumentSelected,
                       child: DropdownLabel(
-                        child: activeIndex < openDocuments.length
+                        child: activeIndex < filePaths.length
                             ? _documentRow(
-                                openDocuments[activeIndex],
+                                filePaths[activeIndex],
                                 projectPath,
                                 diffStats,
                               )
@@ -178,23 +178,23 @@ class EditorScreenHeader extends ConsumerWidget {
     );
   }
 
-  /// [document]'s file icon, path relative to [projectPath] and Git
+  /// [filePath]'s file icon, path relative to [projectPath] and Git
   /// changes from [diffStats], as the picker and its entries show them.
   Widget _documentRow(
-    DocumentState document,
+    String filePath,
     String? projectPath,
     Map<String, GitDiffStats?> diffStats,
   ) {
     return IconMenuRow(
       icon: null,
-      leading: FileIconUtils.ofPath(document.filePath),
-      label: document.fileName,
+      leading: FileIconUtils.ofPath(filePath),
+      label: p.basename(filePath),
       labelWidget: PathText(
-        document.filePath,
+        filePath,
         rootPath: projectPath,
         style: AppTextStyle.label,
       ),
-      trailing: DiffCounter(gitStats: diffStats[document.filePath]),
+      trailing: DiffCounter(gitStats: diffStats[filePath]),
     );
   }
 }

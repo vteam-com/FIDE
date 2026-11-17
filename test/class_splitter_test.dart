@@ -4,6 +4,13 @@ import 'package:fide/services/class_splitter.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
+/// Reads files from disk, appending each path read to the file [log], so
+/// the reads made in the planner's isolate can be counted.
+String Function(String path) _loggingReader(String log) => (path) {
+  File(log).writeAsStringSync('$path\n', mode: FileMode.append);
+  return File(path).readAsStringSync();
+};
+
 void main() {
   late String project;
 
@@ -91,6 +98,48 @@ void main() => B();
       expect(files['lib/main.dart'], isNot(contains("import 'a.dart';")));
     },
   );
+
+  test('reads each project file once, however many classes move', () async {
+    write('lib/a.dart', '''
+class A {}
+
+class B {}
+
+class C {}
+
+class D {}
+''');
+    for (final user in ['one', 'two', 'three']) {
+      write('lib/$user.dart', '''
+import 'a.dart';
+
+final $user = [A(), B(), C(), D()];
+''');
+    }
+    final log = p.join(
+      Directory.systemTemp.createTempSync('fide_split_log_').path,
+      'reads.log',
+    );
+    final logging = ClassSplitter(
+      dartSdkPath: splitter.dartSdkPath,
+      readFile: _loggingReader(log),
+    );
+
+    final result = await logging.plan(
+      projectPath: project,
+      filePath: path('lib/a.dart'),
+    );
+
+    expect(result.createdFiles, hasLength(3));
+    expect(
+      result.files[path('lib/one.dart')],
+      allOf(contains("import 'b.dart';"), contains("import 'd.dart';")),
+    );
+    final reads = File(log).readAsLinesSync();
+    expect(reads.toSet(), hasLength(reads.length));
+    expect(reads, contains(path('lib/one.dart')));
+    Directory(p.dirname(log)).deleteSync(recursive: true);
+  });
 
   test('moves a class with the private helpers only it uses', () async {
     write('lib/stage.dart', '''

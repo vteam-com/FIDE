@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:math';
 
+import 'package:fide/models/image_details.dart';
 import 'package:fide/services/image_inspector.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
@@ -101,4 +103,84 @@ void main() {
       throwsA(isA<FormatException>()),
     );
   });
+
+  test('samples large images as walking every pixel did', () async {
+    // Odd sizes over the sampling limit, so samples skip pixels and wrap
+    // rows at uneven points
+    final random = Random(7);
+    for (final (width, height) in [(333, 257), (1001, 211)]) {
+      final image = img.Image(width: width, height: height, numChannels: 4);
+      for (final pixel in image) {
+        pixel.setRgba(
+          random.nextInt(4) * 64,
+          random.nextInt(2) * 200,
+          random.nextInt(3) * 100,
+          random.nextInt(5) == 0 ? random.nextInt(2) * 128 : 255,
+        );
+      }
+      final path = write('noise_$width.png', img.encodePng(image));
+
+      final details = await const ImageInspector().inspect(path);
+      final expected = _walkingEveryPixel(
+        img.decodePng(File(path).readAsBytesSync())!,
+      );
+
+      expect(details.transparentShare, expected.transparentShare);
+      expect(details.dominantColors, expected.dominant);
+    }
+  });
+}
+
+/// The transparency and dominant colors of [image] as the inspector found
+/// them before sampling by index: walking every pixel to keep each
+/// stride-th one, once for each.
+({double transparentShare, List<DominantColor> dominant}) _walkingEveryPixel(
+  img.Image image,
+) {
+  Iterable<img.Pixel> samples() sync* {
+    final stride = (image.width * image.height / 65536).ceil();
+    var index = 0;
+    for (final pixel in image) {
+      if (index++ % stride == 0) yield pixel;
+    }
+  }
+
+  var total = 0;
+  var transparent = 0;
+  for (final pixel in samples()) {
+    total++;
+    if (pixel.aNormalized < 1) transparent++;
+  }
+  final counts = <int, int>{};
+  final sums = <int, List<int>>{};
+  var visible = 0;
+  for (final pixel in samples()) {
+    if (pixel.aNormalized == 0) continue;
+    final r = (pixel.rNormalized * 255).round();
+    final g = (pixel.gNormalized * 255).round();
+    final b = (pixel.bNormalized * 255).round();
+    final key = (r >> 4) << 8 | (g >> 4) << 4 | b >> 4;
+    counts.update(key, (count) => count + 1, ifAbsent: () => 1);
+    final sum = sums.putIfAbsent(key, () => [0, 0, 0]);
+    sum[0] += r;
+    sum[1] += g;
+    sum[2] += b;
+    visible++;
+  }
+  final keys = counts.keys.toList()
+    ..sort((a, b) => counts[b]!.compareTo(counts[a]!));
+  return (
+    transparentShare: transparent / total,
+    dominant: [
+      for (final key in keys.take(ImageInspector.maxDominantColors))
+        (
+          argb:
+              0xFF000000 |
+              sums[key]![0] ~/ counts[key]! << 16 |
+              sums[key]![1] ~/ counts[key]! << 8 |
+              sums[key]![2] ~/ counts[key]!,
+          share: counts[key]! / visible,
+        ),
+    ],
+  );
 }

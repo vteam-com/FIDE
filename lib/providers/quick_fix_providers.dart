@@ -1,6 +1,7 @@
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/string_review.dart';
 import 'package:fide/providers/project_lifecycle_providers.dart';
+import 'package:fide/providers/project_overview_providers.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/class_split_service.dart';
 import 'package:fide/services/quick_fix_handler.dart';
@@ -90,6 +91,7 @@ final quickFixRunnerProvider = Provider<QuickFixRunner>(
     review: ref.read(codeReviewProvider),
     strings: ref.watch(stringFixerProvider),
     handlers: ref.watch(quickFixHandlersProvider),
+    latest: ref.read(savedCodeMetricsProvider),
   ),
 );
 

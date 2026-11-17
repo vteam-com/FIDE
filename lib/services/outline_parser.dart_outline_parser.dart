@@ -12,7 +12,7 @@ class DartOutlineParser extends OutlineParser {
       featureSet: FeatureSet.latestLanguageVersion(),
       throwIfDiagnostics: false,
     );
-    final visitor = _OutlineVisitor(content);
+    final visitor = _OutlineVisitor(result.lineInfo);
     result.unit.visitChildren(visitor);
     return visitor.nodes;
   }

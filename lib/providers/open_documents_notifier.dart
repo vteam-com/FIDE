@@ -18,7 +18,12 @@ import 'package:path/path.dart' as p;
 final openDocumentsProvider =
     StateNotifierProvider<OpenDocumentsNotifier, OpenDocuments>(
       (ref) => OpenDocumentsNotifier(
-        onSaved: () => ref.read(savedFilesRevisionProvider.notifier).state++,
+        onSaved: (filePaths) {
+          ref.read(savedFilesRevisionProvider.notifier).state++;
+          if (!filePaths.every(FileTypeUtils.isDartFile)) {
+            ref.read(savedAssetsRevisionProvider.notifier).state++;
+          }
+        },
         activeEditor: ref.read(activeEditorProvider),
         reader: ref.read(fileContentReaderProvider),
       ),
@@ -27,6 +32,11 @@ final openDocumentsProvider =
 /// Bumped each time the editor saves a file, so views derived from file
 /// contents can refresh.
 final savedFilesRevisionProvider = StateProvider<int>((_) => 0);
+
+/// Bumped like [savedFilesRevisionProvider], but only by saves that wrote
+/// a file other than Dart source, so views derived from assets and
+/// platform files (such as the app icons) don't refresh for code edits.
+final savedAssetsRevisionProvider = StateProvider<int>((_) => 0);
 
 /// The document showing in the editor, or null.
 final activeDocumentProvider = Provider<DocumentState?>(
@@ -47,8 +57,9 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
   /// Loads the text of the documents opened and writes their saves.
   final FileContentReader reader;
 
-  /// Called after each [save] writes its file.
-  final VoidCallback? onSaved;
+  /// Called with the files written after each [save] and
+  /// [reloadWritten].
+  final void Function(Iterable<String> filePaths)? onSaved;
 
   /// The mounted editor, which saves the showing document so it knows
   /// the document is saved; without it, that document saves as the others.
@@ -150,7 +161,7 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
   /// them, then calls [onSaved] so views derived from them refresh.
   Future<void> reloadWritten(Iterable<String> filePaths) async {
     await reload(filePaths);
-    onSaved?.call();
+    onSaved?.call(filePaths);
   }
 
   /// Shows [filePath], loading it into a new tab unless it is already open.
@@ -193,7 +204,7 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
   Future<void> save(String filePath, String content) async {
     await reader.write(filePath, content);
     update(filePath, content: content, isDirty: false);
-    onSaved?.call();
+    onSaved?.call([filePath]);
   }
 
   /// Writes [content] to [filePath] immediately without changing state,
@@ -219,11 +230,7 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
       selection: selection,
       isDirty: isDirty,
     );
-    if (updated.content == current.content &&
-        updated.selection == current.selection &&
-        updated.isDirty == current.isDirty) {
-      return;
-    }
+    if (updated == current) return;
     _show([...state.documents]..[index] = updated, state.activeIndex);
   }
 

@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:fide/constants/core_constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/git_diff_stats_provider.dart';
 import 'package:fide/providers/service_providers.dart';
@@ -26,31 +29,65 @@ class GitRepoController extends AsyncNotifier<GitRepoState> {
   /// Folder of the repository.
   final String projectPath;
 
-  /// Counts reloads, so a slow one never overwrites a newer result.
-  int _generation = 0;
+  /// The reload running now, if any.
+  Future<void>? _reloading;
+
+  /// Whether a reload was asked for after the running one started.
+  bool _reloadPending = false;
+
+  /// Waits for saves and file changes to pause before reloading.
+  Timer? _reloadDebounce;
 
   @override
   Future<GitRepoState> build() {
-    // Files saved or changed on disk: the changes listed may be stale
-    ref.listen(savedFilesRevisionProvider, (_, _) => reload());
-    ref.listen(projectTreeRevisionProvider, (_, _) => reload());
+    // Files saved or changed on disk: the changes listed may be stale. A
+    // save also updates the tree a moment later: both read Git once
+    ref.listen(savedFilesRevisionProvider, (_, _) => _scheduleReload());
+    ref.listen(projectTreeRevisionProvider, (_, _) => _scheduleReload());
+    ref.onDispose(() => _reloadDebounce?.cancel());
     return _load(ref.read(gitServiceProvider));
+  }
+
+  /// Reloads once saves and file changes pause for
+  /// [AppDuration.gitReloadDebounce].
+  void _scheduleReload() {
+    _reloadDebounce?.cancel();
+    _reloadDebounce = Timer(AppDuration.gitReloadDebounce, reload);
   }
 
   /// Reads the repository again, keeping the current state on show until
   /// the new one is ready.
-  Future<void> reload() async {
-    if (!ref.mounted) return;
-    final generation = ++_generation;
-    final git = ref.read(gitServiceProvider);
-    final next = await AsyncValue.guard(() => _load(git));
-    if (ref.mounted && generation == _generation) state = next;
+  ///
+  /// Reloads never overlap: one asked for while another runs starts when
+  /// it ends, shared by every request made meanwhile. The future completes
+  /// once a reload started after the call has finished.
+  Future<void> reload() {
+    _reloadPending = true;
+    return _reloading ??= _reloadWhilePending();
+  }
+
+  /// Reloads until no reload is pending.
+  Future<void> _reloadWhilePending() async {
+    try {
+      while (_reloadPending && ref.mounted) {
+        _reloadPending = false;
+        final git = ref.read(gitServiceProvider);
+        final next = await AsyncValue.guard(() => _load(git));
+        if (ref.mounted) state = next;
+      }
+    } finally {
+      _reloading = null;
+    }
   }
 
   /// Reloads, then fetches from the remote and reloads again so
   /// [GitRepoState.behind] counts commits that arrived there; the fetch
   /// needs the network, so only an explicit refresh runs it.
+  ///
+  /// The editor's line counts are read again too, with which repository
+  /// each file is in: the repository may just have been initialized.
   Future<void> refresh() async {
+    invalidateGitDiffStats(ref, repositories: true);
     await reload();
     if (!ref.mounted) return;
     if (await ref.read(gitServiceProvider).fetch(projectPath)) {
@@ -126,7 +163,7 @@ class GitRepoController extends AsyncNotifier<GitRepoState> {
     try {
       await action(ref.read(gitServiceProvider));
     } finally {
-      if (ref.mounted) ref.invalidate(gitDiffStatsProvider);
+      if (ref.mounted) invalidateGitDiffStats(ref);
       await reload();
     }
   }

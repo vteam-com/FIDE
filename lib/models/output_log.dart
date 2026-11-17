@@ -1,26 +1,31 @@
+import 'dart:collection';
+
+import 'package:fide/constants/core_constants.dart';
+
+part 'output_log.output_lines.dart';
+
 /// Output and error text captured from commands a panel runs, for display
-/// in its output section.
+/// in its output section. Each keeps its newest
+/// [AppMetric.outputLogMaxLines] lines, and its text is built once per
+/// change rather than on every read.
 class OutputLog {
-  final StringBuffer _errors = StringBuffer();
-  final StringBuffer _output = StringBuffer();
+  final _OutputLines _errors = _OutputLines();
+  final _OutputLines _output = _OutputLines();
 
   /// Captured error text.
-  String get errors => _errors.toString();
+  String get errors => _errors.text;
 
   /// Whether any error text has been captured.
   bool get hasErrors => _errors.isNotEmpty;
 
-  /// Whether any output text has been captured.
-  bool get hasOutput => _output.isNotEmpty;
-
   /// Captured output text.
-  String get output => _output.toString();
+  String get output => _output.text;
 
   /// Appends [line] and a newline to the errors.
-  void addError(String line) => _errors.writeln(line);
+  void addError(String line) => _errors.add(line);
 
   /// Appends [line] and a newline to the output.
-  void addOutput(String line) => _output.writeln(line);
+  void addOutput(String line) => _output.add(line);
 
   /// Discards all captured text.
   void clear() {

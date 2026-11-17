@@ -31,8 +31,12 @@ class _ReferenceWorker {
 
   late final AnalysisContextCollection _collection;
 
-  /// Last seen modification time of each analyzed Dart file.
-  final Map<String, DateTime> _modified = {};
+  /// The analyzed Dart files, with their modification times and text.
+  final FileTexts _files = FileTexts();
+
+  /// Counts the [FindReferencesRequest]s received, so a queued one can
+  /// tell a newer one came.
+  int _findCount = 0;
 
   final OverlayResourceProvider _provider = OverlayResourceProvider(
     PhysicalResourceProvider.INSTANCE,
@@ -45,7 +49,8 @@ class _ReferenceWorker {
 
   /// Isolate entry: sends a request port through `args.$1`, then answers
   /// each `(request, replyPort)` with a [_ReferenceReply] holding the
-  /// [ReferenceRequest]'s answer, or the error message instead.
+  /// [ReferenceRequest]'s answer, or the error message instead; a find a
+  /// newer one replaced while it waited answers [ReferenceFinder.superseded].
   static void main((SendPort, String, String) args) {
     final (ready, projectPath, sdkPath) = args;
     final worker = _ReferenceWorker(projectPath, sdkPath);
@@ -53,7 +58,14 @@ class _ReferenceWorker {
     ready.send(requests.sendPort);
     requests.listen((message) {
       final (request, reply) = message as (ReferenceRequest<Object?>, SendPort);
+      final find = request is FindReferencesRequest
+          ? ++worker._findCount
+          : null;
       worker._queue = worker._queue.then((_) async {
+        if (find != null && find != worker._findCount) {
+          reply.send((answer: null, error: ReferenceFinder.superseded));
+          return;
+        }
         _ReferenceReply response;
         try {
           await worker._refresh();
@@ -79,7 +91,8 @@ class _ReferenceWorker {
         ) =>
           await _rename(await _targetAt(filePath, line, column), newName),
         LookupFieldRequest(:final filePath, :final offset) =>
-          await _lookupField(filePath, offset),
+          await _lookupField(filePath, offset, {}),
+        LookupFieldsRequest(:final sites) => await _lookupFields(sites),
         CheckCompilesRequest(:final contents, :final action) =>
           await _checkCompiles(contents, action).then((_) => null),
       };
@@ -254,16 +267,15 @@ class _ReferenceWorker {
   }
 
   /// The files that may use [element], named [name]: its library's for a
-  /// private name, else every analyzed file mentioning [name].
+  /// private name, else every analyzed file mentioning [name], read only
+  /// when it changed since an earlier request.
   Iterable<String> _candidatePaths(Element element, String name) =>
       element.isPrivate
       ? [
           for (final fragment in element.library!.fragments)
             fragment.source.fullName,
         ]
-      : _modified.keys.where(
-          (path) => File(path).readAsStringSync().contains(name),
-        );
+      : _files.mentioning(name);
 
   /// Tells the analysis about Dart files added, changed or deleted since
   /// the last request.
@@ -273,15 +285,14 @@ class _ReferenceWorker {
       for (final path in context.contextRoot.analyzedFiles()) {
         if (!path.endsWith('.dart')) continue;
         seen.add(path);
-        final modified = File(path).lastModifiedSync();
-        final previous = _modified[path];
-        _modified[path] = modified;
-        if (previous != null && previous != modified) context.changeFile(path);
+        if (_files.update(path, File(path).lastModifiedSync())) {
+          context.changeFile(path);
+        }
       }
     }
-    for (final path in _modified.keys.toList()) {
+    for (final path in _files.paths.toList()) {
       if (seen.contains(path)) continue;
-      _modified.remove(path);
+      _files.remove(path);
       _collection.contextFor(path).changeFile(path);
     }
     await _applyChanges();

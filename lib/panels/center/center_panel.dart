@@ -1,5 +1,4 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/document_state.dart';
 import 'package:fide/panels/center/app_icons_panel.dart';
 import 'package:fide/panels/center/architecture/architecture_panel.dart';
 import 'package:fide/panels/center/editor/editor_screen.dart';
@@ -68,7 +67,10 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final DocumentState? activeDocument = ref.watch(activeDocumentProvider);
+    // Only the active file's path: its text and caret change on each edit
+    final activeFile = ref.watch(
+      activeDocumentProvider.select((doc) => doc?.filePath),
+    );
     final terminalExpanded = ref.watch(bottomPanelExpandedProvider);
     ref.listen(activeDocumentProvider.select((doc) => doc?.filePath), (
       previous,
@@ -91,8 +93,8 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
       CenterView.overview => const ProjectOverviewPanel(),
       CenterView.appIcons => const AppIconsPanel(),
       CenterView.architecture => const ArchitecturePanel(),
-      null when activeDocument != null => EditorScreen(
-        documentState: activeDocument,
+      null when activeFile != null => EditorScreen(
+        filePath: activeFile,
         onClose: widget.onClose,
       ),
       null => const ProjectOverviewPanel(),

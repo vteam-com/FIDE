@@ -21,8 +21,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// One preview in the Preview panel: its title, which shows its code, and
-/// its latest frame, which takes clicks, drags and scrolls as the widget
-/// would, on the backdrop picked for images. Its width and height are each Auto or fixed, as the developer
+/// its latest frame, from [previewFramesProvider], which takes clicks,
+/// drags and scrolls as the widget would, on the backdrop picked for
+/// images. Its width and height are each Auto or fixed, as the developer
 /// picks: grips on the right of and under the frame resize it by
 /// [PreviewSizeStep.step], and Fix Size writes the size shown in the code.
 class PreviewCard extends ConsumerStatefulWidget {
@@ -49,9 +50,9 @@ class PreviewCard extends ConsumerStatefulWidget {
   /// How much larger than its logical size the frame is drawn.
   final double zoom;
 
-  /// Writes the size the preview renders at in its annotation; null when
-  /// the size can't be written there.
-  final VoidCallback? onFixSize;
+  /// Writes the size the preview renders at, as the frame it gets shows,
+  /// in its annotation; null when the size can't be written there.
+  final ValueChanged<PreviewFrame>? onFixSize;
 
   @override
   ConsumerState<PreviewCard> createState() => _PreviewCardState();
@@ -71,7 +72,11 @@ class _PreviewCardState extends ConsumerState<PreviewCard> {
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
-    final frame = item.frame;
+    // Only this card repaints for a new frame of its preview
+    final index = widget.index;
+    final frame = ref.watch(
+      previewFramesProvider.select((frames) => frames.elementAtOrNull(index)),
+    );
     return OutlinedSurface(
       padding: SurfacePadding.dense,
       child: Column(
@@ -101,7 +106,7 @@ class _PreviewCardState extends ConsumerState<PreviewCard> {
                     icon: Icons.straighten,
                     tooltip: _fixSizeTooltip(frame),
                     // Always there, so resizing never moves the buttons
-                    onPressed: frame.differsFromCode ? fix : null,
+                    onPressed: frame.differsFromCode ? () => fix(frame) : null,
                   ),
               ],
             ],

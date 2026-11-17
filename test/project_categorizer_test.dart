@@ -35,9 +35,9 @@ void main() {
 
   /// Groups the project, counting classes from fCheck's analysis of it.
   Future<ProjectCategories> categorize() async =>
-      const ProjectCategorizer(
-        ProjectTreeReader(),
-        AssetCategorizer(ProjectTreeReader(), ProjectConfigReader()),
+      ProjectCategorizer(
+        const ProjectTreeReader(),
+        const AssetCategorizer(ProjectTreeReader(), ProjectConfigReader()),
       ).categorize(
         await loadedRoot(),
         await const CodeReview().analyze(project.path),
@@ -152,9 +152,9 @@ void main() {
   test('counts each Dart file once until fCheck has analyzed it', () async {
     write('lib/models/chord.dart', 'class Chord {}\nclass Note {}');
 
-    final categories = await const ProjectCategorizer(
-      ProjectTreeReader(),
-      AssetCategorizer(ProjectTreeReader(), ProjectConfigReader()),
+    final categories = await ProjectCategorizer(
+      const ProjectTreeReader(),
+      const AssetCategorizer(ProjectTreeReader(), ProjectConfigReader()),
     ).categorize(await loadedRoot());
 
     expect(categories.elementCounts[CodeCategory.models], 1);
@@ -168,5 +168,43 @@ void main() {
     final categories = await categorize();
 
     expect(categories.elementCounts[CodeCategory.localization], 2);
+  });
+
+  test('reads each file once per run, and again only once changed', () async {
+    write('lib/main.dart', 'void main() => runApp(MaterialApp());');
+    write('lib/card.dart', 'class Card extends StatelessWidget {}');
+    write('lib/widgets/ask.dart', 'void ask() => showDialog();');
+    write('lib/l10n/app_en.arb', '{"@@locale": "en", "a": "A"}');
+    final reads = <String>[];
+    final categorizer = ProjectCategorizer(
+      const ProjectTreeReader(),
+      const AssetCategorizer(ProjectTreeReader(), ProjectConfigReader()),
+      readFile: (path) {
+        reads.add(p.relative(path, from: project.path));
+        return File(path).readAsString();
+      },
+    );
+
+    final first = await categorizer.categorize(await loadedRoot());
+    expect(reads, hasLength(reads.toSet().length));
+    expect(
+      reads,
+      containsAll([
+        'lib/main.dart',
+        'lib/card.dart',
+        'lib/widgets/ask.dart',
+        'lib/l10n/app_en.arb',
+      ]),
+    );
+    expect(names(first.nodes[CodeCategory.dialogs]!), ['ask.dart']);
+
+    reads.clear();
+    await categorizer.categorize(await loadedRoot());
+    expect(reads, isEmpty);
+
+    write('lib/card.dart', 'class Card extends StatelessWidget { int a; }');
+    final again = await categorizer.categorize(await loadedRoot());
+    expect(reads, ['lib/card.dart']);
+    expect(names(again.nodes[CodeCategory.widgets]!), ['card.dart']);
   });
 }

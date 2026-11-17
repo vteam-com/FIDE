@@ -49,6 +49,25 @@ class _ImageDetailsPanelState extends ConsumerState<ImageDetailsPanel> {
   Future<ImageDetails> _inspect() =>
       ref.read(imageInspectorProvider).inspect(widget.path);
 
+  /// Reads the details again when the image changed on disk since they
+  /// were read, or they couldn't be.
+  Future<void> _inspectIfChanged() async {
+    final shown = _details;
+    final path = widget.path;
+    bool current;
+    try {
+      current = await ref
+          .read(imageInspectorProvider)
+          .isCurrent(path, await shown);
+    } on Object {
+      current = false;
+    }
+    if (!mounted || current || shown != _details) return;
+    setState(() {
+      _details = _inspect();
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -66,11 +85,7 @@ class _ImageDetailsPanelState extends ConsumerState<ImageDetailsPanel> {
   @override
   Widget build(BuildContext context) {
     // Files rewritten outside the editor, e.g. by an icon fix
-    ref.listen(savedFilesRevisionProvider, (_, _) {
-      setState(() {
-        _details = _inspect();
-      });
-    });
+    ref.listen(savedFilesRevisionProvider, (_, _) => _inspectIfChanged());
     return FutureBuilder(
       future: _details,
       builder: (_, snapshot) {

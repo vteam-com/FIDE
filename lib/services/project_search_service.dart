@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:isolate';
 
+import 'package:fide/constants/core_constants.dart';
 import 'package:fide/models/editor_search.dart';
 import 'package:fide/models/project_files.dart';
 import 'package:fide/models/search_result.dart';
@@ -7,24 +9,56 @@ import 'package:fide/models/search_result_node.dart';
 import 'package:fide/models/tree_order.dart';
 import 'package:path/path.dart' as p;
 
+/// The matches of a project search: the first [results] found, up to the
+/// search's limit, the [files] holding a match, and how many matches
+/// there are in [total], shown or not.
+typedef ProjectSearchHits = ({
+  List<SearchResult> results,
+  List<String> files,
+  int total,
+});
+
 /// Searches the files of a folder tree for text, line by line.
 class ProjectSearchService {
   /// Creates a stateless search service.
   const ProjectSearchService();
 
-  /// Every match of [query] in the files under [directoryPath], in no
-  /// particular file order; unreadable files, and the tool output and
-  /// hidden folders [ProjectFiles] leaves out, are skipped.
-  Future<List<SearchResult>> search(
+  /// No match at all.
+  static const ProjectSearchHits _none = (results: [], files: [], total: 0);
+
+  /// The matches of [query] in the files under [directoryPath], in no
+  /// particular file order: the first [limit] of them as results, every
+  /// file holding one and their count. Unreadable files, and the tool
+  /// output and hidden folders [ProjectFiles] leaves out, are skipped.
+  ///
+  /// The files are read and scanned on a background isolate, so a large
+  /// project doesn't freeze the window.
+  Future<ProjectSearchHits> search(
     String directoryPath,
     String query, {
     bool caseSensitive = false,
     bool wholeWord = false,
+    int limit = AppMetric.projectSearchMaxResults,
   }) async {
-    final directory = Directory(directoryPath);
-    if (query.isEmpty || !await directory.exists()) return const [];
+    if (query.isEmpty) return _none;
+    return Isolate.run(
+      () => _scan(directoryPath, query, caseSensitive, wholeWord, limit),
+    );
+  }
+
+  /// Runs [search] on the calling isolate.
+  static Future<ProjectSearchHits> _scan(
+    String directoryPath,
+    String query,
+    bool caseSensitive,
+    bool wholeWord,
+    int limit,
+  ) async {
+    if (!await Directory(directoryPath).exists()) return _none;
 
     final results = <SearchResult>[];
+    final files = <String>[];
+    var total = 0;
     await for (final entity in ProjectFiles.walk(directoryPath)) {
       final String content;
       try {
@@ -32,6 +66,7 @@ class ProjectSearchService {
       } on FileSystemException {
         continue;
       }
+      final totalBefore = total;
       final lines = content.split('\n');
       for (var i = 0; i < lines.length; i++) {
         for (final start in EditorSearch.findMatches(
@@ -40,6 +75,9 @@ class ProjectSearchService {
           caseSensitive: caseSensitive,
           wholeWord: wholeWord,
         )) {
+          total++;
+          // Past the limit the matches are only counted
+          if (results.length >= limit) continue;
           results.add(
             SearchResult(
               filePath: entity.path,
@@ -51,8 +89,9 @@ class ProjectSearchService {
           );
         }
       }
+      if (total > totalBefore) files.add(entity.path);
     }
-    return results;
+    return (results: results, files: files, total: total);
   }
 
   /// The new content of each of [filePaths] with every match of [query]

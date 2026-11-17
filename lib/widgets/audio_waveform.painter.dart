@@ -1,22 +1,18 @@
 part of 'audio_waveform.dart';
 
-/// Paints [AudioWaveform]: one vertical line per pixel column as tall as
-/// the loudest sample under it, the trimmed parts shaded, the trim handles
-/// and the playhead; repaints when the playhead moves.
+/// Paints [AudioWaveform] without its playhead: one vertical line per
+/// pixel column as tall as the loudest sample under it, the trimmed parts
+/// shaded, and the trim handles; repaints only when the sound, the trim or
+/// the colors change, never as the playhead moves.
 class _AudioWaveformPainter extends CustomPainter {
   _AudioWaveformPainter({
     required this.peaks,
     required this.start,
     required this.end,
-    required this.playhead,
     required this.keptColor,
     required this.trimmedColor,
     required this.shadeColor,
-    required this.playheadColor,
-  }) : super(repaint: playhead);
-
-  /// Splits the height in half to center the waveform.
-  static const int _halves = 2;
+  });
 
   /// Half-height of the line drawn for silence, so it still shows.
   static const double _minHalfHeight = 0.5;
@@ -33,12 +29,6 @@ class _AudioWaveformPainter extends CustomPainter {
   /// The loudest sample of each equal slice of the sound.
   final Float32List peaks;
 
-  /// Share of the sound playing, or null when it isn't.
-  final ValueListenable<double?> playhead;
-
-  /// Color of the playhead.
-  final Color playheadColor;
-
   /// Color laid over the trimmed parts.
   final Color shadeColor;
 
@@ -54,7 +44,7 @@ class _AudioWaveformPainter extends CustomPainter {
     final height = size.height;
     final columns = width.floor();
     if (columns <= 0 || peaks.isEmpty) return;
-    final middle = height / _halves;
+    final middle = height / _AudioPlayheadPainter._halves;
     final kept = Paint()..color = keptColor;
     final trimmed = Paint()..color = trimmedColor;
     for (var column = 0; column < columns; column++) {
@@ -77,12 +67,8 @@ class _AudioWaveformPainter extends CustomPainter {
     canvas
       ..drawRect(Rect.fromLTRB(0, 0, start * width, height), shade)
       ..drawRect(Rect.fromLTRB(end * width, 0, width, height), shade);
-    _drawMarker(canvas, size, start, kept);
-    _drawMarker(canvas, size, end, kept);
-    final playing = playhead.value;
-    if (playing != null) {
-      _drawMarker(canvas, size, playing, Paint()..color = playheadColor);
-    }
+    _AudioPlayheadPainter.drawMarker(canvas, size, start, kept);
+    _AudioPlayheadPainter.drawMarker(canvas, size, end, kept);
   }
 
   @override
@@ -90,14 +76,40 @@ class _AudioWaveformPainter extends CustomPainter {
       oldDelegate.peaks != peaks ||
       oldDelegate.start != start ||
       oldDelegate.end != end ||
-      oldDelegate.playhead != playhead ||
       oldDelegate.keptColor != keptColor ||
       oldDelegate.trimmedColor != trimmedColor ||
-      oldDelegate.shadeColor != shadeColor ||
-      oldDelegate.playheadColor != playheadColor;
+      oldDelegate.shadeColor != shadeColor;
+}
+
+/// Paints [AudioWaveform]'s playhead over the waveform, alone, so each
+/// step of the playhead draws one marker instead of the whole waveform.
+class _AudioPlayheadPainter extends CustomPainter {
+  _AudioPlayheadPainter({required this.playhead, required Color color})
+    : _paint = Paint()..color = color,
+      super(repaint: playhead);
+
+  /// Splits the height in half to center the waveform and the markers.
+  static const int _halves = 2;
+
+  /// Share of the sound playing, or null when it isn't.
+  final ValueListenable<double?> playhead;
+
+  /// Fill of the playhead, made once for every step.
+  final Paint _paint;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final playing = playhead.value;
+    if (playing != null) drawMarker(canvas, size, playing, _paint);
+  }
+
+  @override
+  bool shouldRepaint(_AudioPlayheadPainter oldDelegate) =>
+      oldDelegate.playhead != playhead ||
+      oldDelegate._paint.color != _paint.color;
 
   /// Draws a full-height marker at [share] of the width, with [paint].
-  void _drawMarker(Canvas canvas, Size size, double share, Paint paint) {
+  static void drawMarker(Canvas canvas, Size size, double share, Paint paint) {
     canvas.drawRect(
       Rect.fromCenter(
         center: Offset(share * size.width, size.height / _halves),

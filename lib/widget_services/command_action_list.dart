@@ -1,3 +1,4 @@
+import 'package:fide/models/command_runs.dart';
 import 'package:fide/providers/command_runner.dart';
 import 'package:fide/widgets/action_list.dart';
 import 'package:fide/widgets/panel_action.dart';
@@ -15,7 +16,12 @@ class CommandActionList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final runs = ref.watch(commandRunnerProvider);
+    // Only the statuses: log lines don't rebuild the buttons
+    final runs = CommandRuns(
+      statuses: ref.watch(
+        commandRunnerProvider.select((runs) => runs.statuses),
+      ),
+    );
     final runner = ref.read(commandRunnerProvider.notifier);
     return ActionList(
       actions: [

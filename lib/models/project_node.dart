@@ -78,8 +78,11 @@ class ProjectNode {
     return null;
   }
 
-  /// Inserts [child] at its place in tree order (for incremental updates).
+  /// Inserts [child] at its place in tree order (for incremental updates),
+  /// replacing the child already at its path, as when a file is saved
+  /// atomically or a checkout recreates it.
   void addChild(ProjectNode child) {
+    removeChild(child.path);
     final index = children.indexWhere(
       (current) => compareInTree(child, current) < 0,
     );

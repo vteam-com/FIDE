@@ -1,6 +1,9 @@
 import 'dart:io';
 
+import 'package:fide/models/document_state.dart';
 import 'package:fide/models/editor_diff_outcome.dart';
+import 'package:fide/models/open_documents.dart';
+import 'package:fide/models/text_offsets.dart';
 import 'package:fide/panels/center/editor/editor_session.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/services/git_service.dart';
@@ -73,6 +76,85 @@ void main() {
 
     session.code.text = 'void main() {}\n';
     expect(session.isDirty, isFalse);
+  });
+
+  test('a caret move tells listeners but publishes no document', () {
+    final published = <OpenDocuments>[];
+    documents.addListener(published.add, fireImmediately: false);
+
+    session.code.selection = const TextSelection.collapsed(offset: 5);
+
+    expect(changes, 1);
+    expect(session.cursor, (line: 1, column: 6));
+    expect(published, isEmpty);
+  });
+
+  test('an edit publishes the text and the selection once', () {
+    final published = <OpenDocuments>[];
+    documents.addListener(published.add, fireImmediately: false);
+
+    session.code.insertAtCurrentCursor('// ');
+
+    expect(published, hasLength(1));
+    expect(published.single.active!.content, '// void main() {}\n');
+    expect(published.single.active!.selection, session.code.selection);
+  });
+
+  test('leaving the file publishes the caret moved since', () async {
+    const other = '/project/lib/other.dart';
+    reader.files[other] = 'other\n';
+    await documents.open(other);
+    session.code.selection = const TextSelection.collapsed(offset: 5);
+
+    session.load(documents.state.active!);
+    // Published after the build that switched files
+    expect(documents.state.documentOf(path)!.selection.baseOffset, 0);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(
+      documents.state.documentOf(path)!.selection,
+      const TextSelection.collapsed(offset: 5),
+    );
+    expect(session.filePath, other);
+  });
+
+  test('dispose publishes the caret moved since', () async {
+    session.code.selection = const TextSelection.collapsed(offset: 7);
+
+    session.dispose();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(
+      documents.state.active!.selection,
+      const TextSelection.collapsed(offset: 7),
+    );
+  });
+
+  test('a caret past the end of the text loads at its end', () {
+    session.load(
+      const DocumentState(
+        filePath: path,
+        content: 'ab',
+        selection: TextSelection.collapsed(offset: 99),
+      ),
+    );
+
+    expect(session.code.selection, const TextSelection.collapsed(offset: 2));
+    expect(session.cursor, (line: 1, column: 3));
+  });
+
+  test('cursor matches TextOffsets.positionOf at every offset', () {
+    for (final text in ['', 'a', '\n', 'ab\ncde\n\nf', 'x\r\ny\n', '\n\n']) {
+      session.load(DocumentState(filePath: path, content: text));
+      for (var offset = 0; offset <= text.length; offset++) {
+        session.restoreSelection(TextSelection.collapsed(offset: offset));
+        expect(
+          session.cursor,
+          TextOffsets.positionOf(text, offset),
+          reason: 'offset $offset of ${text.codeUnits}',
+        );
+      }
+    }
   });
 
   test('restoreSelection moves the caret without publishing', () {

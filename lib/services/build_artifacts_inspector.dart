@@ -73,11 +73,17 @@ class BuildArtifactsInspector {
   ) async {
     final buildDir = Directory(ProjectPaths(projectPath).buildDir);
     final location = await _buildLocation(buildDir, platform.name);
+    final (iconPath, output) = await (
+      appIconPath(projectPath, platform),
+      location == null
+          ? Future.value((size: 'Not built', lastBuildTime: 'Never'))
+          : Isolate.run(() => _measure(buildDir.path, location)),
+    ).wait;
     return BuildArtifacts(
-      appIconPath: await appIconPath(projectPath, platform),
+      appIconPath: iconPath,
       location: location ?? 'No build directory found',
-      size: location == null ? 'Not built' : await _size(Directory(location)),
-      lastBuildTime: await _lastBuildTime(buildDir),
+      size: output.size,
+      lastBuildTime: output.lastBuildTime,
     );
   }
 
@@ -105,32 +111,35 @@ class BuildArtifactsInspector {
     return buildDir.path;
   }
 
-  /// Newest modification time under [buildDir], to the second.
-  Future<String> _lastBuildTime(Directory buildDir) async {
-    if (!await buildDir.exists()) return 'Never';
+  /// In one walk of [buildDir], meant for an isolate: the total size of the
+  /// files under [location] (`build/` itself or an entry in it), human
+  /// readable, and the newest modification time under [buildDir], to the
+  /// second. Links are not followed, so no file counts twice.
+  static ({String size, String lastBuildTime}) _measure(
+    String buildDir,
+    String location,
+  ) {
+    final isFolder = FileSystemEntity.isDirectorySync(location);
     try {
       DateTime? latest;
-      await for (final entry in buildDir.list(recursive: true)) {
-        final modified = (await entry.stat()).modified;
-        if (latest == null || modified.isAfter(latest)) latest = modified;
-      }
-      return latest?.toString().split('.').first ?? 'Unknown';
-    } catch (_) {
-      return 'Unknown';
-    }
-  }
-
-  /// Total size of the files under [directory], human readable.
-  Future<String> _size(Directory directory) async {
-    if (!await directory.exists()) return 'Not built';
-    try {
       var totalBytes = 0;
-      await for (final entry in directory.list(recursive: true)) {
-        if (entry is File) totalBytes += await entry.length();
+      for (final entry in Directory(
+        buildDir,
+      ).listSync(recursive: true, followLinks: false)) {
+        final stat = entry.statSync();
+        if (latest == null || stat.modified.isAfter(latest)) {
+          latest = stat.modified;
+        }
+        if (isFolder && entry is File && p.isWithin(location, entry.path)) {
+          totalBytes += stat.size;
+        }
       }
-      return totalBytes.readableSize;
+      return (
+        size: isFolder ? totalBytes.readableSize : 'Not built',
+        lastBuildTime: latest?.toString().split('.').first ?? 'Unknown',
+      );
     } catch (_) {
-      return 'Unknown';
+      return (size: 'Unknown', lastBuildTime: 'Unknown');
     }
   }
 }

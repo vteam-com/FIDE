@@ -3,18 +3,26 @@ import 'package:fide/models/architecture_focus.dart';
 import 'package:fide/models/architecture_layout.dart';
 import 'package:fide/panels/center/architecture/architecture_edge_painter.dart';
 import 'package:fide/panels/center/architecture/architecture_node.dart';
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The architecture graph of [layout], zoomed by a trackpad pinch or the
 /// mouse wheel and panned by dragging: the layer and folder captions, the
-/// imports, and one [ArchitectureNode] per file, highlighted around
-/// [focus]. Pressing the background clears the selection.
-class ArchitectureCanvas extends StatelessWidget {
+/// imports, and one [ArchitectureNode] per file, highlighted around the
+/// [hovered] file, else the [selected] one, else the files matching
+/// [filter]. Pressing the background clears the selection.
+///
+/// Built to stay smooth on large projects: zooming and panning move the
+/// graph's painted layers without painting them again; hovering a file
+/// rebuilds only the boxes whose look changes and repaints only the
+/// focused file's imports.
+class ArchitectureCanvas extends StatefulWidget {
   /// Creates the canvas of [layout].
   const ArchitectureCanvas({
     super.key,
     required this.layout,
-    required this.focus,
+    required this.filter,
+    required this.hovered,
     required this.controller,
     required this.selected,
     required this.showAllImports,
@@ -27,8 +35,11 @@ class ArchitectureCanvas extends StatelessWidget {
   /// Zoom and pan of the canvas.
   final TransformationController controller;
 
-  /// What is highlighted.
-  final ArchitectureFocus focus;
+  /// The files matching the Find File box, with no file in focus.
+  final ArchitectureFocus filter;
+
+  /// The file under the pointer; null for none.
+  final ValueListenable<String?> hovered;
 
   /// Where each file and caption is.
   final ArchitectureLayout layout;
@@ -59,54 +70,69 @@ class ArchitectureCanvas extends StatelessWidget {
   final bool showAllImports;
 
   @override
+  State<ArchitectureCanvas> createState() => _ArchitectureCanvasState();
+}
+
+/// How one file's box looks; a box looking the same is not built again.
+typedef _NodeLook = ({ArchitectureRole role, bool isSelected, bool isMatch});
+
+class _ArchitectureCanvasState extends State<ArchitectureCanvas> {
+  /// Each file's box as last built, with how it looks, reused while its
+  /// look stays the same.
+  final Map<String, (_NodeLook, Widget)> _nodes = {};
+
+  @override
+  void didUpdateWidget(ArchitectureCanvas oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // New boxes for another layout, which may lack some files
+    if (oldWidget.layout != widget.layout) _nodes.clear();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final graph = layout.graph;
+    final layout = widget.layout;
+    final theme = Theme.of(context);
     return InteractiveViewer(
-      transformationController: controller,
+      transformationController: widget.controller,
       constrained: false,
       boundaryMargin: const EdgeInsets.all(double.infinity),
-      minScale: minScale,
-      maxScale: maxScale,
-      onInteractionStart: (_) => onInteractionStart?.call(),
+      minScale: ArchitectureCanvas.minScale,
+      maxScale: ArchitectureCanvas.maxScale,
+      onInteractionStart: (_) => widget.onInteractionStart?.call(),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => onSelect(null),
-        child: SizedBox.fromSize(
-          size: layout.size,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: ArchitectureEdgePainter(
-                    layout: layout,
-                    focus: focus,
-                    theme: Theme.of(context),
-                    showAll: showAllImports,
+        onTap: () => widget.onSelect(null),
+        // Zooming and panning move this layer without painting it again
+        child: RepaintBoundary(
+          child: SizedBox.fromSize(
+            size: layout.size,
+            child: Stack(
+              children: [
+                if (widget.showAllImports)
+                  Positioned.fill(
+                    child: RepaintBoundary(
+                      child: CustomPaint(
+                        painter: ArchitectureEdgePainter.all(
+                          layout: layout,
+                          theme: theme,
+                        ),
+                      ),
+                    ),
+                  ),
+                for (final caption in layout.captions)
+                  Positioned.fromRect(
+                    rect: caption.rect,
+                    child: _caption(context, caption),
+                  ),
+                Positioned.fill(
+                  child: ValueListenableBuilder(
+                    valueListenable: widget.hovered,
+                    builder: (_ /*context*/, hovered, _ /*child*/) =>
+                        _focused(theme, hovered),
                   ),
                 ),
-              ),
-              for (final caption in layout.captions)
-                Positioned.fromRect(
-                  rect: caption.rect,
-                  child: _caption(context, caption),
-                ),
-              for (final MapEntry(key: file, value: rect)
-                  in layout.nodes.entries)
-                Positioned.fromRect(
-                  rect: rect,
-                  child: ArchitectureNode(
-                    path: file,
-                    rootPath: graph.rootPath,
-                    role: focus.roleOf(file),
-                    isSelected: file == selected,
-                    isMatch: focus.isMatch(file),
-                    issues: graph.issues[file] ?? const [],
-                    onHover: (isInside) => onHover(file, isInside),
-                    onSelect: () => onSelect(file),
-                    onOpen: () => onOpen(file),
-                  ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -137,5 +163,59 @@ class ArchitectureCanvas extends StatelessWidget {
         maxLines: 1,
       ),
     );
+  }
+
+  /// The focused file's imports and every file's box, highlighted around
+  /// [hovered], else the selected file.
+  Widget _focused(ThemeData theme, String? hovered) {
+    final layout = widget.layout;
+    final selected = widget.selected;
+    // A file gone after a re-analysis is no longer hovered
+    final pointed = layout.nodes.containsKey(hovered) ? hovered : null;
+    final focus = widget.filter.focusing(pointed ?? selected);
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: RepaintBoundary(
+            child: CustomPaint(
+              painter: ArchitectureEdgePainter.focused(
+                layout: layout,
+                focus: focus,
+                theme: theme,
+              ),
+            ),
+          ),
+        ),
+        for (final MapEntry(key: file, value: rect) in layout.nodes.entries)
+          Positioned.fromRect(rect: rect, child: _node(file, focus)),
+      ],
+    );
+  }
+
+  /// The box of [file] around [focus], the one built before while it
+  /// looks the same.
+  Widget _node(String file, ArchitectureFocus focus) {
+    final look = (
+      role: focus.roleOf(file),
+      isSelected: file == widget.selected,
+      isMatch: focus.isMatch(file),
+    );
+    if (_nodes[file] case (final built, final node) when built == look) {
+      return node;
+    }
+    final node = ArchitectureNode(
+      path: file,
+      rootPath: widget.layout.graph.rootPath,
+      role: look.role,
+      isSelected: look.isSelected,
+      isMatch: look.isMatch,
+      issues: widget.layout.graph.issues[file] ?? const [],
+      // Through the current widget: a box is kept across rebuilds
+      onHover: (isInside) => widget.onHover(file, isInside),
+      onSelect: () => widget.onSelect(file),
+      onOpen: () => widget.onOpen(file),
+    );
+    _nodes[file] = (look, node);
+    return node;
   }
 }

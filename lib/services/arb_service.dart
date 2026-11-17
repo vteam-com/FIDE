@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/arb_keys.dart';
@@ -28,6 +29,10 @@ class ArbService {
 
   /// Byte-order mark some editors put at the start of ARB files.
   static const String _byteOrderMark = '\uFEFF';
+
+  /// ARB files longer than this many characters are decoded on a
+  /// background isolate by [parseArbFile].
+  static const int _isolateDecodeChars = 64 * 1024;
 
   final ProjectConfigReader _config;
 
@@ -143,7 +148,11 @@ class ArbService {
   /// null when it isn't a JSON object.
   Future<ArbFile?> parseArbFile(String path) async {
     final content = await File(path).readAsString();
-    final json = decode(content);
+    // Large files are decoded off the UI thread, small ones not worth
+    // starting an isolate for
+    final json = content.length > _isolateDecodeChars
+        ? await Isolate.run(() => decode(content))
+        : decode(content);
     if (json == null) {
       _logger.severe(
         'ARB file $path is not a JSON object. Raw content (first ${AppMetric.logPreviewChars} chars): ${content.truncated(AppMetric.logPreviewChars)}',

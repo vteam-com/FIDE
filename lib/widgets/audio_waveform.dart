@@ -65,21 +65,31 @@ class _AudioWaveformState extends State<AudioWaveform> {
             },
             onHorizontalDragUpdate: (details) =>
                 _move(shareAt(details.localPosition)),
-            child: CustomPaint(
-              size: constraints.biggest,
-              painter: _AudioWaveformPainter(
-                peaks: widget.peaks,
-                start: widget.start,
-                end: widget.end,
-                playhead: widget.playhead,
-                keptColor: colors.primary,
-                trimmedColor: colors.onSurface.withValues(
-                  alpha: AppOpacity.faint,
+            // The playhead's steps repaint it alone, on top of the
+            // waveform's own layer
+            child: RepaintBoundary(
+              child: CustomPaint(
+                foregroundPainter: _AudioPlayheadPainter(
+                  playhead: widget.playhead,
+                  color: colors.onSurface,
                 ),
-                shadeColor: colors.onSurface.withValues(
-                  alpha: AppOpacity.subtle,
+                child: RepaintBoundary(
+                  child: CustomPaint(
+                    size: constraints.biggest,
+                    painter: _AudioWaveformPainter(
+                      peaks: widget.peaks,
+                      start: widget.start,
+                      end: widget.end,
+                      keptColor: colors.primary,
+                      trimmedColor: colors.onSurface.withValues(
+                        alpha: AppOpacity.faint,
+                      ),
+                      shadeColor: colors.onSurface.withValues(
+                        alpha: AppOpacity.subtle,
+                      ),
+                    ),
+                  ),
                 ),
-                playheadColor: colors.onSurface,
               ),
             ),
           ),

@@ -22,6 +22,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
+part 'preview_controller.preview_frames.dart';
 part 'preview_controller.preview_state.dart';
 
 /// The source of the preview host FIDE copies into each project.
@@ -35,7 +36,8 @@ final previewControllerProvider =
 
 /// Runs the Preview panel: scans the selected file, or the whole project,
 /// for its previews, runs the project's [PreviewHost] once there are some,
-/// hot reloads it as files are saved, and keeps the frames it sends.
+/// hot reloads it as files are saved, and keeps the frames it sends in
+/// [previewFramesProvider].
 ///
 /// For the project, only the one preview expanded is rendered, so the
 /// list scales to any number of previews.
@@ -184,12 +186,14 @@ class PreviewController extends Notifier<PreviewState> {
     return generation;
   }
 
-  /// Writes the size [item] renders at in its annotation in [path]: its
-  /// width and height fixed, or Auto, as the user set them; the saved file
-  /// then reloads the previews.
-  Future<void> fixSize(String path, PreviewItem item) async {
-    final frame = item.frame;
-    if (frame == null) return;
+  /// Writes the size [item] renders at, as its latest [frame] shows, in its
+  /// annotation in [path]: its width and height fixed, or Auto, as the
+  /// user set them; the saved file then reloads the previews.
+  Future<void> fixSize(
+    String path,
+    PreviewItem item,
+    PreviewFrame frame,
+  ) async {
     await _editFile(
       path,
       (content) => const PreviewSizeFixer().withSize(
@@ -481,29 +485,25 @@ class PreviewController extends Notifier<PreviewState> {
   void _onPreviews(int generation, List<PreviewItem> items) {
     if (!ref.mounted) return;
     final previous = state.items;
-    state = state.copyWith(
-      generation: generation,
-      items: [
-        // Keep the last frames until new ones arrive, so cards don't blink
-        for (final (index, item) in items.indexed)
-          if (previous.elementAtOrNull(index)
-              case PreviewItem(function: final function, :final frame?)
-              when function == item.function)
-            item.withFrame(frame)
-          else
-            item,
-      ],
-    );
+    // Keep the last frames until new ones arrive, so cards don't blink
+    ref
+        .read(previewFramesProvider.notifier)
+        .reset(
+          items.length,
+          (index) =>
+              previous.elementAtOrNull(index)?.function ==
+              items[index].function,
+        );
+    state = state.copyWith(generation: generation, items: items);
   }
 
-  /// Shows [frame] on its preview, unless it is from an older list.
+  /// Shows [frame] on its preview, unless it is from an older list; the
+  /// panel's state stays as is, so only the preview's card repaints.
   void _onFrame(PreviewFrame frame) {
     if (!ref.mounted || frame.generation != state.generation) return;
-    final items = state.items;
-    if (frame.index >= items.length) return;
-    state = state.copyWith(
-      items: [...items]..[frame.index] = items[frame.index].withFrame(frame),
-    );
+    final count = state.items.length;
+    if (frame.index >= count) return;
+    ref.read(previewFramesProvider.notifier).show(frame, count);
   }
 
   /// Keeps an error the previews reported, the latest [_maxLogs] only.

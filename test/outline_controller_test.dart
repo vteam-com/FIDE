@@ -154,6 +154,30 @@ void main() {
     },
   );
 
+  test(
+    'consumers are found once the cursor rests, not per line passed',
+    () async {
+      File(path).writeAsStringSync(
+        'class A {\n  void a() {}\n  void b() {}\n  void c() {}\n}\n',
+      );
+      await _settle();
+      await controller().parse();
+      final cursor = container.read(editorCursorLineProvider.notifier);
+
+      for (final line in [2, 3, 4]) {
+        cursor.state = line;
+      }
+
+      // Each entry is highlighted at once, its consumers are not searched yet
+      expect(outline().selected?.name, 'c');
+      expect(finder.finds, 0);
+      await _settle();
+
+      expect(finder.finds, 1);
+      expect(outline().consumersOf(outline().selected!), hasLength(1));
+    },
+  );
+
   test('rename rewrites the project and reports the files', () async {
     await _settle();
     await container.read(openDocumentsProvider.notifier).open(path);
@@ -184,6 +208,14 @@ void main() {
       ),
       throwsStateError,
     );
+  });
+
+  test('the parser provider is dropped once unused', () async {
+    final parser = outlineParserProvider('unused.dart');
+    container.listen(parser, (_, _) {}).close();
+    await container.pump();
+
+    expect(container.read(parser.exists), isFalse);
   });
 
   test('the parser provider picks a parser by file type', () {

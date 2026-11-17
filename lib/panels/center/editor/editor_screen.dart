@@ -38,15 +38,22 @@ import 'package:re_highlight/styles/atom-one-dark.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
 
 /// Full-featured code editor widget with syntax highlighting, search, diff view, and file-save support.
+///
+/// Shows the open document of [filePath]: it loads the document's text
+/// and caret when the file changes, and watches only the document's
+/// fields it renders, so edits don't rebuild it through the open
+/// documents.
 class EditorScreen extends ConsumerStatefulWidget {
+  /// Creates the editor of the open [filePath].
   const EditorScreen({
     super.key,
-    this.documentState,
+    required this.filePath,
     this.onClose,
     this.onSave,
   });
 
-  final DocumentState? documentState;
+  /// The open file to show.
+  final String filePath;
 
   final VoidCallback? onClose;
 
@@ -69,6 +76,11 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   bool _editorHasFocus = false;
 
   bool _isDisposed = false;
+
+  /// The session's dirty flag as last shown; the session's changes rebuild
+  /// the editor only when it changes, a caret move rebuilding just the
+  /// status bar.
+  bool _isDirtyShown = false;
 
   bool _isLoading = false;
 
@@ -106,8 +118,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   void initState() {
     super.initState();
 
-    // Initialize from document state (always provided by CenterPanel)
-    _session.load(widget.documentState!);
+    _loadDocument();
 
     _codeController.showFindings(ref.read(qualityIssuesProvider), _currentFile);
     ref.listenManual(qualityIssuesProvider, (_, issues) {
@@ -152,63 +163,74 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   void didUpdateWidget(EditorScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Each keystroke publishes a new document object, so only a different
-    // file means the editor must load new content
-    if (widget.documentState?.filePath != oldWidget.documentState?.filePath) {
-      if (widget.documentState != null) {
-        _session.load(widget.documentState!);
-        _codeController.showFindings(
-          ref.read(qualityIssuesProvider),
-          _currentFile,
-        );
-        setState(() => _isLoading = false);
+    // Only a different file means the editor must load new content
+    if (widget.filePath != oldWidget.filePath) {
+      _loadDocument();
+      _codeController.showFindings(
+        ref.read(qualityIssuesProvider),
+        _currentFile,
+      );
+      setState(() => _isLoading = false);
 
-        // Set selection safely after the build cycle, checking mounted status and not disposed
-        if (mounted && !_isDisposed) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && !_isDisposed && widget.documentState != null) {
-              _session.restoreSelection(widget.documentState!.selection);
-            }
-          });
-        }
+      // Set selection safely after the build cycle, checking mounted status and not disposed
+      if (mounted && !_isDisposed) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final document = _document;
+          if (mounted && !_isDisposed && document != null) {
+            _session.restoreSelection(document.selection);
+          }
+        });
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer(
-      builder: (_, ref, _) {
-        final openDocuments = ref.watch(openDocumentsProvider).documents;
-        final activeIndex = ref.watch(openDocumentsProvider).activeIndex;
-
-        return Column(
-          children: [
-            EditorScreenHeader(
-              openDocuments: openDocuments,
-              activeIndex: activeIndex,
-              currentFile: _currentFile,
-              viewKind: _viewKind,
-              isDirty: _session.isDirty,
-              showDiffView: _showDiffView,
-              onDocumentSelected: (newIndex) {
-                ref.read(openDocumentsProvider.notifier).activate(newIndex);
-              },
-              onToggleDiffView: () {
-                _toggleDiffView();
-              },
-              onToggleSearch: _search.toggle,
-              onSave: () {
-                _saveFile();
-              },
-              onClose: close,
-            ),
-
-            Expanded(child: _buildContent()),
-          ],
-        );
-      },
+    // The tabs and whether the file shows as plain text, not the text or
+    // caret, which change on each edit
+    final tabs = ref.watch(openDocumentsProvider.select((d) => d.tabs));
+    ref.watch(
+      openDocumentsProvider.select(
+        (d) => d.documentOf(widget.filePath)?.asPlainText,
+      ),
     );
+
+    return Column(
+      children: [
+        EditorScreenHeader(
+          filePaths: tabs.filePaths,
+          activeIndex: tabs.activeIndex,
+          currentFile: _currentFile,
+          viewKind: _viewKind,
+          isDirty: _isDirtyShown,
+          showDiffView: _showDiffView,
+          onDocumentSelected: (newIndex) {
+            ref.read(openDocumentsProvider.notifier).activate(newIndex);
+          },
+          onToggleDiffView: () {
+            _toggleDiffView();
+          },
+          onToggleSearch: _search.toggle,
+          onSave: () {
+            _saveFile();
+          },
+          onClose: close,
+        ),
+
+        Expanded(child: _buildContent()),
+      ],
+    );
+  }
+
+  /// The open document of [EditorScreen.filePath], or null once it is
+  /// closed.
+  DocumentState? get _document =>
+      ref.read(openDocumentsProvider).documentOf(widget.filePath);
+
+  /// Loads the open document of [EditorScreen.filePath] into the session.
+  void _loadDocument() {
+    _session.load(_document ?? DocumentState(filePath: widget.filePath));
+    _isDirtyShown = _session.isDirty;
   }
 
   /// The editor's body: a loading or empty state while there is no
@@ -235,7 +257,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
   /// How [_currentFile] shows: as code once opened as plain text, else as
   /// its type calls for.
-  FileViewKind get _viewKind => (widget.documentState?.asPlainText ?? false)
+  FileViewKind get _viewKind => (_document?.asPlainText ?? false)
       ? FileViewKind.code
       : FileTypeUtils.viewKindOf(_currentFile);
 
@@ -284,7 +306,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
                 child: CodeForge(
                   controller: _codeController,
                   language:
-                      widget.documentState?.language ??
+                      _document?.language ??
                       FileTypeUtils.languageForFile(_currentFile),
                   gutterStyle: GutterStyle(
                     lineNumberStyle: AppTextStyle.lineNumber(context),
@@ -294,21 +316,24 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
               ),
             ),
           ),
-          // Status bar
-          EditorScreenStatusBar(
-            showDiffView: _showDiffView,
-            regionsExpanded: _regionsExpanded,
-            currentLineNumber: _getCurrentLineNumber(),
-            currentColumnNumber: _getCurrentColumnNumber(),
-            findings: _codeController.findingsAt(_getCurrentLineNumber() - 1),
-            currentMatchIndex: _search.currentIndex,
-            matchCount: _search.matchCount,
-            canFormat: !_showDiffView && _session.canFormat,
-            fileLanguage: _getFileLanguage(),
-            onToggleAllRegions: _toggleAllRegions,
-            onFormatFile: () {
-              _formatFile();
-            },
+          // Status bar, rebuilt alone as the caret moves
+          ListenableBuilder(
+            listenable: _session,
+            builder: (_, _) => EditorScreenStatusBar(
+              showDiffView: _showDiffView,
+              regionsExpanded: _regionsExpanded,
+              currentLineNumber: _getCurrentLineNumber(),
+              currentColumnNumber: _getCurrentColumnNumber(),
+              findings: _codeController.findingsAt(_getCurrentLineNumber() - 1),
+              currentMatchIndex: _search.currentIndex,
+              matchCount: _search.matchCount,
+              canFormat: !_showDiffView && _session.canFormat,
+              fileLanguage: _getFileLanguage(),
+              onToggleAllRegions: _toggleAllRegions,
+              onFormatFile: () {
+                _formatFile();
+              },
+            ),
           ),
         ],
       ),
@@ -516,13 +541,13 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     if (mounted && !_isDisposed) setState(() {});
   }
 
-  /// Rebuilds for the session's edits, saves and diff, and publishes the
-  /// cursor line.
+  /// Rebuilds when the session's dirty flag changes (the status bar
+  /// follows the caret by itself) and publishes the cursor line.
   void _onSessionChanged() {
     if (!mounted || _isDisposed) return;
 
-    // Always trigger a rebuild when selection or text changes
-    setState(() {});
+    final isDirty = _session.isDirty;
+    if (isDirty != _isDirtyShown) setState(() => _isDirtyShown = isDirty);
 
     // Notify cursor position changes
     ref.read(editorCursorLineProvider.notifier).state = _getCurrentLineNumber();

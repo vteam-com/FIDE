@@ -64,6 +64,11 @@ class ArchitectureNode extends StatefulWidget {
 }
 
 class _ArchitectureNodeState extends State<ArchitectureNode> {
+  /// Alpha of the surface-colored veil over a dimmed box: what lets the
+  /// box show through at [AppOpacity.faint], as the panel's surface
+  /// shows through a box faded to it, without a layer per box.
+  static const double _dimmedVeilAlpha = 1 - AppOpacity.faint;
+
   /// When the box was last pressed, to tell a double click; null before.
   DateTime? _lastTap;
 
@@ -71,18 +76,27 @@ class _ArchitectureNodeState extends State<ArchitectureNode> {
   Widget build(BuildContext context) {
     final ArchitectureNode(:path, :rootPath, :role, :isSelected, :issues) =
         widget;
+    final theme = Theme.of(context);
     final isPlain =
         role == ArchitectureRole.plain || role == ArchitectureRole.dimmed;
     final highlight = !isPlain
-        ? role.color(Theme.of(context))
+        ? role.color(theme)
         : widget.isMatch && role == ArchitectureRole.plain
-        ? ArchitectureRole.focused.color(Theme.of(context))
+        ? ArchitectureRole.focused.color(theme)
         : null;
     return MouseRegion(
       onEnter: (_) => widget.onHover?.call(true),
       onExit: (_) => widget.onHover?.call(false),
-      child: Opacity(
-        opacity: role == ArchitectureRole.dimmed ? AppOpacity.faint : 1,
+      // Dimmed under a veil of the panel's surface color: the look of a
+      // faded box, drawn in one rectangle rather than an opacity layer
+      child: DecoratedBox(
+        position: DecorationPosition.foreground,
+        decoration: BoxDecoration(
+          color: role == ArchitectureRole.dimmed
+              ? theme.colorScheme.surface.withValues(alpha: _dimmedVeilAlpha)
+              : null,
+          borderRadius: BorderRadius.circular(AppRadius.medium),
+        ),
         child: OutlinedSurface(
           padding: SurfacePadding.none,
           highlight: highlight,

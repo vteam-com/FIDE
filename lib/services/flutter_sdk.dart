@@ -49,8 +49,11 @@ class FlutterSdk {
   /// The Dart tool bundled with Flutter, so `dart analyze` and
   /// `dart format` match the SDK projects build with; [dartExecutable] on
   /// the `PATH` when Flutter does not report one.
-  Future<String> bundledDart() async {
-    final sdkPath = await dartSdkPath();
+  Future<String> bundledDart() async => dartIn(await dartSdkPath());
+
+  /// The Dart tool of the Dart SDK at [sdkPath], as [dartSdkPath] finds
+  /// it; [dartExecutable] on the `PATH` without one.
+  static Future<String> dartIn(String? sdkPath) async {
     if (sdkPath == null) return dartExecutable;
     final dart = p.join(
       sdkPath,

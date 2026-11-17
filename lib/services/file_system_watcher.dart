@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:fide/constants/core_constants.dart';
+import 'package:fide/models/project_files.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/services/project_tree_reader.dart';
 import 'package:logging/logging.dart';
@@ -28,6 +29,13 @@ class FileSystemWatcher {
 
   void Function()? _onTreeUpdated;
 
+  /// Bumped by [dispose], so changes read for a previous project are
+  /// dropped.
+  int _session = 0;
+
+  /// The events being applied, one after another.
+  Future<void> _events = Future.value();
+
   // Debouncing for UI updates
   Timer? _updateDebounceTimer;
 
@@ -51,10 +59,14 @@ class FileSystemWatcher {
     }
     _watchers.clear();
     _watchedDirectories.clear();
+    _session++;
     _updateDebounceTimer?.cancel();
     _updateDebounceTimer = null;
     _onTreeUpdated = null;
   }
+
+  /// Paths of the folders watched now.
+  Iterable<String> get watchedPaths => _watchers.keys;
 
   /// Watches [node] and its loaded subdirectories; folders left unread
   /// (such as build output) are not watched, so their churn costs nothing
@@ -91,40 +103,57 @@ class FileSystemWatcher {
     }
   }
 
-  /// Handle file system events with debounced updates
+  /// Queues [event], from [parentNode]'s watcher, behind the events before
+  /// it, so a file created then deleted at once ends up removed; schedules
+  /// a tree update when it changed the tree.
   void _handleFileSystemEvent(FileSystemEvent event, ProjectNode parentNode) {
-    final eventPath = event.path;
-    final eventType = event.type;
+    final session = _session;
+    _events = _events.then((_) async {
+      if (await _applyEvent(event, parentNode, session)) _scheduleTreeUpdate();
+    });
+  }
 
+  /// Applies [event] to [parentNode], the watched folder it happened in;
+  /// true when the tree changed. A modified file leaves the tree as it is,
+  /// and so do events about the folder itself, which macOS reports for a
+  /// folder created moments before it is watched.
+  Future<bool> _applyEvent(
+    FileSystemEvent event,
+    ProjectNode parentNode,
+    int session,
+  ) async {
+    if (p.dirname(event.path) != parentNode.path) return false;
     try {
-      switch (eventType) {
+      switch (event.type) {
         case FileSystemEvent.create:
-          _handleFileCreated(eventPath, parentNode);
-          break;
+          return await _handleFileCreated(
+            event.path,
+            event.isDirectory,
+            parentNode,
+            session,
+          );
         case FileSystemEvent.delete:
-          _handleFileDeleted(eventPath, parentNode);
-          break;
-        case FileSystemEvent.modify:
-          _handleFileModified(eventPath, parentNode);
-          break;
+          return _handleFileDeleted(event.path, parentNode);
         case FileSystemEvent.move:
-          // Handle move events (both from and to paths)
-          final moveEvent = event as FileSystemMoveEvent;
-          if (moveEvent.destination != null) {
-            _handleFileMoved(eventPath, moveEvent.destination!, parentNode);
-          }
-          break;
+          final destination = (event as FileSystemMoveEvent).destination;
+          if (destination == null) return false;
+          return await _handleFileMoved(
+            event.path,
+            destination,
+            event.isDirectory,
+            parentNode,
+            session,
+          );
       }
-
-      // Debounced UI update to prevent excessive rebuilds
-      _scheduleTreeUpdate();
     } catch (e) {
       _logger.severe('Error handling file system event: $e');
     }
+    return false;
   }
 
   /// Schedule a debounced tree update to prevent UI spamming
   void _scheduleTreeUpdate() {
+    if (_onTreeUpdated == null) return;
     _updateDebounceTimer?.cancel();
     _updateDebounceTimer = Timer(AppDuration.updateDebounce, () {
       _onTreeUpdated?.call();
@@ -132,84 +161,85 @@ class FileSystemWatcher {
     });
   }
 
-  /// Handle file creation
-  void _handleFileCreated(String filePath, ProjectNode parentNode) async {
+  /// Adds the entry created at [filePath] to [parentNode], replacing the
+  /// file listed there; true when the tree changed.
+  ///
+  /// A new folder is read and watched like the folders loaded with the
+  /// tree, unless [ProjectFiles] skips it: tool output such as `build/` or
+  /// `.dart_tool/` is listed but left unread and unwatched, so a build's
+  /// thousands of files cost nothing. Nothing is added when [parentNode]
+  /// isn't loaded, or when the watcher was disposed since the event
+  /// ([session] changed).
+  Future<bool> _handleFileCreated(
+    String filePath,
+    bool isDirectory,
+    ProjectNode parentNode,
+    int session,
+  ) async {
+    if (!parentNode.isLoaded) return false;
+    final existing = _childAt(parentNode, filePath);
+    // A folder already listed keeps its loaded subtree and watchers
+    if (isDirectory && existing != null && existing.isDirectory) return false;
     try {
-      final entity = FileSystemEntity.typeSync(filePath);
-      final isDirectory = entity == FileSystemEntityType.directory;
-
-      // Create new ProjectNode
       final newNode = await _reader.nodeFor(
         isDirectory ? Directory(filePath) : File(filePath),
       );
+      final watched = isDirectory && !ProjectFiles.isSkipped(newNode.name);
+      if (watched) await _reader.loadTree(newNode);
+      if (session != _session) return false;
 
-      // Add to parent node
-      parentNode.addChild(newNode);
-
-      // If it's a directory, start watching it
-      if (isDirectory) {
-        _watchDirectory(newNode);
+      if (existing != null && existing.isDirectory) {
+        _stopWatchingDirectory(filePath);
       }
+      parentNode.addChild(newNode);
+      if (watched) _watchDirectoryRecursive(newNode);
+      // A file written over one already listed leaves the tree as it is
+      return existing == null || existing.isDirectory;
     } catch (e) {
       _logger.severe('Error handling file creation: $e');
+      return false;
     }
   }
 
-  /// Handle file deletion
-  void _handleFileDeleted(String filePath, ProjectNode parentNode) {
-    // Remove from parent node
-    final removed = parentNode.removeChild(filePath);
-
-    // If it was a directory, stop watching it and all its subdirectories
-    if (removed && _watchers.containsKey(filePath)) {
-      _stopWatchingDirectory(filePath);
+  /// [parentNode]'s child at [childPath], or null.
+  static ProjectNode? _childAt(ProjectNode parentNode, String childPath) {
+    for (final child in parentNode.children) {
+      if (child.path == childPath) return child;
     }
+    return null;
+  }
 
+  /// Removes the entry deleted at [filePath] from [parentNode], and its
+  /// watchers; true when the tree changed.
+  bool _handleFileDeleted(String filePath, ProjectNode parentNode) {
+    final removed = parentNode.removeChild(filePath);
     if (removed) {
+      _stopWatchingDirectory(filePath);
       _logger.info('Removed: $filePath');
     }
+    return removed;
   }
 
-  /// Handle file modification
-  void _handleFileModified(String filePath, ProjectNode parentNode) async {
-    try {
-      // For modifications, we might want to update metadata
-      // For now, just mark as modified (could be extended for more detailed tracking)
-      final existingNode = parentNode.children.cast<ProjectNode?>().firstWhere(
-        (child) => child?.path == filePath,
-        orElse: () => null,
-      );
-
-      if (existingNode != null) {
-        // Could update modification time or other metadata here
-        _logger.info('Modified: $filePath');
-      }
-    } catch (e) {
-      _logger.severe('Error handling file modification: $e');
-    }
-  }
-
-  /// Handle file move/rename
-  void _handleFileMoved(
+  /// Moves the entry at [fromPath] in [parentNode] to [toPath], added to
+  /// its watched folder; true when the tree changed. [isDirectory] and
+  /// [session] are as for [_handleFileCreated].
+  Future<bool> _handleFileMoved(
     String fromPath,
     String toPath,
+    bool isDirectory,
     ProjectNode parentNode,
-  ) {
-    // Remove the old node
-    parentNode.removeChild(fromPath);
-
-    // If it was a directory being watched, update the watcher
-    if (_watchers.containsKey(fromPath)) {
-      final subscription = _watchers.remove(fromPath);
-      subscription?.cancel();
-
-      _watchedDirectories.remove(fromPath);
-    }
-
-    // Add the new node (this will trigger the create handler)
-    _handleFileCreated(toPath, parentNode);
-
+    int session,
+  ) async {
+    final removed = _handleFileDeleted(fromPath, parentNode);
+    final toFolder = p.dirname(toPath);
+    final toParent = toFolder == p.dirname(fromPath)
+        ? parentNode
+        : _watchedDirectories[toFolder];
+    final added =
+        toParent != null &&
+        await _handleFileCreated(toPath, isDirectory, toParent, session);
     _logger.info('Moved: $fromPath -> $toPath');
+    return removed || added;
   }
 
   /// Stop watching a directory and all its subdirectories

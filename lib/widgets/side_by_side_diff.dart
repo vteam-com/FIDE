@@ -1,8 +1,12 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:isolate';
+
 import 'package:diff_match_patch/diff_match_patch.dart';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/widgets/busy_bar.dart';
+import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/pane_divider.dart';
 import 'package:fide/widgets/previous_next_buttons.dart';
@@ -29,6 +33,24 @@ class SideBySideDiff extends StatefulWidget {
   /// tools treat the null character as a string terminator.
   static const int _firstLineCode = 1;
 
+  /// Highest character code a line is encoded as: one UTF-16 code unit.
+  static const int _lastLineCode = 0xFFFF;
+
+  /// How many distinct lines can be encoded, one character each.
+  static const int _maxDistinctLines =
+      _lastLineCode - _firstLineCode + 1 - _surrogateCount;
+
+  /// How many UTF-16 surrogate codes there are, from [_surrogatesStart].
+  static const int _surrogateCount = 0x800;
+
+  /// First UTF-16 surrogate code, skipped when encoding lines since a lone
+  /// surrogate isn't a character.
+  static const int _surrogatesStart = 0xD800;
+
+  /// Combined length, in characters, of texts diffed right away; longer
+  /// ones are diffed in a background isolate, so the UI never waits.
+  static const int maxInlineDiffLength = 20000;
+
   /// The modified version, shown on the right.
   final String newText;
 
@@ -46,75 +68,115 @@ class SideBySideDiff extends StatefulWidget {
 
   /// Compares [oldText] and [newText] line by line and returns one row per
   /// unchanged, deleted or added line, numbered on each side.
+  ///
+  /// Runs on the calling isolate; [computeLinesInBackground] doesn't.
   static List<DiffLine> computeLines(String oldText, String newText) {
     final oldLines = oldText.isEmpty ? <String>[] : oldText.split('\n');
     final newLines = newText.split('\n');
+
+    final diffLines = <DiffLine>[];
+    int oldLineNum = 1;
+    int newLineNum = 1;
+    void add(int operation, String line) {
+      if (operation == DIFF_DELETE) {
+        diffLines.add(
+          DiffLine(
+            oldLine: '${oldLineNum++}',
+            oldContent: line,
+            newLine: '',
+            newContent: '',
+            type: DiffType.deletion,
+          ),
+        );
+      } else if (operation == DIFF_INSERT) {
+        diffLines.add(
+          DiffLine(
+            oldLine: '',
+            oldContent: '',
+            newLine: '${newLineNum++}',
+            newContent: line,
+            type: DiffType.addition,
+          ),
+        );
+      } else {
+        diffLines.add(
+          DiffLine(
+            oldLine: '${oldLineNum++}',
+            oldContent: line,
+            newLine: '${newLineNum++}',
+            newContent: line,
+            type: DiffType.equal,
+          ),
+        );
+      }
+    }
+
+    if ({...oldLines, ...newLines}.length > _maxDistinctLines) {
+      // Too many distinct lines to encode: shown as all replaced
+      for (final line in oldLines) {
+        add(DIFF_DELETE, line);
+      }
+      for (final line in newLines) {
+        add(DIFF_INSERT, line);
+      }
+      return diffLines;
+    }
 
     // Encode each distinct line as one character so diff_match_patch
     // compares whole lines instead of the characters inside them.
     final codes = <String, int>{};
     String encode(List<String> lines) => String.fromCharCodes(
       lines.map(
-        (line) => codes.putIfAbsent(line, () => codes.length + _firstLineCode),
+        (line) => codes.putIfAbsent(line, () => _lineCode(codes.length)),
       ),
     );
     final encodedOld = encode(oldLines);
     final encodedNew = encode(newLines);
     final linesByCode = {for (final e in codes.entries) e.value: e.key};
-
-    final diffLines = <DiffLine>[];
-    int oldLineNum = 1;
-    int newLineNum = 1;
     for (final diff in DiffMatchPatch().diff(encodedOld, encodedNew)) {
       for (final code in diff.text.codeUnits) {
-        final line = linesByCode[code]!;
-        if (diff.operation == DIFF_DELETE) {
-          diffLines.add(
-            DiffLine(
-              oldLine: '${oldLineNum++}',
-              oldContent: line,
-              newLine: '',
-              newContent: '',
-              type: DiffType.deletion,
-            ),
-          );
-        } else if (diff.operation == DIFF_INSERT) {
-          diffLines.add(
-            DiffLine(
-              oldLine: '',
-              oldContent: '',
-              newLine: '${newLineNum++}',
-              newContent: line,
-              type: DiffType.addition,
-            ),
-          );
-        } else {
-          diffLines.add(
-            DiffLine(
-              oldLine: '${oldLineNum++}',
-              oldContent: line,
-              newLine: '${newLineNum++}',
-              newContent: line,
-              type: DiffType.equal,
-            ),
-          );
-        }
+        add(diff.operation, linesByCode[code]!);
       }
     }
     return diffLines;
   }
 
+  /// [computeLines] run in a background isolate, so diffing long texts
+  /// doesn't hold up the UI.
+  static Future<List<DiffLine>> computeLinesInBackground(
+    String oldText,
+    String newText,
+  ) => Isolate.run(() => computeLines(oldText, newText));
+
   @override
   State<SideBySideDiff> createState() => _SideBySideDiffState();
+
+  /// The character encoding the line first seen at [index]: one UTF-16
+  /// code unit, skipping the surrogates.
+  static int _lineCode(int index) {
+    final code = index + _firstLineCode;
+    return code < _surrogatesStart ? code : code + _surrogateCount;
+  }
 }
 
 class _SideBySideDiffState extends State<SideBySideDiff> {
-  late List<int> _changeStarts;
+  /// Where each change starts in [_lines].
+  List<int> _changeStarts = const [];
+
+  /// Whether the texts are being diffed in the background.
+  bool _computing = false;
 
   /// Unchanged lines kept in view above a change jumped to.
   static const int _contextLines = 3;
-  late List<DiffLine> _lines;
+
+  /// Counts the diffs started, so a superseded one's result is dropped.
+  int _generation = 0;
+
+  /// The diff rows; null until the first diff is done.
+  List<DiffLine>? _lines;
+
   final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -138,6 +200,7 @@ class _SideBySideDiffState extends State<SideBySideDiff> {
 
   @override
   Widget build(BuildContext context) {
+    final lines = _lines;
     return OutlinedSurface(
       padding: SurfacePadding.none,
       child: Column(
@@ -153,21 +216,29 @@ class _SideBySideDiffState extends State<SideBySideDiff> {
             ),
           ),
           Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    itemExtent: AppSize.diffRowHeight,
-                    itemCount: _lines.length,
-                    itemBuilder: (_ /* context */, index) =>
-                        _buildRow(_lines[index]),
+            child: lines == null
+                ? const LoadingIndicator()
+                : BusyBar.over(
+                    busy: _computing,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: ListView.builder(
+                            controller: _scrollController,
+                            itemExtent: AppSize.diffRowHeight,
+                            itemCount: lines.length,
+                            itemBuilder: (_ /* context */, index) =>
+                                _buildRow(lines[index]),
+                          ),
+                        ),
+                        _DiffMinimap(
+                          lines: lines,
+                          controller: _scrollController,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                _DiffMinimap(lines: _lines, controller: _scrollController),
-              ],
-            ),
           ),
         ],
       ),
@@ -282,10 +353,26 @@ class _SideBySideDiffState extends State<SideBySideDiff> {
     );
   }
 
-  /// Diffs the texts and finds where each change starts.
+  /// Diffs the texts and finds where each change starts: right away when
+  /// they are short, else in the background, keeping the rows shown until
+  /// then and dropping the result if newer texts came meanwhile.
   void _computeLines() {
-    _lines = SideBySideDiff.computeLines(widget.oldText, widget.newText);
-    _changeStarts = SideBySideDiff.changeStarts(_lines);
+    final generation = ++_generation;
+    final oldText = widget.oldText;
+    final newText = widget.newText;
+    if (oldText.length + newText.length <= SideBySideDiff.maxInlineDiffLength) {
+      _computing = false;
+      _show(SideBySideDiff.computeLines(oldText, newText));
+      return;
+    }
+    _computing = true;
+    SideBySideDiff.computeLinesInBackground(oldText, newText).then((lines) {
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _computing = false;
+        _show(lines);
+      });
+    });
   }
 
   /// Scrolls so the change starting at line [index] shows below a few
@@ -319,6 +406,12 @@ class _SideBySideDiffState extends State<SideBySideDiff> {
       if (start < anchor) return start;
     }
     return null;
+  }
+
+  /// Shows [lines] as the diff.
+  void _show(List<DiffLine> lines) {
+    _lines = lines;
+    _changeStarts = SideBySideDiff.changeStarts(lines);
   }
 }
 

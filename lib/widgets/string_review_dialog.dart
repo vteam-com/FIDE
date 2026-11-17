@@ -21,6 +21,10 @@ import 'package:path/path.dart' as p;
 /// its actions: FIDE's fixes matching the role for the strings they can
 /// take, checked one by one, and the AI for the others, such as
 /// fragments or strings without a `BuildContext`.
+///
+/// What each fix makes of each string is worked out once when the dialog
+/// opens, and only the rows in view are built, so checking a string stays
+/// quick with thousands of them.
 class StringReviewDialog extends StatefulWidget {
   /// Creates the body reviewing [review], opening a string's code
   /// through [onOpen].
@@ -76,25 +80,37 @@ class _StringReviewDialogState extends State<StringReviewDialog> {
   late final Set<HardcodedString> _selected = {
     for (final MapEntry(key: role, value: strings) in _byRole.entries)
       if (role != fcheck.HardcodedStringRole.unknown)
-        ...strings.where((string) => _isFixable(role, string)),
+        ...strings.where(_isFixable),
   };
+
+  /// What the fixes of its group make of each string, worked out once.
+  late final Map<HardcodedString, StringVerdict> _verdicts = widget.review
+      .verdictsOn(_byRole.values.expand((strings) => strings));
 
   @override
   Widget build(BuildContext context) {
+    // One item per heading, string and row of actions, built as they
+    // scroll into view
+    final items = <WidgetBuilder>[
+      (context) => Text(
+        'Grouped by how the code uses each string, shown under it. '
+        'FIDE fixes the checked strings at once; the AI fixes the '
+        'others. Open a string to check it in the code.',
+        style: AppTextStyle.secondary(context),
+      ),
+      for (final MapEntry(key: role, value: strings) in _byRole.entries) ...[
+        (context) => _heading(context, role, strings),
+        for (final string in strings)
+          (context) => _spaced(_row(context, string)),
+        (_ /*context*/) => _spaced(_actions(role, strings)),
+      ],
+    ];
     return SizedBox(
       width: AppSize.issueDetailsWidth,
-      child: ListView(
+      child: ListView.builder(
         shrinkWrap: true,
-        children: [
-          Text(
-            'Grouped by how the code uses each string, shown under it. '
-            'FIDE fixes the checked strings at once; the AI fixes the '
-            'others. Open a string to check it in the code.',
-            style: AppTextStyle.secondary(context),
-          ),
-          for (final MapEntry(key: role, value: strings) in _byRole.entries)
-            _section(context, role, strings),
-        ],
+        itemCount: items.length,
+        itemBuilder: (context, index) => items[index](context),
       ),
     );
   }
@@ -113,29 +129,90 @@ class _StringReviewDialogState extends State<StringReviewDialog> {
         : () => Navigator.of(context).pop((fix: fix, strings: strings)),
   );
 
-  /// Whether a fix of the group of [role] can take [string]; the AI fixes
-  /// the others.
-  bool _isFixable(fcheck.HardcodedStringRole role, HardcodedString string) =>
-      StringReview.fixesFor(role)
-          .any((fix) => widget.review.whyNot(fix, string) == null);
+  /// The actions that can take some of [strings] of [role]: each fix of
+  /// the group on the checked strings it can take, and the AI on those no
+  /// fix can.
+  Widget _actions(
+    fcheck.HardcodedStringRole role,
+    List<HardcodedString> strings,
+  ) {
+    final forAi = strings.where((string) => !_isFixable(string)).toList();
+    return Wrap(
+      spacing: AppSpacing.medium,
+      runSpacing: AppSpacing.medium,
+      children: [
+        for (final fix in StringReview.fixesFor(role))
+          if (strings.any((string) => _verdicts[string]!.canTake(fix)))
+            _action(
+              icon: fix.quickFix.icon,
+              label: fix.label,
+              fix: fix,
+              strings: [
+                for (final string in strings)
+                  if (_selected.contains(string) &&
+                      _verdicts[string]!.canTake(fix))
+                    string,
+              ],
+            ),
+        if (forAi.isNotEmpty)
+          _action(
+            icon: _aiIcon,
+            label: 'Fix with AI',
+            fix: null,
+            strings: forAi,
+          ),
+      ],
+    );
+  }
 
-  /// [string] in the group of [role]: its checkbox when a fix can take it,
-  /// else the AI's mark, its text, the use that decided its role, why a
-  /// fix of the group cannot take it, and a link to its code.
-  Widget _row(
+  /// The heading of the group of [strings] of [role]: its title with the
+  /// buttons checking them all or none, and why they are in it.
+  Widget _heading(
     BuildContext context,
     fcheck.HardcodedStringRole role,
-    HardcodedString string,
-  ) {
+    List<HardcodedString> strings,
+  ) => Padding(
+    padding: const EdgeInsets.only(top: AppSpacing.xLarge),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: AppSpacing.tiny,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: SectionTitle(
+                '${role.label} (${strings.length.localized})',
+              ),
+            ),
+            CompactTextButton(
+              label: 'Select all',
+              onPressed: () =>
+                  setState(() => _selected.addAll(strings.where(_isFixable))),
+            ),
+            CompactTextButton(
+              label: 'Select none',
+              onPressed: () => setState(() => _selected.removeAll(strings)),
+            ),
+          ],
+        ),
+        Text(role.explanation, style: AppTextStyle.secondary(context)),
+      ],
+    ),
+  );
+
+  /// Whether a fix of its group can take [string]; the AI fixes the
+  /// others.
+  bool _isFixable(HardcodedString string) => _verdicts[string]!.isFixable;
+
+  /// [string]: its checkbox when a fix of its group can take it, else the
+  /// AI's mark, its text, the use that decided its role, why no fix of the
+  /// group can take it, and a link to its code.
+  Widget _row(BuildContext context, HardcodedString string) {
     final secondary = AppTextStyle.secondary(context);
-    final isFixable = _isFixable(role, string);
+    final verdict = _verdicts[string]!;
+    final isFixable = verdict.isFixable;
     // Reasons only where no fix of the group can take the string
-    final reasons = [
-      if (!isFixable)
-        for (final fix in StringReview.fixesFor(role))
-          if (widget.review.whyNot(fix, string) case final reason?)
-            '${fix.label} $reason',
-    ];
+    final reasons = isFixable ? const <String>[] : verdict.reasons;
     final subtitle = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -180,74 +257,9 @@ class _StringReviewDialogState extends State<StringReviewDialog> {
     );
   }
 
-  /// The group of [strings] of [role]: its title, why, its strings and
-  /// the actions that can take some of them.
-  Widget _section(
-    BuildContext context,
-    fcheck.HardcodedStringRole role,
-    List<HardcodedString> strings,
-  ) {
-    List<HardcodedString> checked(bool Function(HardcodedString) canTake) => [
-      for (final string in strings)
-        if (_selected.contains(string) && canTake(string)) string,
-    ];
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.xLarge),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: AppSpacing.tiny,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: SectionTitle(
-                  '${role.label} (${strings.length.localized})',
-                ),
-              ),
-              CompactTextButton(
-                label: 'Select all',
-                onPressed: () => setState(
-                  () => _selected.addAll(
-                    strings.where((string) => _isFixable(role, string)),
-                  ),
-                ),
-              ),
-              CompactTextButton(
-                label: 'Select none',
-                onPressed: () => setState(() => _selected.removeAll(strings)),
-              ),
-            ],
-          ),
-          Text(role.explanation, style: AppTextStyle.secondary(context)),
-          for (final string in strings) _row(context, role, string),
-          Wrap(
-            spacing: AppSpacing.medium,
-            runSpacing: AppSpacing.medium,
-            children: [
-              for (final fix in StringReview.fixesFor(role))
-                if (strings.any(
-                  (string) => widget.review.whyNot(fix, string) == null,
-                ))
-                  _action(
-                    icon: fix.quickFix.icon,
-                    label: fix.label,
-                    fix: fix,
-                    strings: checked(
-                      (string) => widget.review.whyNot(fix, string) == null,
-                    ),
-                  ),
-              if (strings.where((string) => !_isFixable(role, string))
-                  case final forAi when forAi.isNotEmpty)
-                _action(
-                  icon: _aiIcon,
-                  label: 'Fix with AI',
-                  fix: null,
-                  strings: forAi.toList(),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  /// [child] one small gap under the item before it in its group.
+  Widget _spaced(Widget child) => Padding(
+    padding: const EdgeInsets.only(top: AppSpacing.tiny),
+    child: child,
+  );
 }

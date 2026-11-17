@@ -2,6 +2,7 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_outcome.dart';
+import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/localization_state.dart';
 import 'package:fide/models/localization_status.dart';
 import 'package:fide/models/status_tone.dart';
@@ -172,8 +173,15 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     final hasGeneratedClasses = checks.hasGeneratedClasses;
     final hasAppIntegration = checks.hasAppIntegration;
 
-    return PanelScrollView(
-      children: [
+    final hasEntries = state.arbFiles.isNotEmpty;
+    return _entryList(
+      hasEntries ? state.comparisons : const [],
+      entry: (comparison) => LocalizationEntryWidget(
+        comparison: comparison,
+        onTranslate: (language) =>
+            _show(_controller.translate(comparison, language)),
+      ),
+      header: [
         const SectionTitle('Localization Partially Set Up'),
         Text(
           'Your Flutter project has some localization components set up, but others are missing. Localization requires three main components:',
@@ -246,19 +254,38 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           ),
         ],
 
-        // Show ARB file management if files are loaded
-        if (state.arbFiles.isNotEmpty) ...[
-          const SectionTitle('ARB File Management'),
-          for (final (index, comparison) in state.comparisons.indexed) ...[
-            if (index > 0) const Divider(),
-            LocalizationEntryWidget(
-              comparison: comparison,
-              onTranslate: (language) =>
-                  _show(_controller.translate(comparison, language)),
-            ),
-          ],
-        ],
+        // ARB file management, its entries following, if files are loaded
+        if (hasEntries) const SectionTitle('ARB File Management'),
       ],
+    );
+  }
+
+  /// [comparisons] as entries built by [entry], one divider apart and
+  /// built as they scroll into view, however many keys the project has.
+  /// With a [header], its sections come first and the whole list is laid
+  /// out as [PanelScrollView] lays out a panel's sections: inset, one
+  /// section gap apart, entries included.
+  Widget _entryList(
+    List<ArbComparison> comparisons, {
+    required Widget Function(ArbComparison comparison) entry,
+    List<Widget>? header,
+  }) {
+    final sections = header ?? const <Widget>[];
+    final gap = header == null ? 0.0 : AppSpacing.sectionGap;
+    return ListView.separated(
+      padding: header == null ? null : AppPadding.panelContent,
+      itemCount: sections.length + comparisons.length,
+      itemBuilder: (_ /*context*/, index) => index < sections.length
+          ? sections[index]
+          : entry(comparisons[index - sections.length]),
+      // Gaps between the sections and before the first entry, dividers
+      // between the entries
+      separatorBuilder: (_ /*context*/, index) => index < sections.length
+          ? SizedBox(height: gap)
+          : Padding(
+              padding: EdgeInsets.symmetric(vertical: gap),
+              child: const Divider(),
+            ),
     );
   }
 
@@ -287,19 +314,14 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
         Expanded(
           child: state.arbFiles.isEmpty
               ? const EmptyState(message: 'No ARB files found')
-              : ListView.separated(
-                  itemCount: filteredComparisons.length,
-                  itemBuilder: (_ /*context*/, index) {
-                    final comparison = filteredComparisons[index];
-                    return LocalizationEntryWidget(
-                      comparison: comparison,
-                      showWarning: duplicatedValues.contains(
-                        comparison.englishValue,
-                      ),
-                    );
-                  },
-                  separatorBuilder: (_ /*context*/, _ /*index*/) =>
-                      const Divider(),
+              : _entryList(
+                  filteredComparisons,
+                  entry: (comparison) => LocalizationEntryWidget(
+                    comparison: comparison,
+                    showWarning: duplicatedValues.contains(
+                      comparison.englishValue,
+                    ),
+                  ),
                 ),
         ),
         // Filter bar

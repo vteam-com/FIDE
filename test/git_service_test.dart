@@ -76,9 +76,9 @@ void main() {
     File(image).writeAsBytesSync([0, 255, 10, 0, 13, 1]);
 
     final stats = await const GitService(ProcessRunner())
-        .getFileDiffStats(repo.path, image);
+        .getFileDiffStats(image);
 
-    expect(stats.isBinary, isTrue);
+    expect(stats!.isBinary, isTrue);
     expect(stats.hasChanges, isTrue);
     expect((stats.added, stats.removed), (0, 0));
   });
@@ -301,18 +301,84 @@ void main() {
       File(nestedFile).writeAsStringSync('staged\nworking\n');
 
       final stats = await const GitService(ProcessRunner())
-          .getFileDiffStats(path.dirname(nestedFile), nestedFile);
+          .getFileDiffStats(nestedFile);
 
-      expect((stats.added, stats.removed, stats.isNewFile), (2, 1, false));
+      expect((stats!.added, stats.removed, stats.isNewFile), (2, 1, false));
     },
   );
 
   test('getFileDiffStats is zero for an unchanged file', () async {
     final stats = await const GitService(ProcessRunner())
-        .getFileDiffStats(path.dirname(nestedFile), nestedFile);
+        .getFileDiffStats(nestedFile);
 
-    expect(stats.hasChanges, isFalse);
+    expect(stats!.hasChanges, isFalse);
   });
+
+  test('getFileDiffStats counts untracked and ignored files as new', () async {
+    File(path.join(repo.path, '.gitignore')).writeAsStringSync('out/\n');
+    final fresh = path.join(repo.path, 'lib', 'feature', 'new.dart');
+    final ignored = path.join(repo.path, 'out', 'gen.dart');
+    for (final file in [fresh, ignored]) {
+      File(file)
+        ..createSync(recursive: true)
+        ..writeAsStringSync('a\nb');
+    }
+    const git = GitService(ProcessRunner());
+
+    for (final file in [fresh, ignored]) {
+      final stats = await git.getFileDiffStats(file);
+      expect((stats!.added, stats.isNewFile), (2, true), reason: file);
+    }
+  });
+
+  test('getFileDiffStats counts a staged file before the first commit', () {
+    final fresh = Directory.systemTemp.createTempSync('fide_git_fresh_');
+    addTearDown(() => fresh.deleteSync(recursive: true));
+    _git(fresh.path, ['init', '-q']);
+    final file = path.join(fresh.path, 'a.txt');
+    File(file).writeAsStringSync('one\ntwo\n');
+    _git(fresh.path, ['add', '.']);
+
+    expect(
+      const GitService(ProcessRunner()).getFileDiffStats(file),
+      completion(
+        isA<GitDiffStats>().having((stats) => stats.added, 'added', 2),
+      ),
+    );
+  });
+
+  test('getFileDiffStats is null outside a repository', () async {
+    final outside = Directory.systemTemp.createTempSync('fide_no_git_');
+    addTearDown(() => outside.deleteSync(recursive: true));
+    final file = path.join(outside.path, 'a.txt');
+    File(file).writeAsStringSync('a\n');
+
+    expect(
+      await const GitService(ProcessRunner()).getFileDiffStats(file),
+      null,
+    );
+  });
+
+  test(
+    'getStatus lists a new folder file by file, without ignored ones',
+    () async {
+      File(path.join(repo.path, '.gitignore')).writeAsStringSync('build/\n');
+      for (final file in ['pkg/lib/a.dart', 'pkg/.metadata', 'pkg/build/x.o']) {
+        File(path.join(repo.path, file))
+          ..createSync(recursive: true)
+          ..writeAsStringSync('x\n');
+      }
+
+      final status = await const GitService(ProcessRunner())
+          .getStatus(repo.path);
+
+      expect(status.untracked.toSet(), {
+        '.gitignore',
+        'pkg/.metadata',
+        'pkg/lib/a.dart',
+      });
+    },
+  );
 
   test('diffAgainstHead pairs HEAD with the given text', () async {
     final diff = await const GitService(ProcessRunner())
@@ -369,6 +435,15 @@ void main() {
       final stats = GitDiffStats.parseNumstat('1\t0\ta\tb\n\nnot numstat\n');
 
       expect(stats.keys, ['a\tb']);
+    });
+
+    test('reads NUL-separated records with unquoted paths', () {
+      final stats = GitDiffStats.parseNumstat(
+        '1\t0\tsub/é.txt\x002\t1\ta\nb.txt\x00',
+        recordSeparator: '\x00',
+      );
+
+      expect(stats.keys, ['sub/é.txt', 'a\nb.txt']);
     });
   });
 }

@@ -32,6 +32,7 @@ final aiChatProvider = StateNotifierProvider<AiChatNotifier, AiChat>(
     assistant: ref.watch(aiAssistantProvider),
     review: ref.watch(codeReviewProvider),
     quickFixes: ref.watch(quickFixRunnerProvider),
+    latest: ref.watch(savedCodeMetricsProvider),
     builds: ref.watch(flutterBuildServiceProvider),
     reader: ref.watch(fileContentReaderProvider),
     documents: ref.watch(openDocumentsProvider.notifier),
@@ -51,7 +52,8 @@ class AiChatNotifier extends StateNotifier<AiChat> {
   /// Creates an empty conversation.
   ///
   /// Prompts go to [_model], through [_assistant] for suggestions and
-  /// reviews (analyzed with [_review]) or through an agent that edits the
+  /// reviews (analyzed with [_review], unless [_latest] has an analysis
+  /// of the current files) or through an agent that edits the
   /// project [_projectPath] gives, when [_ollama] says the model can call
   /// tools; the agent reads files with [_reader], reloads the ones it
   /// writes in [_documents], runs [_quickFixes] and checks its work with
@@ -72,7 +74,12 @@ class AiChatNotifier extends StateNotifier<AiChat> {
     required this._platform,
     required this._buildErrors,
     required this._onBuildErrors,
+    this._latest,
   }) : super(const AiChat());
+
+  /// The overview's analysis of the project's current files, reused by
+  /// the reviews analyzing with the same settings.
+  final LatestCodeMetrics? _latest;
 
   final AiAssistant _assistant;
 
@@ -338,8 +345,12 @@ class AiChatNotifier extends StateNotifier<AiChat> {
     bool nearDuplicates = false,
   }) async {
     addReply('🔍 Analyzing the project with fcheck...', isProgress: true);
+    // Near duplicates need their own settings; the others reuse the
+    // overview's analysis while no file changed since
+    final latest = nearDuplicates ? null : await _latest?.call(projectPath);
     return write(
-      await _review.analyze(projectPath, nearDuplicates: nearDuplicates),
+      latest ??
+          await _review.analyze(projectPath, nearDuplicates: nearDuplicates),
     );
   }
 

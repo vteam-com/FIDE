@@ -238,14 +238,17 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
     return widget.selectedPlatform.enableInstructions;
   }
 
-  /// Reads the build output off the UI thread's critical path; results for
-  /// a platform the user has since switched away from are dropped.
+  /// Reads the build output off the UI thread; results for a platform or
+  /// project the user has since switched away from are dropped.
   Future<void> _inspectArtifacts() async {
     final platform = widget.selectedPlatform;
+    final projectPath = widget.projectPath;
     final artifacts = await ref
         .read(buildArtifactsInspectorProvider)
-        .inspect(widget.projectPath, platform);
-    if (mounted && platform == widget.selectedPlatform) {
+        .inspect(projectPath, platform);
+    if (mounted &&
+        platform == widget.selectedPlatform &&
+        projectPath == widget.projectPath) {
       setState(() => _artifacts = artifacts);
     }
   }

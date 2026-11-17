@@ -31,12 +31,30 @@ class TreeFilter {
 
   /// The folders under [root], itself included, to expand so every match
   /// shows: those with a matching descendant; none while not [isActive].
-  Iterable<String> foldersToExpand(ProjectNode root) =>
-      isActive ? _foldersWithMatches(root) : const [];
+  Iterable<String> foldersToExpand(ProjectNode root) {
+    if (!isActive) return const [];
+    return _keptFolders(root, keptPaths(root));
+  }
 
-  /// Whether [node] or anything below it matches the query.
-  bool hasMatchingDescendant(ProjectNode node) {
-    return matches(node) || node.children.any(hasMatchingDescendant);
+  /// The paths of the nodes at and below [root] the filtered tree keeps:
+  /// those matching the query or holding a match below them.
+  ///
+  /// One post-order pass tests each node's name once, so a keystroke costs
+  /// one walk of the tree, however deep it is.
+  Set<String> keptPaths(ProjectNode root) {
+    final kept = <String>{};
+    bool visit(ProjectNode node) {
+      var keep = matches(node);
+      for (final child in node.children) {
+        // Every child is visited, even once [node] is known to be kept
+        if (visit(child)) keep = true;
+      }
+      if (keep) kept.add(node.path);
+      return keep;
+    }
+
+    visit(root);
+    return kept;
   }
 
   /// Whether [node]'s name matches the query; everything matches when
@@ -45,12 +63,15 @@ class TreeFilter {
     return !isActive || node.name.toLowerCase().contains(_query);
   }
 
-  /// The folders at and below [node] holding a match.
-  Iterable<String> _foldersWithMatches(ProjectNode node) sync* {
-    if (!node.isDirectory || !hasMatchingDescendant(node)) return;
+  /// The folders at and below [node] in [kept], parents first.
+  static Iterable<String> _keptFolders(
+    ProjectNode node,
+    Set<String> kept,
+  ) sync* {
+    if (!node.isDirectory || !kept.contains(node.path)) return;
     yield node.path;
     for (final child in node.children) {
-      yield* _foldersWithMatches(child);
+      yield* _keptFolders(child, kept);
     }
   }
 

@@ -108,6 +108,56 @@ void paint(Circle c, Square s) {
     write('lib/b.dart', "import 'a.dart';\n\nfinal a = A();\n");
 
     expect(await finder.find(filePath: a, line: 1, column: 1), hasLength(1));
+
+    // A file already read is read again once changed
+    write('lib/b.dart', 'final b = 1;\n');
+    expect(await finder.find(filePath: a, line: 1, column: 1), isEmpty);
+  });
+
+  test('a newer find replaces the ones still waiting', () async {
+    final a = write('lib/a.dart', 'class A {}\n\nclass B {}\n');
+    write('lib/b.dart', "import 'a.dart';\n\nfinal a = A();\nfinal b = B();\n");
+
+    final first = finder.find(filePath: a, line: 1, column: 1);
+    final waiting = finder.find(filePath: a, line: 3, column: 1);
+    final latest = finder.find(filePath: a, line: 3, column: 1);
+
+    expect(await first, hasLength(1));
+    await expectLater(
+      waiting,
+      throwsA(predicate((e) => '$e'.contains(ReferenceFinder.superseded))),
+    );
+    expect(await latest, hasLength(1));
+  });
+
+  group('FileTexts', () {
+    final first = DateTime(2024);
+    final later = DateTime(2025);
+
+    test('reads a file again only once it changed', () {
+      final reads = <String>[];
+      final texts = FileTexts((path) {
+        reads.add(path);
+        return 'uses $path';
+      });
+      expect(texts.update('a', first), isFalse);
+      expect(texts.update('b', first), isFalse);
+
+      expect(texts.mentioning('a'), ['a']);
+      expect(texts.mentioning('b'), ['b']);
+      expect(reads, ['a', 'b']);
+
+      expect(texts.update('a', first), isFalse);
+      expect(texts.mentioning('a'), ['a']);
+      expect(reads, ['a', 'b']);
+
+      expect(texts.update('a', later), isTrue);
+      expect(texts.mentioning('a'), ['a']);
+      expect(reads, ['a', 'b', 'a']);
+
+      texts.remove('b');
+      expect(texts.paths, ['a']);
+    });
   });
 
   test('renames a class, its constructors and uses across files', () async {
@@ -286,6 +336,40 @@ class Tab {
         finder.lookupField(filePath: tab, offset: content.indexOf(hint)),
         throwsA(predicate((e) => '$e'.contains('read without a BuildContext'))),
       );
+    });
+
+    test('looks up many arguments in one request', () async {
+      localizations();
+      const other = "'Search artists...'";
+      final content =
+          '''
+import 'app_localizations.dart';
+
+class Tab {
+  const Tab({required this.searchHint, this.count = 0});
+  static Tab performers() => Tab(searchHint: $hint);
+  static Tab artists() => Tab(searchHint: $other);
+  static Tab counted() => Tab(searchHint: 'x', count: 1);
+  final String searchHint;
+  final int count;
+  String build(BuildContext context) => searchHint;
+}
+''';
+      final tab = write('lib/tab.dart', content);
+
+      final found = await finder.lookupFields([
+        (filePath: tab, offset: content.indexOf(hint)),
+        (filePath: tab, offset: content.indexOf(other)),
+        (filePath: tab, offset: content.indexOf('1)')),
+      ]);
+
+      expect(found, hasLength(3));
+      expect(found[0].field?.id, 'Tab.searchHint');
+      expect(found[0].field?.arguments, hasLength(3));
+      // The same field, looked up once
+      expect(identical(found[0].field, found[1].field), isTrue);
+      expect(found[2].field, isNull);
+      expect(found[2].error, contains('count is not a String'));
     });
   });
 }

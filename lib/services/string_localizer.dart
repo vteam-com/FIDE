@@ -112,12 +112,12 @@ class StringLocalizer {
         );
       }
       if (rewrite.localized == 0) continue;
-      await file.writeAsString(
-        await _formatter.formatOrKeep(path, rewrite.content),
-      );
+      await file.writeAsString(rewrite.content);
       changedFiles.add(path);
       localized += rewrite.localized;
     }
+    // Once for all files, rather than a formatter run per file
+    await _formatter.formatFiles(changedFiles);
 
     if (keys.added.isNotEmpty) {
       await _generator.writeTemplate(plan.projectPath, config, {
