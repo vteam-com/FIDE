@@ -12,9 +12,6 @@ class ProjectInfoState {
   /// Whether the project is being analyzed.
   final bool isAnalyzing;
 
-  /// Whether the project is being cleaned up.
-  final bool isCleaning;
-
   /// Whether `flutter pub outdated` is running.
   final bool isCheckingOutdated;
 
@@ -30,7 +27,6 @@ class ProjectInfoState {
   /// Creates a state.
   const ProjectInfoState({
     this.isAnalyzing = false,
-    this.isCleaning = false,
     this.isCheckingOutdated = false,
     this.isUpgrading = false,
     this.conflictSummary,
@@ -42,7 +38,6 @@ class ProjectInfoState {
   /// [conflictSummary].
   ProjectInfoState copyWith({
     bool? isAnalyzing,
-    bool? isCleaning,
     bool? isCheckingOutdated,
     bool? isUpgrading,
     String? conflictSummary,
@@ -52,7 +47,6 @@ class ProjectInfoState {
   }) {
     return ProjectInfoState(
       isAnalyzing: isAnalyzing ?? this.isAnalyzing,
-      isCleaning: isCleaning ?? this.isCleaning,
       isCheckingOutdated: isCheckingOutdated ?? this.isCheckingOutdated,
       isUpgrading: isUpgrading ?? this.isUpgrading,
       conflictSummary: clearConflict

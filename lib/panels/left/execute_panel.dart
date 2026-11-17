@@ -94,14 +94,13 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
       id: 'clean',
       icon: Icons.cleaning_services_rounded,
       title: 'Clean',
-      description: 'Clean build artifacts, cache, and temporary files',
+      description: 'Remove build outputs and generated files',
       details: '''
-Cleans the Flutter build cache and artifacts.
+Runs flutter clean.
 
-• Removes build/ directory contents
-• Clears pub cache
-• Removes platform-specific build outputs
-• Prepares for fresh build
+• Deletes the build/ and .dart_tool/ folders
+• Removes generated platform files, such as plugin registrants
+• The next build starts from scratch
       ''',
       onRun: () => _clean(platform),
     ),

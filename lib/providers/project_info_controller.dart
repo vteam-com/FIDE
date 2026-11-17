@@ -113,16 +113,6 @@ class ProjectInfoController extends StateNotifier<ProjectInfoState>
     });
   }
 
-  /// Cleans the project's build artifacts and caches, then measures
-  /// it again.
-  Future<ActionOutcome?> fullCleanup() {
-    return runAction('Cleanup failed', _cleaning, (projectPath) async {
-      await _maintenance.fullCleanup(projectPath);
-      return await analyze() ??
-          const ActionOutcome.success('Full project cleanup completed!');
-    });
-  }
-
   /// Raises the dependency constraints to their latest resolvable
   /// versions and measures the project again; a resolution pub cannot
   /// make is kept as the conflict to show, blaming the package it names.
@@ -165,10 +155,6 @@ class ProjectInfoController extends StateNotifier<ProjectInfoState>
   /// Marks the analysis running or done.
   static ProjectInfoState _analyzing(ProjectInfoState state, bool busy) =>
       state.copyWith(isAnalyzing: busy);
-
-  /// Marks the cleanup running or done.
-  static ProjectInfoState _cleaning(ProjectInfoState state, bool busy) =>
-      state.copyWith(isCleaning: busy);
 
   /// Marks the outdated check running or done.
   static ProjectInfoState _checkingOutdated(

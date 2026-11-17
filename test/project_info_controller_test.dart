@@ -43,12 +43,6 @@ class FakeMaintenance extends ProjectMaintenanceService {
   static List<PubOutdatedPackage> upgraded = const [];
 
   @override
-  Future<void> fullCleanup(String projectPath) async {
-    chores.add('cleanup');
-    if (failure case final error?) throw error;
-  }
-
-  @override
   Future<({String output, Map<String, OutdatedPackage> packages})>
   outdatedReport(String projectPath) async {
     chores.add('outdated');
@@ -153,23 +147,6 @@ void main() {
     expect(controller.pubspecPath, '$_project/pubspec.yaml');
     FakeEntries.existing = {};
     expect(controller.pubspecPath, isNull);
-  });
-
-  test('cleaning up measures the project again', () async {
-    final outcome = await controller.fullCleanup();
-
-    expect(outcome?.succeeded, isTrue);
-    expect(FakeMaintenance.chores, ['cleanup']);
-    expect(FakeAnalyzer.analyses, 1);
-  });
-
-  test('a failed cleanup is reported', () async {
-    FakeMaintenance.failure = const MaintenanceException('busy');
-
-    final outcome = await controller.fullCleanup();
-
-    expect(outcome?.tone, StatusTone.error);
-    expect(outcome?.message, startsWith('Cleanup failed'));
   });
 
   test('checking outdated keeps the output and flags the packages', () async {

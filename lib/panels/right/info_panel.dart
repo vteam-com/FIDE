@@ -11,7 +11,6 @@ import 'package:fide/widget_services/issue_section.dart';
 import 'package:fide/widget_services/output_panel.dart';
 import 'package:fide/widget_services/project_icon.dart';
 import 'package:fide/widgets/badge_status.dart';
-import 'package:fide/widgets/bullet_list.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_label.dart';
 import 'package:fide/widgets/message_box.dart';
@@ -58,20 +57,6 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     if (mounted && result != null) {
       MessageBox.showOutcome(context, result);
     }
-  }
-
-  /// Cleans the project up once the user confirms what it involves.
-  Future<void> _performFullCleanup() async {
-    final confirmed = await MessageBox.confirm(
-      context,
-      title: 'Full Project Cleanup',
-      message:
-          'This will:\n'
-          '${BulletList.text(['Flutter clean', 'Remove build artifacts', 'Clear pub cache'])}'
-          '\n\nContinue?',
-      confirmLabel: 'Continue',
-    );
-    if (confirmed && mounted) _show(_controller.fullCleanup());
   }
 
   /// Opens the project's pubspec.yaml in the editor.
@@ -172,10 +157,9 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               tooltip: 'Edit pubspec.yaml',
               onPressed: _openPubspecYaml,
             ),
-            // The cleanup's button tells it runs, analysis included
             RefreshButton(
               busy:
-                  (info.isAnalyzing && !info.isCleaning) ||
+                  info.isAnalyzing ||
                   ref.watch(projectQualityBusyProvider),
               onPressed: () {
                 refreshProjectQuality(ref.invalidate);
@@ -208,9 +192,6 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
         // Dependencies
         _buildDependenciesCard(projectMetrics, info),
-
-        // Actions
-        _buildActionsCard(info),
       ],
     );
   }
@@ -321,26 +302,6 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           ),
         ],
       ],
-    );
-  }
-
-  /// Handles `_buildActionsCard`.
-  Widget _buildActionsCard(ProjectInfoState info) {
-    return SectionPanel(
-      title: 'Actions',
-      isExpanded: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: AppSpacing.medium,
-        children: [
-          PrimaryButton(
-            busy: info.isCleaning,
-            icon: Icons.cleaning_services,
-            label: 'Full Project Cleanup',
-            onPressed: _performFullCleanup,
-          ),
-        ],
-      ),
     );
   }
 }

@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/outdated_package.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/pub_outdated.dart';
@@ -11,8 +10,8 @@ import 'package:fide/services/pubspec_upgrader.dart';
 part 'project_maintenance_service.maintenance_exception.dart';
 part 'project_maintenance_service.version_conflict_exception.dart';
 
-/// Dependency and cleanup chores for a Flutter project: `pub outdated`,
-/// upgrading pubspec constraints, and full artifact cleanup.
+/// Dependency chores for a Flutter project: `pub outdated` and upgrading
+/// pubspec constraints.
 ///
 /// Chores that can't finish throw a [MaintenanceException]; an upgrade pub
 /// can't resolve throws its [VersionConflictException].
@@ -21,29 +20,6 @@ class ProjectMaintenanceService {
 
   /// Creates a maintenance service that launches commands through [_runner].
   const ProjectMaintenanceService(this._runner);
-
-  /// Cleans Flutter, removes build artifacts, repairs the pub cache, and
-  /// cleans Gradle when the project has Android. Refuses the running app's
-  /// own project ([ProjectPaths.ensureCleanable]).
-  Future<void> fullCleanup(String projectPath) async {
-    final paths = ProjectPaths(projectPath)
-      ..ensureCleanable(Platform.resolvedExecutable);
-    await _runChecked(FlutterSdk.executable, [
-      'clean',
-    ], workingDirectory: projectPath);
-
-    final buildDir = Directory(paths.buildDir);
-    if (buildDir.existsSync()) {
-      await buildDir.delete(recursive: true);
-    }
-
-    await _runChecked(FlutterSdk.executable, ['pub', 'cache', 'repair']);
-
-    final androidDir = paths.platformDir(FlutterPlatform.android);
-    if (Directory(androidDir).existsSync()) {
-      await _runChecked('./gradlew', ['clean'], workingDirectory: androidDir);
-    }
-  }
 
   /// Runs `flutter pub outdated` and returns the table it printed, as text
   /// and parsed into one [OutdatedPackage] per package name.
