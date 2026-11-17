@@ -11,14 +11,15 @@ import 'package:fide/widget_services/issue_section.dart';
 import 'package:fide/widget_services/output_panel.dart';
 import 'package:fide/widget_services/project_icon.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/busy_bar.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/empty_label.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/open_url.dart';
 import 'package:fide/widgets/panel_header.dart';
 import 'package:fide/widgets/panel_scroll_view.dart';
-import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/refresh_button.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/status_tone_style.dart';
@@ -202,31 +203,13 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     final depsDirect = projectMetrics.dependencies;
     final depsDev = projectMetrics.devDependencies;
     final totalDeps = depsDirect.length + depsDev.length;
+    final pubBusy = info.isCheckingOutdated || info.isUpgrading;
 
     // Build dependency content widget
     final dependenciesContent = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: AppSpacing.medium,
       children: [
-        Wrap(
-          spacing: AppSpacing.medium,
-          runSpacing: AppSpacing.medium,
-          children: [
-            PrimaryButton(
-              busy: info.isCheckingOutdated,
-              icon: Icons.update,
-              label: 'Outdated',
-              onPressed: () => _show(_controller.checkOutdated()),
-            ),
-            PrimaryButton(
-              busy: info.isUpgrading,
-              icon: Icons.arrow_upward,
-              label: 'Upgrade',
-              onPressed: () => _show(_controller.upgradePackages()),
-            ),
-          ],
-        ),
-
         if (depsDirect.isNotEmpty)
           SectionPanel(
             title: 'Direct',
@@ -271,13 +254,34 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Use SectionPanel for main dependencies section
+        // The pub chores are the section's actions; while one runs, both
+        // are disabled and a bar runs atop the dependencies
         SectionPanel(
           title: 'Dependencies',
           count: totalDeps,
-          isExpanded:
-              true, // Dependencies section should be expanded by default
-          child: dependenciesContent,
+          isExpanded: true,
+          rightWidget: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CompactTextButton(
+                icon: Icons.update,
+                label: 'Outdated',
+                tooltip: 'List packages with newer versions',
+                onPressed: pubBusy
+                    ? null
+                    : () => _show(_controller.checkOutdated()),
+              ),
+              CompactTextButton(
+                icon: Icons.arrow_upward,
+                label: 'Upgrade',
+                tooltip: 'Raise constraints to the latest resolvable versions',
+                onPressed: pubBusy
+                    ? null
+                    : () => _show(_controller.upgradePackages()),
+              ),
+            ],
+          ),
+          child: BusyBar.over(busy: pubBusy, child: dependenciesContent),
         ),
 
         // Outdated command output (always visible when present)
