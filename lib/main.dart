@@ -77,7 +77,7 @@ class _FIDEState extends ConsumerState<FIDE> {
     );
     final themeMode = ref.watch(themeModeProvider);
     return MaterialApp(
-      title: 'FIDE - Flutter Integrated Developer Environment',
+      title: '${AppName.short} - ${AppName.full}',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

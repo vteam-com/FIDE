@@ -52,8 +52,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   // of overflowing the version beside it
                   Flexible(
                     child: HeroTitleWidget(
-                      title: 'Welcome to FIDE',
-                      subTitle: 'Flutter Integrated Developer Environment',
+                      title: 'Welcome to ${AppName.short}',
+                      subTitle: AppName.full,
                     ),
                   ),
                   // Version Info

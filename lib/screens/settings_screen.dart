@@ -2,9 +2,11 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/theme/app_theme.dart';
-import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/outlined_surface.dart';
-import 'package:fide/widgets/page_header.dart';
+import 'package:fide/widgets/action_card.dart';
+import 'package:fide/widgets/card_grid.dart';
+import 'package:fide/widgets/centered_content.dart';
+import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/widgets/page_scroll_view.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/theme_mode_buttons.dart';
@@ -15,7 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The full-screen settings: the display mode and zoom, then the keyboard shortcuts
-/// of the app's menus. Escape or the close button leaves it.
+/// of the app's menus. Escape or the title bar's close button leaves it.
 class SettingsScreen extends ConsumerStatefulWidget {
   /// Creates the settings listing the shortcuts of [menus].
   const SettingsScreen({super.key, required this.menus, required this.onClose});
@@ -65,28 +67,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         child: DecoratedBox(
           decoration: AppTheme.workspaceBackground(context),
           child: PageScrollView(
-            maxWidth: AppSize.welcomeContentWidth,
             children: [
-              PageHeader(
-                title: 'Settings',
-                logo: const Icon(Icons.settings),
-                actions: [
-                  CompactIconButton(
-                    icon: Icons.close,
-                    tooltip: 'Close (Esc)',
-                    onPressed: widget.onClose,
-                  ),
-                ],
+              CenteredContent(
+                maxWidth: AppSize.welcomeContentWidth,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: AppSpacing.xxLarge,
+                  children: [
+                    // The title bar's close button leaves the screen
+                    const HeroTitleWidget(
+                      title: AppName.short,
+                      subTitle: AppName.full,
+                    ),
+                    _buildSection('Appearance', [
+                      _buildSettingRow(
+                        'Display mode',
+                        _buildDisplayModeButtons(),
+                      ),
+                      _buildSettingRow('Zoom', _buildZoomButtons()),
+                    ]),
+                  ],
+                ),
               ),
-              _buildSection('Appearance', [
-                _buildSettingRow('Display mode', _buildDisplayModeButtons()),
-                _buildSettingRow('Zoom', _buildZoomButtons()),
-              ]),
-              _buildSection('Keyboard Shortcuts', [
-                for (final MapEntry(key: menu, value: entries)
-                    in byMenu.entries)
-                  _buildShortcutGroup(menu, entries),
-              ]),
+              // The shortcut cards wrap across the window's width, the
+              // section as wide as their widest row and centered
+              CenteredContent(
+                child: _buildSection('Keyboard Shortcuts', [
+                  CardGrid(
+                    children: [
+                      for (final MapEntry(key: menu, value: entries)
+                          in byMenu.entries)
+                        _buildShortcutGroup(menu, entries),
+                    ],
+                  ),
+                ]),
+              ),
             ],
           ),
         ),
@@ -94,10 +109,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  /// The section [title] over its [children].
+  /// The section [title] over its [children], as wide as the widest child
+  /// that does not fill the width.
   Widget _buildSection(String title, List<Widget> children) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.start,
       spacing: AppSpacing.xLarge,
       children: [SectionTitle(title), ...children],
     );
@@ -147,17 +163,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  /// The box listing the [entries] of [menu], each command beside its keys.
+  /// The card listing the [entries] of [menu], each command beside its
+  /// keys.
   Widget _buildShortcutGroup(String menu, List<ShortcutHelpEntry> entries) {
     final keysStyle = AppTextStyle.bodyStrong.copyWith(
       color: Theme.of(context).colorScheme.primary,
     );
-    return OutlinedSurface(
+    return ActionCard(
+      title: menu,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: AppSpacing.small,
         children: [
-          Text(menu, style: AppTextStyle.bodyStrong),
           for (final entry in entries)
             Row(
               children: [

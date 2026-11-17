@@ -1,3 +1,4 @@
+import 'package:fide/widgets/centered_content.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// A scroll view holding [child] centered and at most [maxWidth] wide,
@@ -26,12 +27,7 @@ class CenteredScrollView extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: padding,
-      child: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth),
-          child: child,
-        ),
-      ),
+      child: CenteredContent(maxWidth: maxWidth, child: child),
     );
   }
 }

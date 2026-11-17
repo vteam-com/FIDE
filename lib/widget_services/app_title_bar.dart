@@ -30,7 +30,8 @@ import 'package:window_manager/window_manager.dart';
 
 /// The window's title bar: the project menu, the app menus where the
 /// platform has no native menu bar, the side panel buttons while a project
-/// is open, the settings button, and the window buttons on Linux.
+/// is open, the settings button, and the window buttons on Linux. While the
+/// settings screen shows, it holds only the button closing it.
 class AppTitleBar extends ConsumerStatefulWidget {
   /// Creates the title bar showing [menus] off macOS.
   const AppTitleBar({super.key, required this.menus});
@@ -65,6 +66,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
   /// The bar's content, dragging the window from its empty space.
   Widget _buildBar() {
     final zoom = ref.watch(zoomProvider);
+    final settingsVisible = ref.watch(settingsVisibleProvider);
     return Container(
       // Transparent so the window's workspace gradient runs behind it
       color: Colors.transparent,
@@ -79,19 +81,24 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
                 // Space for the macOS traffic lights
                 if (Platform.isMacOS)
                   SizedBox(width: AppSize.macWindowControlsSpacing / zoom),
-                Flexible(child: _buildProjectTitle()),
-                // macOS shows these menus natively
-                if (!Platform.isMacOS) AppMenuBar(menus: widget.menus),
+                if (!settingsVisible) ...[
+                  Flexible(child: _buildProjectTitle()),
+                  // macOS shows these menus natively
+                  if (!Platform.isMacOS) AppMenuBar(menus: widget.menus),
+                ],
               ],
             ),
           ),
-          if (ref.watch(appViewProvider) == AppViewState.mainLayout)
+          if (!settingsVisible &&
+              ref.watch(appViewProvider) == AppViewState.mainLayout)
             _buildPanelToggleButtons(),
           Expanded(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                _buildSettingsButton(),
+                settingsVisible
+                    ? _buildCloseSettingsButton()
+                    : _buildSettingsButton(),
                 // Space for the native window controls on Windows
                 if (Platform.isWindows)
                   const SizedBox(width: AppSize.desktopWindowControlsSpacing),
@@ -179,10 +186,17 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
   Widget _buildSettingsButton() {
     return CompactIconButton(
       icon: Icons.settings,
-      onPressed: () => ref
-          .read(settingsVisibleProvider.notifier)
-          .update((visible) => !visible),
+      onPressed: () => ref.read(settingsVisibleProvider.notifier).state = true,
       tooltip: ShortcutHelpEntry.tooltip('Settings', AppShortcut.settings),
+    );
+  }
+
+  /// The button leaving the settings screen, as Escape does.
+  Widget _buildCloseSettingsButton() {
+    return CompactIconButton(
+      icon: Icons.close,
+      onPressed: () => ref.read(settingsVisibleProvider.notifier).state = false,
+      tooltip: 'Close (Esc)',
     );
   }
 

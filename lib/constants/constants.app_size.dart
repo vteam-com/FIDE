@@ -64,7 +64,7 @@ class AppSize {
   static const double splitterGripLength = 40;
   static const double splitterGripThickness = 4;
   static const double heroLogoHeight = 100;
-  static const double statCardWidth = 260;
+  static const double cardWidth = 260;
   static const double appIconPreview = 64;
   static const double appIconSlot = 72;
   static const double appIconSlotMinDrawn = 16;

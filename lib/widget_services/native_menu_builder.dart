@@ -38,16 +38,16 @@ class NativeMenuBuilder {
   /// Builds the FIDE application menu (About, Settings, Quit).
   PlatformMenu _buildFideMenu() {
     return PlatformMenu(
-      label: 'FIDE',
+      label: AppName.short,
       menus: [
         PlatformMenuItem(
           label: 'About',
           onSelected: () {
             showAboutDialog(
               context: context,
-              applicationName: 'FIDE',
+              applicationName: AppName.short,
               applicationVersion: '1.0.0',
-              applicationLegalese: '© 2025 FIDE',
+              applicationLegalese: '© 2025 ${AppName.short}',
             );
           },
         ),
@@ -58,7 +58,7 @@ class NativeMenuBuilder {
               ref.read(settingsVisibleProvider.notifier).state = true,
         ),
         const PlatformMenuItem(
-          label: 'Quit FIDE',
+          label: 'Quit ${AppName.short}',
           shortcut: AppShortcut.quit,
           onSelected: SystemNavigator.pop,
         ),

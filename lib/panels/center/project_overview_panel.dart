@@ -10,6 +10,7 @@ import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/card_grid.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/page_header.dart';
 import 'package:fide/widgets/page_scroll_view.dart';
@@ -207,9 +208,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
             ),
           ],
         ),
-        Wrap(
-          spacing: AppSpacing.xLarge,
-          runSpacing: AppSpacing.xLarge,
+        CardGrid(
           children: [
             StatCard(
               icon: Icons.verified_outlined,

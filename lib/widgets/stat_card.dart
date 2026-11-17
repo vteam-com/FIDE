@@ -4,7 +4,7 @@ import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/issue_row.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// A fixed-width [ActionCard] headed by [icon] and [title], showing one
+/// An [ActionCard], laid out by a `CardGrid`, headed by [icon] and [title], showing one
 /// headline [value] over [issues], then [details].
 class StatCard extends StatelessWidget {
   /// Creates the card.
@@ -39,22 +39,19 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: AppSize.statCardWidth,
-      child: ActionCard(
-        title: title,
-        icon: icon,
-        action: action,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: AppSpacing.medium,
-          children: [
-            value,
-            for (final issue in issues) IssueRow(issue),
-            for (final detail in details)
-              Text(detail, style: AppTextStyle.secondary(context)),
-          ],
-        ),
+    return ActionCard(
+      title: title,
+      icon: icon,
+      action: action,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppSpacing.medium,
+        children: [
+          value,
+          for (final issue in issues) IssueRow(issue),
+          for (final detail in details)
+            Text(detail, style: AppTextStyle.secondary(context)),
+        ],
       ),
     );
   }
