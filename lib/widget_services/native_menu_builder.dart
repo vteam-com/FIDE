@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/active_editor.dart';
+import 'package:fide/providers/active_terminal.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/left_panel_tab.dart';
@@ -110,8 +111,8 @@ class NativeMenuBuilder {
     );
   }
 
-  /// Builds the Edit menu with the find, go-to-line, and go back and
-  /// forward items.
+  /// Builds the Edit menu with the find, go-to-line, go back and forward,
+  /// and clear terminal items.
   PlatformMenu _buildEditMenu() {
     final editor = ref.read(activeEditorProvider);
     final documents = ref.read(openDocumentsProvider.notifier);
@@ -149,6 +150,19 @@ class NativeMenuBuilder {
               label: 'Go Forward',
               shortcut: AppShortcut.goForward,
               onSelected: documents.goForward,
+            ),
+          ],
+        ),
+        PlatformMenuItemGroup(
+          members: [
+            PlatformMenuItem(
+              label: 'Clear Terminal',
+              shortcut: AppShortcut.clearTerminal,
+              // Disabled, leaving ⌘K to the other panels, unless the
+              // terminal is active
+              onSelected: ref.read(terminalActiveProvider)
+                  ? ref.read(activeTerminalProvider).clear
+                  : null,
             ),
           ],
         ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/providers/active_terminal.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/terminal_providers.dart';
 import 'package:fide/services/terminal_session.dart';
@@ -22,6 +23,10 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
 
   final TerminalController controller = TerminalController();
 
+  /// Routes the menus' terminal commands, such as Clear Terminal, to
+  /// [terminal] while the panel shows.
+  late final ActiveTerminal _activeTerminal = ref.read(activeTerminalProvider);
+
   /// The shell shown, whose output feeds [terminal].
   late final TerminalSession _session = ref.read(terminalSessionProvider);
 
@@ -36,6 +41,7 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
     super.initState();
     _output = _session.output.listen(terminal.write);
     terminal.onOutput = (data) => unawaited(_session.write(data));
+    _activeTerminal.attach(terminal);
 
     // Initialize current project path
     _currentProjectPath = ref.read(currentProjectPathProvider);
@@ -45,6 +51,7 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
 
   @override
   void dispose() {
+    _activeTerminal.detach(terminal);
     unawaited(_output.cancel());
     _session.stop();
     super.dispose();

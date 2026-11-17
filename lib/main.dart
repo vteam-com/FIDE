@@ -5,6 +5,7 @@ import 'package:fide/app_bootstrap.dart';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_view_state.dart';
 import 'package:fide/models/locale_number.dart';
+import 'package:fide/providers/active_terminal.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/app_view_notifier.dart';
 import 'package:fide/providers/ui_state_providers.dart';
@@ -100,7 +101,7 @@ class _FIDEState extends ConsumerState<FIDE> {
           child: Focus(
             autofocus: true,
             // Only the gradient follows the active panel: the menus and the
-            // views are built once, as the Consumer's child
+            // views are the Consumer's child
             child: Consumer(
               builder: (context, ref, child) => AnimatedContainer(
                 duration: AppDuration.gradientMove,
@@ -111,67 +112,68 @@ class _FIDEState extends ConsumerState<FIDE> {
                 ),
                 child: child,
               ),
-              // Builder so the menus get a context under the navigator
-              child: Builder(
-                builder: (context) => Column(
-                  children: [
-                    AppTitleBar(menus: _buildMenus(context)),
-                    // Main content with menu bar
-                    Expanded(
-                      child: PlatformMenuBar(
-                        menus: _buildMenus(context),
-                        child: Consumer(
-                          builder: (_, ref, _) {
-                            final view = ref.read(appViewProvider.notifier);
-                            final Widget content = switch (ref.watch(
-                              appViewProvider,
-                            )) {
-                              AppViewState.createProject => CreateProjectScreen(
-                                onCancel: view.showWelcome,
-                                onOpenProject: view.loadProject,
-                              ),
-                              AppViewState.loadingProject => LoadingScreen(
-                                loadingProjectName: view.loadingProjectPath,
-                              ),
-                              AppViewState.welcome => const WelcomeScreen(),
-                              AppViewState.mainLayout => const MainLayout(),
-                            };
-
-                            // Settings replace the view, which stays mounted
-                            // so closing them returns to it unchanged; it
-                            // stops painting, so the settings show on the
-                            // window's gradient
-                            final settingsVisible = ref.watch(
-                              settingsVisibleProvider,
-                            );
-                            return Stack(
-                              children: [
-                                Positioned.fill(
-                                  child: Offstage(
-                                    offstage: settingsVisible,
-                                    child: content,
-                                  ),
-                                ),
-                                if (settingsVisible)
-                                  Positioned.fill(
-                                    child: SettingsScreen(
-                                      menus: _buildMenus(context),
-                                      onClose: _closeSettings,
-                                    ),
-                                  ),
-                              ],
-                            );
-                          },
-                        ),
+              // The menus follow whether the terminal is active, for Clear
+              // Terminal; the views are built once, as the Consumer's child
+              child: Consumer(
+                builder: (context, ref, content) {
+                  ref.watch(terminalActiveProvider);
+                  final menus = _buildMenus(context);
+                  return Column(
+                    children: [
+                      AppTitleBar(menus: menus),
+                      // Main content with menu bar
+                      Expanded(
+                        child: PlatformMenuBar(menus: menus, child: content!),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  );
+                },
+                child: _buildContent(),
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  /// The welcome, project or loading view the app is on, with the
+  /// settings over it while they show.
+  Widget _buildContent() {
+    return Consumer(
+      builder: (context, ref, _) {
+        final view = ref.read(appViewProvider.notifier);
+        final Widget content = switch (ref.watch(appViewProvider)) {
+          AppViewState.createProject => CreateProjectScreen(
+            onCancel: view.showWelcome,
+            onOpenProject: view.loadProject,
+          ),
+          AppViewState.loadingProject => LoadingScreen(
+            loadingProjectName: view.loadingProjectPath,
+          ),
+          AppViewState.welcome => const WelcomeScreen(),
+          AppViewState.mainLayout => const MainLayout(),
+        };
+
+        // Settings replace the view, which stays mounted so closing them
+        // returns to it unchanged; it stops painting, so the settings show
+        // on the window's gradient
+        final settingsVisible = ref.watch(settingsVisibleProvider);
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: Offstage(offstage: settingsVisible, child: content),
+            ),
+            if (settingsVisible)
+              Positioned.fill(
+                child: SettingsScreen(
+                  menus: _buildMenus(context),
+                  onClose: _closeSettings,
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 

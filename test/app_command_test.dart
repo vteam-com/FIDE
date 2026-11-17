@@ -1,4 +1,6 @@
+import 'package:fide/constants/constants.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
+import 'package:fide/providers/side_panel.dart';
 import 'package:fide/widget_services/app_command.dart';
 import 'package:fide/widget_services/native_menu_builder.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
@@ -66,5 +68,29 @@ void main() {
     ];
 
     expect(keys.toSet(), hasLength(keys.length));
+  });
+
+  testWidgets('Clear Terminal is enabled only while the terminal is active', (
+    tester,
+  ) async {
+    final (context, ref) = await pumpConsumer(tester);
+
+    /// The Edit menu's Clear Terminal item, as the menus build now.
+    PlatformMenuItem clearTerminal() {
+      final menus = NativeMenuBuilder(context: context, ref: ref).buildMenus();
+      final edit = menus.singleWhere((menu) => menu.label == 'Edit');
+      return edit.menus
+          .whereType<PlatformMenuItemGroup>()
+          .expand((group) => group.members)
+          .singleWhere((item) => item.shortcut == AppShortcut.clearTerminal);
+    }
+
+    expect(clearTerminal().onSelected, isNull);
+
+    ref.read(activePanelProvider.notifier).state = SidePanel.bottom;
+    expect(clearTerminal().onSelected, isNotNull);
+
+    ref.read(activePanelProvider.notifier).state = SidePanel.left;
+    expect(clearTerminal().onSelected, isNull);
   });
 }

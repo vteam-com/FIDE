@@ -97,6 +97,13 @@ class AppShortcut {
     shift: true,
   );
 
+  /// Clear Terminal: erase the terminal's scrollback and screen, keeping
+  /// the prompt line (as in macOS Terminal and VS Code).
+  static const SingleActivator clearTerminal = SingleActivator(
+    LogicalKeyboardKey.keyK,
+    meta: true,
+  );
+
   /// Refresh Status: reload the open project's Git state.
   static const SingleActivator refreshGitStatus = SingleActivator(
     LogicalKeyboardKey.keyR,
