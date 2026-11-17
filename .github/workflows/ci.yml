@@ -18,16 +18,19 @@ jobs:
       with:
         flutter-version: '3.50.0'  # keep in step with the local SDK; pubspec needs Dart ^3.13.7
 
+    # Before any flutter command that builds native assets: the build hook
+    # of cnativeapi (a transitive dependency) needs GTK 3, X11 and Xi even
+    # for `flutter test`
+    - name: Install Linux dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libx11-dev libxi-dev liblzma-dev
+
     - name: Get dependencies
       run: flutter pub get
 
     - name: Run tests
       run: flutter test
-
-    - name: Install Linux dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
 
     - name: Build Linux
       run: flutter build linux
