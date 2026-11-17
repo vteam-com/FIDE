@@ -32,6 +32,7 @@ import 'package:fide/widgets/side_by_side_diff.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:material_ui/material_ui.dart';
 import 'package:re_highlight/styles/atom-one-dark.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
@@ -187,6 +188,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
               openDocuments: openDocuments,
               activeIndex: activeIndex,
               currentFile: _currentFile,
+              viewKind: _viewKind,
               isDirty: _session.isDirty,
               showDiffView: _showDiffView,
               onDocumentSelected: (newIndex) {
@@ -216,9 +218,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     if (_currentFile.isEmpty) {
       return const EmptyState(message: 'No file selected');
     }
-    return switch (FileTypeUtils.viewKindOf(_currentFile)) {
+    return switch (_viewKind) {
       FileViewKind.unsupported => EditorScreenUnsupportedFileView(
         filePath: _currentFile,
+        onOpenAsPlainText: _openAsPlainText,
       ),
       FileViewKind.image =>
         _showDiffView
@@ -228,6 +231,25 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       FileViewKind.font => EditorScreenFontView(filePath: _currentFile),
       FileViewKind.code => _showDiffView ? _buildDiffView() : _buildCodeView(),
     };
+  }
+
+  /// How [_currentFile] shows: as code once opened as plain text, else as
+  /// its type calls for.
+  FileViewKind get _viewKind => (widget.documentState?.asPlainText ?? false)
+      ? FileViewKind.code
+      : FileTypeUtils.viewKindOf(_currentFile);
+
+  /// Shows [_currentFile] as plain text, or says why it can't.
+  Future<void> _openAsPlainText() async {
+    final opened = await ref
+        .read(openDocumentsProvider.notifier)
+        .openAsPlainText(_currentFile);
+    if (!opened && mounted) {
+      MessageBox.showError(
+        context,
+        '${p.basename(_currentFile)} is not a text file the editor can open',
+      );
+    }
   }
 
   /// The code editor with its find bar and status bar.

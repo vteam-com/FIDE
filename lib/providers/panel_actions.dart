@@ -9,14 +9,21 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_riverpod/misc.dart';
 
 /// Moves [panel] to its next size: hidden, then its own size, then
-/// expanded to its largest, then hidden again.
+/// expanded to its largest, then hidden again. A shown panel becomes the
+/// active one; hiding the active panel makes the editor area active.
 void cyclePanelSize(WidgetRef ref, SidePanel panel) {
   final visible = panel.visibleProvider;
   final expanded = panel.expandedProvider;
   final shown = ref.read(visible);
   final wasExpanded = ref.read(expanded);
-  ref.read(visible.notifier).state = !shown || !wasExpanded;
+  final showsNow = !shown || !wasExpanded;
+  ref.read(visible.notifier).state = showsNow;
   ref.read(expanded.notifier).state = shown && !wasExpanded;
+  if (showsNow) {
+    _activate(ref.read, panel);
+  } else if (ref.read(activePanelProvider) == panel) {
+    ref.read(activePanelProvider.notifier).state = null;
+  }
 }
 
 /// Switches [panel] between its own size and expanded to its largest,
@@ -31,7 +38,7 @@ void nextLeftPanelTab(WidgetRef ref) => _nextTab(
   ref,
   LeftPanelTab.values,
   activeLeftPanelTabProvider,
-  leftPanelVisibleProvider,
+  SidePanel.left,
 );
 
 /// Shows the right panel's next tab, looping back to the first.
@@ -39,17 +46,17 @@ void nextRightPanelTab(WidgetRef ref) => _nextTab(
   ref,
   RightPanelTab.values,
   activeRightPanelTabProvider,
-  rightPanelVisibleProvider,
+  SidePanel.right,
 );
 
 /// Reads a provider's value, as both [Ref.read] and [WidgetRef.read] do, so
 /// a panel action runs from a widget or from a provider.
 typedef ProviderRead = T Function<T>(ProviderListenable<T> provider);
 
-/// Shows the left panel on [tab], reading its state with [read] (a
-/// `ref.read`).
+/// Shows the left panel on [tab] and makes it the active panel, reading
+/// its state with [read] (a `ref.read`).
 void showLeftPanelTab(ProviderRead read, LeftPanelTab tab) {
-  read(leftPanelVisibleProvider.notifier).state = true;
+  _show(read, SidePanel.left);
   read(activeLeftPanelTabProvider.notifier).state = tab;
 }
 
@@ -81,22 +88,34 @@ void closeCenterView(WidgetRef ref) {
   ref.read(centerViewProvider.notifier).state = null;
 }
 
-/// Shows the right panel on [tab], reading its state with [read] (a
-/// `ref.read`).
+/// Shows the right panel on [tab] and makes it the active panel, reading
+/// its state with [read] (a `ref.read`).
 void showRightPanelTab(ProviderRead read, RightPanelTab tab) {
-  read(rightPanelVisibleProvider.notifier).state = true;
+  _show(read, SidePanel.right);
   read(activeRightPanelTabProvider.notifier).state = tab;
 }
 
+/// Makes [panel] the [activePanelProvider], so the workspace gradient
+/// follows a keyboard shortcut or menu command as it follows a click.
+void _activate(ProviderRead read, SidePanel panel) {
+  read(activePanelProvider.notifier).state = panel;
+}
+
+/// Shows [panel] when hidden and makes it the active panel.
+void _show(ProviderRead read, SidePanel panel) {
+  read(panel.visibleProvider.notifier).state = true;
+  _activate(read, panel);
+}
+
 /// Shows the tab of [tabs] after the [active] one, looping back to the
-/// first, and its panel ([visible]) when hidden.
+/// first, in its [panel], shown and made active.
 void _nextTab<T extends Enum>(
   WidgetRef ref,
   List<T> tabs,
   StateProvider<T> active,
-  StateProvider<bool> visible,
+  SidePanel panel,
 ) {
-  ref.read(visible.notifier).state = true;
+  _show(ref.read, panel);
   ref.read(active.notifier).state =
       tabs[(ref.read(active).index + 1) % tabs.length];
 }

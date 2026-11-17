@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:fide/models/document_state.dart';
@@ -167,6 +168,24 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
     );
     final documents = [...state.documents, document];
     _show(documents, documents.length - 1);
+  }
+
+  /// Shows the open [filePath], whose type the editor doesn't support, as
+  /// plain text in the code editor; false, changing nothing, when it is
+  /// not open, too big, or not UTF-8 text, so a save can't overwrite it.
+  Future<bool> openAsPlainText(String filePath) async {
+    final index = state.indexOf(filePath);
+    if (index == OpenDocuments.noActiveDocument) return false;
+    try {
+      if (await reader.tryRead(filePath) == null) return false;
+    } on FileSystemException {
+      return false;
+    }
+    _show(
+      [...state.documents]..[index] = state.documents[index].toPlainText(),
+      state.activeIndex,
+    );
+    return true;
   }
 
   /// Writes [content] to [filePath] and records it as the clean, saved

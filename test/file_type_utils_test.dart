@@ -4,6 +4,9 @@ import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:re_highlight/languages/bash.dart';
+import 'package:re_highlight/languages/gradle.dart';
+import 'package:re_highlight/languages/kotlin.dart';
 
 // Helper class for test cases
 class TestCase {
@@ -49,7 +52,7 @@ void main() {
       test('shows sounds in the audio editor, as media', () {
         expect(FileTypeUtils.viewKindOf('jump.MP3'), FileViewKind.audio);
         expect(FileTypeUtils.viewKindOf('loop.ogg'), FileViewKind.audio);
-        expect(FileTypeUtils.categoryOf('wav'), FileCategory.audio);
+        expect(FileTypeUtils.categoryOf('jump.WAV'), FileCategory.audio);
         expect(FileViewKind.audio.isMedia, true);
         expect(FileViewKind.image.isMedia, true);
         expect(FileViewKind.code.isMedia, false);
@@ -60,7 +63,7 @@ void main() {
         expect(FileTypeUtils.viewKindOf('Roboto.TTF'), FileViewKind.font);
         expect(FileTypeUtils.viewKindOf('Inter.otf'), FileViewKind.font);
         expect(FileTypeUtils.viewKindOf('web.woff2'), FileViewKind.unsupported);
-        expect(FileTypeUtils.categoryOf('woff'), FileCategory.font);
+        expect(FileTypeUtils.categoryOf('web.woff'), FileCategory.font);
         expect(FileViewKind.font.isMedia, true);
         expect(FileViewKind.font.hasDiffView, false);
         expect(FileViewKind.audio.hasDiffView, false);
@@ -85,6 +88,28 @@ void main() {
         expect(FileTypeUtils.isFileSupportedInEditor('styles.css'), true);
         expect(FileTypeUtils.isFileSupportedInEditor('data.json'), true);
         expect(FileTypeUtils.isFileSupportedInEditor('README.md'), true);
+        expect(FileTypeUtils.isFileSupportedInEditor('build.gradle'), true);
+        expect(
+          FileTypeUtils.isFileSupportedInEditor('settings.gradle.kts'),
+          true,
+        );
+      });
+
+      test('highlights Gradle build scripts', () {
+        expect(FileTypeUtils.languageForFile('build.gradle'), langGradle);
+        expect(FileTypeUtils.languageLabel('build.gradle'), 'Gradle');
+        expect(FileTypeUtils.languageForFile('build.gradle.kts'), langKotlin);
+        expect(FileTypeUtils.languageLabel('build.gradle.kts'), 'Kotlin');
+      });
+
+      test('types gradlew by its name as a shell script', () {
+        expect(FileTypeUtils.isTextFile('android/gradlew'), true);
+        expect(FileTypeUtils.languageForFile('android/gradlew'), langBash);
+        expect(FileTypeUtils.languageLabel('android/gradlew'), 'Shell');
+        expect(
+          FileTypeUtils.categoryOf('android/gradlew'),
+          FileCategory.script,
+        );
       });
 
       test('returns true for supported image file extensions', () {

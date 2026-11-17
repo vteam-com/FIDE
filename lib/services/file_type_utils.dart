@@ -10,6 +10,7 @@ import 'package:re_highlight/languages/css.dart';
 import 'package:re_highlight/languages/dart.dart';
 import 'package:re_highlight/languages/dos.dart';
 import 'package:re_highlight/languages/go.dart';
+import 'package:re_highlight/languages/gradle.dart';
 import 'package:re_highlight/languages/ini.dart';
 import 'package:re_highlight/languages/java.dart';
 import 'package:re_highlight/languages/javascript.dart';
@@ -35,12 +36,18 @@ part 'file_type_utils.file_category.dart';
 part 'file_type_utils.file_type_info.dart';
 part 'file_type_utils.file_view_kind.dart';
 
-/// Answers what FIDE knows about a file from its extension: whether the
+/// Answers what FIDE knows about a file from its name or extension: whether the
 /// editor opens it, how it is highlighted, and which icon it gets.
 ///
-/// Everything comes from the one [_types] table, so supporting a new
-/// extension is a single entry.
+/// Everything comes from the [_types] table, or [_namedTypes] for files
+/// known by their whole name, so supporting a new type is a single entry.
 class FileTypeUtils {
+  /// Files typed by their whole name rather than their extension, such as
+  /// extensionless scripts.
+  static final Map<String, FileTypeInfo> _namedTypes = {
+    'gradlew': FileTypeInfo.text(FileCategory.script, langBash, 'Shell'),
+  };
+
   static final Map<String, FileTypeInfo> _types = {
     // Dart and Flutter
     'dart': FileTypeInfo.text(FileCategory.dart, langDart, 'Dart'),
@@ -99,7 +106,8 @@ class FileTypeUtils {
     'properties': FileTypeInfo.text(FileCategory.config, langProperties),
     'env': const FileTypeInfo.text(FileCategory.config),
     'plist': FileTypeInfo.text(FileCategory.config, langXml),
-    'gradle': const FileTypeInfo.other(FileCategory.config),
+    'gradle': FileTypeInfo.text(FileCategory.config, langGradle, 'Gradle'),
+    'kts': FileTypeInfo.text(FileCategory.config, langKotlin, 'Kotlin'),
     'lock': const FileTypeInfo.text(FileCategory.lock),
     // Scripts
     'sh': FileTypeInfo.text(FileCategory.script, langBash),
@@ -170,9 +178,9 @@ class FileTypeUtils {
     return _typeOf(filePath)?.language ?? langPlaintext;
   }
 
-  /// The icon category for files with [extension], case-insensitive.
-  static FileCategory categoryOf(String extension) {
-    return _types[extension.toLowerCase()]?.category ?? FileCategory.other;
+  /// The icon category of [filePath], from its name or its extension.
+  static FileCategory categoryOf(String filePath) {
+    return _typeOf(filePath)?.category ?? FileCategory.other;
   }
 
   /// The lowercase extension of [filePath]'s file name, without its dot:
@@ -194,9 +202,10 @@ class FileTypeUtils {
     return type.label ?? extensionOf(filePath).toUpperCase();
   }
 
-  /// The table entry for [filePath]'s extension, or null when unknown.
+  /// The table entry for [filePath]'s name, else its extension; null
+  /// when unknown.
   static FileTypeInfo? _typeOf(String filePath) {
     if (filePath.isEmpty) return null;
-    return _types[extensionOf(filePath)];
+    return _namedTypes[p.basename(filePath)] ?? _types[extensionOf(filePath)];
   }
 }

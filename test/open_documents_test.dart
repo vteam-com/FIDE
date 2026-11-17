@@ -137,5 +137,25 @@ void main() {
 
       expect(current.history.current, isNull);
     });
+
+    test('opens an unsupported text file as plain text', () async {
+      final path = write('notes.xyz');
+      await documents.open(path);
+
+      expect(await documents.openAsPlainText(path), isTrue);
+
+      expect(current.active!.asPlainText, isTrue);
+      expect(current.active!.content, '// notes.xyz');
+    });
+
+    test('refuses to open a binary file as plain text', () async {
+      final path = p.join(project.path, 'blob.bin');
+      File(path).writeAsBytesSync(const [0xff, 0xfe, 0x00, 0xc3]);
+      await documents.open(path);
+
+      expect(await documents.openAsPlainText(path), isFalse);
+
+      expect(current.active!.asPlainText, isFalse);
+    });
   });
 }

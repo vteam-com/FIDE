@@ -25,6 +25,7 @@ class EditorScreenHeader extends ConsumerWidget {
     required this.openDocuments,
     required this.activeIndex,
     required this.currentFile,
+    required this.viewKind,
     required this.isDirty,
     required this.showDiffView,
     required this.onDocumentSelected,
@@ -43,6 +44,9 @@ class EditorScreenHeader extends ConsumerWidget {
   final VoidCallback onToggleSearch;
   final List<DocumentState> openDocuments;
   final bool showDiffView;
+
+  /// How the editor shows [currentFile].
+  final FileViewKind viewKind;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final projectPath = ref.watch(currentProjectPathProvider);
@@ -139,7 +143,7 @@ class EditorScreenHeader extends ConsumerWidget {
               ],
             ),
           ),
-          if (FileTypeUtils.viewKindOf(currentFile).hasDiffView &&
+          if (viewKind.hasDiffView &&
               (ref.watch(gitDiffStatsProvider(currentFile)).value?.hasChanges ??
                   false))
             CompactIconButton.header(

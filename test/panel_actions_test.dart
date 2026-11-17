@@ -43,6 +43,35 @@ void main() {
     expect(sizes, ['min', 'max', 'hide', 'min']);
   });
 
+  testWidgets('the panel a shortcut shows becomes the active one', (
+    tester,
+  ) async {
+    final ref = await pumpRef(tester);
+    ref.read(bottomPanelVisibleProvider.notifier).state = false;
+
+    cyclePanelSize(ref, SidePanel.bottom);
+    expect(ref.read(activePanelProvider), SidePanel.bottom);
+
+    nextLeftPanelTab(ref);
+    expect(ref.read(activePanelProvider), SidePanel.left);
+
+    nextRightPanelTab(ref);
+    expect(ref.read(activePanelProvider), SidePanel.right);
+  });
+
+  testWidgets('hiding the active panel makes the editor area active', (
+    tester,
+  ) async {
+    final ref = await pumpRef(tester);
+    ref.read(rightPanelExpandedProvider.notifier).state = true;
+    ref.read(activePanelProvider.notifier).state = SidePanel.right;
+
+    cyclePanelSize(ref, SidePanel.right);
+
+    expect(ref.read(rightPanelVisibleProvider), isFalse);
+    expect(ref.read(activePanelProvider), isNull);
+  });
+
   testWidgets('shows the next tab of each panel, looping', (tester) async {
     final ref = await pumpRef(tester);
     ref.read(activeLeftPanelTabProvider.notifier).state =

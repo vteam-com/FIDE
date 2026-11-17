@@ -16,7 +16,7 @@ class FileIconUtils {
     double size = AppIconSize.medium,
   }) {
     final category = !item.isDirectory
-        ? FileTypeUtils.categoryOf(FileTypeUtils.extensionOf(item.path))
+        ? FileTypeUtils.categoryOf(item.path)
         : FileCategory.other;
     final fallback = Icon(iconOf(category), size: size);
     if (category == FileCategory.dart) {
