@@ -1,0 +1,101 @@
+name: Release
+
+# Builds FIDE for macOS, Windows and Linux only when the code is declared
+# ready, never on a plain push to main:
+#   - pushing a version tag (git tag v1.2.0 && git push origin v1.2.0)
+#     tests, builds and attaches the three builds to a draft GitHub Release
+#   - "Run workflow" on the Actions tab tests and builds any branch, the
+#     builds kept as workflow artifacts only, to try a release out
+on:
+  push:
+    tags: [ 'v*.*.*' ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos
+            runner: macos-latest
+            asset: zip
+          - platform: windows
+            runner: windows-latest
+            asset: zip
+          - platform: linux
+            runner: ubuntu-26.04
+            asset: tar.gz
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    - uses: actions/checkout@v7
+
+    - uses: ./.github/actions/setup-flutter
+
+    # A tag names the version (v1.2.0 builds 1.2.0); a manual run keeps
+    # pubspec's version and names its files after the commit
+    - name: Name the version
+      run: |
+        if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+          version="${GITHUB_REF_NAME#v}"
+          echo "BUILD_ARGS=--build-name=$version --build-number=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+        else
+          version="dev-${GITHUB_SHA::7}"
+        fi
+        echo "ASSET=FIDE-$version-${{ matrix.platform }}.${{ matrix.asset }}" >> "$GITHUB_ENV"
+
+    - name: Build
+      # BUILD_ARGS is split into its flags on purpose
+      run: |
+        # shellcheck disable=SC2086
+        flutter build ${{ matrix.platform }} --release $BUILD_ARGS
+
+    - name: Package macOS
+      if: matrix.platform == 'macos'
+      run: ditto -c -k --keepParent build/macos/Build/Products/Release/FIDE.app "$ASSET"
+
+    - name: Package Windows
+      if: matrix.platform == 'windows'
+      run: 7z a "$GITHUB_WORKSPACE/$ASSET" ./build/windows/x64/runner/Release/*
+
+    - name: Package Linux
+      if: matrix.platform == 'linux'
+      run: tar -czf "$ASSET" -C build/linux/x64/release bundle
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: ${{ matrix.platform }}
+        path: ${{ env.ASSET }}
+        if-no-files-found: error
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/download-artifact@v8
+      with:
+        path: dist
+        merge-multiple: true
+
+    # A draft, so the release is published by hand once its builds are tried
+    - name: Create draft release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: >
+        gh release create "$GITHUB_REF_NAME" dist/*
+        --repo "$GITHUB_REPOSITORY"
+        --draft
+        --generate-notes
+        --verify-tag

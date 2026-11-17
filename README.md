@@ -115,6 +115,17 @@ All shortcuts are listed in **Settings**.
 - Windows: `flutter build windows`
 - Linux: `flutter build linux`
 
+## Releasing
+
+Pushes to `main` only run the tests. To ship the code in its current state, tag it:
+
+```sh
+git tag v1.2.0
+git push origin v1.2.0
+```
+
+The Release workflow tests the tagged code, builds it for macOS, Windows and Linux, and attaches the three builds to a **draft** GitHub Release; publish the draft once the builds are tried. To try a release first, run the Release workflow from the Actions tab: it builds any branch and keeps the builds as workflow artifacts, without making a release.
+
 ## Requirements
 
 - Flutter SDK (Dart `^3.13.7`)
