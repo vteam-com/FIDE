@@ -9,6 +9,7 @@ import 'package:fide/providers/project_info_controller.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widget_services/issue_section.dart';
 import 'package:fide/widget_services/output_panel.dart';
+import 'package:fide/widget_services/project_icon.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/bullet_list.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
@@ -158,8 +159,13 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         PanelHeader(
+          leading: ProjectIcon(
+            projectPath: currentProjectPath,
+            size: AppIconSize.panelHeaderLeading,
+          ),
           title: projectMetrics.name ?? 'Unknown Project',
-          subtitle: version == null ? null : 'v$version',
+          badge: version == null ? null : BadgeStatus.info(text: 'v$version'),
+          subtitle: projectMetrics.description,
           actions: [
             CompactIconButton(
               icon: Icons.edit_note,
@@ -183,16 +189,10 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     );
   }
 
-  /// The project's description, quality, dependencies and actions.
+  /// The project's quality, dependencies and actions.
   Widget _buildContent(ProjectMetrics projectMetrics, ProjectInfoState info) {
     return PanelScrollView(
       children: [
-        Text(
-          projectMetrics.description ?? '< no description >',
-          style: AppTextStyle.secondary(context),
-          overflow: TextOverflow.visible,
-        ),
-
         // The project's quality, once fCheck has analyzed it
         if (ref.watch(projectQualityProvider) case final quality?)
           IssueSection(
