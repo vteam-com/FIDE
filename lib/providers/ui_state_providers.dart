@@ -1,8 +1,12 @@
+import 'package:fide/models/app_view_state.dart';
 import 'package:fide/models/image_backdrop.dart';
 import 'package:fide/models/reference_search.dart';
+import 'package:fide/providers/app_view_notifier.dart';
 import 'package:fide/providers/left_panel_tab.dart';
 import 'package:fide/providers/right_panel_tab.dart';
 import 'package:fide/providers/side_panel.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 export 'package:fide/providers/theme_mode_notifier.dart';
@@ -23,6 +27,20 @@ final rightPanelExpandedProvider = SidePanel.right.expandedProvider;
 
 /// Whether the settings screen covers the current view.
 final settingsVisibleProvider = StateProvider<bool>((_ /*ref*/) => false);
+
+/// Where the workspace gradient centers: on the [activePanelProvider]
+/// panel while the project layout shows it, at the top center otherwise,
+/// the settings screen included. The active panel outlives the settings,
+/// so closing them brings the gradient back to it.
+final workspaceGradientCenterProvider = Provider<Alignment>((ref) {
+  final panel = ref.watch(activePanelProvider);
+  final showsPanel =
+      panel != null &&
+      !ref.watch(settingsVisibleProvider) &&
+      ref.watch(appViewProvider) == AppViewState.mainLayout &&
+      ref.watch(panel.visibleProvider);
+  return showsPanel ? panel.gradientCenter : Alignment.topCenter;
+});
 
 /// What image previews are drawn on, kept from one image to the next.
 final imageBackdropProvider = StateProvider<ImageBackdrop>(

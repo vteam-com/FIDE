@@ -12,10 +12,11 @@ class AppOpacity {
   static const double secondaryText = 0.7;
   static const double emphasis = 0.8;
 
-  /// Primary tint blended into the outer edge of the workspace gradient.
+  /// Primary tint blended into the workspace gradient's core.
   static const double workspaceGlow = 0.6;
 
-  /// Shadow blended into the workspace gradient's core to deepen contrast.
+  /// Shadow blended into the outer edge of the workspace gradient to deepen
+  /// contrast.
   static const double workspaceShade = 0.2;
 
   /// The modified image faded under the changed-pixel mask of an image

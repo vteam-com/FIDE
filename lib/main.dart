@@ -87,7 +87,7 @@ class _FIDEState extends ConsumerState<FIDE> {
       builder: (_, child) =>
           ZoomedView(zoom: ref.watch(zoomProvider), child: child!),
       home: Scaffold(
-        // Builder so the gradient resolves against the app theme, not the
+        // Consumer so the gradient resolves against the app theme, not the
         // context above MaterialApp
         // The native menu binds each menu shortcut's main key; this binds
         // the aliases.
@@ -99,9 +99,14 @@ class _FIDEState extends ConsumerState<FIDE> {
           },
           child: Focus(
             autofocus: true,
-            child: Builder(
-              builder: (context) => DecoratedBox(
-                decoration: AppTheme.workspaceBackground(context),
+            child: Consumer(
+              builder: (context, ref, _) => AnimatedContainer(
+                duration: AppDuration.gradientMove,
+                curve: Curves.easeInOut,
+                decoration: AppTheme.workspaceBackground(
+                  context,
+                  center: ref.watch(workspaceGradientCenterProvider),
+                ),
                 child: Column(
                   children: [
                     AppTitleBar(menus: _buildMenus(context)),
@@ -126,12 +131,22 @@ class _FIDEState extends ConsumerState<FIDE> {
                               AppViewState.mainLayout => const MainLayout(),
                             };
 
-                            // Settings cover the view, which stays mounted
-                            // so closing them returns to it unchanged
+                            // Settings replace the view, which stays mounted
+                            // so closing them returns to it unchanged; it
+                            // stops painting, so the settings show on the
+                            // window's gradient
+                            final settingsVisible = ref.watch(
+                              settingsVisibleProvider,
+                            );
                             return Stack(
                               children: [
-                                Positioned.fill(child: content),
-                                if (ref.watch(settingsVisibleProvider))
+                                Positioned.fill(
+                                  child: Offstage(
+                                    offstage: settingsVisible,
+                                    child: content,
+                                  ),
+                                ),
+                                if (settingsVisible)
                                   Positioned.fill(
                                     child: SettingsScreen(
                                       menus: _buildMenus(context),

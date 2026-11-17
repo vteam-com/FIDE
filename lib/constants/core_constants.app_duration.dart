@@ -11,6 +11,9 @@ class AppDuration {
   /// How long the architecture graph takes to glide to a file or to fit
   /// the view.
   static const Duration graphPan = Duration(milliseconds: 300);
+
+  /// How long the workspace gradient takes to glide to the active panel.
+  static const Duration gradientMove = Duration(milliseconds: 300);
   static const Duration tooltipWait = Duration(seconds: 1);
   static const Duration messageAnimation = Duration(milliseconds: 300);
   static const Duration copiedBadgeFade = Duration(milliseconds: 200);

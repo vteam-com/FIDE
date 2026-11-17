@@ -7,6 +7,7 @@ import 'package:fide/panels/center/project_overview_panel.dart';
 import 'package:fide/panels/center/terminal_panel.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/center_view.dart';
+import 'package:fide/providers/side_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/panel_island.dart';
 import 'package:fide/widgets/resizable_splitter.dart';
@@ -116,7 +117,10 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
                 constraints.maxHeight,
                 expanded: terminalExpanded,
               ),
-              child: const PanelIsland(child: TerminalPanel()),
+              child: const PanelIsland(
+                panel: SidePanel.bottom,
+                child: TerminalPanel(),
+              ),
             ),
           ],
         ],

@@ -143,25 +143,28 @@ class AppTheme {
 
   /// Radial gradient the workspace panel islands float on.
   ///
-  /// A shaded core at the top center of the window, darker than every
-  /// surface tone, opens out to a primary glow toward the bottom and sides,
-  /// so the gaps between islands read clearly in both modes.
-  static BoxDecoration workspaceBackground(BuildContext context) {
+  /// A primary glow at [center], the window's top center by default, fades
+  /// out to a shaded edge darker than every surface tone, so the gaps
+  /// between islands read clearly in both modes.
+  static BoxDecoration workspaceBackground(
+    BuildContext context, {
+    Alignment center = Alignment.topCenter,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     final base = Theme.of(context).brightness == Brightness.light
         ? colorScheme.surfaceDim
         : colorScheme.surfaceContainerLowest;
     return BoxDecoration(
       gradient: RadialGradient(
-        center: Alignment.topCenter,
+        center: center,
         radius: AppGradient.workspaceRadius,
         colors: [
           Color.alphaBlend(
-            colorScheme.shadow.withValues(alpha: AppOpacity.workspaceShade),
+            colorScheme.primary.withValues(alpha: AppOpacity.workspaceGlow),
             base,
           ),
           Color.alphaBlend(
-            colorScheme.primary.withValues(alpha: AppOpacity.workspaceGlow),
+            colorScheme.shadow.withValues(alpha: AppOpacity.workspaceShade),
             base,
           ),
         ],

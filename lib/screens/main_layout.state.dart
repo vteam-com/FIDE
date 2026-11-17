@@ -143,7 +143,10 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                 if (leftShown) ...[
                   SizedBox(
                     width: _shownExplorerWidth,
-                    child: const PanelIsland(child: LeftPanel()),
+                    child: const PanelIsland(
+                      panel: SidePanel.left,
+                      child: LeftPanel(),
+                    ),
                   ),
                   ResizableSplitter(onResize: _onResize),
                 ],
@@ -157,7 +160,10 @@ class MainLayoutState extends ConsumerState<MainLayout> {
                   ResizableSplitter(onResize: _onOutlineResize),
                   SizedBox(
                     width: _shownOutlineWidth,
-                    child: const PanelIsland(child: RightPanel()),
+                    child: const PanelIsland(
+                      panel: SidePanel.right,
+                      child: RightPanel(),
+                    ),
                   ),
                 ],
               ],

@@ -7,6 +7,7 @@ import 'package:fide/panels/left/left_panel.dart';
 import 'package:fide/panels/right/right_panel.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
+import 'package:fide/providers/side_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/panel_island.dart';
 import 'package:fide/widgets/resizable_splitter.dart';

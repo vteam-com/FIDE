@@ -1,7 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/providers/ui_state_providers.dart';
-import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/card_grid.dart';
@@ -17,7 +16,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The full-screen settings: the display mode and zoom, then the keyboard shortcuts
-/// of the app's menus. Escape or the title bar's close button leaves it.
+/// of the app's menus. Escape or the title bar's close button leaves it,
+/// giving the keyboard focus back to where it was.
+///
+/// It paints no background: it shows on the window's workspace gradient.
 class SettingsScreen extends ConsumerStatefulWidget {
   /// Creates the settings listing the shortcuts of [menus].
   const SettingsScreen({super.key, required this.menus, required this.onClose});
@@ -36,15 +38,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// Takes focus from the view underneath, so Escape reaches this screen.
   final FocusNode _focusNode = FocusNode();
 
+  /// What had the focus before this screen took it, such as the editor;
+  /// it gets it back when the screen closes.
+  FocusNode? _previousFocus;
+
   @override
   void initState() {
     super.initState();
+    _previousFocus = FocusManager.instance.primaryFocus;
     _focusNode.requestFocus();
   }
 
   @override
   void dispose() {
     _focusNode.dispose();
+    final previous = _previousFocus;
+    if (previous != null && previous.context != null) previous.requestFocus();
     super.dispose();
   }
 
@@ -64,46 +73,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       },
       child: Focus(
         focusNode: _focusNode,
-        child: DecoratedBox(
-          decoration: AppTheme.workspaceBackground(context),
-          child: PageScrollView(
-            children: [
-              CenteredContent(
-                maxWidth: AppSize.welcomeContentWidth,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: AppSpacing.xxLarge,
-                  children: [
-                    // The title bar's close button leaves the screen
-                    const HeroTitleWidget(
-                      title: AppName.short,
-                      subTitle: AppName.full,
+        child: PageScrollView(
+          children: [
+            CenteredContent(
+              maxWidth: AppSize.welcomeContentWidth,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: AppSpacing.xxLarge,
+                children: [
+                  // The title bar's close button leaves the screen
+                  const HeroTitleWidget(
+                    title: AppName.short,
+                    subTitle: AppName.full,
+                  ),
+                  _buildSection('Appearance', [
+                    _buildSettingRow(
+                      'Display mode',
+                      _buildDisplayModeButtons(),
                     ),
-                    _buildSection('Appearance', [
-                      _buildSettingRow(
-                        'Display mode',
-                        _buildDisplayModeButtons(),
-                      ),
-                      _buildSettingRow('Zoom', _buildZoomButtons()),
-                    ]),
+                    _buildSettingRow('Zoom', _buildZoomButtons()),
+                  ]),
+                ],
+              ),
+            ),
+            // The shortcut cards wrap across the window's width, the
+            // section as wide as their widest row and centered
+            CenteredContent(
+              child: _buildSection('Keyboard Shortcuts', [
+                CardGrid(
+                  children: [
+                    for (final MapEntry(key: menu, value: entries)
+                        in byMenu.entries)
+                      _buildShortcutGroup(menu, entries),
                   ],
                 ),
-              ),
-              // The shortcut cards wrap across the window's width, the
-              // section as wide as their widest row and centered
-              CenteredContent(
-                child: _buildSection('Keyboard Shortcuts', [
-                  CardGrid(
-                    children: [
-                      for (final MapEntry(key: menu, value: entries)
-                          in byMenu.entries)
-                        _buildShortcutGroup(menu, entries),
-                    ],
-                  ),
-                ]),
-              ),
-            ],
-          ),
+              ]),
+            ),
+          ],
         ),
       ),
     );

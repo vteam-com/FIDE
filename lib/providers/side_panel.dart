@@ -3,6 +3,10 @@ import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
+/// The panel the user last clicked or moved the focus into; null for the
+/// editor area between them.
+final activePanelProvider = StateProvider<SidePanel?>((_) => null);
+
 /// Whether each [SidePanel] is shown; the left and right ones are at
 /// start.
 final sidePanelVisibleProvider = StateProvider.family<bool, SidePanel>(
@@ -19,14 +23,25 @@ final sidePanelExpandedProvider = StateProvider.family<bool, SidePanel>(
 /// cycles through Hide, Min and Max from its title-bar button, its View
 /// menu item and its [shortcut].
 enum SidePanel {
-  left('Left', 'assets/toggle_panel_left.svg', AppShortcut.panelLeft),
+  left(
+    'Left',
+    'assets/toggle_panel_left.svg',
+    AppShortcut.panelLeft,
+    Alignment.centerLeft,
+  ),
   bottom(
     'Bottom',
     'assets/toggle_panel_bottom.svg',
     AppShortcut.panelBottom,
+    Alignment.bottomCenter,
     shownAtStart: false,
   ),
-  right('Right', 'assets/toggle_panel_right.svg', AppShortcut.panelRight);
+  right(
+    'Right',
+    'assets/toggle_panel_right.svg',
+    AppShortcut.panelRight,
+    Alignment.centerRight,
+  );
 
   /// Where the panel sits, such as `Left`.
   final String label;
@@ -37,13 +52,18 @@ enum SidePanel {
   /// Keys cycling the panel's size.
   final SingleActivator shortcut;
 
+  /// Where the workspace gradient centers while the panel is active: the
+  /// middle of the window's edge the panel sits on.
+  final Alignment gradientCenter;
+
   /// Whether the panel is shown when the app starts.
   final bool shownAtStart;
 
   const SidePanel(
     this.label,
     this.asset,
-    this.shortcut, {
+    this.shortcut,
+    this.gradientCenter, {
     this.shownAtStart = true,
   });
 
