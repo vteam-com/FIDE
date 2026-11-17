@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/create_project_draft_notifier.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/tool_availability_provider.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/check_list_tile.dart';
@@ -8,7 +9,6 @@ import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/step_header.dart';
 import 'package:fide/widgets/tool_status_row.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -160,7 +160,7 @@ class _CreateProjectStep1State extends ConsumerState<CreateProjectStep1> {
 
   /// Opens a directory picker and makes the chosen folder the parent.
   Future<void> _handleBrowseDirectory() async {
-    final selectedDir = await FilePicker.getDirectoryPath();
+    final selectedDir = await ref.read(folderPickerProvider)();
     if (selectedDir == null || !mounted) return;
     _directoryController.text = selectedDir;
     _notifier.setParentDirectory(selectedDir);

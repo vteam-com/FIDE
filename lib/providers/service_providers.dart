@@ -352,9 +352,13 @@ final newProjectParentDirectoryProvider = Provider<String?>((_) => null);
 
 /// Provides the [FolderPicker] the Open Project actions ask for a folder
 /// with; override in tests to answer without a dialog.
-final folderPickerProvider = Provider<FolderPicker>(
-  (_) => FilePicker.getDirectoryPath,
-);
+final folderPickerProvider = Provider<FolderPicker>((_) => _pickFolderPath);
+
+/// Shows the platform's folder picker and returns the chosen folder's path;
+/// null when the user cancels. On desktop the picker answers with a `file`
+/// URI, whose path FIDE works with.
+Future<String?> _pickFolderPath() async =>
+    (await FilePicker.pickDirectory())?.toFilePath();
 
 /// Provides the [DocumentsDirectoryFinder] the new-project wizard starts
 /// in without a configured parent; override in tests to skip the platform.
