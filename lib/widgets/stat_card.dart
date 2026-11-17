@@ -1,11 +1,9 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/quality_issue.dart';
 import 'package:fide/widgets/action_card.dart';
-import 'package:fide/widgets/issue_row.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// An [ActionCard], laid out by a `CardGrid`, headed by [icon] and [title], showing one
-/// headline [value] over [issues], then [details].
+/// headline [value] over [rows], then [details].
 class StatCard extends StatelessWidget {
   /// Creates the card.
   const StatCard({
@@ -13,7 +11,7 @@ class StatCard extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.value,
-    this.issues = const [],
+    this.rows = const [],
     this.details = const [],
     this.action,
   });
@@ -28,8 +26,9 @@ class StatCard extends StatelessWidget {
   /// Shown before [title].
   final IconData icon;
 
-  /// Problems behind [value], each with how to fix it.
-  final List<QualityIssue> issues;
+  /// Lines explaining [value], such as the `IssueRow`s of the problems
+  /// behind it.
+  final List<Widget> rows;
 
   /// What the card measures.
   final String title;
@@ -48,7 +47,7 @@ class StatCard extends StatelessWidget {
         spacing: AppSpacing.medium,
         children: [
           value,
-          for (final issue in issues) IssueRow(issue),
+          ...rows,
           for (final detail in details)
             Text(detail, style: AppTextStyle.secondary(context)),
         ],

@@ -8,6 +8,7 @@ import 'package:fide/providers/app_icon_review_provider.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/panel_actions.dart';
+import 'package:fide/widget_services/issue_row.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/card_grid.dart';
@@ -121,7 +122,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
               : '${missing.localized} missing translations',
         ],
       ],
-      issues: overview.code.stringIssues,
+      rows: IssueRow.all(overview.code.stringIssues),
     );
   }
 
@@ -178,7 +179,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
                   ? 'CocoaPods can go'
                   : 'Still on CocoaPods',
             ),
-      issues: migration.issues,
+      rows: IssueRow.all(migration.issues),
       details: [
         if (podPlatforms.isNotEmpty)
           'Podfile in ${podPlatforms.map((platform) => platform.displayName).join(', ')}'
@@ -208,7 +209,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
           actions: [
             RefreshButton(
               busy: ref.watch(projectQualityBusyProvider),
-              onPressed: () => refreshProjectQuality(ref),
+              onPressed: () => refreshProjectQuality(ref.invalidate),
             ),
             // Shown over open files: closing returns to them
             if (ref.watch(centerViewProvider) == CenterView.overview)
@@ -228,7 +229,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
                 quality?.score ?? code.complianceScore,
                 large: true,
               ),
-              issues: issues,
+              rows: IssueRow.all(issues),
               details: [
                 if (issues.isEmpty)
                   'Every fCheck analyzer at 100%, nothing from dart analyze',

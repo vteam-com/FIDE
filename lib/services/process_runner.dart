@@ -59,6 +59,34 @@ class ProcessRunner {
         );
   }
 
+  /// Runs [executable] like [run], killing it as soon as [stop] completes,
+  /// such as when a newer run supersedes it; its result then has the
+  /// signal's exit code. Without [stop] it is [run].
+  Future<ProcessResult> runUntil(
+    String executable,
+    List<String> arguments, {
+    String? workingDirectory,
+    Future<void>? stop,
+  }) async {
+    if (stop == null) {
+      return run(executable, arguments, workingDirectory: workingDirectory);
+    }
+    final process = await start(
+      executable,
+      arguments,
+      workingDirectory: workingDirectory,
+    );
+    unawaited(stop.then((_) => process.kill()));
+    final stdout = process.stdout.transform(utf8.decoder).join();
+    final stderr = process.stderr.transform(utf8.decoder).join();
+    return ProcessResult(
+      process.pid,
+      await process.exitCode,
+      await stdout,
+      await stderr,
+    );
+  }
+
   /// Runs [executable] with [input] written to its stdin, then collects its
   /// UTF-8 output like [run].
   Future<ProcessResult> runWithInput(

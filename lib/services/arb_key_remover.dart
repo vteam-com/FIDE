@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/string_rewrite.dart';
@@ -35,22 +33,16 @@ class ArbKeyRemover {
   Future<StringRewrite> apply(String projectPath, List<String> keys) async {
     final config = await _config.l10nConfig(projectPath);
     final prefix = config.templateParts?.prefix ?? '';
-    final folder = Directory(config.arbDirIn(projectPath));
-    final files = await folder.exists()
-        ? folder
-              .listSync()
-              .whereType<File>()
-              .where(
-                (file) =>
-                    file.path.endsWith('.arb') &&
-                    p.basename(file.path).startsWith(prefix),
-              )
-              .toList()
-        : <File>[];
+    final paths = [
+      for (final path in await ArbService.arbFilesIn(
+        config.arbDirIn(projectPath),
+      ))
+        if (p.basename(path).startsWith(prefix)) path,
+    ];
     final removed = <String>{};
     final changedFiles = <String>[];
-    for (final file in files) {
-      final arb = ArbService.decode(await file.readAsString());
+    for (final path in paths) {
+      final arb = await ArbService.read(path);
       if (arb == null) continue;
       final found = keys.where(arb.containsKey).toList();
       if (found.isEmpty) continue;
@@ -59,9 +51,9 @@ class ArbKeyRemover {
           ..remove(key)
           ..remove('@$key');
       }
-      await file.writeAsString(ArbService.encode(arb));
+      await ArbService.write(path, arb);
       removed.addAll(found);
-      changedFiles.add(file.path);
+      changedFiles.add(path);
     }
     if (changedFiles.isNotEmpty) {
       await _generator.generateClasses(projectPath);

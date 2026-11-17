@@ -59,4 +59,13 @@ final a = Icon(size: AppIconSize.large, color: red);
       throwsStateError,
     );
   });
+
+  test('nameError accepts only a free class name', () {
+    expect(DryFix.nameError('LogoBox', {'Other'}), isNull);
+    expect(DryFix.nameError('logoBox', {}), 'logoBox is not a class name');
+    expect(
+      DryFix.nameError('LogoBox', {'LogoBox'}),
+      'LogoBox is taken: pick another name',
+    );
+  });
 }

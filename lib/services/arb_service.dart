@@ -23,6 +23,9 @@ class ArbService {
   /// ARB key naming the file's locale.
   static const String localeKey = '@@locale';
 
+  /// Extension of ARB files.
+  static const String _arbExtension = '.arb';
+
   /// Byte-order mark some editors put at the start of ARB files.
   static const String _byteOrderMark = '\uFEFF';
 
@@ -45,6 +48,41 @@ class ArbService {
   /// [json] as ARB file content, indented like the editor's Format.
   static String encode(Map<String, dynamic> json) =>
       CodeFormatter.encodeJson(json);
+
+  /// The ARB file at [path], decoded; null when it does not exist or is
+  /// not a JSON object.
+  static Future<Map<String, dynamic>?> read(String path) async {
+    final file = File(path);
+    return await file.exists() ? decode(await file.readAsString()) : null;
+  }
+
+  /// Writes [arb] as the ARB file at [path].
+  static Future<void> write(String path, Map<String, dynamic> arb) =>
+      File(path).writeAsString(encode(arb));
+
+  /// Reads the ARB file at [path], or starts from [orElse] (nothing by
+  /// default) when it does not exist or is not valid, makes [change] to
+  /// it and writes it back.
+  static Future<void> update(
+    String path,
+    void Function(Map<String, dynamic> arb) change, {
+    Map<String, dynamic> Function()? orElse,
+  }) async {
+    final arb = await read(path) ?? orElse?.call() ?? <String, dynamic>{};
+    change(arb);
+    await write(path, arb);
+  }
+
+  /// Paths of the ARB files directly in [directory]; none when it does
+  /// not exist.
+  static Future<List<String>> arbFilesIn(String directory) async {
+    final folder = Directory(directory);
+    if (!await folder.exists()) return [];
+    return [
+      await for (final entity in folder.list())
+        if (entity is File && entity.path.endsWith(_arbExtension)) entity.path,
+    ];
+  }
 
   /// Number of translatable entries (keys not starting with `@`) in ARB
   /// [content], or null when it isn't valid.
@@ -79,7 +117,7 @@ class ArbService {
 
     if (await directory.exists()) {
       await for (final entity in directory.list(recursive: true)) {
-        if (entity is File && entity.path.endsWith('.arb')) {
+        if (entity is File && entity.path.endsWith(_arbExtension)) {
           ArbFile? arbFile;
           try {
             arbFile = await parseArbFile(entity.path);

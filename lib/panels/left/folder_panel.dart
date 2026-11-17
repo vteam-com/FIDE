@@ -5,7 +5,7 @@ import 'package:fide/panels/left/shared_panel_utils.dart';
 import 'package:fide/panels/left/tree_filter.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
-import 'package:fide/widget_services/filename_widget.dart';
+import 'package:fide/widgets/filename_widget.dart';
 import 'package:fide/widgets/filter_field.dart';
 import 'package:fide/widgets/folder_node.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

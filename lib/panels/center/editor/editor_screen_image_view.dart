@@ -1,7 +1,7 @@
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/widget_services/image_backdrop_buttons.dart';
 import 'package:fide/widgets/any_image.dart';
 import 'package:fide/widgets/file_facts_label.dart';
-import 'package:fide/widgets/image_backdrop_buttons.dart';
 import 'package:fide/widgets/image_canvas.dart';
 import 'package:fide/widgets/viewer_toolbar.dart';
 import 'package:fide/widgets/zoom_label.dart';

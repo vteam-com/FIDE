@@ -298,7 +298,7 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
           // The graph is drawn from the project overview's analysis
           RefreshButton(
             busy: ref.watch(architectureLayoutProvider).isLoading,
-            onPressed: () => ref.invalidate(projectOverviewProvider),
+            onPressed: () => refreshProjectQuality(ref.invalidate),
           ),
           CompactIconButton.header(
             icon: Icons.close,

@@ -5,7 +5,6 @@ import 'package:fide/models/creation_report.dart';
 import 'package:fide/models/creation_step.dart';
 import 'package:fide/models/loading_action.dart';
 import 'package:fide/models/project_creation_request.dart';
-import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/l10n_generator.dart';
@@ -76,7 +75,7 @@ void main() {
       L10nGenerator(runner),
     ),
     L10nGenerator(runner),
-    ProjectTemplate(model ?? FakeChatModel(), FlutterSdk(runner)),
+    ProjectTemplate(model ?? FakeChatModel()),
   );
 
   void record(CreationReport report) =>
@@ -185,12 +184,24 @@ void main() {
     final project = '${parent.path}/demo';
     expect(
       File('$project/pubspec.yaml').readAsStringSync(),
-      contains('description: "A recipe book"'),
+      contains('description: A recipe book'),
     );
     expect(
       File('$project/README.md').readAsStringSync(),
       startsWith('# demo\n\nA recipe book'),
     );
+  });
+
+  test('AI generation keeps the localization set up in pubspec.yaml', () async {
+    final created = await serviceFor(FakeToolsRunner()).create(
+      request(languages: {'en', 'fr'}, useAi: true, description: 'Quotes "x"'),
+      record,
+    );
+
+    expect(created, true);
+    final pubspec = File('${parent.path}/demo/pubspec.yaml').readAsStringSync();
+    expect(pubspec, contains('generate: true'));
+    expect(pubspec, contains('description: Quotes "x"'));
   });
 
   test('outcomes tell failures apart and steps count from one', () {

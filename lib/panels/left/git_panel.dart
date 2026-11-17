@@ -7,15 +7,15 @@ import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/git_service.dart';
-import 'package:fide/widget_services/diff_counter.dart';
-import 'package:fide/widget_services/filename_widget.dart';
+import 'package:fide/widget_services/image_diff.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
+import 'package:fide/widgets/diff_counter.dart';
 import 'package:fide/widgets/empty_label.dart';
 import 'package:fide/widgets/empty_state.dart';
+import 'package:fide/widgets/filename_widget.dart';
 import 'package:fide/widgets/header_bar.dart';
-import 'package:fide/widgets/image_diff.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/panel_scroll_view.dart';
@@ -144,22 +144,13 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   Future<void> _writeCommitMessage() async {
     final cancel = AiCancelToken();
     setState(() => _messageCancel = cancel);
-    final git = ref.read(gitServiceProvider);
-    final ai = ref.read(commitMessageWriterProvider);
     try {
-      final diff = await git.getStagedDiff(widget.projectPath);
-      cancel.throwIfCancelled();
-      final message = await ai.write(diff, cancel: cancel);
+      final message = await ref
+          .read(gitRepoControllerProvider(widget.projectPath).notifier)
+          .writeCommitMessage(cancel);
       if (mounted && message.isNotEmpty) _commitController.text = message;
     } on AiCancelledException {
       // Stopped by the user: the message stays as it was
-    } on GitException catch (e) {
-      if (mounted) {
-        MessageBox.showError(
-          context,
-          '$_aiMessagePrefix${e.explain(GitMessages.stagedDiffFailed)}',
-        );
-      }
     } catch (e) {
       if (mounted) MessageBox.showError(context, '$_aiMessagePrefix$e');
     } finally {

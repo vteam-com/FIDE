@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/build_artifacts.dart';
 import 'package:fide/models/flutter_platform.dart';
@@ -9,11 +7,11 @@ import 'package:fide/providers/app_icon_review_provider.dart';
 import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/widget_services/file_actions.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/detail_row.dart';
-import 'package:fide/widgets/file_actions.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/section_title.dart';
@@ -24,8 +22,12 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
-/// Represents `PlatformInfoSection`.
+/// The Execute panel's section about the [selectedPlatform]: whether the
+/// project supports it and this computer can build it, its last build's
+/// output and its app icons' problems.
 class PlatformInfoSection extends ConsumerStatefulWidget {
+  /// Creates the section for [selectedPlatform] of the project at
+  /// [projectPath].
   const PlatformInfoSection({
     super.key,
     required this.selectedPlatform,
@@ -34,12 +36,16 @@ class PlatformInfoSection extends ConsumerStatefulWidget {
     required this.projectPath,
   });
 
+  /// Whether this computer can build [selectedPlatform].
   final bool canBuild;
 
+  /// Whether the project has [selectedPlatform]'s folder.
   final bool isSupported;
 
+  /// The open project's folder.
   final String projectPath;
 
+  /// The platform the Execute panel builds and runs.
   final FlutterPlatform selectedPlatform;
 
   @override

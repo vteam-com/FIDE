@@ -1,24 +1,21 @@
 import 'dart:io';
 
-import 'package:analyzer/dart/analysis/utilities.dart';
-import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:fide/models/localization_checks.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/l10n_generator.dart';
+import 'package:fide/services/main_dart_localizer.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:logging/logging.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
-part 'localization_setup.material_app_title_visitor.dart';
-
 /// Sets a project's localization up: adds the packages, enables code
-/// generation, writes template ARB files, wires `main.dart` and reports
-/// which of those pieces a project already has.
+/// generation, writes template ARB files, wires `main.dart` (rewritten by
+/// [MainDartLocalizer]) and reports which of those pieces a project
+/// already has.
 class LocalizationSetup {
   static final Logger _logger = Logger('LocalizationSetup');
 
@@ -79,10 +76,9 @@ class LocalizationSetup {
     final mainDart = await ProjectConfigReader.readIfExists(
       ProjectPaths(projectPath).mainDart,
     );
-    final arbDir = Directory(config.arbDirIn(projectPath));
-    final hasArbFiles =
-        await arbDir.exists() &&
-        await arbDir.list().any((entity) => entity.path.endsWith('.arb'));
+    final hasArbFiles = (await ArbService.arbFilesIn(
+      config.arbDirIn(projectPath),
+    )).isNotEmpty;
 
     return LocalizationChecks(
       hasPubspec: pubspec != null,
@@ -91,10 +87,7 @@ class LocalizationSetup {
       hasGeneratedClasses: await File(config.generatedPathIn(projectPath))
           .exists(),
       hasAppIntegration:
-          mainDart != null &&
-          mainDart.contains('AppLocalizations') &&
-          mainDart.contains('localizationsDelegates') &&
-          mainDart.contains('supportedLocales'),
+          mainDart != null && MainDartLocalizer.isLocalized(mainDart),
       hasDependencies:
           pubspec != null &&
           pubspec.dependsOn('flutter_localizations') &&
@@ -111,53 +104,15 @@ class LocalizationSetup {
       throw Exception('main.dart not found in project');
     }
 
-    String content = await mainFile.readAsString();
-
     final packageName =
         await _config.packageName(projectPath) ?? _fallbackPackageName;
     final config = await _config.l10nConfig(projectPath);
-
-    // Add import if missing
-    final importPath = "import '${config.importUri(packageName)}';";
-    if (!content.contains(importPath)) {
-      // Find the first import statement and add after it
-      final importMatch = RegExp(r'import .+;').firstMatch(content);
-      if (importMatch != null) {
-        final insertPos = importMatch.end;
-        content =
-            '${content.substring(0, insertPos)}\n$importPath\n${content.substring(insertPos)}';
-      }
-    }
-
-    // Extract original title for fallback
-    String originalTitle = 'My App';
-    final titleRegex = RegExp(r"title\s*:\s*'([^']*)'");
-    final titleMatch = titleRegex.firstMatch(content);
-    if (titleMatch != null) {
-      originalTitle = titleMatch.group(1)!;
-    }
-
-    // Replace title with onGenerateTitle
-    if (!content.contains('onGenerateTitle')) {
-      content = content.replaceAllMapped(titleRegex, (_) {
-        return "onGenerateTitle: (BuildContext context) =>\n      AppLocalizations.of(context)?.appTitle ?? '$originalTitle'";
-      });
-    }
-
-    // Update MaterialApp to include localizationsDelegates and supportedLocales
-    if (!content.contains(
-      'localizationsDelegates: AppLocalizations.localizationsDelegates',
-    )) {
-      // Find MaterialApp and add localizationsDelegates
-      final materialAppMatch = RegExp(r'MaterialApp\s*\(').firstMatch(content);
-      if (materialAppMatch != null) {
-        final insertPos = materialAppMatch.end;
-        content =
-            '${content.substring(0, insertPos)}\n  localizationsDelegates: AppLocalizations.localizationsDelegates,\n  supportedLocales: AppLocalizations.supportedLocales,\n${content.substring(insertPos)}';
-      }
-    }
-
-    await mainFile.writeAsString(content);
+    await mainFile.writeAsString(
+      MainDartLocalizer.localize(
+        await mainFile.readAsString(),
+        importUri: config.importUri(packageName),
+      ),
+    );
   }
 
   /// Writes English and French template ARB files into the project's ARB
@@ -171,24 +126,22 @@ class LocalizationSetup {
     );
     final extractedTitle = mainDart == null
         ? null
-        : _extractAppTitleFromMainDart(mainDart);
+        : MainDartLocalizer.appTitle(mainDart);
     final appTitle = extractedTitle == null || extractedTitle.isEmpty
-        ? 'My App'
+        ? MainDartLocalizer.defaultTitle
         : extractedTitle;
 
     for (final (locale, title, greeting) in [
       ('en', appTitle, 'Hello World'),
       ('fr', 'Mon Application', 'Bonjour le monde'),
     ]) {
-      await File(config.arbPathFor(projectPath, locale)).writeAsString(
-        ArbService.encode({
-          ArbService.localeKey: locale,
-          'appTitle': title,
-          '@appTitle': {'description': 'The title of the application'},
-          'helloWorld': greeting,
-          '@helloWorld': {'description': 'A greeting message'},
-        }),
-      );
+      await ArbService.write(config.arbPathFor(projectPath, locale), {
+        ArbService.localeKey: locale,
+        'appTitle': title,
+        '@appTitle': {'description': 'The title of the application'},
+        'helloWorld': greeting,
+        '@helloWorld': {'description': 'A greeting message'},
+      });
     }
   }
 
@@ -208,18 +161,6 @@ class LocalizationSetup {
       editor.update(['flutter'], {'generate': true});
     }
     await pubspecFile.writeAsString(editor.toString());
-  }
-
-  /// Returns the string literal passed as `MaterialApp(title:)`, if any.
-  String? _extractAppTitleFromMainDart(String content) {
-    try {
-      final visitor = _MaterialAppTitleVisitor();
-      parseString(content: content).unit.accept(visitor);
-      return visitor.title;
-    } catch (e) {
-      _logger.severe('Error parsing main.dart: $e');
-      return null;
-    }
   }
 
   /// Adds [package] to the project with `flutter pub add`, from [sdk] when

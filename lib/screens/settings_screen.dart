@@ -1,11 +1,11 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/providers/ui_state_providers.dart';
-import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/card_grid.dart';
 import 'package:fide/widgets/centered_content.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
+import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/page_scroll_view.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/theme_mode_buttons.dart';

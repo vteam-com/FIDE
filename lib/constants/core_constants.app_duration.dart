@@ -40,5 +40,9 @@ class AppDuration {
   /// the views depending on them update.
   static const Duration updateDebounce = Duration(milliseconds: 150);
 
+  /// How long saves must pause, as when the AI agent writes file after
+  /// file, before the project's quality is analyzed again.
+  static const Duration saveBurstPause = Duration(milliseconds: 500);
+
   const AppDuration._();
 }

@@ -56,10 +56,9 @@ class ArbTranslator {
   ) async {
     final config = await _config.l10nConfig(projectPath);
     final template = config.templateParts;
-    final templateFile = File(config.templatePathIn(projectPath));
-    if (template == null || !await templateFile.exists()) return [];
-    final source =
-        ArbService.decode(await templateFile.readAsString()) ?? const {};
+    final templatePath = config.templatePathIn(projectPath);
+    if (template == null || !await File(templatePath).exists()) return [];
+    final source = await ArbService.read(templatePath) ?? const {};
     return [
       for (final issue in metrics.localizationIssues)
         if (issue.languageCode != template.locale)
@@ -143,19 +142,16 @@ class ArbTranslator {
     }
 
     for (final MapEntry(key: path, value: entries) in byFile.entries) {
-      final file = File(path);
-      final arb = await file.exists()
-          ? ArbService.decode(await file.readAsString()) ?? {}
-          : <String, dynamic>{};
-      arb.addAll(entries);
-      for (final key in reviewedByFile[path] ?? const <String>{}) {
-        final metadata = arb['@$key'];
-        arb['@$key'] = {
-          if (metadata is Map) ...metadata,
-          'description': reviewedDescription,
-        };
-      }
-      await file.writeAsString(ArbService.encode(arb));
+      await ArbService.update(path, (arb) {
+        arb.addAll(entries);
+        for (final key in reviewedByFile[path] ?? const <String>{}) {
+          final metadata = arb['@$key'];
+          arb['@$key'] = {
+            if (metadata is Map) ...metadata,
+            'description': reviewedDescription,
+          };
+        }
+      });
     }
     final written = byFile.values.fold(0, (sum, keys) => sum + keys.length);
     if (written > 0) await _generator.generateClasses(projectPath);

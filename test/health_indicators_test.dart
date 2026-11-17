@@ -15,7 +15,6 @@ void main() {
 
     test('each failed check becomes an issue with how to fix it', () {
       final health = HealthIndicators(
-        buildErrors: 2,
         largeFiles: [
           for (var i = 0; i <= AppMetric.maxAllowedLargeFiles; i++)
             'assets/big$i.bin',
@@ -25,11 +24,10 @@ void main() {
 
       expect(issues.map((issue) => issue.label), [
         HealthCheck.missingLock.issueLabel(1),
-        '2 build errors',
         '${AppMetric.maxAllowedLargeFiles + 1} large files',
       ]);
-      expect(issues[1].tone, StatusTone.error);
-      expect(issues[1].findings, isEmpty);
+      expect(issues.first.tone, StatusTone.warning);
+      expect(issues.first.findings, isEmpty);
       final large = issues.last;
       expect(large.tone, StatusTone.info);
       expect(large.rootPath, '/demo');

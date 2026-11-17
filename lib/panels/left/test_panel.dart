@@ -1,10 +1,8 @@
-import 'package:fide/models/test_suite.dart';
 import 'package:fide/providers/command_runner.dart';
 import 'package:fide/providers/service_providers.dart';
-import 'package:fide/services/flutter_build_service.dart';
-import 'package:fide/services/test_suite_inspector.dart';
-import 'package:fide/widgets/command_action_list.dart';
-import 'package:fide/widgets/command_output.dart';
+import 'package:fide/services/test_runner.dart';
+import 'package:fide/widget_services/command_action_list.dart';
+import 'package:fide/widget_services/command_output.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/panel_action.dart';
 import 'package:fide/widgets/panel_header.dart';
@@ -43,9 +41,6 @@ class TestPanel extends ConsumerWidget {
     _validateId,
   ];
 
-  /// Exit code reported when there are no tests to run or validate.
-  static const int _noTestsExitCode = 1;
-
   /// Folder of the project whose tests run.
   final String projectPath;
 
@@ -78,11 +73,8 @@ class TestPanel extends ConsumerWidget {
   List<PanelAction> _actions(BuildContext context, WidgetRef ref) {
     /// Runs `flutter test` on the files [select] picks (every test when it
     /// is null) as action [id].
-    void runTests(
-      String id, {
-      List<String> Function(TestSuite suite)? select,
-      bool coverage = false,
-    }) => _runTests(context, ref, id, select: select, coverage: coverage);
+    void runTests(String id, {TestSelection? select, bool coverage = false}) =>
+        _runTests(context, ref, id, select: select, coverage: coverage);
 
     return [
       PanelAction(
@@ -170,7 +162,7 @@ Validates test organization and naming conventions.
     BuildContext context,
     WidgetRef ref,
     String id, {
-    List<String> Function(TestSuite suite)? select,
+    TestSelection? select,
     bool coverage = false,
   }) async {
     final runner = ref.read(commandRunnerProvider.notifier);
@@ -178,28 +170,14 @@ Validates test organization and naming conventions.
       MessageBox.showInfo(context, 'Tests are already running');
       return;
     }
-    final buildService = ref.read(flutterBuildServiceProvider);
-    final inspector = ref.read(testSuiteInspectorProvider);
+    final tests = ref.read(testRunnerProvider);
 
     final succeeded = await runner.run(
       id,
       logKey: _logKey,
       startMessages: ['Running flutter test${coverage ? ' --coverage' : ''}'],
-      command: (output) async {
-        final paths = select == null
-            ? const <String>[]
-            : select(await inspector.inspect(projectPath) ?? const TestSuite());
-        if (select != null && paths.isEmpty) {
-          output.onError('No matching test files found under test/');
-          return _noTestsExitCode;
-        }
-        return buildService.test(
-          projectPath,
-          output,
-          paths: paths,
-          coverage: coverage,
-        );
-      },
+      command: (output) =>
+          tests.run(projectPath, output, select: select, coverage: coverage),
       successMessage: '✅ Tests completed successfully',
       failureMessage: (exitCode) => '❌ Tests failed with exit code: $exitCode',
       errorPrefix: '❌ Error running tests: ',
@@ -214,30 +192,18 @@ Validates test organization and naming conventions.
 
   /// Reports how the project's tests are organized.
   Future<void> _validateTestStructure(WidgetRef ref) {
-    final inspector = ref.read(testSuiteInspectorProvider);
+    final tests = ref.read(testRunnerProvider);
     return ref
         .read(commandRunnerProvider.notifier)
         .run(
           _validateId,
           logKey: _logKey,
           startMessages: const [],
-          command: (output) => _reportTestStructure(inspector, output),
+          command: (output) => tests.reportStructure(projectPath, output),
           successMessage: '✅ Test structure validated',
           failureMessage: (_) =>
               '⚠️ No test directory found: create test/ to add tests',
           errorPrefix: '❌ Error analyzing test structure: ',
         );
-  }
-
-  /// Writes the test suite's structure to [output]; exits non-zero when
-  /// the project has no tests folder.
-  Future<int> _reportTestStructure(
-    TestSuiteInspector inspector,
-    BuildOutput output,
-  ) async {
-    final suite = await inspector.inspect(projectPath);
-    if (suite == null) return _noTestsExitCode;
-    suite.reportLines.forEach(output.onOutput);
-    return 0;
   }
 }

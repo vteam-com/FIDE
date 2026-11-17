@@ -32,6 +32,11 @@ class IssueRow extends ConsumerWidget {
   /// The issue shown.
   final QualityIssue issue;
 
+  /// One row per issue of [issues], in their order.
+  static List<IssueRow> all(List<QualityIssue> issues) => [
+    for (final issue in issues) IssueRow(issue),
+  ];
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showDetails = issue.hasDetails

@@ -88,6 +88,9 @@ class DartAnalysis {
   /// The analyzed project folder.
   final String rootPath;
 
+  /// Number of compile errors found.
+  int get errorCount => _found(StatusTone.error).length;
+
   /// Quality-score points the diagnostics cost, every severity capped.
   int get deduction =>
       _severities.keys.fold(0, (sum, tone) => sum + _deductionOf(tone));

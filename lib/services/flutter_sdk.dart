@@ -1,7 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:fide/services/process_runner.dart';
 import 'package:path/path.dart' as p;
+
+/// Resolves the command launching the Dart tool.
+typedef DartCommand = Future<String> Function();
 
 /// Versions of the installed Flutter SDK, read from `flutter --version`.
 class FlutterSdk {
@@ -9,9 +13,15 @@ class FlutterSdk {
   /// `PATH`.
   static const String executable = 'flutter';
 
-  /// The command running the Dart tool (`dart format`, `dart analyze`),
-  /// found on the login shell's `PATH` next to Flutter's.
+  /// The command running the Dart tool (`dart format`, `dart analyze`)
+  /// found on the login shell's `PATH`, which may not be Flutter's.
   static const String dartExecutable = 'dart';
+
+  /// The Dart tool's file name in a Dart SDK's `bin` folder on Windows.
+  static const String _windowsDartFile = 'dart.exe';
+
+  /// The folder of a Dart SDK holding its tools.
+  static const String _sdkBinFolder = 'bin';
 
   final ProcessRunner _runner;
 
@@ -35,6 +45,23 @@ class FlutterSdk {
       return null;
     }
   }
+
+  /// The Dart tool bundled with Flutter, so `dart analyze` and
+  /// `dart format` match the SDK projects build with; [dartExecutable] on
+  /// the `PATH` when Flutter does not report one.
+  Future<String> bundledDart() async {
+    final sdkPath = await dartSdkPath();
+    if (sdkPath == null) return dartExecutable;
+    final dart = p.join(
+      sdkPath,
+      _sdkBinFolder,
+      Platform.isWindows ? _windowsDartFile : dartExecutable,
+    );
+    return await File(dart).exists() ? dart : dartExecutable;
+  }
+
+  /// [dartExecutable] on the `PATH`, for tools given no Flutter SDK.
+  static Future<String> dartOnPath() async => dartExecutable;
 
   /// Flutter and Dart versions (e.g. `3.24.0`), or null when Flutter isn't
   /// available. Either version is null when the output doesn't show it.

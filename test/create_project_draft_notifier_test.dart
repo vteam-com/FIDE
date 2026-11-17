@@ -11,7 +11,6 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/create_project_draft_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/tool_availability_provider.dart';
-import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/localization_setup.dart';
@@ -37,7 +36,7 @@ class _RecordingService extends ProjectCreationService {
           L10nGenerator(ProcessRunner()),
         ),
         const L10nGenerator(ProcessRunner()),
-        ProjectTemplate(FakeChatModel(), const FlutterSdk(ProcessRunner())),
+        ProjectTemplate(FakeChatModel()),
       );
 
   final List<ProjectCreationRequest> requests = [];

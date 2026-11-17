@@ -6,8 +6,8 @@ import 'package:fide/panels/left/search_panel.dart';
 import 'package:fide/panels/left/test_panel.dart';
 import 'package:fide/providers/left_panel_tab.dart';
 import 'package:fide/providers/panel_tab_badges.dart';
+import 'package:fide/widget_services/project_scoped.dart';
 import 'package:fide/widgets/panel_tab_spec.dart';
-import 'package:fide/widgets/project_scoped.dart';
 
 /// What the left panel shows under each [LeftPanelTab], in tab order.
 final List<PanelTabSpec<LeftPanelTab>> leftPanelTabs = [

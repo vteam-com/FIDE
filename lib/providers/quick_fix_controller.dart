@@ -6,7 +6,6 @@ import 'package:fide/providers/ai_request.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/quick_fix_runner.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Tells the user [message], in [tone]'s meaning, such as a fix's outcome.
@@ -20,27 +19,25 @@ final quickFixControllerProvider = Provider<QuickFixController>(
     chat: ref.watch(aiChatProvider.notifier),
     requests: ref.watch(aiRequestsProvider),
     documents: ref.watch(openDocumentsProvider.notifier),
-    refreshOverview: () => ref.invalidate(projectOverviewProvider),
   ),
 );
 
 /// Runs the quick fixes the user picks on the open project: confirms
 /// them, runs a fix asking the model as a task in the AI panel, reloads
-/// the files they write, refreshes the project overview and reports the
+/// the files they write, which re-analyzes the project, and reports the
 /// outcome. The caller only provides the dialogs and messages.
 class QuickFixController {
   /// Creates the controller running fixes with [_runner] on the project
   /// [_projectPath] gives, showing those asking the model in [_chat] and
   /// sending the strings no fix can rewrite through [_requests]; the files
-  /// a fix writes are reloaded in [_documents] and [_refreshOverview]
-  /// re-analyzes the project.
+  /// a fix writes are reloaded in [_documents], which re-analyzes the
+  /// project.
   QuickFixController({
     required this._projectPath,
     required this._runner,
     required this._chat,
     required this._requests,
     required this._documents,
-    required this._refreshOverview,
   });
 
   /// Label of the action reviewing hardcoded strings.
@@ -51,8 +48,6 @@ class QuickFixController {
   final OpenDocumentsNotifier _documents;
 
   final String? Function() _projectPath;
-
-  final VoidCallback _refreshOverview;
 
   final AiRequests _requests;
 
@@ -144,7 +139,6 @@ class QuickFixController {
               ));
       if (outcome == null) return;
       await _documents.reloadWritten(outcome.changedFiles);
-      _refreshOverview();
       if (inChat) {
         _chat.endTask(outcome.summary);
       } else {

@@ -1,26 +1,18 @@
-import 'dart:convert';
-
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/dart_string_literal.dart';
 import 'package:fide/services/chat_model.dart';
-import 'package:fide/services/flutter_sdk.dart';
 
-/// Scaffolds a new project's starter files: `pubspec.yaml` and `README.md`
-/// from templates, and `lib/main.dart` written by the model, or a basic
-/// app when its answer has no usable code.
+/// Scaffolds a new project's starter files: `README.md` from a template,
+/// and `lib/main.dart` written by the model, or a basic app when its
+/// answer has no usable code. It leaves `pubspec.yaml` to
+/// `flutter create` and the localization setup, which edit it.
 class ProjectTemplate {
-  /// Constraint used when the installed Dart version can't be detected.
-  static const String _fallbackDartConstraint = '^3.0.0';
-
   /// Fenced code blocks of a reply, optionally tagged `dart`.
   static final RegExp _codeBlock = RegExp(
     r'```\s*(?:dart)?\s*\n?(.*?)\n?```',
     caseSensitive: false,
     dotAll: true,
   );
-
-  /// Runs of line breaks, folded away in one-line fields.
-  static final RegExp _lineBreaks = RegExp(r'[\r\n]+');
 
   /// Import every Flutter `main.dart` starts with.
   static const String _materialImport =
@@ -30,11 +22,9 @@ class ProjectTemplate {
   static const String _mainFunction = 'void main()';
 
   final ChatModel _model;
-  final FlutterSdk _sdk;
 
-  /// Creates a template asking [_model] for the code and reading the Dart
-  /// version from [_sdk].
-  const ProjectTemplate(this._model, this._sdk);
+  /// Creates a template asking [_model] for the code.
+  const ProjectTemplate(this._model);
 
   /// Generates the starter files of the project [projectName] described by
   /// [description], by path relative to the project root; [cancel] stops
@@ -52,20 +42,9 @@ class ProjectTemplate {
       cancel: cancel,
     );
     return {
-      'pubspec.yaml': _pubspec(
-        projectName,
-        description,
-        await _dartConstraint(),
-      ),
       'README.md': _readme(projectName, description),
       'lib/main.dart': _mainDart(reply) ?? _basicMain(projectName, description),
     };
-  }
-
-  /// Dart SDK constraint matching the installed Flutter, such as `^3.9.2`.
-  Future<String> _dartConstraint() async {
-    final dartVersion = (await _sdk.versions())?.dart;
-    return dartVersion == null ? _fallbackDartConstraint : '^$dartVersion';
   }
 
   /// The model's `lib/main.dart` in [reply]: its first code block that
@@ -103,38 +82,6 @@ Follow these rules:
 Customer description:
 "$description"
 ''';
-
-  /// The `pubspec.yaml` of [projectName] described by [description] and
-  /// requiring [sdkConstraint].
-  static String _pubspec(
-    String projectName,
-    String description,
-    String sdkConstraint,
-  ) =>
-      '''
-name: $projectName
-description: ${_yamlLine(description)}
-publish_to: 'none'
-version: 1.0.0+1
-
-environment:
-  sdk: $sdkConstraint
-  flutter: '>=3.0.0'
-
-dependencies:
-  flutter:
-    sdk: flutter
-
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-
-''';
-
-  /// [text] as one double-quoted YAML scalar: JSON strings are valid YAML,
-  /// and line breaks become spaces.
-  static String _yamlLine(String text) =>
-      jsonEncode(text.replaceAll(_lineBreaks, ' ').trim());
 
   /// The `README.md` of [projectName] described by [description].
   static String _readme(String projectName, String description) =>

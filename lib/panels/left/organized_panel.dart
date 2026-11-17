@@ -10,10 +10,10 @@ import 'package:fide/providers/app_icon_review_provider.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/panel_actions.dart';
-import 'package:fide/providers/service_providers.dart';
-import 'package:fide/widget_services/filename_widget.dart';
+import 'package:fide/providers/project_categories_provider.dart';
 import 'package:fide/widgets/asset_kind_icon.dart';
 import 'package:fide/widgets/container_counter.dart';
+import 'package:fide/widgets/filename_widget.dart';
 import 'package:fide/widgets/folder_node.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
@@ -39,49 +39,22 @@ class OrganizedPanel extends ConsumerStatefulWidget {
 
 class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     with ProjectTreePanelState<OrganizedPanel> {
-  /// The grouping of the current tree; null while it is computed.
+  /// The grouping of the tree shown, as of the last build; null while it
+  /// is computed.
   ProjectCategories? _categories;
-
-  /// Bumped per categorization so a stale result is dropped.
-  int _categorizeGeneration = 0;
 
   /// The file whose classes are being split into their own files, if any.
   String? _splittingPath;
 
   @override
-  void onProjectTreeChanged() {
-    _categories = null;
-    _categorize();
-  }
-
-  /// Groups the current tree off the build path, counting classes from
-  /// the overview's fCheck analysis once there is one, and rebuilds with it.
-  Future<void> _categorize() async {
-    final root = projectRoot;
-    if (root == null) return;
-    final generation = ++_categorizeGeneration;
-    final categories = await ref
-        .read(projectCategorizerProvider)
-        .categorize(root, ref.read(projectOverviewProvider).value?.code);
-    if (!mounted || generation != _categorizeGeneration) return;
-    setState(() => _categories = categories);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    ref.listen(savedFilesRevisionProvider, (_, _) => _categorize());
-    // Files were added or removed, e.g. by a class split
-    ref.listen(projectTreeRevisionProvider, (_, _) => _categorize());
-    // Class counts come from fCheck, analyzing again after each save
-    ref.listen(projectOverviewProvider, (_, _) => _categorize());
-
-    return buildPanelContent();
-  }
+  Widget build(BuildContext context) => buildPanelContent();
 
   /// One section per non-empty category, or a spinner while grouping.
   @override
   Widget buildProjectTree(ProjectNode root) {
-    final categories = _categories;
+    final categories = _categories = ref
+        .watch(projectCategoriesProvider(root))
+        .value;
     if (categories == null) {
       return const LoadingIndicator();
     }

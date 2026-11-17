@@ -144,9 +144,6 @@ class AnalyzerPanel extends ConsumerWidget {
   /// Fewest findings with a single fix for their section to offer Fix all.
   static const int minFixAll = 2;
 
-  /// A Dart class name: `CenterRightFittedBox`.
-  static final RegExp _className = RegExp(r'^[A-Z][A-Za-z0-9]*$');
-
   /// Makes [fix]'s edits, after asking the name of the widget it extracts
   /// when it does (a class name no file of the project sees yet), then
   /// tells how it went; [key] names the button that started it, [fix]
@@ -169,13 +166,9 @@ class AnalyzerPanel extends ConsumerWidget {
         confirmLabel: 'Extract',
       );
       if (name == null || name.isEmpty || !context.mounted) return;
-      if (!_className.hasMatch(name)) {
-        MessageBox.showError(context, '$name is not a class name');
-        return;
-      }
       final taken = ref.read(dryReviewProvider).value?.takenNames ?? const {};
-      if (taken.contains(name)) {
-        MessageBox.showError(context, '$name is taken: pick another name');
+      if (DryFix.nameError(name, taken) case final error?) {
+        MessageBox.showError(context, error);
         return;
       }
       named = fix.named(name);

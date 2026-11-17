@@ -74,6 +74,8 @@ mixin ProjectTreePanelState<T extends ConsumerStatefulWidget>
 
     try {
       await ref.read(projectTreeReaderProvider).loadTree(root);
+      if (!mounted) return;
+      ref.read(projectTreeRevisionProvider.notifier).state++;
       onProjectTreeChanged();
       if (mounted) {
         setState(() {});

@@ -44,6 +44,17 @@ class DryFix {
   /// Project-relative paths of the files the fix edits.
   Set<String> get paths => {for (final edit in edits) edit.path};
 
+  /// A Dart class name: `CenterRightFittedBox`.
+  static final RegExp _className = RegExp(r'^[A-Z][A-Za-z0-9]*$');
+
+  /// Why [name] can't name the widget the fix extracts: it is no class
+  /// name or one of the project's [takenNames]; null when it can.
+  static String? nameError(String name, Set<String> takenNames) {
+    if (!_className.hasMatch(name)) return '$name is not a class name';
+    if (takenNames.contains(name)) return '$name is taken: pick another name';
+    return null;
+  }
+
   /// The fix with its widget called [name], in a file named after it.
   DryFix named(String name) {
     final file = ProjectName.normalize(name) ?? name;

@@ -1,5 +1,5 @@
 import 'package:fide/providers/command_runner.dart';
-import 'package:fide/widgets/output_panel.dart';
+import 'package:fide/widget_services/output_panel.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

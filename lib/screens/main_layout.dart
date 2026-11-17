@@ -9,7 +9,7 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/side_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
-import 'package:fide/widgets/panel_island.dart';
+import 'package:fide/widget_services/panel_island.dart';
 import 'package:fide/widgets/resizable_splitter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';

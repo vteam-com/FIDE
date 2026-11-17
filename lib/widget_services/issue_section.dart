@@ -1,7 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/quality_issue.dart';
 import 'package:fide/models/status_tone.dart';
-import 'package:fide/widgets/issue_row.dart';
+import 'package:fide/widget_services/issue_row.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:material_ui/material_ui.dart';
@@ -42,7 +42,7 @@ class IssueSection extends StatelessWidget {
         children: [
           if (issues.isEmpty)
             StatusIndicator.tone(StatusTone.success, label: emptyLabel),
-          for (final issue in issues) IssueRow(issue),
+          ...IssueRow.all(issues),
         ],
       ),
     );

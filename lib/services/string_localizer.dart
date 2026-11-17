@@ -192,13 +192,11 @@ class StringLocalizer {
     String projectPath,
     L10nConfig config,
   ) async {
-    final template = File(config.templatePathIn(projectPath));
-    final arb = await template.exists()
-        ? ArbService.decode(await template.readAsString())
-        : null;
+    final templatePath = config.templatePathIn(projectPath);
+    final arb = await ArbService.read(templatePath);
     if (arb == null) {
       throw Exception(
-        'No valid ${p.relative(template.path, from: projectPath)}: '
+        'No valid ${p.relative(templatePath, from: projectPath)}: '
         'set up localization first',
       );
     }

@@ -19,7 +19,6 @@ import 'package:fide/services/flutter_build_service.dart';
 import 'package:fide/services/ollama_client.dart';
 import 'package:fide/services/project_file_store.dart';
 import 'package:fide/services/quick_fix_runner.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:path/path.dart' as p;
 
@@ -42,7 +41,6 @@ final aiChatProvider = StateNotifierProvider<AiChatNotifier, AiChat>(
     buildErrors: () => ref.read(lastBuildErrorsProvider),
     onBuildErrors: (errors) =>
         ref.read(lastBuildErrorsProvider.notifier).state = errors,
-    refreshOverview: () => ref.invalidate(projectOverviewProvider),
   ),
 );
 
@@ -59,7 +57,7 @@ class AiChatNotifier extends StateNotifier<AiChat> {
   /// writes in [_documents], runs [_quickFixes] and checks its work with
   /// [_builds] for the [_platform] selected, keeping [_buildErrors] up to
   /// date through [_onBuildErrors]; [_selectedFile] gives the file open in
-  /// the editor and [_refreshOverview] re-analyzes the project after a fix.
+  /// the editor. Reloading written files re-analyzes the project.
   AiChatNotifier({
     required this._model,
     required this._ollama,
@@ -74,7 +72,6 @@ class AiChatNotifier extends StateNotifier<AiChat> {
     required this._platform,
     required this._buildErrors,
     required this._onBuildErrors,
-    required this._refreshOverview,
   }) : super(const AiChat());
 
   final AiAssistant _assistant;
@@ -101,8 +98,6 @@ class AiChatNotifier extends StateNotifier<AiChat> {
   final QuickFixRunner _quickFixes;
 
   final FileContentReader _reader;
-
-  final VoidCallback _refreshOverview;
 
   /// Bumped per request and by [cancel], so a stopped request's late
   /// reply is dropped.
@@ -269,7 +264,6 @@ class AiChatNotifier extends StateNotifier<AiChat> {
             );
             if (outcome == null) return '${fix.label} was cancelled.';
             await _documents.reloadWritten(outcome.changedFiles);
-            _refreshOverview();
             return outcome.summary;
           } on Exception catch (e) {
             return '${fix.label} failed: $e';

@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:fide/models/image_diff_mode.dart';
-import 'package:fide/widgets/image_diff.dart';
+import 'package:fide/widget_services/image_diff.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

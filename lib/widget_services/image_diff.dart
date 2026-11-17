@@ -8,11 +8,11 @@ import 'package:fide/models/image_diff_mode.dart';
 import 'package:fide/models/image_diff_result.dart';
 import 'package:fide/providers/image_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/widget_services/image_backdrop_buttons.dart';
 import 'package:fide/widgets/any_image.dart';
 import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/compact_slider.dart';
 import 'package:fide/widgets/empty_state.dart';
-import 'package:fide/widgets/image_backdrop_buttons.dart';
 import 'package:fide/widgets/image_canvas.dart';
 import 'package:fide/widgets/image_diff_mode_icon.dart';
 import 'package:fide/widgets/pane_divider.dart';
@@ -70,6 +70,10 @@ class _ImageDiffState extends ConsumerState<ImageDiff> {
   /// The changed pixels of [_comparison], drawn in Difference mode.
   ui.Image? _mask;
 
+  /// Bumped by each [_compare], so a slower, older comparison finishing
+  /// after a newer one is dropped.
+  int _compareGeneration = 0;
+
   @override
   void initState() {
     super.initState();
@@ -105,6 +109,8 @@ class _ImageDiffState extends ConsumerState<ImageDiff> {
   /// Compares the two versions pixel by pixel on another isolate, then
   /// decodes the changed-pixel mask for Difference mode.
   Future<void> _compare() async {
+    final generation = ++_compareGeneration;
+    bool isCurrent() => mounted && generation == _compareGeneration;
     _mask?.dispose();
     _mask = null;
     _comparison = null;
@@ -113,9 +119,9 @@ class _ImageDiffState extends ConsumerState<ImageDiff> {
     final comparison = await ref
         .read(imageDifferProvider)
         .compare(oldBytes, widget.newBytes);
-    if (!mounted || comparison == null) return;
+    if (!isCurrent() || comparison == null) return;
     final mask = await _decodeMask(comparison);
-    if (!mounted) {
+    if (!isCurrent()) {
       mask.dispose();
       return;
     }

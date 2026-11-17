@@ -9,7 +9,7 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/side_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
-import 'package:fide/widgets/panel_island.dart';
+import 'package:fide/widget_services/panel_island.dart';
 import 'package:fide/widgets/resizable_splitter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -70,25 +70,20 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
   Widget build(BuildContext context) {
     final DocumentState? activeDocument = ref.watch(activeDocumentProvider);
     final terminalExpanded = ref.watch(bottomPanelExpandedProvider);
-    // Opening or switching files leaves the center view; closing a file
-    // opened from it goes back to it
     ref.listen(activeDocumentProvider.select((doc) => doc?.filePath), (
       previous,
       next,
     ) {
       final view = ref.read(centerViewProvider.notifier);
       final opened = ref.read(centerViewOpenedFileProvider.notifier);
-      final openedFile = opened.state;
-      final returnTo =
-          next == null && previous != null && previous == openedFile?.path
-          ? openedFile?.view
-          : null;
-      if (view.state case final showing?) {
-        opened.state = next == null ? null : (view: showing, path: next);
-      } else if (returnTo != null || next != openedFile?.path) {
-        opened.state = null;
-      }
-      view.state = returnTo;
+      final after = centerViewAfterFileChange(
+        previous: previous,
+        next: next,
+        showing: view.state,
+        opened: opened.state,
+      );
+      opened.state = after.opened;
+      view.state = after.view;
     });
 
     // Determine the main content to display

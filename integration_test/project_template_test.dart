@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/ollama_client.dart';
 import 'package:fide/services/ollama_installer.dart';
 import 'package:fide/services/process_runner.dart';
@@ -23,10 +22,7 @@ void main() {
   late Directory testOutputDir;
 
   setUp(() async {
-    template = ProjectTemplate(
-      OllamaClient(http.Client()),
-      const FlutterSdk(ProcessRunner()),
-    );
+    template = ProjectTemplate(OllamaClient(http.Client()));
     // Use test_output folder at project root for persistent testing
     testOutputDir = Directory('test_output');
     if (!await testOutputDir.exists()) {
@@ -87,11 +83,11 @@ void main() {
       // generate throws AiServiceException when generation fails
       substep('Expected text returned');
 
-      // Verify we have all required files
+      // Verify we have all required files; pubspec.yaml is flutter create's
       expect(
         files.containsKey('pubspec.yaml'),
-        isTrue,
-        reason: 'Should generate pubspec.yaml',
+        isFalse,
+        reason: 'Should leave pubspec.yaml to flutter create',
       );
       expect(
         files.containsKey('lib/main.dart'),
@@ -106,11 +102,6 @@ void main() {
 
       // Verify files are not empty
       expect(
-        files['pubspec.yaml']?.isNotEmpty,
-        isTrue,
-        reason: 'pubspec.yaml should not be empty',
-      );
-      expect(
         files['lib/main.dart']?.isNotEmpty,
         isTrue,
         reason: 'main.dart should not be empty',
@@ -121,26 +112,6 @@ void main() {
         reason: 'README.md should not be empty',
       );
 
-      // Verify pubspec.yaml has basic required fields
-      substep('Inspect content of "pubspec.yaml"');
-      {
-        final pubspecContent = files['pubspec.yaml']!;
-        expect(
-          pubspecContent.contains('name:'),
-          isTrue,
-          reason: 'pubspec.yaml should contain name field',
-        );
-        expect(
-          pubspecContent.contains('flutter:'),
-          isTrue,
-          reason: 'pubspec.yaml should contain flutter block',
-        );
-        expect(
-          pubspecContent.contains('sdk: flutter'),
-          isTrue,
-          reason: 'pubspec.yaml should declare flutter sdk dependency',
-        );
-      }
       // Verify main.dart contains essential Flutter code
       substep('Inspect content of "lib/main.dart"');
       final mainDartContent = files['lib/main.dart']!;
@@ -172,9 +143,6 @@ void main() {
       await libDir.create();
 
       // Write the generated files
-      final pubspecFile = File(path.join(projectDir.path, 'pubspec.yaml'));
-      await pubspecFile.writeAsString(files['pubspec.yaml']!);
-
       final mainDartFile = File(path.join(libDir.path, 'main.dart'));
       await mainDartFile.writeAsString(files['lib/main.dart']!);
 
@@ -182,11 +150,6 @@ void main() {
       await readmeFile.writeAsString(files['README.md']!);
 
       // Verify files were written correctly
-      expect(
-        await pubspecFile.exists(),
-        isTrue,
-        reason: 'pubspec.yaml should be created',
-      );
       expect(
         await mainDartFile.exists(),
         isTrue,

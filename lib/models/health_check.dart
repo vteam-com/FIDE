@@ -4,12 +4,6 @@ import 'package:fide/models/quality_issue.quality_finding.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:path/path.dart' as p;
 
-/// How to clear build errors and warnings.
-const String _fixBuildGuidance =
-    'Build for the platform selected in the Execute panel, then pick '
-    '**Fix Build** in the AI panel to have the errors of the last build '
-    'fixed in the files.';
-
 /// One project health check, with how serious a failure is and the best
 /// practice that fixes it; a failure is listed among the project's quality
 /// issues.
@@ -22,12 +16,6 @@ enum HealthCheck {
         '`pubspec.lock`; commit it so every build uses the same '
         'package versions.',
   ),
-
-  /// Build logs mention errors.
-  buildErrors(tone: StatusTone.error, guidance: _fixBuildGuidance),
-
-  /// Build logs mention warnings.
-  buildWarnings(tone: StatusTone.warning, guidance: _fixBuildGuidance),
 
   /// Files are over the large-file threshold.
   largeFiles(
@@ -49,8 +37,6 @@ enum HealthCheck {
   /// What is wrong when the check found [count] occurrences.
   String issueLabel(int count) => switch (this) {
     missingLock => 'Missing pubspec.lock',
-    buildErrors => '$count build errors',
-    buildWarnings => '$count build warnings',
     largeFiles => '$count large files',
   };
 

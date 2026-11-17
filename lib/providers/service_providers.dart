@@ -23,6 +23,7 @@ import 'package:fide/services/file_system_watcher.dart';
 import 'package:fide/services/flutter_build_service.dart';
 import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/git_service.dart';
+import 'package:fide/services/health_checker.dart';
 import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/ollama_client.dart';
@@ -40,6 +41,7 @@ import 'package:fide/services/project_template.dart';
 import 'package:fide/services/project_tree_reader.dart';
 import 'package:fide/services/string_constants_extractor.dart';
 import 'package:fide/services/string_localizer.dart';
+import 'package:fide/services/test_runner.dart';
 import 'package:fide/services/test_suite_inspector.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -128,10 +130,7 @@ final commitMessageWriterProvider = Provider<CommitMessageWriter>(
 /// Provides the [ProjectTemplate] scaffolding the new-project wizard's
 /// starter files.
 final projectTemplateProvider = Provider<ProjectTemplate>(
-  (ref) => ProjectTemplate(
-    ref.read(chatModelProvider),
-    ref.read(flutterSdkProvider),
-  ),
+  (ref) => ProjectTemplate(ref.read(chatModelProvider)),
 );
 
 /// Provides the [CodeReview] that runs fcheck for the AI reviews, the
@@ -141,7 +140,10 @@ final codeReviewProvider = Provider<CodeReview>((_) => const CodeReview());
 /// Provides the [DartAnalyzer] running `dart analyze` for the project's
 /// quality.
 final dartAnalyzerProvider = Provider<DartAnalyzer>(
-  (ref) => DartAnalyzer(ref.read(processRunnerProvider)),
+  (ref) => DartAnalyzer(
+    ref.read(processRunnerProvider),
+    () => ref.read(bundledDartProvider.future),
+  ),
 );
 
 /// Provides the [OllamaInstaller] that installs and starts the local model.
@@ -179,7 +181,7 @@ final stringLocalizerProvider = Provider<StringLocalizer>(
 /// Provides the [ArbMigrator] behind the Migrate to ARB quick fix.
 final arbMigratorProvider = Provider<ArbMigrator>(
   (ref) => ArbMigrator(
-    ref.read(processRunnerProvider),
+    ref.read(dartAnalyzerProvider),
     ref.read(projectConfigReaderProvider),
     ref.read(l10nGeneratorProvider),
     ref.read(codeFormatterProvider),
@@ -223,6 +225,14 @@ final testSuiteInspectorProvider = Provider<TestSuiteInspector>(
   (_) => const TestSuiteInspector(),
 );
 
+/// Provides the [TestRunner] behind the Test panel's actions.
+final testRunnerProvider = Provider<TestRunner>(
+  (ref) => TestRunner(
+    ref.read(flutterBuildServiceProvider),
+    ref.read(testSuiteInspectorProvider),
+  ),
+);
+
 /// Provides the [BuildArtifactsInspector] the Execute panel reads build
 /// output with.
 final buildArtifactsInspectorProvider = Provider<BuildArtifactsInspector>(
@@ -236,7 +246,10 @@ final appIconFixerProvider = Provider<AppIconFixer>(
 
 /// Provides the [CodeFormatter] behind the editor's Format action.
 final codeFormatterProvider = Provider<CodeFormatter>(
-  (ref) => CodeFormatter(ref.read(processRunnerProvider)),
+  (ref) => CodeFormatter(
+    ref.read(processRunnerProvider),
+    () => ref.read(bundledDartProvider.future),
+  ),
 );
 
 /// Provides the [AudioFileService] the audio editor loads and saves sounds
@@ -255,6 +268,12 @@ final fileContentReaderProvider = Provider<FileContentReader>(
 /// entries with.
 final fileEntryServiceProvider = Provider<FileEntryService>(
   (_) => const FileEntryService(),
+);
+
+/// Provides the [HealthChecker] behind the health issues of the project's
+/// quality.
+final healthCheckerProvider = Provider<HealthChecker>(
+  (_) => const HealthChecker(),
 );
 
 /// Provides the [ProjectAnalyzer] that computes Info panel metrics.
@@ -281,6 +300,12 @@ final projectMaintenanceServiceProvider = Provider<ProjectMaintenanceService>(
 /// Provides the [FlutterSdk] probe for the installed Flutter and Dart versions.
 final flutterSdkProvider = Provider<FlutterSdk>(
   (ref) => FlutterSdk(ref.read(processRunnerProvider)),
+);
+
+/// The Dart tool bundled with Flutter, resolved once for every tool that
+/// launches `dart`.
+final bundledDartProvider = FutureProvider<String>(
+  (ref) => ref.read(flutterSdkProvider).bundledDart(),
 );
 
 /// Provides the shared [ArbService] for reading and writing ARB files.

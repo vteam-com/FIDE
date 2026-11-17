@@ -7,15 +7,15 @@ import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/project_info_controller.dart';
 import 'package:fide/theme/app_theme.dart';
+import 'package:fide/widget_services/issue_section.dart';
+import 'package:fide/widget_services/output_panel.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/bullet_list.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_label.dart';
-import 'package:fide/widgets/issue_section.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/open_url.dart';
-import 'package:fide/widgets/output_panel.dart';
 import 'package:fide/widgets/panel_header.dart';
 import 'package:fide/widgets/panel_scroll_view.dart';
 import 'package:fide/widgets/primary_button.dart';
@@ -172,7 +172,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                   (info.isAnalyzing && !info.isCleaning) ||
                   ref.watch(projectQualityBusyProvider),
               onPressed: () {
-                refreshProjectQuality(ref);
+                refreshProjectQuality(ref.invalidate);
                 _show(_controller.analyze());
               },
             ),

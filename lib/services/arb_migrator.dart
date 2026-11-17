@@ -10,11 +10,10 @@ import 'package:fide/models/project_files.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/code_formatter.dart';
+import 'package:fide/services/dart_analyzer.dart';
 import 'package:fide/services/dart_translations_parser.dart';
-import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/hand_written_l10n_parser.dart';
 import 'package:fide/services/l10n_generator.dart';
-import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:path/path.dart' as p;
 
@@ -27,12 +26,12 @@ import 'package:path/path.dart' as p;
 /// where it is used, then regenerates the classes. When the project ends
 /// up with more analyzer errors than before, every file is restored.
 class ArbMigrator {
-  /// Creates a migrator running tools through [_runner], reading project
+  /// Creates a migrator counting errors with [_analyzer], reading project
   /// settings with [_config], regenerating through [_generator] and
   /// formatting through [_formatter]; [translations] and [handWritten]
   /// read the Dart localizations files.
   const ArbMigrator(
-    this._runner,
+    this._analyzer,
     this._config,
     this._generator,
     this._formatter, {
@@ -42,9 +41,6 @@ class ArbMigrator {
 
   /// Suffix of the file the hand-written code moves to.
   static const String _movedSuffix = '_extensions.dart';
-
-  /// An analyzer error line of `flutter analyze`.
-  static final RegExp _analyzerError = RegExp(r'^\s*error •', multiLine: true);
 
   final CodeFormatter _formatter;
 
@@ -56,7 +52,7 @@ class ArbMigrator {
 
   final DartTranslationsParser _translations;
 
-  final ProcessRunner _runner;
+  final DartAnalyzer _analyzer;
 
   /// Migrates the project at [projectPath], whose generated class [sync]
   /// compared with its ARB files.
@@ -162,14 +158,10 @@ class ArbMigrator {
     );
   }
 
-  /// Number of errors `flutter analyze` reports in the project.
-  Future<int> _analyzerErrors(String projectPath) async {
-    final result = await _runner.run(FlutterSdk.executable, [
-      'analyze',
-      '--no-pub',
-    ], workingDirectory: projectPath);
-    return _analyzerError.allMatches('${result.stdout}').length;
-  }
+  /// Number of errors `dart analyze` reports in the project; throws when
+  /// it can't analyze it, as the migration can't then be checked.
+  Future<int> _analyzerErrors(String projectPath) async =>
+      (await _analyzer.analyze(projectPath)).errorCount;
 
   /// Dart files under `lib` that use [moved] code, with their content
   /// after `outputClass.name` calls of moved statics drop the class and,
@@ -284,24 +276,22 @@ class ArbMigrator {
     DartTranslations dart, {
     required bool withPlaceholders,
   }) async {
-    final file = File(path);
-    final arb =
-        (await file.exists()
-            ? ArbService.decode(await file.readAsString())
-            : null) ??
-        <String, dynamic>{ArbService.localeKey: locale};
-    arb.addAll(dart.messages);
-    if (withPlaceholders) {
-      for (final MapEntry(:key, value: types) in dart.placeholders.entries) {
-        final metadata = {...?(arb['@$key'] as Map<String, dynamic>?)};
-        metadata['placeholders'] = {
-          for (final MapEntry(key: name, value: type) in types.entries)
-            name: {'type': type},
-        };
-        arb['@$key'] = metadata;
-      }
-    }
-    await file.writeAsString(ArbService.encode(arb));
+    await ArbService.update(
+      path,
+      orElse: () => {ArbService.localeKey: locale},
+      (arb) {
+        arb.addAll(dart.messages);
+        if (!withPlaceholders) return;
+        for (final MapEntry(:key, value: types) in dart.placeholders.entries) {
+          final metadata = {...?(arb['@$key'] as Map<String, dynamic>?)};
+          metadata['placeholders'] = {
+            for (final MapEntry(key: name, value: type) in types.entries)
+              name: {'type': type},
+          };
+          arb['@$key'] = metadata;
+        }
+      },
+    );
   }
 
   /// Writes Dart [content] to [path], formatted when the formatter can.

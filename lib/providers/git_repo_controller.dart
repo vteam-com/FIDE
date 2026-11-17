@@ -1,6 +1,7 @@
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/git_diff_stats_provider.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -55,6 +56,21 @@ class GitRepoController extends AsyncNotifier<GitRepoState> {
     if (await ref.read(gitServiceProvider).fetch(projectPath)) {
       await reload();
     }
+  }
+
+  /// A commit message the AI writes from the staged changes; empty when
+  /// it writes none. Throws an `AiCancelledException` when [cancel] stops
+  /// it, and a [GitException] worded for the user when the staged changes
+  /// can't be read.
+  Future<String> writeCommitMessage(AiCancelToken cancel) async {
+    final String diff;
+    try {
+      diff = await ref.read(gitServiceProvider).getStagedDiff(projectPath);
+    } on GitException catch (e) {
+      throw GitException(GitMessages.stagedDiffFailed, e.details);
+    }
+    cancel.throwIfCancelled();
+    return ref.read(commitMessageWriterProvider).write(diff, cancel: cancel);
   }
 
   /// Stages [files].

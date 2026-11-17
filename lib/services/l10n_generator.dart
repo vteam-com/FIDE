@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:fide/models/l10n_config.dart';
 import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/flutter_sdk.dart';
@@ -33,8 +31,7 @@ class L10nGenerator {
     L10nConfig config,
     Map<String, dynamic> arb,
   ) async {
-    await File(config.templatePathIn(projectPath))
-        .writeAsString(ArbService.encode(arb));
+    await ArbService.write(config.templatePathIn(projectPath), arb);
     await generateClasses(projectPath);
   }
 }

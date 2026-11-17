@@ -21,8 +21,12 @@ class CodeFormatter {
 
   final ProcessRunner _runner;
 
-  /// Creates a formatter that runs `dart format` through [_runner].
-  const CodeFormatter(this._runner);
+  /// Resolves the Dart tool to launch, such as [FlutterSdk.bundledDart].
+  final DartCommand _dart;
+
+  /// Creates a formatter that runs `dart format` with the tool [_dart]
+  /// resolves, through [_runner].
+  const CodeFormatter(this._runner, [this._dart = FlutterSdk.dartOnPath]);
 
   /// [json] as the content of a JSON file, indented like [format], with a
   /// final line break.
@@ -44,7 +48,7 @@ class CodeFormatter {
     if (_jsonExtensions.contains(FileTypeUtils.extensionOf(filePath))) {
       return JsonEncoder.withIndent(jsonIndent).convert(jsonDecode(content));
     }
-    final result = await _runner.runWithInput(FlutterSdk.dartExecutable, [
+    final result = await _runner.runWithInput(await _dart(), [
       'format',
       '--stdin-name=$filePath',
     ], content);
