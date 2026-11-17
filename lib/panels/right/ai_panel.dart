@@ -9,7 +9,6 @@ import 'package:fide/providers/ollama_model_provider.dart';
 import 'package:fide/providers/ollama_status_notifier.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_text_field.dart';
-import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/dropdown_label.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/header_bar.dart';
@@ -18,6 +17,7 @@ import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/primary_button.dart';
+import 'package:fide/widgets/task_button.dart';
 import 'package:fide/widgets/truncated_text.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -157,30 +157,24 @@ class _AIPanelState extends ConsumerState<AIPanel> {
         hintText: hint,
         maxLines: AppMetric.aiInputMaxLines,
         minLines: 1,
-        trailing: isBusy
-            ? CompactIconButton(
-                onPressed: notifier.cancel,
-                icon: Icons.stop_circle_outlined,
-                tooltip: 'Stop (Esc)',
-              )
-            : CompactIconButton(
-                onPressed: _send,
-                icon: Icons.arrow_upward,
-                tooltip: 'Send (Enter)',
-              ),
+        trailing: TaskButton(
+          icon: Icons.arrow_upward,
+          tooltip: 'Send (Enter)',
+          running: isBusy,
+          onRun: _send,
+          onStop: notifier.cancel,
+        ),
       ),
     );
   }
 
-  /// The last transcript line while a reply or task is pending.
+  /// The last transcript line while a reply or task is pending; the ring
+  /// around the prompt's Stop button shows the progress.
   Widget _buildWorking() {
     return SelectionContainer.disabled(
-      child: Row(
-        spacing: AppSpacing.medium,
-        children: [
-          const InlineSpinner.small(),
-          Text('Working… Esc to stop', style: AppTextStyle.secondary(context)),
-        ],
+      child: Text(
+        'Working… Esc to stop',
+        style: AppTextStyle.secondary(context),
       ),
     );
   }

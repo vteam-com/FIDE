@@ -1,24 +1,21 @@
-import 'dart:typed_data';
-
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/relative_time.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/git_repo_controller.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/widget_services/diff_counter.dart';
 import 'package:fide/widget_services/filename_widget.dart';
 import 'package:fide/widgets/app_text_field.dart';
-import 'package:fide/widgets/busy_bar.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/empty_label.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/image_diff.dart';
-import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/panel_scroll_view.dart';
@@ -27,7 +24,9 @@ import 'package:fide/widgets/refresh_button.dart';
 import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
+import 'package:fide/widgets/task_button.dart';
 import 'package:fide/widgets/tree_row.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
@@ -57,7 +56,12 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
   /// Whether Check again is reloading and fetching the repository.
   bool _isRefreshing = false;
-  bool _isWritingMessage = false;
+
+  /// Stops the AI writing the commit message; null while it isn't.
+  AiCancelToken? _messageCancel;
+
+  /// Whether the AI is writing the commit message.
+  bool get _isWritingMessage => _messageCancel != null;
 
   /// The repository the panel shows and acts on.
   GitRepoController get _repo =>
@@ -136,15 +140,19 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   }
 
   /// Fills the commit message with one the AI writes from the staged
-  /// changes.
+  /// changes, until [_stopWritingMessage].
   Future<void> _writeCommitMessage() async {
-    setState(() => _isWritingMessage = true);
+    final cancel = AiCancelToken();
+    setState(() => _messageCancel = cancel);
     final git = ref.read(gitServiceProvider);
     final ai = ref.read(commitMessageWriterProvider);
     try {
       final diff = await git.getStagedDiff(widget.projectPath);
-      final message = await ai.write(diff);
+      cancel.throwIfCancelled();
+      final message = await ai.write(diff, cancel: cancel);
       if (mounted && message.isNotEmpty) _commitController.text = message;
+    } on AiCancelledException {
+      // Stopped by the user: the message stays as it was
     } on GitException catch (e) {
       if (mounted) {
         MessageBox.showError(
@@ -155,9 +163,12 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     } catch (e) {
       if (mounted) MessageBox.showError(context, '$_aiMessagePrefix$e');
     } finally {
-      if (mounted) setState(() => _isWritingMessage = false);
+      if (mounted) setState(() => _messageCancel = null);
     }
   }
+
+  /// Stops the AI writing the commit message.
+  void _stopWritingMessage() => _messageCancel?.cancel();
 
   /// Commits the staged changes with the entered message.
   Future<void> _commit() async {
@@ -311,29 +322,40 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   spacing: AppSpacing.medium,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AppTextField(
-                      controller: _commitController,
-                      hintText: 'Enter commit message...',
-                      maxLines: AppMetric.aiInputMaxLines,
-                      trailing: _isWritingMessage
-                          ? const InlineSpinner()
-                          : CompactIconButton(
-                              icon: Icons.auto_awesome,
-                              onPressed: _writeCommitMessage,
-                              tooltip: 'Write commit message with AI',
-                            ),
+                    CallbackShortcuts(
+                      bindings: {
+                        const SingleActivator(LogicalKeyboardKey.escape):
+                            _stopWritingMessage,
+                      },
+                      child: AppTextField(
+                        controller: _commitController,
+                        hintText: _isWritingMessage
+                            ? 'Writing commit message… Esc to stop'
+                            : 'Enter commit message...',
+                        maxLines: AppMetric.aiInputMaxLines,
+                        readOnly: _isWritingMessage,
+                        trailing: TaskButton(
+                          icon: Icons.auto_awesome,
+                          tooltip: 'Write commit message with AI',
+                          running: _isWritingMessage,
+                          onRun: _writeCommitMessage,
+                          onStop: _stopWritingMessage,
+                        ),
+                      ),
                     ),
                     Row(
                       spacing: AppSpacing.medium,
                       children: [
                         PrimaryButton(
                           busy: _isCommitting,
-                          onPressed: _commit,
+                          onPressed: _isWritingMessage ? null : _commit,
                           label: 'Commit',
                         ),
                         if (repo.canAmend)
                           SecondaryButton(
-                            onPressed: _isCommitting ? null : _amend,
+                            onPressed: _isCommitting || _isWritingMessage
+                                ? null
+                                : _amend,
                             label: 'Amend',
                           ),
                       ],
@@ -346,70 +368,67 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
         // Content
         Expanded(
-          child: BusyBar.over(
-            busy: _isRefreshing,
-            child: PanelScrollView(
-              children: [
-                // Staged files
-                if (status.staged.isNotEmpty) ...[
-                  _buildFileSection(
-                    'Staged Changes',
-                    status.staged,
-                    kindOf: (file) =>
-                        status.stagedKinds[file] ?? GitFileStatus.added,
-                    stats: repo.stagedStats,
-                    staged: true,
-                    onStage: null,
-                    onUnstage: _unstageFiles,
-                    canDiscard: false,
-                    onDiscard: _discardChanges,
-                  ),
-                ],
-
-                // Unstaged files
-                if (status.unstaged.isNotEmpty) ...[
-                  _buildFileSection(
-                    'Changes',
-                    status.unstaged,
-                    kindOf: (file) =>
-                        status.unstagedKinds[file] ?? GitFileStatus.modified,
-                    stats: repo.unstagedStats,
-                    onStage: _stageFiles,
-                    onUnstage: null,
-                    canDiscard: true,
-                    onDiscard: _discardChanges,
-                  ),
-                ],
-
-                // Untracked files
-                if (status.untracked.isNotEmpty) ...[
-                  // Untracked files are new, so they read as added
-                  _buildFileSection(
-                    'Untracked',
-                    status.untracked,
-                    kindOf: (_) => GitFileStatus.added,
-                    stats: repo.unstagedStats,
-                    onStage: _stageFiles,
-                    onUnstage: null,
-                    canDiscard: true,
-                    onDiscard: _discardChanges,
-                  ),
-                ],
-
-                // Recent commits
-                SectionPanel(
-                  title: 'Recent Commits',
-                  isExpanded:
-                      true, // Recent commits should be expanded by default
-
-                  child: repo.commits.isEmpty
-                      ? const EmptyLabel('No commits yet')
-                      : Column(
-                          children: repo.commits.map(_buildCommitTile).toList(),
-                        ),
+          child: PanelScrollView(
+            children: [
+              // Staged files
+              if (status.staged.isNotEmpty) ...[
+                _buildFileSection(
+                  'Staged Changes',
+                  status.staged,
+                  kindOf: (file) =>
+                      status.stagedKinds[file] ?? GitFileStatus.added,
+                  stats: repo.stagedStats,
+                  staged: true,
+                  onStage: null,
+                  onUnstage: _unstageFiles,
+                  canDiscard: false,
+                  onDiscard: _discardChanges,
                 ),
               ],
-            ),
+
+              // Unstaged files
+              if (status.unstaged.isNotEmpty) ...[
+                _buildFileSection(
+                  'Changes',
+                  status.unstaged,
+                  kindOf: (file) =>
+                      status.unstagedKinds[file] ?? GitFileStatus.modified,
+                  stats: repo.unstagedStats,
+                  onStage: _stageFiles,
+                  onUnstage: null,
+                  canDiscard: true,
+                  onDiscard: _discardChanges,
+                ),
+              ],
+
+              // Untracked files
+              if (status.untracked.isNotEmpty) ...[
+                // Untracked files are new, so they read as added
+                _buildFileSection(
+                  'Untracked',
+                  status.untracked,
+                  kindOf: (_) => GitFileStatus.added,
+                  stats: repo.unstagedStats,
+                  onStage: _stageFiles,
+                  onUnstage: null,
+                  canDiscard: true,
+                  onDiscard: _discardChanges,
+                ),
+              ],
+
+              // Recent commits
+              SectionPanel(
+                title: 'Recent Commits',
+                isExpanded:
+                    true, // Recent commits should be expanded by default
+
+                child: repo.commits.isEmpty
+                    ? const EmptyLabel('No commits yet')
+                    : Column(
+                        children: repo.commits.map(_buildCommitTile).toList(),
+                      ),
+              ),
+            ],
           ),
         ),
       ],
@@ -550,6 +569,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
   @override
   void dispose() {
+    _messageCancel?.cancel();
     _commitController.dispose();
     super.dispose();
   }

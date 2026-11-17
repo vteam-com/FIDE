@@ -11,7 +11,6 @@ import 'package:fide/providers/right_panel_tab.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/app_icon_slot_tile.dart';
-import 'package:fide/widgets/busy_bar.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_label.dart';
@@ -47,41 +46,38 @@ class AppIconsPanel extends ConsumerWidget {
     final master = review?.master;
     final fixing = ref.watch(appIconFixControllerProvider);
 
-    return BusyBar.over(
-      busy: reviewing.isLoading,
-      child: PageScrollView(
-        children: [
-          PageHeader(
-            title: 'App Icons',
-            subTitle: issues.isEmpty
-                ? 'Every platform icon checks out'
-                : '${issues.length.count('problem')} on '
-                      '${review!.brokenPlatformCount.count('platform')}',
-            logo: const Icon(Icons.apps),
-            actions: [
-              RefreshButton(
-                busy: reviewing.isLoading,
-                onPressed: () => ref.invalidate(appIconReviewProvider),
-              ),
-              CompactIconButton(
-                tooltip: 'Close',
-                icon: Icons.close,
-                onPressed: () => closeCenterView(ref),
-              ),
-            ],
-          ),
-          _masterCard(
-            context,
-            ref,
-            projectPath,
-            master,
-            review?.brokenPlatforms ?? const [],
-            fixing,
-          ),
-          for (final platform in review?.platforms ?? const [])
-            _platformCard(context, ref, projectPath, platform, master, fixing),
-        ],
-      ),
+    return PageScrollView(
+      children: [
+        PageHeader(
+          title: 'App Icons',
+          subTitle: issues.isEmpty
+              ? 'Every platform icon checks out'
+              : '${issues.length.count('problem')} on '
+                    '${review!.brokenPlatformCount.count('platform')}',
+          logo: const Icon(Icons.apps),
+          actions: [
+            RefreshButton(
+              busy: reviewing.isLoading,
+              onPressed: () => ref.invalidate(appIconReviewProvider),
+            ),
+            CompactIconButton(
+              tooltip: 'Close',
+              icon: Icons.close,
+              onPressed: () => closeCenterView(ref),
+            ),
+          ],
+        ),
+        _masterCard(
+          context,
+          ref,
+          projectPath,
+          master,
+          review?.brokenPlatforms ?? const [],
+          fixing,
+        ),
+        for (final platform in review?.platforms ?? const [])
+          _platformCard(context, ref, projectPath, platform, master, fixing),
+      ],
     );
   }
 

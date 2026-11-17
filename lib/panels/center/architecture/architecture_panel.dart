@@ -11,12 +11,14 @@ import 'package:fide/providers/architecture_orientation_notifier.dart';
 import 'package:fide/providers/architecture_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/panel_actions.dart';
+import 'package:fide/providers/project_overview_providers.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/pane_divider.dart';
 import 'package:fide/widgets/project_analysis_view.dart';
+import 'package:fide/widgets/refresh_button.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/zoom_buttons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -292,6 +294,11 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
             icon: Icons.fit_screen_outlined,
             tooltip: 'Fit to View',
             onPressed: () => _fit(layout),
+          ),
+          // The graph is drawn from the project overview's analysis
+          RefreshButton(
+            busy: ref.watch(architectureLayoutProvider).isLoading,
+            onPressed: () => ref.invalidate(projectOverviewProvider),
           ),
           CompactIconButton.header(
             icon: Icons.close,

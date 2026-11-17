@@ -1,4 +1,3 @@
-import 'package:fide/widgets/busy_bar.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,8 +5,9 @@ import 'package:material_ui/material_ui.dart';
 
 /// What a view shows of [analysis], built from fCheck's analysis of the
 /// open project: [builder]'s widget once analyzed, still showing the last
-/// result under a [BusyBar] while it re-analyzes, a [LoadingIndicator]
-/// before the first one, and the error when the analysis failed.
+/// result while it re-analyzes (its `RefreshButton` spins), a
+/// [LoadingIndicator] before the first one, and the error when the
+/// analysis failed.
 class ProjectAnalysisView<T> extends StatelessWidget {
   /// Creates the view of [analysis].
   const ProjectAnalysisView({
@@ -30,8 +30,7 @@ class ProjectAnalysisView<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     return analysis.when(
       skipLoadingOnReload: true,
-      data: (value) =>
-          BusyBar.over(busy: analysis.isLoading, child: builder(value)),
+      data: builder,
       loading: () => LoadingIndicator(message: loadingMessage),
       error: (error, _) =>
           EmptyState.error(message: 'Could not analyze the project: $error'),

@@ -10,7 +10,6 @@ import 'package:fide/providers/project_info_controller.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/bullet_list.dart';
-import 'package:fide/widgets/busy_bar.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_label.dart';
@@ -212,18 +211,15 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               tooltip: 'Edit pubspec.yaml',
               onPressed: _openPubspecYaml,
             ),
+            // The cleanup's button tells it runs, analysis included
             RefreshButton(
-              busy: info.isAnalyzing,
+              busy: info.isAnalyzing && !info.isCleaning,
               onPressed: () => _show(_controller.analyze()),
             ),
           ],
         ),
         Expanded(
-          // The cleanup's button tells it runs, analysis included
-          child: BusyBar.over(
-            busy: info.isAnalyzing && !info.isCleaning,
-            child: _buildContent(currentProjectPath, projectMetrics, info),
-          ),
+          child: _buildContent(currentProjectPath, projectMetrics, info),
         ),
       ],
     );

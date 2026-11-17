@@ -26,6 +26,10 @@ class AppTextField extends StatelessWidget {
     this.keyboardType,
   });
 
+  /// Gap between the trailing widget and the box's border, so a button
+  /// such as a `TaskButton` and its ring stay inside it.
+  static const EdgeInsets _trailingInset = EdgeInsets.all(AppSpacing.tiny);
+
   /// Whether the box takes focus when first shown.
   final bool autofocus;
 
@@ -71,7 +75,6 @@ class AppTextField extends StatelessWidget {
   /// Widget shown after the text, such as an action button; the clear
   /// button takes its place while it shows.
   final Widget? trailing;
-
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
@@ -89,16 +92,18 @@ class AppTextField extends StatelessWidget {
           labelText: labelText,
           hintText: hintText,
           prefixIcon: icon == null ? null : Icon(icon, size: AppIconSize.large),
-          suffixIcon: clearable && value.text.isNotEmpty
-              ? CompactIconButton(
-                  icon: Icons.clear,
-                  tooltip: 'Clear',
-                  onPressed: () {
-                    controller.clear();
-                    onCleared?.call();
-                  },
-                )
-              : trailing,
+          suffixIcon: _inset(
+            clearable && value.text.isNotEmpty
+                ? CompactIconButton(
+                    icon: Icons.clear,
+                    tooltip: 'Clear',
+                    onPressed: () {
+                      controller.clear();
+                      onCleared?.call();
+                    },
+                  )
+                : trailing,
+          ),
           isDense: true,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppRadius.small),
@@ -113,4 +118,8 @@ class AppTextField extends StatelessWidget {
       ),
     );
   }
+
+  /// [child] inset from the box's border; null when there is none.
+  static Widget? _inset(Widget? child) =>
+      child == null ? null : Padding(padding: _trailingInset, child: child);
 }

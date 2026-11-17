@@ -1,14 +1,13 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_status.dart';
-import 'package:fide/models/status_tone.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
-import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/optional_tooltip.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/panel_action.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/surface_padding.dart';
+import 'package:fide/widgets/task_button.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Panel actions as one compact row each: the action's status-aware icon,
@@ -127,52 +126,17 @@ class _ActionRowState extends State<_ActionRow> {
     return OptionalTooltip(message: action.status.resultLabel, child: icon);
   }
 
-  /// Runs the action, or stops it while it runs. A ring spins around the
-  /// button while the task works, and stops once it is
-  /// [ActionStatus.live], such as an app that has launched.
+  /// Runs the action, or stops it while it runs.
   Widget _buildRunButton() {
     final action = widget.action;
-    const constraints = BoxConstraints.tightFor(
-      width: AppSize.compactActionButton,
-      height: AppSize.compactActionButton,
-    );
-    final Widget button;
-    if (action.isRunning) {
-      final onStop = action.onStop;
-      button = IconButton.filled(
-        onPressed: onStop,
-        tooltip: onStop == null ? 'Running...' : 'Stop ${action.title}',
-        constraints: constraints,
-        padding: EdgeInsets.zero,
-        style: IconButton.styleFrom(
-          backgroundColor: StatusTone.error.color,
-          foregroundColor: AppTheme.onStatusColor,
-        ),
-        icon: const Icon(Icons.stop_rounded, size: AppIconSize.mediumLarge),
-      );
-    } else {
-      button = IconButton.filledTonal(
-        onPressed: action.onRun,
-        tooltip: '${action.title}: ${action.description}',
-        constraints: constraints,
-        padding: EdgeInsets.zero,
-        icon: const Icon(
-          Icons.play_arrow_rounded,
-          size: AppIconSize.mediumLarge,
-        ),
-      );
-    }
-    // The slot keeps the ring's size, so rows don't jump when it shows
-    return SizedBox.square(
-      dimension: AppSize.actionButtonRing,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          if (action.status == ActionStatus.running)
-            const InlineSpinner(size: AppSize.actionButtonRing),
-          button,
-        ],
-      ),
+    return TaskButton(
+      icon: Icons.play_arrow_rounded,
+      tooltip: '${action.title}: ${action.description}',
+      stopTooltip: 'Stop ${action.title}',
+      running: action.isRunning,
+      live: action.status == ActionStatus.live,
+      onRun: action.onRun,
+      onStop: action.onStop,
     );
   }
 
