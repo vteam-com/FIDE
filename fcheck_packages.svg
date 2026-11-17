@@ -1085,7 +1085,7 @@
 <g class="platformBadge platformBadge--windows"><title>Windows</title><rect x="519.0" y="499.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#2563eb" stroke="#1d4ed8" stroke-width="0.6"/><text x="525.5" y="506.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">W</text></g>
 <g class="platformBadge platformBadge--web"><title>Browser</title><rect x="536.0" y="499.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#0891b2" stroke="#0e7490" stroke-width="0.6"/><text x="542.5" y="506.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">B</text></g>
 <text x="500.0" y="480.0" class="packageLabelNodeName packageLabelCaption" text-anchor="middle">file_picker</text>
-<text x="500.0" y="493.0" class="packageLabelNodeVersion" text-anchor="middle">v13.3.3</text>
+<text x="500.0" y="493.0" class="packageLabelNodeVersion" text-anchor="middle">v13.4.0</text>
 </g>
 <g class="badge outgoingBadge">
   <path d="M 394.0,494.0 L 406.0,487.0 Q 409.0,487.0 409.0,490.0 L 409.0,498.0 Q 409.0,501.0 406.0,501.0 Z" fill="#10b981"/>
@@ -1194,7 +1194,7 @@
 <rect x="400.0" y="1340.0" width="200.0" height="68.0" rx="8.0" ry="8.0" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1"/>
 <g class="packageMetadataPill"><title>Flutter &gt;=3.47.0</title><rect x="461.2" y="1395.0" width="77.6" height="9.0" rx="4.5" ry="4.5" class="packageMetadataPillShape"/><text x="500.0" y="1400" class="packageLabelMetadata" text-anchor="middle" dominant-baseline="middle">Flutter &gt;=3.47.0</text></g>
 <text x="500.0" y="1360.0" class="packageLabelNodeName packageLabelCaption" text-anchor="middle">material_ui</text>
-<text x="500.0" y="1373.0" class="packageLabelNodeVersion" text-anchor="middle">v1.11.0</text>
+<text x="500.0" y="1373.0" class="packageLabelNodeVersion" text-anchor="middle">v1.11.1</text>
 </g>
 <g class="badge outgoingBadge">
   <path d="M 394.0,1374.0 L 406.0,1367.0 Q 409.0,1367.0 409.0,1370.0 L 409.0,1378.0 Q 409.0,1381.0 406.0,1381.0 Z" fill="#10b981"/>

@@ -2,9 +2,9 @@ import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/source/line_info.dart';
 import 'package:fide/models/outline_kind.dart';
 import 'package:fide/models/outline_node.dart';
-import 'package:analyzer/source/line_info.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:yaml/yaml.dart';
 
