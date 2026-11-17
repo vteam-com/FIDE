@@ -2,8 +2,9 @@ name: Release
 
 # Builds FIDE for macOS, Windows and Linux only when the code is declared
 # ready, never on a plain push to main:
-#   - pushing a version tag (git tag v1.2.0 && git push origin v1.2.0)
-#     tests, builds and attaches the three builds to a draft GitHub Release
+#   - tool/release.sh sets pubspec's version and pushes its tag (v1.2.0),
+#     which tests, builds and attaches the three builds to a draft GitHub
+#     Release
 #   - "Run workflow" on the Actions tab tests and builds any branch, the
 #     builds kept as workflow artifacts only, to try a release out
 on:
@@ -12,11 +13,36 @@ on:
   workflow_dispatch:
 
 jobs:
+  # pubspec.yaml holds the version, which tool/release.sh sets and tags;
+  # a tag that names another version stops the release before it tests
+  version:
+    runs-on: ubuntu-26.04
+    outputs:
+      name: ${{ steps.version.outputs.name }}
+
+    steps:
+    - uses: actions/checkout@v7
+
+    - id: version
+      run: |
+        version="$(sed -n 's/^version: *\([^+]*\).*/\1/p' pubspec.yaml)"
+        if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+          if [[ "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match pubspec.yaml's version $version; release with tool/release.sh"
+            exit 1
+          fi
+        else
+          # A manual run names its files after the commit
+          version="$version-dev-${GITHUB_SHA::7}"
+        fi
+        echo "name=$version" >> "$GITHUB_OUTPUT"
+
   test:
+    needs: version
     uses: ./.github/workflows/ci.yml
 
   build:
-    needs: test
+    needs: [ version, test ]
     strategy:
       fail-fast: false
       matrix:
@@ -40,23 +66,11 @@ jobs:
 
     - uses: ./.github/actions/setup-flutter
 
-    # A tag names the version (v1.2.0 builds 1.2.0); a manual run keeps
-    # pubspec's version and names its files after the commit
-    - name: Name the version
-      run: |
-        if [[ "$GITHUB_REF_TYPE" == tag ]]; then
-          version="${GITHUB_REF_NAME#v}"
-          echo "BUILD_ARGS=--build-name=$version --build-number=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
-        else
-          version="dev-${GITHUB_SHA::7}"
-        fi
-        echo "ASSET=FIDE-$version-${{ matrix.platform }}.${{ matrix.asset }}" >> "$GITHUB_ENV"
+    - name: Name the build
+      run: echo "ASSET=FIDE-${{ needs.version.outputs.name }}-${{ matrix.platform }}.${{ matrix.asset }}" >> "$GITHUB_ENV"
 
     - name: Build
-      # BUILD_ARGS is split into its flags on purpose
-      run: |
-        # shellcheck disable=SC2086
-        flutter build ${{ matrix.platform }} --release $BUILD_ARGS
+      run: flutter build ${{ matrix.platform }} --release
 
     - name: Package macOS
       if: matrix.platform == 'macos'

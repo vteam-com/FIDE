@@ -117,14 +117,15 @@ All shortcuts are listed in **Settings**.
 
 ## Releasing
 
-Pushes to `main` only run the tests. To ship the code in its current state, tag it:
+Pushes to `main` only run the tests. To ship the code in its current state, from an up-to-date `main` with no pending changes:
 
 ```sh
-git tag v1.2.0
-git push origin v1.2.0
+tool/release.sh patch   # or minor, major, or an exact version such as 1.2.0
 ```
 
-The Release workflow tests the tagged code, builds it for macOS, Windows and Linux, and attaches the three builds to a **draft** GitHub Release; publish the draft once the builds are tried. To try a release first, run the Release workflow from the Actions tab: it builds any branch and keeps the builds as workflow artifacts, without making a release.
+The script sets the new version in `pubspec.yaml` (the build number goes up by one), runs the analyzer, the tests, `fcheck --strict` and a macOS build, then commits the version, tags it `v1.2.0` and pushes both. If any step fails, `pubspec.yaml` is put back and nothing is committed.
+
+The pushed tag starts the Release workflow, which checks that the tag matches `pubspec.yaml`, tests the code, builds it for macOS, Windows and Linux, and attaches the three builds to a **draft** GitHub Release; publish the draft once the builds are tried. To try a release first, run the Release workflow from the Actions tab: it builds any branch and keeps the builds as workflow artifacts, without making a release.
 
 ## Requirements
 

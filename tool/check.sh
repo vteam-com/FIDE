@@ -1,6 +1,6 @@
 #!/bin/sh
 
-FCHECK_VERSION="1.6.4"
+. "$(dirname "$0")/fcheck.env"
 CHECK_FAILURE_EXIT_CODE="1"
 ANSI_RED="$(printf '\033[31m')"
 ANSI_BOLD="$(printf '\033[1m')"
