@@ -11,8 +11,9 @@ enum ImageBackdrop {
   /// Plain white, revealing dark fringes.
   white('White'),
 
-  /// A rainbow gradient, revealing partial transparency of any color.
-  rainbow('Rainbow');
+  /// Soft spots of unrelated hues blended together, revealing partial
+  /// transparency of any color.
+  blend('Blend');
 
   const ImageBackdrop(this.label);
 

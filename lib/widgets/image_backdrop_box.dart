@@ -28,14 +28,28 @@ class ImageBackdropBox extends StatelessWidget {
       ),
       ImageBackdrop.black => ColoredBox(color: Colors.black, child: child),
       ImageBackdrop.white => ColoredBox(color: Colors.white, child: child),
-      ImageBackdrop.rainbow => DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(colors: AppColor.rainbow),
-        ),
-        child: child,
+      ImageBackdrop.blend => ColoredBox(
+        color: AppColor.blendBase,
+        child: AppColor.blendSpots.fold<Widget>(child, _overSpot),
       ),
     };
   }
+
+  /// Draws [inner] over [spot], a radial glow of its color fading out to
+  /// the same color fully transparent, so its edge never darkens.
+  static Widget _overSpot(
+    Widget inner,
+    ({Alignment center, Color color}) spot,
+  ) => DecoratedBox(
+    decoration: BoxDecoration(
+      gradient: RadialGradient(
+        center: spot.center,
+        radius: AppGradient.blendSpotRadius,
+        colors: [spot.color, spot.color.withValues(alpha: 0)],
+      ),
+    ),
+    child: inner,
+  );
 }
 
 /// A checkerboard behind an image, so its transparent parts show as such,

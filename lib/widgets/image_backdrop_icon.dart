@@ -8,6 +8,6 @@ extension ImageBackdropIcon on ImageBackdrop {
     ImageBackdrop.transparent => Icons.grid_on,
     ImageBackdrop.black => Icons.square,
     ImageBackdrop.white => Icons.square_outlined,
-    ImageBackdrop.rainbow => Icons.gradient,
+    ImageBackdrop.blend => Icons.gradient,
   };
 }
