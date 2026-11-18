@@ -2,6 +2,12 @@
 
 What changed in each FIDE release, newest first. `tool/release.sh` adds each release's entry: one line per commit since the release before.
 
+## 1.3.0 - 2026-11-18
+
+- fix build
+- Add widget edits to the Outline's widget tree: Wrap with (Padding, Center, Expanded, SizedBox, Column, Row, Stack, Builder, or a named widget), Remove this widget, Swap with parent, Move up/down, formatted with the caret on the edited widget
+- Fold the title bar's menus into one menu button when they don't fit beside the title (Linux and Windows), fixing the title bar overflow the Run menu caused at narrow windows
+
 ## 1.2.0 - 2026-11-18
 
 - update "release.sh"
