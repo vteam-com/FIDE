@@ -13,6 +13,11 @@ class CommandRuns {
   /// Creates a snapshot of [statuses] and [logs].
   const CommandRuns({this.statuses = const {}, this.logs = const {}});
 
+  /// Whether any of the actions [ids] is working toward a result: in
+  /// progress but not yet [ActionStatus.live], as a progress ring shows.
+  bool isAnyBusy(Iterable<String> ids) =>
+      ids.any((id) => statusOf(id) == ActionStatus.running);
+
   /// Whether any of the actions [ids] is in progress.
   bool isAnyRunning(Iterable<String> ids) => ids.any(isRunning);
 

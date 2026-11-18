@@ -1,4 +1,8 @@
+import 'package:fide/models/action_status.dart';
+import 'package:fide/models/command_runs.dart';
+import 'package:fide/panels/left/execute_panel.dart';
 import 'package:fide/panels/left/left_panel_tabs.dart';
+import 'package:fide/panels/left/test_panel.dart';
 import 'package:fide/panels/right/right_panel_tabs.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/left_panel_tab.dart';
@@ -70,6 +74,28 @@ void main() {
     );
 
     expect(busy, [true, false]);
+  });
+
+  test('Run and Test ring for their own runs, until an app is live', () {
+    final testRun = TestPanel.actionIds.first;
+    final build = ExecutePanel.actionIds.firstWhere((id) => id != 'clean');
+    CommandRuns runs(Map<String, ActionStatus> statuses) =>
+        CommandRuns(statuses: statuses);
+
+    final testing = runs({testRun: ActionStatus.running});
+    expect(testing.isAnyBusy(TestPanel.actionIds), isTrue);
+    expect(testing.isAnyBusy(ExecutePanel.actionIds), isFalse);
+
+    final building = runs({build: ActionStatus.running});
+    expect(building.isAnyBusy(ExecutePanel.actionIds), isTrue);
+    expect(building.isAnyBusy(TestPanel.actionIds), isFalse);
+
+    final live = runs({'debug': ActionStatus.live});
+    expect(live.isAnyBusy(ExecutePanel.actionIds), isFalse);
+    expect(
+      TestPanel.actionIds.toSet().intersection(ExecutePanel.actionIds),
+      isEmpty,
+    );
   });
 
   testWidgets('a busy tab rings its icon, an idle one does not', (

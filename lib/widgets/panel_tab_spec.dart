@@ -15,7 +15,8 @@ class PanelTabSpec<T extends Enum> {
 
   /// Whether the panel's work, which can outlast the panel, is running,
   /// ringing the tab's icon so it shows from the other tabs; null for a
-  /// tab that never rings.
+  /// tab that never rings. Watching it must not start that work: a source
+  /// that works once created is read through `followBusy`.
   final ProviderListenable<bool>? busy;
 
   /// The tab.

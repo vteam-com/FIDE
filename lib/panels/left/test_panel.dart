@@ -33,7 +33,7 @@ class TestPanel extends ConsumerWidget {
   static const String _validateId = 'check_test_structure';
 
   /// Every action of the panel: one runs at a time.
-  static const List<String> _actionIds = [
+  static const List<String> actionIds = [
     _allTestsId,
     _unitTestsId,
     _widgetTestsId,
@@ -166,7 +166,7 @@ Validates test organization and naming conventions.
     bool coverage = false,
   }) async {
     final runner = ref.read(commandRunnerProvider.notifier);
-    if (ref.read(commandRunnerProvider).isAnyRunning(_actionIds)) {
+    if (ref.read(commandRunnerProvider).isAnyRunning(actionIds)) {
       MessageBox.showInfo(context, 'Tests are already running');
       return;
     }

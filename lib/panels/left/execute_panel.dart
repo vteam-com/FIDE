@@ -20,6 +20,24 @@ import 'package:material_ui/material_ui.dart';
 /// Flutter project. The runs belong to [commandRunnerProvider], so they
 /// keep going while the panel is hidden.
 class ExecutePanel extends ConsumerStatefulWidget {
+  /// Id of the action cleaning the project.
+  static const String _cleanId = 'clean';
+
+  /// Id of the action running the app in release mode.
+  static const String _runId = 'run';
+
+  /// Id of the action running the app in debug mode.
+  static const String _debugId = 'debug';
+
+  /// Every action of the panel, for any platform.
+  static final Set<String> actionIds = {
+    _cleanId,
+    for (final platform in FlutterPlatform.values)
+      for (final build in platform.buildActions) build.id,
+    _runId,
+    _debugId,
+  };
+
   /// Creates the panel.
   const ExecutePanel({super.key});
 
@@ -91,7 +109,7 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
   /// The actions offered for [platform].
   List<PanelAction> _actionsFor(FlutterPlatform platform) => [
     PanelAction(
-      id: 'clean',
+      id: ExecutePanel._cleanId,
       icon: Icons.cleaning_services_rounded,
       title: 'Clean',
       description: 'Remove build outputs and generated files',
@@ -114,7 +132,7 @@ Runs flutter clean.
         onRun: () => _build(build.id, platform, target: build.target),
       ),
     PanelAction(
-      id: 'run',
+      id: ExecutePanel._runId,
       icon: Icons.rocket_launch_rounded,
       title: 'Run Release',
       description: 'Run application in release mode',
@@ -126,10 +144,10 @@ Runs the Flutter application in release mode.
 • Hot reload disabled for performance
 • Designed for production deployment
       ''',
-      onRun: () => _runApp('run', platform, isDebug: false),
+      onRun: () => _runApp(ExecutePanel._runId, platform, isDebug: false),
     ),
     PanelAction(
-      id: 'debug',
+      id: ExecutePanel._debugId,
       icon: Icons.bug_report_rounded,
       title: 'Run Debug',
       description: 'Run application in debug mode with hot reload',
@@ -141,7 +159,7 @@ Runs the Flutter application in debug mode.
 • Allows real-time code modification
 • Development and testing mode
       ''',
-      onRun: () => _runApp('debug', platform, isDebug: true),
+      onRun: () => _runApp(ExecutePanel._debugId, platform, isDebug: true),
     ),
   ];
 
@@ -163,7 +181,7 @@ Runs the Flutter application in debug mode.
   /// Cleans the project. The panel only offers it for platforms the
   /// project has and the host can build.
   Future<void> _clean(FlutterPlatform platform) => _runProjectAction(
-    'clean',
+    ExecutePanel._cleanId,
     platform,
     startMessages: ['🧹 Cleaning Flutter project...'],
     // A failed clean throws, so reaching the end means success
