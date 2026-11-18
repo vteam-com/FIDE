@@ -413,14 +413,12 @@ void main() {
 
     stepStart('Right Panel');
     {
-      await tester.tap(find.byKey(const Key('keyTabOutline')));
+      await tester.tap(find.byKey(const Key('keyTabInfo')));
       await tester.pump(const Duration(milliseconds: 50));
       await tester.tap(find.byKey(const Key('keyTabLocalize')));
       await tester.pump(const Duration(milliseconds: 50));
       await tester.tap(find.byKey(const Key('keyTabAI')));
       await tester.pump(const Duration(milliseconds: 50));
-      // await tester.tap(find.byKey(const Key('keyTabInfo')));
-      // await tester.pump(const Duration(milliseconds: 50));
     }
     stepStop();
 

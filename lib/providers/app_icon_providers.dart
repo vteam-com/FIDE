@@ -1,3 +1,4 @@
+import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/project_lifecycle_providers.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/app_icon_inspector.dart';
@@ -26,12 +27,22 @@ final appIconMasterChoiceProvider = StateProvider<String?>((ref) {
 });
 
 /// The app icon file picked in the App Icons view, as an absolute path,
-/// whose details the Outline tab shows while the view is open; null when
+/// whose details the Info tab shows while the view is open; null when
 /// none is. Forgotten when the project changes.
 final appIconSelectionProvider = StateProvider<String?>((ref) {
   ref.watch(currentProjectPathProvider);
   return null;
 });
+
+/// The file whose details the Info tab shows: the icon picked in the App
+/// Icons view while it is open, else the selected file; null when neither.
+final detailedFilePathProvider = Provider<String?>(
+  (ref) =>
+      (ref.watch(centerViewProvider) == CenterView.appIcons
+          ? ref.watch(appIconSelectionProvider)
+          : null) ??
+      ref.watch(selectedFileProvider)?.path,
+);
 
 /// The image the open project's icons are generated from: the one the
 /// user picked, else the fixer's default; null when there is none.

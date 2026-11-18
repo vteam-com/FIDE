@@ -5,6 +5,7 @@ import 'package:fide/models/project_node.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/git_repo_controller.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/services/desktop_shell.dart';
 import 'package:fide/services/file_entry_service.dart';
 import 'package:fide/services/git_service.dart';

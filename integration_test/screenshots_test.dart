@@ -106,8 +106,9 @@ void main() {
       path.join(_projectPath, 'lib', 'panels', 'right', 'ai_panel.dart'),
     );
     await _settleFor(tester, _renderTime);
+    // The Explorer shows the file's outline under it, Info its details
     await _tapKey(tester, 'keyTabFolder');
-    await _tapKey(tester, 'keyTabOutline');
+    await _tapKey(tester, 'keyTabInfo');
     await _capture(tester, 'editor');
     stepStop();
 

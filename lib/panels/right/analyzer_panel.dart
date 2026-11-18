@@ -54,9 +54,11 @@ class AnalyzerPanel extends ConsumerWidget {
               : '${review.findings.length.count('finding')} in '
                     '${review.fileCount.count('file')}',
           actions: [
+            // The Analyzer tab's ring shows the review running
             RefreshButton(
-              busy: analysis.isLoading,
-              onPressed: () => ref.invalidate(dryReviewProvider),
+              onPressed: analysis.isLoading
+                  ? null
+                  : () => ref.invalidate(dryReviewProvider),
             ),
           ],
         ),
@@ -64,6 +66,8 @@ class AnalyzerPanel extends ConsumerWidget {
           child: ProjectAnalysisView(
             analysis: analysis,
             loadingMessage: 'Comparing the widgets of lib…',
+            // The Analyzer tab rings meanwhile
+            isRinged: true,
             builder: (review) => review == null || review.findings.isEmpty
                 ? const EmptyState(
                     icon: Icons.check_circle_outline,

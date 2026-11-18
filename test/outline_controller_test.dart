@@ -268,6 +268,51 @@ void main() {
       expect(counted.copyWith(counted: (node: null)).countedNode, isNull);
       expect(counted.copyWith(isRenaming: true).consumers, isEmpty);
     });
+
+    group('shownNodes', () {
+      // Two methods, each returning a widget tree
+      const nodes = [
+        a,
+        run,
+        OutlineNode(
+          name: 'Column',
+          kind: OutlineKind.widget,
+          line: 3,
+          level: 2,
+        ),
+        OutlineNode(name: 'Text', kind: OutlineKind.widget, line: 4, level: 3),
+        OutlineNode(name: 'other', kind: OutlineKind.method, line: 6, level: 1),
+        OutlineNode(name: 'Row', kind: OutlineKind.widget, line: 7, level: 2),
+      ];
+
+      /// The names shown with the cursor on [cursorLine], each with the
+      /// count of widgets folded under it.
+      List<(String, int)> shown(int cursorLine) => [
+        for (final (:node, :foldedWidgets) in OutlineState(
+          nodes: nodes,
+          cursorLine: cursorLine,
+        ).shownNodes)
+          (node.name, foldedWidgets),
+      ];
+
+      test('folds every widget tree while the cursor is in none', () {
+        expect(shown(OutlineState.noCursorLine), [
+          ('A', 0),
+          ('run', 2),
+          ('other', 1),
+        ]);
+      });
+
+      test('unfolds the widget tree of the declaration under the cursor', () {
+        expect(shown(4), [
+          ('A', 0),
+          ('run', 0),
+          ('Column', 0),
+          ('Text', 0),
+          ('other', 1),
+        ]);
+      });
+    });
   });
 
   group('OutlineNode', () {

@@ -12,11 +12,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 part 'outline_controller.outline_state.dart';
 
-/// The outline of a file, kept while the Outline panel shows it.
+/// The outline of a file, kept while its project tree row shows it.
 final outlineControllerProvider = NotifierProvider.autoDispose
     .family<OutlineController, OutlineState, String>(OutlineController.new);
 
-/// Outlines one file for the Outline panel: parses its editor text (or
+/// Outlines one file for its project tree row: parses its editor text (or
 /// its saved text when it isn't open) again as it is edited, follows the
 /// editor's cursor to highlight the entry under it, finds that entry's
 /// consumers and renames it across the project.

@@ -13,7 +13,6 @@ import 'package:fide/widgets/dropdown_label.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/icon_menu_item.dart';
-import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/primary_button.dart';
@@ -180,8 +179,8 @@ class _AIPanelState extends ConsumerState<AIPanel> {
   }
 
   /// The first missing piece of the Ollama setup, with the button that
-  /// fixes it, a spinner while a fix runs, or that it is ready; [step] is
-  /// null while it is being checked.
+  /// fixes it, or that it is ready; while a fix runs, the AI tab's ring
+  /// shows it; [step] is null while it is being checked.
   Widget _buildSetupState(OllamaStep? step) {
     if (step == null) return const LoadingIndicator();
     final actionLabel = step.actionLabel;
@@ -194,9 +193,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
           isFixing ? 'Setting up Ollama…' : step.message,
           style: AppTextStyle.caption,
         ),
-        if (isFixing)
-          const InlineSpinner()
-        else if (actionLabel != null)
+        if (actionLabel != null && !isFixing)
           PrimaryButton(onPressed: () => _fixSetup(step), label: actionLabel),
       ],
     );

@@ -12,9 +12,9 @@ import 'package:fide/widgets/section_title.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Shown in the Outline tab for an image file: everything FIDE reads from
-/// it, from its size on disk to its dimensions, color mode, transparency,
-/// dominant colors and format-specific facts.
+/// Shown in the Info tab's file section for an image: everything FIDE
+/// reads from it, from its size on disk to its dimensions, color mode,
+/// transparency, dominant colors and format-specific facts.
 class ImageDetailsPanel extends ConsumerStatefulWidget {
   /// Creates the details of the image at [path].
   const ImageDetailsPanel({super.key, required this.path});
@@ -99,8 +99,8 @@ class _ImageDetailsPanelState extends ConsumerState<ImageDetailsPanel> {
         // Vector images have no pixels: no color mode, and colors counted
         // by use rather than by area
         final isRaster = details.colorMode != null;
-        return ListView(
-          padding: AppPadding.panelContent,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ..._section('File', [
               DetailRow('Format', details.format),

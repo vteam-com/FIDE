@@ -1,7 +1,7 @@
 import 'package:fide/models/outline_kind.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// How an [OutlineKind] looks in the Outline panel: its icon and the theme
+/// How an [OutlineKind] looks in a file's outline: its icon and the theme
 /// color tinting it.
 extension OutlineKindStyle on OutlineKind {
   /// Icon shown before the entry.

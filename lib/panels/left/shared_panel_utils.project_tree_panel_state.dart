@@ -42,9 +42,14 @@ mixin ProjectTreePanelState<T extends ConsumerStatefulWidget>
     return ref.read(projectTreeReaderProvider).loadChildren(node);
   }
 
-  /// Opens [node] as the selected file, seeding its Git status first.
+  /// Opens [node] as the selected file, seeding its Git status first; the
+  /// selected file, clicked again, folds or unfolds its outline instead.
   void handleFileTap(ProjectNode node) {
-    if (ref.read(selectedFileProvider)?.path == node.path) return;
+    if (ref.read(selectedFileProvider)?.path == node.path) {
+      final folded = ref.read(foldedOutlinePathProvider.notifier);
+      folded.state = folded.state == node.path ? null : node.path;
+      return;
+    }
 
     final root = projectRoot;
     if (node.gitStatus == GitFileStatus.clean && root != null) {

@@ -1,6 +1,6 @@
 part of 'outline_controller.dart';
 
-/// The outline of one file as the Outline panel shows it: its entries,
+/// The outline of one file as its project tree row shows it: its entries,
 /// the cursor line highlighting them, and the consumers of the selected
 /// entry.
 @immutable
@@ -61,6 +61,33 @@ class OutlineState {
   OutlineNode? get selected => nodes
       .where((node) => !node.kind.isWidget && isHighlighted(node))
       .lastOrNull;
+
+  /// The entries a file tree shows, each with the count of widgets folded
+  /// under it: every declaration, heading and key, and only the widget
+  /// tree of the [selected] declaration, so the outline stays short and
+  /// the cursor unfolds the tree it is in.
+  List<({OutlineNode node, int foldedWidgets})> get shownNodes {
+    final selected = this.selected;
+    final shown = <OutlineNode>[];
+    final folded = <int>[];
+    // Whether the widgets met belong to the selected declaration
+    var isUnfolded = true;
+    for (final node in nodes) {
+      if (!node.kind.isWidget) {
+        isUnfolded = node.isSameAs(selected);
+      } else if (!isUnfolded && shown.isNotEmpty) {
+        // The owner was the last entry shown: its widgets stay folded
+        folded.last++;
+        continue;
+      }
+      shown.add(node);
+      folded.add(0);
+    }
+    return [
+      for (var i = 0; i < shown.length; i++)
+        (node: shown[i], foldedWidgets: folded[i]),
+    ];
+  }
 
   /// A copy with the given fields replaced; [countedNode] and
   /// [consumers] are replaced by [counted] and [found] when given, as

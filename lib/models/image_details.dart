@@ -1,7 +1,7 @@
 /// One of the colors an image is mostly made of.
 typedef DominantColor = ({int argb, double share});
 
-/// What FIDE knows about an image file, for the Outline tab: the file,
+/// What FIDE knows about an image file, for the Info tab: the file,
 /// the picture's size and color, and facts specific to its format.
 class ImageDetails {
   /// Creates the details of an image.

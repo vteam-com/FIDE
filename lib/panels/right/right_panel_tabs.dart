@@ -2,7 +2,6 @@ import 'package:fide/panels/right/ai_panel.dart';
 import 'package:fide/panels/right/analyzer_panel.dart';
 import 'package:fide/panels/right/info_panel.dart';
 import 'package:fide/panels/right/localization/localization_panel.dart';
-import 'package:fide/panels/right/outline_tab.dart';
 import 'package:fide/panels/right/preview_panel.dart';
 import 'package:fide/providers/ai_panel_busy_provider.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -15,7 +14,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// What the right panel shows under each [RightPanelTab], in tab order.
 final List<PanelTabSpec<RightPanelTab>> rightPanelTabs = [
-  PanelTabSpec(RightPanelTab.outline, build: OutlineTab.new),
+  PanelTabSpec(
+    RightPanelTab.info,
+    build: InfoPanel.new,
+    busy: followBusy(projectQualityBusyProvider, (busy) => busy),
+  ),
   PanelTabSpec(
     RightPanelTab.preview,
     build: PreviewPanel.new,
@@ -35,9 +38,4 @@ final List<PanelTabSpec<RightPanelTab>> rightPanelTabs = [
     busy: followBusy(dryReviewProvider, (review) => review.isLoading),
   ),
   PanelTabSpec(RightPanelTab.ai, build: AIPanel.new, busy: aiPanelBusyProvider),
-  PanelTabSpec(
-    RightPanelTab.info,
-    build: InfoPanel.new,
-    busy: followBusy(projectQualityBusyProvider, (busy) => busy),
-  ),
 ];

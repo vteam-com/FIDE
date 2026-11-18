@@ -2,7 +2,7 @@ part of 'folder_panel.dart';
 
 /// The row of one node of the Explorer's tree: a directory, whose children
 /// have rows of their own, or a file, highlighted when selected or
-/// revealed.
+/// revealed, with its outline under it while selected.
 class NodeBuilder extends StatelessWidget {
   /// Creates the row of [node].
   const NodeBuilder({
@@ -58,16 +58,13 @@ class NodeBuilder extends StatelessWidget {
       );
     }
     final isRevealed = node.path == revealedPath;
-    return SelectedFileBuilder(
-      path: node.path,
-      builder: (_, isSelected) => FileNameWidget(
-        key: isRevealed ? revealedKey : null,
-        fileItem: FileSystemItem.fromNode(node),
-        isSelected: isRevealed || isSelected,
-        rootPath: rootPath,
-        onTap: () => onNodeTapped(node, false),
-        onContextMenu: (offset) => onShowContextMenu(node, offset),
-      ),
+    return FileTreeRow(
+      key: isRevealed ? revealedKey : null,
+      fileItem: FileSystemItem.fromNode(node),
+      isRevealed: isRevealed,
+      rootPath: rootPath,
+      onTap: () => onNodeTapped(node, false),
+      onContextMenu: (offset) => onShowContextMenu(node, offset),
     );
   }
 }

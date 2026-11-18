@@ -259,10 +259,10 @@ class AppIconsPanel extends ConsumerWidget {
   VoidCallback? _onDoubleTap(WidgetRef ref, String? path) =>
       path == null ? null : () => openFromCenterView(ref, path);
 
-  /// Shows the details of the icon file at [path] in the Outline tab.
+  /// Shows the details of the icon file at [path] in the Info tab.
   void _select(WidgetRef ref, String path) {
     ref.read(appIconSelectionProvider.notifier).state = path;
-    showRightPanelTab(ref.read, RightPanelTab.outline);
+    showRightPanelTab(ref.read, RightPanelTab.info);
   }
 
   /// Lets the user pick the master image, starting in the project folder.

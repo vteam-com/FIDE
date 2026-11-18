@@ -6,7 +6,9 @@ import 'package:material_ui/material_ui.dart';
 ///
 /// A [TaskButton], so while [busy] the ring spinning around it is the
 /// one sign that the panel is working, whether the check started from
-/// it or by itself, such as after a save.
+/// it or by itself, such as after a save. In a side panel whose tab rings
+/// for that check, the tab's ring is that sign: the button is only
+/// disabled meanwhile (no [onPressed]), not [busy].
 class RefreshButton extends StatelessWidget {
   /// Creates the button calling [onPressed].
   const RefreshButton({super.key, required this.onPressed, this.busy = false});
@@ -14,8 +16,8 @@ class RefreshButton extends StatelessWidget {
   /// Whether the check is running.
   final bool busy;
 
-  /// Runs the check again.
-  final VoidCallback onPressed;
+  /// Runs the check again; the button is disabled when null.
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {

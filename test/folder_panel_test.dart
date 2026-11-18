@@ -1,3 +1,4 @@
+import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/project_node.dart';
 import 'package:fide/panels/left/folder_panel.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -72,6 +73,23 @@ void main() {
     // A screenful of the 1,000 matching files
     expect(built, lessThan(_folderCount * _filesPerFolder ~/ 10));
     expect(find.text('dir0'), findsOneWidget);
+  });
+
+  testWidgets('clicking the selected file again folds its outline, then '
+      'unfolds it', (tester) async {
+    final container = await _pumpExplorer(tester);
+    const path = '/p/dir0/file0_0.dart';
+    container.read(selectedFileProvider.notifier).state =
+        FileSystemItem.fromPath(path);
+    // Its folder opens once the selection is followed
+    await tester.pump();
+    await tester.pump();
+
+    await tester.tap(find.text('file0_0.dart'));
+    expect(container.read(foldedOutlinePathProvider), path);
+
+    await tester.tap(find.text('file0_0.dart'));
+    expect(container.read(foldedOutlinePathProvider), isNull);
   });
 
   testWidgets('revealing a file far down scrolls its row into view', (

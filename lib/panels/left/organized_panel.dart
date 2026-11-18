@@ -11,10 +11,9 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/project_categories_provider.dart';
-import 'package:fide/widget_services/selected_file_builder.dart';
+import 'package:fide/widget_services/file_tree_row.dart';
 import 'package:fide/widgets/asset_kind_icon.dart';
 import 'package:fide/widgets/container_counter.dart';
-import 'package:fide/widgets/filename_widget.dart';
 import 'package:fide/widgets/folder_node.dart';
 import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
@@ -247,32 +246,26 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
       );
     } else {
       final classCount = _categories?.multiClassFiles[node.path];
-      // Selecting a file rebuilds its row and the one it leaves, not the
-      // whole section
-      return SelectedFileBuilder(
-        path: item.path,
-        builder: (_, isSelected) => FileNameWidget(
-          fileItem: item,
-          isSelected: isSelected,
-          rootPath: projectRoot!.path,
-          onTap: () => handleFileTap(node),
-          onContextMenu: (position) => showNodeContextMenu(node, position),
-          trailing: _splittingPath == node.path
-              ? const InlineSpinner.small()
-              : classCount == null
-              ? null
-              : ContainerCounter.warning(
-                  icon: Icons.data_object,
-                  count: classCount,
-                  tooltip:
-                      'Defines $classCount public classes; '
-                      'expected one public class per file.\n'
-                      'Click to move the others into their own files.',
-                  onTap: _splittingPath == null
-                      ? () => _splitClasses(node, classCount)
-                      : null,
-                ),
-        ),
+      return FileTreeRow(
+        fileItem: item,
+        rootPath: projectRoot!.path,
+        onTap: () => handleFileTap(node),
+        onContextMenu: (position) => showNodeContextMenu(node, position),
+        trailing: _splittingPath == node.path
+            ? const InlineSpinner.small()
+            : classCount == null
+            ? null
+            : ContainerCounter.warning(
+                icon: Icons.data_object,
+                count: classCount,
+                tooltip:
+                    'Defines $classCount public classes; '
+                    'expected one public class per file.\n'
+                    'Click to move the others into their own files.',
+                onTap: _splittingPath == null
+                    ? () => _splitClasses(node, classCount)
+                    : null,
+              ),
       );
     }
   }

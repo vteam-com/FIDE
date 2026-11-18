@@ -11,7 +11,6 @@ import 'package:fide/services/preview_generator.dart';
 import 'package:fide/services/preview_project_scanner.dart';
 import 'package:fide/widget_services/image_backdrop_buttons.dart';
 import 'package:fide/widget_services/output_panel.dart';
-import 'package:fide/widgets/busy_bar.dart';
 import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
@@ -90,7 +89,8 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               _configure(context, constraints.maxWidth);
-              return BusyBar.over(busy: state.isBusy, child: _buildBody(state));
+              // The Preview tab's ring shows the host starting or reloading
+              return _buildBody(state);
             },
           ),
         ),

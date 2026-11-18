@@ -4,6 +4,7 @@ import 'package:fide/models/dependency_version.dart';
 import 'package:fide/models/project_info_state.dart';
 import 'package:fide/models/project_metrics.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/panels/right/file_info_section.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/project_info_controller.dart';
 import 'package:fide/theme/app_theme.dart';
@@ -26,7 +27,8 @@ import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// The Info tab: the open project's name, version, quality (the same as
+/// The Info tab: the selected file's path, actions and, for an image, its
+/// details; then the open project's name, version, quality (the same as
 /// the overview's), dependencies and maintenance actions, run by
 /// [ProjectInfoController].
 class InfoPanel extends ConsumerStatefulWidget {
@@ -45,8 +47,13 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   @override
   void initState() {
     super.initState();
-    // Analyzing marks the controller busy at once, which Riverpod forbids
-    // while the tree builds
+    _analyzeAfterBuild();
+  }
+
+  /// Measures the project once the current build is done: analyzing marks
+  /// the controller busy at once, which Riverpod forbids while the tree
+  /// builds.
+  void _analyzeAfterBuild() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _show(_controller.analyze());
     });
@@ -132,12 +139,22 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
   @override
   Widget build(BuildContext context) {
+    // The panel outlives the project: measure each one opened
+    ref.listen(currentProjectPathProvider, (previous, next) {
+      if (next != null && next != previous) _analyzeAfterBuild();
+    });
     final currentProjectPath = ref.watch(currentProjectPathProvider);
     final projectMetrics = ref.watch(projectMetricsProvider);
     final info = ref.watch(projectInfoControllerProvider);
+    final filePath = ref.watch(detailedFilePathProvider);
+    final fileSection = filePath == null
+        ? null
+        : FileInfoSection(path: filePath);
 
     if (currentProjectPath == null) {
-      return const NoProjectPlaceholder();
+      return fileSection == null
+          ? const NoProjectPlaceholder()
+          : PanelScrollView(children: [fileSection]);
     }
 
     final version = projectMetrics.version;
@@ -158,24 +175,41 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               tooltip: 'Edit pubspec.yaml',
               onPressed: _openPubspecYaml,
             ),
-            RefreshButton(
-              busy: info.isAnalyzing || ref.watch(projectQualityBusyProvider),
-              onPressed: () {
-                refreshProjectQuality(ref.invalidate);
-                _show(_controller.analyze());
-              },
-            ),
+            _buildRefreshButton(info),
           ],
         ),
-        Expanded(child: _buildContent(projectMetrics, info)),
+        Expanded(child: _buildContent(fileSection, projectMetrics, info)),
       ],
     );
   }
 
-  /// The project's quality, dependencies and actions.
-  Widget _buildContent(ProjectMetrics projectMetrics, ProjectInfoState info) {
+  /// Measures the project and analyzes its quality again. While the
+  /// quality is analyzed, the Info tab's ring shows it and the button is
+  /// only disabled; measuring alone rings the button.
+  Widget _buildRefreshButton(ProjectInfoState info) {
+    final isQualityBusy = ref.watch(projectQualityBusyProvider);
+    return RefreshButton(
+      busy: info.isAnalyzing && !isQualityBusy,
+      onPressed: isQualityBusy
+          ? null
+          : () {
+              refreshProjectQuality(ref.invalidate);
+              _show(_controller.analyze());
+            },
+    );
+  }
+
+  /// The [fileSection] about the selected file, if any, then the
+  /// project's quality, dependencies and actions.
+  Widget _buildContent(
+    Widget? fileSection,
+    ProjectMetrics projectMetrics,
+    ProjectInfoState info,
+  ) {
     return PanelScrollView(
       children: [
+        ?fileSection,
+
         // The project's quality, once fCheck has analyzed it
         if (ref.watch(projectQualityProvider) case final quality?)
           IssueSection(

@@ -53,6 +53,10 @@ final imageBackdropProvider = StateProvider<ImageBackdrop>(
   (_ /*ref*/) => ImageBackdrop.transparent,
 );
 
+/// The selected file whose outline its project tree row folds, clicked
+/// again once selected; selecting another file unfolds that one's.
+final foldedOutlinePathProvider = StateProvider<String?>((_ /*ref*/) => null);
+
 /// A file the Explorer is asked to reveal; it clears it once shown.
 final explorerRevealPathProvider = StateProvider<String?>((_ /*ref*/) => null);
 

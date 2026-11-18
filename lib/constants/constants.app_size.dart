@@ -61,7 +61,6 @@ class AppSize {
   /// change in a long file stays visible.
   static const double diffMinimapMinMark = 2;
   static const double diffLineNumberColumnWidth = 60;
-  static const double outlineFallbackHeight = 200;
 
   /// Gap between workspace panel islands and around the workspace edge.
   static const double islandGap = 6;

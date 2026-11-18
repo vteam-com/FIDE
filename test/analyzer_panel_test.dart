@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:fide/models/dry_review.dart';
 import 'package:fide/panels/right/analyzer_panel.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/dry_review_provider.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/theme/app_theme.dart';
+import 'package:fide/widgets/busy_bar.dart';
+import 'package:fide/widgets/task_button.dart';
+import 'package:fide/widgets/task_ring.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -92,16 +97,19 @@ const DryReview _extractReview = DryReview(
 const int _numberOffset = 11;
 
 void main() {
-  /// Shows the Analyzer tab reviewing [review], reading and writing the
-  /// files of [reader] when given; returns its provider scope.
+  /// Shows the Analyzer tab reviewing [review], still reviewing when
+  /// null, reading and writing the files of [reader] when given; returns
+  /// its provider scope.
   Future<ProviderContainer> pumpPanel(
     WidgetTester tester,
-    DryReview review, {
+    DryReview? review, {
     FakeFileContentReader? reader,
   }) async {
     final container = ProviderContainer(
       overrides: [
-        dryReviewProvider.overrideWith((_) => review),
+        dryReviewProvider.overrideWith(
+          (_) => review ?? Completer<DryReview?>().future,
+        ),
         if (reader != null) fileContentReaderProvider.overrideWithValue(reader),
         codeFormatterProvider.overrideWithValue(const FakeCodeFormatter()),
       ],
@@ -207,6 +215,17 @@ void main() {
 
     expect(find.text('FittedBox is taken: pick another name'), findsOneWidget);
     expect(reader.files.keys, ['/p/lib/a.dart']);
+  });
+
+  testWidgets('while it reviews, only the tab rings: the message shows '
+      'without a bar and Refresh is just disabled', (tester) async {
+    // Settling proves nothing spins in the panel
+    await pumpPanel(tester, null);
+
+    expect(find.text('Comparing the widgets of lib…'), findsOneWidget);
+    expect(find.byType(BusyBar), findsNothing);
+    expect(tester.widget<TaskRing>(find.byType(TaskRing)).spinning, isFalse);
+    expect(tester.widget<TaskButton>(find.byType(TaskButton)).onRun, isNull);
   });
 
   testWidgets('a project without repetition says so', (tester) async {

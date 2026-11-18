@@ -1,94 +1,91 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/outline_node.dart';
 import 'package:fide/models/reference_search.dart';
 import 'package:fide/models/search_result.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/left_panel_tab.dart';
 import 'package:fide/providers/outline_controller.dart';
+import 'package:fide/providers/outline_providers.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/ui_state_providers.dart';
-import 'package:fide/widget_services/output_panel.dart';
 import 'package:fide/widgets/container_counter.dart';
-import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/icon_menu_item.dart';
 import 'package:fide/widgets/inline_spinner.dart';
-import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/more_menu_button.dart';
 import 'package:fide/widgets/outline_kind_style.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// The outline of a file: its declarations, headings or keys, and under
-/// each function returning widgets its widget tree, the entries under the
-/// editor's cursor highlighted, the declaration's consumers counted.
-class OutlinePanel extends ConsumerWidget {
-  /// Creates the outline of [file].
-  const OutlinePanel({super.key, required this.file});
+/// The outline of the selected file, nested under its row in a project
+/// tree: its declarations, headings or keys, the widget tree of the
+/// declaration under the editor's cursor, the entries under the cursor
+/// highlighted and the declaration's consumers counted. Nothing for a
+/// file type without an outline, or while its row folds it.
+class FileOutline extends ConsumerWidget {
+  /// Creates the outline of the file at [path].
+  const FileOutline({super.key, required this.path});
 
   /// The file outlined; its editor text when open, else its saved text.
-  final FileSystemItem file;
+  final String path;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final outline = ref.watch(outlineControllerProvider(file.path));
-    final list = ListView.builder(
-      padding: AppPadding.panelContent,
-      itemCount: outline.nodes.length,
-      itemBuilder: (_, index) =>
-          _buildOutlineNode(context, ref, outline, outline.nodes[index]),
+    final isFolded = ref.watch(
+      foldedOutlinePathProvider.select((folded) => folded == path),
     );
+    if (isFolded || ref.watch(outlineParserProvider(path)) == null) {
+      return const SizedBox.shrink();
+    }
+    final outline = ref.watch(outlineControllerProvider(path));
+    // An outline that never parsed says why; a later failure, such as
+    // YAML mid-edit, keeps the last one shown
+    if (outline.nodes.isEmpty && outline.error.isNotEmpty) {
+      return _buildError(context, ref, outline.error);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final (:node, :foldedWidgets) in outline.shownNodes)
+          _buildNode(context, ref, outline, node, foldedWidgets),
+      ],
+    );
+  }
 
-    return LayoutBuilder(
-      builder: (_ /*context*/, constraints) {
-        final isConstrained = constraints.maxHeight.isFinite;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (outline.isLoading)
-              const LoadingIndicator()
-            else if (outline.error.isNotEmpty)
-              OutputPanel(
-                title: 'Parse Error',
-                text: outline.error,
-                isExpanded: true,
-                onClear: ref
-                    .read(outlineControllerProvider(file.path).notifier)
-                    .parse,
-              )
-            else if (outline.nodes.isEmpty)
-              const Padding(
-                padding: AppPadding.panelContent,
-                child: EmptyState(message: 'No outline available'),
-              )
-            else if (isConstrained)
-              Expanded(child: list)
-            else
-              Flexible(
-                child: SizedBox(
-                  height: AppSize.outlineFallbackHeight,
-                  child: list,
-                ),
-              ),
-          ],
-        );
-      },
+  /// The row telling the file can't be outlined, [error] in its tooltip;
+  /// clicking it parses the file again.
+  Widget _buildError(BuildContext context, WidgetRef ref, String error) {
+    return TreeRow(
+      icon: Icon(
+        StatusTone.error.icon,
+        color: StatusTone.error.readableIn(Theme.of(context).colorScheme),
+        size: AppIconSize.medium,
+      ),
+      name: 'Parse error',
+      note: '$error\n\nClick to parse again',
+      onTap: ref.read(outlineControllerProvider(path).notifier).parse,
     );
   }
 
   /// One entry of [outline] with its icon and label, highlighted when the
-  /// cursor is on it.
-  Widget _buildOutlineNode(
+  /// cursor is on it; [foldedWidgets] counts the widgets folded under it.
+  Widget _buildNode(
     BuildContext context,
     WidgetRef ref,
     OutlineState outline,
     OutlineNode node,
+    int foldedWidgets,
   ) {
     final kind = node.kind;
+    // Moving the cursor there also unfolds the entry's widget tree
+    void goToNode() => ref
+        .read(activeEditorProvider)
+        .navigateToLine(node.line, column: node.column);
     return TreeRow(
       icon: Icon(
         kind.icon,
@@ -98,11 +95,17 @@ class OutlinePanel extends ConsumerWidget {
       name: node.name,
       depth: node.level,
       highlighted: outline.isHighlighted(node),
-      // Navigate to the corresponding line and column in the editor
-      onTap: () => ref
-          .read(activeEditorProvider)
-          .navigateToLine(node.line, column: node.column),
+      onTap: goToNode,
       trailing: [
+        if (foldedWidgets > 0)
+          ContainerCounter(
+            count: foldedWidgets,
+            tooltip: foldedWidgets == 1
+                ? 'Builds 1 widget; click to show it'
+                : 'Builds $foldedWidgets widgets; click to show its widget '
+                      'tree',
+            onTap: goToNode,
+          ),
         if (outline.isCounted(node)) ...[
           _buildConsumerCount(ref, outline, node),
           if (!outline.isRenaming)
@@ -177,7 +180,7 @@ class OutlinePanel extends ConsumerWidget {
     WidgetRef ref,
     OutlineNode node,
   ) async {
-    final controller = ref.read(outlineControllerProvider(file.path).notifier);
+    final controller = ref.read(outlineControllerProvider(path).notifier);
     if (!controller.canRename) return;
     final name = node.usedName;
     final newName = await MessageBox.promptForText(
