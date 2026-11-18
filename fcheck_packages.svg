@@ -347,7 +347,7 @@
     font-weight: 900;
   }
 </style>
-<text x="717.0" y="28.0" class="packageLabelTitle" text-anchor="middle">fide v1.0.2+3</text>
+<text x="717.0" y="28.0" class="packageLabelTitle" text-anchor="middle">fide v1.2.0+6</text>
 <g class="packageMetadataPill"><title>Dart ^3.14.0</title><rect x="644.6" y="36.0" width="61.199999999999996" height="9.0" rx="4.5" ry="4.5" class="packageMetadataPillShape"/><text x="675.2" y="41" class="packageLabelMetadata" text-anchor="middle" dominant-baseline="middle">Dart ^3.14.0</text></g>
 <g class="packageMetadataPill"><title>Flutter &gt;=3.50.0</title><rect x="711.8" y="36.0" width="77.6" height="9.0" rx="4.5" ry="4.5" class="packageMetadataPillShape"/><text x="750.5999999999999" y="41" class="packageLabelMetadata" text-anchor="middle" dominant-baseline="middle">Flutter &gt;=3.50.0</text></g>
 <text x="397.0" y="70.0" class="packageLabelSection">dependencies (28 items)</text>
@@ -886,7 +886,7 @@
 </g>
 <g>
   <path d="M 857.0 5928.0 H 896.0 Q 902.0 5928.0 902.0 5934.0 V 8620.0 Q 902.0 8626.0 896.0 8626.0 H 577.0" class="edgeVertical"/>
-  <title>shared_preferences_android -> jni v1.1.2</title>
+  <title>shared_preferences_android -> jni v1.2.0</title>
 </g>
 <g>
   <path d="M 857.0 5992.0 H 899.0 Q 905.0 5992.0 905.0 5998.0 V 8876.0 Q 905.0 8882.0 899.0 8882.0 H 577.0" class="edgeVertical"/>
@@ -906,11 +906,11 @@
 </g>
 <g>
   <path d="M 857.0 5416.0 H 911.0 Q 917.0 5416.0 917.0 5422.0 V 8620.0 Q 917.0 8626.0 911.0 8626.0 H 577.0" class="edgeVertical"/>
-  <title>path_provider_android -> jni v1.1.2</title>
+  <title>path_provider_android -> jni v1.2.0</title>
 </g>
 <g>
   <path d="M 857.0 5416.0 H 914.0 Q 920.0 5416.0 920.0 5422.0 V 8684.0 Q 920.0 8690.0 914.0 8690.0 H 577.0" class="edgeVertical"/>
-  <title>path_provider_android -> jni_flutter v1.0.4+1</title>
+  <title>path_provider_android -> jni_flutter v1.1.0</title>
 </g>
 <g>
   <path d="M 857.0 5032.0 H 917.0 Q 923.0 5032.0 923.0 5038.0 V 8364.0 Q 923.0 8370.0 917.0 8370.0 H 577.0" class="edgeVertical"/>
@@ -2370,7 +2370,7 @@
 <g class="platformBadge platformBadge--linux"><title>Linux</title><rect x="710.5" y="8623.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#7c3aed" stroke="#6d28d9" stroke-width="0.6"/><text x="717.0" y="8630.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">L</text></g>
 <g class="platformBadge platformBadge--windows"><title>Windows</title><rect x="727.5" y="8623.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#2563eb" stroke="#1d4ed8" stroke-width="0.6"/><text x="734.0" y="8630.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">W</text></g>
 <text x="585.0" y="8618.0" class="packageLabelDerivedName packageLabelCaption" text-anchor="start">jni</text>
-<text x="849.0" y="8618.0" class="packageLabelDerivedVersion" text-anchor="end">^1.1.2</text>
+<text x="849.0" y="8618.0" class="packageLabelDerivedVersion" text-anchor="end">^1.2.0</text>
 </g>
 <g class="badge incomingBadge">
   <path d="M 851.0,8621.0 L 863.0,8614.0 Q 866.0,8614.0 866.0,8617.0 L 866.0,8625.0 Q 866.0,8628.0 863.0,8628.0 Z" fill="#3b82f6"/>
@@ -2382,7 +2382,7 @@
 <g class="packageMetadataPill"><title>Flutter &gt;=3.35.6</title><rect x="678.2" y="8703.0" width="77.6" height="9.0" rx="4.5" ry="4.5" class="packageMetadataPillShape"/><text x="717.0" y="8708" class="packageLabelMetadata" text-anchor="middle" dominant-baseline="middle">Flutter &gt;=3.35.6</text></g>
 <g class="platformBadge platformBadge--android"><title>Android</title><rect x="710.5" y="8687.0" width="13.0" height="13.0" rx="6.5" ry="6.5" fill="#16a34a" stroke="#15803d" stroke-width="0.6"/><text x="717.0" y="8694.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">A</text></g>
 <text x="585.0" y="8682.0" class="packageLabelDerivedName packageLabelCaption" text-anchor="start">jni_flutter</text>
-<text x="849.0" y="8682.0" class="packageLabelDerivedVersion" text-anchor="end">^1.0.4+1</text>
+<text x="849.0" y="8682.0" class="packageLabelDerivedVersion" text-anchor="end">^1.1.0</text>
 </g>
 <g class="badge incomingBadge">
   <path d="M 851.0,8690.0 L 863.0,8683.0 Q 866.0,8683.0 866.0,8686.0 L 866.0,8694.0 Q 866.0,8697.0 863.0,8697.0 Z" fill="#3b82f6"/>

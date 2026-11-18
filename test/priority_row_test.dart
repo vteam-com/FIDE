@@ -3,7 +3,6 @@ import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/priority_row.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/tree_row.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
