@@ -2,16 +2,15 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fide/models/flutter_daemon_message.dart';
 import 'package:fide/models/preview_frame.dart';
 import 'package:fide/models/preview_item.dart';
 import 'package:fide/models/preview_settings.dart';
-import 'package:fide/services/flutter_sdk.dart';
+import 'package:fide/services/flutter_app_session.dart';
 import 'package:fide/services/preview_registry.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:flutter/painting.dart';
 
-/// Runs a project's preview host: `flutter run --machine` on the headless
+/// Runs a project's preview host: a [FlutterAppSession] on the headless
 /// `flutter-tester` device, hot reloaded as files change, talking to FIDE
 /// over a WebSocket on the loopback interface.
 ///
@@ -32,13 +31,6 @@ class PreviewHost {
   /// The `--dart-define` telling the host the port of FIDE's server.
   static const String _portDefine = 'FIDE_PREVIEW_PORT';
 
-  /// How long [stop] waits for the app to stop before killing it.
-  static const Duration _stopTimeout = Duration(seconds: 5);
-
-  /// Most lines of output kept for the error shown when a start or a
-  /// reload fails.
-  static const int _maxOutputLines = 400;
-
   final ProcessRunner _runner;
 
   /// The project's root folder.
@@ -58,14 +50,8 @@ class PreviewHost {
 
   HttpServer? _server;
   WebSocket? _socket;
-  Process? _process;
-  String? _appId;
+  FlutterAppSession? _session;
   PreviewSettings? _settings;
-  bool _stopping = false;
-  int _nextRequestId = 1;
-  final Map<int, Completer<FlutterDaemonMessage>> _requests = {};
-  final Completer<void> _started = Completer<void>();
-  final List<String> _output = [];
 
   /// Starts the host and completes once it runs; throws with its output
   /// when it can't start, such as when the project doesn't compile.
@@ -75,40 +61,35 @@ class PreviewHost {
       0,
     );
     server.listen(_accept);
-    final process = _process = await _runner.start(FlutterSdk.executable, [
-      'run',
-      '--machine',
-      '--show-test-device',
-      '-d',
-      'flutter-tester',
-      '-t',
-      PreviewRegistry.entryPoint,
-      '--dart-define=$_portDefine=${server.port}',
-    ], workingDirectory: projectPath);
-    _lines(process.stdout).listen(_onLine);
-    _lines(process.stderr).listen(_addOutput);
-    unawaited(process.exitCode.then(_exited));
-    await _started.future;
+    final session = _session = FlutterAppSession(
+      runner: _runner,
+      projectPath: projectPath,
+      arguments: [
+        '--show-test-device',
+        '-d',
+        'flutter-tester',
+        '-t',
+        PreviewRegistry.entryPoint,
+        '--dart-define=$_portDefine=${server.port}',
+      ],
+      onExit: onExit,
+    );
+    await session.launch();
+    unawaited(session.exitCode.then((_) => server.close(force: true)));
+    await session.started;
   }
 
-  /// Hot reloads the host, or hot restarts it when [full], so it renders
-  /// what is on disk; returns null on success, else why it failed, with
-  /// the compile errors.
-  Future<String?> reload({bool full = false}) async {
-    final appId = _appId;
-    if (appId == null) return 'The preview host is not running';
-    final from = _output.length;
-    final answer = await _request('app.restart', {
-      'appId': appId,
-      'fullRestart': full,
-      'pause': false,
-    });
-    if (answer.succeeded) return null;
-    return [
-      answer.resultMessage,
-      ..._output.skip(from),
-    ].where((line) => line.trim().isNotEmpty).join('\n');
-  }
+  /// Hot restarts the host, so it renders what is on disk from a fresh
+  /// state; returns null on success, else why it failed.
+  Future<String?> restart() async =>
+      await _session?.reload(full: true) ?? FlutterAppSession.notRunning;
+
+  /// Hot reloads the host so it renders what is on disk, restarting it
+  /// when the reload can't apply a change
+  /// ([FlutterAppSession.reloadOrRestart]); returns null on success, else
+  /// why it failed, with the compile errors.
+  Future<String?> reload() async =>
+      await _session?.reloadOrRestart() ?? FlutterAppSession.notRunning;
 
   /// Sends the render [settings], now and to a host that connects later.
   void configure(PreviewSettings settings) {
@@ -152,14 +133,7 @@ class PreviewHost {
 
   /// Stops the host and its server.
   Future<void> stop() async {
-    _stopping = true;
-    final appId = _appId;
-    if (appId != null) {
-      await _request('app.stop', {
-        'appId': appId,
-      }).timeout(_stopTimeout, onTimeout: () => const FlutterDaemonMessage());
-    }
-    _process?.kill();
+    await _session?.stop();
     await _socket?.close();
     await _server?.close(force: true);
   }
@@ -200,71 +174,6 @@ class PreviewHost {
     }
   }
 
-  /// Handles a line of `flutter run` output: an answer, an event or
-  /// plain output kept for errors.
-  void _onLine(String line) {
-    final message = FlutterDaemonMessage.parse(line);
-    if (message == null) {
-      _addOutput(line);
-      return;
-    }
-    final id = message.id;
-    if (id != null) {
-      _requests.remove(id)?.complete(message);
-      return;
-    }
-    switch (message.event) {
-      case 'app.start':
-        _appId = message.params['appId'] as String?;
-      case 'app.started':
-        if (!_started.isCompleted) _started.complete();
-    }
-    final text = message.logText;
-    if (text != null) _addOutput(text);
-  }
-
-  /// Keeps [line], the latest [_maxOutputLines] only.
-  void _addOutput(String line) {
-    _output.add(line);
-    if (_output.length > _maxOutputLines) _output.removeAt(0);
-  }
-
-  /// Fails the pending requests and the start, or reports the exit.
-  void _exited(int exitCode) {
-    _appId = null;
-    for (final request in _requests.values) {
-      request.complete(FlutterDaemonMessage(error: 'Exited with $exitCode'));
-    }
-    _requests.clear();
-    final output = _output.join('\n');
-    if (!_started.isCompleted) {
-      _started.completeError(StateError(output));
-    } else if (!_stopping) {
-      onExit(output);
-    }
-    unawaited(_server?.close(force: true));
-  }
-
-  /// Sends daemon request [method] with [params] and waits for its
-  /// answer.
-  Future<FlutterDaemonMessage> _request(
-    String method,
-    Map<String, Object?> params,
-  ) {
-    final process = _process;
-    if (process == null) {
-      return Future.value(const FlutterDaemonMessage(error: 'Not running'));
-    }
-    final id = _nextRequestId++;
-    final answer = _requests[id] = Completer<FlutterDaemonMessage>();
-    process.stdin.writeln(FlutterDaemonMessage.request(id, method, params));
-    return answer.future;
-  }
-
   /// Sends [message] to the host, once connected.
   void _send(Map<String, Object?> message) => _socket?.add(jsonEncode(message));
-
-  /// The lines of a process output stream.
-  static Stream<String> _lines(Stream<List<int>> bytes) =>
-      bytes.transform(utf8.decoder).transform(const LineSplitter());
 }

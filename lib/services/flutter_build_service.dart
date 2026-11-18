@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/project_paths.dart';
+import 'package:fide/services/flutter_app_session.dart';
 import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/process_runner.dart';
 
@@ -14,9 +16,6 @@ part 'flutter_build_service.build_output.dart';
 /// through [BuildOutput] and decide how to present success or failure. A
 /// failed [clean] throws a [BuildException].
 class FlutterBuildService {
-  /// Line `flutter run` prints once the app has launched.
-  static const String _appLaunchedMarker = 'Flutter run key commands';
-
   final ProcessRunner _runner;
 
   /// Creates a build service that launches commands through [_runner].
@@ -57,25 +56,32 @@ class FlutterBuildService {
     }
   }
 
-  /// Whether [output] of [run] shows the app has launched: `flutter run`
-  /// lists its key commands once the app is up.
-  static bool isAppLaunched(String output) =>
-      output.contains(_appLaunchedMarker);
-
-  /// Runs the app on [device] in debug or release mode; completes with the
-  /// exit code when the app stops.
+  /// Runs the app on [device] in debug or release mode as a
+  /// [FlutterAppSession], given to [BuildOutput.onAppStarted] once the app
+  /// runs, to hot reload and stop it; completes with the exit code when
+  /// the app stops.
   Future<int> run(
     String projectPath,
     String device,
     BuildOutput output, {
     required bool isDebug,
-  }) {
-    return _stream(
-      FlutterSdk.executable,
-      ['run', if (!isDebug) '--release', '-d', device],
-      output,
-      workingDirectory: projectPath,
+  }) async {
+    final session = FlutterAppSession(
+      runner: _runner,
+      projectPath: projectPath,
+      arguments: [if (!isDebug) '--release', '-d', device],
+      onOutput: output.onOutput,
+      onError: output.onError,
     );
+    output.onProcessStarted?.call(await session.launch());
+    unawaited(
+      session.started.then<void>(
+        (_) => output.onAppStarted?.call(session),
+        // The exit code tells a failed start
+        onError: (Object _) {},
+      ),
+    );
+    return session.exitCode;
   }
 
   /// Runs `flutter test` in [projectPath] on [paths] (every test when

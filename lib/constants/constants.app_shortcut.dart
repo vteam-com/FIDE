@@ -104,6 +104,21 @@ class AppShortcut {
     meta: true,
   );
 
+  /// Hot Reload: apply the saved code to the running app, keeping its
+  /// state (as in Android Studio).
+  static const SingleActivator hotReload = SingleActivator(
+    LogicalKeyboardKey.backslash,
+    meta: true,
+  );
+
+  /// Hot Restart: restart the running app on the saved code, resetting
+  /// its state.
+  static const SingleActivator hotRestart = SingleActivator(
+    LogicalKeyboardKey.backslash,
+    meta: true,
+    shift: true,
+  );
+
   /// Refresh Status: reload the open project's Git state.
   static const SingleActivator refreshGitStatus = SingleActivator(
     LogicalKeyboardKey.keyR,

@@ -1,4 +1,5 @@
 import 'package:fide/models/flutter_platform.dart';
+import 'package:fide/models/hot_reload.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/panels/left/packages_section.dart';
 import 'package:fide/panels/left/platform_info_section.dart';
@@ -156,12 +157,22 @@ Runs the Flutter application in release mode.
       details: '''
 Runs the Flutter application in debug mode.
 
-• Enables hot reload for fast development
+• Each save hot reloads the running app, keeping its state; a change hot reload can't apply restarts it
+• Hot Reload and Hot Restart beside Stop, or in the Run menu, apply the saved code at once
 • Includes debugging tools and assertions
-• Allows real-time code modification
-• Development and testing mode
       ''',
       onRun: () => _runApp(ExecutePanel._debugId, platform, isDebug: true),
+      liveControls: [
+        for (final kind in HotReload.values)
+          LiveControl(
+            icon: kind.icon,
+            tooltip: kind.tooltip,
+            status: kind.status,
+            onRun: () => ref
+                .read(commandRunnerProvider.notifier)
+                .reloadApp(ExecutePanel._debugId, kind),
+          ),
+      ],
     ),
   ];
 
@@ -221,7 +232,6 @@ Runs the Flutter application in debug mode.
         '✗ App ${isDebug ? 'debug' : 'run'} failed with exit code $exitCode',
     errorPrefix: '✗ Run error: ',
     resetWhenDone: false,
-    isLive: FlutterBuildService.isAppLaunched,
   );
 
   /// Runs action [id] of [platform] against the loaded project, into the
@@ -237,7 +247,6 @@ Runs the Flutter application in debug mode.
     required String Function(int) failureMessage,
     required String errorPrefix,
     bool resetWhenDone = true,
-    bool Function(String output)? isLive,
   }) async {
     final projectPath = ref.read(currentProjectPathProvider);
     if (projectPath == null) return;
@@ -253,7 +262,6 @@ Runs the Flutter application in debug mode.
           errorPrefix: errorPrefix,
           resetWhenDone: resetWhenDone,
           reportsBuildErrors: true,
-          isLive: isLive,
         );
   }
 }

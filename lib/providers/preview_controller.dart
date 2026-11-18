@@ -63,9 +63,6 @@ class PreviewController extends Notifier<PreviewState> {
   /// list's padding.
   static const double _layoutInset = 48;
 
-  /// How the compiler starts an error, after its `file:line:column`.
-  static const String _compileError = ': Error: ';
-
   PreviewHost? _host;
   Future<void> _work = Future.value();
   PreviewSettings? _settings;
@@ -147,7 +144,7 @@ class PreviewController extends Notifier<PreviewState> {
     final host = _host;
     if (host == null) return _refresh();
     state = state.copyWith(status: PreviewStatus.reloading, message: '');
-    _finishReload(await host.reload(full: true));
+    _finishReload(await host.restart());
   });
 
   /// Expands the project preview [label] of file [path], collapsing the
@@ -389,13 +386,7 @@ class PreviewController extends Notifier<PreviewState> {
       status: PreviewStatus.reloading,
       message: '',
     );
-    var error = await host.reload();
-    if (error != null && !error.contains(_compileError)) {
-      // A change hot reload can't apply, such as to a class's shape, needs
-      // a restart; a compile error would only fail again
-      error = await host.reload(full: true);
-    }
-    _finishReload(error);
+    _finishReload(await host.reload());
   }
 
   /// Starts the host of the project [registry] belongs to, for [scan].

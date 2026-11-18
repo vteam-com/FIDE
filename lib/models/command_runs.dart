@@ -10,13 +10,22 @@ class CommandRuns {
   /// Output of each log, by log key.
   final Map<String, OutputLog> logs;
 
-  /// Creates a snapshot of [statuses] and [logs].
-  const CommandRuns({this.statuses = const {}, this.logs = const {}});
+  /// The actions whose app has launched and hot reloads.
+  final Set<String> reloadable;
 
-  /// Whether any of the actions [ids] is working toward a result: in
-  /// progress but not yet [ActionStatus.live], as a progress ring shows.
-  bool isAnyBusy(Iterable<String> ids) =>
-      ids.any((id) => statusOf(id) == ActionStatus.running);
+  /// Creates a snapshot of [statuses], [logs] and the [reloadable] apps.
+  const CommandRuns({
+    this.statuses = const {},
+    this.logs = const {},
+    this.reloadable = const {},
+  });
+
+  /// Whether any app runs that a hot reload or restart applies to.
+  bool get canReload => reloadable.isNotEmpty;
+
+  /// Whether any of the actions [ids] is working toward a result, as a
+  /// progress ring shows ([ActionStatusResult.isBusy]).
+  bool isAnyBusy(Iterable<String> ids) => ids.any((id) => statusOf(id).isBusy);
 
   /// Whether any of the actions [ids] is in progress.
   bool isAnyRunning(Iterable<String> ids) => ids.any(isRunning);

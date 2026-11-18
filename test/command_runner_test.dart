@@ -3,12 +3,14 @@ import 'dart:io';
 
 import 'package:fide/constants/core_constants.dart';
 import 'package:fide/models/action_status.dart';
+import 'package:fide/models/hot_reload.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/command_runner.dart';
 import 'package:fide/services/flutter_build_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'fake_flutter_daemon.dart';
 import 'notifier_state.dart';
 
 const String _log = 'log';
@@ -100,33 +102,130 @@ void main() {
     expect(runs.logOf(_log).output, isEmpty);
   });
 
-  test('turns live at the output marking the launch', () async {
-    final exit = Completer<int>();
-    late BuildOutput output;
-    final done = runner.run(
-      'run',
-      logKey: _log,
-      startMessages: const [],
-      command: (o) {
-        output = o;
-        return exit.future;
-      },
-      successMessage: 'ok',
-      failureMessage: (code) => 'failed $code',
-      errorPrefix: 'error: ',
-      isLive: (text) => text.contains('ready'),
-    );
-    ActionStatus status() => stateOf(runner).statusOf('run');
+  group('an app run', () {
+    late FakeFlutterDaemon daemon;
 
-    output.onOutput('building');
-    expect(status(), ActionStatus.running);
-    output.onOutput('ready');
-    expect(status(), ActionStatus.live);
-    expect(stateOf(runner).isRunning('run'), isTrue);
+    setUp(() => daemon = FakeFlutterDaemon());
 
-    exit.complete(0);
-    await done;
-    expect(status(), ActionStatus.success);
+    /// Runs the app of action [id] in debug mode, or release, through the
+    /// fake daemon, and lets it launch.
+    Future<Future<bool>> runApp({
+      String id = 'debug',
+      bool isDebug = true,
+      CommandRunner? on,
+    }) async {
+      final runs = on ?? runner;
+      final done = runs.run(
+        id,
+        logKey: _log,
+        startMessages: const [],
+        command: (output) =>
+            FlutterBuildService(FakeDaemonRunner(daemon))
+                .run('/p', 'macos', output, isDebug: isDebug),
+        successMessage: 'ok',
+        failureMessage: (code) => 'failed $code',
+        errorPrefix: 'error: ',
+        resetWhenDone: false,
+        reportsBuildErrors: true,
+      );
+      await pumpEventQueue();
+      expect(stateOf(runs).statusOf(id), ActionStatus.running);
+      daemon.launch(supportsRestart: isDebug);
+      await pumpEventQueue();
+      return done;
+    }
+
+    ActionStatus status([String id = 'debug']) => stateOf(runner).statusOf(id);
+
+    test('turns live once the app has launched', () async {
+      final done = await runApp();
+
+      expect(status(), ActionStatus.live);
+      expect(stateOf(runner).isRunning('debug'), isTrue);
+      expect(stateOf(runner).reloadable, {'debug'});
+
+      await daemon.exit(0);
+      await done;
+      expect(status(), ActionStatus.success);
+      expect(stateOf(runner).canReload, isFalse);
+    });
+
+    test('hot reloads, ringing meanwhile, and reports the errors', () async {
+      daemon.answer = (_, _) => {'code': 1, 'message': "a.dart:1:2: Error: x"};
+      final done = await runApp();
+
+      final reload = runner.reloadApp('debug');
+      expect(status(), ActionStatus.reloading);
+      expect(stateOf(runner).isAnyBusy(['debug']), isTrue);
+      await reload;
+
+      expect(status(), ActionStatus.live);
+      expect(buildErrors.last, contains('Error: x'));
+      expect(stateOf(runner).logOf(_log).errors, contains('Error: x'));
+
+      daemon.answer = (_, _) => {'code': 0, 'message': ''};
+      await runner.reloadApp('debug', HotReload.restart);
+      expect(daemon.requests.last.params['fullRestart'], isTrue);
+      expect(buildErrors.last, isEmpty);
+
+      runner.stop('debug');
+      await done;
+    });
+
+    test('a reload asked while reloading follows it once', () async {
+      final done = await runApp();
+
+      final first = runner.reloadApp('debug');
+      unawaited(runner.reloadApps());
+      unawaited(runner.reloadApps(HotReload.restart));
+      await first;
+
+      expect(
+        [for (final r in daemon.requests) r.params['fullRestart']],
+        [false, true],
+      );
+      expect(status(), ActionStatus.live);
+
+      runner.stop('debug');
+      await done;
+    });
+
+    test('a release app does not hot reload', () async {
+      final done = await runApp(id: 'run', isDebug: false);
+
+      expect(status('run'), ActionStatus.live);
+      expect(stateOf(runner).canReload, isFalse);
+      await runner.reloadApps();
+      expect(daemon.requests, isEmpty);
+
+      runner.stop('run');
+      await done;
+    });
+
+    test('stop asks the tool to stop the app and the run ends idle', () async {
+      final done = await runApp();
+
+      runner.stop('debug');
+
+      expect(await done, isFalse);
+      expect(daemon.methods, ['app.stop']);
+      expect(status(), ActionStatus.idle);
+      expect(stateOf(runner).logOf(_log).output, contains('Stopped'));
+    });
+
+    test('a save hot reloads the apps running', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final runs = container.read(commandRunnerProvider.notifier);
+      final done = await runApp(on: runs);
+
+      container.read(savedFilesRevisionProvider.notifier).state++;
+      await pumpEventQueue();
+
+      expect(daemon.methods, ['app.restart']);
+      runs.stop('debug');
+      await done;
+    });
   });
 
   test('shows a burst of log lines in one update', () async {

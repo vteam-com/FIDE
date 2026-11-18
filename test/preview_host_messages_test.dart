@@ -45,6 +45,14 @@ void main() {
       );
     });
 
+    test('tells error logs from other output', () {
+      FlutterDaemonMessage log(String params) =>
+          FlutterDaemonMessage.parse('[{"event":"x","params":$params}]')!;
+      expect(log('{"level":"error","message":"m"}').isError, isTrue);
+      expect(log('{"log":"l","error":true}').isError, isTrue);
+      expect(log('{"level":"status","message":"m"}').isError, isFalse);
+    });
+
     test('writes a request line', () {
       expect(
         FlutterDaemonMessage.request(3, 'app.stop', {'appId': 'a'}),

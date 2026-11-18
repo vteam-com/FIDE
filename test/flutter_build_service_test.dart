@@ -1,9 +1,12 @@
 import 'dart:io';
 
 import 'package:fide/models/flutter_platform.dart';
+import 'package:fide/services/flutter_app_session.dart';
 import 'package:fide/services/flutter_build_service.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'fake_flutter_daemon.dart';
 
 // Scripted reply for one fake command
 class FakeReply {
@@ -99,6 +102,43 @@ void main() {
 
       expect(runner.commands, ['flutter build appbundle']);
     });
+  });
+
+  group('FlutterBuildService.run', () {
+    test(
+      'runs the app as a daemon session, handed over once launched',
+      () async {
+        final daemon = FakeFlutterDaemon();
+        final runner = FakeDaemonRunner(daemon);
+        final sessions = <FlutterAppSession>[];
+        final processes = [];
+        final exitCode = FlutterBuildService(runner).run(
+          '/p',
+          'macos',
+          BuildOutput(
+            onOutput: output.add,
+            onError: errors.add,
+            onProcessStarted: processes.add,
+            onAppStarted: sessions.add,
+          ),
+          isDebug: false,
+        );
+        await pumpEventQueue();
+        expect(runner.commands, ['flutter run --machine --release -d macos']);
+        expect(processes, [daemon]);
+        expect(sessions, isEmpty);
+
+        daemon
+          ..line('Built')
+          ..launch(supportsRestart: false);
+        await pumpEventQueue();
+        expect(sessions, hasLength(1));
+        expect(output, ['Built']);
+
+        await daemon.exit(3);
+        expect(await exitCode, 3);
+      },
+    );
   });
 
   group('FlutterBuildService.test', () {

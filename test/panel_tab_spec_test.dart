@@ -76,7 +76,8 @@ void main() {
     expect(busy, [true, false]);
   });
 
-  test('Run and Test ring for their own runs, until an app is live', () {
+  test('Run and Test ring for their own runs, until an app is live, and '
+      'while it reloads', () {
     final testRun = TestPanel.actionIds.first;
     final build = ExecutePanel.actionIds.firstWhere((id) => id != 'clean');
     CommandRuns runs(Map<String, ActionStatus> statuses) =>
@@ -92,6 +93,10 @@ void main() {
 
     final live = runs({'debug': ActionStatus.live});
     expect(live.isAnyBusy(ExecutePanel.actionIds), isFalse);
+
+    final reloading = runs({'debug': ActionStatus.reloading});
+    expect(reloading.isAnyBusy(ExecutePanel.actionIds), isTrue);
+    expect(reloading.isRunning('debug'), isTrue);
     expect(
       TestPanel.actionIds.toSet().intersection(ExecutePanel.actionIds),
       isEmpty,

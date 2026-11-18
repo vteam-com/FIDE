@@ -9,6 +9,7 @@ import 'package:fide/providers/active_terminal.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/app_update_notifier.dart';
 import 'package:fide/providers/app_view_notifier.dart';
+import 'package:fide/providers/command_runner.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/screens/create_project_screen.dart';
 import 'package:fide/screens/loading_screen.dart';
@@ -115,10 +116,14 @@ class _FIDEState extends ConsumerState<FIDE> {
                 child: child,
               ),
               // The menus follow whether the terminal is active, for Clear
-              // Terminal; the views are built once, as the Consumer's child
+              // Terminal, and whether an app runs, for Hot Reload; the views
+              // are built once, as the Consumer's child
               child: Consumer(
                 builder: (context, ref, content) {
                   ref.watch(terminalActiveProvider);
+                  ref.watch(
+                    commandRunnerProvider.select((runs) => runs.canReload),
+                  );
                   final menus = _buildMenus(context);
                   return Column(
                     children: [

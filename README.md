@@ -72,6 +72,7 @@ FIDE holds itself to the same standard: its own code must score 100% with `fchec
 ### Build, run and test
 
 - **Run**: build, run, debug and clean for each supported platform, with clickable `path:line:column` links in the output, then manage the project's packages: the direct and developer dependencies, each opening its pub.dev page, flagged when outdated or conflicting, **Outdated** and **Upgrade**, and editing `pubspec.yaml`
+  - **Hot reload**: while **Run Debug** runs, each save hot reloads the app, and restarts it when a change can't be hot reloaded; **Hot Reload** and **Hot Restart**, beside its Stop and in the **Run** menu, apply the saved code at once, and their compile errors feed the AI's **Fix Build**
 - **Test**: run the project's tests and coverage
 - **Create project**: a three-step wizard for new Flutter apps
 
@@ -117,6 +118,7 @@ When you ask for a change, the AI edits the project files itself instead of repl
 | ⌘1 / ⌘2 / ⌘3 | Show or hide the left, bottom and right panels |
 | ⌃1 / ⌃3 | Show the next left or right panel tab |
 | ⌘+ / ⌘- / ⌘0 | Zoom in, out, or back to 100% |
+| ⌘\ / ⇧⌘\ | Hot reload or hot restart the app Run Debug runs |
 
 All shortcuts are listed in **Settings**.
 

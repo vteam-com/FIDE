@@ -73,6 +73,10 @@ class FlutterDaemonMessage {
     return '${message ?? error ?? ''}';
   }
 
+  /// Whether this log event reports an error: the app's error output, or
+  /// an error the tool logs, such as a compile error.
+  bool get isError => params['error'] == true || params['level'] == 'error';
+
   /// The text a log event carries; null for other messages.
   String? get logText => switch (event) {
     'app.log' => params['log'] as String?,

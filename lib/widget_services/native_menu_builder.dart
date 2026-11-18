@@ -1,8 +1,10 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/hot_reload.dart';
 import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/active_terminal.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/center_view.dart';
+import 'package:fide/providers/command_runner.dart';
 import 'package:fide/providers/left_panel_tab.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/service_providers.dart';
@@ -34,6 +36,7 @@ class NativeMenuBuilder {
       _buildFileMenu(),
       _buildEditMenu(),
       _buildViewMenu(),
+      _buildRunMenu(),
     ];
   }
 
@@ -169,6 +172,24 @@ class NativeMenuBuilder {
             ),
           ],
         ),
+      ],
+    );
+  }
+
+  /// Builds the Run menu: hot reload and hot restart the running apps,
+  /// enabled while one runs that hot reloads.
+  PlatformMenu _buildRunMenu() {
+    final runner = ref.read(commandRunnerProvider.notifier);
+    final canReload = ref.read(commandRunnerProvider).canReload;
+    return PlatformMenu(
+      label: 'Run',
+      menus: [
+        for (final kind in HotReload.values)
+          PlatformMenuItem(
+            label: kind.label,
+            shortcut: kind.shortcut,
+            onSelected: canReload ? () => runner.reloadApps(kind) : null,
+          ),
       ],
     );
   }

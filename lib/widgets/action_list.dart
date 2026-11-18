@@ -88,6 +88,7 @@ class _ActionRowState extends State<_ActionRow> {
                       selected: _expanded,
                       onPressed: _toggle,
                     ),
+                    ..._buildLiveControls(),
                     _buildRunButton(),
                   ],
                 ),
@@ -126,6 +127,23 @@ class _ActionRowState extends State<_ActionRow> {
     return OptionalTooltip(message: action.status.resultLabel, child: icon);
   }
 
+  /// The buttons of the action's [LiveControl]s while it is live, one task
+  /// at a time: the one whose task runs rings, the others wait disabled.
+  List<Widget> _buildLiveControls() {
+    final action = widget.action;
+    if (!action.status.isLive) return const [];
+    final idle = action.status == ActionStatus.live;
+    return [
+      for (final control in action.liveControls)
+        TaskButton(
+          icon: control.icon,
+          tooltip: control.tooltip,
+          running: action.status == control.status,
+          onRun: idle ? control.onRun : null,
+        ),
+    ];
+  }
+
   /// Runs the action, or stops it while it runs.
   Widget _buildRunButton() {
     final action = widget.action;
@@ -134,7 +152,7 @@ class _ActionRowState extends State<_ActionRow> {
       tooltip: '${action.title}: ${action.description}',
       stopTooltip: 'Stop ${action.title}',
       running: action.isRunning,
-      live: action.status == ActionStatus.live,
+      live: action.status.isLive,
       onRun: action.onRun,
       onStop: action.onStop,
     );
