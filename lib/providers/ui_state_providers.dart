@@ -28,18 +28,24 @@ final rightPanelExpandedProvider = SidePanel.right.expandedProvider;
 /// Whether the settings screen covers the current view.
 final settingsVisibleProvider = StateProvider<bool>((_ /*ref*/) => false);
 
-/// Where the workspace gradient centers: on the [activePanelProvider]
-/// panel while the project layout shows it, at the top center otherwise,
-/// the settings screen included. The active panel outlives the settings,
-/// so closing them brings the gradient back to it.
+/// Where the workspace gradient centers: in the middle of the island of
+/// the [activePanelProvider] panel, or of the editor area while that panel
+/// is hidden, where [islandWindowRectProvider] places it, while the project
+/// layout shows; at the window's top center otherwise, the settings screen
+/// included. The active panel outlives the settings, so closing them
+/// brings the gradient back to it.
 final workspaceGradientCenterProvider = Provider<Alignment>((ref) {
+  if (ref.watch(settingsVisibleProvider) ||
+      ref.watch(appViewProvider) != AppViewState.mainLayout) {
+    return Alignment.topCenter;
+  }
   final panel = ref.watch(activePanelProvider);
-  final showsPanel =
-      panel != null &&
-      !ref.watch(settingsVisibleProvider) &&
-      ref.watch(appViewProvider) == AppViewState.mainLayout &&
-      ref.watch(panel.visibleProvider);
-  return showsPanel ? panel.gradientCenter : Alignment.topCenter;
+  final shown = panel != null && ref.watch(panel.visibleProvider)
+      ? panel
+      : null;
+  final island = ref.watch(islandWindowRectProvider(shown));
+  if (island == null) return Alignment.topCenter;
+  return FractionalOffset(island.center.dx, island.center.dy);
 });
 
 /// What image previews are drawn on, kept from one image to the next.

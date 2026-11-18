@@ -19,29 +19,25 @@ final sidePanelExpandedProvider = StateProvider.family<bool, SidePanel>(
   (_, _) => false,
 );
 
+/// Where each panel's island, or the editor area's for null, sits in the
+/// window, as fractions of its width and height, reported by the island as
+/// the layout moves it; null until the island first shows.
+final islandWindowRectProvider = StateProvider.family<Rect?, SidePanel?>(
+  (_, _) => null,
+);
+
 /// The panels around the editor, in the title bar's order; each one
 /// cycles through Hide, Min and Max from its title-bar button, its View
 /// menu item and its [shortcut].
 enum SidePanel {
-  left(
-    'Left',
-    'assets/toggle_panel_left.svg',
-    AppShortcut.panelLeft,
-    Alignment.centerLeft,
-  ),
+  left('Left', 'assets/toggle_panel_left.svg', AppShortcut.panelLeft),
   bottom(
     'Bottom',
     'assets/toggle_panel_bottom.svg',
     AppShortcut.panelBottom,
-    Alignment.bottomCenter,
     shownAtStart: false,
   ),
-  right(
-    'Right',
-    'assets/toggle_panel_right.svg',
-    AppShortcut.panelRight,
-    Alignment.centerRight,
-  );
+  right('Right', 'assets/toggle_panel_right.svg', AppShortcut.panelRight);
 
   /// Where the panel sits, such as `Left`.
   final String label;
@@ -52,18 +48,13 @@ enum SidePanel {
   /// Keys cycling the panel's size.
   final SingleActivator shortcut;
 
-  /// Where the workspace gradient centers while the panel is active: the
-  /// middle of the window's edge the panel sits on.
-  final Alignment gradientCenter;
-
   /// Whether the panel is shown when the app starts.
   final bool shownAtStart;
 
   const SidePanel(
     this.label,
     this.asset,
-    this.shortcut,
-    this.gradientCenter, {
+    this.shortcut, {
     this.shownAtStart = true,
   });
 

@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/side_panel.dart';
+import 'package:fide/widgets/window_rect_reporter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -8,7 +9,9 @@ import 'package:material_ui/material_ui.dart';
 /// alone separates the panels.
 ///
 /// A click or the focus inside makes its [panel] the
-/// [activePanelProvider], which the gradient centers on.
+/// [activePanelProvider], which the gradient centers on: on the island
+/// itself, which reports to [islandWindowRectProvider] wherever the layout
+/// puts it.
 ///
 /// Each island paints on its own layer, so a spinner, progress bar or
 /// hover fade in one panel repaints that panel alone, not the editor
@@ -39,12 +42,18 @@ class PanelIsland extends ConsumerWidget {
       },
       child: Listener(
         onPointerDown: (_) => activate(),
-        child: RepaintBoundary(
-          child: ClipRRect(
-            borderRadius: _radius,
-            child: ColoredBox(
-              color: Theme.of(context).colorScheme.surface,
-              child: child,
+        // Outside the island's layer, so it repaints, and measures, as the
+        // panels around it move it
+        child: WindowRectReporter(
+          onMoved: (rect) =>
+              ref.read(islandWindowRectProvider(panel).notifier).state = rect,
+          child: RepaintBoundary(
+            child: ClipRRect(
+              borderRadius: _radius,
+              child: ColoredBox(
+                color: Theme.of(context).colorScheme.surface,
+                child: child,
+              ),
             ),
           ),
         ),
