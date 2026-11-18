@@ -18,7 +18,7 @@ FIDE is an open-source, opinionated IDE for Flutter development, built in Flutte
 | Windows | [FIDE-windows.zip](https://github.com/vteam-com/FIDE/releases/latest/download/FIDE-windows.zip) |
 | Linux | [FIDE-linux.tar.gz](https://github.com/vteam-com/FIDE/releases/latest/download/FIDE-linux.tar.gz) |
 
-The builds are not signed: on macOS, allow the first launch in **System Settings › Privacy & Security › Open Anyway**; on Windows, pick **More info › Run anyway**. To run FIDE from its source code instead, see [Getting Started](#getting-started).
+The builds are not signed: on macOS, allow the first launch in **System Settings › Privacy & Security › Open Anyway**; on Windows, pick **More info › Run anyway**. To run FIDE from its source code instead, see [Getting Started](#getting-started). What changed in each release is in [CHANGELOG.md](CHANGELOG.md).
 
 ### Updates
 
@@ -143,7 +143,7 @@ Pushes to `main` only run the tests. To ship the code in its current state, from
 tool/release.sh patch   # or minor, major, or an exact version such as 1.2.0
 ```
 
-The script sets the new version in `pubspec.yaml` (the build number goes up by one), runs the analyzer, the tests, `fcheck --strict` and a macOS build, then commits the version, tags it `v1.2.0` and pushes both. If any step fails, `pubspec.yaml` is put back and nothing is committed.
+The script sets the new version in `pubspec.yaml` (the build number goes up by one) and adds the release to [CHANGELOG.md](CHANGELOG.md), one line per commit subject since the last release, which it shows before you confirm. It then runs the analyzer, the tests, `fcheck --strict` and a macOS build, commits the version and the changelog, tags them `v1.2.0` and pushes both. If any step fails, both files are put back and nothing is committed. A release tag found only on your machine, never pushed, is left over from an earlier try: the release moves it.
 
 The pushed tag starts the Release workflow, which checks that the tag matches `pubspec.yaml`, tests the code, builds it for macOS, Windows and Linux, and publishes the three builds as the latest GitHub Release, which the [Download](#download) links serve as soon as the workflow ends, and which running FIDEs then offer to [update](#updates) to. It then deletes the older releases (their tags stay), so GitHub stores only the latest build. To try a release first, run the Release workflow from the Actions tab: it builds any branch and keeps the builds as workflow artifacts, without making a release. Each Release run deletes the build artifacts of the runs before it.
 
