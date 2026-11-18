@@ -5,7 +5,14 @@ import 'package:material_ui/material_ui.dart';
 /// (Linux, Windows); built from the same [menus] macOS shows natively.
 class AppMenuBar extends StatelessWidget {
   /// Creates the bar showing each top-level [PlatformMenu] of [menus].
-  const AppMenuBar({super.key, required this.menus});
+  const AppMenuBar({super.key, required this.menus}) : compact = false;
+
+  /// Creates the bar folding all of [menus] into one menu button, for a
+  /// bar too narrow to show them side by side.
+  const AppMenuBar.compact({super.key, required this.menus}) : compact = true;
+
+  /// Whether [menus] fold into one menu button.
+  final bool compact;
 
   /// The native menu structure, as `PlatformMenuBar` takes it.
   final List<PlatformMenuItem> menus;
@@ -19,7 +26,14 @@ class AppMenuBar extends StatelessWidget {
         elevation: WidgetStatePropertyAll(0),
         padding: WidgetStatePropertyAll(EdgeInsets.zero),
       ),
-      children: _buildItems(menus),
+      children: compact
+          ? [
+              SubmenuButton(
+                menuChildren: _buildItems(menus),
+                child: const Icon(Icons.menu, size: AppIconSize.medium),
+              ),
+            ]
+          : _buildItems(menus),
     );
   }
 

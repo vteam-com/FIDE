@@ -21,7 +21,9 @@ import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/dropdown_label.dart';
 import 'package:fide/widgets/icon_menu_item.dart';
+import 'package:fide/widgets/priority_row.dart';
 import 'package:fide/widgets/status_tone_style.dart';
+import 'package:fide/widgets/truncated_text.dart';
 import 'package:fide/widgets/window_buttons.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -85,18 +87,9 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
       child: Row(
         children: [
           Expanded(
-            child: Row(
-              children: [
-                // Space for the macOS traffic lights
-                if (Platform.isMacOS)
-                  SizedBox(width: AppSize.macWindowControlsSpacing / zoom),
-                if (!settingsVisible) ...[
-                  Flexible(child: _buildProjectTitle()),
-                  // macOS shows these menus natively
-                  if (!Platform.isMacOS) AppMenuBar(menus: widget.menus),
-                ],
-              ],
-            ),
+            child: settingsVisible
+                ? const SizedBox.shrink()
+                : _buildTitleAndMenus(zoom),
           ),
           if (showsWorkspace) _buildPanelToggleButtons(),
           Expanded(
@@ -118,6 +111,25 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
           ),
         ],
       ),
+    );
+  }
+
+  /// The project title, then the app menus off macOS, which shows them
+  /// natively; as the bar narrows, those menus fold into one menu button
+  /// rather than squeezing the title. [zoom] scales the space kept for the
+  /// macOS traffic lights.
+  Widget _buildTitleAndMenus(double zoom) {
+    final menusInBar = !Platform.isMacOS;
+    return PriorityRow(
+      packed: true,
+      leading: Platform.isMacOS
+          ? SizedBox(width: AppSize.macWindowControlsSpacing / zoom)
+          : null,
+      title: _buildProjectTitle(),
+      trailing: menusInBar ? AppMenuBar(menus: widget.menus) : null,
+      compactTrailing: menusInBar
+          ? AppMenuBar.compact(menus: widget.menus)
+          : null,
     );
   }
 
@@ -168,7 +180,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
 
   /// Builds the centred app title text widget.
   Widget _buildAppTitle() {
-    return Text('The Flutter IDE', style: AppTextStyle.label);
+    return TruncatedText('The Flutter IDE', style: AppTextStyle.label);
   }
 
   /// The light bulb telling the project's [quality] needs attention, its

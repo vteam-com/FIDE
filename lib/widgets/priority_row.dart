@@ -13,6 +13,9 @@ enum PriorityRowSlot { leading, title, trailing, compactTrailing }
 /// the extras give way to [compactTrailing], then hide, rather than
 /// squeezing the title.
 ///
+/// A [packed] row puts [trailing] right after the title's own width instead,
+/// leaving the end of the row empty.
+///
 /// Whatever still does not fit, such as a [leading] wider than the row, is
 /// clipped, not flagged as an overflow.
 class PriorityRow
@@ -24,6 +27,7 @@ class PriorityRow
     required this.title,
     this.trailing,
     this.compactTrailing,
+    this.packed = false,
     this.spacing = 0,
   });
 
@@ -37,6 +41,10 @@ class PriorityRow
 
   /// Fixed glyph at the start, such as an icon or a chevron.
   final Widget? leading;
+
+  /// Whether the title takes only its own width, [trailing] right after
+  /// it, rather than filling the width up to [trailing] at the row's end.
+  final bool packed;
 
   /// Gap between the parts.
   final double spacing;
@@ -62,14 +70,17 @@ class PriorityRow
 
   @override
   SlottedContainerRenderObjectMixin<PriorityRowSlot, RenderBox>
-  createRenderObject(BuildContext context) => _RenderPriorityRow(spacing);
+  createRenderObject(BuildContext context) =>
+      _RenderPriorityRow(spacing, packed);
 
   @override
   void updateRenderObject(
     BuildContext context,
     SlottedContainerRenderObjectMixin<PriorityRowSlot, RenderBox> renderObject,
   ) {
-    (renderObject as _RenderPriorityRow).spacing = spacing;
+    (renderObject as _RenderPriorityRow)
+      ..spacing = spacing
+      ..packed = packed;
   }
 }
 
@@ -77,13 +88,23 @@ class PriorityRow
 /// the title and the widest trailing part that leaves the title its share.
 class _RenderPriorityRow extends RenderBox
     with SlottedContainerRenderObjectMixin<PriorityRowSlot, RenderBox> {
-  _RenderPriorityRow(this._spacing);
+  _RenderPriorityRow(this._spacing, this._packed);
 
   /// The clip layer, kept across repaints.
   final LayerHandle<ClipRectLayer> _clipLayer = LayerHandle<ClipRectLayer>();
 
   /// The trailing part shown in the last layout; none when both hide.
   RenderBox? _shownTrailing;
+
+  bool _packed;
+
+  /// Whether the title takes only its own width, the trailing part right
+  /// after it.
+  set packed(bool value) {
+    if (value == _packed) return;
+    _packed = value;
+    markNeedsLayout();
+  }
 
   double _spacing;
 
@@ -141,9 +162,10 @@ class _RenderPriorityRow extends RenderBox
       }
     }
     final shownTrailing = _shownTrailing;
-    final titleWidth = shownTrailing == null
+    final titleRoom = shownTrailing == null
         ? room
         : room - widthOf(shownTrailing);
+    final titleWidth = _packed ? math.min(titleNatural, titleRoom) : titleRoom;
     title.layout(
       BoxConstraints(
         minWidth: titleWidth,
@@ -165,7 +187,12 @@ class _RenderPriorityRow extends RenderBox
     if (leading != null) _place(leading, 0);
     _place(title, leadingWidth);
     if (shownTrailing != null) {
-      _place(shownTrailing, size.width - shownTrailing.size.width);
+      _place(
+        shownTrailing,
+        _packed
+            ? leadingWidth + titleWidth + _spacing
+            : size.width - shownTrailing.size.width,
+      );
     }
   }
 
