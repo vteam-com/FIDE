@@ -32,6 +32,9 @@ class OutlineState {
   /// Whether [countedNode] is being renamed.
   final bool isRenaming;
 
+  /// The widget-tree entry being edited, if any.
+  final OutlineNode? editedWidget;
+
   /// Creates an outline state.
   const OutlineState({
     this.nodes = const [],
@@ -41,7 +44,11 @@ class OutlineState {
     this.countedNode,
     this.consumers,
     this.isRenaming = false,
+    this.editedWidget,
   });
+
+  /// Whether an entry is being renamed or edited, so no other edit starts.
+  bool get isEditing => isRenaming || editedWidget != null;
 
   /// The consumers of [node] once found, or null while they are being
   /// found or when [node] isn't the counted entry.
@@ -50,6 +57,9 @@ class OutlineState {
 
   /// Whether [node] is the entry whose consumers are shown.
   bool isCounted(OutlineNode node) => node.isSameAs(countedNode);
+
+  /// Whether [node] is the widget-tree entry being edited.
+  bool isEdited(OutlineNode node) => node.isSameAs(editedWidget);
 
   /// Whether the cursor is on [node] or inside its scope.
   bool isHighlighted(OutlineNode node) =>
@@ -60,6 +70,12 @@ class OutlineState {
   /// whose consumers are counted.
   OutlineNode? get selected => nodes
       .where((node) => !node.kind.isWidget && isHighlighted(node))
+      .lastOrNull;
+
+  /// The innermost widget-tree entry under the cursor, if any: the widget
+  /// the widget menu edits.
+  OutlineNode? get selectedWidget => nodes
+      .where((node) => node.kind.isWidget && isHighlighted(node))
       .lastOrNull;
 
   /// The entry [node] is nested in, such as a method's class; null for a
@@ -107,9 +123,9 @@ class OutlineState {
     ];
   }
 
-  /// A copy with the given fields replaced; [countedNode] and
-  /// [consumers] are replaced by [counted] and [found] when given, as
-  /// both can become null.
+  /// A copy with the given fields replaced; [countedNode], [consumers]
+  /// and [editedWidget] are replaced by [counted], [found] and [edited]
+  /// when given, as they can become null.
   OutlineState copyWith({
     List<OutlineNode>? nodes,
     bool? isLoading,
@@ -118,6 +134,7 @@ class OutlineState {
     ({OutlineNode? node})? counted,
     ({List<SearchResult>? uses})? found,
     bool? isRenaming,
+    ({OutlineNode? node})? edited,
   }) {
     return OutlineState(
       nodes: nodes ?? this.nodes,
@@ -127,6 +144,7 @@ class OutlineState {
       countedNode: counted == null ? countedNode : counted.node,
       consumers: found == null ? consumers : found.uses,
       isRenaming: isRenaming ?? this.isRenaming,
+      editedWidget: edited == null ? editedWidget : edited.node,
     );
   }
 }

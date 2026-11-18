@@ -6,6 +6,7 @@ import 'package:fide/models/file_history.dart';
 import 'package:fide/models/open_documents.dart';
 import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/code_formatter.dart';
 import 'package:fide/services/editor_commands.dart';
 import 'package:fide/services/file_content_reader.dart';
 import 'package:fide/services/file_type_utils.dart';
@@ -103,6 +104,26 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
     }
     if (files.isNotEmpty) await reloadWritten(files.keys);
     return files;
+  }
+
+  /// Rewrites the file at [path] with what [edit] makes of its saved text,
+  /// formatted by [formatter], through [applyEdits]; returns the text
+  /// [edit] made and the formatted text written, or null, writing
+  /// nothing, when [edit] returns null.
+  Future<({String edited, String written})?> applyFileEdit(
+    String path,
+    String? Function(String content) edit, {
+    required CodeFormatter formatter,
+  }) async {
+    ({String edited, String written})? result;
+    await applyEdits(() async {
+      final edited = edit(await reader.read(path));
+      if (edited == null) return const {};
+      final written = await formatter.formatOrKeep(path, edited);
+      result = (edited: edited, written: written);
+      return {path: written};
+    });
+    return result;
   }
 
   /// Closes the showing tab, saving its unsaved edits first, and shows

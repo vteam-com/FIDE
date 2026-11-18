@@ -4,10 +4,12 @@ import 'package:fide/constants/core_constants.dart';
 import 'package:fide/models/outline_kind.dart';
 import 'package:fide/models/outline_node.dart';
 import 'package:fide/models/search_result.dart';
+import 'package:fide/models/text_offsets.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/outline_providers.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/services/widget_editor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,7 +22,8 @@ final outlineControllerProvider = NotifierProvider.autoDispose
 /// Outlines one file for its project tree row: parses its editor text (or
 /// its saved text when it isn't open) again as it is edited, follows the
 /// editor's cursor to highlight the entry under it, finds that entry's
-/// consumers and renames it across the project.
+/// consumers, renames it across the project, and edits the widgets of its
+/// widget trees.
 class OutlineController extends Notifier<OutlineState> {
   /// Creates the controller outlining [filePath].
   OutlineController(this.filePath);
@@ -114,6 +117,41 @@ class OutlineController extends Notifier<OutlineState> {
     }
   }
 
+  /// Makes [edit] to the widget-tree entry [node] in the saved file, after
+  /// saving the open files, formats the file and returns the 1-based line
+  /// and column the edited widget starts at now; throws, writing nothing,
+  /// when [node] isn't in the file any more or [edit] doesn't apply to it.
+  Future<({int line, int column})> editWidget(
+    OutlineNode node,
+    WidgetEdit edit,
+  ) async {
+    state = state.copyWith(edited: (node: node));
+    try {
+      int? offset;
+      final written = await ref
+          .read(openDocumentsProvider.notifier)
+          .applyFileEdit(filePath, (content) {
+            final editor = WidgetEditor.find(content, node);
+            final result = editor == null ? null : edit(editor);
+            offset = result?.offset;
+            return result?.content;
+          }, formatter: ref.read(codeFormatterProvider));
+      final at = offset;
+      if (written == null || at == null) {
+        throw StateError('${node.name} changed since it was outlined');
+      }
+      return TextOffsets.positionOf(
+        written.written,
+        TextOffsets.formattedOffset(written.edited, written.written, at),
+      );
+    } finally {
+      if (ref.mounted) {
+        state = state.copyWith(edited: (node: null));
+        scheduleParse();
+      }
+    }
+  }
+
   /// Outlines the file again once edits pause for
   /// [AppDuration.updateDebounce].
   void scheduleParse() {
@@ -133,6 +171,14 @@ class OutlineController extends Notifier<OutlineState> {
     _consumersDebounce = Timer(AppDuration.updateDebounce, () {
       if (ref.mounted) _updateConsumers();
     });
+  }
+
+  /// The widget-tree entry [node] in the text last outlined, to list the
+  /// edits the widget menu offers; null when it isn't one, or when that
+  /// text no longer has it.
+  WidgetEditor? widgetEditorOf(OutlineNode node) {
+    final content = _parsed?.content;
+    return content == null ? null : WidgetEditor.find(content, node);
   }
 
   /// The text to outline: the editor's, unsaved edits included, when the

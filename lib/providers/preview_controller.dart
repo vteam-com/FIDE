@@ -210,13 +210,9 @@ class PreviewController extends Notifier<PreviewState> {
     String path,
     String? Function(String content) edit,
   ) async {
-    await ref.read(openDocumentsProvider.notifier).applyEdits(() async {
-      final content = await ref.read(fileContentReaderProvider).read(path);
-      final edited = edit(content);
-      if (edited == null) return const {};
-      final formatter = ref.read(codeFormatterProvider);
-      return {path: await formatter.formatOrKeep(path, edited)};
-    });
+    await ref
+        .read(openDocumentsProvider.notifier)
+        .applyFileEdit(path, edit, formatter: ref.read(codeFormatterProvider));
   }
 
   /// Has the AI panel write previews for [widgets], whose arguments need

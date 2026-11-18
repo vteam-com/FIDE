@@ -1,12 +1,15 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/outline_node.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/models/widget_wrapper.dart';
 import 'package:fide/providers/active_editor.dart';
+import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/outline_controller.dart';
 import 'package:fide/providers/outline_providers.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/right_panel_tab.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/services/widget_editor.dart';
 import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/icon_menu_item.dart';
 import 'package:fide/widgets/inline_spinner.dart';
@@ -21,8 +24,10 @@ import 'package:material_ui/material_ui.dart';
 /// The outline of the selected file, nested under its row in a project
 /// tree: its declarations, headings or keys, the widget tree of the
 /// declaration under the editor's cursor, the entries under the cursor
-/// highlighted and the declaration's consumers counted. Nothing for a
-/// file type without an outline, or while its row folds it.
+/// highlighted and the declaration's consumers counted. Each widget-tree
+/// entry has a menu of widget edits (wrap, remove, swap, move), on its
+/// ⋯ button under the cursor and on a secondary click. Nothing for a file
+/// type without an outline, or while its row folds it.
 class FileOutline extends ConsumerWidget {
   /// Creates the outline of the file at [path].
   const FileOutline({super.key, required this.path});
@@ -44,12 +49,20 @@ class FileOutline extends ConsumerWidget {
     if (outline.nodes.isEmpty && outline.error.isNotEmpty) {
       return _buildError(context, ref, outline.error);
     }
+    final selectedWidget = outline.selectedWidget;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         for (final (:node, :foldedWidgets) in outline.shownNodes)
-          _buildNode(context, ref, outline, node, foldedWidgets),
+          _buildNode(
+            context,
+            ref,
+            outline,
+            node,
+            foldedWidgets,
+            isSelectedWidget: node.isSameAs(selectedWidget),
+          ),
       ],
     );
   }
@@ -71,13 +84,17 @@ class FileOutline extends ConsumerWidget {
 
   /// One entry of [outline] with its icon and label, highlighted when the
   /// cursor is on it; [foldedWidgets] counts the widgets folded under it.
+  /// A widget-tree entry opens its widget menu on a secondary click, and
+  /// on its ⋯ button when [isSelectedWidget], the innermost under the
+  /// cursor.
   Widget _buildNode(
     BuildContext context,
     WidgetRef ref,
     OutlineState outline,
     OutlineNode node,
-    int foldedWidgets,
-  ) {
+    int foldedWidgets, {
+    required bool isSelectedWidget,
+  }) {
     final kind = node.kind;
     // Moving the cursor there also unfolds the entry's widget tree
     void goToNode() => ref
@@ -93,7 +110,12 @@ class FileOutline extends ConsumerWidget {
       depth: node.level,
       highlighted: outline.isHighlighted(node),
       onTap: goToNode,
+      onContextMenu: kind.isWidget && !outline.isEditing
+          ? (position) => _showWidgetMenu(context, ref, node, position)
+          : null,
+      showMenuButton: isSelectedWidget,
       trailing: [
+        if (outline.isEdited(node)) const InlineSpinner.small(),
         if (foldedWidgets > 0)
           ContainerCounter(
             count: foldedWidgets,
@@ -105,7 +127,7 @@ class FileOutline extends ConsumerWidget {
           ),
         if (outline.isCounted(node)) ...[
           _buildConsumerCount(ref, outline, node),
-          if (!outline.isRenaming)
+          if (!outline.isEditing)
             MoreMenuButton(
               onPressed: (position) =>
                   _showNodeMenu(context, ref, node, position),
@@ -149,6 +171,106 @@ class FileOutline extends ConsumerWidget {
         label: 'Rename…',
       ),
     ]);
+  }
+
+  /// [node]'s widget edits that apply to it: wrap it in a common widget or
+  /// one the user names, remove it in favor of its children, swap it with
+  /// its parent, move it among the widgets of its list.
+  void _showWidgetMenu(
+    BuildContext context,
+    WidgetRef ref,
+    OutlineNode node,
+    Offset position,
+  ) {
+    final editor = ref
+        .read(outlineControllerProvider(path).notifier)
+        .widgetEditorOf(node);
+    if (editor == null) return;
+    void edit(WidgetEdit change) => _editWidget(context, ref, node, change);
+    final reshapes = [
+      if (editor.canRemove)
+        IconMenuItem<VoidCallback>(
+          value: () => edit((editor) => editor.remove()),
+          icon: Icons.layers_clear,
+          label: 'Remove this widget',
+        ),
+      if (editor.canSwapWithParent)
+        IconMenuItem<VoidCallback>(
+          value: () => edit((editor) => editor.swapWithParent()),
+          icon: Icons.swap_vert,
+          label: 'Swap with parent',
+        ),
+      if (editor.canMoveUp)
+        IconMenuItem<VoidCallback>(
+          value: () => edit((editor) => editor.moveUp()),
+          icon: Icons.arrow_upward,
+          label: 'Move up',
+        ),
+      if (editor.canMoveDown)
+        IconMenuItem<VoidCallback>(
+          value: () => edit((editor) => editor.moveDown()),
+          icon: Icons.arrow_downward,
+          label: 'Move down',
+        ),
+    ];
+    showActionMenu(context, position, [
+      for (final wrapper in WidgetWrapper.common)
+        IconMenuItem(
+          value: () => edit((editor) => editor.wrap(wrapper)),
+          icon: Icons.add_box_outlined,
+          label: 'Wrap with ${wrapper.name}',
+        ),
+      IconMenuItem(
+        value: () => _wrapWithNamed(context, ref, node),
+        icon: Icons.add_box_outlined,
+        label: 'Wrap with widget…',
+      ),
+      if (reshapes.isNotEmpty) ...[const PopupMenuDivider(), ...reshapes],
+    ]);
+  }
+
+  /// Asks for a widget's name and wraps [node] in it.
+  Future<void> _wrapWithNamed(
+    BuildContext context,
+    WidgetRef ref,
+    OutlineNode node,
+  ) async {
+    final name = await MessageBox.promptForText(
+      context,
+      title: 'Wrap ${node.name}',
+      labelText: 'Widget',
+      hintText: 'Enter the widget class name',
+      confirmLabel: 'Wrap',
+    );
+    if (!context.mounted || name == null || name.trim().isEmpty) return;
+    final wrapper = WidgetWrapper.named(name);
+    if (wrapper == null) {
+      MessageBox.showError(context, '$name is not a widget name');
+      return;
+    }
+    await _editWidget(context, ref, node, (editor) => editor.wrap(wrapper));
+  }
+
+  /// Makes [edit] to [node], then moves the caret to the widget edited, or
+  /// says why it couldn't.
+  Future<void> _editWidget(
+    BuildContext context,
+    WidgetRef ref,
+    OutlineNode node,
+    WidgetEdit edit,
+  ) async {
+    try {
+      final at = await ref
+          .read(outlineControllerProvider(path).notifier)
+          .editWidget(node, edit);
+      if (context.mounted) {
+        await openFileAtLine(ref, path, at.line, column: at.column);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        MessageBox.showError(context, 'Widget edit failed: $e');
+      }
+    }
   }
 
   /// Asks for a new name and renames [node] and its uses across the

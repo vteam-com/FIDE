@@ -18,6 +18,21 @@ void main() {
     expect(TextOffsets.offsetOf(text, 0), isNull);
   });
 
+  test('formattedOffset follows the code through a new layout', () {
+    const code = 'f(a, Center(child: x,));';
+    const formatted = 'f(\n  a,\n  Center(child: x),\n);\n';
+
+    expect(
+      TextOffsets.formattedOffset(code, formatted, code.indexOf('Center')),
+      formatted.indexOf('Center'),
+    );
+    expect(TextOffsets.formattedOffset(code, formatted, 0), 0);
+    expect(
+      TextOffsets.formattedOffset(code, formatted, code.indexOf('x')),
+      formatted.indexOf('x'),
+    );
+  });
+
   test('applyEdits replaces from the end so offsets stay valid', () {
     expect(
       TextOffsets.applyEdits('const a = 1;', {

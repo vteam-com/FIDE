@@ -4,9 +4,11 @@ import 'package:fide/constants/core_constants.dart';
 import 'package:fide/models/outline_kind.dart';
 import 'package:fide/models/outline_node.dart';
 import 'package:fide/models/search_result.dart';
+import 'package:fide/models/widget_wrapper.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/outline_controller.dart';
 import 'package:fide/providers/outline_providers.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/outline_parser.dart';
@@ -15,6 +17,8 @@ import 'package:fide/services/reference_finder.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
+
+import 'fake_code_formatter.dart';
 
 /// Finds one consumer of everything and renames by rewriting the file.
 class _FakeFinder extends ReferenceFinder {
@@ -68,7 +72,10 @@ void main() {
     File(path).writeAsStringSync('class A {\n  void run() {}\n}\n');
     finder = _FakeFinder();
     container = ProviderContainer(
-      overrides: [referenceFinderProvider.overrideWithValue(finder)],
+      overrides: [
+        referenceFinderProvider.overrideWithValue(finder),
+        codeFormatterProvider.overrideWithValue(const FakeCodeFormatter()),
+      ],
     );
     // Keeps the auto-disposed controller alive
     container.listen(outlineControllerProvider(path), (_, _) {});
@@ -190,6 +197,50 @@ void main() {
     expect(File(path).readAsStringSync(), 'class B {}\n');
     expect(outline().isRenaming, isFalse);
     expect([for (final n in outline().nodes) n.name], ['B']);
+  });
+
+  test('editWidget rewrites the file and returns where the widget starts '
+      'now', () async {
+    File(path).writeAsStringSync(
+      'class A {\n  Widget build(BuildContext context) {\n'
+      "    return Center(child: Text('a'));\n  }\n}\n",
+    );
+    await _settle();
+    final text = outline().nodes.firstWhere((node) => node.name == 'Text');
+
+    expect(controller().widgetEditorOf(text)?.canSwapWithParent, isFalse);
+    final at = await controller().editWidget(
+      text,
+      (editor) => editor.wrap(WidgetWrapper.center),
+    );
+    await _settle();
+
+    expect(
+      File(path).readAsStringSync(),
+      contains("return Center(child: Center(child: Text('a'),));"),
+    );
+    expect(at, (line: 3, column: 26));
+    expect(outline().editedWidget, isNull);
+    expect(
+      [for (final node in outline().nodes) node.name],
+      ['A', 'build', 'Center', 'Center', 'Text'],
+    );
+  });
+
+  test('editWidget writes nothing when the edit does not apply', () async {
+    const content =
+        'class A {\n  Widget build(BuildContext context) => Text(title);\n}\n';
+    File(path).writeAsStringSync(content);
+    await _settle();
+    final text = outline().nodes.last;
+
+    expect(controller().widgetEditorOf(text)?.canRemove, isFalse);
+    await expectLater(
+      controller().editWidget(text, (editor) => editor.remove()),
+      throwsStateError,
+    );
+    expect(File(path).readAsStringSync(), content);
+    expect(outline().isEditing, isFalse);
   });
 
   test('rename needs an open project', () async {

@@ -1,6 +1,10 @@
 /// Converts between character offsets in a text and 1-based line and
 /// column positions, and edits a text at offsets.
 class TextOffsets {
+  /// The characters a code formatter adds, removes or moves: whitespace,
+  /// and the commas it adds after or removes from a last argument.
+  static const Set<String> _layout = {' ', '\t', '\r', '\n', ','};
+
   /// The line separator [positionOf] counts.
   static const String _newline = '\n';
 
@@ -25,6 +29,23 @@ class TextOffsets {
     }
     result.write(text.substring(copied));
     return result.toString();
+  }
+
+  /// The offset in [formatted], [text] laid out again by a code formatter,
+  /// of the code at [offset] in [text]: found by counting the characters
+  /// before it that the formatter keeps, everything but [_layout].
+  static int formattedOffset(String text, String formatted, int offset) {
+    var kept = 0;
+    for (var i = 0; i < offset && i < text.length; i++) {
+      if (!_layout.contains(text[i])) kept++;
+    }
+    var at = 0;
+    for (; at < formatted.length; at++) {
+      if (_layout.contains(formatted[at])) continue;
+      if (kept == 0) break;
+      kept--;
+    }
+    return at;
   }
 
   /// The 1-based line and column of [offset] in [text]; offsets past the

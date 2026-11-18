@@ -6,6 +6,7 @@ import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widget_services/file_outline.dart';
 import 'package:fide/widget_services/file_tree_row.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -53,6 +54,34 @@ void main() {
     await tester.pumpAndSettle(const Duration(seconds: 1));
 
     expect(find.text('Second'), findsOneWidget);
+  });
+
+  testWidgets('a widget entry lists the widget edits that apply to it', (
+    tester,
+  ) async {
+    path = '${folder.path}/a.dart';
+    File(path).writeAsStringSync(
+      'class A {\n  Widget build(BuildContext context) {\n'
+      "    return Center(child: Text('a'));\n  }\n}\n",
+    );
+    await pump(tester, FileOutline(path: path));
+    container.read(editorCursorLineProvider.notifier).state = 3;
+    await tester.pumpAndSettle(const Duration(seconds: 1));
+
+    // The widget under the cursor shows its menu button
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    expect(find.text('Wrap with Padding'), findsOneWidget);
+    expect(find.text('Wrap with widget…'), findsOneWidget);
+    expect(find.text('Remove this widget'), findsNothing);
+    await tester.tapAt(Offset.zero);
+    await tester.pumpAndSettle();
+
+    // Any widget entry opens it on a secondary click
+    await tester.tap(find.text('Center'), buttons: kSecondaryButton);
+    await tester.pumpAndSettle();
+    expect(find.text('Remove this widget'), findsOneWidget);
+    expect(find.text('Swap with parent'), findsNothing);
   });
 
   testWidgets('shows nothing while its file row folds it', (tester) async {

@@ -7,6 +7,7 @@ import 'package:analyzer/source/line_info.dart';
 import 'package:fide/models/outline_kind.dart';
 import 'package:fide/models/outline_node.dart';
 import 'package:fide/services/file_type_utils.dart';
+import 'package:fide/services/widget_creation.dart';
 import 'package:yaml/yaml.dart';
 
 part 'outline_parser.dart_outline_parser.dart';

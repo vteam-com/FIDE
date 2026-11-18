@@ -22,12 +22,10 @@ class _WidgetTree {
   /// The named arguments that hold a widget in any widget: whatever fills
   /// them, a variable included, is a widget.
   static const Set<String> _childSlots = {
+    ...WidgetCreation.singleChildSlots,
+    ...WidgetCreation.multiChildSlots,
     'body',
-    'child',
-    'children',
     'home',
-    'sliver',
-    'slivers',
   };
 
   /// The other named arguments Flutter's widgets fill with widgets. Some
@@ -151,6 +149,11 @@ class _WidgetTree {
   /// [isChildSlot] says whatever fills the slot is a widget, so a variable
   /// there is added too. Text, numbers, icons and the like add nothing.
   void _addValue(Expression value, int level, {required bool isChildSlot}) {
+    final creation = WidgetCreation.of(value);
+    if (creation != null) {
+      _addWidget(creation, level);
+      return;
+    }
     switch (value) {
       case ParenthesizedExpression(:final expression) ||
           AsExpression(:final expression) ||
@@ -173,28 +176,6 @@ class _WidgetTree {
         }
       case FunctionExpression(:final body):
         addReturnedBy(body, level);
-      case InstanceCreationExpression(
-        :final constructorName,
-        :final argumentList,
-      ):
-        // Without types, `const A.b()` reads as type `b` of import prefix
-        // `A`, so the name joins all three as written
-        final type = constructorName.type;
-        final name = [
-          ?type.importPrefix?.name.lexeme,
-          type.name.lexeme,
-          ?constructorName.name?.name,
-        ].join('.');
-        _addWidget(name, constructorName.offset, argumentList, level);
-      case MethodInvocation(:final target, :final methodName)
-          when _isTypeName(methodName.name) ||
-              (target is SimpleIdentifier && _isTypeName(target.name)):
-        // A constructor read without types: `Text(...)`,
-        // `ListView.builder(...)`, `material.Text(...)`
-        final name = target == null
-            ? methodName.name
-            : '${target.toSource()}.${methodName.name}';
-        _addWidget(name, value.offset, value.argumentList, level);
       case MethodInvocation():
         _addCall(value, level, isChildSlot: isChildSlot);
       case Identifier() || PropertyAccess() || IndexExpression()
@@ -208,11 +189,12 @@ class _WidgetTree {
     }
   }
 
-  /// Adds the widget [name] created at [offset] at [level], then the
-  /// widgets in the slots of its [arguments] one level deeper.
-  void _addWidget(String name, int offset, ArgumentList arguments, int level) {
-    _add(name, OutlineKind.widget, offset, level);
-    for (final argument in arguments.arguments.whereType<NamedArgument>()) {
+  /// Adds the widget [creation] at [level], then the widgets in the slots
+  /// of its arguments one level deeper.
+  void _addWidget(WidgetCreation creation, int level) {
+    _add(creation.name, OutlineKind.widget, creation.nameOffset, level);
+    for (final argument
+        in creation.arguments.arguments.whereType<NamedArgument>()) {
       final slot = argument.name.lexeme;
       final isChildSlot =
           _childSlots.contains(slot) ||
@@ -247,11 +229,5 @@ class _WidgetTree {
       for (final link in links)
         ...link.argumentList.arguments.whereType<FunctionExpression>(),
     ];
-  }
-
-  /// Whether [name] is spelled as a type is, from a capital letter.
-  static bool _isTypeName(String name) {
-    final first = name.replaceFirst('_', '');
-    return first.isNotEmpty && first[0] != first[0].toLowerCase();
   }
 }
