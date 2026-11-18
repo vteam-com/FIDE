@@ -2,6 +2,13 @@
 
 What changed in each FIDE release, newest first. `tool/release.sh` adds each release's entry: one line per commit since the release before.
 
+## 1.2.0 - 2026-11-18
+
+- update "release.sh"
+- Hot reload the app Run Debug runs: each save reloads it (restarting when a reload can't apply), Hot Reload/Hot Restart beside Stop and in a new Run menu (⌘\\ / ⇧⌘\\), apps run through a FlutterAppSession shared with Preview that stops them gracefully
+- Make Info describe the selection (file, declaration with its callers and calls, widget preview) above project quality, and move package management into the Test tab
+- Show the selected file's outline under its row in the Explorer and Organized trees, drop the Outline tab, make Info the first right tab describing the selected file then the project, and let a ringing tab's icon be the only spinner for its work
+
 ## 1.1.1 - 2026-11-18
 
 - Panel toggles show or hide again instead of cycling Hide/Min/Max; ⌥-click a title-bar toggle to show its panel large
