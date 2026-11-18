@@ -3,13 +3,13 @@ name: Release
 # Builds FIDE for macOS, Windows and Linux only when the code is declared
 # ready, never on a plain push to main:
 #   - tool/release.sh sets pubspec's version and pushes its tag (v1.2.0),
-#     which tests, builds and attaches the three builds to a draft GitHub
-#     Release; publishing the draft makes its builds the README's downloads
-#     and deletes the older releases (keep-latest-release.yml)
+#     which tests, builds and publishes the three builds as the latest
+#     GitHub Release, the README's downloads
 #   - "Run workflow" on the Actions tab tests and builds any branch, the
 #     builds kept as workflow artifacts only, to try a release out
-# Only the latest build is kept, to save GitHub storage: each run deletes
-# the build artifacts of the runs before it (the prune job).
+# Only the latest build is kept, to save GitHub storage: a release deletes
+# the older releases, and each run deletes the build artifacts of the runs
+# before it (the prune job).
 on:
   push:
     tags: [ 'v*.*.*' ]
@@ -89,12 +89,17 @@ jobs:
         path: ${{ env.ASSET }}
         if-no-files-found: error
 
+  # Published at once, so the README's download links serve its builds as
+  # soon as the run ends; then the older releases go, drafts included, so
+  # GitHub stores only the latest build (their tags stay, for the history)
   release:
     if: github.ref_type == 'tag'
     needs: build
     runs-on: ubuntu-26.04
     permissions:
       contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
 
     steps:
     - uses: actions/download-artifact@v8
@@ -102,18 +107,23 @@ jobs:
         path: dist
         merge-multiple: true
 
-    # A draft, so the release is published by hand once its builds are tried
-    - name: Create draft release
-      env:
-        GH_TOKEN: ${{ github.token }}
+    - name: Publish the release
       run: >
         gh release create "$GITHUB_REF_NAME" dist/*
         --repo "$GITHUB_REPOSITORY"
-        --draft
+        --latest
         --generate-notes
         --verify-tag
 
-  # Only the latest build is kept: a tag run's builds now live in its draft
+    - name: Delete the older releases
+      run: |
+        gh release list --repo "$GITHUB_REPOSITORY" --json tagName \
+          --jq '.[] | select(.tagName != env.GITHUB_REF_NAME) | .tagName' |
+        while read -r tag; do
+          gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes
+        done
+
+  # Only the latest build is kept: a tag run's builds now live in its
   # release, so it deletes every FIDE build artifact; a manual run keeps its
   # own builds and deletes those of the runs before it. A failed release
   # keeps its builds.

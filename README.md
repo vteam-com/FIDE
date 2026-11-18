@@ -137,7 +137,7 @@ tool/release.sh patch   # or minor, major, or an exact version such as 1.2.0
 
 The script sets the new version in `pubspec.yaml` (the build number goes up by one), runs the analyzer, the tests, `fcheck --strict` and a macOS build, then commits the version, tags it `v1.2.0` and pushes both. If any step fails, `pubspec.yaml` is put back and nothing is committed.
 
-The pushed tag starts the Release workflow, which checks that the tag matches `pubspec.yaml`, tests the code, builds it for macOS, Windows and Linux, and attaches the three builds to a **draft** GitHub Release; publish the draft once the builds are tried. Publishing it makes its builds the [Download](#download) links and deletes the older releases (their tags stay), so GitHub stores only the latest build. To try a release first, run the Release workflow from the Actions tab: it builds any branch and keeps the builds as workflow artifacts, without making a release. Each Release run deletes the build artifacts of the runs before it.
+The pushed tag starts the Release workflow, which checks that the tag matches `pubspec.yaml`, tests the code, builds it for macOS, Windows and Linux, and publishes the three builds as the latest GitHub Release, which the [Download](#download) links serve as soon as the workflow ends. It then deletes the older releases (their tags stay), so GitHub stores only the latest build. To try a release first, run the Release workflow from the Actions tab: it builds any branch and keeps the builds as workflow artifacts, without making a release. Each Release run deletes the build artifacts of the runs before it.
 
 ## Requirements
 

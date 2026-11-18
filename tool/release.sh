@@ -1,8 +1,8 @@
 #!/bin/bash
 # Releases FIDE: sets the new version in pubspec.yaml, checks and builds
 # the code, then commits, tags and pushes it. The pushed tag starts the
-# Release workflow, which builds macOS, Windows and Linux into a draft
-# GitHub Release.
+# Release workflow, which builds macOS, Windows and Linux and publishes
+# them as the latest GitHub Release, the README's downloads.
 #
 # Usage: tool/release.sh <major|minor|patch|X.Y.Z>
 #   patch  1.2.3 -> 1.2.4      minor  1.2.3 -> 1.3.0
@@ -95,5 +95,5 @@ git tag -a "$tag" -m "FIDE $version"
 git push --atomic "$REMOTE" "$RELEASE_BRANCH" "$tag" ||
 	fail "push failed; $tag is committed and tagged here, retry with: git push --atomic $REMOTE $RELEASE_BRANCH $tag"
 
-echo "Released $tag: the Release workflow now builds the draft release"
+echo "Released $tag: the Release workflow now builds and publishes it"
 echo "https://github.com/vteam-com/FIDE/actions/workflows/release.yml"
