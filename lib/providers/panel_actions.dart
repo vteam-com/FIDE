@@ -8,22 +8,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_riverpod/misc.dart';
 
-/// Moves [panel] to its next size: hidden, then its own size, then
-/// expanded to its largest, then hidden again. A shown panel becomes the
-/// active one; hiding the active panel makes the editor area active.
-void cyclePanelSize(WidgetRef ref, SidePanel panel) {
+/// Shows [panel] at its own size when hidden, or hides it; when [large]
+/// (an ⌥-click), shows it expanded to its largest instead, or back at its
+/// own size when it shows so already. A shown panel becomes the active
+/// one; hiding the active panel makes the editor area active.
+void togglePanelVisible(WidgetRef ref, SidePanel panel, {bool large = false}) {
   final visible = panel.visibleProvider;
   final expanded = panel.expandedProvider;
   final shown = ref.read(visible);
-  final wasExpanded = ref.read(expanded);
-  final showsNow = !shown || !wasExpanded;
-  ref.read(visible.notifier).state = showsNow;
-  ref.read(expanded.notifier).state = shown && !wasExpanded;
-  if (showsNow) {
-    _activate(ref.read, panel);
-  } else if (ref.read(activePanelProvider) == panel) {
-    ref.read(activePanelProvider.notifier).state = null;
+  if (shown && !large) {
+    ref.read(visible.notifier).state = false;
+    if (ref.read(activePanelProvider) == panel) {
+      ref.read(activePanelProvider.notifier).state = null;
+    }
+    return;
   }
+  ref.read(expanded.notifier).state = large && !(shown && ref.read(expanded));
+  _show(ref.read, panel);
 }
 
 /// Switches [panel] between its own size and expanded to its largest,

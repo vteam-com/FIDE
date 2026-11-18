@@ -107,14 +107,14 @@ When you ask for a change, the AI edits the project files itself instead of repl
 
 ### Layout
 
-- Left, center, bottom and right panels, each hidden, minimized or maximized
+- Left, center, bottom and right panels, each shown or hidden; ⌥-click a panel toggle, or click the active tab of the left or right panel again, to show it large
 - Light, dark and system themes, with whole-UI zoom
 - Recent projects on the welcome screen
 - Native builds for macOS, Windows and Linux
 
 | Shortcut | Action |
 | --- | --- |
-| ⌘1 / ⌘2 / ⌘3 | Cycle the left, bottom and right panels through Hide, Min and Max |
+| ⌘1 / ⌘2 / ⌘3 | Show or hide the left, bottom and right panels |
 | ⌃1 / ⌃3 | Show the next left or right panel tab |
 | ⌘+ / ⌘- / ⌘0 | Zoom in, out, or back to 100% |
 

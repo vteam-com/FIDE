@@ -23,6 +23,7 @@ import 'package:fide/widgets/dropdown_label.dart';
 import 'package:fide/widgets/icon_menu_item.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/window_buttons.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
@@ -183,8 +184,8 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     );
   }
 
-  /// The buttons cycling each [SidePanel] through Hide, Min and Max, each
-  /// highlighted while its panel shows.
+  /// The buttons showing or hiding each [SidePanel], an ⌥-click showing it
+  /// large, each highlighted while its panel shows.
   Widget _buildPanelToggleButtons() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.medium),
@@ -197,7 +198,11 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
               key: panel.toggleKey,
               svgAsset: panel.asset,
               selected: ref.watch(panel.visibleProvider),
-              onPressed: () => cyclePanelSize(ref, panel),
+              onPressed: () => togglePanelVisible(
+                ref,
+                panel,
+                large: HardwareKeyboard.instance.isAltPressed,
+              ),
               tooltip: panel.tooltip,
             ),
         ],

@@ -24,23 +24,45 @@ void main() {
     return captured;
   }
 
-  testWidgets('cycles a panel through hide, min and max', (tester) async {
+  /// The bottom panel's size after each of [clicks], each one large (an
+  /// ⌥-click) or not, from hidden: hide, show or large.
+  Future<List<String>> bottomSizes(
+    WidgetTester tester,
+    List<bool> clicks,
+  ) async {
     final ref = await pumpRef(tester);
     ref.read(bottomPanelVisibleProvider.notifier).state = false;
+    return [
+      for (final large in clicks)
+        () {
+          togglePanelVisible(ref, SidePanel.bottom, large: large);
+          return !ref.read(bottomPanelVisibleProvider)
+              ? 'hide'
+              : ref.read(bottomPanelExpandedProvider)
+              ? 'large'
+              : 'show';
+        }(),
+    ];
+  }
 
-    /// The bottom panel's size: hidden, min or max.
-    String size() => !ref.read(bottomPanelVisibleProvider)
-        ? 'hide'
-        : ref.read(bottomPanelExpandedProvider)
-        ? 'max'
-        : 'min';
-    final sizes = <String>[];
-    for (var step = 0; step < 4; step++) {
-      cyclePanelSize(ref, SidePanel.bottom);
-      sizes.add(size());
-    }
+  testWidgets('a click shows or hides a panel', (tester) async {
+    expect(await bottomSizes(tester, [false, false, false]), [
+      'show',
+      'hide',
+      'show',
+    ]);
+  });
 
-    expect(sizes, ['min', 'max', 'hide', 'min']);
+  testWidgets('an ⌥-click shows a panel large, or back at its own size', (
+    tester,
+  ) async {
+    expect(await bottomSizes(tester, [true, true, true, false, false]), [
+      'large',
+      'show',
+      'large',
+      'hide',
+      'show',
+    ]);
   });
 
   testWidgets('the panel a shortcut shows becomes the active one', (
@@ -49,7 +71,7 @@ void main() {
     final ref = await pumpRef(tester);
     ref.read(bottomPanelVisibleProvider.notifier).state = false;
 
-    cyclePanelSize(ref, SidePanel.bottom);
+    togglePanelVisible(ref, SidePanel.bottom);
     expect(ref.read(activePanelProvider), SidePanel.bottom);
 
     nextLeftPanelTab(ref);
@@ -66,7 +88,7 @@ void main() {
     ref.read(rightPanelExpandedProvider.notifier).state = true;
     ref.read(activePanelProvider.notifier).state = SidePanel.right;
 
-    cyclePanelSize(ref, SidePanel.right);
+    togglePanelVisible(ref, SidePanel.right);
 
     expect(ref.read(rightPanelVisibleProvider), isFalse);
     expect(ref.read(activePanelProvider), isNull);

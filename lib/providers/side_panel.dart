@@ -26,9 +26,9 @@ final islandWindowRectProvider = StateProvider.family<Rect?, SidePanel?>(
   (_, _) => null,
 );
 
-/// The panels around the editor, in the title bar's order; each one
-/// cycles through Hide, Min and Max from its title-bar button, its View
-/// menu item and its [shortcut].
+/// The panels around the editor, in the title bar's order; each one shows
+/// or hides from its title-bar button, its View menu item and its
+/// [shortcut], and shows large from an ⌥-click on its title-bar button.
 enum SidePanel {
   left('Left', 'assets/toggle_panel_left.svg', AppShortcut.panelLeft),
   bottom(
@@ -45,7 +45,7 @@ enum SidePanel {
   /// The title-bar button's icon.
   final String asset;
 
-  /// Keys cycling the panel's size.
+  /// Keys showing or hiding the panel.
   final SingleActivator shortcut;
 
   /// Whether the panel is shown when the app starts.
@@ -58,8 +58,8 @@ enum SidePanel {
     this.shownAtStart = true,
   });
 
-  /// The command cycling the panel's size, as its View menu item reads.
-  String get commandLabel => '$label Panel: Hide, Min, Max';
+  /// The command showing or hiding the panel, as its View menu item reads.
+  String get commandLabel => '$label Panel: Show, Hide';
 
   /// Whether the panel is expanded to its largest size; restoring it
   /// brings back the size it had.
@@ -68,8 +68,11 @@ enum SidePanel {
   /// Key the integration tests find the title-bar button by.
   Key get toggleKey => Key('togglePanel$label');
 
-  /// The title-bar button's tooltip: its [commandLabel] and [shortcut].
-  String get tooltip => ShortcutHelpEntry.tooltip(commandLabel, shortcut);
+  /// The title-bar button's tooltip: its [commandLabel] and [shortcut],
+  /// then the ⌥-click showing the panel large.
+  String get tooltip =>
+      '${ShortcutHelpEntry.tooltip(commandLabel, shortcut)}\n'
+      '${ShortcutHelpEntry.alt}-click: Large';
 
   /// Whether the panel is shown.
   StateProvider<bool> get visibleProvider => sidePanelVisibleProvider(this);

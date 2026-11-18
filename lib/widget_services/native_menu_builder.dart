@@ -173,7 +173,7 @@ class NativeMenuBuilder {
     );
   }
 
-  /// Builds the View menu with panel-size, panel-tab and zoom items.
+  /// Builds the View menu with panel show/hide, panel-tab and zoom items.
   PlatformMenu _buildViewMenu() {
     final controller = ref.read(zoomProvider.notifier);
     return PlatformMenu(
@@ -183,7 +183,7 @@ class NativeMenuBuilder {
           PlatformMenuItem(
             label: panel.commandLabel,
             shortcut: panel.shortcut,
-            onSelected: () => cyclePanelSize(ref, panel),
+            onSelected: () => togglePanelVisible(ref, panel),
           ),
         PlatformMenuItemGroup(
           members: [

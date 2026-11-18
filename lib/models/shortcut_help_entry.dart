@@ -12,9 +12,11 @@ class ShortcutHelpEntry {
 
   /// Modifier symbols in the order macOS menus show them.
   static const String _control = '⌃';
-  static const String _alt = '⌥';
   static const String _shift = '⇧';
   static const String _meta = '⌘';
+
+  /// The Option (Alt) key's symbol, as macOS menus show it.
+  static const String alt = '⌥';
 
   /// Ellipsis ending labels of commands that ask for more input.
   static const String _ellipsis = '...';
@@ -75,7 +77,7 @@ class ShortcutHelpEntry {
   static String format(SingleActivator activator) {
     return [
       if (activator.control) _control,
-      if (activator.alt) _alt,
+      if (activator.alt) alt,
       if (activator.shift) _shift,
       if (activator.meta) _meta,
       activator.trigger.keyLabel.toUpperCase(),

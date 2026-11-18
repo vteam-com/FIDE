@@ -123,19 +123,19 @@ class AppShortcut {
     meta: true,
   );
 
-  /// Left panel: cycle it through Hide, Min and Max.
+  /// Left panel: show or hide it.
   static const SingleActivator panelLeft = SingleActivator(
     LogicalKeyboardKey.digit1,
     meta: true,
   );
 
-  /// Bottom panel: cycle it through Hide, Min and Max.
+  /// Bottom panel: show or hide it.
   static const SingleActivator panelBottom = SingleActivator(
     LogicalKeyboardKey.digit2,
     meta: true,
   );
 
-  /// Right panel: cycle it through Hide, Min and Max.
+  /// Right panel: show or hide it.
   static const SingleActivator panelRight = SingleActivator(
     LogicalKeyboardKey.digit3,
     meta: true,
