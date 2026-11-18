@@ -37,6 +37,12 @@ void main() {
     expect(() => lookup.answerFrom('field'), throwsA(isA<TypeError>()));
   });
 
+  test('only the latest lookup of a kind is answered, every rename is', () {
+    expect(const FindReferencesRequest('/p/a.dart', 1, 1).isLatestOnly, isTrue);
+    expect(const CalleesRequest('/p/a.dart', 1, 1).isLatestOnly, isTrue);
+    expect(const RenameRequest('/p/a.dart', 1, 1, 'B').isLatestOnly, isFalse);
+  });
+
   test('a compile check answers nothing', () {
     const check = CheckCompilesRequest({}, 'Renaming');
     expect(() => check.answerFrom(null), returnsNormally);

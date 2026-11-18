@@ -1,6 +1,5 @@
 import 'package:fide/models/app_view_state.dart';
 import 'package:fide/models/image_backdrop.dart';
-import 'package:fide/models/reference_search.dart';
 import 'package:fide/providers/app_view_notifier.dart';
 import 'package:fide/providers/left_panel_tab.dart';
 import 'package:fide/providers/right_panel_tab.dart';
@@ -72,12 +71,6 @@ final activeRightPanelTabProvider = StateProvider<RightPanelTab>(
 
 /// 1-based line of the caret in the active editor, for panels that track it.
 final editorCursorLineProvider = StateProvider<int>((_ /*ref*/) => 1);
-
-/// Uses of a declaration waiting to be listed by the Search panel, which
-/// clears it once shown.
-final referenceSearchProvider = StateProvider<ReferenceSearch?>(
-  (_ /*ref*/) => null,
-);
 
 /// Text the Search panel should search for, waiting to be picked up; the
 /// panel focuses its input and clears it once shown. Empty focuses the input

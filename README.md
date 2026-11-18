@@ -62,7 +62,7 @@ FIDE holds itself to the same standard: its own code must score 100% with `fchec
   - **Git**: staged, unstaged and untracked files
 - **Code editor** with Dart syntax highlighting, search and replace, go to line, quick open, side-by-side diffs and image preview
 - **Audio editor** for sound files (WAV, MP3, Ogg, M4A, AAC, FLAC): play and stop, trim on the waveform, change the speed without changing the pitch and the pitch (±12 semitones) without changing the speed, then save over the file in its own format. WAV is handled natively; other formats convert through `afconvert` (built into macOS) or `ffmpeg`, which saving MP3 and Ogg needs
-- **Outline** of the selected file, right under its row in the Organized and Folder trees (click the file again to fold it): a Dart file's classes and members, with their callers, a Markdown file's headings, a YAML file's keys. Under the `build` the cursor is in (any function returning widgets) unfolds its **widget tree**: every widget nested under the parent whose slot it fills (`child`, `children`, `body`, `appBar`, `title`, builders, ...), through `if`, `for`, `?:` and `.map(...)`, with helper calls such as `_buildHeader()` and widget variables marked as references; other functions show how many widgets they build. The cursor highlights its path down the tree, and a click jumps to the entry
+- **Outline** of the selected file, right under its row in the Organized and Folder trees (click the file again to fold it): a Dart file's classes and members, with how many callers each has, a Markdown file's headings, a YAML file's keys. Under the `build` the cursor is in (any function returning widgets) unfolds its **widget tree**: every widget nested under the parent whose slot it fills (`child`, `children`, `body`, `appBar`, `title`, builders, ...), through `if`, `for`, `?:` and `.map(...)`, with helper calls such as `_buildHeader()` and widget variables marked as references; other functions show how many widgets they build. The cursor highlights its path down the tree, and a click jumps to the entry
 - **Preview** of the current file's `@Preview` widgets, live as you save: FIDE runs them headless on the Dart VM (so `dart:io` and assets work), streams each frame into the panel, on the same Transparent / Black / White / Rainbow backdrop picked for images, and forwards your clicks and scrolls. Switch it to **Project** to list every preview of the project, collapsed and filterable: only the one you expand is rendered, so it scales to any number of previews. A preview whose code sets no size is sized to its content; its width and height are each **Auto** or fixed, your choice: click either to switch, or drag the grips on the right of and under the preview to resize it in 10-px steps, then **Fix Size** writes what you picked into its `@Preview(size: ...)` (`Size(w, h)`, `Size.fromWidth`, `Size.fromHeight`, or no size). For a file without previews, **Generate Previews** writes them, with sample values picked from each parameter's type; the AI writes those that need model objects
 - **Search** across the project
 - **Terminal** opened in the project folder
@@ -71,14 +71,14 @@ FIDE holds itself to the same standard: its own code must score 100% with `fchec
 
 ### Build, run and test
 
-- **Run**: build, run, debug and clean for each supported platform, with clickable `path:line:column` links in the output
+- **Run**: build, run, debug and clean for each supported platform, with clickable `path:line:column` links in the output, then manage the project's packages: the direct and developer dependencies, each opening its pub.dev page, flagged when outdated or conflicting, **Outdated** and **Upgrade**, and editing `pubspec.yaml`
 - **Test**: run the project's tests and coverage
 - **Create project**: a three-step wizard for new Flutter apps
 
 ### Quality and localization
 
 - **Project overview**: icon, version, fCheck score, code size, platforms, tests, coverage and translations, shown when no file is open
-- **Info panel**, the right panel's first tab: the selected file's path and actions (and an image's dimensions, color mode, transparency and dominant colors), then the project's version, dependencies, and every fCheck deduction with its findings and the best practice that fixes it
+- **Info panel**, the right panel's first tab, about what is selected, then the project: the selected file's path and actions (and an image's dimensions, color mode, transparency and dominant colors); the declaration under the cursor with its **callers** and what it **calls** in the project, each a click away; the live **preview** of the widget class the cursor is in, when it has a `@Preview`; then the project's version and every fCheck deduction with its findings and the best practice that fixes it
 - **Localize panel**: sets up `gen-l10n`, lists each ARB key with its translations, and translates missing keys with the local model
 
 ### Git

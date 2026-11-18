@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fide/models/action_outcome.dart';
 import 'package:fide/models/project_info_state.dart';
 import 'package:fide/models/project_metrics.dart';
@@ -10,24 +12,31 @@ import 'package:fide/services/project_analyzer.dart';
 import 'package:fide/services/project_maintenance_service.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
-/// The Info panel's actions on the open project; a new controller per
-/// project, dropped with the panel.
+/// The actions of the Info and Run panels on the open project; a new
+/// controller per project, which measures it at once, dropped with the
+/// panels.
 final projectInfoControllerProvider =
-    StateNotifierProvider.autoDispose<ProjectInfoController, ProjectInfoState>(
-      (ref) => ProjectInfoController(
+    StateNotifierProvider.autoDispose<ProjectInfoController, ProjectInfoState>((
+      ref,
+    ) {
+      final controller = ProjectInfoController(
         ref.watch(currentProjectPathProvider),
         analyzer: ref.read(projectAnalyzerProvider),
         maintenance: ref.read(projectMaintenanceServiceProvider),
         entries: ref.read(fileEntryServiceProvider),
         metrics: ref.read(projectMetricsProvider.notifier),
         currentMetrics: () => ref.read(projectMetricsProvider),
-      ),
-    );
+      );
+      // Marking it busy must wait for the build creating it; a failure
+      // leaves the cached metrics shown
+      unawaited(Future.microtask(controller.analyze));
+      return controller;
+    });
 
 /// Reads the metrics the Info panel shows now.
 typedef MetricsReader = ProjectMetrics Function();
 
-/// Analyzes, cleans up and upgrades the open project for the Info panel,
+/// Measures and upgrades the open project for the Info and Run panels,
 /// writing the metrics it measures and keeping what pub reported; each
 /// action marks the state busy until it ends, whether it succeeds or fails.
 class ProjectInfoController extends StateNotifier<ProjectInfoState>

@@ -5,6 +5,7 @@ import 'package:fide/models/arb_keys.dart';
 import 'package:fide/models/hardcoded_string.dart';
 import 'package:fide/models/l10n_config.dart';
 import 'package:fide/models/lookup_rewrite.dart';
+import 'package:fide/models/search_result.dart';
 import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/reference_finder.dart';
@@ -128,6 +129,62 @@ void paint(Circle c, Square s) {
       throwsA(predicate((e) => '$e'.contains(ReferenceFinder.superseded))),
     );
     expect(await latest, hasLength(1));
+  });
+
+  group('callees', () {
+    /// The names [calls] mark, in order.
+    List<String> names(List<SearchResult> calls) => [
+      for (final call in calls)
+        call.lineContent.substring(call.matchStart, call.matchEnd),
+    ];
+
+    test('lists what a method calls, once each, in the order first '
+        'called', () async {
+      final shapes = write('lib/shapes.dart', '''
+class Circle {
+  int get area => 3;
+  int radius = 1;
+  void draw() {
+    _outline();
+    print(area + radius);
+    final origin = Point.origin();
+    _outline();
+    Label();
+    void local() {}
+    local();
+  }
+  void _outline() {}
+}
+
+class Point {
+  Point.origin();
+}
+
+class Label {}
+''');
+
+      final calls = await finder.callees(filePath: shapes, line: 4, column: 3);
+
+      // A field and a local function are no calls; an implicit
+      // constructor is its class
+      expect(names(calls), ['_outline', 'area', 'origin', 'Label']);
+      expect(calls.first.lineNumber, 13);
+    });
+
+    test('lists calls into other project files, not the SDK or '
+        'itself', () async {
+      write('lib/util.dart', 'int twice(int x) => x * 2;\n');
+      final main = write('lib/main.dart', '''
+import 'util.dart';
+
+int count(int n) => n == 0 ? 0 : count(n - 1) + twice(n).abs();
+''');
+
+      final calls = await finder.callees(filePath: main, line: 3, column: 1);
+
+      expect(calls.map((call) => p.basename(call.filePath)), ['util.dart']);
+      expect(names(calls), ['twice']);
+    });
   });
 
   group('FileTexts', () {

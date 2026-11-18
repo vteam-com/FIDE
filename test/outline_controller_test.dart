@@ -269,6 +269,15 @@ void main() {
       expect(counted.copyWith(isRenaming: true).consumers, isEmpty);
     });
 
+    test('parentOf and classOf find what an entry is nested in', () {
+      const state = OutlineState(nodes: [a, run, b]);
+
+      expect(state.parentOf(run), a);
+      expect(state.parentOf(a), isNull);
+      expect(state.classOf(run), a);
+      expect(state.classOf(b), b);
+    });
+
     group('shownNodes', () {
       // Two methods, each returning a widget tree
       const nodes = [

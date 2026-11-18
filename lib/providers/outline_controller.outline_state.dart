@@ -62,6 +62,24 @@ class OutlineState {
       .where((node) => !node.kind.isWidget && isHighlighted(node))
       .lastOrNull;
 
+  /// The entry [node] is nested in, such as a method's class; null for a
+  /// top-level entry.
+  OutlineNode? parentOf(OutlineNode node) {
+    for (var i = nodes.indexOf(node) - 1; i >= 0; i--) {
+      if (nodes[i].level < node.level) return nodes[i];
+    }
+    return null;
+  }
+
+  /// The class [node] is or is a member of; null for anything else, such
+  /// as a top-level function.
+  OutlineNode? classOf(OutlineNode node) {
+    for (OutlineNode? entry = node; entry != null; entry = parentOf(entry)) {
+      if (entry.kind == OutlineKind.dartClass) return entry;
+    }
+    return null;
+  }
+
   /// The entries a file tree shows, each with the count of widgets folded
   /// under it: every declaration, heading and key, and only the widget
   /// tree of the [selected] declaration, so the outline stays short and

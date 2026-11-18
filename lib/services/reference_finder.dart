@@ -10,6 +10,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/file_system/overlay_file_system.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
+import 'package:analyzer/source/line_info.dart';
 import 'package:fide/models/lookup_field.dart';
 import 'package:fide/models/search_result.dart';
 import 'package:fide/models/text_offsets.dart';
@@ -17,7 +18,10 @@ import 'package:fide/services/compile_errors.dart';
 import 'package:fide/services/flutter_sdk.dart';
 import 'package:path/path.dart' as p;
 
+part 'reference_finder.callee_visitor.dart';
+part 'reference_finder.callees_request.dart';
 part 'reference_finder.check_compiles_request.dart';
+part 'reference_finder.declaration_request.dart';
 part 'reference_finder.file_texts.dart';
 part 'reference_finder.find_references_request.dart';
 part 'reference_finder.lookup_field_request.dart';
@@ -35,7 +39,8 @@ part 'reference_finder.usage_visitor.dart';
 /// The analysis lives in a background isolate started on first use and kept
 /// for later lookups, which then only re-read files changed on disk.
 class ReferenceFinder {
-  /// The error message of a [find] a newer one replaced before it started.
+  /// The error message of a [find] or [callees] a newer one replaced
+  /// before it started.
   static const String superseded = 'A newer lookup replaced this one';
 
   /// Creates a finder for the project at `projectPath`, resolving against
@@ -65,6 +70,19 @@ class ReferenceFinder {
     required int line,
     required int column,
   }) => _request(FindReferencesRequest(filePath, line, column));
+
+  /// What the function or method starting at 1-based [line] and [column]
+  /// of [filePath] calls that the project declares: the functions,
+  /// methods, constructors and explicit getters and setters it calls or
+  /// tears off, each once, in the order first named, as the place each is
+  /// declared (a class for its implicit constructor).
+  ///
+  /// Throws as [find] does, [superseded] included.
+  Future<List<SearchResult>> callees({
+    required String filePath,
+    required int line,
+    required int column,
+  }) => _request(CalleesRequest(filePath, line, column));
 
   /// The `String` field the argument starting at [offset] of [filePath]
   /// fills through a `this.` parameter, with every value passed to it and

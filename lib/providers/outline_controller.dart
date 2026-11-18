@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fide/constants/core_constants.dart';
+import 'package:fide/models/outline_kind.dart';
 import 'package:fide/models/outline_node.dart';
 import 'package:fide/models/search_result.dart';
 import 'package:fide/providers/app_providers.dart';

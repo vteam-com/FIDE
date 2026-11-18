@@ -1,5 +1,6 @@
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/panels/left/packages_section.dart';
 import 'package:fide/panels/left/platform_info_section.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/command_runner.dart';
@@ -17,8 +18,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Panel providing one-click build, run, and clean actions for the loaded
-/// Flutter project. The runs belong to [commandRunnerProvider], so they
-/// keep going while the panel is hidden.
+/// Flutter project, then its packages. The runs belong to
+/// [commandRunnerProvider], so they keep going while the panel is hidden.
 class ExecutePanel extends ConsumerStatefulWidget {
   /// Id of the action cleaning the project.
   static const String _cleanId = 'clean';
@@ -102,6 +103,7 @@ class _ExecutePanelState extends ConsumerState<ExecutePanel> {
             ),
           ),
         CommandOutput(logKey: _logKeyOf(platform)),
+        const PackagesSection(),
       ],
     );
   }

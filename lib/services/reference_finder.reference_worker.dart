@@ -18,9 +18,9 @@ typedef _ReferenceReply = ({Object? answer, String? error});
 /// Files are read through an overlay so a rename can be checked against the
 /// analysis before anything is written.
 class _ReferenceWorker {
-  _ReferenceWorker(String projectPath, String sdkPath) {
+  _ReferenceWorker(this._projectPath, String sdkPath) {
     _collection = AnalysisContextCollection(
-      includedPaths: [projectPath],
+      includedPaths: [_projectPath],
       resourceProvider: _provider,
       sdkPath: sdkPath,
     );
@@ -34,9 +34,13 @@ class _ReferenceWorker {
   /// The analyzed Dart files, with their modification times and text.
   final FileTexts _files = FileTexts();
 
-  /// Counts the [FindReferencesRequest]s received, so a queued one can
+  /// Counts the requests received of each kind that only the latest of
+  /// is answered (see [ReferenceRequest.isLatestOnly]), so a queued one can
   /// tell a newer one came.
-  int _findCount = 0;
+  final Map<Type, int> _latest = {};
+
+  /// The analyzed project's folder: what it calls elsewhere isn't listed.
+  final String _projectPath;
 
   final OverlayResourceProvider _provider = OverlayResourceProvider(
     PhysicalResourceProvider.INSTANCE,
@@ -49,8 +53,9 @@ class _ReferenceWorker {
 
   /// Isolate entry: sends a request port through `args.$1`, then answers
   /// each `(request, replyPort)` with a [_ReferenceReply] holding the
-  /// [ReferenceRequest]'s answer, or the error message instead; a find a
-  /// newer one replaced while it waited answers [ReferenceFinder.superseded].
+  /// [ReferenceRequest]'s answer, or the error message instead; a request
+  /// a newer one of its kind replaced while it waited answers
+  /// [ReferenceFinder.superseded] (see [ReferenceRequest.isLatestOnly]).
   static void main((SendPort, String, String) args) {
     final (ready, projectPath, sdkPath) = args;
     final worker = _ReferenceWorker(projectPath, sdkPath);
@@ -58,11 +63,12 @@ class _ReferenceWorker {
     ready.send(requests.sendPort);
     requests.listen((message) {
       final (request, reply) = message as (ReferenceRequest<Object?>, SendPort);
-      final find = request is FindReferencesRequest
-          ? ++worker._findCount
+      final kind = request.runtimeType;
+      final ticket = request.isLatestOnly
+          ? worker._latest.update(kind, (count) => count + 1, ifAbsent: () => 1)
           : null;
       worker._queue = worker._queue.then((_) async {
-        if (find != null && find != worker._findCount) {
+        if (ticket != null && ticket != worker._latest[kind]) {
           reply.send((answer: null, error: ReferenceFinder.superseded));
           return;
         }
@@ -83,6 +89,9 @@ class _ReferenceWorker {
       switch (request) {
         FindReferencesRequest(:final filePath, :final line, :final column) =>
           await _find(await _targetAt(filePath, line, column)),
+        CalleesRequest(:final filePath, :final line, :final column) => _callees(
+          await _targetAt(filePath, line, column),
+        ),
         RenameRequest(
           :final filePath,
           :final line,
@@ -109,6 +118,38 @@ class _ReferenceWorker {
           : a.lineNumber != b.lineNumber
           ? a.lineNumber.compareTo(b.lineNumber)
           : a.matchStart.compareTo(b.matchStart),
+    );
+  }
+
+  /// See [ReferenceFinder.callees].
+  List<SearchResult> _callees(_Target target) => [
+    for (final callee in _CalleeVisitor.calleesOf(target.declaration))
+      if (!_UsageVisitor.same(callee, target.element)) ?_declarationOf(callee),
+  ];
+
+  /// Where [callee] is declared, as a place in the code naming it (its
+  /// class for an implicit constructor); null when the project doesn't
+  /// declare it.
+  SearchResult? _declarationOf(ExecutableElement callee) {
+    final declared = switch (callee) {
+      ConstructorElement(isOriginDeclaration: false, :final enclosingElement) =>
+        enclosingElement,
+      _ => callee,
+    };
+    final fragment = declared.firstFragment;
+    final library = fragment.libraryFragment;
+    final path = library?.source.fullName;
+    if (library == null || path == null || !p.isWithin(_projectPath, path)) {
+      return null;
+    }
+    final nameOffset = fragment.nameOffset;
+    return _UsageVisitor.resultAt(
+      path,
+      _provider.getFile(path).readAsStringSync(),
+      library.lineInfo,
+      nameOffset ?? fragment.offset,
+      // An unnamed constructor's place has no name to mark
+      nameOffset == null ? 0 : declared.name?.length ?? 0,
     );
   }
 

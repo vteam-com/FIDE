@@ -11,6 +11,7 @@ import 'package:fide/services/preview_generator.dart';
 import 'package:fide/services/preview_project_scanner.dart';
 import 'package:fide/widget_services/image_backdrop_buttons.dart';
 import 'package:fide/widget_services/output_panel.dart';
+import 'package:fide/widget_services/preview_viewport.dart';
 import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
@@ -88,7 +89,12 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              _configure(context, constraints.maxWidth);
+              configurePreviewViewport(
+                ref,
+                context,
+                constraints.maxWidth,
+                _scale,
+              );
               // The Preview tab's ring shows the host starting or reloading
               return _buildBody(state);
             },
@@ -96,25 +102,6 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
         ),
       ],
     );
-  }
-
-  /// Sends the panel's width, pixel ratio, zoom and brightness to the host
-  /// once laid out.
-  void _configure(BuildContext context, double width) {
-    final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
-    final brightness = Theme.of(context).brightness;
-    final scale = _scale;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ref
-          .read(previewControllerProvider.notifier)
-          .configure(
-            width: width,
-            devicePixelRatio: devicePixelRatio,
-            zoom: scale,
-            appBrightness: brightness,
-          );
-    });
   }
 
   /// The scope, brightness, zoom and restart controls, wrapping onto a

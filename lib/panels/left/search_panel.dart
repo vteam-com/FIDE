@@ -2,21 +2,19 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/editor_search.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/project_paths.dart';
-import 'package:fide/models/reference_search.dart';
 import 'package:fide/models/search_result.dart';
 import 'package:fide/models/search_result_node.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/widget_services/search_result_row.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/empty_label.dart';
 import 'package:fide/widgets/empty_state.dart';
-import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/foldername_widget.dart' show FolderNameWidget;
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/loading_indicator.dart';
-import 'package:fide/widgets/location_row.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/search_replace_field.dart';
 import 'package:fide/widgets/search_toggle_icons.dart';
@@ -72,8 +70,6 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     // Searches requested before this tab was built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final pending = ref.read(referenceSearchProvider);
-      if (pending != null) _showReferences(pending);
       final query = ref.read(projectSearchRequestProvider);
       if (query != null) _startSearch(query);
     });
@@ -85,26 +81,6 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     _searchFocusNode.dispose();
     _replaceController.dispose();
     super.dispose();
-  }
-
-  /// Shows [search]'s uses as the results, with every folder expanded.
-  void _showReferences(ReferenceSearch search) {
-    ref.read(referenceSearchProvider.notifier).state = null;
-    _searchController.text = search.name;
-    final tree = ref
-        .read(projectSearchServiceProvider)
-        .toTree(search.results, widget.projectPath);
-    _searchGeneration++;
-    setState(() {
-      _matchCase = true;
-      _wholeWord = true;
-      _isSearching = false;
-      _resultsQuery = search.name;
-      _resultsTree = tree;
-      _matchingFiles = tree == null ? const [] : _filePaths(tree);
-      _unlistedCount = 0;
-      if (tree != null) _expandFolders(tree);
-    });
   }
 
   /// Focuses the input with its text selected, first searching for [query]
@@ -120,13 +96,6 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
       extentOffset: _searchController.text.length,
     );
     _searchFocusNode.requestFocus();
-  }
-
-  /// Marks every folder under [node] expanded.
-  void _expandFolders(SearchResultNode node) {
-    if (!node.isDirectory) return;
-    _expandedState[node.path] = true;
-    node.children.forEach(_expandFolders);
   }
 
   /// Drops the results, and those of any search still running.
@@ -180,9 +149,6 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<ReferenceSearch?>(referenceSearchProvider, (_, next) {
-      if (next != null) _showReferences(next);
-    });
     ref.listen<String?>(projectSearchRequestProvider, (_, next) {
       if (next != null) _startSearch(next);
     });
@@ -288,11 +254,6 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     }
   }
 
-  /// Paths of the files under results [node].
-  static List<String> _filePaths(SearchResultNode node) => node.isDirectory
-      ? [for (final child in node.children) ..._filePaths(child)]
-      : [node.path];
-
   /// The results [tree], built a screenful at a time: its folders, its
   /// files each over its matches, then how many matches are not listed.
   Widget _buildResults(SearchResultNode tree) {
@@ -316,7 +277,10 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
         final SearchResultNode folder when folder.isDirectory =>
           _buildDirectoryResultNode(folder),
         final SearchResultNode file => _buildFileResultNode(file),
-        final SearchResult match => _buildMatchResult(match),
+        final SearchResult match => SearchResultRow(
+          result: match,
+          rootPath: widget.projectPath,
+        ),
         _ => _buildUnlistedCount(),
       },
     );
@@ -353,25 +317,6 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
         '${_unlistedCount.localized} more not listed; '
         'narrow the search to see them',
       ),
-    );
-  }
-
-  /// The line of [result], its match highlighted, opening the file there:
-  /// a place in the code like every other.
-  Widget _buildMatchResult(SearchResult result) {
-    final line = result.lineContent;
-    final indent = line.length - line.trimLeft().length;
-    return LocationRow(
-      icon: FileIconUtils.ofPath(result.filePath),
-      name: line.trim(),
-      match: TextRange(
-        start: result.matchStart - indent,
-        end: result.matchEnd - indent,
-      ),
-      path: result.filePath,
-      line: result.lineNumber,
-      rootPath: widget.projectPath,
-      onTap: () => openFileAtLine(ref, result.filePath, result.lineNumber),
     );
   }
 }

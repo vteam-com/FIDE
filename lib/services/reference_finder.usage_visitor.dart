@@ -66,7 +66,7 @@ class _UsageVisitor extends GeneralizingAstVisitor<void> {
 
   /// Whether [a] and [b] are the same declaration, even when resolved by
   /// different analysis contexts.
-  static bool _same(Element a, Element b) =>
+  static bool same(Element a, Element b) =>
       identical(a, b) ||
       (a.kind == b.kind &&
           a.name == b.name &&
@@ -76,26 +76,45 @@ class _UsageVisitor extends GeneralizingAstVisitor<void> {
   /// Records a use spanning [offset] and [length] when [element] is the
   /// target.
   void _check(Element? element, int offset, int length) {
-    if (element == null || !_same(_declared(element), _declared(_target))) {
+    if (element == null || !same(_declared(element), _declared(_target))) {
       return;
     }
-    final location = _unit.lineInfo.getLocation(offset);
+    _uses.add((
+      offset: offset,
+      result: resultAt(
+        _unit.path,
+        _unit.content,
+        _unit.lineInfo,
+        offset,
+        length,
+      ),
+    ));
+  }
+
+  /// The place in [path], whose text is [content] and lines [lineInfo],
+  /// of the [length] characters at [offset], as a line of code with them
+  /// marked.
+  static SearchResult resultAt(
+    String path,
+    String content,
+    LineInfo lineInfo,
+    int offset,
+    int length,
+  ) {
+    final location = lineInfo.getLocation(offset);
     final lineStart = offset - (location.columnNumber - 1);
-    final lineBreak = _unit.content.indexOf('\n', lineStart);
-    final lineContent = _unit.content
+    final lineBreak = content.indexOf('\n', lineStart);
+    final lineContent = content
         .substring(lineStart, lineBreak == -1 ? null : lineBreak)
         .trimRight();
     final matchStart = location.columnNumber - 1;
-    _uses.add((
-      offset: offset,
-      result: SearchResult(
-        filePath: _unit.path,
-        lineNumber: location.lineNumber,
-        lineContent: lineContent,
-        matchStart: matchStart,
-        matchEnd: matchStart + length,
-      ),
-    ));
+    return SearchResult(
+      filePath: path,
+      lineNumber: location.lineNumber,
+      lineContent: lineContent,
+      matchStart: matchStart,
+      matchEnd: matchStart + length,
+    );
   }
 
   @override

@@ -156,7 +156,7 @@ class _FieldUseVisitor extends RecursiveAstVisitor<void> {
     void visit(AstNode node) {
       if (found != null) return;
       if (node is VariableDeclaration &&
-          _UsageVisitor._same(node.declaredFragment!.element, field)) {
+          _UsageVisitor.same(node.declaredFragment!.element, field)) {
         found = (node.parent as VariableDeclarationList?)?.type;
         return;
       }
@@ -212,7 +212,7 @@ class _FieldUseVisitor extends RecursiveAstVisitor<void> {
 
   /// Whether [element] is the field.
   bool _isField(Element? element) =>
-      element != null && _UsageVisitor._same(element, _field);
+      element != null && _UsageVisitor.same(element, _field);
 
   /// The read [name] belongs to, with its receiver, such as `widget.name`.
   static Expression _readOf(SimpleIdentifier name) => switch (name.parent) {

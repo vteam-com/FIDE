@@ -1,36 +1,32 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_outcome.dart';
-import 'package:fide/models/dependency_version.dart';
+import 'package:fide/models/outline_node.dart';
 import 'package:fide/models/project_info_state.dart';
-import 'package:fide/models/project_metrics.dart';
-import 'package:fide/models/status_tone.dart';
 import 'package:fide/panels/right/file_info_section.dart';
+import 'package:fide/panels/right/symbol_info_section.dart';
+import 'package:fide/panels/right/widget_preview_section.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/class_previews_provider.dart';
+import 'package:fide/providers/outline_controller.dart';
+import 'package:fide/providers/outline_providers.dart';
 import 'package:fide/providers/project_info_controller.dart';
-import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widget_services/issue_section.dart';
 import 'package:fide/widget_services/output_panel.dart';
 import 'package:fide/widget_services/project_icon.dart';
 import 'package:fide/widgets/badge_status.dart';
-import 'package:fide/widgets/busy_bar.dart';
-import 'package:fide/widgets/compact_icon_button.dart';
-import 'package:fide/widgets/compact_text_button.dart';
-import 'package:fide/widgets/empty_label.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
-import 'package:fide/widgets/open_url.dart';
 import 'package:fide/widgets/panel_header.dart';
 import 'package:fide/widgets/panel_scroll_view.dart';
 import 'package:fide/widgets/refresh_button.dart';
-import 'package:fide/widgets/section_panel.dart';
-import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// The Info tab: the selected file's path, actions and, for an image, its
-/// details; then the open project's name, version, quality (the same as
-/// the overview's), dependencies and maintenance actions, run by
-/// [ProjectInfoController].
+/// The Info tab: what is selected, then the open project. The selected
+/// file's path, actions and, for an image, its details; the declaration
+/// under the editor's cursor, with its callers and what it calls; the
+/// live preview of the widget class it is in, when there is one; then the
+/// project's name, version and quality (the same as the overview's).
 class InfoPanel extends ConsumerStatefulWidget {
   /// Creates the panel.
   const InfoPanel({super.key});
@@ -40,24 +36,9 @@ class InfoPanel extends ConsumerStatefulWidget {
 }
 
 class _InfoPanelState extends ConsumerState<InfoPanel> {
-  /// The controller running the panel's actions.
+  /// The controller measuring the project, which it does once created.
   ProjectInfoController get _controller =>
       ref.read(projectInfoControllerProvider.notifier);
-
-  @override
-  void initState() {
-    super.initState();
-    _analyzeAfterBuild();
-  }
-
-  /// Measures the project once the current build is done: analyzing marks
-  /// the controller busy at once, which Riverpod forbids while the tree
-  /// builds.
-  void _analyzeAfterBuild() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _show(_controller.analyze());
-    });
-  }
 
   /// Shows how an action ended, once it has, while the panel is there.
   Future<void> _show(Future<ActionOutcome?> outcome) async {
@@ -67,96 +48,18 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     }
   }
 
-  /// Opens the project's pubspec.yaml in the editor.
-  void _openPubspecYaml() {
-    final pubspecPath = _controller.pubspecPath;
-    if (pubspecPath == null) {
-      MessageBox.showError(context, 'pubspec.yaml not found');
-      return;
-    }
-    ref.read(openDocumentsProvider.notifier).open(pubspecPath);
-  }
-
-  /// Opens [packageName]'s page on pub.dev.
-  Future<void> _openPubDev(String packageName) =>
-      openUrl(context, 'https://pub.dev/packages/$packageName');
-
-  /// Handles `_buildDependencyChip`.
-  Widget _buildDependencyChip(
-    String packageName,
-    DependencyVersion version,
-    ProjectMetrics projectMetrics,
-    ProjectInfoState info,
-  ) {
-    final outdatedInfo = projectMetrics.outdated[packageName];
-    final isOutdated = outdatedInfo != null;
-    final isProblematic = info.problematicPackages.contains(packageName);
-    final hasIncompatibleVersion =
-        outdatedInfo?.hasNoResolvableVersion ?? false;
-
-    final colorScheme = Theme.of(context).colorScheme;
-    final label = isOutdated
-        ? '$packageName ${version.label} → ${outdatedInfo.latest}'
-        : '$packageName ${version.label}';
-
-    return InputChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: AppTextStyle.badge.copyWith(
-              color: isProblematic || hasIncompatibleVersion
-                  ? StatusTone.error.readableIn(colorScheme)
-                  : (isOutdated
-                        ? StatusTone.warning.readableIn(colorScheme)
-                        : null),
-            ),
-          ),
-          if (isProblematic || hasIncompatibleVersion) ...[
-            const SizedBox(width: AppSpacing.tiny),
-            Icon(
-              StatusTone.error.icon,
-              size: AppIconSize.tiny,
-              color: StatusTone.error.readableIn(colorScheme),
-            ),
-          ],
-        ],
-      ),
-      // Kept enabled for every chip so they all render alike
-      onPressed: () {
-        if (version.isHosted && !hasIncompatibleVersion) {
-          _openPubDev(packageName);
-        }
-      },
-      backgroundColor: isProblematic || hasIncompatibleVersion
-          ? AppTheme.errorBackground
-          : null,
-      labelPadding: AppPadding.chipLabel,
-      visualDensity: VisualDensity.compact,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    // The panel outlives the project: measure each one opened
-    ref.listen(currentProjectPathProvider, (previous, next) {
-      if (next != null && next != previous) _analyzeAfterBuild();
-    });
     final currentProjectPath = ref.watch(currentProjectPathProvider);
-    final projectMetrics = ref.watch(projectMetricsProvider);
-    final info = ref.watch(projectInfoControllerProvider);
-    final filePath = ref.watch(detailedFilePathProvider);
-    final fileSection = filePath == null
-        ? null
-        : FileInfoSection(path: filePath);
-
+    final selection = _buildSelection(hasProject: currentProjectPath != null);
     if (currentProjectPath == null) {
-      return fileSection == null
+      return selection.isEmpty
           ? const NoProjectPlaceholder()
-          : PanelScrollView(children: [fileSection]);
+          : PanelScrollView(children: selection);
     }
 
+    final projectMetrics = ref.watch(projectMetricsProvider);
+    final info = ref.watch(projectInfoControllerProvider);
     final version = projectMetrics.version;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -169,17 +72,77 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           title: projectMetrics.name ?? 'Unknown Project',
           badge: version == null ? null : BadgeStatus.info(text: 'v$version'),
           subtitle: projectMetrics.description,
-          actions: [
-            CompactIconButton(
-              icon: Icons.edit_note,
-              tooltip: 'Edit pubspec.yaml',
-              onPressed: _openPubspecYaml,
-            ),
-            _buildRefreshButton(info),
-          ],
+          actions: [_buildRefreshButton(info)],
         ),
-        Expanded(child: _buildContent(fileSection, projectMetrics, info)),
+        Expanded(
+          child: PanelScrollView(
+            children: [
+              ...selection,
+
+              // The project's quality, once fCheck has analyzed it
+              if (ref.watch(projectQualityProvider) case final quality?)
+                IssueSection(
+                  title: 'Quality',
+                  issues: quality.issues,
+                  emptyLabel: 'No issues detected',
+                  rightWidget: BadgeStatus.score(quality.score),
+                ),
+
+              // What dart analyze printed, links opening each place it
+              // names
+              if (ref.watch(dartAnalysisProvider).value case final analysis?)
+                OutputPanel(title: 'dart analyze', text: analysis.output),
+            ],
+          ),
+        ),
       ],
+    );
+  }
+
+  /// The sections about what is selected: the file, then, in an open
+  /// project ([hasProject]), the declaration under the cursor in it and
+  /// the previews of the widget class that declaration is in.
+  List<Widget> _buildSelection({required bool hasProject}) {
+    final path = ref.watch(detailedFilePathProvider);
+    if (path == null) return const [];
+    // The App Icons view's picked icon has no outline
+    final isSelectedFile = ref.watch(
+      selectedFileProvider.select((file) => file?.path == path),
+    );
+    final hasOutline =
+        hasProject &&
+        isSelectedFile &&
+        ref.watch(outlineParserProvider(path)) != null;
+    final (:symbol, :widgetClass) = hasOutline
+        ? ref.watch(outlineControllerProvider(path).select(_selectionIn))
+        : (symbol: null, widgetClass: null);
+    final className = widgetClass?.usedName;
+    final previews = className == null
+        ? const <IndexedPreview>[]
+        : ref.watch(classPreviewsProvider((path: path, className: className)));
+    return [
+      FileInfoSection(path: path),
+      if (symbol != null && symbol.kind.isCountable)
+        SymbolInfoSection(path: path, node: symbol),
+      if (className != null && previews.isNotEmpty)
+        WidgetPreviewSection(
+          path: path,
+          className: className,
+          previews: previews,
+        ),
+    ];
+  }
+
+  /// The declaration under the cursor in [outline] and the class it is
+  /// or is in, compared by identity: moving the cursor within it changes
+  /// neither.
+  static ({OutlineNode? symbol, OutlineNode? widgetClass}) _selectionIn(
+    OutlineState outline,
+  ) {
+    final symbol = outline.selected;
+    return (
+      symbol: symbol,
+      widgetClass: symbol == null ? null : outline.classOf(symbol),
     );
   }
 
@@ -196,148 +159,6 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
               refreshProjectQuality(ref.invalidate);
               _show(_controller.analyze());
             },
-    );
-  }
-
-  /// The [fileSection] about the selected file, if any, then the
-  /// project's quality, dependencies and actions.
-  Widget _buildContent(
-    Widget? fileSection,
-    ProjectMetrics projectMetrics,
-    ProjectInfoState info,
-  ) {
-    return PanelScrollView(
-      children: [
-        ?fileSection,
-
-        // The project's quality, once fCheck has analyzed it
-        if (ref.watch(projectQualityProvider) case final quality?)
-          IssueSection(
-            title: 'Quality',
-            issues: quality.issues,
-            emptyLabel: 'No issues detected',
-            rightWidget: BadgeStatus.score(quality.score),
-          ),
-
-        // What dart analyze printed, links opening each place it names
-        if (ref.watch(dartAnalysisProvider).value case final analysis?)
-          OutputPanel(title: 'dart analyze', text: analysis.output),
-
-        // Dependencies
-        _buildDependenciesCard(projectMetrics, info),
-      ],
-    );
-  }
-
-  /// Handles `_buildDependenciesCard`.
-  Widget _buildDependenciesCard(
-    ProjectMetrics projectMetrics,
-    ProjectInfoState info,
-  ) {
-    final depsDirect = projectMetrics.dependencies;
-    final depsDev = projectMetrics.devDependencies;
-    final totalDeps = depsDirect.length + depsDev.length;
-    final pubBusy = info.isCheckingOutdated || info.isUpgrading;
-
-    // Build dependency content widget
-    final dependenciesContent = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: AppSpacing.medium,
-      children: [
-        if (depsDirect.isNotEmpty)
-          SectionPanel(
-            title: 'Direct',
-            count: depsDirect.length,
-            child: Wrap(
-              spacing: AppSpacing.medium,
-              runSpacing: AppSpacing.tiny,
-              children: depsDirect.entries.map((entry) {
-                return _buildDependencyChip(
-                  entry.key,
-                  entry.value,
-                  projectMetrics,
-                  info,
-                );
-              }).toList(),
-            ),
-          ),
-
-        if (depsDev.isNotEmpty)
-          SectionPanel(
-            title: 'Developer',
-            count: depsDev.length,
-            child: Wrap(
-              spacing: AppSpacing.medium,
-              runSpacing: AppSpacing.tiny,
-              children: depsDev.entries.map((entry) {
-                return _buildDependencyChip(
-                  entry.key,
-                  entry.value,
-                  projectMetrics,
-                  info,
-                );
-              }).toList(),
-            ),
-          ),
-
-        if (depsDirect.isEmpty && depsDev.isEmpty)
-          const EmptyLabel('No dependencies'),
-      ],
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // The pub chores are the section's actions; while one runs, both
-        // are disabled and a bar runs atop the dependencies
-        SectionPanel(
-          title: 'Dependencies',
-          count: totalDeps,
-          isExpanded: true,
-          rightWidget: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CompactTextButton(
-                icon: Icons.update,
-                label: 'Outdated',
-                tooltip: 'List packages with newer versions',
-                onPressed: pubBusy
-                    ? null
-                    : () => _show(_controller.checkOutdated()),
-              ),
-              CompactTextButton(
-                icon: Icons.arrow_upward,
-                label: 'Upgrade',
-                tooltip: 'Raise constraints to the latest resolvable versions',
-                onPressed: pubBusy
-                    ? null
-                    : () => _show(_controller.upgradePackages()),
-              ),
-            ],
-          ),
-          child: BusyBar.over(busy: pubBusy, child: dependenciesContent),
-        ),
-
-        // Outdated command output (always visible when present)
-        if (info.outdatedOutput case final output?) ...[
-          const SizedBox(height: AppSpacing.large),
-          OutputPanel(
-            title: '📄 Package Analysis Output',
-            text: output,
-            isExpanded: true,
-          ),
-        ],
-
-        // Dependency conflict output (always visible when present)
-        if (info.conflictSummary case final conflict?) ...[
-          const SizedBox(height: AppSpacing.large),
-          OutputPanel(
-            title: '⚠️ Dependency Conflicts',
-            text: conflict,
-            isExpanded: true,
-          ),
-        ],
-      ],
     );
   }
 }

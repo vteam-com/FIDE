@@ -1,14 +1,11 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/outline_node.dart';
-import 'package:fide/models/reference_search.dart';
-import 'package:fide/models/search_result.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/active_editor.dart';
-import 'package:fide/providers/editor_navigation.dart';
-import 'package:fide/providers/left_panel_tab.dart';
 import 'package:fide/providers/outline_controller.dart';
 import 'package:fide/providers/outline_providers.dart';
 import 'package:fide/providers/panel_actions.dart';
+import 'package:fide/providers/right_panel_tab.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/icon_menu_item.dart';
@@ -111,15 +108,15 @@ class FileOutline extends ConsumerWidget {
           if (!outline.isRenaming)
             MoreMenuButton(
               onPressed: (position) =>
-                  _showNodeMenu(context, ref, outline, node, position),
+                  _showNodeMenu(context, ref, node, position),
             ),
         ],
       ],
     );
   }
 
-  /// [node]'s consumer count, clickable to list them in the Search panel,
-  /// or a spinner while they are found.
+  /// [node]'s consumer count, clickable to list them in the Info tab, or
+  /// a spinner while they are found.
   Widget _buildConsumerCount(
     WidgetRef ref,
     OutlineState outline,
@@ -132,44 +129,25 @@ class FileOutline extends ConsumerWidget {
     return ContainerCounter(
       count: consumers.length,
       tooltip: consumers.length == 1
-          ? '1 consumer; click to list it in Search'
-          : '${consumers.length} consumers; click to list them in Search',
-      onTap: () => _showConsumers(ref, node, consumers),
+          ? '1 consumer; click to list it in Info'
+          : '${consumers.length} consumers; click to list them in Info',
+      onTap: () => showRightPanelTab(ref.read, RightPanelTab.info),
     );
   }
 
-  /// [node]'s actions: Rename, and once its consumers are known, Jump to
-  /// caller (when there is exactly one) and Show all callers.
+  /// [node]'s actions: Rename; the Info tab lists its callers.
   void _showNodeMenu(
     BuildContext context,
     WidgetRef ref,
-    OutlineState outline,
     OutlineNode node,
     Offset position,
   ) {
-    final consumers = outline.consumersOf(node);
     showActionMenu(context, position, [
       IconMenuItem(
         value: () => _rename(context, ref, node),
         icon: Icons.drive_file_rename_outline,
         label: 'Rename…',
       ),
-      if (consumers != null && consumers.length == 1)
-        IconMenuItem(
-          value: () => openFileAtLine(
-            ref,
-            consumers.single.filePath,
-            consumers.single.lineNumber,
-          ),
-          icon: Icons.call_made,
-          label: 'Jump to caller',
-        ),
-      if (consumers != null && consumers.isNotEmpty)
-        IconMenuItem(
-          value: () => _showConsumers(ref, node, consumers),
-          icon: Icons.manage_search,
-          label: 'Show all callers',
-        ),
     ]);
   }
 
@@ -210,18 +188,5 @@ class FileOutline extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) MessageBox.showError(context, 'Rename failed: $e');
     }
-  }
-
-  /// Lists [consumers], the uses of [node], in the left panel's Search tab.
-  void _showConsumers(
-    WidgetRef ref,
-    OutlineNode node,
-    List<SearchResult> consumers,
-  ) {
-    ref.read(referenceSearchProvider.notifier).state = ReferenceSearch(
-      name: node.usedName,
-      results: consumers,
-    );
-    showLeftPanelTab(ref.read, LeftPanelTab.search);
   }
 }
