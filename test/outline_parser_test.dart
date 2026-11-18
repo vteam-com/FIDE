@@ -53,6 +53,101 @@ void main() {
     expect([for (final n in nodes) n.isOverride], [false, true, false]);
   });
 
+  group('Dart widget trees', () {
+    /// The outline of [source] as (name, kind, level) records.
+    List<(String, OutlineKind, int)> outline(String source) => [
+      for (final node in const DartOutlineParser().parse(source))
+        (node.name, node.kind, node.level),
+    ];
+
+    test('nest each widget under the slot it fills, leaving out padding, '
+        'styles and other values', () {
+      const source = '''
+class Home extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final footer = Text('end');
+    return Scaffold(
+      appBar: AppBar(title: const Text('Home')),
+      body: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          children: [
+            if (busy) const Spinner.small() else Text('idle', style: TextStyle()),
+            for (final item in items) Item(item),
+            ...items.map((item) => Tile(item)),
+            _buildHeader(),
+            footer,
+          ],
+        ),
+      ),
+    );
+  }
+}
+''';
+
+      expect(outline(source), [
+        ('Home', OutlineKind.dartClass, 0),
+        ('build', OutlineKind.method, 1),
+        ('Scaffold', OutlineKind.widget, 2),
+        ('AppBar', OutlineKind.widget, 3),
+        ('Text', OutlineKind.widget, 4),
+        ('Padding', OutlineKind.widget, 3),
+        ('Column', OutlineKind.widget, 4),
+        ('Spinner.small', OutlineKind.widget, 5),
+        ('Text', OutlineKind.widget, 5),
+        ('Item', OutlineKind.widget, 5),
+        ('Tile', OutlineKind.widget, 5),
+        ('_buildHeader()', OutlineKind.widgetReference, 5),
+        ('footer', OutlineKind.widgetReference, 5),
+      ]);
+    });
+
+    test('follow builders and branches; only child slots outline '
+        'variables', () {
+      const source = '''
+Widget panel(bool wide, Widget? child, String name) => LayoutBuilder(
+  builder: (context, constraints) {
+    return wide
+        ? Row(children: [child ?? Empty()])
+        : ListTile(title: name, leading: Icon(Icons.add), trailing: _badge());
+  },
+);
+
+void tap() => showDialog(builder: (context) => AlertDialog());
+''';
+
+      expect(outline(source), [
+        ('panel', OutlineKind.function, 0),
+        ('LayoutBuilder', OutlineKind.widget, 1),
+        ('Row', OutlineKind.widget, 2),
+        ('child', OutlineKind.widgetReference, 3),
+        ('Empty', OutlineKind.widget, 3),
+        ('ListTile', OutlineKind.widget, 2),
+        ('Icon', OutlineKind.widget, 3),
+        ('_badge()', OutlineKind.widgetReference, 3),
+        ('tap', OutlineKind.function, 0),
+      ]);
+    });
+
+    test('keep source order around local functions', () {
+      const source = '''
+Widget build() {
+  Widget cell(String text) => Text(text);
+  return Row(children: [cell('a')]);
+}
+''';
+
+      expect(outline(source), [
+        ('build', OutlineKind.function, 0),
+        ('cell', OutlineKind.function, 1),
+        ('Text', OutlineKind.widget, 2),
+        ('Row', OutlineKind.widget, 1),
+        ('cell()', OutlineKind.widgetReference, 2),
+      ]);
+    });
+  });
+
   test('Markdown outlines headings by level', () {
     final nodes = const MarkdownOutlineParser().parse('# Title\ntext\n## Sub');
 

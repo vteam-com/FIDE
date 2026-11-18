@@ -55,8 +55,12 @@ class OutlineState {
   bool isHighlighted(OutlineNode node) =>
       cursorLine != noCursorLine && node.coversLine(cursorLine, nodes);
 
-  /// The innermost entry under the cursor, if any.
-  OutlineNode? get selected => nodes.where(isHighlighted).lastOrNull;
+  /// The innermost entry under the cursor, if any, widget-tree entries
+  /// aside: the cursor in a build function's widgets selects the function,
+  /// whose consumers are counted.
+  OutlineNode? get selected => nodes
+      .where((node) => !node.kind.isWidget && isHighlighted(node))
+      .lastOrNull;
 
   /// A copy with the given fields replaced; [countedNode] and
   /// [consumers] are replaced by [counted] and [found] when given, as

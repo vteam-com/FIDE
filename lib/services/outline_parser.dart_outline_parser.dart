@@ -1,6 +1,8 @@
 part of 'outline_parser.dart';
 
-/// Outlines Dart: classes, functions, methods and top-level variables.
+/// Outlines Dart: classes, functions, methods and top-level variables, and
+/// under each function returning widgets (`build`), the widget tree it
+/// returns.
 class DartOutlineParser extends OutlineParser {
   /// Creates the parser.
   const DartOutlineParser();

@@ -243,6 +243,20 @@ void main() {
       expect(const OutlineState(nodes: [a, run, b]).selected, isNull);
     });
 
+    test('highlights the widgets under the cursor but selects their '
+        'function', () {
+      const column = OutlineNode(
+        name: 'Column',
+        kind: OutlineKind.widget,
+        line: 3,
+        level: 2,
+      );
+      const state = OutlineState(nodes: [a, run, column, b], cursorLine: 3);
+
+      expect(state.isHighlighted(column), isTrue);
+      expect(state.selected, run);
+    });
+
     test('copyWith replaces the counted entry and its consumers', () {
       final counted = const OutlineState().copyWith(
         counted: (node: a),

@@ -9,6 +9,8 @@ extension OutlineKindStyle on OutlineKind {
     OutlineKind.dartClass => Icons.class_,
     OutlineKind.function || OutlineKind.method => Icons.functions,
     OutlineKind.variable => Icons.tag,
+    OutlineKind.widget => Icons.widgets,
+    OutlineKind.widgetReference => Icons.widgets_outlined,
     OutlineKind.heading1 => Icons.looks_one,
     OutlineKind.heading2 => Icons.looks_two,
     OutlineKind.heading3 => Icons.looks_3,
@@ -21,6 +23,7 @@ extension OutlineKindStyle on OutlineKind {
   /// [icon]'s color in [scheme].
   Color colorIn(ColorScheme scheme) => switch (this) {
     OutlineKind.dartClass ||
+    OutlineKind.widget ||
     OutlineKind.heading1 ||
     OutlineKind.heading4 ||
     OutlineKind.yamlKey => scheme.primary,
@@ -30,6 +33,7 @@ extension OutlineKindStyle on OutlineKind {
     OutlineKind.method ||
     OutlineKind.heading3 ||
     OutlineKind.heading6 => scheme.tertiary,
-    OutlineKind.variable => scheme.onSurfaceVariant,
+    OutlineKind.variable ||
+    OutlineKind.widgetReference => scheme.onSurfaceVariant,
   };
 }

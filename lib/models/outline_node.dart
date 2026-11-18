@@ -1,7 +1,7 @@
 import 'package:fide/models/outline_kind.dart';
 
-/// One entry of the outline: a declaration, heading or key with where it
-/// starts and how deeply it is nested.
+/// One entry of the outline: a declaration, widget, heading or key with
+/// where it starts and how deeply it is nested.
 class OutlineNode {
   /// Displayed name.
   final String name;

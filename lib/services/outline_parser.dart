@@ -1,6 +1,7 @@
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/source/line_info.dart';
 import 'package:fide/models/outline_kind.dart';
@@ -11,6 +12,8 @@ import 'package:yaml/yaml.dart';
 part 'outline_parser.dart_outline_parser.dart';
 part 'outline_parser.markdown_outline_parser.dart';
 part 'outline_parser.outline_visitor.dart';
+part 'outline_parser.return_collector.dart';
+part 'outline_parser.widget_tree.dart';
 part 'outline_parser.yaml_outline_parser.dart';
 
 /// Turns a file's text into its outline.

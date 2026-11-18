@@ -22,8 +22,9 @@ import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// The outline of a file: its declarations, headings or keys, the one
-/// under the editor's cursor highlighted with its consumers counted.
+/// The outline of a file: its declarations, headings or keys, and under
+/// each function returning widgets its widget tree, the entries under the
+/// editor's cursor highlighted, the declaration's consumers counted.
 class OutlinePanel extends ConsumerWidget {
   /// Creates the outline of [file].
   const OutlinePanel({super.key, required this.file});
