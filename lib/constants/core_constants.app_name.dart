@@ -7,4 +7,7 @@ class AppName {
 
   /// What [short] stands for.
   static const String full = 'Flutter Integrated Development Environment';
+
+  /// FIDE's GitHub repository, as `owner/name`: its issues and releases.
+  static const String repository = 'vteam-com/FIDE';
 }

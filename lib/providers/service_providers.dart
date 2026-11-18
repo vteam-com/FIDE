@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/services/ai_assistant.dart';
 import 'package:fide/services/app_icon_fixer.dart';
+import 'package:fide/services/app_quit.dart';
+import 'package:fide/services/app_updater.dart';
 import 'package:fide/services/arb_key_remover.dart';
 import 'package:fide/services/arb_migrator.dart';
 import 'package:fide/services/arb_service.dart';
@@ -44,8 +46,10 @@ import 'package:fide/services/string_localizer.dart';
 import 'package:fide/services/test_runner.dart';
 import 'package:fide/services/test_suite_inspector.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// Asks the user for a folder; null when they cancel.
@@ -102,6 +106,29 @@ final httpClientProvider = Provider<http.Client>((ref) {
   ref.onDispose(client.close);
   return client;
 });
+
+/// Provides the [AppUpdater] keeping FIDE up to date; null in a debug or
+/// profile build, as when FIDE runs from its source code, which Git
+/// updates.
+final appUpdaterProvider = Provider<AppUpdater?>(
+  (ref) => kReleaseMode
+      ? AppUpdater.forOperatingSystem(
+          ref.read(hostOperatingSystemProvider),
+          ref.read(httpClientProvider),
+          ref.read(processRunnerProvider),
+          executable: Platform.resolvedExecutable,
+          processId: pid,
+        )
+      : null,
+);
+
+/// Quits FIDE, as [quitApp] does; override in tests, which can't exit.
+final quitAppProvider = Provider<Future<void> Function()>((_) => quitApp);
+
+/// FIDE's version, such as `1.2.0`, as its build names it.
+final appVersionProvider = FutureProvider<String>(
+  (_) async => (await PackageInfo.fromPlatform()).version,
+);
 
 /// Provides the shared [OllamaClient], which picks the local model and
 /// says whether it can call tools.

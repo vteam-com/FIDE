@@ -6,6 +6,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/app_view_state.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/providers/active_terminal.dart';
+import 'package:fide/providers/app_update_notifier.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/app_view_notifier.dart';
 import 'package:fide/providers/ui_state_providers.dart';
@@ -67,6 +68,7 @@ class _FIDEState extends ConsumerState<FIDE> {
 
   @override
   Widget build(BuildContext context) {
+    _announceUpdates();
     _showErrors(projectOpenErrorProvider, MessageBox.showError);
     _showErrors(
       projectCreationErrorProvider,
@@ -135,6 +137,23 @@ class _FIDEState extends ConsumerState<FIDE> {
         ),
       ),
     );
+  }
+
+  /// Tells, once per release, that a newer FIDE is out, which the title
+  /// bar's update button installs; listening checks for it at launch.
+  void _announceUpdates() {
+    ref.listen(appUpdateProvider.select((update) => update.value?.version), (
+      _,
+      version,
+    ) {
+      final context = navigatorKey.currentContext;
+      if (version == null || context == null) return;
+      MessageBox.showInfo(
+        context,
+        '${AppName.short} $version is available: update and restart with '
+        'the button atop the window, beside Settings',
+      );
+    });
   }
 
   /// The welcome, project or loading view the app is on, with the

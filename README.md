@@ -20,6 +20,12 @@ FIDE is an open-source, opinionated IDE for Flutter development, built in Flutte
 
 The builds are not signed: on macOS, allow the first launch in **System Settings › Privacy & Security › Open Anyway**; on Windows, pick **More info › Run anyway**. To run FIDE from its source code instead, see [Getting Started](#getting-started).
 
+### Updates
+
+FIDE keeps itself up to date. It looks for a newer release at launch and every four hours; when one is out, it tells you and shows an update button in the title bar, beside Settings. Click it when you're ready: FIDE downloads the new build, saves your open files, quits, and restarts updated. **Settings › Updates** shows the version you run and checks again on demand.
+
+FIDE replaces itself where it is installed, so it needs to be able to write there: on macOS, move `FIDE.app` to **Applications** before its first launch (an app opened from **Downloads** runs from a read-only copy), and on Windows and Linux keep its folder in one you own. FIDE run from its source code never updates itself: Git does.
+
 ## Philosophy
 
 - **Flutter first**: the project tree, run targets, tests, localization and quality checks all understand Flutter projects
@@ -137,7 +143,7 @@ tool/release.sh patch   # or minor, major, or an exact version such as 1.2.0
 
 The script sets the new version in `pubspec.yaml` (the build number goes up by one), runs the analyzer, the tests, `fcheck --strict` and a macOS build, then commits the version, tags it `v1.2.0` and pushes both. If any step fails, `pubspec.yaml` is put back and nothing is committed.
 
-The pushed tag starts the Release workflow, which checks that the tag matches `pubspec.yaml`, tests the code, builds it for macOS, Windows and Linux, and publishes the three builds as the latest GitHub Release, which the [Download](#download) links serve as soon as the workflow ends. It then deletes the older releases (their tags stay), so GitHub stores only the latest build. To try a release first, run the Release workflow from the Actions tab: it builds any branch and keeps the builds as workflow artifacts, without making a release. Each Release run deletes the build artifacts of the runs before it.
+The pushed tag starts the Release workflow, which checks that the tag matches `pubspec.yaml`, tests the code, builds it for macOS, Windows and Linux, and publishes the three builds as the latest GitHub Release, which the [Download](#download) links serve as soon as the workflow ends, and which running FIDEs then offer to [update](#updates) to. It then deletes the older releases (their tags stay), so GitHub stores only the latest build. To try a release first, run the Release workflow from the Actions tab: it builds any branch and keeps the builds as workflow artifacts, without making a release. Each Release run deletes the build artifacts of the runs before it.
 
 ## Requirements
 

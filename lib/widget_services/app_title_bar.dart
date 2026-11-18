@@ -15,6 +15,7 @@ import 'package:fide/providers/side_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widget_services/app_command.dart';
 import 'package:fide/widget_services/project_icon.dart';
+import 'package:fide/widget_services/update_button.dart';
 import 'package:fide/widgets/app_menu_bar.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
@@ -32,8 +33,9 @@ import 'package:window_manager/window_manager.dart';
 /// The window's title bar: the project menu, the app menus where the
 /// platform has no native menu bar, the side panel buttons while a project
 /// is open, a light bulb while the project's quality needs attention, the
-/// settings button, and the window buttons on Linux. While the settings
-/// screen shows, it holds only the button closing it.
+/// update button while a newer FIDE is out, the settings button, and the
+/// window buttons on Linux. While the settings screen shows, it holds only
+/// the button closing it.
 class AppTitleBar extends ConsumerStatefulWidget {
   /// Creates the title bar showing [menus] off macOS.
   const AppTitleBar({super.key, required this.menus});
@@ -103,6 +105,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
                 // Centered between the panel buttons and the settings one
                 if (quality != null && quality.needsAttention)
                   Expanded(child: Center(child: _buildQualityButton(quality))),
+                if (!settingsVisible) const UpdateButton(),
                 settingsVisible
                     ? _buildCloseSettingsButton()
                     : _buildSettingsButton(),

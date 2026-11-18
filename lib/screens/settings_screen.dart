@@ -1,12 +1,18 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/app_release.dart';
+import 'package:fide/models/readable_error.dart';
 import 'package:fide/models/shortcut_help_entry.dart';
+import 'package:fide/providers/app_update_notifier.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/widget_services/update_button.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/card_grid.dart';
 import 'package:fide/widgets/centered_content.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/page_scroll_view.dart';
+import 'package:fide/widgets/refresh_button.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/theme_mode_buttons.dart';
 import 'package:fide/widgets/zoom_buttons.dart';
@@ -15,9 +21,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// The full-screen settings: the display mode and zoom, then the keyboard shortcuts
-/// of the app's menus. Escape or the title bar's close button leaves it,
-/// giving the keyboard focus back to where it was.
+/// The full-screen settings: the display mode and zoom, FIDE's version and
+/// its updates, then the keyboard shortcuts of the app's menus. Escape or
+/// the title bar's close button leaves it, giving the keyboard focus back
+/// to where it was.
 ///
 /// It paints no background: it shows on the window's workspace gradient.
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -93,6 +100,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     _buildSettingRow('Zoom', _buildZoomButtons()),
                   ]),
+                  _buildSection('Updates', [_buildUpdateRow()]),
                 ],
               ),
             ),
@@ -167,6 +175,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       onZoomOut: zoom > AppZoom.levels.first ? controller.zoomOut : null,
       onZoomIn: zoom < AppZoom.levels.last ? controller.zoomIn : null,
     );
+  }
+
+  /// The running version and whether a newer one is out, beside the
+  /// button installing it and the one checking again.
+  Widget _buildUpdateRow() {
+    final canUpdate = ref.watch(appUpdaterProvider) != null;
+    final update = ref.watch(appUpdateProvider);
+    return _buildSettingRow(
+      _updateSummary(canUpdate, update),
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: AppSpacing.medium,
+        children: [
+          const UpdateButton(),
+          if (canUpdate)
+            RefreshButton(
+              onPressed: ref.read(appUpdateProvider.notifier).check,
+              busy: update.isLoading,
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// The running version, then what the last check for a newer one,
+  /// [update], found; a build that can't update itself, as [canUpdate]
+  /// tells, runs from its source code.
+  String _updateSummary(bool canUpdate, AsyncValue<AppRelease?> update) {
+    final running =
+        '${AppName.short} ${ref.watch(appVersionProvider).value ?? ''}';
+    final release = update.value;
+    return switch (update) {
+      _ when !canUpdate =>
+        '$running runs from its source code, which Git updates',
+      AsyncError(:final error) =>
+        "$running: couldn't check for a newer version: "
+            '${ReadableError.describe(error)}',
+      _ when release != null =>
+        '$running: version ${release.version} is available',
+      AsyncValue(hasValue: true) => '$running is up to date',
+      _ => running,
+    };
   }
 
   /// The card listing the [entries] of [menu], each command beside its

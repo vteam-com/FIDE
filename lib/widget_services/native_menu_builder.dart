@@ -5,12 +5,13 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/left_panel_tab.dart';
 import 'package:fide/providers/panel_actions.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/side_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/services/app_quit.dart';
 import 'package:fide/widget_services/app_command.dart';
 import 'package:fide/widget_services/project_git_actions.dart';
 import 'package:fide/widgets/goto_line_dialog.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -41,17 +42,7 @@ class NativeMenuBuilder {
     return PlatformMenu(
       label: AppName.short,
       menus: [
-        PlatformMenuItem(
-          label: 'About',
-          onSelected: () {
-            showAboutDialog(
-              context: context,
-              applicationName: AppName.short,
-              applicationVersion: '1.0.0',
-              applicationLegalese: '© 2025 ${AppName.short}',
-            );
-          },
-        ),
+        PlatformMenuItem(label: 'About', onSelected: _showAbout),
         PlatformMenuItem(
           label: 'Settings',
           shortcut: AppShortcut.settings,
@@ -61,9 +52,21 @@ class NativeMenuBuilder {
         const PlatformMenuItem(
           label: 'Quit ${AppName.short}',
           shortcut: AppShortcut.quit,
-          onSelected: SystemNavigator.pop,
+          onSelected: quitApp,
         ),
       ],
+    );
+  }
+
+  /// Shows the About dialog, naming FIDE's version.
+  Future<void> _showAbout() async {
+    final version = await ref.read(appVersionProvider.future);
+    if (!context.mounted) return;
+    showAboutDialog(
+      context: context,
+      applicationName: AppName.short,
+      applicationVersion: version,
+      applicationLegalese: '© 2025 ${AppName.short}',
     );
   }
 

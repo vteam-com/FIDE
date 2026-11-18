@@ -16,7 +16,8 @@ class EditorScreenUnsupportedFileView extends StatelessWidget {
   });
 
   /// Where users ask for support of new file types.
-  static const String _issuesUrl = 'https://github.com/vteam-com/FIDE/issues';
+  static const String _issuesUrl =
+      'https://github.com/${AppName.repository}/issues';
 
   /// The file that can't be shown.
   final String filePath;

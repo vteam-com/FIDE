@@ -13,6 +13,7 @@ class ReadableError {
   /// type name.
   static String describe(Object error) => switch (error) {
     ProcessException(:final message) => message,
+    HttpException(:final message) || SocketException(:final message) => message,
     FormatException(:final message) => message,
     FileSystemException(:final message, :final path) => '$message: $path',
     StateError(:final message) => message,

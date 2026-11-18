@@ -227,4 +227,18 @@ class ProcessRunner {
     await drained;
     return exitCode;
   }
+
+  /// The arguments of `powershell` running [script] as written: without
+  /// the user's profile, and never waiting for input.
+  static List<String> powerShellArguments(String script) => [
+    '-NoProfile',
+    '-NonInteractive',
+    '-Command',
+    script,
+  ];
+
+  /// [text] as a PowerShell string literal: single-quoted, so nothing in
+  /// it expands, each single quote in it doubled.
+  static String powerShellLiteral(String text) =>
+      "'${text.replaceAll("'", "''")}'";
 }

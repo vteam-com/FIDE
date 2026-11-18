@@ -18,4 +18,17 @@ void main() {
     );
     expect(ReadableError.describe('plain'), 'plain');
   });
+
+  test('describe keeps the message of network errors', () {
+    expect(
+      ReadableError.describe(
+        const HttpException('api.github.com answered 500'),
+      ),
+      'api.github.com answered 500',
+    );
+    expect(
+      ReadableError.describe(const SocketException('Failed host lookup')),
+      'Failed host lookup',
+    );
+  });
 }

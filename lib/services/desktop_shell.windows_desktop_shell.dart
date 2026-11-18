@@ -14,15 +14,14 @@ class WindowsDesktopShell extends DesktopShell {
   Future<void> openWithDefaultApp(String file) =>
       runner.run('cmd', ['/c', 'start', '', file]);
 
-  // A single quote is doubled inside a PowerShell single-quoted string
   @override
-  Future<Process> playSound(String file) => runner.start('powershell', [
-    '-NoProfile',
-    '-NonInteractive',
-    '-Command',
-    "(New-Object Media.SoundPlayer '${file.replaceAll("'", "''")}')"
-        '.PlaySync()',
-  ]);
+  Future<Process> playSound(String file) => runner.start(
+    'powershell',
+    ProcessRunner.powerShellArguments(
+      '(New-Object Media.SoundPlayer ${ProcessRunner.powerShellLiteral(file)})'
+      '.PlaySync()',
+    ),
+  );
 
   @override
   Future<void> revealFile(String file) =>

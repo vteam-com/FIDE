@@ -2,6 +2,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/app_view_notifier.dart';
+import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/centered_scroll_view.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
@@ -13,7 +14,6 @@ import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart' as p;
 
 /// The welcome screen: open or create a project, or reopen a recent one.
@@ -26,17 +26,10 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 }
 
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
-  String _appVersion = '1.0.0';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadAppVersion();
-  }
-
   @override
   Widget build(BuildContext context) {
     final view = ref.read(appViewProvider.notifier);
+    final appVersion = ref.watch(appVersionProvider).value ?? '';
     return ScreenScaffold(
       child: LayoutBuilder(
         builder: (context, _) {
@@ -58,7 +51,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   ),
                   // Version Info
                   Text(
-                    'Version\n$_appVersion',
+                    'Version\n$appVersion',
                     style: AppTextStyle.secondary(context),
                     textAlign: TextAlign.center,
                   ),
@@ -131,19 +124,5 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             : null,
       );
     }).toList();
-  }
-
-  /// Fetches the app version from the package info plugin and stores it in [_appVersion].
-  Future<void> _loadAppVersion() async {
-    try {
-      final packageInfo = await PackageInfo.fromPlatform();
-      if (mounted) {
-        setState(() {
-          _appVersion = packageInfo.version;
-        });
-      }
-    } catch (_) {
-      // Keep default version if loading fails
-    }
   }
 }

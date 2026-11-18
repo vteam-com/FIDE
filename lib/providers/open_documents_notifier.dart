@@ -87,7 +87,7 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
   Future<Map<String, String>> applyEdits(
     Future<Map<String, String>> Function() edit,
   ) async {
-    await _saveAll();
+    await saveAll();
     final files = await edit();
     final editedMeanwhile = state.documents.where(
       (document) => document.isDirty && files.containsKey(document.filePath),
@@ -261,7 +261,7 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
   /// Saves every document with unsaved edits: the showing one through
   /// [activeEditor], the others (and that one without an editor) from
   /// their recorded content.
-  Future<void> _saveAll() async {
+  Future<void> saveAll() async {
     if (state.active?.isDirty ?? false) await activeEditor?.save();
     for (final document in state.documents.where((d) => d.isDirty).toList()) {
       await save(document.filePath, document.content);

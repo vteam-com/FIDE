@@ -35,6 +35,10 @@ class AppDuration {
   static const Duration gitOperationTimeout = Duration(seconds: 30);
   static const Duration loginShellTimeout = Duration(seconds: 30);
 
+  /// How often a running FIDE asks GitHub whether a newer release is out,
+  /// well within GitHub's limit on unauthenticated requests.
+  static const Duration updateCheckInterval = Duration(hours: 4);
+
   /// How long after the login shell's `PATH` failed to read it is read
   /// again, in the background.
   static const Duration loginShellRetryInterval = Duration(minutes: 1);
