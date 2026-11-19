@@ -45,7 +45,8 @@ class SectionPanel extends StatefulWidget {
   /// Called with the new expansion each time the header is tapped.
   final ValueChanged<bool>? onExpansionChanged;
 
-  /// Shown at the end of the header, before [count], such as actions.
+  /// Shown at the end of the header, before [count], such as actions; in a
+  /// narrow panel kept, as icons alone, after the count hides.
   final Widget? rightWidget;
 
   /// The section heading, shown in capitals.
@@ -88,7 +89,8 @@ class _SectionPanelState extends State<SectionPanel> {
             onTap: _toggle,
             child: SurfaceHeaderBand(
               // In a narrow panel the title keeps its room: the actions
-              // drop their labels, then hide
+              // drop their labels, then the count hides; the actions stay
+              // within reach, the title ellipsizing for them
               child: PriorityRow(
                 spacing: AppSpacing.tiny,
                 leading: ExpansionChevron(isExpanded: _isExpanded),
@@ -98,6 +100,9 @@ class _SectionPanelState extends State<SectionPanel> {
                 compactTrailing: trailing == null
                     ? null
                     : IconOnlyLabels(child: trailing),
+                essentialTrailing: rightWidget == null
+                    ? null
+                    : IconOnlyLabels(child: rightWidget),
               ),
             ),
           ),

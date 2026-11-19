@@ -4,14 +4,22 @@ import 'package:flutter/rendering.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The parts of a [PriorityRow], the slots of its children.
-enum PriorityRowSlot { leading, title, trailing, compactTrailing }
+enum PriorityRowSlot {
+  leading,
+  title,
+  trailing,
+  compactTrailing,
+  essentialTrailing,
+}
 
 /// A row of a fixed [leading] glyph, a [title] filling the width, and
 /// [trailing] extras (badges, counts, actions) at the end, where the title
 /// has priority: as the row narrows, the title keeps at least
 /// [titleMinShare] of the room after [leading] (all of it when shorter),
-/// the extras give way to [compactTrailing], then hide, rather than
-/// squeezing the title.
+/// the extras give way to [compactTrailing], then [essentialTrailing], then
+/// hide, rather than squeezing the title. [essentialTrailing] alone never
+/// hides: the title ellipsizes to make room for it, so the actions it holds
+/// stay within reach.
 ///
 /// A [packed] row puts [trailing] right after the title's own width instead,
 /// leaving the end of the row empty.
@@ -27,6 +35,7 @@ class PriorityRow
     required this.title,
     this.trailing,
     this.compactTrailing,
+    this.essentialTrailing,
     this.packed = false,
     this.spacing = 0,
   });
@@ -36,8 +45,15 @@ class PriorityRow
   static const double titleMinShare = 0.5;
 
   /// Narrower stand-in for [trailing], such as its actions as icons only,
-  /// shown when [trailing] does not fit; hidden too when it does not.
+  /// shown when [trailing] does not fit; hidden too when it does not, giving
+  /// way to [essentialTrailing].
   final Widget? compactTrailing;
+
+  /// The part of [trailing] that must stay within reach, such as its
+  /// actions alone as icons: shown when neither [trailing] nor
+  /// [compactTrailing] fits, then kept even when the title must ellipsize
+  /// to leave it room.
+  final Widget? essentialTrailing;
 
   /// Fixed glyph at the start, such as an icon or a chevron.
   final Widget? leading;
@@ -65,6 +81,7 @@ class PriorityRow
       PriorityRowSlot.title => title,
       PriorityRowSlot.trailing => trailing,
       PriorityRowSlot.compactTrailing => compactTrailing,
+      PriorityRowSlot.essentialTrailing => essentialTrailing,
     };
   }
 
@@ -85,7 +102,8 @@ class PriorityRow
 }
 
 /// Lays out a [PriorityRow]: measures every part, then shows [leading],
-/// the title and the widest trailing part that leaves the title its share.
+/// the title and the widest trailing part that leaves the title its share,
+/// or else the essential one, which the title makes room for.
 class _RenderPriorityRow extends RenderBox
     with SlottedContainerRenderObjectMixin<PriorityRowSlot, RenderBox> {
   _RenderPriorityRow(this._spacing, this._packed);
@@ -119,6 +137,8 @@ class _RenderPriorityRow extends RenderBox
 
   RenderBox get _title => childForSlot(PriorityRowSlot.title)!;
 
+  RenderBox? get _essential => childForSlot(PriorityRowSlot.essentialTrailing);
+
   /// The parts painted, hit and read out, in paint order.
   List<RenderBox> get _shown => [?_leading, _title, ?_shownTrailing];
 
@@ -134,6 +154,7 @@ class _RenderPriorityRow extends RenderBox
     final candidates = <RenderBox>[
       ?childForSlot(PriorityRowSlot.trailing),
       ?childForSlot(PriorityRowSlot.compactTrailing),
+      ?_essential,
     ];
     for (final candidate in candidates) {
       candidate.layout(heightOnly, parentUsesSize: true);
@@ -154,7 +175,8 @@ class _RenderPriorityRow extends RenderBox
         ? math.max(0.0, constraints.maxWidth - leadingWidth)
         : titleNatural + (candidates.isEmpty ? 0 : widthOf(candidates.first));
     final titleMin = math.min(titleNatural, room * PriorityRow.titleMinShare);
-    _shownTrailing = null;
+    // The first part leaving the title its share, else the essential one
+    _shownTrailing = _essential;
     for (final candidate in candidates) {
       if (titleMin + widthOf(candidate) <= room) {
         _shownTrailing = candidate;
@@ -164,7 +186,7 @@ class _RenderPriorityRow extends RenderBox
     final shownTrailing = _shownTrailing;
     final titleRoom = shownTrailing == null
         ? room
-        : room - widthOf(shownTrailing);
+        : math.max(0.0, room - widthOf(shownTrailing));
     final titleWidth = _packed ? math.min(titleNatural, titleRoom) : titleRoom;
     title.layout(
       BoxConstraints(
@@ -223,21 +245,21 @@ class _RenderPriorityRow extends RenderBox
 
   @override
   double computeMinIntrinsicWidth(double height) {
-    final leading = _leading;
-    return leading == null
-        ? 0
-        : leading.getMinIntrinsicWidth(height) + _spacing;
+    double min(RenderBox box) => box.getMinIntrinsicWidth(height);
+    return _gapped(_leading, min) + _gapped(_essential, min);
   }
 
   @override
   double computeMaxIntrinsicWidth(double height) {
-    final trailing = childForSlot(PriorityRowSlot.trailing);
-    return computeMinIntrinsicWidth(height) +
+    final trailing = childForSlot(PriorityRowSlot.trailing) ?? _essential;
+    return _gapped(_leading, (box) => box.getMinIntrinsicWidth(height)) +
         _title.getMaxIntrinsicWidth(height) +
-        (trailing == null
-            ? 0
-            : trailing.getMaxIntrinsicWidth(height) + _spacing);
+        _gapped(trailing, (box) => box.getMaxIntrinsicWidth(height));
   }
+
+  /// [box]'s width by [measure] with the gap after it; none without [box].
+  double _gapped(RenderBox? box, double Function(RenderBox box) measure) =>
+      box == null ? 0 : measure(box) + _spacing;
 
   @override
   double computeMinIntrinsicHeight(double width) => children

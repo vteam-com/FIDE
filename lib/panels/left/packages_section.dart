@@ -24,7 +24,7 @@ import 'package:material_ui/material_ui.dart';
 /// The Run tab's package management: the project's direct and developer
 /// dependencies, each opening its pub.dev page, flagged when outdated or
 /// conflicting; listing the outdated ones, upgrading them, editing
-/// pubspec.yaml, and what pub reported.
+/// pubspec.yaml, and, within the same section, what pub reported.
 class PackagesSection extends ConsumerWidget {
   /// Creates the section of the open project.
   const PackagesSection({super.key});
@@ -74,52 +74,9 @@ class PackagesSection extends ConsumerWidget {
           ),
         if (depsDirect.isEmpty && depsDev.isEmpty)
           const EmptyLabel('No dependencies'),
-      ],
-    );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: AppSpacing.large,
-      children: [
-        // The pub chores are the section's actions; while one runs, both
-        // are disabled and a bar runs atop the dependencies
-        SectionPanel(
-          title: 'Dependencies',
-          count: depsDirect.length + depsDev.length,
-          isExpanded: true,
-          rightWidget: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CompactTextButton(
-                icon: Icons.update,
-                label: 'Outdated',
-                tooltip: 'List packages with newer versions',
-                onPressed: pubBusy
-                    ? null
-                    : () => show(controller.checkOutdated()),
-              ),
-              // The quick fix the CocoaPods issue offers too: one upgrade,
-              // confirmed alike
-              CompactTextButton(
-                icon: QuickFix.upgradePackages.icon,
-                label: 'Upgrade',
-                tooltip: 'Raise constraints to the latest resolvable versions',
-                onPressed: pubBusy
-                    ? null
-                    : () =>
-                          applyQuickFix(context, ref, QuickFix.upgradePackages),
-              ),
-              CompactIconButton(
-                icon: Icons.edit_note,
-                tooltip: 'Edit pubspec.yaml',
-                onPressed: () => _openPubspecYaml(context, ref),
-              ),
-            ],
-          ),
-          child: BusyBar.over(busy: pubBusy, child: dependenciesContent),
-        ),
-
-        // What pub printed, always shown when present
+        // What pub printed for the section's actions, under the packages
+        // it reports on
         if (info.outdatedOutput case final output?)
           OutputPanel(
             title: 'Outdated Packages',
@@ -133,6 +90,41 @@ class PackagesSection extends ConsumerWidget {
             isExpanded: true,
           ),
       ],
+    );
+
+    // The pub chores are the section's actions; while one runs, both are
+    // disabled and a bar runs atop the dependencies
+    return SectionPanel(
+      title: 'Dependencies',
+      count: depsDirect.length + depsDev.length,
+      isExpanded: true,
+      rightWidget: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CompactTextButton(
+            icon: Icons.update,
+            label: 'Outdated',
+            tooltip: 'List packages with newer versions',
+            onPressed: pubBusy ? null : () => show(controller.checkOutdated()),
+          ),
+          // The quick fix the CocoaPods issue offers too: one upgrade,
+          // confirmed alike
+          CompactTextButton(
+            icon: QuickFix.upgradePackages.icon,
+            label: 'Upgrade',
+            tooltip: 'Raise constraints to the latest resolvable versions',
+            onPressed: pubBusy
+                ? null
+                : () => applyQuickFix(context, ref, QuickFix.upgradePackages),
+          ),
+          CompactIconButton(
+            icon: Icons.edit_note,
+            tooltip: 'Edit pubspec.yaml',
+            onPressed: () => _openPubspecYaml(context, ref),
+          ),
+        ],
+      ),
+      child: BusyBar.over(busy: pubBusy, child: dependenciesContent),
     );
   }
 

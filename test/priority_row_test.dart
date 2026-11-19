@@ -18,6 +18,9 @@ const double _narrowWidth = 300;
 /// A panel too narrow for any extra beside the title.
 const double _tinyWidth = 100;
 
+/// The count of changes in [_section].
+const _changeCount = 3;
+
 /// The labels of the title bar's menus off macOS.
 const _menuLabels = ['FIDE', 'File', 'Edit', 'Run', 'View'];
 
@@ -53,9 +56,10 @@ Future<void> _pumpIn(WidgetTester tester, double width, Widget child) {
   );
 }
 
-/// A section with the Git panel's kind of labeled actions.
+/// A section with the Git panel's kind of labeled actions, and a count.
 SectionPanel _section() => SectionPanel(
   title: 'Changes',
+  count: _changeCount,
   rightWidget: Row(
     mainAxisSize: MainAxisSize.min,
     children: [
@@ -71,23 +75,28 @@ SectionPanel _section() => SectionPanel(
 
 void main() {
   testWidgets('a section header keeps its title on one line as it narrows: '
-      'labeled actions, then icons, then none', (tester) async {
+      'labeled actions, then icons, then icons without the count, kept as '
+      'the title ellipsizes', (tester) async {
     final title = find.text('Changes');
     final label = find.text('Stage All').hitTestable();
     final icon = find.byIcon(Icons.add).hitTestable();
+    final count = find.text('$_changeCount').hitTestable();
 
     await _pumpIn(tester, _wideWidth, _section());
     final lineHeight = tester.getSize(title).height;
     expect(label, findsOneWidget);
+    expect(count, findsOneWidget);
 
     await _pumpIn(tester, _narrowWidth, _section());
     expect(label, findsNothing);
     expect(icon, findsOneWidget);
+    expect(count, findsOneWidget);
     expect(tester.getSize(title).height, lineHeight);
 
     await _pumpIn(tester, _tinyWidth, _section());
     expect(tester.takeException(), isNull);
-    expect(icon, findsNothing);
+    expect(icon, findsOneWidget);
+    expect(count, findsNothing);
     expect(tester.getSize(title).height, lineHeight);
   });
 
