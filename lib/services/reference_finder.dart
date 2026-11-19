@@ -8,13 +8,14 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
-import 'package:analyzer/file_system/overlay_file_system.dart';
-import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer/source/line_info.dart';
 import 'package:fide/models/lookup_field.dart';
 import 'package:fide/models/search_result.dart';
 import 'package:fide/models/text_offsets.dart';
+import 'package:fide/models/unique_name.dart';
 import 'package:fide/services/compile_errors.dart';
+import 'package:fide/services/file_type_utils.dart';
+import 'package:fide/services/flutter_sdk.dart';
 import 'package:path/path.dart' as p;
 
 part 'reference_finder.callee_visitor.dart';
@@ -47,9 +48,8 @@ class ReferenceFinder {
   /// `dartSdkPathProvider`.
   ReferenceFinder({required this._projectPath, required this._dartSdkPath});
 
-  /// Root of the Dart SDK bundled with Flutter; null when Flutter isn't
-  /// found.
-  final Future<String?> Function() _dartSdkPath;
+  /// Root of the Dart SDK bundled with Flutter.
+  final DartSdkFinder _dartSdkPath;
 
   Isolate? _isolate;
 
@@ -140,10 +140,12 @@ class ReferenceFinder {
 
   /// Starts the analysis isolate and returns its request port.
   Future<SendPort> _spawn() async {
-    final sdkPath = await _dartSdkPath();
-    if (sdkPath == null) {
+    final String sdkPath;
+    try {
+      sdkPath = await _dartSdkPath();
+    } catch (_) {
       _worker = null;
-      throw Exception('Flutter SDK not found');
+      rethrow;
     }
     // A worker failing to start reports its error, or just exits, on the
     // same port, so the lookups waiting on it fail instead of hanging

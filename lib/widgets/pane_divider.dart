@@ -9,6 +9,6 @@ class PaneDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const VerticalDivider(width: AppSize.borderThin);
+    return const VerticalDivider(width: AppBorderWidth.thin);
   }
 }

@@ -45,4 +45,37 @@ void main() {
       added,
     );
   });
+
+  test('withImport keeps dart, package, then relative imports in order', () {
+    const content = "import 'dart:io';\n\nimport 'a.dart';\n\nclass A {}\n";
+
+    expect(
+      withImport(content, 'package:b/b.dart', isImported: (_) => false),
+      "import 'dart:io';\n\nimport 'package:b/b.dart';\nimport 'a.dart';\n"
+      '\nclass A {}\n',
+    );
+  });
+
+  test('withDirective adds a part after the other directives', () {
+    const content = "import 'dart:io';\n\nclass A {}\n";
+
+    expect(
+      withDirective(content, "part 'a.b.dart';"),
+      "import 'dart:io';\npart 'a.b.dart';\n\nclass A {}\n",
+    );
+  });
+
+  test('compareDirectiveLines sorts dart, package, then relative URIs', () {
+    final lines = [
+      "import 'b.dart';",
+      "import 'package:a/a.dart';",
+      "import 'dart:io';",
+    ]..sort(compareDirectiveLines);
+
+    expect(lines, [
+      "import 'dart:io';",
+      "import 'package:a/a.dart';",
+      "import 'b.dart';",
+    ]);
+  });
 }

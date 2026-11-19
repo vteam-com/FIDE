@@ -43,6 +43,6 @@ void main() {
     expect(find.text('Outdated'), findsOneWidget);
     expect(find.text('Upgrade'), findsOneWidget);
     // The header's actions are built full and compact, for a narrow panel
-    expect(find.byTooltip('Edit pubspec.yaml'), findsWidgets);
+    expect(find.byTooltip('Open pubspec.yaml'), findsWidgets);
   });
 }

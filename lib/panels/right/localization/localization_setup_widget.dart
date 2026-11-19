@@ -27,28 +27,33 @@ class LocalizationSetupWidget extends StatelessWidget {
           'Your Flutter project needs localization setup.',
           style: AppTextStyle.label,
         ),
-        ActionCard(
-          title: 'Initialize Localization',
-          icon: AppIcon.fix,
-          description:
-              'Automatically configure everything needed for localization',
-          steps: const [
-            'Add flutter_localizations & intl packages',
-            'Create l10n directory and ARB files',
-            'Generate AppLocalizations class',
-          ],
-          action: PrimaryButton(
-            icon: AppIcon.fix,
-            label: 'Initialize',
-            onPressed: onInitializeLocalization,
-          ),
-        ),
+        initializeCard(onInitializeLocalization),
         const SectionTitle('Next Steps'),
         Text(
           'After setup, use AppLocalizations.of(context) to display localized strings in your widgets.',
           style: AppTextStyle.label,
         ),
       ],
+    );
+  }
+
+  /// The card setting localization up, calling [onPressed]: shown here
+  /// and as the next step of a project missing its ARB files, alike.
+  static Widget initializeCard(VoidCallback onPressed) {
+    return ActionCard(
+      title: 'Initialize Localization',
+      icon: AppIcon.fix,
+      description: 'Automatically configure everything needed for localization',
+      steps: const [
+        'Add flutter_localizations & intl packages',
+        'Create l10n directory and ARB files',
+        'Generate AppLocalizations class',
+      ],
+      action: PrimaryButton(
+        icon: AppIcon.fix,
+        label: 'Initialize',
+        onPressed: onPressed,
+      ),
     );
   }
 }

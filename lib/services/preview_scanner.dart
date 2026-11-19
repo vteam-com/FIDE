@@ -1,7 +1,6 @@
-import 'package:analyzer/dart/analysis/features.dart';
-import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/source/line_info.dart';
+import 'package:fide/models/dart_parse.dart';
 import 'package:fide/models/preview_scan.dart';
 
 /// Finds the widget previews, widgets and imports of a Dart file from its
@@ -30,11 +29,7 @@ class PreviewScanner {
   PreviewScan scan(String content) {
     final CompilationUnit unit;
     try {
-      unit = parseString(
-        content: content,
-        featureSet: FeatureSet.latestLanguageVersion(),
-        throwIfDiagnostics: false,
-      ).unit;
+      unit = parseDart(content).unit;
     } on Object {
       return PreviewScan.empty;
     }

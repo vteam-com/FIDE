@@ -11,7 +11,20 @@ class CompactToggleButton extends StatelessWidget {
     required this.tooltip,
     required this.isOn,
     required this.onChanged,
-  });
+  }) : _isHeader = false;
+
+  /// Creates the toggle for the strip atop a panel, as large as the
+  /// [CompactIconButton.header]s beside it.
+  const CompactToggleButton.header({
+    super.key,
+    required this.icon,
+    required this.tooltip,
+    required this.isOn,
+    required this.onChanged,
+  }) : _isHeader = true;
+
+  /// Whether the toggle sits in the strip atop a panel.
+  final bool _isHeader;
 
   /// The glyph shown.
   final IconData icon;
@@ -27,11 +40,20 @@ class CompactToggleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CompactIconButton(
-      icon: icon,
-      selected: isOn,
-      tooltip: '$tooltip (${isOn ? 'ON' : 'OFF'})',
-      onPressed: () => onChanged(!isOn),
-    );
+    final tooltip = '${this.tooltip} (${isOn ? 'ON' : 'OFF'})';
+    void onPressed() => onChanged(!isOn);
+    return _isHeader
+        ? CompactIconButton.header(
+            icon: icon,
+            selected: isOn,
+            tooltip: tooltip,
+            onPressed: onPressed,
+          )
+        : CompactIconButton(
+            icon: icon,
+            selected: isOn,
+            tooltip: tooltip,
+            onPressed: onPressed,
+          );
   }
 }

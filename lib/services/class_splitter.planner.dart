@@ -3,24 +3,15 @@ part of 'class_splitter.dart';
 /// A text range to delete from a file.
 typedef _Removal = ({int offset, int end});
 
-/// A directive line to add to a file; parts go after every other directive.
-typedef _Insertion = ({String line, bool isPart});
-
 /// Plans a [ClassSplitter] run over an overlay of the project, so every
 /// step re-resolves the files as already changed, without touching disk.
 class _Planner {
   _Planner({
     required String sdkPath,
     required String projectPath,
-    required String filePath,
+    required this._filePath,
     required this._readFile,
-  }) : _filePath = filePath {
-    _context = AnalysisContextCollection(
-      includedPaths: [projectPath],
-      resourceProvider: _provider,
-      sdkPath: sdkPath,
-    ).contextFor(filePath);
-  }
+  }) : _analysis = OverlayAnalysis(projectPath: projectPath, sdkPath: sdkPath);
 
   /// Key of the `dart:core` library, which every file imports implicitly.
   static final Uri _dartCore = Uri.parse('dart:core');
@@ -36,14 +27,16 @@ class _Planner {
   /// The project's Dart files on disk, listed once, on first use.
   late final List<String> _dartFiles = [
     for (final path in _context.contextRoot.analyzedFiles())
-      if (path.endsWith('.dart')) path,
+      if (FileTypeUtils.isDartFile(path)) path,
   ];
 
-  final OverlayResourceProvider _provider = OverlayResourceProvider(
-    PhysicalResourceProvider.INSTANCE,
-  );
+  /// The project's analysis, with the planned files overlaid.
+  final OverlayAnalysis _analysis;
 
-  late final AnalysisContext _context;
+  /// The context analyzing the file being split.
+  late final AnalysisContext _context = _analysis.collection.contextFor(
+    _filePath,
+  );
 
   /// Planned content of every changed file.
   final Map<String, String> _changed = {};
@@ -55,16 +48,15 @@ class _Planner {
   /// files start at zero.
   final Map<String, int> _baselineErrors = {};
 
-  int _modificationStamp = 0;
-
   /// Splits [_filePath] until one public class is left, then checks that
   /// no changed file gained compile errors.
   Future<ClassSplitResult> run() async {
     // Unresolved code (stale packages, broken imports) can't be split safely
-    final existing = await _errorsIn(_filePath);
+    final existing = await _analysis.errorsIn(_filePath);
     if (existing.isNotEmpty) {
       throw ClassSplitException(
-        '${p.basename(_filePath)} has ${existing.length} compile error(s); '
+        '${p.basename(_filePath)} has '
+        '${existing.length.count('compile error')}; '
         'fix them, or run `flutter pub get`, and try again:\n'
         '${existing.first}',
       );
@@ -230,35 +222,28 @@ class _Planner {
         unit.content.substring(range.offset, range.end).trim(),
     ].join('\n\n');
     final removals = <String, List<_Removal>>{unit.path: ranges};
-    final insertions = <String, List<_Insertion>>{};
-    void insert(String path, String line, {bool isPart = false}) => insertions
-        .putIfAbsent(path, () => [])
-        .add((line: line, isPart: isPart));
+    // Directive lines to add to each file, placed by [withDirective]
+    final insertions = <String, List<String>>{};
+    void insert(String path, String line) =>
+        insertions.putIfAbsent(path, () => []).add(line);
 
     final String newContent;
     if (tangled) {
       newContent =
           "part of '${relativeUriOf(rootPath, from: newPath)}';\n\n$classText\n";
-      insert(
-        rootPath,
-        "part '${relativeUriOf(newPath, from: rootPath)}';",
-        isPart: true,
-      );
+      insert(rootPath, "part '${relativeUriOf(newPath, from: rootPath)}';");
     } else {
-      final header =
-          [
-            for (final (neededUnit, directive) in needed)
-              _directiveFor(neededUnit, directive, newPath),
-            if (inner.any(
-              (r) =>
-                  r.needsImport &&
-                  r.top.library == libraryElement &&
-                  !isMoving(r.top),
-            ))
-              "import '${relativeUriOf(rootPath, from: newPath)}';",
-          ]..sort(
-            (a, b) => _uriOrder(_lineUri(a)).compareTo(_uriOrder(_lineUri(b))),
-          );
+      final header = [
+        for (final (neededUnit, directive) in needed)
+          _directiveFor(neededUnit, directive, newPath),
+        if (inner.any(
+          (r) =>
+              r.needsImport &&
+              r.top.library == libraryElement &&
+              !isMoving(r.top),
+        ))
+          "import '${relativeUriOf(rootPath, from: newPath)}';",
+      ]..sort(compareDirectiveLines);
       newContent = [
         if (header.isNotEmpty) '${header.join('\n')}\n',
         '$classText\n',
@@ -292,7 +277,7 @@ class _Planner {
     // Read errors while the session still matches the files
     for (final path in edited) {
       if (!_baselineErrors.containsKey(path)) {
-        _baselineErrors[path] = (await _errorsIn(path)).length;
+        _baselineErrors[path] = (await _analysis.errorsIn(path)).length;
       }
     }
     _baselineErrors[newPath] = 0;
@@ -308,7 +293,7 @@ class _Planner {
     }
     _created.add(newPath);
     _write(newPath, newContent);
-    await _context.applyPendingFileChanges();
+    await _analysis.applyChanges();
   }
 
   /// Points every other library using [moved] through [rootPath] at
@@ -394,25 +379,14 @@ class _Planner {
 
   /// Throws when a changed file has more compile errors than before.
   Future<void> _checkErrors() async {
-    await _context.applyPendingFileChanges();
-    final problems = <String>[];
-    for (final path in _changed.keys) {
-      final errors = await _errorsIn(path);
-      if (errors.length > (_baselineErrors[path] ?? 0)) {
-        problems.add(errors.first);
-      }
-    }
-    if (problems.isNotEmpty) {
-      throw ClassSplitException(
-        'Splitting would break the build, so nothing was changed:\n'
-        '${problems.join('\n')}',
-      );
-    }
+    await _analysis.applyChanges();
+    await _analysis.checkNoNewErrors(
+      _changed.keys,
+      _baselineErrors,
+      action: 'Splitting',
+      failure: ClassSplitException.new,
+    );
   }
-
-  /// Compile errors currently reported for [path].
-  Future<List<String>> _errorsIn(String path) =>
-      compileErrors(_context.currentSession, path);
 
   /// [path]'s planned content, else its text on disk, read at most once.
   String _textOf(String path) =>
@@ -421,12 +395,7 @@ class _Planner {
   /// Overlays [content] at [path] for the next analysis.
   void _write(String path, String content) {
     _changed[path] = content;
-    _provider.setOverlay(
-      path,
-      content: content,
-      modificationStamp: _modificationStamp++,
-    );
-    _context.changeFile(path);
+    _analysis.overlay(path, content);
   }
 
   /// The resolved library [path] belongs to.
@@ -551,86 +520,20 @@ class _Planner {
     return lineBreak == -1 ? content.length : lineBreak + 1;
   }
 
-  /// [content] with [removals] cut, then [insertions] added after the
-  /// existing directives of their kind.
+  /// [content] with [removals] cut, then the directive lines
+  /// [insertions] added, each placed by [withDirective].
   static String _edited(
     String content,
     List<_Removal> removals,
-    List<_Insertion> insertions,
+    List<String> insertions,
   ) {
     var result = TextOffsets.applyEdits(content, {
       for (final removal in removals)
         removal.offset: (removal.end - removal.offset, ''),
     });
-    for (final insertion in insertions) {
-      result = _withDirective(result, insertion);
+    for (final line in insertions) {
+      result = withDirective(result, line);
     }
     return result;
-  }
-
-  /// Sort key putting `dart:` URIs first, then `package:`, then relative
-  /// ones, each alphabetically, as the `directives_ordering` lint expects.
-  static String _uriOrder(String uri) {
-    final group = uri.startsWith('dart:')
-        ? _dartUriGroup
-        : uri.startsWith(packageScheme)
-        ? _packageUriGroup
-        : _relativeUriGroup;
-    return '$group$uri';
-  }
-
-  static const String _dartUriGroup = '0';
-  static const String _packageUriGroup = '1';
-  static const String _relativeUriGroup = '2';
-
-  /// The quoted URI in directive [line].
-  static String _lineUri(String line) =>
-      RegExp(r"'([^']*)'").firstMatch(line)?.group(1) ?? '';
-
-  /// [content] with [insertion]'s line in URI order among the directives of
-  /// its kind, else after the last directive it may follow, else at the top.
-  static String _withDirective(String content, _Insertion insertion) {
-    final directives = parseString(
-      content: content,
-      throwIfDiagnostics: false,
-    ).unit.directives;
-    if (!insertion.isPart) {
-      final isExport = insertion.line.startsWith('export');
-      final peers = directives
-          .whereType<NamespaceDirective>()
-          .where((d) => (d is ExportDirective) == isExport)
-          .toList();
-      final key = _uriOrder(_lineUri(insertion.line));
-      final next = peers
-          .where((d) => _uriOrder(d.uri.stringValue ?? '').compareTo(key) > 0)
-          .firstOrNull;
-      if (next != null) {
-        return content.replaceRange(
-          next.offset,
-          next.offset,
-          '${insertion.line}\n',
-        );
-      }
-      if (peers.isNotEmpty) {
-        return content.replaceRange(
-          peers.last.end,
-          peers.last.end,
-          '\n${insertion.line}',
-        );
-      }
-    }
-    final anchor = insertion.isPart
-        ? directives.lastOrNull
-        : directives.where((d) => d is! PartDirective).lastOrNull;
-    if (anchor != null) {
-      return content.replaceRange(
-        anchor.end,
-        anchor.end,
-        '\n${insertion.line}',
-      );
-    }
-    final firstPart = directives.whereType<PartDirective>().firstOrNull;
-    final offset = firstPart?.offset ?? 0;
-    return content.replaceRange(offset, offset, '${insertion.line}\n\n');
   }
 }

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:fide/providers/terminal_providers.dart';
+import 'package:fide/services/login_shell_environment.dart';
 import 'package:fide/services/terminal_session.dart';
 import 'package:flutter_pty2/flutter_pty2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -86,7 +87,7 @@ void main() {
     expect(await session.start(workingDirectory: '/project'), isTrue);
 
     final options = spawned.single.options;
-    expect(options.executable, TerminalSession.shellPath);
+    expect(options.executable, LoginShellEnvironment.shell);
     expect(options.workingDirectory, '/project');
     final environment = options.environment as PtyInheritedEnvironment;
     expect(environment.overrides, {

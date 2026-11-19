@@ -1,8 +1,7 @@
-import 'dart:async';
-
 import 'package:fide/constants/core_constants.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/debouncer.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -41,15 +40,15 @@ final gitRepoLocationProvider = FutureProvider.autoDispose
 
 /// The changes against HEAD of the repository at a root path, for all its
 /// files at once; read again once saves pause for
-/// [AppDuration.gitReloadDebounce], and after Git actions.
+/// [AppDuration.saveBurstPause], and after Git actions.
 final gitHeadChangesProvider = FutureProvider.autoDispose
     .family<GitHeadChanges, String>((ref, root) {
-      Timer? debounce;
-      ref.listen(savedFilesRevisionProvider, (_, _) {
-        debounce?.cancel();
-        debounce = Timer(AppDuration.gitReloadDebounce, ref.invalidateSelf);
-      });
-      ref.onDispose(() => debounce?.cancel());
+      final debounce = Debouncer(AppDuration.saveBurstPause);
+      ref.listen(
+        savedFilesRevisionProvider,
+        (_, _) => debounce.run(ref.invalidateSelf),
+      );
+      ref.onDispose(debounce.cancel);
       return ref.read(gitServiceProvider).headChanges(root);
     }, retry: (_, _) => null);
 

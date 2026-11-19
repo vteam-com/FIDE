@@ -32,8 +32,7 @@ class CodeCoverage {
     return CodeCoverage(linesFound: found, linesHit: hit);
   }
 
-  /// Share of instrumented lines executed, from 0 to [AppMetric.maxScore].
-  int get percent => linesFound == 0
-      ? 0
-      : (linesHit * AppMetric.maxScore / linesFound).round();
+  /// Share of instrumented lines executed, in percent.
+  int get percent =>
+      linesFound == 0 ? 0 : (linesHit * AppMetric.percent / linesFound).round();
 }

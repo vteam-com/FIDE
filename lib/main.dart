@@ -10,6 +10,7 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/app_update_notifier.dart';
 import 'package:fide/providers/app_view_notifier.dart';
 import 'package:fide/providers/command_runner.dart';
+import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/screens/create_project_screen.dart';
 import 'package:fide/screens/loading_screen.dart';
@@ -192,7 +193,7 @@ class _FIDEState extends ConsumerState<FIDE> {
               Positioned.fill(
                 child: SettingsScreen(
                   menus: _buildMenus(context),
-                  onClose: _closeSettings,
+                  onClose: () => showSettings(ref, visible: false),
                 ),
               ),
           ],
@@ -204,11 +205,6 @@ class _FIDEState extends ConsumerState<FIDE> {
   /// The native menus; [context] must be under the app's navigator.
   List<PlatformMenuItem> _buildMenus(BuildContext context) {
     return NativeMenuBuilder(context: context, ref: ref).buildMenus();
-  }
-
-  /// Hides the settings screen.
-  void _closeSettings() {
-    ref.read(settingsVisibleProvider.notifier).state = false;
   }
 
   /// Shows the Go to File palette over the loaded project's files.

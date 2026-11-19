@@ -51,11 +51,13 @@ class PathText extends StatelessWidget {
     final line = this.line;
     final name = '${p.basename(shown)}${line == null ? '' : ':$line'}';
 
-    final color = style.color ?? Theme.of(context).colorScheme.onSurface;
-    final folderStyle = style.copyWith(
-      color: color.withAlpha(AppAlpha.pathPrefix),
-    );
-    final nameStyle = style.merge(AppTextStyle.strong).copyWith(color: color);
+    final colorScheme = Theme.of(context).colorScheme;
+    // The folders dimmed as all secondary text is, never by transparency,
+    // which would read below AA
+    final folderStyle = style.copyWith(color: colorScheme.onSurfaceVariant);
+    final nameStyle = style
+        .merge(AppTextStyle.strong)
+        .copyWith(color: style.color ?? colorScheme.onSurface);
 
     if (selectable) {
       return SelectableText.rich(

@@ -30,6 +30,13 @@ extension RelativeTime on DateTime {
     return _ago(days ~/ AppMetric.daysPerYear, 'year');
   }
 
+  /// This moment's date and time to the second, such as
+  /// `2024-05-01 14:03:27`.
+  String get toSecond => toString().split(_fractionSeparator).first;
+
+  /// What separates the seconds from their fraction in [toString].
+  static const String _fractionSeparator = '.';
+
   /// `[count] [unit]s ago`, singular when [count] is one.
   static String _ago(int count, String unit) => '${count.count(unit)} ago';
 }

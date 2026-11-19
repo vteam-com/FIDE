@@ -1,29 +1,23 @@
 part of 'shared_panel_utils.dart';
 
-/// Actions offered in the project tree's context menu, in menu order.
+/// What the project tree's context menu offers besides the [FileAction]s,
+/// changing the tree itself, in menu order.
 enum NodeAction {
-  open('Open', Icons.open_in_new),
-  reveal('Reveal in', Icons.folder_open),
-  copyFullPath('Copy Full Path', Icons.content_copy),
-  copyRelativePath('Copy Relative Path', Icons.content_copy),
-  newFile('New File', Icons.note_add),
-  newFolder('New Folder', Icons.create_new_folder),
-  rename('Rename', Icons.edit),
+  newFile('New File…', Icons.note_add),
+  newFolder('New Folder…', Icons.create_new_folder),
+  rename('Rename…', Icons.drive_file_rename_outline),
   delete('Delete', Icons.delete);
 
-  const NodeAction(this._label, this.icon);
+  const NodeAction(this.label, this.icon);
 
-  final String _label;
+  /// Menu label.
+  final String label;
 
   /// Icon shown before the label.
   final IconData icon;
 
   /// Whether the action is destructive and drawn in the error color.
   bool get isDestructive => this == delete;
-
-  /// Menu label, naming [shell]'s file manager for [reveal].
-  String labelIn(DesktopShell shell) =>
-      this == reveal ? '$_label ${shell.fileManagerName}' : _label;
 
   /// Whether the action is offered for [node]; creating entries needs a
   /// directory to create them in.

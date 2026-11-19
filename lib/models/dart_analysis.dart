@@ -101,9 +101,11 @@ class DartAnalysis {
     for (final MapEntry(key: tone, value: severity) in _severities.entries)
       if (_found(tone) case final found when found.isNotEmpty)
         QualityIssue(
-          label:
-              '$title: -${_deductionOf(tone).localized}% '
-              '(${found.length.count(severity.noun)})',
+          label: QualityIssue.deductionLabel(
+            title,
+            _deductionOf(tone),
+            found.length.count(severity.noun),
+          ),
           title: title,
           tone: tone,
           guidance: _guidance,
@@ -122,7 +124,11 @@ class DartAnalysis {
   /// Points the diagnostics of [tone] cost, capped.
   int _deductionOf(StatusTone tone) {
     final severity = _severities[tone]!;
-    return (_found(tone).length * severity.points).clamp(0, severity.maxPoints);
+    return QualityIssue.deductionOf(
+      _found(tone).length,
+      points: severity.points,
+      max: severity.maxPoints,
+    );
   }
 
   /// The diagnostics of [tone], in the analyzer's order.

@@ -52,10 +52,9 @@ The service will be available at `http://localhost:11434`
 2. **Select a file** in the file explorer
 3. **Click the "AI" tab** in the right panel
 4. **Choose an action** from the dropdown:
-   - **Ask AI**: General coding questions
-   - **Explain Code**: Get explanations for code snippets
-   - **Generate Code**: Create new code based on descriptions
-   - **Refactor Code**: Improve existing code
+   - **Ask AI**: Answers questions about your code, and makes the
+     changes you ask for (explain, generate or refactor code) by editing
+     the project files itself
    - **Fix Build**: Fixes the last failed build. With a project open, the
      model reads and edits project files itself (list, read, replace and
      write files, then rebuild for the platform selected in the Execute

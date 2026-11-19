@@ -2,6 +2,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/more_menu_button.dart';
+import 'package:fide/widgets/optional_tooltip.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/priority_row.dart';
 import 'package:material_ui/material_ui.dart';
@@ -129,9 +130,7 @@ class TreeRow extends StatelessWidget {
         child: PriorityRow(
           spacing: AppSpacing.tiny,
           leading: icon,
-          title: tooltip == null
-              ? text
-              : Tooltip(message: tooltip, child: text),
+          title: OptionalTooltip(message: tooltip, child: text),
           trailing: extras.isEmpty
               ? null
               : Row(

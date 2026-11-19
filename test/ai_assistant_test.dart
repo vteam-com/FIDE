@@ -30,18 +30,6 @@ void main() {
     expect(model.thinks, [true]);
   });
 
-  test('actions without context work on the prompt itself', () async {
-    await assistant.respond(AiAction.explain, 'void main() {}', 'ignored');
-
-    expect(model.prompts.single, contains('Context: void main() {}'));
-    expect(
-      model.prompts.single,
-      contains('Request: ${AiAction.explain.instruction}'),
-    );
-    expect(model.prompts.single, isNot(contains('ignored')));
-    expect(model.thinks, [false]);
-  });
-
   test('ask sends the question with the selected file', () async {
     await assistant.respond(AiAction.ask, 'What is this?', 'class A {}');
 

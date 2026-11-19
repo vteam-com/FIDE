@@ -220,7 +220,7 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
       title: 'Replace All',
       message:
           'Replace every "$query" with "$replacement" in '
-          '${filePaths.length} file${filePaths.length == 1 ? '' : 's'}?',
+          '${filePaths.length.count('file')}?',
       confirmLabel: 'Replace',
     );
     if (!confirmed || !mounted) return;

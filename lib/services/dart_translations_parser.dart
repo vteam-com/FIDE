@@ -1,6 +1,5 @@
-import 'package:analyzer/dart/analysis/features.dart';
-import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:fide/models/dart_parse.dart';
 import 'package:fide/models/dart_translations.dart';
 
 /// Reads a Dart localizations class, such as
@@ -21,11 +20,7 @@ class DartTranslationsParser {
 
   /// Reads the class in [content] that extends [outputClass].
   DartTranslations parse(String content, String outputClass) {
-    final unit = parseString(
-      content: content,
-      featureSet: FeatureSet.latestLanguageVersion(),
-      throwIfDiagnostics: false,
-    ).unit;
+    final unit = parseDart(content).unit;
     final messages = <String, String>{};
     final placeholders = <String, Map<String, String>>{};
     final unsupported = <String>[];

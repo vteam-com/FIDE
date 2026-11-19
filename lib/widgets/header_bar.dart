@@ -28,7 +28,7 @@ class HeaderBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final divider = BorderSide(
       color: Theme.of(context).dividerColor,
-      width: AppSize.borderThin,
+      width: AppBorderWidth.thin,
     );
     return DecoratedBox(
       decoration: BoxDecoration(

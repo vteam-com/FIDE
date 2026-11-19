@@ -20,7 +20,7 @@ final referenceFinderProvider = Provider<ReferenceFinder?>((ref) {
   if (projectPath == null) return null;
   final finder = ReferenceFinder(
     projectPath: projectPath,
-    dartSdkPath: () => ref.read(dartSdkPathProvider.future),
+    dartSdkPath: () => requireDartSdkPath(ref),
   );
   ref.onDispose(finder.dispose);
   return finder;
@@ -101,7 +101,7 @@ final quickFixRunnerProvider = Provider<QuickFixRunner>(
 /// files with more than one public class.
 final classSplitServiceProvider = Provider<ClassSplitService>(
   (ref) => ClassSplitService(
-    () => ref.read(dartSdkPathProvider.future),
+    () => requireDartSdkPath(ref),
     ref.read(codeFormatterProvider),
   ),
 );

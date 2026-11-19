@@ -28,7 +28,10 @@ class PreviewProjectScanner {
     final folder = ProjectPaths(projectPath).libDir;
     if (!Directory(folder).existsSync()) return const [];
     final files = <PreviewFileScan>[];
-    await for (final entity in ProjectFiles.walk(folder, extension: '.dart')) {
+    await for (final entity in ProjectFiles.walk(
+      folder,
+      extension: ProjectFiles.dartExtension,
+    )) {
       final content = entity.readAsStringSync();
       if (!content.contains(PreviewScanner.previewClass)) continue;
       final scan = const PreviewScanner().scan(content);

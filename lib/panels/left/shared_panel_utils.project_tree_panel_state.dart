@@ -63,11 +63,6 @@ mixin ProjectTreePanelState<T extends ConsumerStatefulWidget>
     );
   }
 
-  /// Opens [node] from its context menu: toggles a directory, opens a file.
-  void openNode(ProjectNode node) {
-    toggleOrOpenNode(node, expandedState[node.path] ?? false);
-  }
-
   /// Called after the tree is replaced or reloaded; panels clear caches
   /// derived from it here.
   void onProjectTreeChanged() {}
@@ -93,24 +88,6 @@ mixin ProjectTreePanelState<T extends ConsumerStatefulWidget>
   /// Runs the context-menu [action] chosen for [node].
   void runNodeAction(NodeAction action, ProjectNode node) {
     switch (action) {
-      case NodeAction.open:
-        openNode(node);
-      case NodeAction.reveal:
-        revealInFileManager(
-          context,
-          ref,
-          node.path,
-          isDirectory: node.isDirectory,
-        );
-      case NodeAction.copyFullPath:
-        _copyPath(node.path, 'Full path copied to clipboard');
-      case NodeAction.copyRelativePath:
-        if (projectRoot case final root?) {
-          _copyPath(
-            p.relative(node.path, from: root.path),
-            'Relative path copied to clipboard',
-          );
-        }
       case NodeAction.newFile:
         _fileOperations.createNewFile(context, node, refreshProjectTree);
       case NodeAction.newFolder:
@@ -127,19 +104,38 @@ mixin ProjectTreePanelState<T extends ConsumerStatefulWidget>
     MessageBox.showError(context, message);
   }
 
-  /// Shows the file/folder context menu for [node] at [position].
+  /// Shows the file/folder context menu for [node] at [position]: the
+  /// [FileAction]s that apply to it, then the [NodeAction]s.
   void showNodeContextMenu(ProjectNode node, Offset position) {
-    ContextMenuHandler.showNodeContextMenu(
-      context,
-      node,
-      position,
-      runNodeAction,
-    );
-  }
-
-  /// Copies [text] to the clipboard and confirms it with [confirmation].
-  void _copyPath(String text, String confirmation) {
-    MessageBox.copyToClipboard(context, text, confirmation: confirmation);
+    final shell = ref.read(desktopShellProvider);
+    final projectPath = projectRoot?.path;
+    showActionMenu(context, position, [
+      for (final action in FileAction.values)
+        if (action.inProjectTrees &&
+            action.appliesTo(
+              node.path,
+              isDirectory: node.isDirectory,
+              projectPath: projectPath,
+            ))
+          IconMenuItem(
+            value: () => action.run(
+              context,
+              ref,
+              node.path,
+              isDirectory: node.isDirectory,
+            ),
+            icon: action.icon,
+            label: action.labelIn(shell),
+          ),
+      for (final action in NodeAction.values)
+        if (action.appliesTo(node))
+          IconMenuItem(
+            value: () => runNodeAction(action, node),
+            icon: action.icon,
+            label: action.label,
+            isError: action.isDestructive,
+          ),
+    ]);
   }
 
   /// Tags [node], under [root], with its change in [status], the

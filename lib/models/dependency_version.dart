@@ -1,3 +1,5 @@
+import 'package:fide/models/pubspec.dart';
+
 part 'dependency_version.dependency_source.dart';
 
 /// A pubspec dependency's version: a hosted constraint, the Flutter SDK or
@@ -37,7 +39,7 @@ class DependencyVersion {
   /// `sdk: flutter` map, or anything else.
   factory DependencyVersion.fromPubspec(Object? value) => switch (value) {
     String constraint => DependencyVersion.hosted(constraint),
-    Map() when value['sdk'] == 'flutter' => sdk,
+    _ when Pubspec.isFlutterSdk(value) => sdk,
     _ => complex,
   };
 

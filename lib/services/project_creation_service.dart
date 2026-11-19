@@ -10,6 +10,7 @@ import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/l10n_config.dart';
 import 'package:fide/models/project_creation_request.dart';
 import 'package:fide/models/project_paths.dart';
+import 'package:fide/models/pubspec.dart';
 import 'package:fide/models/readable_error.dart';
 import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/chat_model.dart';
@@ -18,6 +19,7 @@ import 'package:fide/services/git_service.dart';
 import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/process_runner.dart';
+import 'package:fide/services/project_config_reader.dart';
 import 'package:fide/services/project_template.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml_edit/yaml_edit.dart';
@@ -36,9 +38,6 @@ class ProjectCreationService {
   /// gen-l10n settings of a new project, whose ARB files stay in Flutter's
   /// default folder.
   static const L10nConfig _l10n = L10nConfig();
-
-  /// The `pubspec.yaml` field describing the app.
-  static const String _descriptionKey = 'description';
 
   /// Platform folders every created project must have to pass
   /// verification.
@@ -142,10 +141,12 @@ class ProjectCreationService {
   /// `flutter create` wrote, editing only that field.
   Future<void> _describe(ProjectCreationRequest request) async {
     if (request.description.isEmpty) return;
-    final pubspec = File(ProjectPaths(request.projectPath).pubspec);
-    final editor = YamlEditor(await pubspec.readAsString())
-      ..update([_descriptionKey], request.description);
-    await pubspec.writeAsString(editor.toString());
+    await ProjectConfigReader.updatePubspec(
+      request.projectPath,
+      (yaml) => (YamlEditor(
+        yaml,
+      )..update([Pubspec.descriptionKey], request.description)).toString(),
+    );
   }
 
   /// Replaces template files with AI-generated ones when requested; how

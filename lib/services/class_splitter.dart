@@ -2,19 +2,17 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:analyzer/dart/analysis/analysis_context.dart';
-import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
-import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/file_system/overlay_file_system.dart';
-import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:fide/models/class_split_result.dart';
 import 'package:fide/models/dart_imports.dart';
+import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/project_name.dart';
 import 'package:fide/models/text_offsets.dart';
 import 'package:fide/services/compile_errors.dart';
 import 'package:fide/services/dart_references.dart';
+import 'package:fide/services/file_type_utils.dart';
 import 'package:path/path.dart' as p;
 
 part 'class_splitter.class_split_exception.dart';

@@ -1,6 +1,4 @@
-import 'package:fide/widgets/compact_icon_button.dart';
-import 'package:fide/widgets/message_box.dart';
-import 'package:material_ui/material_ui.dart';
+part of 'message_box.dart';
 
 /// The button copying [text] to the clipboard, then confirming it with
 /// [confirmation]; every copy action looks and reads alike.

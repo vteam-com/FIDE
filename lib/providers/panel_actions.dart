@@ -79,6 +79,13 @@ void revealInExplorer(WidgetRef ref, String path) {
   ref.read(explorerRevealPathProvider.notifier).state = path;
 }
 
+/// Shows the settings screen in place of the window's view, or returns
+/// from it to the view it replaced when [visible] is false: the Settings
+/// menu item, its shortcut, the title bar's gear and close buttons and
+/// Escape all go through it.
+void showSettings(WidgetRef ref, {bool visible = true}) =>
+    ref.read(settingsVisibleProvider.notifier).state = visible;
+
 /// Shows [view] in the center panel.
 void showCenterView(WidgetRef ref, CenterView view) {
   ref.read(centerViewProvider.notifier).state = view;

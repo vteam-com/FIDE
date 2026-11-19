@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/model_message.dart';
 import 'package:fide/models/project_command.dart';
 import 'package:fide/models/quick_fix.dart';
+import 'package:fide/models/text_offsets.dart';
 import 'package:fide/models/text_truncation.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/project_file_store.dart';
@@ -336,8 +338,7 @@ class CodeEditAgent {
   /// file to see it.
   static String _excerpt(String content, int start, int end) {
     final lines = const LineSplitter().convert(content);
-    int lineOf(int offset) =>
-        '\n'.allMatches(content.substring(0, offset)).length;
+    int lineOf(int offset) => TextOffsets.positionOf(content, offset).line - 1;
     final first = (lineOf(start) - AppMetric.aiEditContextLines).clamp(
       0,
       lines.length,
@@ -393,10 +394,7 @@ class CodeEditAgent {
             'and concisely. Only when the question is about this project\'s '
             'code, look it up first with the tools you are given, which read '
             'it; never change files. Paths are relative to the project root.',
-        [
-          ...history,
-          {'role': 'user', 'content': question},
-        ],
+        [...history, ModelMessage.user(question)],
         'Stopped after ${AppMetric.aiMaxAnswerRounds} steps without an '
             'answer; ask a narrower question.',
         skills: skillsFor(edits: false),
@@ -429,10 +427,7 @@ class CodeEditAgent {
           'summary naming each file you changed. Paths are relative to the '
           'project root.'
           '${offersFixes ? ' For ${fixes.map((fix) => fix.label).join(', ')}, call $_quickFixName first, then edit by hand only what it left.' : ''}',
-      [
-        ...history,
-        {'role': 'user', 'content': request},
-      ],
+      [...history, ModelMessage.user(request)],
       'Stopped after ${AppMetric.aiMaxToolRounds} steps; the change may '
           'be incomplete.',
       skills: skills,
@@ -453,12 +448,10 @@ class CodeEditAgent {
         'a short summary of what you changed. Paths are relative to the '
         'project root.',
     [
-      {
-        'role': 'user',
-        'content':
-            'Build errors:\n'
-            '${errors.truncated(AppMetric.aiBuildErrorChars)}\n\n$notes',
-      },
+      ModelMessage.user(
+        'Build errors:\n'
+        '${errors.truncated(AppMetric.aiBuildErrorChars)}\n\n$notes',
+      ),
     ],
     'Stopped after ${AppMetric.aiMaxToolRounds} steps without a '
         'passing build.',
@@ -480,7 +473,7 @@ class CodeEditAgent {
   }) async {
     final tools = [for (final skill in skills) skill.toTool()];
     final messages = <Map<String, dynamic>>[
-      {'role': 'system', 'content': system},
+      ModelMessage.of(ModelMessage.systemRole, system),
       ...conversation,
     ];
     // Results of the calls since the project last changed, by call, so a
@@ -499,16 +492,16 @@ class CodeEditAgent {
         onText: hooks.onText,
       );
       messages.add(reply);
-      final calls = reply['tool_calls'];
+      final calls = reply[ModelMessage.toolCallsKey];
       if (calls is! List || calls.isEmpty) {
-        return reply['content']?.toString() ?? '';
+        return reply[ModelMessage.contentKey]?.toString() ?? '';
       }
       for (final call in calls) {
         _cancelToken.throwIfCancelled();
-        final function = call is Map ? call['function'] : null;
+        final function = call is Map ? call[ModelMessage.functionKey] : null;
         if (function is! Map) continue;
-        final name = function['name']?.toString() ?? '';
-        final given = function['arguments'];
+        final name = function[ModelMessage.nameKey]?.toString() ?? '';
+        final given = function[ModelMessage.argumentsKey];
         final arguments = given is Map<String, dynamic>
             ? given
             : const <String, dynamic>{};
@@ -537,10 +530,9 @@ class CodeEditAgent {
           }
         }
         messages.add({
-          'role': 'tool',
-          'tool_name': name,
-          'tool_call_id': ?call['id'],
-          'content': result,
+          ...ModelMessage.of(ModelMessage.toolRole, result),
+          ModelMessage.toolNameKey: name,
+          ModelMessage.toolCallIdKey: ?call[ModelMessage.idKey],
         });
       }
     }
@@ -568,25 +560,34 @@ class CodeEditAgent {
     if (budget == null || size <= budget) return false;
     final target = (budget * AppMetric.aiContextKeptShare).floor();
     final latest = messages.lastIndexWhere(
-      (message) => message['role'] == 'assistant',
+      (message) => message[ModelMessage.roleKey] == ModelMessage.assistantRole,
     );
     var dropped = false;
     for (var index = 0; index < latest; index++) {
       if (size <= target) return dropped;
       final message = messages[index];
       final smaller = switch (message) {
-        {'role': 'tool', 'content': final String content}
+        {
+          ModelMessage.roleKey: ModelMessage.toolRole,
+          ModelMessage.contentKey: final String content,
+        }
             when content.length >= AppMetric.aiDroppableOutputChars =>
           {
             ...message,
-            'content':
+            ModelMessage.contentKey:
                 'Output dropped to save memory; call '
-                '${message['tool_name']} again if you need it.',
+                '${message[ModelMessage.toolNameKey]} again if you need it.',
           },
-        {'role': 'assistant', 'tool_calls': final List calls} => {
-          ...message,
-          'tool_calls': [for (final call in calls) _withoutLongArguments(call)],
-        },
+        {
+          ModelMessage.roleKey: ModelMessage.assistantRole,
+          ModelMessage.toolCallsKey: final List calls,
+        } =>
+          {
+            ...message,
+            ModelMessage.toolCallsKey: [
+              for (final call in calls) _withoutLongArguments(call),
+            ],
+          },
         _ => message,
       };
       size -= tokens(message) - tokens(smaller);
@@ -601,12 +602,16 @@ class CodeEditAgent {
   static Object? _withoutLongArguments(Object? call) {
     if (call
         case final Map map &&
-            {'function': final Map function && {'arguments': final Map args}}) {
+            {
+              ModelMessage.functionKey:
+                  final Map function &&
+                  {ModelMessage.argumentsKey: final Map args},
+            }) {
       return {
         ...map,
-        'function': {
+        ModelMessage.functionKey: {
           ...function,
-          'arguments': {
+          ModelMessage.argumentsKey: {
             for (final MapEntry(:key, :value) in args.entries)
               key: '$value'.length >= AppMetric.aiDroppableOutputChars
                   ? '(${'$value'.length} characters)'

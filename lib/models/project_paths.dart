@@ -9,8 +9,17 @@ class ProjectPaths {
   /// Creates the locations for the project at [root].
   const ProjectPaths(this.root);
 
+  /// Name of the build output folder.
+  static const String buildFolder = 'build';
+
+  /// Name of the source folder.
+  static const String libFolder = 'lib';
+
+  /// Name of the tests folder.
+  static const String testFolder = 'test';
+
   /// The `build/` output directory.
-  String get buildDir => p.join(root, 'build');
+  String get buildDir => p.join(root, buildFolder);
 
   /// Line coverage report written by `flutter test --coverage`.
   String get coverageLcov => p.join(root, 'coverage', 'lcov.info');
@@ -25,7 +34,7 @@ class ProjectPaths {
   }
 
   /// The `lib/` source directory.
-  String get libDir => p.join(root, 'lib');
+  String get libDir => p.join(root, libFolder);
 
   /// The folder of [platform]'s native project, such as `ios/`.
   String platformDir(FlutterPlatform platform) => p.join(root, platform.name);

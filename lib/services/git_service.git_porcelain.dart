@@ -14,6 +14,13 @@ abstract final class GitPorcelain {
   /// hash, time, subject.
   static const int _commitFields = 3;
 
+  /// Letters of a porcelain status code: the index's, then the work tree's.
+  static const int _statusCodeLength = 2;
+
+  /// Where a porcelain status line's path starts, after its code and a
+  /// space.
+  static const int _statusPathStart = _statusCodeLength + 1;
+
   /// Porcelain separator between the old and new path of a rename or copy.
   static const String _renameArrow = ' -> ';
 
@@ -32,9 +39,9 @@ abstract final class GitPorcelain {
   static List<GitStatusEntry> parseStatus(String output) {
     final entries = <GitStatusEntry>[];
     for (final line in output.split('\n')) {
-      if (line.length < AppMetric.gitStatusFieldOffset) continue;
-      final code = line.substring(0, AppMetric.doubleLineLimit);
-      final entryPath = line.substring(AppMetric.gitStatusFieldOffset);
+      if (line.length < _statusPathStart) continue;
+      final code = line.substring(0, _statusCodeLength);
+      final entryPath = line.substring(_statusPathStart);
       entries.add((
         code: code,
         path: entryPath.contains(_renameArrow)

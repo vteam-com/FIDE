@@ -10,6 +10,7 @@ import 'package:fide/providers/outline_controller.dart';
 import 'package:fide/providers/outline_providers.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/outline_parser.dart';
 import 'package:fide/services/reference_finder.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,7 +21,11 @@ import 'fake_code_formatter.dart';
 
 /// Finds one consumer of everything and renames by rewriting the file.
 class _FakeFinder extends ReferenceFinder {
-  _FakeFinder() : super(projectPath: '', dartSdkPath: () async => null);
+  _FakeFinder()
+    : super(
+        projectPath: '',
+        dartSdkPath: () async => throw const FlutterSdkNotFoundException(),
+      );
 
   int finds = 0;
 

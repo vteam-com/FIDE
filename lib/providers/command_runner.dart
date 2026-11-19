@@ -8,6 +8,7 @@ import 'package:fide/models/hot_reload.dart';
 import 'package:fide/models/output_log.dart';
 import 'package:fide/providers/open_documents_notifier.dart';
 import 'package:fide/providers/project_lifecycle_providers.dart';
+import 'package:fide/services/debouncer.dart';
 import 'package:fide/services/flutter_app_session.dart';
 import 'package:fide/services/flutter_build_service.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -76,7 +77,7 @@ class CommandRunner extends StateNotifier<CommandRuns> {
   final Map<String, HotReload> _pendingReloads = {};
 
   /// Pending publication of log lines written since the last one.
-  Timer? _publishTimer;
+  final Throttle _logPublish = Throttle(AppDuration.outputLogPublish);
 
   /// Discards the text of log [logKey].
   void clearLog(String logKey) {
@@ -86,7 +87,7 @@ class CommandRunner extends StateNotifier<CommandRuns> {
 
   @override
   void dispose() {
-    _publishTimer?.cancel();
+    _logPublish.cancel();
     _killAll();
     super.dispose();
   }
@@ -96,8 +97,7 @@ class CommandRunner extends StateNotifier<CommandRuns> {
   void reset() {
     _generation++;
     _killAll();
-    _publishTimer?.cancel();
-    _publishTimer = null;
+    _logPublish.cancel();
     state = const CommandRuns();
   }
 
@@ -295,14 +295,13 @@ class CommandRunner extends StateNotifier<CommandRuns> {
   }
 
   /// Publishes [statuses] with the logs as they are now, including lines
-  /// still waiting for [_publishTimer], and the [reloadable] apps.
+  /// still waiting for [_logPublish], and the [reloadable] apps.
   void _publish(
     Map<String, ActionStatus> statuses, {
     Map<String, OutputLog>? logs,
     Set<String>? reloadable,
   }) {
-    _publishTimer?.cancel();
-    _publishTimer = null;
+    _logPublish.cancel();
     state = CommandRuns(
       statuses: statuses,
       logs: logs ?? state.logs,
@@ -326,9 +325,6 @@ class CommandRunner extends StateNotifier<CommandRuns> {
       return;
     }
     change(log);
-    _publishTimer ??= Timer(
-      AppDuration.outputLogPublish,
-      () => _publish(state.statuses),
-    );
+    _logPublish.run(() => _publish(state.statuses));
   }
 }

@@ -21,24 +21,33 @@ import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/viewer_toolbar.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:path/path.dart' as p;
 
 /// Edits a sound file without leaving FIDE: plays and stops it, trims it
 /// by dragging the handles on its waveform, changes its speed without
-/// changing its pitch and its pitch without changing its speed, then saves
-/// it over the file in the file's own format.
+/// changing its pitch and its pitch without changing its speed; the
+/// editor's Save writes it over the file in the file's own format.
 ///
 /// Play plays the sound as edited, the playhead following on the
 /// original's waveform.
 class EditorScreenAudioView extends ConsumerStatefulWidget {
   /// Creates the audio editor of [filePath].
-  const EditorScreenAudioView({super.key, required this.filePath});
+  const EditorScreenAudioView({
+    super.key,
+    required this.filePath,
+    required this.onSaveChanged,
+  });
 
   /// The sound edited.
   final String filePath;
+
+  /// Called with what writes the edited sound over the file while there
+  /// are changes to save, and with null once there are none; the editor's
+  /// Save runs it, so the sound saves as every file does.
+  final ValueChanged<AsyncCallback?> onSaveChanged;
 
   @override
   ConsumerState<EditorScreenAudioView> createState() =>
@@ -92,6 +101,9 @@ class _EditorScreenAudioViewState extends ConsumerState<EditorScreenAudioView>
   /// The edit [_rendered] was made with.
   AudioEdit? _renderedEdit;
 
+  /// The save last reported to [EditorScreenAudioView.onSaveChanged].
+  AsyncCallback? _reportedSave;
+
   /// Moves the playhead every frame while the sound plays.
   late final Ticker _ticker;
 
@@ -127,6 +139,11 @@ class _EditorScreenAudioViewState extends ConsumerState<EditorScreenAudioView>
 
   @override
   Widget build(BuildContext context) {
+    _reportSave(
+      _audio != null && _error == null && !_busy && !_edit.isNone
+          ? _save
+          : null,
+    );
     final error = _error;
     if (error != null) {
       return EmptyState.error(
@@ -226,16 +243,10 @@ class _EditorScreenAudioViewState extends ConsumerState<EditorScreenAudioView>
                 ),
               ),
               CompactTextButton(
-                icon: Icons.restart_alt,
-                label: 'Reset',
-                tooltip: 'Undo every change not saved',
+                icon: Icons.undo,
+                label: 'Discard',
+                tooltip: 'Discard every change not saved',
                 onPressed: hasChanges ? () => _change(AudioEdit.none) : null,
-              ),
-              CompactTextButton(
-                icon: Icons.download,
-                label: 'Save',
-                tooltip: 'Write the changes over the file',
-                onPressed: hasChanges ? _save : null,
               ),
             ],
           ),
@@ -317,26 +328,27 @@ class _EditorScreenAudioViewState extends ConsumerState<EditorScreenAudioView>
     return made;
   }
 
-  /// Saves the edited sound over the file, then reloads it.
+  /// Reports [save] to [EditorScreenAudioView.onSaveChanged] once this
+  /// frame is built, when it changed.
+  void _reportSave(AsyncCallback? save) {
+    if (save == _reportedSave) return;
+    _reportedSave = save;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onSaveChanged(save);
+    });
+  }
+
+  /// Writes the edited sound over the file, then reloads it; throws when
+  /// it can't be written.
   Future<void> _save() async {
     final audio = _audio;
     if (audio == null) return;
     _stop();
     setState(() => _busy = true);
-    final path = widget.filePath;
     try {
       final clip = await _render(audio.clip);
-      await ref.read(audioFileServiceProvider).save(clip, path);
-      if (!mounted) return;
-      MessageBox.showSuccess(context, 'Saved ${p.basename(path)}');
-      await _load();
-    } catch (error) {
-      if (mounted) {
-        MessageBox.showError(
-          context,
-          "Couldn't save: ${ReadableError.describe(error)}",
-        );
-      }
+      await ref.read(audioFileServiceProvider).save(clip, widget.filePath);
+      if (mounted) await _load();
     } finally {
       if (mounted) setState(() => _busy = false);
     }

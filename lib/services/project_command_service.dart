@@ -17,7 +17,7 @@ typedef ProjectCommandOutcome = ({String summary, List<String> changedFiles});
 /// another command or read the files to find out.
 class ProjectCommandService {
   /// Creates a service launching commands through [_runner], `dart` as
-  /// [_dart] resolves it, such as [FlutterSdk.bundledDart], so `dart pub`
+  /// [_dart] resolves it, such as `bundledDartProvider`, so `dart pub`
   /// uses the SDK the project builds with.
   const ProjectCommandService(
     this._runner, [

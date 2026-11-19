@@ -55,9 +55,9 @@ class AiSkill {
 
   /// The skill as an Ollama tool definition.
   Map<String, dynamic> toTool() => {
-    'type': 'function',
-    'function': {
-      'name': name,
+    'type': ModelMessage.functionKey,
+    ModelMessage.functionKey: {
+      ModelMessage.nameKey: name,
       'description': description,
       'parameters': {
         'type': 'object',

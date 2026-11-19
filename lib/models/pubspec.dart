@@ -2,6 +2,25 @@ import 'package:yaml/yaml.dart';
 
 /// The parts of a `pubspec.yaml` the IDE reads.
 class Pubspec {
+  /// Key of the package description.
+  static const String descriptionKey = 'description';
+
+  /// Key of the direct dependencies section.
+  static const String dependenciesKey = 'dependencies';
+
+  /// Key of the dev dependencies section.
+  static const String devDependenciesKey = 'dev_dependencies';
+
+  /// Key of the `flutter:` section, and the name of the Flutter SDK a
+  /// dependency comes from (`sdk: flutter`).
+  static const String flutterKey = 'flutter';
+
+  /// Key of `flutter: generate:`, which turns on generated localizations.
+  static const String generateKey = 'generate';
+
+  /// Key of the SDK a dependency comes from.
+  static const String _sdkKey = 'sdk';
+
   /// The `flutter: config:` key turning Swift Package Manager on or off.
   static const String _swiftPackageManagerKey = 'enable-swift-package-manager';
 
@@ -62,19 +81,19 @@ class Pubspec {
     return Pubspec._(
       name: map['name']?.toString(),
       version: map['version']?.toString(),
-      description: map['description']?.toString(),
-      dependencies: _section(map['dependencies']),
-      devDependencies: _section(map['dev_dependencies']),
-      flutterSection: _section(map['flutter']),
-      hasFlutterSection: map.containsKey('flutter'),
+      description: map[descriptionKey]?.toString(),
+      dependencies: _section(map[dependenciesKey]),
+      devDependencies: _section(map[devDependenciesKey]),
+      flutterSection: _section(map[flutterKey]),
+      hasFlutterSection: map.containsKey(flutterKey),
       launcherIconsSection: _section(map['flutter_launcher_icons']),
       dependencyLines: {
-        ..._keyLines(map.nodes['dependencies']),
-        ..._keyLines(map.nodes['dev_dependencies']),
+        ..._keyLines(map.nodes[dependenciesKey]),
+        ..._keyLines(map.nodes[devDependenciesKey]),
       },
       swiftPackageManagerLine: _keyLines(
-        map.nodes['flutter'] is YamlMap
-            ? (map.nodes['flutter']! as YamlMap).nodes['config']
+        map.nodes[flutterKey] is YamlMap
+            ? (map.nodes[flutterKey]! as YamlMap).nodes['config']
             : null,
       )[_swiftPackageManagerKey],
     );
@@ -82,13 +101,16 @@ class Pubspec {
 
   /// Whether this is a Flutter package: it depends on the Flutter SDK or
   /// has a `flutter:` section.
-  bool get isFlutter {
-    final flutter = dependencies['flutter'];
-    return hasFlutterSection || (flutter is Map && flutter['sdk'] == 'flutter');
-  }
+  bool get isFlutter =>
+      hasFlutterSection || isFlutterSdk(dependencies[flutterKey]);
 
   /// Whether `flutter: generate: true` is set.
-  bool get generatesLocalizations => flutterSection['generate'] == true;
+  bool get generatesLocalizations => flutterSection[generateKey] == true;
+
+  /// Whether the dependency [value] comes from the Flutter SDK
+  /// (`sdk: flutter`).
+  static bool isFlutterSdk(Object? value) =>
+      value is Map && value[_sdkKey] == flutterKey;
 
   /// Project-relative image paths `flutter_launcher_icons:` generates
   /// icons from: its own `image_path`, then each platform's.

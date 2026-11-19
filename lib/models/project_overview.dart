@@ -48,12 +48,12 @@ class ProjectOverview {
         sum + key.missingInLanguages.length + (key.isMissingInEnglish ? 1 : 0),
   );
 
-  /// Share of Dart lines reachable from tests, from 0 to
-  /// [AppMetric.maxScore]; fCheck's static estimate, no tests run.
+  /// Share of Dart lines reachable from tests, in percent; fCheck's static
+  /// estimate, no tests run.
   int get testReachPercent => code.totalLinesOfCode == 0
       ? 0
       : (code.testConsumedLinesOfCode *
-                AppMetric.maxScore /
+                AppMetric.percent /
                 code.totalLinesOfCode)
             .round();
 }

@@ -1,4 +1,6 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/theme/app_theme.dart';
+import 'package:fide/widgets/section_title.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// A wizard step's header: its number in a circle, its title, and a rule
@@ -29,15 +31,15 @@ class StepHeader extends StatelessWidget {
             child: Text(
               '$number',
               style: AppTextStyle.bodyStrong.copyWith(
-                color: colorScheme.onPrimary,
+                color: AppTheme.onFill(colorScheme.primary),
               ),
             ),
           ),
         ),
         const SizedBox(width: AppSpacing.medium),
-        Text(title),
+        SectionTitle(title),
         const SizedBox(width: AppSpacing.xLarge),
-        Expanded(child: Divider(thickness: AppBorderWidth.medium)),
+        const Expanded(child: Divider()),
       ],
     );
   }

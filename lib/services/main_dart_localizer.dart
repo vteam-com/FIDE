@@ -1,30 +1,26 @@
-import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:fide/models/dart_imports.dart';
-import 'package:logging/logging.dart';
+import 'package:fide/models/dart_parse.dart';
 
 part 'main_dart_localizer.material_app_title_visitor.dart';
 
 /// Reads and rewrites the text of a project's `main.dart` for
 /// localization: its `MaterialApp` title, whether the generated
-/// `AppLocalizations` are wired in, and wiring them.
+/// localizations class (`output-class` in `l10n.yaml`) is wired in, and
+/// wiring it.
 class MainDartLocalizer {
-  static final Logger _logger = Logger('MainDartLocalizer');
-
   /// Title kept when `main.dart` sets none.
   static const String defaultTitle = 'My App';
 
-  /// The generated class every localized app uses.
-  static const String _localizationsClass = 'AppLocalizations';
+  /// ARB key of the app's title, which the title lookup reads.
+  static const String titleKey = 'appTitle';
 
-  /// The `MaterialApp` argument wiring the generated delegates.
-  static const String _delegates =
-      'localizationsDelegates: $_localizationsClass.localizationsDelegates';
+  /// The `MaterialApp` parameter taking the generated delegates.
+  static const String _delegatesParameter = 'localizationsDelegates';
 
-  /// The `MaterialApp` argument listing the generated locales.
-  static const String _locales =
-      'supportedLocales: $_localizationsClass.supportedLocales';
+  /// The `MaterialApp` parameter taking the generated locales.
+  static const String _localesParameter = 'supportedLocales';
 
   /// The `MaterialApp` argument looking the title up.
   static const String _titleLookup = 'onGenerateTitle';
@@ -38,29 +34,32 @@ class MainDartLocalizer {
   const MainDartLocalizer._();
 
   /// The string literal [content] passes as `MaterialApp(title:)`; null
-  /// when it passes none or does not parse.
+  /// when it passes none.
   static String? appTitle(String content) {
-    try {
-      final visitor = _MaterialAppTitleVisitor();
-      parseString(content: content).unit.accept(visitor);
-      return visitor.title;
-    } catch (e) {
-      _logger.severe('Error parsing main.dart: $e');
-      return null;
-    }
+    final visitor = _MaterialAppTitleVisitor();
+    parseDart(content).unit.accept(visitor);
+    return visitor.title;
   }
 
-  /// Whether [content] wires the generated localizations into its app.
-  static bool isLocalized(String content) =>
-      content.contains(_localizationsClass) &&
-      content.contains('localizationsDelegates') &&
-      content.contains('supportedLocales');
+  /// Whether [content] wires the generated localizations class
+  /// [outputClass] into its app.
+  static bool isLocalized(String content, {required String outputClass}) =>
+      content.contains(outputClass) &&
+      content.contains(_delegatesParameter) &&
+      content.contains(_localesParameter);
 
-  /// [content] with the generated localizations imported from
-  /// [importUri], the title looked up with `onGenerateTitle` (keeping the
-  /// old one as the fallback) and the delegates and locales passed to
-  /// `MaterialApp`; what it already has is left as it is.
-  static String localize(String content, {required String importUri}) {
+  /// [content] with the generated localizations class [outputClass]
+  /// imported from [importUri], the title looked up with
+  /// `onGenerateTitle` (keeping the old one as the fallback) and the
+  /// delegates and locales passed to `MaterialApp`; what it already has is
+  /// left as it is.
+  static String localize(
+    String content, {
+    required String importUri,
+    required String outputClass,
+  }) {
+    final delegates =
+        '$_delegatesParameter: $outputClass.localizationsDelegates';
     var localized = withImport(
       content,
       importUri,
@@ -72,15 +71,16 @@ class MainDartLocalizer {
       localized = localized.replaceAll(
         _titleArgument,
         '$_titleLookup: (BuildContext context) =>\n'
-        "      $_localizationsClass.of(context)?.appTitle ?? '$title'",
+        "      $outputClass.of(context)?.$titleKey ?? '$title'",
       );
     }
-    if (!localized.contains(_delegates)) {
+    if (!localized.contains(delegates)) {
       if (_materialApp.firstMatch(localized) case final match?) {
         localized = localized.replaceRange(
           match.end,
           match.end,
-          '\n  $_delegates,\n  $_locales,\n',
+          '\n  $delegates,\n'
+          '  $_localesParameter: $outputClass.supportedLocales,\n',
         );
       }
     }

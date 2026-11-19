@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import 'package:fide/models/dart_imports.dart';
 import 'package:fide/models/preview_scan.dart';
 import 'package:fide/models/project_paths.dart';
+import 'package:fide/services/file_content_reader.dart';
 import 'package:path/path.dart' as p;
 
 /// The files of the preview host in a project's `.dart_tool` folder: the
@@ -51,11 +50,8 @@ class PreviewRegistry {
   Future<void> writeEmptyRegistry() => _write(_registryPath, emptySource);
 
   /// Writes [content] to the file at absolute [path], creating its folder.
-  static Future<void> _write(String path, String content) async {
-    final file = File(path);
-    await file.parent.create(recursive: true);
-    await file.writeAsString(content);
-  }
+  static Future<void> _write(String path, String content) =>
+      const FileContentReader().write(path, content);
 
   /// The source of a registry listing no preview.
   static const String emptySource =

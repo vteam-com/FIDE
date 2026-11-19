@@ -90,7 +90,7 @@ class PubOutdatedPackage {
 
   /// The pubspec section the package is declared in, by its [kind].
   String get pubspecSection =>
-      kind == devKind ? 'dev_dependencies' : 'dependencies';
+      kind == devKind ? Pubspec.devDependenciesKey : Pubspec.dependenciesKey;
 
   /// Whether a resolvable version other than the current one exists.
   bool get canUpgrade =>

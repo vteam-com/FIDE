@@ -1,5 +1,6 @@
 import 'package:fide/models/dart_imports.dart';
 import 'package:fide/models/preview_scan.dart';
+import 'package:fide/models/text_case.dart';
 import 'package:fide/models/unique_name.dart';
 import 'package:fide/services/preview_scanner.dart';
 
@@ -179,9 +180,7 @@ class PreviewGenerator {
   /// A preview function name for [className] not in [taken], such as
   /// `myWidgetPreview`.
   static String _uniqueName(String className, Set<String> taken) {
-    final base =
-        '${className[0].toLowerCase()}${className.substring(1)}'
-        '${PreviewScanner.previewClass}';
+    final base = '${className.uncapitalized}${PreviewScanner.previewClass}';
     return uniqueName(base, taken.contains);
   }
 
@@ -190,9 +189,7 @@ class PreviewGenerator {
     final words = name
         .replaceAllMapped(RegExp('[A-Z]'), (m) => ' ${m[0]!.toLowerCase()}')
         .trim();
-    return words.isEmpty
-        ? name
-        : '${words[0].toUpperCase()}${words.substring(1)}';
+    return words.isEmpty ? name : words.capitalized;
   }
 
   /// How many parameters [list], the inside of a function type's

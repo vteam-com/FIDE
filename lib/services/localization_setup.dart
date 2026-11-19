@@ -1,7 +1,10 @@
 import 'dart:io';
 
+import 'package:fide/models/arb_keys.dart';
+import 'package:fide/models/arb_message.dart';
 import 'package:fide/models/localization_checks.dart';
 import 'package:fide/models/project_paths.dart';
+import 'package:fide/models/pubspec.dart';
 import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/l10n_generator.dart';
@@ -21,6 +24,15 @@ class LocalizationSetup {
 
   /// Package name assumed when the pubspec has none.
   static const String _fallbackPackageName = 'my_app';
+
+  /// The Flutter SDK package with the localization delegates.
+  static const String _localizationsPackage = 'flutter_localizations';
+
+  /// The package formatting localized messages.
+  static const String _intlPackage = 'intl';
+
+  /// ARB key of the greeting the template files start with.
+  static const String _greetingKey = 'helloWorld';
 
   final ProcessRunner _runner;
 
@@ -55,9 +67,13 @@ class LocalizationSetup {
 
     onStep?.call('Adding flutter_localizations and intl packages…');
     await runTool(
-      () => _addPackage(projectPath, 'flutter_localizations', sdk: 'flutter'),
+      () => _addPackage(
+        projectPath,
+        _localizationsPackage,
+        sdk: Pubspec.flutterKey,
+      ),
     );
-    await runTool(() => _addPackage(projectPath, 'intl'));
+    await runTool(() => _addPackage(projectPath, _intlPackage));
 
     onStep?.call('Configuring pubspec.yaml…');
     await _enableGenerate(projectPath);
@@ -87,11 +103,15 @@ class LocalizationSetup {
       hasGeneratedClasses: await File(config.generatedPathIn(projectPath))
           .exists(),
       hasAppIntegration:
-          mainDart != null && MainDartLocalizer.isLocalized(mainDart),
+          mainDart != null &&
+          MainDartLocalizer.isLocalized(
+            mainDart,
+            outputClass: config.outputClass,
+          ),
       hasDependencies:
           pubspec != null &&
-          pubspec.dependsOn('flutter_localizations') &&
-          pubspec.dependsOn('intl'),
+          pubspec.dependsOn(_localizationsPackage) &&
+          pubspec.dependsOn(_intlPackage),
       hasGenerateFlag: pubspec?.generatesLocalizations ?? false,
     );
   }
@@ -111,6 +131,7 @@ class LocalizationSetup {
       MainDartLocalizer.localize(
         await mainFile.readAsString(),
         importUri: config.importUri(packageName),
+        outputClass: config.outputClass,
       ),
     );
   }
@@ -137,31 +158,33 @@ class LocalizationSetup {
     ]) {
       await ArbService.write(config.arbPathFor(projectPath, locale), {
         ArbService.localeKey: locale,
-        'appTitle': title,
-        '@appTitle': {'description': 'The title of the application'},
-        'helloWorld': greeting,
-        '@helloWorld': {'description': 'A greeting message'},
+        MainDartLocalizer.titleKey: title,
+        ArbKeys.metadataKeyOf(MainDartLocalizer.titleKey): {
+          ArbMessage.descriptionKey: 'The title of the application',
+        },
+        _greetingKey: greeting,
+        ArbKeys.metadataKeyOf(_greetingKey): {
+          ArbMessage.descriptionKey: 'A greeting message',
+        },
       });
     }
   }
 
   /// Turns on `flutter: generate: true` in the project's pubspec, creating
   /// the `flutter:` section when it is missing or empty.
-  Future<void> _enableGenerate(String projectPath) async {
-    final pubspecFile = File(ProjectPaths(projectPath).pubspec);
-    if (!await pubspecFile.exists()) return;
-
-    final editor = YamlEditor(await pubspecFile.readAsString());
-    final flutterSection = editor.parseAt([
-      'flutter',
-    ], orElse: () => wrapAsYamlNode(null));
-    if (flutterSection is YamlMap) {
-      editor.update(['flutter', 'generate'], true);
-    } else {
-      editor.update(['flutter'], {'generate': true});
-    }
-    await pubspecFile.writeAsString(editor.toString());
-  }
+  Future<void> _enableGenerate(String projectPath) =>
+      ProjectConfigReader.updatePubspec(projectPath, (yaml) {
+        final editor = YamlEditor(yaml);
+        final flutterSection = editor.parseAt([
+          Pubspec.flutterKey,
+        ], orElse: () => wrapAsYamlNode(null));
+        if (flutterSection is YamlMap) {
+          editor.update([Pubspec.flutterKey, Pubspec.generateKey], true);
+        } else {
+          editor.update([Pubspec.flutterKey], {Pubspec.generateKey: true});
+        }
+        return editor.toString();
+      });
 
   /// Adds [package] to the project with `flutter pub add`, from [sdk] when
   /// it is an SDK package, throwing with the tool's stderr on failure.

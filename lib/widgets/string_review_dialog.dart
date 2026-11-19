@@ -6,14 +6,15 @@ import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/models/string_review.dart';
 import 'package:fide/widgets/check_list_tile.dart';
+import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/quick_fix_icon.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:path/path.dart' as p;
 
 /// The body of the dialog showing a project's hardcoded strings grouped
 /// by role, each string with
@@ -227,13 +228,18 @@ class _StringReviewDialogState extends State<StringReviewDialog> {
           ),
       ],
     );
-    final open = CompactTextButton(
-      icon: Icons.open_in_new,
-      label: '${p.basename(string.path)}:${string.line}',
-      onPressed: () {
+    // The place in the code, as a `LocationRow` shows it
+    final open = Clickable(
+      onTap: () {
         Navigator.of(context).pop();
         widget.onOpen(string);
       },
+      child: PathText(
+        string.path,
+        line: string.line,
+        showFolder: false,
+        style: AppTextStyle.secondary(context),
+      ),
     );
     final title = Text('"${string.message.text}"');
     if (!isFixable) {

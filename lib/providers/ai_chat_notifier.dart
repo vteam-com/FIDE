@@ -7,6 +7,7 @@ import 'package:fide/models/ai_chat.dart';
 import 'package:fide/models/chat_message.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/flutter_platform.dart';
+import 'package:fide/models/model_message.dart';
 import 'package:fide/models/output_log.dart';
 import 'package:fide/models/prompt_intent.dart';
 import 'package:fide/models/readable_error.dart';
@@ -20,6 +21,7 @@ import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/code_edit_agent.dart';
 import 'package:fide/services/code_review.dart';
 import 'package:fide/services/dart_analyzer.dart';
+import 'package:fide/services/debouncer.dart';
 import 'package:fide/services/file_content_reader.dart';
 import 'package:fide/services/flutter_build_service.dart';
 import 'package:fide/services/project_command_service.dart';
@@ -110,8 +112,8 @@ class AiChatNotifier extends StateNotifier<AiChat> {
   /// [AppDuration.outputLogPublish].
   String _draft = '';
 
-  /// Shows [_draft] once it fires; null while nothing waits to show.
-  Timer? _draftTimer;
+  /// Shows [_draft] at most every [AppDuration.outputLogPublish].
+  final Throttle _draftThrottle = Throttle(AppDuration.outputLogPublish);
 
   final ChatModel _model;
 
@@ -175,7 +177,7 @@ class AiChatNotifier extends StateNotifier<AiChat> {
 
   @override
   void dispose() {
-    _draftTimer?.cancel();
+    _draftThrottle.cancel();
     super.dispose();
   }
 
@@ -301,8 +303,7 @@ class AiChatNotifier extends StateNotifier<AiChat> {
 
   /// Shows no reply streaming in.
   void _clearDraft() {
-    _draftTimer?.cancel();
-    _draftTimer = null;
+    _draftThrottle.cancel();
     _draft = '';
     if (state.draft.isNotEmpty) state = state.copyWith(draft: '');
   }
@@ -312,8 +313,7 @@ class AiChatNotifier extends StateNotifier<AiChat> {
   /// panel for each word.
   void _showDraft(String text) {
     _draft = text;
-    _draftTimer ??= Timer(AppDuration.outputLogPublish, () {
-      _draftTimer = null;
+    _draftThrottle.run(() {
       if (mounted) state = state.copyWith(draft: _draft);
     });
   }
@@ -443,10 +443,10 @@ class AiChatNotifier extends StateNotifier<AiChat> {
     return [
       if (start >= 0)
         for (final message in kept.skip(start))
-          {
-            'role': message.isUser ? 'user' : 'assistant',
-            'content': message.content,
-          },
+          ModelMessage.of(
+            message.isUser ? ModelMessage.userRole : ModelMessage.assistantRole,
+            message.content,
+          ),
     ];
   }
 
@@ -454,7 +454,6 @@ class AiChatNotifier extends StateNotifier<AiChat> {
   /// which a review needs.
   Future<String> _context(AiContext context, String? projectPath) async =>
       switch (context) {
-        AiContext.none => '',
         AiContext.selectedFile => await _selectedFileContext(),
         AiContext.buildErrors => _buildErrors().truncated(
           AppMetric.aiContextPreviewChars,

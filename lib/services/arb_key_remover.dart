@@ -1,4 +1,5 @@
 import 'package:fcheck/fcheck.dart' as fcheck;
+import 'package:fide/models/arb_keys.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/string_rewrite.dart';
 import 'package:fide/services/arb_service.dart';
@@ -49,7 +50,7 @@ class ArbKeyRemover {
       for (final key in found) {
         arb
           ..remove(key)
-          ..remove('@$key');
+          ..remove(ArbKeys.metadataKeyOf(key));
       }
       await ArbService.write(path, arb);
       removed.addAll(found);

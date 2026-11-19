@@ -1,7 +1,6 @@
 import 'package:fide/models/action_outcome.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/message_box.dart';
-import 'package:fide/widgets/message_widget.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 

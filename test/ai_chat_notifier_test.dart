@@ -30,7 +30,7 @@ void main() {
   test('keeps the conversation outside the panel', () async {
     await container
         .read(aiChatProvider.notifier)
-        .send('What does this do?', action: AiAction.explain);
+        .send('What does this do?', action: AiAction.ask);
 
     final chat = container.read(aiChatProvider);
     expect(
@@ -38,8 +38,8 @@ void main() {
       ['What does this do?', 'It prints a greeting.'],
     );
     expect(chat.isBusy, isFalse);
-    expect(chat.action, AiAction.explain);
-    expect(model.prompts.single, contains('Context: What does this do?'));
+    expect(chat.action, AiAction.ask);
+    expect(model.prompts.single, contains('Request: What does this do?'));
   });
 
   test('a review without a project asks to open one', () async {
@@ -112,7 +112,7 @@ void main() {
 
     final reply = streamed
         .read(aiChatProvider.notifier)
-        .send('Explain', action: AiAction.explain);
+        .send('Explain', action: AiAction.ask);
     await Future<void>.delayed(AppDuration.outputLogPublish * 2);
     expect(streamed.read(aiChatProvider).draft, 'It prints');
 

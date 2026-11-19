@@ -6,6 +6,7 @@ import 'package:fide/providers/git_diff_stats_provider.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/compact_toggle_button.dart';
 import 'package:fide/widgets/diff_counter.dart';
 import 'package:fide/widgets/dropdown_menu_button.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
@@ -144,11 +145,12 @@ class EditorScreenHeader extends ConsumerWidget {
           if (viewKind.hasDiffView &&
               (ref.watch(gitDiffStatsProvider(currentFile)).value?.hasChanges ??
                   false))
-            CompactIconButton.header(
+            CompactToggleButton.header(
               key: const Key('keyEditorDiff'),
-              icon: showDiffView ? Icons.edit : Icons.difference,
-              tooltip: showDiffView ? 'Back to Editor' : 'Show Diff View',
-              onPressed: onToggleDiffView,
+              icon: Icons.difference,
+              tooltip: 'Diff View',
+              isOn: showDiffView,
+              onChanged: (_) => onToggleDiffView(),
             ),
           CompactIconButton.header(
             key: const Key('keyEditorFind'),

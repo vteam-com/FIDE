@@ -1,8 +1,8 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/chat_message.dart';
 import 'package:fide/models/relative_time.dart';
-import 'package:fide/widgets/copy_button.dart';
 import 'package:fide/widgets/markdown_text.dart';
+import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:material_ui/material_ui.dart';

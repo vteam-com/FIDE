@@ -25,10 +25,7 @@ class ArbKeys {
     'of',
     'supportedLocales',
     'localeName',
-    'hashCode',
-    'noSuchMethod',
-    'runtimeType',
-    'toString',
+    ...objectMembers,
   };
 
   /// Entries to add to the template ARB file, metadata included.
@@ -37,6 +34,9 @@ class ArbKeys {
   final Map<String, String> _keyByMessage = {};
 
   final Set<String> _keys = {};
+
+  /// The key of [key]'s metadata, such as `@title`.
+  static String metadataKeyOf(String key) => '$metadataPrefix$key';
 
   /// Whether the ARB [key] names a message, not metadata.
   static bool isMessageKey(String key) => !key.startsWith(metadataPrefix);
@@ -56,7 +56,7 @@ class ArbKeys {
     _keyByMessage[message.text] = key;
     added[key] = message.text;
     final metadata = message.metadata;
-    if (metadata.isNotEmpty) added['@$key'] = metadata;
+    if (metadata.isNotEmpty) added[metadataKeyOf(key)] = metadata;
     return key;
   }
 }

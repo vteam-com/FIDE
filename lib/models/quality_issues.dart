@@ -160,9 +160,11 @@ extension QualityIssues on fcheck.ProjectMetrics {
     // analyzers differently, such as localization by language
     final count = findings.isEmpty ? analyzer.issueCount : findings.length;
     return QualityIssue(
-      label:
-          '${analyzer.label}: -${deduction.localized}% '
-          '(${count.localized} issues)',
+      label: QualityIssue.deductionLabel(
+        analyzer.label,
+        deduction,
+        '${count.localized} issues',
+      ),
       title: analyzer.label,
       guidance: _guidance(domain),
       aiVerb: _aiVerb(domain),

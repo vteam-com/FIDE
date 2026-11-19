@@ -3,7 +3,8 @@ import 'package:fide/models/architecture_focus.dart';
 import 'package:fide/models/architecture_graph.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/panels/center/architecture/architecture_role_style.dart';
-import 'package:fide/providers/editor_navigation.dart';
+import 'package:fide/providers/service_providers.dart';
+import 'package:fide/widget_services/file_action.dart';
 import 'package:fide/widget_services/file_actions.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
@@ -111,9 +112,11 @@ class ArchitectureDetails extends ConsumerWidget {
               onTap: () => onSelect(related),
               trailing: [
                 CompactIconButton(
-                  icon: Icons.open_in_new,
-                  tooltip: 'Open in FIDE',
-                  onPressed: () => openFromCenterView(ref, related),
+                  icon: FileAction.open.icon,
+                  tooltip: FileAction.open.labelIn(
+                    ref.read(desktopShellProvider),
+                  ),
+                  onPressed: () => FileAction.open.run(context, ref, related),
                 ),
               ],
             ),

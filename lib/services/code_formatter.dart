@@ -29,7 +29,7 @@ class CodeFormatter {
 
   final ProcessRunner _runner;
 
-  /// Resolves the Dart tool to launch, such as [FlutterSdk.bundledDart].
+  /// Resolves the Dart tool to launch, such as `bundledDartProvider`.
   final DartCommand _dart;
 
   /// Creates a formatter that runs `dart format` with the tool [_dart]

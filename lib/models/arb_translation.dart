@@ -1,3 +1,5 @@
+import 'package:fide/models/arb_message.dart';
+
 /// One ARB key to translate from the template language into another.
 class ArbTranslation {
   /// Creates the translation of [key] from [source] into [language].
@@ -28,6 +30,7 @@ class ArbTranslation {
 
   /// The `{placeholder}`s of [source], which the translation must keep.
   Set<String> get placeholders => {
-    for (final match in RegExp(r'\{\w+\}').allMatches(source)) match[0]!,
+    for (final match in ArbMessage.placeholderPattern.allMatches(source))
+      match[0]!,
   };
 }

@@ -1,4 +1,5 @@
 import 'package:fcheck/fcheck.dart' as fcheck;
+import 'package:fide/models/text_case.dart';
 import 'package:fide/models/unique_name.dart';
 
 /// A hardcoded string as an ARB message: its text with a `{placeholder}`
@@ -33,6 +34,21 @@ class ArbMessage {
     required this.isExpressible,
   });
 
+  /// Key of the description in a message's `@key` metadata.
+  static const String descriptionKey = 'description';
+
+  /// Key of the placeholders in a message's `@key` metadata.
+  static const String placeholdersKey = 'placeholders';
+
+  /// Key of a placeholder's type in [placeholdersKey].
+  static const String placeholderTypeKey = 'type';
+
+  /// A `{placeholder}` in a message.
+  static final RegExp placeholderPattern = RegExp(r'\{\w+\}');
+
+  /// Type of the placeholders [metadata] declares, which takes any value.
+  static const String _placeholderType = 'Object';
+
   /// Most words of the text used to name a key.
   static const int _maxKeyWords = 5;
 
@@ -59,22 +75,22 @@ class ArbMessage {
   /// `unknownPerformer`; never starts with a digit.
   String get keyBase {
     final words = RegExp(r'[A-Za-z0-9]+')
-        .allMatches(text.replaceAll(RegExp(r'\{\w+\}'), ' '))
+        .allMatches(text.replaceAll(placeholderPattern, ' '))
         .map((match) => match[0]!.toLowerCase())
         .take(_maxKeyWords)
         .toList();
     if (words.isEmpty) return _fallbackKey;
-    final key = words.first + words.skip(1).map(_capitalized).join();
-    return key.startsWith(RegExp('[0-9]'))
-        ? '$_fallbackKey${_capitalized(key)}'
-        : key;
+    final key =
+        words.first + words.skip(1).map((word) => word.capitalized).join();
+    return withoutLeadingDigit(key, prefix: _fallbackKey);
   }
 
   /// The `@key` metadata declaring [placeholders]; empty without any.
   Map<String, Object> get metadata => {
     if (placeholders.isNotEmpty)
-      'placeholders': {
-        for (final name in placeholders) name: {'type': 'Object'},
+      placeholdersKey: {
+        for (final name in placeholders)
+          name: {placeholderTypeKey: _placeholderType},
       },
   };
 
@@ -83,10 +99,6 @@ class ArbMessage {
   String lookup(String localizations, String key) => arguments.isEmpty
       ? '$localizations.$key'
       : '$localizations.$key(${arguments.join(', ')})';
-
-  /// [word] with its first letter in uppercase.
-  static String _capitalized(String word) =>
-      word.isEmpty ? word : word[0].toUpperCase() + word.substring(1);
 
   /// A placeholder name from the last identifier of [expression], such as
   /// `name` for `concert.name`, ignoring a trailing `toString()`.
@@ -97,7 +109,6 @@ class ArbMessage {
         .where((name) => name.isNotEmpty)
         .toList();
     if (identifiers.isEmpty) return _fallbackPlaceholder;
-    final name = identifiers.last;
-    return name[0].toLowerCase() + name.substring(1);
+    return identifiers.last.uncapitalized;
   }
 }

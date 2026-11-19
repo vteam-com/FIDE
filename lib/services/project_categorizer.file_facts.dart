@@ -6,8 +6,7 @@ class _FileFacts {
   /// Reads the facts of [content], the file at [path] as [stat]
   /// describes it.
   _FileFacts(String path, String content, FileStat stat)
-    : modified = stat.modified,
-      size = stat.size,
+    : stamp = stat.stamp,
       isApp = content.contains('MaterialApp('),
       declaresWidget = _declaresWidget(content),
       showsDialog = content.contains('showDialog'),
@@ -15,11 +14,8 @@ class _FileFacts {
           ? ArbService.countEntries(content)
           : null;
 
-  /// When the file was modified as read.
-  final DateTime modified;
-
-  /// The file's size in bytes as read.
-  final int size;
+  /// The file's modification time and size as read.
+  final FileStamp stamp;
 
   /// Whether the file builds an app (`MaterialApp(`), making it a view.
   final bool isApp;
@@ -35,8 +31,7 @@ class _FileFacts {
   final int? arbEntries;
 
   /// Whether these facts still describe the file [stat] describes.
-  bool isCurrent(FileStat stat) =>
-      stat.modified == modified && stat.size == size;
+  bool isCurrent(FileStat stat) => stat.stamp == stamp;
 
   /// Whether [content] declares a class extending a `...Widget` type.
   ///

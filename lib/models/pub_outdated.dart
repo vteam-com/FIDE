@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:fide/models/pubspec.dart';
+
 part 'pub_outdated.pub_outdated_package.dart';
 
 /// What `flutter pub outdated --json` reports: the versions pub knows for

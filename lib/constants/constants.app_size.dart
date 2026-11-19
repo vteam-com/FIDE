@@ -2,8 +2,6 @@ part of 'constants.dart';
 
 /// Shared numeric size values used for dimensions and fixed layout widths.
 class AppSize {
-  static const double borderThin = 1;
-  static const double gutterDividerAlpha = 100;
   static const double titleBarHeight = 40;
 
   /// Height of the strip atop each panel (the side panels' tab bars, the
@@ -38,8 +36,6 @@ class AppSize {
       AppIconSize.panelHeader + AppSpacing.medium;
   static const double panelFallbackHeight = 600;
   static const double compactContextButton = 20;
-  static const double regularProgressIndicator = 20;
-  static const double expandedProgressIndicator = 24;
   static const double macWindowControlsSpacing = 80;
   static const double desktopWindowControlsSpacing = 120;
 
@@ -83,7 +79,6 @@ class AppSize {
   /// Widest the left and right panels can be dragged.
   static const double maxSidePanelWidth = 900;
   static const double statusLogMaxHeight = 300;
-  static const double statusIconTall = 25;
   static const double wizardMaxWidth = 600;
   static const double welcomeContentWidth = 700;
 

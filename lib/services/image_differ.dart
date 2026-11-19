@@ -15,9 +15,6 @@ class ImageDiffer {
   /// Bytes per RGBA pixel.
   static const int _channels = 4;
 
-  /// Largest value of an 8-bit color channel.
-  static const int _channelMax = 0xFF;
-
   /// Compares the encoded [oldBytes] and [newBytes] on another isolate, or
   /// returns null when either can't be decoded, such as a vector image.
   Future<ImageDiffResult?> compare(Uint8List oldBytes, Uint8List newBytes) =>
@@ -81,7 +78,7 @@ class ImageDiffer {
   /// The 8-bit RGBA bytes of [color].
   static List<int> _rgba(Color color) => [
     for (final channel in [color.r, color.g, color.b, color.a])
-      (channel * _channelMax).round(),
+      (channel * AppMetric.colorChannelMax).round(),
   ];
 
   /// Whether the pixel at [a] in [aPixels] equals the one at [b] in

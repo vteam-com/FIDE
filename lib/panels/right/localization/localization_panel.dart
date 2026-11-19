@@ -2,6 +2,7 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_outcome.dart';
+import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/localization_state.dart';
 import 'package:fide/models/localization_status.dart';
@@ -9,10 +10,11 @@ import 'package:fide/models/status_tone.dart';
 import 'package:fide/panels/right/localization/localization_entry_widget.dart';
 import 'package:fide/panels/right/localization/localization_setup_widget.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/localization_controller.dart';
 import 'package:fide/providers/quick_fix_controller.dart';
 import 'package:fide/services/arb_service.dart';
+import 'package:fide/providers/service_providers.dart';
+import 'package:fide/widget_services/file_action.dart';
 import 'package:fide/widget_services/issue_section.dart';
 import 'package:fide/widget_services/quick_fix_prompts.dart';
 import 'package:fide/widgets/action_card.dart';
@@ -27,6 +29,7 @@ import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/panel_scroll_view.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/primary_button.dart';
+import 'package:fide/widgets/refresh_button.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/status_tone_style.dart';
@@ -156,9 +159,9 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     }
   }
 
-  /// Reloads the localization status after a failure.
+  /// Checks the localization status again after a failure.
   Widget _buildRetryButton() {
-    return PrimaryButton(onPressed: _controller.reload, label: 'Retry');
+    return RefreshButton(onPressed: _controller.reload);
   }
 
   /// The checklist and next step for a partly set up project.
@@ -226,12 +229,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
 
         // Show specific actions based on what's missing
         if (!hasArbFiles) ...[
-          _buildActionItem(
-            'Create ARB files',
-            'Set up localization files with template content',
-            Icons.file_copy,
-            _initializeLocalization,
-          ),
+          LocalizationSetupWidget.initializeCard(_initializeLocalization),
         ] else if (!hasValidArbFiles) ...[
           _buildActionItem(
             'Fix malformed ARB files',
@@ -312,8 +310,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           Padding(
             padding: AppPadding.panelContent,
             child: BadgeStatus.warning(
-              text:
-                  '${duplicatedValues.length} English ${duplicatedValues.length == 1 ? 'string is' : 'strings are'} duplicated',
+              text: duplicatedValues.length.count('duplicated English string'),
               showIcon: true,
             ),
           ),
@@ -388,9 +385,12 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                         ),
                       ),
                       CompactTextButton(
-                        icon: Icons.edit,
-                        label: 'Edit',
-                        onPressed: () => openFile(ref, filePath),
+                        icon: FileAction.open.icon,
+                        label: FileAction.open.labelIn(
+                          ref.read(desktopShellProvider),
+                        ),
+                        onPressed: () =>
+                            FileAction.open.run(context, ref, filePath),
                       ),
                     ],
                   ),

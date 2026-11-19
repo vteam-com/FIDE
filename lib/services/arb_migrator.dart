@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:fcheck/fcheck.dart' as fcheck;
+import 'package:fide/models/arb_keys.dart';
+import 'package:fide/models/arb_message.dart';
 import 'package:fide/models/arb_migration.dart';
 import 'package:fide/models/dart_imports.dart';
 import 'package:fide/models/dart_translations.dart';
@@ -41,9 +43,6 @@ class ArbMigrator {
 
   /// Suffix of the file the hand-written code moves to.
   static const String _movedSuffix = '_extensions.dart';
-
-  /// Extension of Dart files.
-  static const String _dartExtension = '.dart';
 
   final CodeFormatter _formatter;
 
@@ -106,7 +105,10 @@ class ArbMigrator {
     );
     final snapshot = await _snapshot([
       ...await ProjectFiles.filesIn(arbDir, extension: ArbService.arbExtension),
-      ...await ProjectFiles.filesIn(outputDir, extension: _dartExtension),
+      ...await ProjectFiles.filesIn(
+        outputDir,
+        extension: ProjectFiles.dartExtension,
+      ),
       ...callers.keys,
       movedPath,
     ]);
@@ -195,7 +197,7 @@ class ArbMigrator {
     final classUse = RegExp('\\b$outputClass\\b');
     await for (final file in ProjectFiles.walk(
       ProjectPaths(projectPath).libDir,
-      extension: _dartExtension,
+      extension: ProjectFiles.dartExtension,
     )) {
       final path = file.path;
       if (p.isWithin(outputDir, path) || p.equals(p.dirname(path), outputDir)) {
@@ -229,7 +231,7 @@ class ArbMigrator {
     return {
       for (final path in await ProjectFiles.filesIn(
         outputDir,
-        extension: _dartExtension,
+        extension: ProjectFiles.dartExtension,
       ))
         if (L10nConfig.localeParts(p.basename(path))
             case (:final prefix, :final locale) when prefix == '${stem}_')
@@ -245,7 +247,7 @@ class ArbMigrator {
   Future<void> _restore(Map<String, String?> snapshot, String outputDir) async {
     for (final path in await ProjectFiles.filesIn(
       outputDir,
-      extension: _dartExtension,
+      extension: ProjectFiles.dartExtension,
     )) {
       if (!snapshot.containsKey(path)) await File(path).delete();
     }
@@ -281,12 +283,14 @@ class ArbMigrator {
         arb.addAll(dart.messages);
         if (!withPlaceholders) return;
         for (final MapEntry(:key, value: types) in dart.placeholders.entries) {
-          final metadata = {...?(arb['@$key'] as Map<String, dynamic>?)};
-          metadata['placeholders'] = {
-            for (final MapEntry(key: name, value: type) in types.entries)
-              name: {'type': type},
+          final metadataKey = ArbKeys.metadataKeyOf(key);
+          arb[metadataKey] = {
+            ...?(arb[metadataKey] as Map<String, dynamic>?),
+            ArbMessage.placeholdersKey: {
+              for (final MapEntry(key: name, value: type) in types.entries)
+                name: {ArbMessage.placeholderTypeKey: type},
+            },
           };
-          arb['@$key'] = metadata;
         }
       },
     );

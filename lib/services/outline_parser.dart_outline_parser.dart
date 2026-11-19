@@ -9,11 +9,7 @@ class DartOutlineParser extends OutlineParser {
 
   @override
   List<OutlineNode> parse(String content) {
-    final result = parseString(
-      content: content,
-      featureSet: FeatureSet.latestLanguageVersion(),
-      throwIfDiagnostics: false,
-    );
+    final result = parseDart(content);
     final visitor = _OutlineVisitor(result.lineInfo);
     result.unit.visitChildren(visitor);
     return visitor.nodes;

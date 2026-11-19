@@ -4,7 +4,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/ai_action.dart';
 import 'package:fide/models/chat_message.dart';
 import 'package:fide/panels/right/ai_panel.ai_transcript_entry.dart';
-import 'package:fide/widgets/copy_button.dart';
+import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/gestures.dart';
 import 'package:fide/models/ollama_model.dart';
 import 'package:fide/models/ollama_step.dart';
@@ -70,7 +70,7 @@ void main() {
     unawaited(
       container
           .read(aiChatProvider.notifier)
-          .send('What is it?', action: AiAction.explain),
+          .send('What is it?', action: AiAction.ask),
     );
     await tester.pump(AppDuration.outputLogPublish);
     await tester.pump();

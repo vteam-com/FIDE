@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/model_message.dart';
 import 'package:fide/models/text_tool_calls.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/model_http.dart';
@@ -38,8 +39,8 @@ class OllamaClient implements ChatModel {
   /// qwen3-coder leaves out `</function>`: the same request would write
   /// the same broken call.
   static const Map<String, String> _unreadableCall = {
-    'role': 'user',
-    'content':
+    ModelMessage.roleKey: ModelMessage.userRole,
+    ModelMessage.contentKey:
         'Your last tool call could not be read. Call the tool again, '
         'writing the whole call: every <parameter=…> closed by '
         '</parameter>, then </function> before </tool_call>.',
@@ -173,9 +174,9 @@ class OllamaClient implements ChatModel {
       onText: onText,
     );
     return _withWrittenCalls({
-      'role': 'assistant',
-      'content': reply.text,
-      if (reply.toolCalls.isNotEmpty) 'tool_calls': reply.toolCalls,
+      ...ModelMessage.of(ModelMessage.assistantRole, reply.text),
+      if (reply.toolCalls.isNotEmpty)
+        ModelMessage.toolCallsKey: reply.toolCalls,
     });
   }
 
@@ -266,12 +267,16 @@ class OllamaClient implements ChatModel {
         cancel: cancel,
       )) {
         final message = chunk['message'];
-        final words = message is Map ? message['content'] : chunk['response'];
+        final words = message is Map
+            ? message[ModelMessage.contentKey]
+            : chunk['response'];
         if (words is String && words.isNotEmpty) {
           text.write(words);
           onText?.call(TextToolCalls.textBefore(text.toString()));
         }
-        final calls = message is Map ? message['tool_calls'] : null;
+        final calls = message is Map
+            ? message[ModelMessage.toolCallsKey]
+            : null;
         if (calls is List) toolCalls.addAll(calls);
       }
       return (text: text.toString(), toolCalls: toolCalls);
@@ -282,15 +287,15 @@ class OllamaClient implements ChatModel {
   /// `tool_calls` when Ollama found none, so they run, and so the history
   /// shows the model proper calls rather than text it would imitate.
   static Map<String, dynamic> _withWrittenCalls(Map<String, dynamic> reply) {
-    final calls = reply['tool_calls'];
+    final calls = reply[ModelMessage.toolCallsKey];
     if (calls is List && calls.isNotEmpty) return reply;
-    final content = reply['content']?.toString() ?? '';
+    final content = reply[ModelMessage.contentKey]?.toString() ?? '';
     final written = TextToolCalls.parse(content);
     if (written.isEmpty) return reply;
     return {
       ...reply,
-      'content': TextToolCalls.textBefore(content),
-      'tool_calls': written,
+      ModelMessage.contentKey: TextToolCalls.textBefore(content),
+      ModelMessage.toolCallsKey: written,
     };
   }
 }

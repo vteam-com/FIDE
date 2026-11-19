@@ -52,7 +52,7 @@ class AppTheme {
       dividerColor: colorScheme.outline.withValues(alpha: AppOpacity.divider),
       dividerTheme: DividerThemeData(
         color: colorScheme.outline.withValues(alpha: AppOpacity.divider),
-        thickness: AppSize.borderThin,
+        thickness: AppBorderWidth.thin,
       ),
       // One look for every TabBar: full-width underline, primary when selected
       tabBarTheme: TabBarThemeData(
@@ -83,7 +83,7 @@ class AppTheme {
       popupMenuTheme: PopupMenuThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(AppRadius.small)),
-          side: BorderSide(color: popupBorderColor, width: AppSize.borderThin),
+          side: BorderSide(color: popupBorderColor, width: AppBorderWidth.thin),
         ),
         elevation: AppSpacing.small,
       ),

@@ -14,6 +14,11 @@ import 'package:fide/constants/core_constants.dart';
 class LoginShellEnvironment {
   static const String _pathKey = 'PATH';
   static const String _marker = '__FIDE_PATH__';
+
+  /// Environment variable naming the user's shell.
+  static const String _shellKey = 'SHELL';
+
+  /// The shell used when [_shellKey] names none: macOS's default.
   static const String _defaultShell = '/bin/zsh';
   static const int _timedOutExitCode = -1;
 
@@ -26,6 +31,9 @@ class LoginShellEnvironment {
   static bool _retrying = false;
 
   const LoginShellEnvironment._();
+
+  /// The user's shell, as `$SHELL` names it, else zsh.
+  static String get shell => Platform.environment[_shellKey] ?? _defaultShell;
 
   /// Starts reading the login shell's `PATH`; safe to call more than once.
   ///
@@ -76,7 +84,6 @@ class LoginShellEnvironment {
   /// file that edits `PATH` is sourced, and prints `PATH` between markers to
   /// skip any banner the profile prints.
   static Future<String?> _readLoginShellPath() async {
-    final shell = Platform.environment['SHELL'] ?? _defaultShell;
     try {
       final process = await Process.start(shell, [
         '-l',

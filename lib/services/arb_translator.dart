@@ -4,7 +4,11 @@ import 'dart:math' as math;
 
 import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/arb_keys.dart';
+import 'package:fide/models/arb_message.dart';
 import 'package:fide/models/arb_translation.dart';
+import 'package:fide/models/locale_number.dart';
+import 'package:fide/models/model_reply.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/string_rewrite.dart';
 import 'package:fide/services/arb_service.dart';
@@ -70,7 +74,9 @@ class ArbTranslator {
               ArbTranslation(
                 key: detail.key,
                 source: source[detail.key] as String,
-                description: _description(source['@${detail.key}']),
+                description: _description(
+                  source[ArbKeys.metadataKeyOf(detail.key)],
+                ),
                 language: issue.languageName,
                 arbPath: config.arbPathFor(projectPath, issue.languageCode),
               ),
@@ -80,7 +86,9 @@ class ArbTranslator {
   /// The `description` of an ARB key's [metadata], or null when it has
   /// none.
   static String? _description(Object? metadata) {
-    final description = metadata is Map ? metadata['description'] : null;
+    final description = metadata is Map
+        ? metadata[ArbMessage.descriptionKey]
+        : null;
     return description is String && description.isNotEmpty ? description : null;
   }
 
@@ -114,7 +122,7 @@ class ArbTranslator {
         );
         onProgress?.call(
           'Translating ${start + 1}–${start + batch.length} of '
-          '${pending.length} keys into $language…',
+          '${pending.length.count('key')} into $language…',
         );
         final List<String> texts;
         try {
@@ -145,10 +153,11 @@ class ArbTranslator {
       await ArbService.update(path, (arb) {
         arb.addAll(entries);
         for (final key in reviewedByFile[path] ?? const <String>{}) {
-          final metadata = arb['@$key'];
-          arb['@$key'] = {
+          final metadataKey = ArbKeys.metadataKeyOf(key);
+          final metadata = arb[metadataKey];
+          arb[metadataKey] = {
             if (metadata is Map) ...metadata,
-            'description': reviewedDescription,
+            ArbMessage.descriptionKey: reviewedDescription,
           };
         }
       });

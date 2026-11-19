@@ -21,12 +21,6 @@ final dryReviewProvider = FutureProvider<DryReview?>((ref) async {
   if (projectPath == null) return null;
   return afterSavesPause(ref, ref.read(_dryReviewRunsProvider), () async {
     final analyzer = ref.read(dryAnalyzerProvider);
-    final sdkPath = await ref.read(dartSdkPathProvider.future);
-    if (sdkPath == null) {
-      // Look again next time, in case Flutter was installed meanwhile
-      if (ref.mounted) ref.invalidate(dartSdkPathProvider);
-      throw StateError('Flutter SDK not found');
-    }
-    return analyzer.review(projectPath, sdkPath);
+    return analyzer.review(projectPath, await requireDartSdkPath(ref));
   });
 });

@@ -49,8 +49,7 @@ class NativeMenuBuilder {
         PlatformMenuItem(
           label: 'Settings',
           shortcut: AppShortcut.settings,
-          onSelected: () =>
-              ref.read(settingsVisibleProvider.notifier).state = true,
+          onSelected: () => showSettings(ref),
         ),
         const PlatformMenuItem(
           label: 'Quit ${AppName.short}',

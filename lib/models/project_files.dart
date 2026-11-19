@@ -1,15 +1,19 @@
 import 'dart:io';
 
 import 'package:fide/models/project_node.dart';
+import 'package:fide/models/project_paths.dart';
 import 'package:path/path.dart' as p;
 
 /// The files of a project the user works on, leaving out tool output and
 /// hidden folders and files.
 class ProjectFiles {
+  /// The extension of Dart files, as [walk] and [filesIn] take it.
+  static const String dartExtension = '.dart';
+
   /// Folders left out besides hidden ones: tool output, installed
   /// dependencies and Git data.
   static const Set<String> skippedFolders = {
-    'build',
+    ProjectPaths.buildFolder,
     '.dart_tool',
     '.git',
     'node_modules',

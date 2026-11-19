@@ -3,7 +3,6 @@ import 'dart:async';
 part 'chat_model.ai_cancel_token.dart';
 part 'chat_model.ai_cancelled_exception.dart';
 part 'chat_model.ai_service_exception.dart';
-part 'chat_model.model_reply.dart';
 
 /// Receives the text of a reply as it streams in: all of it so far.
 typedef ReplyText = void Function(String textSoFar);

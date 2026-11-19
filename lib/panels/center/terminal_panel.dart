@@ -83,11 +83,11 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
       // Keeps the first and last rows and columns clear of the panel edges
       padding: AppPadding.panelContent,
       theme: TerminalTheme(
-        cursor: Colors.white,
-        selection: Colors.blue.withAlpha(AppSize.gutterDividerAlpha.toInt()),
-        searchHitBackground: Colors.yellow,
-        searchHitBackgroundCurrent: Colors.orange,
-        searchHitForeground: Colors.black,
+        cursor: TerminalPalette.cursor,
+        selection: TerminalPalette.selection,
+        searchHitBackground: TerminalPalette.searchHit,
+        searchHitBackgroundCurrent: TerminalPalette.searchHitCurrent,
+        searchHitForeground: TerminalPalette.searchHitText,
         black: TerminalPalette.background,
         red: TerminalPalette.red,
         green: TerminalPalette.green,

@@ -287,7 +287,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
                 '${code.codeSizeClassArtifacts.length.localized} classes, '
                     '${code.totalFunctionCount.localized} functions',
                 '${code.totalCommentLines.localized} comment lines '
-                    '(${(code.commentRatio * AppMetric.maxScore).round()}%)',
+                    '(${(code.commentRatio * AppMetric.percent).round()}%)',
               ],
             ),
             StatCard(

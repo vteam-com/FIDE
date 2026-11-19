@@ -149,8 +149,6 @@ class AppMetric {
   static const int gitCommitDefaultCount = 10;
   static const int daysPerMonth = 30;
   static const int daysPerYear = 365;
-  static const int maxMruFolders = 10;
-  static const int gitStatusFieldOffset = 3;
   static const int regexBaseClassGroupIndex = 2;
   static const int logPreviewChars = 200;
 

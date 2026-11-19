@@ -1,3 +1,4 @@
+import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/widgets/task_button.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -11,7 +12,12 @@ import 'package:material_ui/material_ui.dart';
 /// disabled meanwhile (no [onPressed]), not [busy].
 class RefreshButton extends StatelessWidget {
   /// Creates the button calling [onPressed].
-  const RefreshButton({super.key, required this.onPressed, this.busy = false});
+  const RefreshButton({
+    super.key,
+    required this.onPressed,
+    this.busy = false,
+    this.shortcut,
+  });
 
   /// Whether the check is running.
   final bool busy;
@@ -19,11 +25,15 @@ class RefreshButton extends StatelessWidget {
   /// Runs the check again; the button is disabled when null.
   final VoidCallback? onPressed;
 
+  /// Keys a menu item running the same check answers to, named in the
+  /// tooltip; none when null.
+  final SingleActivator? shortcut;
+
   @override
   Widget build(BuildContext context) {
     return TaskButton(
       icon: Icons.refresh,
-      tooltip: 'Check again',
+      tooltip: ShortcutHelpEntry.tooltip('Check again', shortcut),
       running: busy,
       onRun: onPressed,
     );

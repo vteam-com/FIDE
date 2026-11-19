@@ -18,18 +18,17 @@ typedef _ReferenceReply = ({Object? answer, String? error});
 /// Files are read through an overlay so a rename can be checked against the
 /// analysis before anything is written.
 class _ReferenceWorker {
-  _ReferenceWorker(this._projectPath, String sdkPath) {
-    _collection = AnalysisContextCollection(
-      includedPaths: [_projectPath],
-      resourceProvider: _provider,
-      sdkPath: sdkPath,
-    );
-  }
+  _ReferenceWorker(this._projectPath, String sdkPath)
+    : _analysis = OverlayAnalysis(projectPath: _projectPath, sdkPath: sdkPath);
 
-  /// Characters a Dart identifier may hold, not starting with a digit.
-  static final RegExp _identifier = RegExp(r'^[A-Za-z_$][A-Za-z0-9_$]*$');
+  /// A whole Dart identifier.
+  static final RegExp _identifier = RegExp('^$identifierPattern\$');
 
-  late final AnalysisContextCollection _collection;
+  /// The project's analysis, with a change being checked overlaid.
+  final OverlayAnalysis _analysis;
+
+  /// The project's analysis contexts.
+  AnalysisContextCollection get _collection => _analysis.collection;
 
   /// The analyzed Dart files, with their modification times and text.
   final FileTexts _files = FileTexts();
@@ -42,14 +41,8 @@ class _ReferenceWorker {
   /// The analyzed project's folder: what it calls elsewhere isn't listed.
   final String _projectPath;
 
-  final OverlayResourceProvider _provider = OverlayResourceProvider(
-    PhysicalResourceProvider.INSTANCE,
-  );
-
   /// Completes when the requests received so far are answered.
   Future<void> _queue = Future.value();
-
-  int _modificationStamp = 0;
 
   /// Isolate entry: sends a request port through `args.$1`, then answers
   /// each `(request, replyPort)` with a [_ReferenceReply] holding the
@@ -145,7 +138,7 @@ class _ReferenceWorker {
     final nameOffset = fragment.nameOffset;
     return _UsageVisitor.resultAt(
       path,
-      _provider.getFile(path).readAsStringSync(),
+      _analysis.read(path),
       library.lineInfo,
       nameOffset ?? fragment.offset,
       // An unnamed constructor's place has no name to mark
@@ -220,47 +213,16 @@ class _ReferenceWorker {
     Map<String, String> contents,
     String action,
   ) async {
-    final before = {
-      for (final path in contents.keys) path: (await _errorsIn(path)).length,
-    };
-    final problems = <String>[];
+    final before = await _analysis.errorCounts(contents.keys);
     try {
-      _overlay(contents);
-      await _applyChanges();
-      for (final path in contents.keys) {
-        final errors = await _errorsIn(path);
-        if (errors.length > before[path]!) problems.add(errors.first);
-      }
+      contents.forEach(_analysis.overlay);
+      await _analysis.applyChanges();
+      await _analysis.checkNoNewErrors(contents.keys, before, action: action);
     } finally {
-      for (final path in contents.keys) {
-        _provider.removeOverlay(path);
-        _collection.contextFor(path).changeFile(path);
-      }
-      await _applyChanges();
-    }
-    if (problems.isNotEmpty) {
-      throw StateError(
-        '$action would break the build, so nothing was changed:\n'
-        '${problems.join('\n')}',
-      );
+      contents.keys.forEach(_analysis.removeOverlay);
+      await _analysis.applyChanges();
     }
   }
-
-  /// Overlays each of [contents] for the next analysis.
-  void _overlay(Map<String, String> contents) {
-    for (final MapEntry(key: path, value: content) in contents.entries) {
-      _provider.setOverlay(
-        path,
-        content: content,
-        modificationStamp: _modificationStamp++,
-      );
-      _collection.contextFor(path).changeFile(path);
-    }
-  }
-
-  /// Compile errors [path] has in the current analysis.
-  Future<List<String>> _errorsIn(String path) =>
-      compileErrors(_collection.contextFor(path).currentSession, path);
 
   /// The outline declaration starting at 1-based [line] and [column] of
   /// [filePath]; throws when there is none (e.g. unsaved edits moved it),
@@ -324,7 +286,7 @@ class _ReferenceWorker {
     final seen = <String>{};
     for (final context in _collection.contexts) {
       for (final path in context.contextRoot.analyzedFiles()) {
-        if (!path.endsWith('.dart')) continue;
+        if (!FileTypeUtils.isDartFile(path)) continue;
         seen.add(path);
         if (_files.update(path, File(path).lastModifiedSync())) {
           context.changeFile(path);
@@ -336,14 +298,7 @@ class _ReferenceWorker {
       _files.remove(path);
       _collection.contextFor(path).changeFile(path);
     }
-    await _applyChanges();
-  }
-
-  /// Lets every context take in the files marked changed.
-  Future<void> _applyChanges() async {
-    for (final context in _collection.contexts) {
-      await context.applyPendingFileChanges();
-    }
+    await _analysis.applyChanges();
   }
 
   /// [path] resolved, or null when it can't be.

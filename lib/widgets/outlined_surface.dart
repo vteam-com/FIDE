@@ -36,7 +36,9 @@ class OutlinedSurface extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.medium),
         border: Border.all(
           color: highlight ?? Theme.of(context).dividerColor,
-          width: highlight == null ? AppSize.borderThin : AppBorderWidth.medium,
+          width: highlight == null
+              ? AppBorderWidth.thin
+              : AppBorderWidth.medium,
         ),
       ),
       child: child,

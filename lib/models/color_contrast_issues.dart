@@ -27,9 +27,10 @@ extension ColorContrastIssues on ColorContrastReport {
       '`// ignore: fcheck_color_contrast`.';
 
   /// Quality-score points the findings cost, capped.
-  int get deduction => (findings.length * AppMetric.colorContrastPoints).clamp(
-    0,
-    AppMetric.colorContrastPointsMax,
+  int get deduction => QualityIssue.deductionOf(
+    findings.length,
+    points: AppMetric.colorContrastPoints,
+    max: AppMetric.colorContrastPointsMax,
   );
 
   /// The issue listing every finding, located under the project folder
@@ -37,9 +38,11 @@ extension ColorContrastIssues on ColorContrastReport {
   QualityIssue? issue(String rootPath) => findings.isEmpty
       ? null
       : QualityIssue(
-          label:
-              '$title: -${deduction.localized}% '
-              '(${findings.length.count('color')} below WCAG AA)',
+          label: QualityIssue.deductionLabel(
+            title,
+            deduction,
+            '${findings.length.count('color')} below WCAG AA',
+          ),
           title: title,
           guidance: _guidance,
           rootPath: rootPath,

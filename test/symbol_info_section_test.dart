@@ -6,6 +6,7 @@ import 'package:fide/panels/right/symbol_info_section.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/outline_controller.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/reference_finder.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,7 +15,10 @@ import 'package:material_ui/material_ui.dart';
 /// Finds one caller of everything, and [calls] as what it calls.
 class _FakeFinder extends ReferenceFinder {
   _FakeFinder(this.calls)
-    : super(projectPath: '', dartSdkPath: () async => null);
+    : super(
+        projectPath: '',
+        dartSdkPath: () async => throw const FlutterSdkNotFoundException(),
+      );
 
   final List<SearchResult> calls;
 

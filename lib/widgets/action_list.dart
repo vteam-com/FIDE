@@ -1,13 +1,14 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_status.dart';
 import 'package:fide/theme/app_theme.dart';
-import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/compact_toggle_button.dart';
 import 'package:fide/widgets/optional_tooltip.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/panel_action.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:fide/widgets/task_button.dart';
+import 'package:fide/widgets/truncated_text.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Panel actions as one compact row each: the action's status-aware icon,
@@ -75,18 +76,16 @@ class _ActionRowState extends State<_ActionRow> {
                   children: [
                     _buildLeading(colorScheme),
                     Expanded(
-                      child: Text(
+                      child: TruncatedText(
                         action.title,
                         style: AppTextStyle.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    CompactIconButton(
-                      icon: _expanded ? Icons.info : Icons.info_outline,
-                      tooltip: _expanded ? 'Hide details' : 'Show details',
-                      selected: _expanded,
-                      onPressed: _toggle,
+                    CompactToggleButton(
+                      icon: Icons.info_outline,
+                      tooltip: 'Details',
+                      isOn: _expanded,
+                      onChanged: (_) => _toggle(),
                     ),
                     ..._buildLiveControls(),
                     _buildRunButton(),

@@ -256,6 +256,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   RefreshButton(
                     busy: repo.activity == GitActivity.refresh,
                     onPressed: repo.activity == null ? _refresh : null,
+                    shortcut: AppShortcut.refreshGitStatus,
                   ),
                 ],
               ),

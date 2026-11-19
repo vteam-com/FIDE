@@ -1,3 +1,6 @@
+/// Shown for an installed tool whose version can't be read.
+const String unknownVersion = 'Unknown';
+
 /// The `x.y.z` version a tool prints right after [name] in [output], as
 /// `Flutter 3.24.0 • channel stable` or `git version 2.39.3` do; null when
 /// the output doesn't hold one.

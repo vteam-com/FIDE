@@ -17,7 +17,7 @@ import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/more_menu_button.dart';
 import 'package:fide/widgets/outline_kind_style.dart';
-import 'package:fide/widgets/status_tone_style.dart';
+import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -48,7 +48,7 @@ class FileOutline extends ConsumerWidget {
     // An outline that never parsed says why; a later failure, such as
     // YAML mid-edit, keeps the last one shown
     if (outline.nodes.isEmpty && outline.error.isNotEmpty) {
-      return _buildError(context, ref, outline.error);
+      return _buildError(ref, outline.error);
     }
     final selectedWidget = outline.selectedWidget;
     return Column(
@@ -70,13 +70,9 @@ class FileOutline extends ConsumerWidget {
 
   /// The row telling the file can't be outlined, [error] in its tooltip;
   /// clicking it parses the file again.
-  Widget _buildError(BuildContext context, WidgetRef ref, String error) {
+  Widget _buildError(WidgetRef ref, String error) {
     return TreeRow(
-      icon: Icon(
-        StatusTone.error.icon,
-        color: StatusTone.error.readableIn(Theme.of(context).colorScheme),
-        size: AppIconSize.medium,
-      ),
+      icon: StatusIndicator.tone(StatusTone.error),
       name: 'Parse error',
       note: '$error\n\nClick to parse again',
       onTap: ref.read(outlineControllerProvider(path).notifier).parse,

@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/models/tool_version.dart';
 import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/status_indicator.dart';
@@ -36,7 +37,8 @@ class ToolStatusRow extends StatelessWidget {
       children: [
         StatusIndicator.tone(
           available ? StatusTone.success : StatusTone.error,
-          label: '$name: ${available ? version ?? 'Unknown' : 'Not Found'}',
+          label:
+              '$name: ${available ? version ?? unknownVersion : 'Not Found'}',
         ),
         if (!available)
           CompactTextButton(

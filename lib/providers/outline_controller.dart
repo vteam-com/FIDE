@@ -9,6 +9,7 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/outline_providers.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
+import 'package:fide/services/debouncer.dart';
 import 'package:fide/services/widget_editor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -35,10 +36,10 @@ class OutlineController extends Notifier<OutlineState> {
   int _consumersGeneration = 0;
 
   /// The pending parse, while edits are debounced.
-  Timer? _debounce;
+  final Debouncer _parse = Debouncer(AppDuration.updateDebounce);
 
   /// The pending consumer lookup, while cursor moves are debounced.
-  Timer? _consumersDebounce;
+  final Debouncer _consumers = Debouncer(AppDuration.updateDebounce);
 
   /// The text last parsed and its outline, so an unchanged text isn't
   /// parsed again.
@@ -55,8 +56,8 @@ class OutlineController extends Notifier<OutlineState> {
     );
     ref.listen(editorCursorLineProvider, (_, line) => setCursorLine(line));
     ref.onDispose(() {
-      _debounce?.cancel();
-      _consumersDebounce?.cancel();
+      _parse.cancel();
+      _consumers.cancel();
     });
     // The first parse runs once the state exists
     unawaited(Future.microtask(parse));
@@ -155,8 +156,7 @@ class OutlineController extends Notifier<OutlineState> {
   /// Outlines the file again once edits pause for
   /// [AppDuration.updateDebounce].
   void scheduleParse() {
-    _debounce?.cancel();
-    _debounce = Timer(AppDuration.updateDebounce, () {
+    _parse.run(() {
       if (ref.mounted) unawaited(parse());
     });
   }
@@ -167,8 +167,7 @@ class OutlineController extends Notifier<OutlineState> {
   /// search the project for each entry passed.
   void setCursorLine(int line) {
     state = state.copyWith(cursorLine: line);
-    _consumersDebounce?.cancel();
-    _consumersDebounce = Timer(AppDuration.updateDebounce, () {
+    _consumers.run(() {
       if (ref.mounted) _updateConsumers();
     });
   }

@@ -224,7 +224,7 @@ class _ImageDiffState extends ConsumerState<ImageDiff> {
                   _swipe,
                 )!,
                 child: SizedBox(
-                  width: AppSize.borderThin,
+                  width: AppBorderWidth.thin,
                   child: ColoredBox(
                     color: Theme.of(context).colorScheme.primary,
                   ),

@@ -1,3 +1,5 @@
+import 'package:fide/models/model_reply.dart';
+
 /// A Flutter, Dart or CocoaPods command the AI agent runs in a project,
 /// read from the command line the model writes: only the [allowed]
 /// dependency, code generation and fix chores, with arguments that stay in
@@ -52,9 +54,6 @@ class ProjectCommand {
   /// The spaces between the words of a command line.
   static final RegExp _spaces = RegExp(r'\s+');
 
-  /// Quotes or backticks the model may wrap the whole line in.
-  static final RegExp _lineQuotes = RegExp('^[\'"`]+|[\'"`]+\$');
-
   /// Quotes the model may wrap a word in, such as a version constraint.
   static final RegExp _wordQuotes = RegExp('^[\'"]+|[\'"]+\$');
 
@@ -74,7 +73,7 @@ class ProjectCommand {
   /// when the line is not one of the [allowed] commands, chains commands,
   /// or has an argument outside the project.
   static ProjectCommand parse(String line) {
-    final text = line.trim().replaceAll(_lineQuotes, '');
+    final text = line.trim().unquoted;
     if (text.contains('\n')) {
       throw const FormatException('Run one command per call.');
     }

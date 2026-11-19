@@ -168,10 +168,8 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
         children: [
           ProjectIcon(projectPath: currentProjectPath),
           Flexible(
-            child: Text(
+            child: TruncatedText(
               p.basename(currentProjectPath),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
               style: AppTextStyle.label,
             ),
           ),
@@ -228,7 +226,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
   Widget _buildSettingsButton() {
     return CompactIconButton(
       icon: Icons.settings,
-      onPressed: () => ref.read(settingsVisibleProvider.notifier).state = true,
+      onPressed: () => showSettings(ref),
       tooltip: ShortcutHelpEntry.tooltip('Settings', AppShortcut.settings),
     );
   }
@@ -237,7 +235,7 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
   Widget _buildCloseSettingsButton() {
     return CompactIconButton(
       icon: Icons.close,
-      onPressed: () => ref.read(settingsVisibleProvider.notifier).state = false,
+      onPressed: () => showSettings(ref, visible: false),
       tooltip: 'Close (Esc)',
     );
   }

@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/preview_item.dart';
 import 'package:fide/models/preview_scope.dart';
 import 'package:fide/panels/right/preview_card.dart';
@@ -186,9 +187,8 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
         () => Align(
           alignment: Alignment.centerLeft,
           child: CompactTextButton(
-            label: missing == 1
-                ? 'Generate a preview for 1 more widget'
-                : 'Generate previews for $missing more widgets',
+            icon: AppIcon.fix,
+            label: 'Generate Previews for ${missing.count('more widget')}',
             onPressed: _generate,
           ),
         ),

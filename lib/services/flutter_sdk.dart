@@ -5,8 +5,14 @@ import 'package:fide/models/tool_version.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:path/path.dart' as p;
 
+part 'flutter_sdk.flutter_sdk_not_found_exception.dart';
+
 /// Resolves the command launching the Dart tool.
 typedef DartCommand = Future<String> Function();
+
+/// Finds the root of the Dart SDK bundled with Flutter; throws a
+/// [FlutterSdkNotFoundException] when Flutter isn't found.
+typedef DartSdkFinder = Future<String> Function();
 
 /// Versions of the installed Flutter SDK, read from `flutter --version`.
 class FlutterSdk {
@@ -21,8 +27,11 @@ class FlutterSdk {
   /// The Dart tool's file name in a Dart SDK's `bin` folder on Windows.
   static const String _windowsDartFile = 'dart.exe';
 
-  /// The folder of a Dart SDK holding its tools.
+  /// The folder of a Dart or Flutter SDK holding its tools.
   static const String _sdkBinFolder = 'bin';
+
+  /// Where the Flutter SDK keeps its Dart SDK, under [_sdkBinFolder].
+  static const List<String> _bundledDartSdk = ['cache', 'dart-sdk'];
 
   final ProcessRunner _runner;
 
@@ -41,16 +50,11 @@ class FlutterSdk {
     try {
       final flutterRoot = (jsonDecode(output) as Map)['flutterRoot'];
       if (flutterRoot is! String) return null;
-      return p.join(flutterRoot, 'bin', 'cache', 'dart-sdk');
+      return p.joinAll([flutterRoot, _sdkBinFolder, ..._bundledDartSdk]);
     } on FormatException {
       return null;
     }
   }
-
-  /// The Dart tool bundled with Flutter, so `dart analyze` and
-  /// `dart format` match the SDK projects build with; [dartExecutable] on
-  /// the `PATH` when Flutter does not report one.
-  Future<String> bundledDart() async => dartIn(await dartSdkPath());
 
   /// The Dart tool of the Dart SDK at [sdkPath], as [dartSdkPath] finds
   /// it; [dartExecutable] on the `PATH` without one.

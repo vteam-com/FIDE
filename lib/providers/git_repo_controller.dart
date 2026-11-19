@@ -5,6 +5,7 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/git_diff_stats_provider.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/chat_model.dart';
+import 'package:fide/services/debouncer.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -41,7 +42,7 @@ class GitRepoController extends AsyncNotifier<GitRepoState> {
   bool _reloadPending = false;
 
   /// Waits for saves and file changes to pause before reloading.
-  Timer? _reloadDebounce;
+  final Debouncer _reloadDebounce = Debouncer(AppDuration.saveBurstPause);
 
   @override
   Future<GitRepoState> build() {
@@ -49,16 +50,13 @@ class GitRepoController extends AsyncNotifier<GitRepoState> {
     // save also updates the tree a moment later: both read Git once
     ref.listen(savedFilesRevisionProvider, (_, _) => _scheduleReload());
     ref.listen(projectTreeRevisionProvider, (_, _) => _scheduleReload());
-    ref.onDispose(() => _reloadDebounce?.cancel());
+    ref.onDispose(_reloadDebounce.cancel);
     return _load(ref.read(gitServiceProvider));
   }
 
   /// Reloads once saves and file changes pause for
-  /// [AppDuration.gitReloadDebounce].
-  void _scheduleReload() {
-    _reloadDebounce?.cancel();
-    _reloadDebounce = Timer(AppDuration.gitReloadDebounce, reload);
-  }
+  /// [AppDuration.saveBurstPause].
+  void _scheduleReload() => _reloadDebounce.run(reload);
 
   /// Reads the repository again, keeping the current state on show until
   /// the new one is ready.

@@ -1,9 +1,7 @@
-import 'dart:io';
-
-import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/pub_outdated.dart';
 import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/process_runner.dart';
+import 'package:fide/services/project_config_reader.dart';
 import 'package:fide/services/pubspec_upgrader.dart';
 
 part 'project_maintenance_service.maintenance_exception.dart';
@@ -43,23 +41,19 @@ class ProjectMaintenanceService {
   ) async {
     final outdated = await _outdated(projectPath);
 
-    final pubspecFile = File(ProjectPaths(projectPath).pubspec);
-    if (!pubspecFile.existsSync()) {
-      throw const MaintenanceException('pubspec.yaml not found');
-    }
-    final upgrade = PubspecUpgrader.upgrade(
-      await pubspecFile.readAsString(),
-      outdated,
-    );
-    if (upgrade.upgraded.isNotEmpty) {
-      await pubspecFile.writeAsString(upgrade.yaml);
-    }
+    var upgraded = const <PubOutdatedPackage>[];
+    final found = await ProjectConfigReader.updatePubspec(projectPath, (yaml) {
+      final upgrade = PubspecUpgrader.upgrade(yaml, outdated);
+      upgraded = upgrade.upgraded;
+      return upgrade.yaml;
+    });
+    if (!found) throw const MaintenanceException('pubspec.yaml not found');
 
     await _runChecked(FlutterSdk.executable, [
       'pub',
       'get',
     ], workingDirectory: projectPath);
-    return upgrade.upgraded;
+    return upgraded;
   }
 
   /// What `flutter pub outdated --json` reports for the project at

@@ -1,9 +1,8 @@
-import 'package:analyzer/dart/analysis/features.dart';
-import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/syntactic_entity.dart';
 import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:fide/models/dart_parse.dart';
 import 'package:fide/models/outline_node.dart';
 import 'package:fide/models/widget_wrapper.dart';
 import 'package:fide/services/widget_creation.dart';
@@ -58,11 +57,7 @@ class WidgetEditor {
   /// edit the outline hasn't caught up with.
   static WidgetEditor? find(String content, OutlineNode node) {
     if (!node.kind.isWidget) return null;
-    final parsed = parseString(
-      content: content,
-      featureSet: FeatureSet.latestLanguageVersion(),
-      throwIfDiagnostics: false,
-    );
+    final parsed = parseDart(content);
     final lineInfo = parsed.lineInfo;
     if (node.line < 1 || node.line > lineInfo.lineCount) return null;
     final finder = _EntryFinder(

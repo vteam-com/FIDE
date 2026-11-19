@@ -7,6 +7,7 @@ import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/project_info_controller.dart';
+import 'package:fide/widget_services/file_action.dart';
 import 'package:fide/widget_services/output_panel.dart';
 import 'package:fide/widget_services/quick_fix_prompts.dart';
 import 'package:fide/widgets/busy_bar.dart';
@@ -17,6 +18,7 @@ import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/open_url.dart';
 import 'package:fide/widgets/quick_fix_icon.dart';
 import 'package:fide/widgets/section_panel.dart';
+import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -120,8 +122,8 @@ class PackagesSection extends ConsumerWidget {
                 : () => applyQuickFix(context, ref, QuickFix.upgradePackages),
           ),
           CompactIconButton(
-            icon: Icons.edit_note,
-            tooltip: 'Edit pubspec.yaml',
+            icon: FileAction.open.icon,
+            tooltip: 'Open pubspec.yaml',
             onPressed: () => _openPubspecYaml(context, ref),
           ),
         ],
@@ -139,7 +141,7 @@ class PackagesSection extends ConsumerWidget {
       MessageBox.showError(context, 'pubspec.yaml not found');
       return;
     }
-    ref.read(openDocumentsProvider.notifier).open(pubspecPath);
+    FileAction.open.run(context, ref, pubspecPath);
   }
 
   /// The chip of dependency [packageName] at [version], flagged when
@@ -178,11 +180,7 @@ class PackagesSection extends ConsumerWidget {
           ),
           if (isProblematic || hasIncompatibleVersion) ...[
             const SizedBox(width: AppSpacing.tiny),
-            Icon(
-              StatusTone.error.icon,
-              size: AppIconSize.tiny,
-              color: StatusTone.error.readableIn(colorScheme),
-            ),
+            StatusIndicator.tone(StatusTone.error),
           ],
         ],
       ),

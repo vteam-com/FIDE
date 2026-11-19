@@ -14,12 +14,12 @@ import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/detail_row.dart';
 import 'package:fide/widgets/detail_section.dart';
 import 'package:fide/widgets/outlined_surface.dart';
+import 'package:fide/widgets/platform_icon.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
@@ -209,10 +209,10 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
     return AppIconImage(
       path: _artifacts.appIconPath,
       size: AppIconSize.xLarge,
-      fallback: SvgPicture.asset(
-        _genericIconPath,
-        width: AppIconSize.xLarge,
-        height: AppIconSize.xLarge,
+      fallback: PlatformIcon(
+        platform: widget.selectedPlatform,
+        size: AppIconSize.xLarge,
+        isSupported: widget.isSupported,
       ),
     );
   }

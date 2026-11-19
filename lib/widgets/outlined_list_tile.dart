@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/surface_padding.dart';
+import 'package:fide/widgets/truncated_text.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// A list entry in an outlined box: [leading], [title] over [subtitle], an
@@ -52,12 +53,7 @@ class OutlinedListTile extends StatelessWidget {
             vertical: AppSpacing.tiny,
           ),
           leading: leading,
-          title: Text(
-            title,
-            style: AppTextStyle.label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+          title: TruncatedText(title, style: AppTextStyle.label),
           subtitle: Text(
             subtitle,
             style: AppTextStyle.secondary(context),

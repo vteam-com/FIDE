@@ -19,9 +19,6 @@ class TerminalSession {
     this._environment = LoginShellEnvironment.load,
   });
 
-  /// The shell every session runs.
-  static const String shellPath = '/bin/zsh';
-
   /// What the shell is told its terminal is, for colors and key codes.
   static const String terminalType = 'xterm-256color';
 
@@ -71,7 +68,7 @@ class TerminalSession {
     final folder = workingDirectory ?? Directory.current.path;
     final session = await _spawn(
       PtySpawnOptions(
-        executable: shellPath,
+        executable: LoginShellEnvironment.shell,
         workingDirectory: folder,
         environment: PtyEnvironment.inherit(
           overrides: {...await _environment(), _terminalTypeKey: terminalType},

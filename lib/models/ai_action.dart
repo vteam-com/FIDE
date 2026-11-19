@@ -14,31 +14,6 @@ enum AiAction {
     context: AiContext.selectedFile,
   ),
 
-  /// Explain the pasted code.
-  explain(
-    'Explain Code',
-    'Paste code here to get explanation…',
-    instruction: 'Explain what this code does in simple terms:',
-  ),
-
-  /// Generate code from a description.
-  generate(
-    'Generate Code',
-    'Describe what code you want to generate…',
-    editsFiles: true,
-    instruction: 'Generate Flutter/Dart code for the following requirement:',
-  ),
-
-  /// Refactor the pasted code.
-  refactor(
-    'Refactor Code',
-    'Paste code and describe how to refactor it…',
-    editsFiles: true,
-    instruction:
-        'Refactor this code with the following instruction: Please '
-        'refactor this code',
-  ),
-
   /// Fix the errors of the last failed build, or the pasted ones; a
   /// thinking model reasons first, as tracing errors to their cause needs
   /// it.
@@ -101,8 +76,7 @@ enum AiAction {
   /// needing judgment.
   final bool think;
 
-  /// What is sent with the prompt; with [AiContext.none] the prompt itself
-  /// is the code or description the [instruction] applies to.
+  /// What is sent with the prompt.
   final AiContext context;
 
   /// What the model is told to do; empty when the prompt says it.
@@ -114,7 +88,7 @@ enum AiAction {
     this.editsFiles = false,
     this.editsOnlyWhenAsked = false,
     this.think = false,
-    this.context = AiContext.none,
+    required this.context,
     this.instruction = '',
   });
 

@@ -93,11 +93,7 @@ class IssueRow extends ConsumerWidget {
     QualityFinding finding,
   ) {
     return LocationRow(
-      icon: Icon(
-        issue.tone.icon,
-        size: AppIconSize.small,
-        color: issue.tone.readableIn(Theme.of(context).colorScheme),
-      ),
+      icon: StatusIndicator.tone(issue.tone),
       name: finding.text,
       path: finding.path,
       line: finding.line,

@@ -4,6 +4,7 @@ import 'package:fide/models/dependency_version.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/project_files.dart';
 import 'package:fide/models/project_metrics.dart';
+import 'package:fide/models/project_paths.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:path/path.dart' as p;
@@ -16,8 +17,8 @@ import 'package:path/path.dart' as p;
 class ProjectAnalyzer {
   static final Set<String> _trackedTopLevelDirectories = {
     for (final platform in FlutterPlatform.values) platform.name,
-    'lib',
-    'test',
+    ProjectPaths.libFolder,
+    ProjectPaths.testFolder,
   };
 
   final ProjectConfigReader _config;

@@ -23,10 +23,9 @@ class AiAssistant {
   /// [AiAction.context] collected, such as the selected file's content or
   /// fcheck's findings; [cancel] stops the request.
   ///
-  /// Without a context of its own, the action works on [text] as told by
-  /// its [AiAction.instruction]; with one, [text] adds to the instruction.
-  /// [onText] receives the answer as it streams in. Throws an
-  /// [AiServiceException] when the request fails.
+  /// [text] adds to the action's [AiAction.instruction]. [onText] receives
+  /// the answer as it streams in. Throws an [AiServiceException] when the
+  /// request fails.
   Future<String> respond(
     AiAction action,
     String text,
@@ -43,13 +42,12 @@ class AiAssistant {
         onText: onText,
       );
     }
-    final textIsContext = action.context == AiContext.none;
     return suggest(
       [
         if (action.instruction.isNotEmpty) action.instruction,
-        if (!textIsContext) text,
+        text,
       ].join('\n\n'),
-      textIsContext ? text : context,
+      context,
       think: action.think,
       cancel: cancel,
       onText: onText,

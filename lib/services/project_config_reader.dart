@@ -48,6 +48,21 @@ class ProjectConfigReader {
       await packageName(projectPath) ??
       (throw Exception('pubspec.yaml has no name'));
 
+  /// Rewrites the pubspec of the project at [projectPath] with what
+  /// [change] makes of its text, when that differs; false when the
+  /// project has none.
+  static Future<bool> updatePubspec(
+    String projectPath,
+    String Function(String yaml) change,
+  ) async {
+    final path = ProjectPaths(projectPath).pubspec;
+    final yaml = await readIfExists(path);
+    if (yaml == null) return false;
+    final changed = change(yaml);
+    if (changed != yaml) await File(path).writeAsString(changed);
+    return true;
+  }
+
   /// The text of the file at [path]; null when there is none.
   static Future<String?> readIfExists(String path) async {
     final file = File(path);

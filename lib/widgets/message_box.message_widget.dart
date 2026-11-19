@@ -1,15 +1,4 @@
-// ignore_for_file:  use_build_context_synchronously
-
-import 'dart:async';
-
-import 'package:fide/constants/constants.dart';
-import 'package:fide/models/status_tone.dart';
-import 'package:fide/theme/app_theme.dart';
-import 'package:fide/widgets/badge_status.dart';
-import 'package:fide/widgets/compact_icon_button.dart';
-import 'package:fide/widgets/status_tone_style.dart';
-import 'package:flutter/services.dart';
-import 'package:material_ui/material_ui.dart';
+part of 'message_box.dart';
 
 /// A message bar in the icon and color of its [type], with a close button
 /// and, for tones whose messages are copyable, a copy button; it fades out
@@ -48,8 +37,6 @@ class _MessageWidgetState extends State<MessageWidget>
   bool _dismissing = false;
 
   late Animation<double> _fadeAnimation;
-
-  bool _showCopiedText = false;
 
   @override
   void initState() {
@@ -95,7 +82,7 @@ class _MessageWidgetState extends State<MessageWidget>
               borderRadius: BorderRadius.circular(AppRadius.medium),
               border: Border.all(
                 color: foregroundColor.withValues(alpha: AppOpacity.selected),
-                width: AppSize.borderThin,
+                width: AppBorderWidth.thin,
               ),
               boxShadow: [
                 BoxShadow(
@@ -105,70 +92,42 @@ class _MessageWidgetState extends State<MessageWidget>
                 ),
               ],
             ),
-            child: Padding(
-              padding: AppPadding.pageContent,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    widget.type.icon,
-                    color: foregroundColor,
-                    size: AppIconSize.large,
-                  ),
-                  const SizedBox(width: AppSpacing.large),
-                  Expanded(
-                    child: Text(
-                      widget.message,
-                      style: AppTextStyle.label.copyWith(
-                        color: foregroundColor,
+            // The bar's buttons read on its fill as its text does
+            child: IconButtonTheme(
+              data: IconButtonThemeData(
+                style: IconButton.styleFrom(foregroundColor: foregroundColor),
+              ),
+              child: Padding(
+                padding: AppPadding.pageContent,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      widget.type.icon,
+                      color: foregroundColor,
+                      size: AppIconSize.large,
+                    ),
+                    const SizedBox(width: AppSpacing.large),
+                    Expanded(
+                      child: Text(
+                        widget.message,
+                        style: AppTextStyle.label.copyWith(
+                          color: foregroundColor,
+                        ),
                       ),
                     ),
-                  ),
-                  if (widget.type.messageCopyable) ...[
-                    const SizedBox(width: AppSpacing.medium),
-                    SizedBox(
-                      height: AppSize.compactActionButton,
-                      child: _showCopiedText
-                          ? Center(
-                              child: AnimatedOpacity(
-                                opacity: _showCopiedText ? 1.0 : 0.0,
-                                duration: AppDuration.copiedBadgeFade,
-                                child: BadgeStatus.success(text: 'Copied'),
-                              ),
-                            )
-                          : CompactIconButton(
-                              icon: Icons.copy,
-                              color: foregroundColor,
-                              onPressed: () async {
-                                await Clipboard.setData(
-                                  ClipboardData(text: widget.message),
-                                );
-                                // Show "Copied" in place of the button
-                                if (mounted) {
-                                  setState(() => _showCopiedText = true);
-                                  // Hide "Copied" after 1.5 seconds
-                                  Future.delayed(
-                                    AppDuration.copiedBadgeVisible,
-                                    () {
-                                      if (mounted) {
-                                        setState(() => _showCopiedText = false);
-                                      }
-                                    },
-                                  );
-                                }
-                              },
-                              tooltip: 'Copy message',
-                            ),
+                    if (widget.type.messageCopyable) ...[
+                      const SizedBox(width: AppSpacing.medium),
+                      CopyButton(text: widget.message, tooltip: 'Copy message'),
+                    ],
+                    const SizedBox(width: AppSpacing.tiny),
+                    CompactIconButton(
+                      icon: Icons.close,
+                      onPressed: _dismiss,
+                      tooltip: 'Close message',
                     ),
                   ],
-                  const SizedBox(width: AppSpacing.tiny),
-                  CompactIconButton(
-                    icon: Icons.close,
-                    color: foregroundColor,
-                    onPressed: _dismiss,
-                    tooltip: 'Close message',
-                  ),
-                ],
+                ),
               ),
             ),
           ),

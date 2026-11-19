@@ -45,7 +45,10 @@ class CodeReview {
     );
     final root = config.analysisDirectory;
     final before = {
-      await for (final file in ProjectFiles.walk(root.path, extension: '.dart'))
+      await for (final file in ProjectFiles.walk(
+        root.path,
+        extension: ProjectFiles.dartExtension,
+      ))
         file.path: file.readAsStringSync(),
     };
     fcheck.AnalyzeFolder(

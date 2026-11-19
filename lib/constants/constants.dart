@@ -13,7 +13,6 @@ part 'constants.app_font_size.dart';
 part 'constants.app_text_style.dart';
 part 'constants.app_radius.dart';
 part 'constants.app_opacity.dart';
-part 'constants.app_alpha.dart';
 part 'constants.app_border_width.dart';
 part 'constants.app_line_height.dart';
 part 'constants.editor_config.dart';

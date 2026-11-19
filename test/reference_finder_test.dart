@@ -6,20 +6,13 @@ import 'package:fide/models/hardcoded_string.dart';
 import 'package:fide/models/l10n_config.dart';
 import 'package:fide/models/lookup_rewrite.dart';
 import 'package:fide/models/search_result.dart';
-import 'package:fide/services/flutter_sdk.dart';
-import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/reference_finder.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
-// Reports the Dart SDK the tests run on, without launching flutter
-class _TestSdk extends FlutterSdk {
-  const _TestSdk() : super(const ProcessRunner());
-
-  @override
-  Future<String?> dartSdkPath() async =>
-      p.join(Platform.environment['FLUTTER_ROOT']!, 'bin', 'cache', 'dart-sdk');
-}
+/// The Dart SDK the tests run on, found without launching flutter.
+Future<String> _testSdkPath() async =>
+    p.join(Platform.environment['FLUTTER_ROOT']!, 'bin', 'cache', 'dart-sdk');
 
 void main() {
   late String project;
@@ -29,10 +22,7 @@ void main() {
     project = Directory.systemTemp
         .createTempSync('fide_refs_')
         .resolveSymbolicLinksSync();
-    finder = ReferenceFinder(
-      projectPath: project,
-      dartSdkPath: const _TestSdk().dartSdkPath,
-    );
+    finder = ReferenceFinder(projectPath: project, dartSdkPath: _testSdkPath);
   });
   tearDown(() {
     finder.dispose();
@@ -52,7 +42,7 @@ void main() {
     // say so rather than wait forever on a worker that died
     final broken = ReferenceFinder(
       projectPath: '$project/',
-      dartSdkPath: const _TestSdk().dartSdkPath,
+      dartSdkPath: _testSdkPath,
     );
     addTearDown(broken.dispose);
     final path = write('lib/a.dart', 'class A {}');

@@ -16,8 +16,6 @@ class AppDuration {
   static const Duration gradientMove = Duration(milliseconds: 300);
   static const Duration tooltipWait = Duration(seconds: 1);
   static const Duration messageAnimation = Duration(milliseconds: 300);
-  static const Duration copiedBadgeFade = Duration(milliseconds: 200);
-  static const Duration copiedBadgeVisible = Duration(milliseconds: 1500);
   static const Duration messageSuccess = Duration(seconds: 4);
   static const Duration messageWarning = Duration(seconds: 6);
   static const Duration messageError = Duration(seconds: 8);
@@ -49,19 +47,16 @@ class AppDuration {
   /// the views depending on them update.
   static const Duration updateDebounce = Duration(milliseconds: 150);
 
-  /// How long saves must pause, as when the AI agent writes file after
-  /// file, before the project's quality is analyzed again.
+  /// How long saves and file changes must pause, as when the AI agent
+  /// writes file after file, before the project's quality is analyzed and
+  /// Git reads the repository again: longer than [updateDebounce], so a
+  /// save and the tree update it causes read it once.
   static const Duration saveBurstPause = Duration(milliseconds: 500);
 
   /// Longest new output waits before it is shown, a command's lines or
   /// the words of an AI reply, so a burst updates the view a few times,
   /// not once per line or word.
   static const Duration outputLogPublish = Duration(milliseconds: 50);
-
-  /// How long saves and file changes must pause before Git reads the
-  /// repository again: longer than [updateDebounce], so a save and the
-  /// tree update it causes read it once.
-  static const Duration gitReloadDebounce = Duration(milliseconds: 300);
 
   const AppDuration._();
 }

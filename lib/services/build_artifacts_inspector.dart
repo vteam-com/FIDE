@@ -7,11 +7,15 @@ import 'package:fide/models/build_artifacts.dart';
 import 'package:fide/models/byte_size.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/project_paths.dart';
+import 'package:fide/models/relative_time.dart';
 import 'package:path/path.dart' as p;
 
 /// Reads a project's build output and app icon for the Execute panel and
 /// the project overview.
 class BuildArtifactsInspector {
+  /// Shown for a size or time that can't be read.
+  static const String _unknown = 'Unknown';
+
   /// Platforms whose icon best represents the whole app, sharpest first.
   static const List<FlutterPlatform> _projectIconPlatforms = [
     FlutterPlatform.ios,
@@ -136,10 +140,10 @@ class BuildArtifactsInspector {
       }
       return (
         size: isFolder ? totalBytes.readableSize : 'Not built',
-        lastBuildTime: latest?.toString().split('.').first ?? 'Unknown',
+        lastBuildTime: latest?.toSecond ?? _unknown,
       );
     } catch (_) {
-      return (size: 'Unknown', lastBuildTime: 'Unknown');
+      return (size: _unknown, lastBuildTime: _unknown);
     }
   }
 }

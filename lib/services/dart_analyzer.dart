@@ -11,7 +11,7 @@ class DartAnalyzer {
 
   final ProcessRunner _runner;
 
-  /// Resolves the Dart tool to launch, such as [FlutterSdk.bundledDart].
+  /// Resolves the Dart tool to launch, such as `bundledDartProvider`.
   final DartCommand _dart;
 
   /// Highest exit code of a run that analyzed the project: 0 when clean,

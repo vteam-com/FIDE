@@ -1,3 +1,5 @@
+import 'package:fide/models/unique_name.dart';
+
 part 'widget_wrapper.wrapper_slot.dart';
 
 /// A widget the outline's widget menu wraps another widget in: its name,
@@ -71,7 +73,7 @@ class WidgetWrapper {
   /// A widget class or constructor name, optionally prefixed:
   /// `Card`, `ListView.builder`, `material.Card`.
   static final RegExp _namePattern = RegExp(
-    r'^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$',
+    '^$identifierPattern(\\.$identifierPattern)*\$',
   );
 
   /// The arguments written before [slot], such as `padding: ...`; empty

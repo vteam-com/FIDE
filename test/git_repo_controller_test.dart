@@ -302,7 +302,7 @@ void main() {
       // A burst of saves reads the repository once
       counting.read(savedFilesRevisionProvider.notifier).state++;
       counting.read(savedFilesRevisionProvider.notifier).state++;
-      await Future<void>.delayed(AppDuration.gitReloadDebounce * 2);
+      await Future<void>.delayed(AppDuration.saveBurstPause * 2);
 
       expect((await counting.read(stats.future))!.added, 2);
       expect((git.reads, git.locations), (2, 1));

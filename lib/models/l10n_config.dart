@@ -1,4 +1,5 @@
 import 'package:fide/models/dart_imports.dart';
+import 'package:fide/models/project_paths.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -107,7 +108,10 @@ class L10nConfig {
         p.posix.join(_syntheticDir, outputFile),
       );
     }
-    final inLib = p.posix.relative(outputDir ?? arbDir, from: 'lib');
+    final inLib = p.posix.relative(
+      outputDir ?? arbDir,
+      from: ProjectPaths.libFolder,
+    );
     return packageUriOf(packageName, p.posix.join(inLib, outputFile));
   }
 

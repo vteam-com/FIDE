@@ -108,6 +108,9 @@ class BadgeStatus extends StatelessWidget {
         large: large,
       );
 
+  /// The icon's size relative to the text's, so it sits within its line.
+  static const double _iconScale = 0.9;
+
   /// The fill and outline color.
   final Color color;
 
@@ -139,7 +142,7 @@ class BadgeStatus extends StatelessWidget {
         spacing: AppSpacing.narrow,
         children: [
           if (icon != null)
-            Icon(icon, size: fontSize * AppOpacity.prominent, color: textColor),
+            Icon(icon, size: fontSize * _iconScale, color: textColor),
           Text(
             text,
             textAlign: TextAlign.center,

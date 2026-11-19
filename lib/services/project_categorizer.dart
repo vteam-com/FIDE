@@ -4,10 +4,13 @@ import 'dart:math';
 import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/code_category.dart';
+import 'package:fide/models/file_stamp.dart';
 import 'package:fide/models/project_categories.dart';
 import 'package:fide/models/project_node.dart';
+import 'package:fide/models/project_paths.dart';
 import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/asset_categorizer.dart';
+import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/project_tree_reader.dart';
 import 'package:path/path.dart' as p;
 
@@ -33,9 +36,6 @@ class ProjectCategorizer {
 
   /// The facts of the files read, by path, kept across runs.
   final Map<String, _FileFacts> _facts = {};
-
-  /// The project's Dart source folder.
-  static const String _libFolder = 'lib';
 
   /// Creates a categorizer that loads unread folders with [_reader],
   /// groups assets with [_assets] and reads files with [_readFile]
@@ -75,7 +75,7 @@ class ProjectCategorizer {
     final categorized = {
       for (final list in nodes.values) ..._files(list).map((node) => node.path),
     };
-    final lib = root.descendantAt(_libFolder);
+    final lib = root.descendantAt(ProjectPaths.libFolder);
     final unmatched = lib == null || lib.isFile
         ? const <ProjectNode>[]
         : lib.files().where(
@@ -208,7 +208,7 @@ class ProjectCategorizer {
       nodes.expand((node) => node.files());
 
   static bool _isDart(ProjectNode node) =>
-      !node.isDirectory && node.path.endsWith('.dart');
+      !node.isDirectory && FileTypeUtils.isDartFile(node.path);
 
   /// The facts of the file at [path], read again only when it changed
   /// since the last run; null when it can't be read.

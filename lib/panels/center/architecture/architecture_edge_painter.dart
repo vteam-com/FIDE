@@ -40,7 +40,7 @@ class ArchitectureEdgePainter extends CustomPainter {
     final focus = this.focus;
     if (focus == null) {
       paint
-        ..strokeWidth = AppSize.borderThin
+        ..strokeWidth = AppBorderWidth.thin
         ..color = theme.dividerColor;
       for (final edge in edges.all) {
         canvas.drawPath(edge.path, paint);

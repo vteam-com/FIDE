@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:fide/constants/core_constants.dart';
 import 'package:fide/models/project_files.dart';
 import 'package:fide/models/project_node.dart';
+import 'package:fide/services/debouncer.dart';
 import 'package:fide/services/project_tree_reader.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
@@ -36,8 +37,8 @@ class FileSystemWatcher {
   /// The events being applied, one after another.
   Future<void> _events = Future.value();
 
-  // Debouncing for UI updates
-  Timer? _updateDebounceTimer;
+  /// Waits for a burst of changes to pause before the tree updates.
+  final Debouncer _treeUpdate = Debouncer(AppDuration.updateDebounce);
 
   /// Watches [rootNode]'s loaded folders, calling [onTreeUpdated] after
   /// each burst of changes applied to the tree.
@@ -60,8 +61,7 @@ class FileSystemWatcher {
     _watchers.clear();
     _watchedDirectories.clear();
     _session++;
-    _updateDebounceTimer?.cancel();
-    _updateDebounceTimer = null;
+    _treeUpdate.cancel();
     _onTreeUpdated = null;
   }
 
@@ -154,11 +154,7 @@ class FileSystemWatcher {
   /// Schedule a debounced tree update to prevent UI spamming
   void _scheduleTreeUpdate() {
     if (_onTreeUpdated == null) return;
-    _updateDebounceTimer?.cancel();
-    _updateDebounceTimer = Timer(AppDuration.updateDebounce, () {
-      _onTreeUpdated?.call();
-      _updateDebounceTimer = null;
-    });
+    _treeUpdate.run(() => _onTreeUpdated?.call());
   }
 
   /// Adds the entry created at [filePath] to [parentNode], replacing the

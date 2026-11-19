@@ -1,4 +1,5 @@
 import 'package:fide/constants/core_constants.dart';
+import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/quality_issue.quality_finding.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/status_tone.dart';
@@ -47,6 +48,16 @@ class QualityIssue {
 
   /// How serious the issue is.
   final StatusTone tone;
+
+  /// The [label] of an issue of [title] costing [deduction] percent of the
+  /// score, then what [found] says was found, such as
+  /// `Dart analyzer: -4% (2 warnings)`.
+  static String deductionLabel(String title, num deduction, String found) =>
+      '$title: -${deduction.localized}% ($found)';
+
+  /// Score points [count] findings cost at [points] each, at most [max].
+  static int deductionOf(int count, {required int points, required int max}) =>
+      (count * points).clamp(0, max);
 
   /// The request asking the AI to fix every finding by editing the
   /// project files, following [guidance]; null when there is nothing in

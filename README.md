@@ -99,8 +99,7 @@ The AI panel works like a terminal session: your prompts, the model's Markdown r
 
 | Action | What it does |
 | --- | --- |
-| Ask AI | Answers questions, with the selected file as context |
-| Explain / Generate / Refactor Code | Explains, writes or reshapes code |
+| Ask AI | Answers questions and makes the changes you ask for (explain, write or reshape code), with the selected file as context |
 | Fix Build | Fixes the errors of the last failed build |
 | D.R.Y. review | Reviews the duplicate code fCheck found |
 | S.O.L.I.D. review | Reviews fCheck's largest and most coupled code against SOLID |

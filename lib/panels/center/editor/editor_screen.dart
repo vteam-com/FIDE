@@ -5,6 +5,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/document_state.dart';
 import 'package:fide/models/editor_diff_outcome.dart';
 import 'package:fide/models/editor_search.dart';
+import 'package:fide/models/readable_error.dart';
 import 'package:fide/models/text_offsets.dart';
 import 'package:fide/panels/center/editor/code_folding.dart';
 import 'package:fide/panels/center/editor/editor_screen_audio_view.dart';
@@ -30,6 +31,7 @@ import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
@@ -44,19 +46,13 @@ import 'package:path/path.dart' as p;
 /// documents.
 class EditorScreen extends ConsumerStatefulWidget {
   /// Creates the editor of the open [filePath].
-  const EditorScreen({
-    super.key,
-    required this.filePath,
-    this.onClose,
-    this.onSave,
-  });
+  const EditorScreen({super.key, required this.filePath, this.onClose});
 
   /// The open file to show.
   final String filePath;
 
+  /// Closes the editor's file, from its header's Close or a command.
   final VoidCallback? onClose;
-
-  final VoidCallback? onSave;
 
   @override
   ConsumerState<EditorScreen> createState() => _EditorScreenState();
@@ -84,6 +80,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   bool _isLoading = false;
 
   late final AppLifecycleListener _lifecycleListener;
+
+  /// Writes the unsaved edits of the view showing a media file, such as a
+  /// trimmed sound; null while it has none.
+  AsyncCallback? _mediaSave;
 
   final Logger _logger = Logger('EditorScreenState');
 
@@ -167,6 +167,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       // The diff shown was the previous file's; showing it again loads
       // this file's
       _showDiffView = false;
+      _mediaSave = null;
       _loadDocument();
       _codeController.showFindings(
         ref.read(qualityIssuesProvider),
@@ -204,7 +205,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
           activeIndex: tabs.activeIndex,
           currentFile: _currentFile,
           viewKind: _viewKind,
-          isDirty: _isDirtyShown,
+          isDirty: _pendingSave != null,
           showDiffView: _showDiffView,
           onDocumentSelected: (newIndex) {
             ref.read(openDocumentsProvider.notifier).activate(newIndex);
@@ -251,7 +252,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
         _showDiffView
             ? EditorScreenImageDiffView(filePath: _currentFile)
             : EditorScreenImageView(filePath: _currentFile),
-      FileViewKind.audio => EditorScreenAudioView(filePath: _currentFile),
+      FileViewKind.audio => EditorScreenAudioView(
+        filePath: _currentFile,
+        onSaveChanged: (save) => setState(() => _mediaSave = save),
+      ),
       FileViewKind.font => EditorScreenFontView(filePath: _currentFile),
       FileViewKind.code => _showDiffView ? _buildDiffView() : _buildCodeView(),
     };
@@ -559,19 +563,28 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     MessageBox.showSuccess(context, EditorSearch.replacedMessage(count));
   }
 
-  /// Persists current editor content to disk and clears dirty state.
+  /// What Save writes: the code's edits, or the media view's; null without
+  /// changes to save, so Save never writes a file it didn't change, such
+  /// as an image, whose document holds no text.
+  AsyncCallback? get _pendingSave => _viewKind == FileViewKind.code
+      ? (_isDirtyShown ? _session.save : null)
+      : _mediaSave;
+
+  /// Writes the file's unsaved changes and confirms it; does nothing
+  /// without changes.
   Future<void> _saveFile() async {
-    if (_currentFile.isEmpty) return;
-
+    final save = _pendingSave;
+    if (save == null) return;
+    final name = p.basename(_currentFile);
     try {
-      await _session.save();
-
+      await save();
+      if (mounted) MessageBox.showSuccess(context, 'Saved $name');
+    } catch (error) {
       if (mounted) {
-        MessageBox.showSuccess(context, 'File saved successfully');
-      }
-    } catch (e) {
-      if (mounted) {
-        MessageBox.showError(context, 'Error saving file: $e');
+        MessageBox.showError(
+          context,
+          "Couldn't save $name: ${ReadableError.describe(error)}",
+        );
       }
     }
   }

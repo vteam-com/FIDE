@@ -1,10 +1,10 @@
-import 'package:fide/models/status_tone.dart';
-import 'package:fide/theme/app_theme.dart';
-import 'package:fide/widgets/status_tone_style.dart';
+import 'package:fide/constants/constants.dart';
+import 'package:fide/widgets/badge_status.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// An orange counter overlaid on the corner of [child], such as a tab icon,
-/// flagging pending items; hidden while [count] is zero.
+/// flagging pending items; hidden while [count] is zero. It is a
+/// [BadgeStatus], so it looks like every other badge of the app.
 class CountBadge extends StatelessWidget {
   /// Creates a badge showing [count] over [child].
   const CountBadge({super.key, required this.count, required this.child});
@@ -12,17 +12,23 @@ class CountBadge extends StatelessWidget {
   /// The widget the badge decorates.
   final Widget child;
 
-  /// The number shown; the badge is hidden when it is zero.
+  /// The number shown; no badge while zero.
   final int count;
+
   @override
   Widget build(BuildContext context) {
-    final fill = StatusTone.warning.color;
-    return Badge.count(
-      count: count,
-      isLabelVisible: count > 0,
-      backgroundColor: fill,
-      textColor: AppTheme.onFill(fill),
-      child: child,
+    // Always a stack, so [child] keeps its state as the count comes and goes
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        child,
+        if (count > 0)
+          PositionedDirectional(
+            top: -AppSpacing.tiny,
+            end: -AppSpacing.small,
+            child: BadgeStatus.warning(text: '$count'),
+          ),
+      ],
     );
   }
 }

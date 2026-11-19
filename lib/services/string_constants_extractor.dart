@@ -10,6 +10,7 @@ import 'package:fide/models/string_rewrite.dart';
 import 'package:fide/models/text_offsets.dart';
 import 'package:fide/models/unique_name.dart';
 import 'package:fide/services/code_formatter.dart';
+import 'package:fide/services/file_content_reader.dart';
 import 'package:fide/services/hardcoded_string_finder.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:path/path.dart' as p;
@@ -34,14 +35,6 @@ class StringConstantsExtractor {
 
   /// The file declaring [_className], relative to `lib`.
   static const String _fileInLib = 'constants/data_keys.dart';
-
-  /// Names a constant cannot take: members every class inherits.
-  static const Set<String> _objectMembers = {
-    'hashCode',
-    'noSuchMethod',
-    'runtimeType',
-    'toString',
-  };
 
   /// A constant [_declare] writes, with its `name` and quoted `value`.
   static final RegExp _declaration = RegExp(
@@ -82,7 +75,6 @@ class StringConstantsExtractor {
     ConstantsPlan plan,
     Iterable<HardcodedString> selected,
   ) async {
-    final constantsFile = File(plan.constantsPath);
     final existing = await ProjectConfigReader.readIfExists(plan.constantsPath);
     final nameByValue = {
       for (final match in _declaration.allMatches(existing ?? ''))
@@ -100,7 +92,7 @@ class StringConstantsExtractor {
         safeIdentifier(
           string.message.keyBase,
           suffix: 'Key',
-          reserved: _objectMembers,
+          reserved: objectMembers,
         ),
         names.contains,
       );
@@ -150,8 +142,8 @@ class StringConstantsExtractor {
     }
 
     if (added.isNotEmpty) {
-      await constantsFile.parent.create(recursive: true);
-      await constantsFile.writeAsString(
+      await const FileContentReader().write(
+        plan.constantsPath,
         _declare(existing, plan.className, added),
       );
       changedFiles.add(plan.constantsPath);

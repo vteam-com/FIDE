@@ -26,7 +26,7 @@ class ColorSample extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.small),
           border: Border.all(
             color: Theme.of(context).colorScheme.outline,
-            width: AppSize.borderThin,
+            width: AppBorderWidth.thin,
           ),
         ),
       ),

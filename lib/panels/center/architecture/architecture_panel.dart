@@ -16,6 +16,7 @@ import 'package:fide/providers/project_overview_providers.dart';
 import 'package:fide/widget_services/center_view_close_button.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
+import 'package:fide/widgets/compact_toggle_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/pane_divider.dart';
@@ -303,13 +304,11 @@ class _ArchitecturePanelState extends ConsumerState<ArchitecturePanel>
             ),
           ),
           _orientationButton(),
-          CompactIconButton.header(
+          CompactToggleButton.header(
             icon: Icons.polyline_outlined,
-            tooltip: _showAllImports
-                ? "Show only the focused file's imports"
-                : 'Show every import',
-            selected: _showAllImports,
-            onPressed: () => setState(() => _showAllImports = !_showAllImports),
+            tooltip: 'Every import',
+            isOn: _showAllImports,
+            onChanged: (on) => setState(() => _showAllImports = on),
           ),
           ZoomButtons.canvas(
             controller: _transformation,

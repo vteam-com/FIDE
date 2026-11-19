@@ -97,7 +97,7 @@ class _ImageDetailsPanelState extends ConsumerState<ImageDetailsPanel> {
             DetailRow('Format', details.format),
             DetailRow('Size', details.fileBytes.readableSize),
             DetailRow('Modified', details.modified.timeAgo()),
-            DetailRow('Date', details.modified.toString().split('.').first),
+            DetailRow('Date', details.modified.toSecond),
           ]),
           DetailSection('Image', [
             if (details.width case final width?)

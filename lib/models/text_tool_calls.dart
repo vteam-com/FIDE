@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:fide/models/model_message.dart';
+
 /// Tool calls a model wrote into its reply's text instead of returning
 /// them as `tool_calls`, which Ollama misses when the model drifts from
 /// its template, such as qwen3-coder leaving out the opening
@@ -35,7 +37,7 @@ class TextToolCalls {
   /// when it holds no call.
   static List<Map<String, dynamic>> parse(String content) => [
     for (final call in _xmlCall.allMatches(content))
-      _call(call.namedGroup('name')!, {
+      ModelMessage.toolCall(call.namedGroup('name')!, {
         for (final parameter in _xmlParameter.allMatches(
           call.namedGroup('body')!,
         ))
@@ -53,24 +55,16 @@ class TextToolCalls {
     return (start < 0 ? content : content.substring(0, start)).trim();
   }
 
-  /// A `tool_calls` entry calling [name] with [arguments].
-  static Map<String, dynamic> _call(
-    String name,
-    Map<String, dynamic> arguments,
-  ) => {
-    'function': {'name': name, 'arguments': arguments},
-  };
-
   /// The call [json] describes, or null when it is no
   /// `{"name": …, "arguments": {…}}` object.
   static Map<String, dynamic>? _fromJson(String json) {
     try {
       final call = jsonDecode(json);
       if (call case {
-        'name': final String name,
-        'arguments': final Map<String, dynamic> arguments,
+        ModelMessage.nameKey: final String name,
+        ModelMessage.argumentsKey: final Map<String, dynamic> arguments,
       }) {
-        return _call(name, arguments);
+        return ModelMessage.toolCall(name, arguments);
       }
     } on FormatException {
       // Not a call: left as text

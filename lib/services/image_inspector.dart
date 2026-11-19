@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:fcheck/fcheck.dart' show AppIconFileInfo;
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/file_stamp.dart';
 import 'package:fide/models/image_details.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:image/image.dart' as img;
@@ -101,8 +102,7 @@ class ImageInspector {
   Future<bool> isCurrent(String path, ImageDetails details) async {
     final stat = await File(path).stat();
     return stat.type != FileSystemEntityType.notFound &&
-        stat.modified == details.modified &&
-        stat.size == details.fileBytes;
+        stat.stamp == (modified: details.modified, size: details.fileBytes);
   }
 
   /// The [size]-pixel image embedded in the ICO file at [path] as PNG,

@@ -1,6 +1,5 @@
-import 'package:analyzer/dart/analysis/features.dart';
-import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:fide/models/dart_parse.dart';
 import 'package:fide/models/hand_written_l10n.dart';
 
 /// Cuts the code written by hand into a generated localizations file out
@@ -16,11 +15,7 @@ class HandWrittenL10nParser {
     String outputClass,
     List<String> handWrittenMembers,
   ) {
-    final unit = parseString(
-      content: content,
-      featureSet: FeatureSet.latestLanguageVersion(),
-      throwIfDiagnostics: false,
-    ).unit;
+    final unit = parseDart(content).unit;
     final wanted = handWrittenMembers.toSet();
     final parts = <String>[];
     final staticNames = <String>[];

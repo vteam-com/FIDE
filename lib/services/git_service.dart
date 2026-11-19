@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/file_stamp.dart';
 import 'package:fide/models/git_file_status.dart';
 import 'package:fide/models/tool_version.dart';
 import 'package:fide/services/file_content_reader.dart';
@@ -41,10 +42,6 @@ class GitService {
   /// The revision of the last commit, as `git show` names it.
   static const String headRevision = 'HEAD';
 
-  /// Version [version] reports when git runs but its output can't be
-  /// parsed.
-  static const String unknownVersion = 'Unknown';
-
   /// What a tracked file's changes compare against: HEAD, or the index
   /// before the first commit, when there is no HEAD.
   static const List<List<String>> _headBases = [
@@ -64,8 +61,7 @@ class GitService {
   /// Line counts of untracked files already read, by absolute path, with
   /// the modification time and size they were read at: a reload reads
   /// only the files that changed since.
-  static final Map<String, ({DateTime modified, int size, int lines})>
-  _lineCounts = {};
+  static final Map<String, ({FileStamp stamp, int lines})> _lineCounts = {};
 
   /// Runs `git` with [args] in [path] and returns its result when it
   /// exits with [expectedExitCode].
@@ -433,20 +429,14 @@ class GitService {
     final stat = await File(filePath).stat();
     if (stat.type != FileSystemEntityType.file) return _wholeNewFile(0);
     final cached = _lineCounts[filePath];
-    if (cached != null &&
-        cached.modified == stat.modified &&
-        cached.size == stat.size) {
+    if (cached != null && cached.stamp == stat.stamp) {
       return _wholeNewFile(cached.lines);
     }
     final lines = await _countLines(filePath);
     if (_lineCounts.length >= AppMetric.gitLineCountCacheLimit) {
       _lineCounts.clear();
     }
-    _lineCounts[filePath] = (
-      modified: stat.modified,
-      size: stat.size,
-      lines: lines,
-    );
+    _lineCounts[filePath] = (stamp: stat.stamp, lines: lines);
     return _wholeNewFile(lines);
   }
 

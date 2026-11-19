@@ -4,7 +4,7 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
-import 'package:fide/widgets/copy_button.dart';
+import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

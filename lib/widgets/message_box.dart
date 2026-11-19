@@ -1,15 +1,23 @@
+import 'dart:async';
+
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_outcome.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/app_text_field.dart';
-import 'package:fide/widgets/message_widget.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/secondary_button.dart';
+import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
-// Convenience methods for showing messages
-/// Represents `MessageBox`.
+part 'message_box.copy_button.dart';
+part 'message_box.message_widget.dart';
+
+/// How the app talks to the user: the message bars telling how an action
+/// ended, the dialogs showing details, asking for text or a confirmation,
+/// and copies to the clipboard, confirmed by a bar.
 class MessageBox {
   /// [copyToClipboard]'s confirmation unless it names what was copied.
   static const String copiedConfirmation = 'Copied to clipboard';
@@ -147,29 +155,90 @@ class MessageBox {
 
   /// Presents an overlay message bar of [tone], the one every message of
   /// that meaning gets; the bar removes itself once closed or after the
-  /// tone's [StatusTone.messageDuration].
+  /// tone's [StatusTone.messageDuration]. Bars shown together stack, the
+  /// newest at the bottom, so none covers another, such as the
+  /// confirmation of copying a message under that message.
   static void show(BuildContext context, String message, StatusTone tone) {
-    late final OverlayEntry overlayEntry;
-    overlayEntry = OverlayEntry(
+    // The navigator's own context (navigatorKey.currentContext) sits above
+    // the overlay it builds, so take the overlay from the navigator first
+    final overlay = Navigator.maybeOf(context)?.overlay ?? Overlay.of(context);
+    (_stacks[overlay] ??= _MessageStack(overlay)).add(message, tone);
+  }
+
+  /// The message bars shown in each overlay.
+  static final Expando<_MessageStack> _stacks = Expando();
+}
+
+/// One message shown by [MessageBox.show], a bar of its own even when
+/// another says the same.
+class _Message {
+  /// Creates the message [text] in the tone of [tone].
+  _Message(this.text, this.tone);
+
+  /// The text shown.
+  final String text;
+
+  /// The tone giving the bar its icon, color and duration.
+  final StatusTone tone;
+}
+
+/// The message bars shown in one [overlay], stacked upward from its
+/// bottom edge in the order they came.
+class _MessageStack {
+  /// Creates the empty stack of [overlay].
+  _MessageStack(this.overlay);
+
+  /// The overlay the bars show in.
+  final OverlayState overlay;
+
+  /// The bars shown, oldest first.
+  final ValueNotifier<List<_Message>> _messages = ValueNotifier(const []);
+
+  /// The overlay entry holding the bars, while there are any.
+  OverlayEntry? _entry;
+
+  /// Shows [text] in the tone of [tone] under the bars already shown.
+  void add(String text, StatusTone tone) {
+    _messages.value = [..._messages.value, _Message(text, tone)];
+    if (_entry != null) return;
+    final entry = OverlayEntry(
       builder: (context) => Positioned(
         bottom: MediaQuery.of(context).padding.bottom + AppSpacing.medium,
         left: 0,
         right: 0,
-        child: MessageWidget(
-          message: message,
-          type: tone,
-          // Removed rather than left faded out: an invisible bar would
-          // still catch the clicks meant for what lies under it
-          onClose: () {
-            if (overlayEntry.mounted) overlayEntry.remove();
-          },
+        child: ValueListenableBuilder(
+          valueListenable: _messages,
+          builder: (_, messages, _) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final message in messages)
+                MessageWidget(
+                  // Keeps each bar's own fade and timer as others go
+                  key: ObjectKey(message),
+                  message: message.text,
+                  type: message.tone,
+                  onClose: () => _remove(message),
+                ),
+            ],
+          ),
         ),
       ),
     );
-    // The navigator's own context (navigatorKey.currentContext) sits above
-    // the overlay it builds, so take the overlay from the navigator first
-    (Navigator.maybeOf(context)?.overlay ?? Overlay.of(context)).insert(
-      overlayEntry,
-    );
+    _entry = entry;
+    overlay.insert(entry);
+  }
+
+  /// Takes [message] off the stack, and the stack off the overlay once
+  /// empty: an invisible bar would still catch the clicks meant for what
+  /// lies under it.
+  void _remove(_Message message) {
+    _messages.value = [
+      for (final shown in _messages.value)
+        if (!identical(shown, message)) shown,
+    ];
+    if (_messages.value.isNotEmpty) return;
+    final entry = _entry;
+    _entry = null;
+    if (entry != null && entry.mounted) entry.remove();
   }
 }

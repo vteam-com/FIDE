@@ -354,9 +354,21 @@ final bundledDartProvider = FutureProvider<String>(
 
 /// Root of the Dart SDK bundled with Flutter, looked up once per session
 /// (each lookup runs `flutter --version`); null when Flutter isn't found.
+/// Analyses read it through [requireDartSdkPath].
 final dartSdkPathProvider = FutureProvider<String?>(
   (ref) => ref.read(flutterSdkProvider).dartSdkPath(),
 );
+
+/// The root of the Dart SDK bundled with Flutter, as [dartSdkPathProvider]
+/// finds it; throws a [FlutterSdkNotFoundException] when Flutter isn't
+/// found, looking again on the next call, in case it was installed
+/// meanwhile.
+Future<String> requireDartSdkPath(Ref ref) async {
+  final path = await ref.read(dartSdkPathProvider.future);
+  if (path != null) return path;
+  if (ref.mounted) ref.invalidate(dartSdkPathProvider);
+  throw const FlutterSdkNotFoundException();
+}
 
 /// Provides the shared [ArbService] for reading and writing ARB files.
 final arbServiceProvider = Provider<ArbService>(

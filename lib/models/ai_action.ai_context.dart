@@ -2,9 +2,6 @@ part of 'ai_action.dart';
 
 /// What an [AiAction] sends the model along with the user's prompt.
 enum AiContext {
-  /// Nothing: the prompt is the code or description to work on.
-  none,
-
   /// The content of the file open in the editor.
   selectedFile,
 
