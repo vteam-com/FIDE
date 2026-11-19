@@ -40,7 +40,7 @@ class Home extends StatelessWidget {
 
 /// The kinds of what [report] found, in order.
 List<ColorContrastKind> _kinds(ColorContrastReport report) => [
-  for (final finding in report.findings) finding.kind,
+  for (final finding in report.findings) finding.failure!,
 ];
 
 void main() {
@@ -222,6 +222,100 @@ abstract final class AppColors {
 ''',
       );
       expect(report.findings, isEmpty);
+    });
+  });
+
+  group('what the report counts', () {
+    test('every element judged, passing or not, and those not judged', () {
+      final report = _analyze('''
+Container(
+  color: Colors.white,
+  child: Column(children: [
+    Text('Body', style: TextStyle(color: Colors.black87)),
+    Text('Muted', style: TextStyle(color: Colors.grey)),
+    Icon(Icons.add, color: Colors.black),
+    Text('Picked', style: TextStyle(color: picked)),
+  ]),
+)''');
+      expect(report.checks, hasLength(3));
+      expect(report.findings, hasLength(1));
+      expect(report.of(ColorContrastElement.icon).single.passes, isTrue);
+      expect(report.unjudged, 1);
+      expect(report.score, 66);
+    });
+
+    test('every color the code writes, the most used first', () {
+      final report = _analyze(
+        '''
+Column(children: [
+  Text('a', style: TextStyle(color: AppColors.brand)),
+  Text('b', style: TextStyle(color: AppColors.brand)),
+  Icon(Icons.star, color: AppColors.brand),
+  Text('c', style: TextStyle(color: Colors.grey)),
+  Text('d', style: TextStyle(color: Color(0xFF9E9E9E))),
+  Text('e', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+])''',
+        app:
+            '''
+$_bothThemesApp
+abstract final class AppColors {
+  static const Color brand = Color(0xFF3D5AFE);
+}
+''',
+      );
+      final colors = report.colors;
+      // The constant counts where it is read, not where it is defined
+      expect(colors.first.names, {'AppColors.brand': 3});
+      expect(colors.first.colors.single.hex, '#3D5AFE');
+      final grey = colors.firstWhere((color) => color.count == 2);
+      expect(grey.names, {'Colors.grey': 1, 'Color(0xFF9E9E9E)': 1});
+      final primary = colors.singleWhere(
+        (color) => color.names.containsKey('colorScheme.primary'),
+      );
+      expect(primary.colors.map((color) => color.hex), ['#6750A4', '#D0BCFF']);
+    });
+
+    test('the scheme of each theme, one built for either brightness', () {
+      final report = _analyze(
+        'Placeholder()',
+        app: '''
+void main() => runApp(
+  MaterialApp(theme: build(Brightness.light), darkTheme: build(Brightness.dark)),
+);
+
+ThemeData build(Brightness brightness) => ThemeData(
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: Colors.teal,
+    brightness: brightness,
+  ),
+);
+''',
+      );
+      expect(
+        [for (final scheme in report.schemes) scheme.theme],
+        ['light', 'dark'],
+      );
+      for (final scheme in report.schemes) {
+        expect(scheme.origin, 'Generated from the seed Colors.teal');
+        expect(scheme.line, 6);
+      }
+      expect(report.schemes.last.roles.isDark, isTrue);
+    });
+
+    test("a scheme picked at run time can't be read, and says so", () {
+      final report = _analyze(
+        'Placeholder()',
+        app: '''
+void main() => runApp(
+  MaterialApp(theme: ThemeData(colorSchemeSeed: seeds[picked])),
+);
+''',
+      );
+      expect(
+        report.schemes.single.origin,
+        "Can't be read here: Material 3's default is assumed",
+      );
+      expect(report.schemes.single.line, 2);
     });
   });
 

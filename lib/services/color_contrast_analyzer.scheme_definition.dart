@@ -1,12 +1,17 @@
 part of 'color_contrast_analyzer.dart';
 
-/// A color scheme the project's code builds: its colors, the roles the
-/// code gives with their values, and the given roles that can't be read.
+/// A color scheme the project's code builds: its colors, how it is made,
+/// the roles the code gives with their values, and the given roles that
+/// can't be read.
 class _SchemeDefinition {
-  _SchemeDefinition(this.roles, this.given, this.unread);
+  _SchemeDefinition(this.roles, this.given, this.unread, this.origin);
 
   /// The roles the code gives, each with the value it gives.
   final Map<String, Expression> given;
+
+  /// How the scheme is made, such as `Generated from the seed
+  /// Colors.indigo`.
+  final String origin;
 
   /// The scheme's colors.
   final ColorRoles roles;
@@ -14,9 +19,9 @@ class _SchemeDefinition {
   /// Given roles whose value can't be read, whose pairs are not judged.
   final Set<String> unread;
 
-  /// The on-colors of the scheme that fall below WCAG 2 level AA on their
-  /// fill, where the code gives one of the two, in [file].
-  List<ColorContrastFinding> pairFindings(_SourceFile file) => [
+  /// Each on-color of the scheme judged on its fill, where the code gives
+  /// one of the two, in [file].
+  List<ColorContrastCheck> pairChecks(_SourceFile file) => [
     for (final (fill, on) in ColorRoles.pairs)
       if ((given[on] ?? given[fill]) case final value?
           when !unread.contains(fill) &&
@@ -27,50 +32,74 @@ class _SchemeDefinition {
           final onColor?,
         ))
           if (onColor.isOpaque ? onColor : onColor.over(fillColor)
-              case final drawn
-              when drawn.contrastWith(fillColor) < WcagColor.minTextContrast)
-            ColorContrastFinding(
-              kind: ColorContrastKind.themePair,
+              case final drawn)
+            ColorContrastCheck(
+              element: ColorContrastElement.schemePair,
+              failure:
+                  drawn.contrastWith(fillColor) <
+                      ColorContrastElement.schemePair.minimum
+                  ? ColorContrastKind.themePair
+                  : null,
               path: file.path,
               line: file.lineOf(value),
               foreground: on,
               foregroundColor: drawn,
               background: fill,
               backgroundColor: fillColor,
-              minimum: WcagColor.minTextContrast,
-              theme: roles.isDark ? 'dark' : 'light',
+              theme: _ProjectTheme.themeName(roles.isDark),
             ),
   ];
 
-  /// Whether a theme or scheme's `brightness` [value] is dark.
-  static bool isDarkBrightness(Expression? value) =>
-      value?.toSource().endsWith('.dark') ?? false;
+  /// Whether a theme or scheme's `brightness` [value] is dark: false when
+  /// not given, as Flutter's default is light; null when it is not a
+  /// `Brightness` constant, such as a parameter, so either theme may get it.
+  static bool? darkBrightness(Expression? value) => switch (value?.toSource()) {
+    null || 'Brightness.light' => false,
+    'Brightness.dark' => true,
+    _ => null,
+  };
+
+  /// The schemes [expression] builds, reading its colors with [colors]: one
+  /// for its brightness, or one for each theme when its brightness is not a
+  /// constant, such as a parameter of a function building both themes.
+  static List<_SchemeDefinition> readAll(
+    Expression expression,
+    _ColorEvaluator colors,
+  ) => [
+    for (final isDark in const [false, true])
+      if (read(expression, colors, asDark: isDark) case final scheme?
+          when scheme.roles.isDark == isDark)
+        scheme,
+  ];
 
   /// The scheme [expression] builds, reading its colors with [colors]:
   /// `ColorScheme(…)`, `ColorScheme.light/dark(…)`,
   /// `ColorScheme.fromSeed(…)`, `ThemeData(colorSchemeSeed: …)`, a copy of
-  /// one, or a constant holding one; null for anything else, or a seed
-  /// that can't be read.
+  /// one, or a constant holding one, dark when [asDark] and its brightness
+  /// is not a constant; null for anything else, or a seed that can't be
+  /// read.
   static _SchemeDefinition? read(
     Expression expression,
-    _ColorEvaluator colors,
-  ) {
+    _ColorEvaluator colors, {
+    bool asDark = false,
+  }) {
     final call = _Call.of(colors.resolve(expression));
     if (call == null) return null;
     if ((call.member, call.target) case ('copyWith', final target?)) {
-      final base = read(target, colors);
+      final base = read(target, colors, asDark: asDark);
       if (base == null) return null;
       final (given, unread) = _rolesOf(call, colors, base.roles.isDark);
       return _SchemeDefinition(
         base.roles.copyWith(given),
         {...base.given, ..._valuesOf(call)},
         {...base.unread, ...unread},
+        base.origin,
       );
     }
     final isDark = switch (call.fullName) {
       'ColorScheme.dark' => true,
       'ColorScheme.light' => false,
-      _ => isDarkBrightness(call['brightness']),
+      _ => darkBrightness(call['brightness']) ?? asDark,
     };
     final (given, unread) = _rolesOf(call, colors, isDark);
     final roles = switch (call.fullName) {
@@ -92,9 +121,22 @@ class _SchemeDefinition {
       ),
       _ => null,
     };
-    return roles == null
-        ? null
-        : _SchemeDefinition(roles, _valuesOf(call), unread);
+    if (roles == null) return null;
+    final seed = call['seedColor'] ?? call['colorSchemeSeed'];
+    final variant = call['dynamicSchemeVariant']?.toSource().split('.').last;
+    return _SchemeDefinition(
+      roles,
+      _valuesOf(call),
+      unread,
+      switch (call.fullName) {
+        'ColorScheme' => 'Written out with ColorScheme(…)',
+        'ColorScheme.light' ||
+        'ColorScheme.dark' => 'The Material 2 defaults of ${call.fullName}()',
+        _ =>
+          'Generated from the seed ${ColorContrastAnalyzer._shown(seed!)}'
+              '${variant == null ? '' : ', $variant'}',
+      },
+    );
   }
 
   /// The scheme generated from the seed [seed] as [call] asks, its variant

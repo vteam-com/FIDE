@@ -10,7 +10,10 @@ enum CenterView {
   appIcons('App Icons'),
 
   /// The interactive graph of the project's architecture layers.
-  architecture('Architecture');
+  architecture('Architecture'),
+
+  /// The review of how accessible the project's colors are.
+  accessibility('Accessibility');
 
   const CenterView(this.label);
 

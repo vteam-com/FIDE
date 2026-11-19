@@ -13,6 +13,7 @@ import 'package:path/path.dart' as p;
 part 'color_contrast_analyzer.backdrop.dart';
 part 'color_contrast_analyzer.call.dart';
 part 'color_contrast_analyzer.color_evaluator.dart';
+part 'color_contrast_analyzer.color_use_collector.dart';
 part 'color_contrast_analyzer.contrast_visitor.dart';
 part 'color_contrast_analyzer.declaration_collector.dart';
 part 'color_contrast_analyzer.fill.dart';
@@ -58,22 +59,36 @@ class ColorContrastAnalyzer {
   ColorContrastReport analyze(String projectPath) {
     final files = _SourceFile.readAll(p.join(projectPath, 'lib'));
     final theme = _ProjectTheme.collect(files);
+    final judged = [
+      for (final file in files) _ContrastVisitor.judge(file, theme),
+    ];
+    final uses = _ColorUseCollector(theme);
+    for (final file in files) {
+      uses.collect(file);
+    }
     final seen = <String>{};
-    final findings = [
-      ...theme.pairFindings(),
-      for (final file in files) ..._ContrastVisitor.findIn(file, theme),
-    ].where((finding) => seen.add(_keyOf(finding))).toList();
-    findings.sort(
+    final checks = [
+      ...theme.pairChecks(),
+      for (final file in judged) ...file.checks,
+    ].where((check) => seen.add(_keyOf(check))).toList();
+    checks.sort(
       (a, b) => a.path == b.path
           ? a.line.compareTo(b.line)
           : a.path.compareTo(b.path),
     );
-    return ColorContrastReport(findings: findings, fileCount: files.length);
+    return ColorContrastReport(
+      checks: checks,
+      fileCount: files.length,
+      unjudged: judged.fold(0, (sum, file) => sum + file.unjudged),
+      colors: uses.usages,
+      schemes: theme.schemes,
+    );
   }
 
-  /// What makes [finding] a repeat of another: its place and message.
-  static String _keyOf(ColorContrastFinding finding) =>
-      '${finding.path}:${finding.line}:${finding.message}';
+  /// What makes [check] a repeat of another, such as a scheme pair its
+  /// copy judges again: its place and message.
+  static String _keyOf(ColorContrastCheck check) =>
+      '${check.path}:${check.line}:${check.message}';
 
   /// The code of [node] as a finding quotes it, cut at [_maxShownChars].
   static String _shown(AstNode node) {

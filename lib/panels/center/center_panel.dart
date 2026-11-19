@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/panels/center/accessibility_panel.dart';
 import 'package:fide/panels/center/app_icons_panel.dart';
 import 'package:fide/panels/center/architecture/architecture_panel.dart';
 import 'package:fide/panels/center/editor/editor_screen.dart';
@@ -93,6 +94,7 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
       CenterView.overview => const ProjectOverviewPanel(),
       CenterView.appIcons => const AppIconsPanel(),
       CenterView.architecture => const ArchitecturePanel(),
+      CenterView.accessibility => const AccessibilityPanel(),
       null when activeFile != null => EditorScreen(
         filePath: activeFile,
         onClose: widget.onClose,

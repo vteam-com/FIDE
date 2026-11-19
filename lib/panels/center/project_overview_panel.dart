@@ -1,9 +1,11 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/color_contrast_issues.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/project_overview.dart';
 import 'package:fide/models/quality_issues.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/panels/center/accessibility_panel.dart';
 import 'package:fide/providers/app_icon_review_provider.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/center_view.dart';
@@ -27,9 +29,10 @@ import 'package:material_ui/material_ui.dart';
 
 /// Shown in the center panel when no file is open, or over open files as
 /// [CenterView.overview]: the current project's icon, version, quality
-/// (fCheck's score over the issues of fCheck, `dart analyze` and the
-/// health checks), code size, packages still on
-/// CocoaPods, supported platforms, tests, coverage and translations.
+/// (fCheck's score less what `dart analyze` and the color contrast
+/// analyzer find, over the issues of those and the health checks), code
+/// size, packages still on CocoaPods, supported platforms, tests,
+/// coverage, translations, app icons, architecture and accessibility.
 class ProjectOverviewPanel extends ConsumerWidget {
   /// Creates the overview of the current project.
   const ProjectOverviewPanel({super.key});
@@ -41,6 +44,47 @@ class ProjectOverviewPanel extends ConsumerWidget {
       builder: (overview) => overview == null
           ? const EmptyState(message: 'Select a file to start editing')
           : _overview(ref, overview),
+    );
+  }
+
+  /// How many of the project's texts, icons and color scheme pairs read at
+  /// WCAG 2 level AA, its colors and themes, opening the Accessibility
+  /// view to review them.
+  Widget _accessibilityCard(WidgetRef ref) {
+    final projectPath = ref.watch(currentProjectPathProvider);
+    final report = ref.watch(colorContrastProvider).value;
+    final judged = report?.checks.length ?? 0;
+    final failing = report?.findings.length ?? 0;
+    final schemes = report?.schemes ?? const [];
+    return StatCard(
+      icon: AccessibilityPanel.icon,
+      title: CenterView.accessibility.label,
+      value: switch (report) {
+        null => StatCard.text('…'),
+        _ when judged == 0 => StatCard.text('Not judged'),
+        final report => BadgeStatus.score(report.score, large: true),
+      },
+      rows: IssueRow.all([
+        if (projectPath != null) ?report?.issue(projectPath),
+      ]),
+      details: [
+        if (report != null) ...[
+          failing == 0
+              ? '${judged.count('element')} judged, all at WCAG AA'
+              : '${judged.count('element')} judged, '
+                    '${failing.localized} below WCAG AA',
+          '${report.colors.length.count('color')} used',
+          switch (schemes) {
+            [final only] => '${AccessibilityPanel.themeLabel(only)} only',
+            _ => 'Light and dark themes',
+          },
+        ],
+      ],
+      action: SecondaryButton(
+        icon: AccessibilityPanel.icon,
+        label: 'Review',
+        onPressed: () => showCenterView(ref, CenterView.accessibility),
+      ),
     );
   }
 
@@ -229,7 +273,8 @@ class ProjectOverviewPanel extends ConsumerWidget {
               rows: IssueRow.all(issues),
               details: [
                 if (issues.isEmpty)
-                  'Every fCheck analyzer at 100%, nothing from dart analyze',
+                  'Every fCheck analyzer at 100%, nothing from dart analyze '
+                      'nor the color contrast check',
               ],
             ),
             StatCard(
@@ -288,6 +333,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
             _localizationCard(overview),
             _appIconsCard(ref),
             _architectureCard(ref, overview),
+            _accessibilityCard(ref),
           ],
         ),
       ],

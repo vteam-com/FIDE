@@ -3,8 +3,10 @@ import 'package:fide/models/byte_size.dart';
 import 'package:fide/models/image_details.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/relative_time.dart';
+import 'package:fide/models/wcag_color.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/image_providers.dart';
+import 'package:fide/widgets/color_sample.dart';
 import 'package:fide/widgets/detail_row.dart';
 import 'package:fide/widgets/detail_section.dart';
 import 'package:fide/widgets/empty_state.dart';
@@ -30,20 +32,11 @@ class _ImageDetailsPanelState extends ConsumerState<ImageDetailsPanel> {
   /// The details of [ImageDetailsPanel.path], read once per file.
   late Future<ImageDetails> _details;
 
-  /// Base of hexadecimal digits.
-  static const int _hexRadix = 16;
-
   /// Percent in a share of 1.
   static const int _percent = 100;
 
   /// Pixels in a megapixel.
   static const int _pixelsPerMegapixel = 1000000;
-
-  /// Hexadecimal digits of a color without its alpha.
-  static const int _rgbHexDigits = 6;
-
-  /// Mask of an ARGB color's red, green and blue.
-  static const int _rgbMask = 0xFFFFFF;
 
   /// Starts reading the details of [ImageDetailsPanel.path].
   Future<ImageDetails> _inspect() =>
@@ -133,10 +126,10 @@ class _ImageDetailsPanelState extends ConsumerState<ImageDetailsPanel> {
           DetailSection(isRaster ? 'Dominant colors' : 'Colors used', [
             for (final color in details.dominantColors)
               DetailRow(
-                _hex(color.argb),
+                WcagColor(color.argb).opaque.hex,
                 '${(color.share * _percent).round()}%'
                 '${isRaster ? '' : ' of uses'}',
-                leading: _swatch(color.argb),
+                leading: ColorSample(color.argb),
               ),
           ]),
           DetailSection('${details.format} details', [
@@ -153,26 +146,6 @@ class _ImageDetailsPanelState extends ConsumerState<ImageDetailsPanel> {
           ],
         );
       },
-    );
-  }
-
-  /// [argb] as `#RRGGBB`.
-  static String _hex(int argb) =>
-      '#${(argb & _rgbMask).toRadixString(_hexRadix).padLeft(_rgbHexDigits, '0').toUpperCase()}';
-
-  /// A small square of [argb], outlined so white shows on light themes.
-  Widget _swatch(int argb) {
-    return Container(
-      width: AppIconSize.medium,
-      height: AppIconSize.medium,
-      decoration: BoxDecoration(
-        color: Color(argb),
-        borderRadius: BorderRadius.circular(AppRadius.small),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline,
-          width: AppSize.borderThin,
-        ),
-      ),
     );
   }
 }

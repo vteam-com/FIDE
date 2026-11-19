@@ -14,6 +14,12 @@ class _ColorEvaluator {
 
   static const String _withValues = 'withValues';
 
+  /// The methods making a color translucent.
+  static const Set<String> _modifiers = {_withOpacity, _withAlpha, _withValues};
+
+  /// What starts the code of a constant instance creation.
+  static const String _constPrefix = 'const ';
+
   /// Wrappers of one color for every state, as a `ButtonStyle` takes it.
   static const Set<String> _allStates = {
     'WidgetStatePropertyAll',
@@ -68,6 +74,44 @@ class _ColorEvaluator {
     return current;
   }
 
+  /// Whether [name] is the name of a top-level or static constant.
+  bool isConstant(String name) => _constants.containsKey(name);
+
+  /// How the color [expression] is written, alike wherever it is: a role
+  /// of the color scheme as `colorScheme.primary` however the scheme is
+  /// reached, without `const`, a trailing `!` or a state wrapper.
+  String nameOf(Expression expression) {
+    // The color a state wrapper gives every state
+    if (_Call.of(expression) case final call?
+        when _allStates.contains(call.fullName) && call.positional.isNotEmpty) {
+      return nameOf(call.positional.first);
+    }
+    return _nameOf(expression);
+  }
+
+  /// [nameOf]'s work on anything but a state wrapper.
+  String _nameOf(Expression expression) => switch (expression) {
+    ParenthesizedExpression(:final expression) => nameOf(expression),
+    PostfixExpression(:final operand)
+        when expression.operator.type == TokenType.BANG =>
+      nameOf(operand),
+    PrefixedIdentifier(:final prefix, :final identifier)
+        when ColorRoles.isRole(identifier.name) && _isScheme(prefix) =>
+      '$_colorScheme.${identifier.name}',
+    PropertyAccess(:final target?, :final propertyName)
+        when ColorRoles.isRole(propertyName.name) && _isScheme(target) =>
+      '$_colorScheme.${propertyName.name}',
+    MethodInvocation(:final target?, :final methodName, :final argumentList) =>
+      '${nameOf(target)}.${methodName.name}${argumentList.toSource()}',
+
+    _ => switch (expression.toSource()) {
+      final source when source.startsWith(_constPrefix) => source.substring(
+        _constPrefix.length,
+      ),
+      final source => source,
+    },
+  };
+
   /// The scheme of the dark theme when [isDark], else the light one's.
   ColorRoles schemeOf(bool isDark) => isDark ? dark : light;
 
@@ -93,15 +137,19 @@ class _ColorEvaluator {
       final value? => number(value),
       null => null,
     };
-    final first = positional.isEmpty ? null : number(positional.first);
+    double? first() => positional.isEmpty ? null : number(positional.first);
     if (call.target case final target?) {
+      // Any other method is not read, nor its value: most calls of the
+      // code are not colors
+      if (!_modifiers.contains(call.member)) return null;
       final base = _color(target, isDark, visiting);
       if (base == null) return null;
+      final amount = first();
       // Only an alpha: a changed channel or color space is not read
       final alpha = call.named.length == 1 ? named('alpha') : null;
       return switch (call.member) {
-        _withOpacity when first != null => base.withOpacity(first),
-        _withAlpha when first != null => base.withAlpha(first.toInt()),
+        _withOpacity when amount != null => base.withOpacity(amount),
+        _withAlpha when amount != null => base.withAlpha(amount.toInt()),
         _withValues when alpha != null => base.withOpacity(alpha),
         _ => null,
       };
@@ -111,9 +159,9 @@ class _ColorEvaluator {
           ? null
           : _color(positional.first, isDark, visiting);
     }
-    final isSwatch = _swatches.contains(call.typeName);
-    if (isSwatch || call.fullName == 'Color') {
-      return first == null ? null : WcagColor(first.toInt());
+    if (_swatches.contains(call.typeName) || call.fullName == 'Color') {
+      final argb = first();
+      return argb == null ? null : WcagColor(argb.toInt());
     }
     if (call.typeName != 'Color') return null;
     final numbers = [for (final argument in positional) number(argument)];

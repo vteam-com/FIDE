@@ -26,6 +26,9 @@ class WcagColor {
   /// meaning against their background, WCAG 2 level AA.
   static const double minLargeContrast = 3;
 
+  /// Least contrast of text against its background, WCAG 2 level AAA.
+  static const double enhancedTextContrast = 7;
+
   static const int _alphaShift = 24;
 
   static const int _redShift = 16;

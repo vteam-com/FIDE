@@ -16,8 +16,8 @@ class _DeclarationCollector extends RecursiveAstVisitor<void> {
   final List<(Expression, _SourceFile)> schemes = [];
 
   /// The `ThemeData` calls, whose brightness tells which themes the app
-  /// renders.
-  final List<_Call> themes = [];
+  /// renders, each with its file.
+  final List<(_Call, _SourceFile)> themes = [];
 
   /// The `themeMode` each app gives, such as `ThemeMode.dark`.
   final Set<String> themeModes = {};
@@ -115,7 +115,7 @@ class _DeclarationCollector extends RecursiveAstVisitor<void> {
     if (call == null) return;
     if (call['darkTheme'] != null) hasDarkTheme = true;
     if (call['themeMode'] case final mode?) themeModes.add(mode.toSource());
-    if (call.typeName == 'ThemeData') themes.add(call);
+    if (call.typeName == 'ThemeData') themes.add((call, _file));
     final buildsScheme =
         call.typeName == 'ColorScheme' ||
         call.member == 'copyWith' ||

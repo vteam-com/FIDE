@@ -67,7 +67,10 @@ class _ContrastVisitor extends RecursiveAstVisitor<void> {
 
   final _SourceFile _file;
 
-  final List<ColorContrastFinding> _findings = [];
+  final List<ColorContrastCheck> _checks = [];
+
+  /// How many colors could not be judged.
+  int _unjudged = 0;
 
   final _ProjectTheme _theme;
 
@@ -83,18 +86,19 @@ class _ContrastVisitor extends RecursiveAstVisitor<void> {
     super.visitMethodInvocation(node);
   }
 
-  /// Judges the [foreground] color [owner] gives, an icon when [isGlyph],
-  /// large text when [isLarge], against what it is drawn on in each theme.
+  /// Judges the [foreground] color [owner] gives to an [element] against
+  /// what it is drawn on in each theme, counting it as not judged when
+  /// either can't be read.
   ///
-  /// With nothing painted around it, the surface is only assumed, so only
-  /// what the theme or an opacity causes counts: a color unreadable in
-  /// the dark theme alone, or one an opacity fades.
+  /// With nothing painted around it, the surface is only assumed: a color
+  /// failing there counts only for what the theme or an opacity causes, a
+  /// color unreadable in the dark theme alone or one an opacity fades; any
+  /// other may be drawn on a fill it gets elsewhere, so it is not judged.
   void _check(
     Expression foreground,
-    _Call owner, {
-    required bool isGlyph,
-    bool isLarge = false,
-  }) {
+    _Call owner,
+    ColorContrastElement element,
+  ) {
     if (_file.isIgnoredAt(foreground) ||
         _disabled.hasMatch(foreground.toSource())) {
       return;
@@ -105,25 +109,36 @@ class _ContrastVisitor extends RecursiveAstVisitor<void> {
       final backdrop = color == null
           ? null
           : _Backdrop.of(owner, _theme, isDark);
-      if (color == null || backdrop == null) return;
+      if (color == null || backdrop == null) {
+        _unjudged++;
+        return;
+      }
       samples.add((color: color, backdrop: backdrop, isDark: isDark));
     }
-    final minimum = isGlyph || isLarge
-        ? WcagColor.minLargeContrast
-        : WcagColor.minTextContrast;
+    final minimum = element.minimum;
     double ratio(_Sample sample) =>
         _drawn(sample).contrastWith(sample.backdrop.color);
     final failing = [
       for (final sample in samples)
         if (ratio(sample) < minimum) sample,
     ];
-    if (failing.isEmpty) return;
-    final worst = failing.reduce((a, b) => ratio(a) <= ratio(b) ? a : b);
+    // The theme judged is the one the colors fare worst in
+    final worst = samples.reduce((a, b) => ratio(a) <= ratio(b) ? a : b);
     final isFaded =
         !worst.color.isOpaque &&
         worst.color.opaque.contrastWith(worst.backdrop.color) >= minimum;
     final isOneTheme = failing.length < samples.length;
-    if (worst.backdrop.isAssumed && !isFaded && !(isOneTheme && worst.isDark)) {
+    final failure = switch (failing) {
+      [] => null,
+      _ when isFaded => ColorContrastKind.translucent,
+      _ when isOneTheme => ColorContrastKind.oneTheme,
+      _ => ColorContrastKind.lowContrast,
+    };
+    if (failure != null &&
+        worst.backdrop.isAssumed &&
+        !isFaded &&
+        !(isOneTheme && worst.isDark)) {
+      _unjudged++;
       return;
     }
     final varies =
@@ -131,23 +146,20 @@ class _ContrastVisitor extends RecursiveAstVisitor<void> {
             .length >
         1;
     final namesTheme =
-        varies || isOneTheme || (samples.length == 1 && worst.isDark);
-    _findings.add(
-      ColorContrastFinding(
-        kind: isFaded
-            ? ColorContrastKind.translucent
-            : isOneTheme
-            ? ColorContrastKind.oneTheme
-            : ColorContrastKind.lowContrast,
+        varies ||
+        failure == ColorContrastKind.oneTheme ||
+        (samples.length == 1 && worst.isDark);
+    _checks.add(
+      ColorContrastCheck(
+        element: element,
+        failure: failure,
         path: _file.path,
         line: _file.lineOf(foreground),
         foreground: ColorContrastAnalyzer._shown(foreground),
         foregroundColor: _drawn(worst),
         background: worst.backdrop.label,
         backgroundColor: worst.backdrop.color,
-        minimum: minimum,
-        isGlyph: isGlyph,
-        theme: namesTheme ? (worst.isDark ? 'dark' : 'light') : null,
+        theme: namesTheme ? _ProjectTheme.themeName(worst.isDark) : null,
       ),
     );
   }
@@ -176,19 +188,31 @@ class _ContrastVisitor extends RecursiveAstVisitor<void> {
         _textStyles.hasMatch(call.target?.toSource() ?? '');
     if (call.fullName == 'TextStyle' || copiesTextStyle) {
       if (call['color'] case final color?) {
-        _check(color, call, isGlyph: false, isLarge: _isLarge(call));
+        _check(
+          color,
+          call,
+          _isLarge(call)
+              ? ColorContrastElement.largeText
+              : ColorContrastElement.text,
+        );
       }
       return;
     }
     if (!call.isClass) return;
     if (call['color'] case final color? when _icons.contains(call.typeName)) {
-      _check(color, call, isGlyph: true);
+      _check(color, call, ColorContrastElement.icon);
     }
     for (final (name, value) in call.named) {
       if (_textColors.contains(name)) {
-        _check(value, call, isGlyph: _iconWidgets.contains(call.typeName));
+        _check(
+          value,
+          call,
+          _iconWidgets.contains(call.typeName)
+              ? ColorContrastElement.icon
+              : ColorContrastElement.text,
+        );
       } else if (name == _iconColor) {
-        _check(value, call, isGlyph: true);
+        _check(value, call, ColorContrastElement.icon);
       }
     }
   }
@@ -199,15 +223,15 @@ class _ContrastVisitor extends RecursiveAstVisitor<void> {
       ? sample.color
       : sample.color.over(sample.backdrop.color);
 
-  /// What the color contrast analyzer finds in [file], judged in
-  /// [theme].
-  static List<ColorContrastFinding> findIn(
+  /// The texts and icons of [file] judged in [theme], and how many could
+  /// not be judged.
+  static ({List<ColorContrastCheck> checks, int unjudged}) judge(
     _SourceFile file,
     _ProjectTheme theme,
   ) {
-    if (file.isIgnored) return const [];
+    if (file.isIgnored) return (checks: const [], unjudged: 0);
     final visitor = _ContrastVisitor(file, theme);
     file.unit.accept(visitor);
-    return visitor._findings;
+    return (checks: visitor._checks, unjudged: visitor._unjudged);
   }
 }

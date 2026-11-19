@@ -31,17 +31,17 @@ const String _command = 'dart analyze';
 /// A report of [count] grey texts on white in `/demo/lib/a.dart`.
 ColorContrastReport _greyTexts(int count) => ColorContrastReport(
   fileCount: 1,
-  findings: [
+  checks: [
     for (var line = 1; line <= count; line++)
-      ColorContrastFinding(
-        kind: ColorContrastKind.lowContrast,
+      ColorContrastCheck(
+        element: ColorContrastElement.text,
+        failure: ColorContrastKind.lowContrast,
         path: '/demo/lib/a.dart',
         line: line,
         foreground: 'Colors.grey',
         foregroundColor: const WcagColor(0xFF9E9E9E),
         background: 'Colors.white',
         backgroundColor: const WcagColor(0xFFFFFFFF),
-        minimum: WcagColor.minTextContrast,
       ),
   ],
 );

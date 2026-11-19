@@ -10,6 +10,7 @@ class _ProjectTheme {
     this._definitions,
     this._themedFills,
     this._paintingClasses,
+    this.schemes,
   );
 
   /// The arguments of `ThemeData` that set the fill of a widget, with the
@@ -53,36 +54,53 @@ class _ProjectTheme {
       light: ColorRoles.material3(isDark: false),
       dark: ColorRoles.material3(isDark: true),
     );
+    // Where a node is: the file whose code it is part of
+    final fileOf = {for (final file in files) file.unit: file};
     final definitions = [
       for (final (expression, file) in collector.schemes)
-        if (_SchemeDefinition.read(expression, defaults) case final scheme?)
-          (scheme, file),
+        for (final scheme in _SchemeDefinition.readAll(expression, defaults))
+          (scheme, file, expression),
     ];
-    // The schemes the themes use first, then any the code builds
-    final schemes = [
-      for (final theme in collector.themes)
+    // The schemes the themes use, each with the file and node defining
+    // it, the first ones of a theme winning, then any the code builds; a
+    // theme's scheme that can't be read is kept to tell where it is
+    final themeSchemes = [
+      for (final (theme, file) in collector.themes)
         if (theme['colorScheme'] ??
                 (theme['colorSchemeSeed'] == null ? null : theme.node)
             case final Expression scheme)
-          ?_SchemeDefinition.read(scheme, defaults)?.roles,
-      for (final (definition, _) in definitions) definition.roles,
+          (scheme, fileOf[defaults.resolve(scheme).root] ?? file),
     ];
-    ColorRoles schemeOf(bool isDark) {
-      for (final scheme in schemes) {
-        if (scheme.isDark == isDark) return scheme;
+    final sources = <(_SchemeDefinition, _SourceFile, AstNode)>[
+      for (final (scheme, file) in themeSchemes)
+        for (final definition in _SchemeDefinition.readAll(scheme, defaults))
+          (definition, file, defaults.resolve(scheme)),
+      ...definitions,
+    ];
+    final unread = [
+      for (final (scheme, file) in themeSchemes)
+        if (_SchemeDefinition.readAll(scheme, defaults).isEmpty)
+          (file, defaults.resolve(scheme)),
+    ];
+    (_SchemeDefinition, _SourceFile, AstNode)? sourceOf(bool isDark) {
+      for (final source in sources) {
+        if (source.$1.roles.isDark == isDark) return source;
       }
-      return ColorRoles.material3(isDark: isDark);
+      return null;
     }
 
+    ColorRoles schemeOf(bool isDark) =>
+        sourceOf(isDark)?.$1.roles ?? ColorRoles.material3(isDark: isDark);
+
     final hints = {
-      for (final theme in collector.themes) _isDarkTheme(theme, defaults),
-      for (final (definition, _) in definitions) definition.roles.isDark,
+      for (final (theme, _) in collector.themes)
+        ..._brightnessesOf(theme, defaults),
+      for (final (definition, _, _) in definitions) definition.roles.isDark,
     };
     // The fills each theme gives widgets, the first theme of a brightness
     // that gives one winning
     final themedFills = <bool, Map<String, _Fill>>{false: {}, true: {}};
-    for (final theme in collector.themes) {
-      final fills = themedFills[_isDarkTheme(theme, defaults)]!;
+    for (final (theme, _) in collector.themes) {
       for (final MapEntry(key: slot, value: widget) in _themeSlots.entries) {
         if (theme[slot] case final value?) {
           final fill = widget == 'Scaffold'
@@ -92,7 +110,9 @@ class _ProjectTheme {
                   null => _Fill.unknown,
                 };
           if (fill.kind case _FillKind.color || _FillKind.unknown) {
-            fills.putIfAbsent(widget, () => fill);
+            for (final isDark in _brightnessesOf(theme, defaults)) {
+              themedFills[isDark]!.putIfAbsent(widget, () => fill);
+            }
           }
         }
       }
@@ -106,20 +126,21 @@ class _ProjectTheme {
       },
       _ => null,
     };
+    final brightnesses = switch (onlyDark) {
+      final isDark? => [isDark],
+      null when collector.hasDarkTheme || hints.length > 1 => const [
+        false,
+        true,
+      ],
+      null => [hints.contains(true)],
+    };
     return _ProjectTheme._(
       _ColorEvaluator(
         collector.constants,
         light: schemeOf(false),
         dark: schemeOf(true),
       ),
-      switch (onlyDark) {
-        final isDark? => [isDark],
-        null when collector.hasDarkTheme || hints.length > 1 => const [
-          false,
-          true,
-        ],
-        null => [hints.contains(true)],
-      },
+      brightnesses,
       definitions,
       themedFills,
       {
@@ -127,6 +148,33 @@ class _ProjectTheme {
             in collector.classes.entries)
           if (_paints(declaration, defaults)) name,
       },
+      [
+        for (final isDark in brightnesses)
+          switch (sourceOf(isDark)) {
+            (final definition, final file, final node) => ColorSchemeSummary(
+              theme: themeName(isDark),
+              roles: definition.roles,
+              origin: definition.origin,
+              givenRoles: definition.given.keys.toList(),
+              path: file.path,
+              line: file.lineOf(node),
+            ),
+            null => switch (unread) {
+              [(final file, final node), ...] => ColorSchemeSummary(
+                theme: themeName(isDark),
+                roles: ColorRoles.material3(isDark: isDark),
+                origin: "Can't be read here: Material 3's default is assumed",
+                path: file.path,
+                line: file.lineOf(node),
+              ),
+              [] => ColorSchemeSummary(
+                theme: themeName(isDark),
+                roles: ColorRoles.material3(isDark: isDark),
+                origin: "Material 3's default",
+              ),
+            },
+          },
+      ],
     );
   }
 
@@ -138,8 +186,12 @@ class _ProjectTheme {
   /// constants.
   final _ColorEvaluator colors;
 
-  /// The color schemes the code defines, each with its file.
-  final List<(_SchemeDefinition, _SourceFile)> _definitions;
+  /// The color scheme of each theme the app renders, as [brightnesses]
+  /// order them.
+  final List<ColorSchemeSummary> schemes;
+
+  /// The color schemes the code defines, each with its file and node.
+  final List<(_SchemeDefinition, _SourceFile, AstNode)> _definitions;
 
   /// The fill each theme gives widgets in place of their default, by
   /// brightness then widget.
@@ -160,11 +212,10 @@ class _ProjectTheme {
     return _themedFills[isDark]![_themedAs[widget] ?? widget] ?? fill;
   }
 
-  /// The on-colors of the schemes the code defines that fall below WCAG 2
-  /// level AA on their fill.
-  List<ColorContrastFinding> pairFindings() => [
-    for (final (definition, file) in _definitions)
-      ...definition.pairFindings(file),
+  /// Each on-color of the schemes the code defines judged on its fill.
+  List<ColorContrastCheck> pairChecks() => [
+    for (final (definition, file, _) in _definitions)
+      ...definition.pairChecks(file),
   ];
 
   /// The scheme of the dark theme when [isDark], else the light one's.
@@ -177,11 +228,14 @@ class _ProjectTheme {
     for (AstNode? current = node; current != null; current = current.parent) {
       if (_Call.of(current) case final call?
           when call.typeName == 'ThemeData') {
-        return [_isDarkTheme(call, colors)];
+        return _brightnessesOf(call, colors);
       }
     }
     return null;
   }
+
+  /// The name of the dark theme when [isDark], else the light one's.
+  static String themeName(bool isDark) => isDark ? 'dark' : 'light';
 
   /// Whether the code of the class [declaration] paints a fill, reading
   /// constants with [colors].
@@ -191,21 +245,30 @@ class _ProjectTheme {
     return finder.paints;
   }
 
-  /// Whether the `ThemeData` [call] builds a dark theme, reading its
-  /// scheme with [colors].
-  static bool _isDarkTheme(_Call call, _ColorEvaluator colors) =>
-      switch (call.member) {
-        'dark' => true,
-        'light' => false,
-        _ when call['brightness'] != null => _SchemeDefinition.isDarkBrightness(
-          call['brightness'],
-        ),
-        _ => switch (call['colorScheme']) {
-          final scheme? =>
-            _SchemeDefinition.read(scheme, colors)?.roles.isDark ?? false,
-          null => false,
-        },
+  /// The themes the `ThemeData` [call] builds, false for the light one,
+  /// reading its scheme with [colors]: both when its brightness is not a
+  /// constant, such as a parameter of a function building both.
+  static List<bool> _brightnessesOf(_Call call, _ColorEvaluator colors) {
+    switch (call.member) {
+      case 'dark':
+        return const [true];
+      case 'light':
+        return const [false];
+    }
+    if (call['brightness'] case final brightness?) {
+      return switch (_SchemeDefinition.darkBrightness(brightness)) {
+        final isDark? => [isDark],
+        null => const [false, true],
       };
+    }
+    final scheme = call['colorScheme'];
+    final schemes = scheme == null
+        ? const <_SchemeDefinition>[]
+        : _SchemeDefinition.readAll(scheme, colors);
+    return schemes.isEmpty
+        ? const [false]
+        : [for (final scheme in schemes) scheme.roles.isDark];
+  }
 }
 
 /// Tells whether code paints a fill: whether a call in it does, as a
