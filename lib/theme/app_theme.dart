@@ -171,9 +171,10 @@ class AppTheme {
 
   /// Radial gradient the workspace panel islands float on.
   ///
-  /// A primary glow at [center], the window's top center by default, fades
-  /// out to a shaded edge darker than every surface tone, so the gaps
-  /// between islands read clearly in both modes.
+  /// The panels' surface tinted with the primary color, strongest in a
+  /// glow at [center], the window's top center by default: the light
+  /// theme's primary darkens it to a blue, the dark theme's brightens it,
+  /// so the gaps between islands read clearly in both modes.
   static BoxDecoration workspaceBackground(
     BuildContext context, {
     Alignment center = Alignment.topCenter,
@@ -191,23 +192,23 @@ class AppTheme {
     );
   }
 
-  /// The [workspaceBackground] gradient's two colors: its primary glow, then
-  /// its shaded edge.
+  /// The [workspaceBackground] gradient's two colors: its glow, then its
+  /// edge.
   ///
   /// The title bar and the settings draw straight on them, so both stay
   /// subtle enough for text and icons to read on either.
   static List<Color> workspaceColors(ColorScheme colorScheme) {
-    final base = colorScheme.brightness == Brightness.light
-        ? colorScheme.surfaceDim
-        : colorScheme.surfaceContainerLowest;
+    final light = colorScheme.brightness == Brightness.light;
+    Color tint(double alpha) => Color.alphaBlend(
+      colorScheme.primary.withValues(alpha: alpha),
+      colorScheme.surface,
+    );
     return [
-      Color.alphaBlend(
-        colorScheme.primary.withValues(alpha: AppOpacity.workspaceGlow),
-        base,
+      tint(
+        light ? AppOpacity.workspaceGlowLight : AppOpacity.workspaceGlowDark,
       ),
-      Color.alphaBlend(
-        colorScheme.shadow.withValues(alpha: AppOpacity.workspaceShade),
-        base,
+      tint(
+        light ? AppOpacity.workspaceEdgeLight : AppOpacity.workspaceEdgeDark,
       ),
     ];
   }

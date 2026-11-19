@@ -12,13 +12,23 @@ class AppOpacity {
   static const double secondaryText = 0.7;
   static const double emphasis = 0.8;
 
-  /// Primary tint blended into the workspace gradient's core, light enough
-  /// for the title bar's and the settings' text to read on it.
-  static const double workspaceGlow = 0.25;
+  /// Primary tint over the panel surface at the light workspace gradient's
+  /// core, darkening it to a blue: as dark as the title bar's and the
+  /// settings' dim text allows, reading at AA on it.
+  static const double workspaceGlowLight = 0.44;
 
-  /// Shadow blended into the outer edge of the workspace gradient to deepen
-  /// contrast, light enough for the title bar's icons to read on it.
-  static const double workspaceShade = 0.1;
+  /// Primary tint over the panel surface at the dark workspace gradient's
+  /// core, brightening it to a blue the title bar's icons still read on.
+  static const double workspaceGlowDark = 0.3;
+
+  /// Primary tint over the panel surface at the light workspace gradient's
+  /// edge: as far in lightness from the panels as the dark theme's edge,
+  /// so the gradient from the glow shows as plainly in both themes.
+  static const double workspaceEdgeLight = 0.19;
+
+  /// Primary tint over the panel surface at the dark workspace gradient's
+  /// edge: enough to keep the gaps brighter than the panels.
+  static const double workspaceEdgeDark = 0.12;
 
   /// The modified image faded under the changed-pixel mask of an image
   /// diff's Difference mode, so the mask stands out but keeps its context.
