@@ -34,7 +34,19 @@ class _AiTranscriptEntryState extends State<AiTranscriptEntry> {
       child: Stack(
         children: [
           _buildContent(),
-          if (_isHovering) Positioned(top: 0, right: 0, child: _buildToolbar()),
+          // Laid out even while hidden, so the entry is at least as tall
+          // as the toolbar, which a one-line step would otherwise clip
+          Align(
+            alignment: Alignment.topRight,
+            // Its size kept, not its clicks, while hidden
+            child: Visibility(
+              visible: _isHovering,
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
+              child: _buildToolbar(),
+            ),
+          ),
         ],
       ),
     );

@@ -18,6 +18,10 @@ class AppMetric {
   static const int aiContextPreviewChars = 2000;
   static const int aiMaxToolRounds = 25;
 
+  /// Calls the agent repeats, with nothing changed in between, before it
+  /// stops: a local model can loop on one, such as `check_build`.
+  static const int aiMaxRepeatedCalls = 3;
+
   /// Most steps the agent takes to answer a question, reading the code it
   /// needs: fewer than an edit, which also writes and checks.
   static const int aiMaxAnswerRounds = 12;

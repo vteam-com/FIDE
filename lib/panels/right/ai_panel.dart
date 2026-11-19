@@ -59,7 +59,8 @@ class _AIPanelState extends ConsumerState<AIPanel> {
   @override
   Widget build(BuildContext context) {
     final chat = ref.watch(aiChatProvider);
-    final messages = chat.messages;
+    // Each run of steps as one entry, a repeated step counted
+    final messages = ChatMessage.compacted(chat.messages);
     final setup = ref.watch(ollamaStatusProvider);
     final isReady = setup.value == OllamaStep.ready;
     // Follows new messages and the reply as it streams in

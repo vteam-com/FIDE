@@ -110,6 +110,7 @@ class CodeEditAgent {
         'old_text': 'Exact text to replace, including whitespace',
         'new_text': 'Replacement text',
       },
+      changesProject: true,
       run: (args) => replaceInFile(
         _argument(args, 'path'),
         _argument(args, 'old_text'),
@@ -123,6 +124,7 @@ class CodeEditAgent {
         'path': 'File relative to the project root',
         'content': 'The complete new file content',
       },
+      changesProject: true,
       run: (args) =>
           _write(_argument(args, 'path'), _argument(args, 'content')),
     ),
@@ -134,6 +136,7 @@ class CodeEditAgent {
       // A parameter, as qwen3-coder can leave a call with none unclosed,
       // which Ollama then fails to read
       parameters: {'changes': 'What you changed, in a few words'},
+      usesArguments: false,
       run: (_) async {
         final errors = await hooks.checkBuild();
         return errors.isEmpty
@@ -155,6 +158,7 @@ class CodeEditAgent {
           'editing files: ${[for (final fix in fixes) '${fix.name} ${fix.purpose}'].join('; ')}. '
           'Returns what it changed and what it left for you.',
       parameters: {'name': 'One of ${fixes.map((fix) => fix.name).join(', ')}'},
+      changesProject: true,
       run: (args) {
         final name = _argument(args, 'name');
         final fix = fixes.where((fix) => fix.name == name).firstOrNull;
@@ -330,9 +334,14 @@ class CodeEditAgent {
       {'role': 'system', 'content': system},
       ...conversation,
     ];
+    // Results of the calls since the project last changed, by call, so a
+    // local model repeating one, as it can in a loop, gets told instead
+    final unchanged = <String, String>{};
+    var repeats = 0;
     for (var round = 0; round < maxRounds; round++) {
       _cancelToken.throwIfCancelled();
-      _fitBudget(messages, tools);
+      // Dropped outputs may be read again, once more, without repeating
+      if (_fitBudget(messages, tools)) unchanged.clear();
       final reply = await _model.chat(
         messages,
         tools,
@@ -350,16 +359,39 @@ class CodeEditAgent {
         final function = call is Map ? call['function'] : null;
         if (function is! Map) continue;
         final name = function['name']?.toString() ?? '';
-        final arguments = function['arguments'];
+        final given = function['arguments'];
+        final arguments = given is Map<String, dynamic>
+            ? given
+            : const <String, dynamic>{};
+        final skill = skills.where((s) => s.name == name).firstOrNull;
+        final key = skill?.callKey(arguments);
+        final earlier = unchanged[key];
+        final String result;
+        if (earlier != null) {
+          _reportStep(name, arguments);
+          if (++repeats >= AppMetric.aiMaxRepeatedCalls) {
+            return 'Stopped: the model kept calling $name with nothing '
+                'changed in between; the change may be incomplete.';
+          }
+          result =
+              '$earlier\n\n(Same result as your earlier $name call: '
+              'nothing changed since. Act on it instead of calling it '
+              'again, or reply with your summary.)';
+        } else {
+          result = await _runSkill(skills, name, arguments);
+          if (skill != null && key != null) {
+            if (skill.changesProject) {
+              unchanged.clear();
+            } else {
+              unchanged[key] = result;
+            }
+          }
+        }
         messages.add({
           'role': 'tool',
           'tool_name': name,
           'tool_call_id': ?call['id'],
-          'content': await _runSkill(
-            skills,
-            name,
-            arguments is Map<String, dynamic> ? arguments : const {},
-          ),
+          'content': result,
         });
       }
     }
@@ -374,7 +406,9 @@ class CodeEditAgent {
   /// whole. A local model slows down sharply as its context fills, and
   /// past it Ollama would cut the start of the conversation, the request
   /// with it.
-  void _fitBudget(
+  ///
+  /// Returns whether it dropped anything.
+  bool _fitBudget(
     List<Map<String, dynamic>> messages,
     List<Map<String, dynamic>> tools,
   ) {
@@ -382,13 +416,14 @@ class CodeEditAgent {
     int tokens(Object? value) =>
         jsonEncode(value).length ~/ AppMetric.aiCharsPerToken;
     var size = tokens([messages, tools]);
-    if (budget == null || size <= budget) return;
+    if (budget == null || size <= budget) return false;
     final target = (budget * AppMetric.aiContextKeptShare).floor();
     final latest = messages.lastIndexWhere(
       (message) => message['role'] == 'assistant',
     );
+    var dropped = false;
     for (var index = 0; index < latest; index++) {
-      if (size <= target) return;
+      if (size <= target) return dropped;
       final message = messages[index];
       final smaller = switch (message) {
         {'role': 'tool', 'content': final String content}
@@ -406,8 +441,10 @@ class CodeEditAgent {
         _ => message,
       };
       size -= tokens(message) - tokens(smaller);
+      dropped |= !identical(smaller, message);
       messages[index] = smaller;
     }
+    return dropped;
   }
 
   /// [call] with each long argument, such as the content of a file it
@@ -449,9 +486,7 @@ class CodeEditAgent {
     String name,
     Map<String, dynamic> arguments,
   ) async {
-    final subject =
-        arguments['path'] ?? arguments['text'] ?? arguments['changes'];
-    hooks.onStep(subject == null ? name : '$name $subject');
+    _reportStep(name, arguments);
     final skill = skills.where((s) => s.name == name).firstOrNull;
     if (skill == null) return 'Error: unknown tool $name';
     try {
@@ -461,6 +496,14 @@ class CodeEditAgent {
     } on FileSystemException catch (e) {
       return 'Error: ${e.message} ${e.path ?? ''}';
     }
+  }
+
+  /// Reports the call of the skill [name] with [arguments] to
+  /// [CodeEditHooks.onStep], as one line naming what it works on.
+  void _reportStep(String name, Map<String, dynamic> arguments) {
+    final subject =
+        arguments['path'] ?? arguments['text'] ?? arguments['changes'];
+    hooks.onStep(subject == null ? name : '$name $subject');
   }
 
   /// Writes [content] to the project file at [path] and runs

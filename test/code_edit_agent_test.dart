@@ -399,4 +399,65 @@ void main() {
       expect(parameters['required'], isNotEmpty, reason: skill.name);
     }
   });
+
+  test('a call repeated with nothing changed is told, then stopped', () async {
+    var checks = 0;
+    final model = FakeChatModel(
+      chatReplies: [
+        for (var i = 0; i < 4; i++) toolCall('check_build', {'changes': 'x'}),
+        answer('never reached'),
+      ],
+    );
+    final agent = CodeEditAgent(
+      model,
+      files: store,
+      hooks: CodeEditHooks(
+        onStep: (_) {},
+        onFileWritten: (_) async {},
+        checkBuild: () async {
+          checks++;
+          return '';
+        },
+      ),
+    );
+
+    final summary = await agent.edit('fix main', const []);
+
+    // Checked once: the repeats get the earlier result, with a note
+    expect(checks, 1);
+    expect(toolResults(model)[1]['content'], contains('nothing changed'));
+    expect(summary, startsWith('Stopped'));
+    expect(model.chats, hasLength(1 + AppMetric.aiMaxRepeatedCalls));
+  });
+
+  test('a change in between makes the same call run again', () async {
+    var checks = 0;
+    final model = FakeChatModel(
+      chatReplies: [
+        toolCall('check_build', {'changes': 'first'}),
+        toolCall('replace_in_file', {
+          'path': 'lib/main.dart',
+          'old_text': 'print(1)',
+          'new_text': 'print(1);',
+        }),
+        toolCall('check_build', {'changes': 'second'}),
+        answer('Done.'),
+      ],
+    );
+    final agent = CodeEditAgent(
+      model,
+      files: store,
+      hooks: CodeEditHooks(
+        onStep: (_) {},
+        onFileWritten: (_) async {},
+        checkBuild: () async {
+          checks++;
+          return '';
+        },
+      ),
+    );
+
+    expect(await agent.edit('fix main', const []), 'Done.');
+    expect(checks, 2);
+  });
 }

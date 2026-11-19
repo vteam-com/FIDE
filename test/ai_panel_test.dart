@@ -2,6 +2,10 @@ import 'dart:async';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/ai_action.dart';
+import 'package:fide/models/chat_message.dart';
+import 'package:fide/panels/right/ai_panel.ai_transcript_entry.dart';
+import 'package:fide/widgets/copy_button.dart';
+import 'package:flutter/gestures.dart';
 import 'package:fide/models/ollama_model.dart';
 import 'package:fide/models/ollama_step.dart';
 import 'package:fide/panels/right/ai_panel.dart';
@@ -86,5 +90,38 @@ void main() {
     await tester.pump();
 
     expect(model.warmUps, 1);
+  });
+
+  testWidgets('a one-line step is as tall as its hover toolbar', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AiTranscriptEntry(
+            message: ChatMessage(
+              content: '🔧 check_build',
+              isUser: false,
+              isProgress: true,
+              timestamp: DateTime.now(),
+            ),
+          ),
+        ),
+      ),
+    );
+    final entry = find.byType(AiTranscriptEntry);
+    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await gesture.addPointer(location: tester.getCenter(entry));
+    await tester.pump();
+
+    final toolbar = find.byType(CopyButton);
+    expect(toolbar, findsOneWidget);
+    // The toolbar lies within the entry, so nothing clips it
+    expect(
+      tester
+          .getRect(entry)
+          .contains(tester.getBottomRight(toolbar) - const Offset(1, 1)),
+      isTrue,
+    );
   });
 }
