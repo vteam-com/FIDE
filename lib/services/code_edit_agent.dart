@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/project_command.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/text_truncation.dart';
 import 'package:fide/services/chat_model.dart';
@@ -25,6 +26,9 @@ class CodeEditAgent {
 
   /// Name of the tool running FIDE's whole-project fixes.
   static const String _quickFixName = 'run_quick_fix';
+
+  /// Name of the tool running Flutter, Dart and CocoaPods commands.
+  static const String _commandName = 'run_command';
 
   /// Where a build or analyzer error points: a Dart file and a line.
   static final RegExp _errorLocation = RegExp(
@@ -58,15 +62,17 @@ class CodeEditAgent {
   /// Other features' requests are unaffected.
   void cancel() => _cancelToken.cancel();
 
-  /// The tools the model may call: reading the project always, editing it
-  /// when [edits], and FIDE's own whole-project [fixes], only those the
-  /// request names, when the caller runs them.
+  /// The tools the model may call: reading the project always; editing
+  /// it when [edits], running the commands FIDE allows and FIDE's own
+  /// whole-project [fixes], only those the request names, when the caller
+  /// runs them.
   List<AiSkill> skillsFor({
     required bool edits,
     List<QuickFix> fixes = const [],
   }) => [
     ..._readSkills,
     if (edits) ..._editSkills,
+    if (edits) ?_commandSkill(),
     if (edits) ?_quickFixSkill(fixes),
   ];
 
@@ -162,6 +168,36 @@ class CodeEditAgent {
       },
     ),
   ];
+
+  /// The tool running one of the [ProjectCommand]s FIDE allows, such as
+  /// `flutter pub upgrade`, in a project folder; null when the caller runs
+  /// none.
+  AiSkill? _commandSkill() {
+    final runCommand = hooks.runCommand;
+    if (runCommand == null) return null;
+    return AiSkill(
+      name: _commandName,
+      icon: '💻',
+      description:
+          'Runs one command in the project and returns how it went, the '
+          'files it changed and its output. flutter pub upgrade <package> '
+          'updates a package, even an indirect one, within the pubspec.yaml '
+          'constraints; pod install runs in folder ios. Run the commands a '
+          'change needs yourself: never ask the user to. Allowed: '
+          '${ProjectCommand.allowed}.',
+      parameters: {'command': 'The command line, such as flutter pub get'},
+      optionalParameters: {
+        'folder':
+            'Project folder to run it in, such as ios; the root '
+            'by default',
+      },
+      changesProject: true,
+      run: (args) => runCommand(
+        ProjectCommand.parse(_argument(args, 'command')),
+        files.resolve('${args['folder'] ?? '.'}'),
+      ),
+    );
+  }
 
   /// The tool running one of FIDE's whole-project [fixes]; null when there
   /// are none or the caller runs none.
@@ -623,7 +659,10 @@ class CodeEditAgent {
         skills.where((skill) => skill.name == name).firstOrNull?.icon ??
         AiSkill.unknownIcon;
     final subject =
-        arguments['path'] ?? arguments['text'] ?? arguments['changes'];
+        arguments['path'] ??
+        arguments['text'] ??
+        arguments['changes'] ??
+        arguments['command'];
     hooks.onStep(subject == null ? '$icon $name' : '$icon $name $subject');
   }
 

@@ -34,6 +34,7 @@ import 'package:fide/services/ollama_installer.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_analyzer.dart';
 import 'package:fide/services/project_categorizer.dart';
+import 'package:fide/services/project_command_service.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:fide/services/project_creation_service.dart';
 import 'package:fide/services/project_maintenance_service.dart';
@@ -169,6 +170,15 @@ final codeReviewProvider = Provider<CodeReview>((_) => const CodeReview());
 /// quality.
 final dartAnalyzerProvider = Provider<DartAnalyzer>(
   (ref) => DartAnalyzer(
+    ref.read(processRunnerProvider),
+    () => ref.read(bundledDartProvider.future),
+  ),
+);
+
+/// Provides the [ProjectCommandService] running the commands the AI agent
+/// asks for, `dart` being the one bundled with Flutter.
+final projectCommandServiceProvider = Provider<ProjectCommandService>(
+  (ref) => ProjectCommandService(
     ref.read(processRunnerProvider),
     () => ref.read(bundledDartProvider.future),
   ),

@@ -11,6 +11,8 @@ void main() {
       'Can you fix the overflow?',
       "let's extract a widget",
       'Now, update the README',
+      'run flutter pub upgrade google_sign_in_ios',
+      'install the firebase_auth package',
     ]) {
       expect(PromptIntent.asksForChange(prompt), isTrue, reason: prompt);
     }

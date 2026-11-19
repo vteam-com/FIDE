@@ -28,8 +28,16 @@ class AiRequests {
 
   /// Shows the AI panel and has it send [request] as an Ask AI prompt, so
   /// the agent edits the project files to do it.
-  void ask(String request) {
+  void ask(String request) => _send(request, AiAction.ask);
+
+  /// Shows the AI panel and has it run Fix Build on the errors of the last
+  /// failed build (`lastBuildErrorsProvider`), so the agent edits the
+  /// project files until it builds.
+  void fixBuild() => _send('', AiAction.fixBuild);
+
+  /// Shows the AI panel and has it send [text] for [action].
+  void _send(String text, AiAction action) {
     showPanel();
-    chat.send(request, action: AiAction.ask);
+    chat.send(text, action: action);
   }
 }

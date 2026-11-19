@@ -371,6 +371,81 @@ void main() {
     },
   );
 
+  test('runs the commands FIDE allows through run_command', () async {
+    final ran = <(String, String)>[];
+    final steps = <String>[];
+    final model = FakeChatModel(
+      chatReplies: [
+        toolCall('run_command', {
+          'command': 'flutter pub upgrade google_sign_in_ios',
+        }),
+        toolCall('run_command', {'command': 'pod install', 'folder': 'ios'}),
+        toolCall('run_command', {'command': 'cd ios && pod install'}),
+        toolCall('run_command', {'command': 'pod install', 'folder': '..'}),
+        answer('Upgraded google_sign_in_ios.'),
+      ],
+    );
+    final agent = CodeEditAgent(
+      model,
+      files: store,
+      hooks: CodeEditHooks(
+        onStep: steps.add,
+        onFileWritten: (_) async {},
+        checkBuild: () async => '',
+        runCommand: (command, directory) async {
+          ran.add((command.line, directory));
+          return '${command.line} succeeded.';
+        },
+      ),
+    );
+
+    final summary = await agent.edit(
+      'upgrade google_sign_in_ios for Firebase iOS SDK 13',
+      const [],
+    );
+
+    expect(summary, 'Upgraded google_sign_in_ios.');
+    expect(ran, [
+      ('flutter pub upgrade google_sign_in_ios', _MemoryFileStore.rootPath),
+      ('pod install', '${_MemoryFileStore.rootPath}/ios'),
+    ]);
+    expect(
+      steps.first,
+      '💻 run_command flutter pub upgrade google_sign_in_ios',
+    );
+    final results = [
+      for (final result in toolResults(model)) result['content'] as String,
+    ];
+    expect(results[0], 'flutter pub upgrade google_sign_in_ios succeeded.');
+    // A chained command or a folder outside the project runs nothing
+    expect(results[2], startsWith('Error: Run one command per call'));
+    expect(results[3], 'Error: .. is outside the project');
+  });
+
+  test('offers run_command only for edits, when the caller runs it', () {
+    List<String> names(CodeEditAgent agent, {required bool edits}) => [
+      for (final skill in agent.skillsFor(edits: edits)) skill.name,
+    ];
+    final running = CodeEditAgent(
+      FakeChatModel(),
+      files: store,
+      hooks: CodeEditHooks(
+        onStep: (_) {},
+        onFileWritten: (_) async {},
+        checkBuild: () async => '',
+        runCommand: (command, _) async => command.line,
+      ),
+    );
+
+    expect(names(running, edits: true), contains('run_command'));
+    // Answering a question only reads
+    expect(names(running, edits: false), isNot(contains('run_command')));
+    expect(
+      names(agentOf(FakeChatModel()), edits: true),
+      isNot(contains('run_command')),
+    );
+  });
+
   test('offers a whole-project fix only when the request names it', () async {
     final model = FakeChatModel(
       chatReplies: [answer('Done.'), answer('Done.')],

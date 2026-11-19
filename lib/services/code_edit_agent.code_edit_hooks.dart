@@ -22,12 +22,19 @@ class CodeEditHooks {
   /// for the model; null when the caller offers none.
   final Future<String> Function(QuickFix fix)? runQuickFix;
 
+  /// Runs a command in the absolute folder given, inside the project, and
+  /// completes with how it went for the model; null when the caller runs
+  /// none.
+  final Future<String> Function(ProjectCommand command, String directory)?
+  runCommand;
+
   /// Creates hooks from the caller's callbacks.
   const CodeEditHooks({
     required this.onStep,
     required this.onFileWritten,
     required this.checkBuild,
     this.runQuickFix,
+    this.runCommand,
     this.onText,
   });
 }

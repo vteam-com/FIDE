@@ -22,6 +22,7 @@ import 'package:fide/services/code_review.dart';
 import 'package:fide/services/dart_analyzer.dart';
 import 'package:fide/services/file_content_reader.dart';
 import 'package:fide/services/flutter_build_service.dart';
+import 'package:fide/services/project_command_service.dart';
 import 'package:fide/services/project_file_store.dart';
 import 'package:fide/services/quick_fix_runner.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -39,6 +40,7 @@ final aiChatProvider = StateNotifierProvider<AiChatNotifier, AiChat>(
     quickFixes: ref.watch(quickFixRunnerProvider),
     latest: ref.watch(savedCodeMetricsProvider),
     builds: ref.watch(flutterBuildServiceProvider),
+    commands: ref.watch(projectCommandServiceProvider),
     reader: ref.watch(fileContentReaderProvider),
     documents: ref.watch(openDocumentsProvider.notifier),
     projectPath: () => ref.read(currentProjectPathProvider),
@@ -61,7 +63,8 @@ class AiChatNotifier extends StateNotifier<AiChat> {
   /// of the current files) or through an agent that edits the
   /// project [_projectPath] gives, when the model can call tools; the
   /// agent reads files with [_reader], reloads the ones it writes in
-  /// [_documents], runs [_quickFixes] and checks its work with [_analyzer],
+  /// [_documents], runs [_quickFixes] and the commands it asks for with
+  /// [_commands], and checks its work with [_analyzer],
   /// and when fixing a build, with [_builds] for the [_platform] selected,
   /// keeping [_buildErrors] up to date through [_onBuildErrors];
   /// [_selectedFile] gives the file open in the editor. Reloading written
@@ -73,6 +76,7 @@ class AiChatNotifier extends StateNotifier<AiChat> {
     required this._review,
     required this._quickFixes,
     required this._builds,
+    required this._commands,
     required this._reader,
     required this._documents,
     required this._projectPath,
@@ -94,6 +98,8 @@ class AiChatNotifier extends StateNotifier<AiChat> {
   final String Function() _buildErrors;
 
   final FlutterBuildService _builds;
+
+  final ProjectCommandService _commands;
 
   /// Stops the pending reply or task's model requests, if any.
   AiCancelToken? _cancelToken;
@@ -358,7 +364,8 @@ class AiChatNotifier extends StateNotifier<AiChat> {
   /// and its replies as they stream in the chat, checking its work for
   /// compile errors, with a build for the platform selected in the Execute
   /// panel when [checksWithBuild] is set, and running FIDE's quick fixes
-  /// when the model asks; [cancel] stops it and the fixes it runs.
+  /// and the commands it allows when the model asks; [cancel] stops it and
+  /// the fixes and commands it runs.
   CodeEditAgent _editAgent(
     String projectPath,
     AiCancelToken cancel, {
@@ -388,6 +395,19 @@ class AiChatNotifier extends StateNotifier<AiChat> {
           } on Exception catch (e) {
             return '${fix.label} failed: ${ReadableError.describe(e)}';
           }
+        },
+        // The files a command changes reload like those the agent writes
+        runCommand: (command, directory) async {
+          final outcome = await _commands.run(
+            command,
+            projectPath: projectPath,
+            directory: directory,
+            stop: cancel.whenCancelled,
+          );
+          if (outcome.changedFiles.isNotEmpty) {
+            await _documents.reloadWritten(outcome.changedFiles);
+          }
+          return outcome.summary;
         },
         checkBuild: () => _compileErrors(
           projectPath,

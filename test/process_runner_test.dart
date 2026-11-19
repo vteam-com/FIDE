@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:fide/services/process_runner.dart';
@@ -47,4 +48,20 @@ void main() {
       throwsA(isA<StateError>().having((e) => e.message, 'message', 'exit 2')),
     );
   });
+
+  test(
+    'runUntil closes stdin, so a command reading it ends',
+    () async {
+      final result = await const ProcessRunner().runUntil(
+        'cat',
+        const [],
+        stop: Completer<void>().future,
+      );
+
+      expect(result.exitCode, 0);
+      expect(result.stdout, isEmpty);
+    },
+    skip: Platform.isWindows ? 'cat is not on Windows' : null,
+    timeout: const Timeout(Duration(seconds: 10)),
+  );
 }

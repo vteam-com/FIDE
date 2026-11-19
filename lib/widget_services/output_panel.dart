@@ -11,7 +11,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Command output in a collapsible section, with Copy, Wrap and Clear in
-/// its header; `path:line:column` references to existing files, relative
+/// its header, led by Fix with AI when the output is errors the AI can fix;
+/// `path:line:column` references to existing files, relative
 /// ones resolved against the open project, are links that open the file at
 /// that line.
 class OutputPanel extends ConsumerStatefulWidget {
@@ -22,6 +23,7 @@ class OutputPanel extends ConsumerStatefulWidget {
     this.isExpanded = false,
     required this.text,
     required this.onClear,
+    this.onFixWithAi,
   });
 
   /// Whether the section starts expanded.
@@ -30,6 +32,10 @@ class OutputPanel extends ConsumerStatefulWidget {
   /// Clears the output, as the header's Clear button does; the owner drops
   /// the text, which hides the section until there is output again.
   final VoidCallback onClear;
+
+  /// Hands the output to the AI to fix, as the header's Fix with AI button
+  /// does; no button when null.
+  final VoidCallback? onFixWithAi;
 
   /// The command output shown.
   final String text;
@@ -83,6 +89,12 @@ class _OutputPanelState extends ConsumerState<OutputPanel> {
       rightWidget: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (widget.onFixWithAi case final onFixWithAi?)
+            CompactIconButton(
+              icon: AppIcon.ai,
+              onPressed: onFixWithAi,
+              tooltip: 'Fix with AI',
+            ),
           CopyButton(text: widget.text),
           CompactIconButton(
             onPressed: () => setState(() => _wrapText = !_wrapText),

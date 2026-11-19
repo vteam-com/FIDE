@@ -55,6 +55,13 @@ class AppMetric {
   /// first errors, which the others often follow from.
   static const int aiBuildErrorChars = 8000;
 
+  /// Most characters of a command's output the agent's `run_command`
+  /// returns: its end, which says how the command went.
+  static const int aiCommandOutputChars = 4000;
+
+  /// Most changed files the agent's `run_command` names.
+  static const int aiMaxChangedFilesListed = 20;
+
   /// Most lines the agent's `search` returns.
   static const int aiSearchMaxResults = 50;
   static const int aiCommitDiffChars = 12000;

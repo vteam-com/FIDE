@@ -61,7 +61,9 @@ class ProcessRunner {
 
   /// Runs [executable] like [run], killing it as soon as [stop] completes,
   /// such as when a newer run supersedes it; its result then has the
-  /// signal's exit code. Without [stop] it is [run].
+  /// signal's exit code. Without [stop] it is [run]. Its stdin is closed,
+  /// as [run]'s is, so a command asking a question gets no answer rather
+  /// than waiting for one.
   Future<ProcessResult> runUntil(
     String executable,
     List<String> arguments, {
@@ -77,6 +79,7 @@ class ProcessRunner {
       workingDirectory: workingDirectory,
     );
     unawaited(stop.then((_) => process.kill()));
+    unawaited(process.stdin.close());
     final stdout = process.stdout.transform(utf8.decoder).join();
     final stderr = process.stderr.transform(utf8.decoder).join();
     return ProcessResult(

@@ -30,6 +30,7 @@
 - AI panel: when the user asks to fix or change code, the AI edits the project files (through `CodeEditAgent`); it never replies with code for the user to paste
   - code decides whether a prompt asks for a change (`PromptIntent`), not the model: any other prompt is answered by an agent whose tools only read, as a local model given editing tools edits files even for "2+2="
   - the agent is offered FIDE's whole-project quick fixes only when the request names their subject (`QuickFix.topics`), never all of them
+  - the agent runs the commands a change needs itself (`run_command`), never asking the user to; only the allowlisted `ProjectCommand`s (pub dependency chores, `flutter gen-l10n`, `dart fix`/`format`, `dart run build_runner build`, `pod install`/`update`), run without a shell, one per call, with arguments inside the project; never a shell, `rm` or any other executable: a local model tries `rm pubspec.lock && …`, and runs a script it just wrote when it can; only editing tasks get it, never a question
 - prefer deterministic code refactorings (quick fixes) over sending work to the AI: the local model is too slow for mechanical changes; leave the AI only what code cannot decide or rewrite
 - AI is private, local and fast: it runs only on the local Ollama model, offline, and the code never leaves the computer; no cloud or remote AI provider (they were tried and removed as too complex to set up)
 - never regress the local AI's speed or judgment; every AI change keeps these, and re-measures against a real Ollama model when it touches the agent, its prompts or tools:
@@ -41,7 +42,7 @@
   - a call the model repeats with nothing changed in between gets its earlier result and a note instead of running again, and the agent stops after `AppMetric.aiMaxRepeatedCalls` of them: a local model can loop on one, such as `check_build`
   - every agent tool takes at least one required parameter: qwen3-coder can leave a call with none unclosed (`<function=…>` without `</function>`), which Ollama fails as "XML syntax error … unexpected EOF"
   - the routing above: a question gets read-only tools, quick fixes only when named
-  - reference timings to stay at or under: "2+2=" answered in one step without tools, in ~4 s; a question needing one file read ~5 s; a rename in one file 6 steps, ~8 s; a multi-file Fix Build of 10 errors ~20 steps, ~40 s; the step cap (`AppMetric.aiMaxToolRounds`) stays far above what a task takes
+  - reference timings to stay at or under: "2+2=" answered in one step without tools, in ~4 s; a question needing one file read ~5 s; a rename in one file 6 steps, ~8 s; upgrading one package through `run_command` ~10 steps, ~12 s; a multi-file Fix Build of 10 errors ~20 steps, ~40 s; the step cap (`AppMetric.aiMaxToolRounds`) stays far above what a task takes
 
 # Workflow
 

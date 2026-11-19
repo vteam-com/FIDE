@@ -6,7 +6,8 @@ class PromptIntent {
   /// [refersToOpenFile].
   const PromptIntent._();
 
-  /// Verbs a request to change the code starts with.
+  /// Verbs a request to change the code, or to run a command on it such
+  /// as `flutter pub upgrade`, starts with.
   static const Set<String> _changeVerbs = {
     'add',
     'adjust',
@@ -22,6 +23,7 @@ class PromptIntent {
     'delete',
     'disable',
     'document',
+    'downgrade',
     'drop',
     'edit',
     'enable',
@@ -33,6 +35,7 @@ class PromptIntent {
     'improve',
     'inline',
     'insert',
+    'install',
     'introduce',
     'localize',
     'make',
@@ -42,12 +45,14 @@ class PromptIntent {
     'move',
     'optimize',
     'refactor',
+    'regenerate',
     'remove',
     'rename',
     'reorder',
     'replace',
     'resize',
     'rewrite',
+    'run',
     'set',
     'simplify',
     'sort',

@@ -7,11 +7,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
 void main() {
-  /// Shows an [OutputPanel] of [text], cleared by [onClear].
+  /// Shows an [OutputPanel] of [text], cleared by [onClear] and fixed by
+  /// [onFixWithAi].
   Future<void> show(
     WidgetTester tester,
     String text, {
     VoidCallback? onClear,
+    VoidCallback? onFixWithAi,
   }) => tester.pumpWidget(
     ProviderScope(
       child: MaterialApp(
@@ -21,6 +23,7 @@ void main() {
             isExpanded: true,
             text: text,
             onClear: onClear ?? () {},
+            onFixWithAi: onFixWithAi,
           ),
         ),
       ),
@@ -34,6 +37,19 @@ void main() {
     await tester.tap(find.byTooltip('Clear output').hitTestable());
 
     expect(clears, 1);
+  });
+
+  testWidgets('offers Fix with AI only when the output can be fixed', (
+    tester,
+  ) async {
+    await show(tester, 'error');
+    expect(find.byTooltip('Fix with AI'), findsNothing);
+
+    var fixes = 0;
+    await show(tester, 'error', onFixWithAi: () => fixes++);
+    await tester.tap(find.byTooltip('Fix with AI').hitTestable());
+
+    expect(fixes, 1);
   });
 
   /// The link spans of the panel's text, by their text.
