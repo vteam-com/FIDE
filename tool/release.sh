@@ -70,8 +70,10 @@ previous_tag="v$current_name"
 	fail "commit or stash your changes first"
 [ -f "$CHANGELOG" ] || fail "no $CHANGELOG"
 git fetch --quiet --tags "$REMOTE" "$RELEASE_BRANCH"
-[ "$(git rev-parse HEAD)" = "$(git rev-parse "$REMOTE/$RELEASE_BRANCH")" ] ||
-	fail "$RELEASE_BRANCH differs from $REMOTE/$RELEASE_BRANCH: pull or push first"
+# Commits not pushed yet go out with the release; commits only on the
+# remote would get the push at the end rejected, after the build
+git merge-base --is-ancestor "$REMOTE/$RELEASE_BRANCH" HEAD ||
+	fail "$REMOTE/$RELEASE_BRANCH has commits $RELEASE_BRANCH lacks: pull first"
 
 # The remote holds the releases: a tag found only here was never pushed, so
 # it is left over from an earlier try and the release moves it
