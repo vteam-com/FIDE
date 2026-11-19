@@ -22,6 +22,38 @@ void main() {
     expect(ring, findsNothing);
   });
 
+  testWidgets('prominent, it is filled with the accent color', (tester) async {
+    /// The fill of the button showing [icon].
+    Color? fillOf(IconData icon) => tester
+        .widget<Material>(
+          find
+              .ancestor(of: find.byIcon(icon), matching: find.byType(Material))
+              .first,
+        )
+        .color;
+
+    await pump(
+      tester,
+      Row(
+        children: [
+          TaskButton(icon: Icons.play_arrow, tooltip: 'Run', onRun: () {}),
+          TaskButton(
+            icon: Icons.system_update_alt,
+            tooltip: 'Update',
+            onRun: () {},
+            prominent: true,
+          ),
+        ],
+      ),
+    );
+    final accent = Theme.of(tester.element(find.byType(Row)))
+        .colorScheme
+        .primary;
+
+    expect(fillOf(Icons.system_update_alt), accent);
+    expect(fillOf(Icons.play_arrow), isNot(accent));
+  });
+
   testWidgets('running, a ring spins around Stop', (tester) async {
     var stops = 0;
     await pump(

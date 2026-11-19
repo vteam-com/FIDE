@@ -9,7 +9,8 @@ import 'package:material_ui/material_ui.dart';
 /// Run or Test, Send in the AI prompt, writing the commit message with AI,
 /// or a panel's Refresh.
 ///
-/// Idle, a round tonal button showing the task's [icon]. While [running],
+/// Idle, a round tonal button showing the task's [icon], or, when
+/// [prominent], one filled with the theme's accent color. While [running],
 /// a ring spins around it, the task's only progress indicator, and a red
 /// Stop takes its place, or, for a task that can't be stopped (no
 /// [onStop]), the disabled [icon]; the ring stops once the task is
@@ -25,6 +26,7 @@ class TaskButton extends StatelessWidget {
     this.onStop,
     this.running = false,
     this.live = false,
+    this.prominent = false,
     this.stopTooltip = 'Stop (Esc)',
   });
 
@@ -40,6 +42,11 @@ class TaskButton extends StatelessWidget {
   /// Stops the task; null for a task that can't be stopped, which shows
   /// its disabled [icon] while it runs.
   final VoidCallback? onStop;
+
+  /// Whether the idle button asks for attention, filled with the theme's
+  /// accent color rather than tonal, for a task waiting for the user,
+  /// such as installing a newer release.
+  final bool prominent;
 
   /// Whether the task is in progress, showing Stop.
   final bool running;
@@ -69,7 +76,8 @@ class TaskButton extends StatelessWidget {
             ),
             icon: const Icon(Icons.stop_rounded, size: AppIconSize.mediumLarge),
           )
-        : IconButton.filledTonal(
+        // Both styles take the same arguments
+        : (prominent ? IconButton.filled : IconButton.filledTonal)(
             onPressed: running ? null : onRun,
             tooltip: tooltip,
             constraints: constraints,
