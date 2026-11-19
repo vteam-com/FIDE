@@ -2,6 +2,11 @@
 
 What changed in each FIDE release, newest first. `tool/release.sh` adds each release's entry: one line per commit since the release before.
 
+## 1.4.1 - 2026-11-19
+
+- Workspace gradient tints the panel surface with primary: brighter than the panels in dark mode (+20% contrast), darker blue in light mode up to the AA limit
+- AI agent runs allowlisted flutter/dart/pod commands itself (run_command: pub chores, gen-l10n, fix, format, build_runner, pod) without a shell; Run tab's failed-build Errors offer Fix with AI
+
 ## 1.4.0 - 2026-11-19
 
 - release.sh: push unpushed commits of main with the release instead of stopping; stop only when origin/main has commits not pulled
