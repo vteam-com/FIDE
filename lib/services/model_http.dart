@@ -44,18 +44,20 @@ class ModelHttp {
   /// Runs [request] again while it fails with a retryable
   /// [AiServiceException], such as a busy server or a local model that
   /// wrote a malformed tool call, at most [AppMetric.aiRequestRetries]
-  /// more times; [cancel] stops the retries.
+  /// more times; [request] gets the number of the retry, 0 at first, so a
+  /// retry can differ from the request that failed. [cancel] stops the
+  /// retries.
   static Future<T> retrying<T>(
-    Future<T> Function() request, {
+    Future<T> Function(int retry) request, {
     AiCancelToken? cancel,
   }) async {
-    for (var attempt = 1; ; attempt++) {
+    for (var retry = 0; ; retry++) {
       try {
-        return await request();
+        return await request(retry);
       } on AiCancelledException {
         rethrow;
       } on AiServiceException catch (e) {
-        if (!e.isRetryable || attempt > AppMetric.aiRequestRetries) rethrow;
+        if (!e.isRetryable || retry >= AppMetric.aiRequestRetries) rethrow;
       }
       cancel?.throwIfCancelled();
     }

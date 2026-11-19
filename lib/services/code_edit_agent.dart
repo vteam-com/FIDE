@@ -131,7 +131,9 @@ class CodeEditAgent {
       description:
           'Checks the project for compile errors and returns them, or says '
           'the build succeeded.',
-      parameters: const {},
+      // A parameter, as qwen3-coder can leave a call with none unclosed,
+      // which Ollama then fails to read
+      parameters: {'changes': 'What you changed, in a few words'},
       run: (_) async {
         final errors = await hooks.checkBuild();
         return errors.isEmpty
@@ -447,7 +449,8 @@ class CodeEditAgent {
     String name,
     Map<String, dynamic> arguments,
   ) async {
-    final subject = arguments['path'] ?? arguments['text'];
+    final subject =
+        arguments['path'] ?? arguments['text'] ?? arguments['changes'];
     hooks.onStep(subject == null ? name : '$name $subject');
     final skill = skills.where((s) => s.name == name).firstOrNull;
     if (skill == null) return 'Error: unknown tool $name';

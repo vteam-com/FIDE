@@ -32,7 +32,8 @@
   - keep the model's context small, as it slows down sharply as it fills (on an M4 Max, qwen3-coder reads 1,200 tokens/s near the start, 300 at 24k; writes 129 tokens/s, 25 at 28k): the agent stays within `ChatModel.contextBudget`, dropping the oldest tool outputs first, never letting Ollama overflow and cut the conversation
   - tools return bounded output: `list_files` capped, files read in parts, `search` before reading, history capped
   - the agent checks its work with `dart analyze` (seconds), building only to fix a failed build (a release build takes minutes)
-  - stream replies, warm the model up when the prompt takes focus, and retry Ollama's malformed tool calls
+  - stream replies, warm the model up when the prompt takes focus, and retry Ollama's malformed tool calls with a request that says what went wrong: the same request writes the same broken call
+  - every agent tool takes at least one required parameter: qwen3-coder can leave a call with none unclosed (`<function=…>` without `</function>`), which Ollama fails as "XML syntax error … unexpected EOF"
   - the routing above: a question gets read-only tools, quick fixes only when named
   - reference timings to stay at or under: "2+2=" answered in one step without tools, in ~4 s; a question needing one file read ~5 s; a multi-file Fix Build of 10 errors ~53 s
 

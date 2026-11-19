@@ -390,4 +390,13 @@ void main() {
     expect(model.toolNames.last, isNot(contains('run_quick_fix')));
     expect(model.toolNames.last, contains('replace_in_file'));
   });
+
+  test('every tool takes a parameter, so no call is left unclosed', () {
+    // qwen3-coder can leave a call with no parameter unclosed, which
+    // Ollama then fails to read
+    for (final skill in agentOf(FakeChatModel()).skillsFor(edits: true)) {
+      final parameters = skill.toTool()['function']['parameters'] as Map;
+      expect(parameters['required'], isNotEmpty, reason: skill.name);
+    }
+  });
 }

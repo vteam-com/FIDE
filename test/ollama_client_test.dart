@@ -313,30 +313,45 @@ void main() {
     });
   });
 
-  test('asks again when Ollama fails on a malformed tool call', () async {
-    var chats = 0;
-    final client = OllamaClient(
-      MockClient((request) async {
-        if (request.method == 'GET') return http.Response('{}', HttpStatus.ok);
-        chats++;
-        if (chats == 1) {
+  test(
+    'asks again when Ollama fails on a malformed tool call, saying so',
+    () async {
+      final sent = <List<Object?>>[];
+      final client = OllamaClient(
+        MockClient((request) async {
+          if (request.method == 'GET') {
+            return http.Response('{}', HttpStatus.ok);
+          }
+          final body = jsonDecode(request.body) as Map<String, dynamic>;
+          sent.add(body['messages'] as List<Object?>);
+          if (sent.length == 1) {
+            return http.Response(
+              jsonEncode({
+                'error': 'XML syntax error on line 3: unexpected EOF',
+              }),
+              HttpStatus.internalServerError,
+            );
+          }
           return http.Response(
-            jsonEncode({'error': 'XML syntax error on line 3: unexpected EOF'}),
-            HttpStatus.internalServerError,
+            jsonEncode({
+              'message': {'role': 'assistant', 'content': 'done'},
+            }),
+            HttpStatus.ok,
           );
-        }
-        return http.Response(
-          jsonEncode({
-            'message': {'role': 'assistant', 'content': 'done'},
-          }),
-          HttpStatus.ok,
-        );
-      }),
-    );
+        }),
+      );
+      final messages = [
+        {'role': 'user', 'content': 'Fix main'},
+      ];
 
-    expect((await client.chat([], []))['content'], 'done');
-    expect(chats, 2);
-  });
+      expect((await client.chat(messages, []))['content'], 'done');
+
+      // The same request would write the same broken call
+      expect(sent.first, messages);
+      expect(sent.last, hasLength(messages.length + 1));
+      expect((sent.last.last as Map)['content'], contains('</function>'));
+    },
+  );
 
   test(
     'warming up loads the model with no prompt, as requests set it',

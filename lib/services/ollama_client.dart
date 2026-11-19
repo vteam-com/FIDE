@@ -34,6 +34,17 @@ class OllamaClient implements ChatModel {
   /// Capability Ollama reports for models that reason before answering.
   static const String _thinkingCapability = 'thinking';
 
+  /// Told the model when Ollama couldn't read its tool call, as when
+  /// qwen3-coder leaves out `</function>`: the same request would write
+  /// the same broken call.
+  static const Map<String, String> _unreadableCall = {
+    'role': 'user',
+    'content':
+        'Your last tool call could not be read. Call the tool again, '
+        'writing the whole call: every <parameter=…> closed by '
+        '</parameter>, then </function> before </tool_call>.',
+  };
+
   final ModelHttp _http;
 
   String _model = AiModel.ollama;
@@ -131,7 +142,7 @@ class OllamaClient implements ChatModel {
   }) async {
     final reply = await _stream(
       _generatePath,
-      {'prompt': prompt},
+      (_) => {'prompt': prompt},
       timeout,
       think: think,
       cancel: cancel,
@@ -150,7 +161,12 @@ class OllamaClient implements ChatModel {
   }) async {
     final reply = await _stream(
       _chatPath,
-      {'messages': messages, 'tools': tools},
+      // The same request writes the same broken call: a retry says what
+      // went wrong
+      (retry) => {
+        'messages': retry == 0 ? messages : [...messages, _unreadableCall],
+        'tools': tools,
+      },
       AppDuration.aiToolStepTimeout,
       think: think,
       cancel: cancel,
@@ -193,7 +209,7 @@ class OllamaClient implements ChatModel {
     try {
       await _stream(
         _generatePath,
-        const {},
+        (_) => const {},
         AppDuration.aiGenerateTimeout,
         think: false,
         cancel: null,
@@ -204,11 +220,11 @@ class OllamaClient implements ChatModel {
     }
   }
 
-  /// Streams [body] (plus the model name) to Ollama's [path], resolving
-  /// the model first when [resolveModel] hasn't, and returns the reply's
-  /// text, which [onText] receives as it grows, and the tool calls it
-  /// lists. A malformed tool call, which Ollama fails the request for, is
-  /// asked for again.
+  /// Streams the [body] of each attempt (plus the model name) to Ollama's
+  /// [path], resolving the model first when [resolveModel] hasn't, and
+  /// returns the reply's text, which [onText] receives as it grows, and
+  /// the tool calls it lists. A malformed tool call, which Ollama fails
+  /// the request for, is asked for again with the body of the retry.
   ///
   /// A thinking model reasons before answering only when [think] is set:
   /// on a local model the hidden reasoning costs most of the time and
@@ -218,7 +234,7 @@ class OllamaClient implements ChatModel {
   /// context window for every request.
   Future<({String text, List<Object?> toolCalls})> _stream(
     String path,
-    Map<String, Object> body,
+    Map<String, Object> Function(int retry) body,
     Duration timeout, {
     required bool think,
     required AiCancelToken? cancel,
@@ -233,7 +249,7 @@ class OllamaClient implements ChatModel {
         // The request below reports the failure
       }
     }
-    return ModelHttp.retrying(cancel: cancel, () async {
+    return ModelHttp.retrying(cancel: cancel, (retry) async {
       final text = StringBuffer();
       final toolCalls = <Object?>[];
       await for (final chunk in _http.jsonLines(
@@ -245,7 +261,7 @@ class OllamaClient implements ChatModel {
           'keep_alive': AppDuration.aiModelKeepAlive.inSeconds,
           'options': {'num_ctx': AppMetric.aiContextTokens},
           if (_supportsThinking) 'think': think,
-          ...body,
+          ...body(retry),
         },
         cancel: cancel,
       )) {
