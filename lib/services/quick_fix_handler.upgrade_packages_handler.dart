@@ -1,11 +1,14 @@
 part of 'quick_fix_handler.dart';
 
-/// Runs [QuickFix.upgradePackages] once the user confirms the upgrade.
+/// Runs [QuickFix.upgradePackages] once the user confirms the upgrade,
+/// through the one upgrade the Packages section shows: its busy bar, its
+/// version conflicts and its measures again.
 class UpgradePackagesHandler implements QuickFixHandler {
-  /// Creates the handler upgrading through [_maintenance].
-  const UpgradePackagesHandler(this._maintenance);
+  /// Creates the handler upgrading the open project with [_upgrade].
+  const UpgradePackagesHandler(this._upgrade);
 
-  final ProjectMaintenanceService _maintenance;
+  /// Upgrades the open project's packages; null without a project.
+  final Future<ActionOutcome?> Function() _upgrade;
 
   @override
   Future<QuickFixOutcome?> run(QuickFixRequest request) async {
@@ -16,15 +19,15 @@ class UpgradePackagesHandler implements QuickFixHandler {
     )) {
       return null;
     }
-    final upgraded = await _maintenance.upgradeToResolvable(
-      request.projectPath,
-    );
-    if (upgraded.isEmpty) {
-      return _nothingToDo('Every package is at its latest resolvable version');
-    }
-    return (
-      summary: 'Upgraded ${upgraded.length.count('package')}',
-      changedFiles: [ProjectPaths(request.projectPath).pubspec],
-    );
+    final outcome = await _upgrade();
+    if (outcome == null) return null;
+    return switch (outcome.tone) {
+      StatusTone.success => (
+        summary: outcome.message,
+        changedFiles: [ProjectPaths(request.projectPath).pubspec],
+      ),
+      StatusTone.error => throw Exception(outcome.message),
+      _ => _nothingToDo(outcome.message),
+    };
   }
 }

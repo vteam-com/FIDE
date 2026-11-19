@@ -24,7 +24,7 @@ abstract final class GitPorcelain {
   static const String _unchangedLetter = ' ';
 
   /// What `git --version` prints before the version number.
-  static final RegExp _versionPattern = RegExp(r'git version (\d+\.\d+\.\d+)');
+  static const String _versionPrefix = 'git version';
 
   /// The entries of `git status --porcelain` [output]; a rename or copy
   /// lists `old -> new` and is reported at the new path, and a wholly new
@@ -108,5 +108,5 @@ abstract final class GitPorcelain {
   /// The version number in `git --version` [output], e.g. `2.39.3`; null
   /// when the output doesn't hold one.
   static String? parseVersion(String output) =>
-      _versionPattern.firstMatch(output)?.group(1);
+      versionAfter(_versionPrefix, output);
 }

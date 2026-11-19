@@ -3,7 +3,9 @@ import 'package:fide/models/create_project_step.dart';
 import 'package:fide/models/creation_outcome.dart';
 import 'package:fide/models/creation_report.dart';
 import 'package:fide/models/creation_step.dart';
+import 'package:fide/models/ollama_step.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/ollama_status_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/tool_availability_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -102,9 +104,10 @@ class CreateProjectDraftNotifier extends Notifier<CreateProjectDraft> {
     final actions = ref.read(loadingActionsProvider.notifier);
     actions.state = CreationLabels.initialActions();
     final tools = await ref.read(toolAvailabilityProvider.future);
+    final aiReady = await ref.read(ollamaStatusProvider.future);
     if (!ref.mounted) return;
     final created = await ref.read(projectCreationServiceProvider).create(
-      state.toRequest(tools),
+      state.toRequest(tools, aiReady: aiReady == OllamaStep.ready),
       (report) {
         final number = report.step.number;
         actions.state = [

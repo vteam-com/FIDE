@@ -6,6 +6,7 @@ import 'package:fide/models/dart_imports.dart';
 import 'package:fide/models/hardcoded_string.dart';
 import 'package:fide/models/l10n_config.dart';
 import 'package:fide/models/localization_plan.dart';
+import 'package:fide/models/lookup_rewrite.dart';
 import 'package:fide/models/string_rewrite.dart';
 import 'package:fide/models/text_offsets.dart';
 import 'package:fide/services/arb_service.dart';
@@ -50,8 +51,7 @@ class StringLocalizer {
     final config = await _config.l10nConfig(projectPath);
     // Throws without a valid template ARB file
     await readTemplate(projectPath, config);
-    final packageName = await _config.packageName(projectPath);
-    if (packageName == null) throw Exception('pubspec.yaml has no name');
+    final packageName = await _config.requirePackageName(projectPath);
     final sync = metrics.localizationSync;
     if (sync != null && !sync.isInSync) {
       throw Exception(
@@ -159,9 +159,7 @@ class StringLocalizer {
         site.length,
         message.lookup(config.lookup(contextName), key),
       );
-      for (final offset in site.constKeywordOffsets) {
-        edits[offset] = (_constLength(content, offset), '');
-      }
+      edits.addAll(constKeywordRemovals(content, site.constKeywordOffsets));
     }
     final localized = strings.length - changed;
     if (localized == 0) {
@@ -177,13 +175,6 @@ class StringLocalizer {
       localized: localized,
       changed: changed,
     );
-  }
-
-  /// Length of the `const` keyword at [offset] with the spaces after it;
-  /// 0 when there is none.
-  static int _constLength(String content, int offset) {
-    final match = RegExp(r'const\s+').matchAsPrefix(content, offset);
-    return match == null ? 0 : match.end - offset;
   }
 
   /// The entries of the project's template ARB file; throws when it is

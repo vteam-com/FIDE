@@ -5,10 +5,12 @@ import 'package:fide/models/create_project_step.dart';
 import 'package:fide/models/creation_outcome.dart';
 import 'package:fide/models/creation_report.dart';
 import 'package:fide/models/creation_step.dart';
+import 'package:fide/models/ollama_step.dart';
 import 'package:fide/models/project_creation_request.dart';
 import 'package:fide/models/tool_availability.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/create_project_draft_notifier.dart';
+import 'package:fide/providers/ollama_status_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/tool_availability_provider.dart';
 import 'package:fide/services/git_service.dart';
@@ -54,12 +56,14 @@ class _RecordingService extends ProjectCreationService {
   }
 }
 
+/// Ollama installed, running and with a model, without probing it.
+class _ReadyOllama extends OllamaStatusNotifier {
+  @override
+  Future<OllamaStep> build() async => OllamaStep.ready;
+}
+
 void main() {
-  const tools = ToolAvailability(
-    flutterAvailable: true,
-    gitVersion: '2.40.0',
-    ollamaAvailable: true,
-  );
+  const tools = ToolAvailability(flutterAvailable: true, gitVersion: '2.40.0');
   late _RecordingService service;
   late ProviderContainer container;
 
@@ -68,6 +72,7 @@ void main() {
     container = ProviderContainer(
       overrides: [
         toolAvailabilityProvider.overrideWith((_) async => tools),
+        ollamaStatusProvider.overrideWith(_ReadyOllama.new),
         projectCreationServiceProvider.overrideWithValue(service),
         newProjectParentDirectoryProvider.overrideWithValue('/work'),
       ],
@@ -161,11 +166,11 @@ void main() {
     expect(pending.map((a) => a.step), [1, 2, 3, 4, 5, 6]);
     expect(
       pending.first.text,
-      'Validating settings and checking dependencies...',
+      'Validating settings and checking dependencies…',
     );
     expect(
       CreationLabels.pending(CreationStep.verification),
-      'Final verification and cleanup...',
+      'Final verification and cleanup…',
     );
     for (final outcome in CreationOutcome.values) {
       expect(
@@ -213,6 +218,7 @@ void main() {
 
     final request = choices.toRequest(
       const ToolAvailability(flutterAvailable: true),
+      aiReady: true,
     );
 
     expect(request.languages, null);

@@ -1,23 +1,17 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:fide/models/arb_translation.dart';
 import 'package:fide/models/localization_checks.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/localization_state.dart';
 import 'package:fide/models/localization_status.dart';
-import 'package:fide/models/string_rewrite.dart';
 import 'package:fide/providers/localization_controller.dart';
 import 'package:fide/services/arb_service.dart';
-import 'package:fide/services/arb_translator.dart';
-import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'fake_chat_model.dart';
 
 /// Checks for a fully set up project.
 const LocalizationChecks _complete = LocalizationChecks(
@@ -84,39 +78,10 @@ class FakeL10nGenerator extends L10nGenerator {
   Future<void> generateClasses(String projectPath) => actions.act();
 }
 
-/// Reports every translation as written without asking a model.
-class FakeTranslator extends ArbTranslator {
-  FakeTranslator()
-    : super(
-        FakeChatModel(),
-        const ProjectConfigReader(),
-        const L10nGenerator(ProcessRunner()),
-      );
-
-  final List<ArbTranslation> applied = [];
-
-  @override
-  Future<StringRewrite> apply(
-    String projectPath,
-    List<ArbTranslation> translations, {
-    AiCancelToken? cancel,
-    void Function(String)? onProgress,
-  }) async {
-    applied.addAll(translations);
-    return StringRewrite(
-      action: 'Translated',
-      rewritten: translations.length,
-      changedFiles: const [],
-      skipped: const {},
-    );
-  }
-}
-
 void main() {
   late Directory project;
   late FakeActions actions;
   late FakeLocalizationSetup service;
-  late FakeTranslator translator;
   late LocalizationController controller;
 
   setUp(() {
@@ -128,13 +93,11 @@ void main() {
         .writeAsStringSync('{"hello": "Bonjour"}');
     actions = FakeActions();
     service = FakeLocalizationSetup(actions);
-    translator = FakeTranslator();
     controller = LocalizationController(
       project.path,
       setup: service,
       generator: FakeL10nGenerator(actions),
       arb: const ArbService(),
-      translator: translator,
     );
   });
 
@@ -202,17 +165,17 @@ void main() {
     expect(controller.state.isBusy, false);
   });
 
-  test('translate writes the missing language and reloads', () async {
+  test('a missing language translates into its ARB file', () async {
     await controller.reload();
     final missing = controller.state.comparisons.firstWhere(
       (comparison) => comparison.key == 'hi',
     );
 
-    final outcome = await controller.translate(missing, 'fr');
+    final translation = controller.translationOf(missing, 'fr');
 
-    expect(outcome!.succeeded, true);
-    expect(translator.applied.single.arbPath, endsWith('app_fr.arb'));
-    expect(controller.state.isBusy, false);
+    expect(translation!.key, 'hi');
+    expect(translation.arbPath, endsWith('app_fr.arb'));
+    expect(controller.translationOf(missing, 'xx'), isNull);
   });
 
   test('without a project, actions do nothing', () async {
@@ -221,7 +184,6 @@ void main() {
       setup: service,
       generator: FakeL10nGenerator(actions),
       arb: const ArbService(),
-      translator: translator,
     );
     addTearDown(idle.dispose);
 

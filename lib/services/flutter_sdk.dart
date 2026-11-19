@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fide/models/tool_version.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:path/path.dart' as p;
 
@@ -75,8 +76,9 @@ class FlutterSdk {
     if (output == null) return null;
 
     // e.g. "Flutter 3.24.0 • channel stable" ... "Dart 3.5.0 • DevTools 2.37.2"
-    String? versionAfter(String name) =>
-        RegExp('$name (\\d+\\.\\d+\\.\\d+)').firstMatch(output)?.group(1);
-    return (flutter: versionAfter('Flutter'), dart: versionAfter('Dart'));
+    return (
+      flutter: versionAfter('Flutter', output),
+      dart: versionAfter('Dart', output),
+    );
   }
 }

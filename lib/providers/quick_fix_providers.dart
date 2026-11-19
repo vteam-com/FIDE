@@ -1,5 +1,6 @@
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/string_review.dart';
+import 'package:fide/providers/project_info_controller.dart';
 import 'package:fide/providers/project_lifecycle_providers.dart';
 import 'package:fide/providers/project_overview_providers.dart';
 import 'package:fide/providers/service_providers.dart';
@@ -75,7 +76,8 @@ final quickFixHandlersProvider = Provider<Map<QuickFix, QuickFixHandler>>((
       ref.read(arbTranslatorProvider),
     ),
     QuickFix.upgradePackages: UpgradePackagesHandler(
-      ref.read(projectMaintenanceServiceProvider),
+      // Read when it runs: the controller is the open project's
+      () => ref.read(projectInfoControllerProvider.notifier).upgradePackages(),
     ),
     QuickFix.removeCocoaPods: RemoveCocoaPodsHandler(
       ref.read(cocoaPodsMigratorProvider),

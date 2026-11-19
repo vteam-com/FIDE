@@ -60,9 +60,6 @@ class ImageInspector {
   /// Converts PNG pixels per meter to dots per inch.
   static const double _inchesPerMeter = 0.0254;
 
-  /// Extension of vector images.
-  static const String _svgExtension = 'svg';
-
   /// The `<svg>` root element of an SVG file.
   static final RegExp _svgRoot = RegExp(r'<svg\b[^>]*>', caseSensitive: false);
 
@@ -94,7 +91,7 @@ class ImageInspector {
     final file = File(path);
     final bytes = file.readAsBytesSync();
     final modified = file.lastModifiedSync();
-    return FileTypeUtils.extensionOf(path) == _svgExtension
+    return FileTypeUtils.isSvg(path)
         ? _svg(String.fromCharCodes(bytes), bytes.length, modified)
         : _raster(file, bytes, modified);
   });

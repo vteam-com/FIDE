@@ -41,6 +41,17 @@ class PubOutdated {
     ]);
   }
 
+  /// The packages by name.
+  Map<String, PubOutdatedPackage> get byName => {
+    for (final package in packages) package.name: package,
+  };
+
+  /// The report as text, one package per line, as the Packages section
+  /// shows it.
+  String get summary => packages.isEmpty
+      ? 'Every package is up to date'
+      : packages.map((package) => package.summary).join('\n');
+
   /// The direct and dev dependencies whose constraint can be raised: those
   /// with a resolvable version other than the current one.
   List<PubOutdatedPackage> get upgradable => [

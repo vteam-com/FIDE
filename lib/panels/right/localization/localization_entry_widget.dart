@@ -2,10 +2,12 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/localization_data.dart';
+import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/primary_button.dart';
+import 'package:fide/widgets/quick_fix_icon.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:material_ui/material_ui.dart';
@@ -105,8 +107,9 @@ class LocalizationEntryWidget extends StatelessWidget {
                   runSpacing: AppSpacing.tiny,
                   children: [
                     for (final language in comparison.missingInLanguages)
+                      // One key of Translate with AI
                       PrimaryButton(
-                        icon: Icons.translate,
+                        icon: QuickFix.translateKeys.icon,
                         label: 'Translate to $language',
                         onPressed: comparison.englishValue == null
                             ? null

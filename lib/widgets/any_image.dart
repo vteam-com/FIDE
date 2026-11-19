@@ -15,16 +15,12 @@ class AnyImage extends StatelessWidget {
   AnyImage.file(String path, {super.key})
     : bytes = null,
       file = File(path),
-      isVector = _isVector(path);
+      isVector = FileTypeUtils.isSvg(path);
 
   /// Creates the image decoded from [bytes], of the format [path] names.
   AnyImage.memory(Uint8List this.bytes, {super.key, required String path})
     : file = null,
-      isVector = _isVector(path);
-
-  /// Extension of vector images, drawn by `flutter_svg` once their style
-  /// sheet is inlined by [StyledSvgLoader].
-  static const String _svgExtension = 'svg';
+      isVector = FileTypeUtils.isSvg(path);
 
   /// The encoded image; null when read from [file].
   final Uint8List? bytes;
@@ -32,7 +28,8 @@ class AnyImage extends StatelessWidget {
   /// The image file; null when decoded from [bytes].
   final File? file;
 
-  /// Whether the image is an SVG rather than a raster.
+  /// Whether the image is an SVG rather than a raster, drawn by
+  /// `flutter_svg` once its style sheet is inlined by [StyledSvgLoader].
   final bool isVector;
   @override
   Widget build(BuildContext context) {
@@ -60,8 +57,4 @@ class AnyImage extends StatelessWidget {
       message: 'The image file may be corrupted or unsupported',
     );
   }
-
-  /// Whether the file at [path] is an SVG.
-  static bool _isVector(String path) =>
-      FileTypeUtils.extensionOf(path) == _svgExtension;
 }

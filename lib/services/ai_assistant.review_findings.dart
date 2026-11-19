@@ -12,7 +12,7 @@ class ReviewFindings {
   /// the most project files, and layer violations; cut to
   /// [AppMetric.aiReviewContextChars].
   Future<String> design(fcheck.ProjectMetrics metrics) async {
-    final sources = _SourceReader(metrics.analysisRootPath);
+    final sources = _SourceReader(metrics);
     final classes = [...metrics.codeSizeClassArtifacts]
       ..sort((a, b) => b.linesOfCode.compareTo(a.linesOfCode));
     final largest = classes.take(AppMetric.aiReviewMaxItems).toList();
@@ -60,7 +60,7 @@ class ReviewFindings {
   /// first, each with both snippets, then the most repeated string
   /// literals; cut to [AppMetric.aiReviewContextChars].
   Future<String> duplicates(fcheck.ProjectMetrics metrics) async {
-    final sources = _SourceReader(metrics.analysisRootPath);
+    final sources = _SourceReader(metrics);
     final pairs = [...metrics.duplicateCodeIssues]
       ..sort(
         (a, b) =>
@@ -117,17 +117,20 @@ class ReviewFindings {
 /// Reads and labels the source files fcheck's findings point to; paths
 /// may be absolute or relative to the analysis root.
 class _SourceReader {
-  /// The folder fcheck analyzed.
-  final String _root;
+  /// The analysis whose findings are read.
+  final fcheck.ProjectMetrics _metrics;
 
   /// File lines already read, by absolute path.
   final Map<String, List<String>> _cache = {};
 
-  /// Creates a reader for findings under [_root].
-  _SourceReader(this._root);
+  /// Creates a reader for the findings of [_metrics].
+  _SourceReader(this._metrics);
 
   /// [path] relative to the analysis root, for display.
-  String display(String path) => p.relative(_absolute(path), from: _root);
+  String display(String path) => p.relative(
+    _metrics.absolutePathOf(path),
+    from: _metrics.analysisRootPath,
+  );
 
   /// The lines of [path] from 1-based [startLine]: through [endLine], or
   /// until [nonEmptyLines] non-empty lines are taken; empty when the file
@@ -138,7 +141,7 @@ class _SourceReader {
     int? endLine,
     int? nonEmptyLines,
   }) async {
-    final absolute = _absolute(path);
+    final absolute = _metrics.absolutePathOf(path);
     final List<String> all;
     try {
       all = _cache[absolute] ??= await File(absolute).readAsLines();
@@ -155,8 +158,4 @@ class _SourceReader {
     }
     return taken.join('\n');
   }
-
-  /// [path] made absolute against the analysis root.
-  String _absolute(String path) =>
-      p.isAbsolute(path) ? path : p.join(_root, path);
 }

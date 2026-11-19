@@ -40,3 +40,13 @@ Future<void> openFileAtLine(
   await Future.delayed(AppDuration.editorScroll);
   editor.navigateToLine(line, column: column);
 }
+
+/// Opens [filePath] in the editor showing its changes since the last
+/// commit, the one diff view, wherever it is asked for.
+Future<void> openFileDiff(WidgetRef ref, String filePath) async {
+  // Read before the pause: the calling widget may be gone after it
+  final editor = ref.read(activeEditorProvider);
+  openFile(ref, filePath);
+  await Future.delayed(AppDuration.editorScroll);
+  editor.showDiff();
+}

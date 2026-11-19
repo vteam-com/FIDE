@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:fide/models/code_coverage.dart';
 import 'package:fide/models/project_overview.dart';
 import 'package:fide/models/project_paths.dart';
@@ -57,8 +55,7 @@ class ProjectOverviewService {
 
   /// Coverage from the lcov report at [lcovPath], or null when absent.
   Future<CodeCoverage?> _readCoverage(String lcovPath) async {
-    final report = File(lcovPath);
-    if (!await report.exists()) return null;
-    return CodeCoverage.fromLcov(await report.readAsString());
+    final report = await ProjectConfigReader.readIfExists(lcovPath);
+    return report == null ? null : CodeCoverage.fromLcov(report);
   }
 }

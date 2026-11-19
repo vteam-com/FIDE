@@ -105,7 +105,7 @@ class AppIconsPanel extends ConsumerWidget {
             onPressed: () => _chooseMaster(ref, projectPath),
           ),
           PrimaryButton(
-            icon: Icons.auto_fix_high,
+            icon: AppIcon.fix,
             label: 'Fix all',
             // The platforms' own buttons tell they are being fixed
             busy: fixing.contains(AppIconFixController.masterId),
@@ -187,7 +187,7 @@ class AppIconsPanel extends ConsumerWidget {
       action: !platform.hasIssues
           ? null
           : PrimaryButton(
-              icon: Icons.auto_fix_high,
+              icon: AppIcon.fix,
               label: 'Fix',
               busy: fixing.contains(platform.id),
               onPressed: master == null || fixing.isNotEmpty

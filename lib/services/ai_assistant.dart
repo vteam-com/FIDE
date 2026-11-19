@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/ai_action.dart';
+import 'package:fide/models/quality_issues.dart';
 import 'package:fide/models/text_truncation.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:path/path.dart' as p;

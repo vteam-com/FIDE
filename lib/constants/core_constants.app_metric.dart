@@ -65,10 +65,6 @@ class AppMetric {
 
   /// Most quality-score points `dart analyze` infos cost together.
   static const int dartInfoPointsMax = 10;
-  static const int outdatedMinColumns = 5;
-  static const int outdatedUpgradableColIndex = 2;
-  static const int outdatedResolvableColIndex = 3;
-  static const int outdatedLatestColIndex = 4;
   static const int aiInputMaxLines = 3;
   static const int duplicateThreshold = 2;
   static const int gitHashShortLength = 7;

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/git_file_status.dart';
+import 'package:fide/models/tool_version.dart';
 import 'package:fide/services/file_content_reader.dart';
 import 'package:fide/services/file_entry_service.dart';
 import 'package:fide/services/process_runner.dart';
@@ -39,10 +40,6 @@ class GitService {
 
   /// The revision of the last commit, as `git show` names it.
   static const String headRevision = 'HEAD';
-
-  /// The revision of the index (staged content), as `git show` names it:
-  /// an empty name.
-  static const String indexRevision = '';
 
   /// Version [version] reports when git runs but its output can't be
   /// parsed.
@@ -328,22 +325,13 @@ class GitService {
     return await _showRelativeToFile(filePath, headRevision) ?? '';
   }
 
-  /// Returns the staged (index) content of the absolute [filePath], or null
-  /// when the file isn't in the index.
-  Future<String?> getStagedContent(String filePath) {
-    return _showRelativeToFile(filePath, indexRevision);
-  }
-
-  /// Returns the raw bytes of the absolute [filePath] at [revision],
-  /// [indexRevision] for the staged copy, or null when it isn't there:
-  /// for binary files such as images, which [getHeadContent] would mangle.
-  Future<Uint8List?> getBytesAt(
-    String filePath, {
-    String revision = headRevision,
-  }) {
+  /// Returns the raw bytes of the absolute [filePath] at HEAD, or null
+  /// when it isn't there: for binary files such as images, which
+  /// [getHeadContent] would mangle.
+  Future<Uint8List?> getHeadBytes(String filePath) {
     return _runner.bytesOf('git', [
       'show',
-      _showSpec(filePath, revision),
+      _showSpec(filePath, headRevision),
     ], workingDirectory: p.dirname(filePath));
   }
 
@@ -555,19 +543,16 @@ class GitService {
 
   /// The two sides of the change to the absolute [filePath] since HEAD:
   /// its committed content (empty when it isn't in HEAD) and [newText], or
-  /// without it the staged content when [staged], else the working copy.
-  /// Null when the file isn't in a Git repository.
+  /// without it the working copy. Null when the file isn't in a Git
+  /// repository.
   Future<({String oldText, String newText})?> diffAgainstHead(
     String filePath, {
     String? newText,
-    bool staged = false,
   }) async {
     if (!await isGitRepository(p.dirname(filePath))) return null;
-    final oldText = await getHeadContent(filePath);
-    final stagedText = staged ? await getStagedContent(filePath) : null;
     return (
-      oldText: oldText,
-      newText: newText ?? stagedText ?? await _readWorkingCopy(filePath),
+      oldText: await getHeadContent(filePath),
+      newText: newText ?? await _readWorkingCopy(filePath),
     );
   }
 

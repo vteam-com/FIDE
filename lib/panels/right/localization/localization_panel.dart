@@ -11,8 +11,10 @@ import 'package:fide/panels/right/localization/localization_setup_widget.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/localization_controller.dart';
+import 'package:fide/providers/quick_fix_controller.dart';
 import 'package:fide/services/arb_service.dart';
 import 'package:fide/widget_services/issue_section.dart';
+import 'package:fide/widget_services/quick_fix_prompts.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/bullet_list.dart';
@@ -173,8 +175,17 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       hasEntries ? state.comparisons : const [],
       entry: (comparison) => LocalizationEntryWidget(
         comparison: comparison,
-        onTranslate: (language) =>
-            _show(_controller.translate(comparison, language)),
+        onTranslate: (language) {
+          if (_controller.translationOf(comparison, language)
+              case final translation?) {
+            ref
+                .read(quickFixControllerProvider)
+                .translateKey(
+                  translation,
+                  notify: quickFixNoticesOver(context),
+                );
+          }
+        },
       ),
       header: [
         const SectionTitle('Localization Partially Set Up'),
@@ -322,7 +333,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
         // Filter bar
         FilterField(
           controller: _filterController,
-          hintText: 'Filter localization keys...',
+          hintText: 'Filter localization keys…',
         ),
       ],
     );

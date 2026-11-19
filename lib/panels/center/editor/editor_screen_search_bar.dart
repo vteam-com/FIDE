@@ -43,7 +43,7 @@ class EditorScreenSearchBar extends StatelessWidget {
             searchField: AppTextField(
               controller: controller.queryController,
               focusNode: controller.queryFocusNode,
-              hintText: 'Find in file...',
+              hintText: 'Find in file…',
               icon: Icons.search,
               onChanged: controller.search,
               onSubmitted: (_ /* value */) => onNextMatch(),

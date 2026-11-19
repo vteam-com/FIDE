@@ -19,54 +19,45 @@ final projectMetricsProvider =
 
 /// The Info panel's metrics for one project, cached per project in
 /// preferences: shown at once, whether or not preferences are loaded yet,
-/// and saved once they are.
-class ProjectMetricsNotifier extends StateNotifier<ProjectMetrics> {
-  /// The preferences caching metrics, once loaded.
-  final Future<SharedPreferences> _prefs;
-
-  /// Whether [updateMetrics] ran, so the cache no longer overrides the
-  /// metrics shown.
-  bool _isUpdated = false;
-
+/// and saved once they are; cached metrics never replace newer ones.
+class ProjectMetricsNotifier extends PersistedNotifier<ProjectMetrics> {
   /// Starts from the cached metrics of the project at [projectPath], if
-  /// any, once [_prefs] loads.
-  ProjectMetricsNotifier(this._prefs, String? projectPath)
-    : super(ProjectMetrics.empty) {
-    if (projectPath != null) _loadCachedMetrics(projectPath);
+  /// any, once [prefs] loads.
+  ProjectMetricsNotifier(Future<SharedPreferences> prefs, this._projectPath)
+    : super(prefs, ProjectMetrics.empty) {
+    if (_projectPath != null) load();
   }
 
-  /// Restores the metrics cached for [projectPath], unless newer ones were
-  /// shown meanwhile.
-  Future<void> _loadCachedMetrics(String projectPath) async {
-    final String? jsonString;
-    try {
-      jsonString = (await _prefs).getString(_key(projectPath));
-    } catch (_) {
-      return; // No preferences: nothing cached
-    }
-    if (jsonString == null || _isUpdated || !mounted) return;
-    try {
-      state = ProjectMetrics.fromJson(
-        jsonDecode(jsonString) as Map<String, dynamic>,
-      );
-    } catch (_) {
-      // Ignore invalid cached data.
-    }
+  /// The project whose metrics are shown and cached; null without one.
+  String? _projectPath;
+
+  /// The metrics cached for the project, or null when none were; throws
+  /// for invalid cached data, which [load] ignores.
+  @override
+  ProjectMetrics? read(SharedPreferences prefs) {
+    final projectPath = _projectPath;
+    final json = projectPath == null
+        ? null
+        : prefs.getString(_key(projectPath));
+    return json == null
+        ? null
+        : ProjectMetrics.fromJson(jsonDecode(json) as Map<String, dynamic>);
   }
 
-  /// Shows [metrics] for [projectPath] and caches them once preferences
-  /// load; without preferences they are only shown.
-  Future<void> updateMetrics(String projectPath, ProjectMetrics metrics) async {
-    _isUpdated = true;
-    state = metrics;
-    try {
-      await (await _prefs).setString(
-        _key(projectPath),
-        jsonEncode(metrics.toJson()),
-      );
-    } catch (_) {
-      // Caching is optional: the metrics are shown either way
-    }
+  /// Shows [metrics], measured in the project at [projectPath], and caches
+  /// them for it once preferences load; without preferences they are only
+  /// shown.
+  Future<void> updateMetrics(String projectPath, ProjectMetrics metrics) {
+    _projectPath = projectPath;
+    return persist(metrics);
+  }
+
+  /// Caches [metrics] for the project.
+  @override
+  Future<void> write(SharedPreferences prefs, ProjectMetrics metrics) async {
+    final projectPath = _projectPath;
+    if (projectPath == null) return;
+    await prefs.setString(_key(projectPath), jsonEncode(metrics.toJson()));
   }
 
   /// Preferences key of the metrics cached for [projectPath].

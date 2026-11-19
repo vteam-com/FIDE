@@ -163,6 +163,21 @@ void main() {
       );
     });
 
+    test('shows the network action running, one at a time', () async {
+      await load();
+      GitActivity? activity() =>
+          container.read(gitRepoControllerProvider(repo.path)).value!.activity;
+
+      final refreshing = controller().refresh();
+      expect(activity(), GitActivity.refresh);
+      // A push asked meanwhile, say from another button, doesn't start
+      await controller().push();
+      expect(activity(), GitActivity.refresh);
+
+      await refreshing;
+      expect(activity(), isNull);
+    });
+
     test('reloads after a save', () async {
       await load();
       File(file).writeAsStringSync('changed\n');

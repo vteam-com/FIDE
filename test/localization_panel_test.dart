@@ -7,7 +7,6 @@ import 'package:fide/panels/right/localization/localization_panel.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/localization_controller.dart';
 import 'package:fide/services/arb_service.dart';
-import 'package:fide/services/arb_translator.dart';
 import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/process_runner.dart';
@@ -15,8 +14,6 @@ import 'package:fide/services/project_config_reader.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-
-import 'fake_chat_model.dart';
 
 /// How many ARB keys the project has.
 const int _keyCount = 500;
@@ -33,11 +30,6 @@ class _FixedController extends LocalizationController {
         ),
         generator: const L10nGenerator(ProcessRunner()),
         arb: const ArbService(),
-        translator: ArbTranslator(
-          FakeChatModel(),
-          const ProjectConfigReader(),
-          const L10nGenerator(ProcessRunner()),
-        ),
       ) {
     state = shown;
   }

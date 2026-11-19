@@ -38,6 +38,9 @@ class ActiveEditor implements EditorCommands {
   Future<void> save() async => _editor?.save();
 
   @override
+  void showDiff() => _editor?.showDiff();
+
+  @override
   String get searchSeed => _editor?.searchSeed ?? '';
 }
 

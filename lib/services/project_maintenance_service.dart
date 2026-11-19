@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:fide/models/outdated_package.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/pub_outdated.dart';
 import 'package:fide/services/flutter_sdk.dart';
@@ -21,21 +20,15 @@ class ProjectMaintenanceService {
   /// Creates a maintenance service that launches commands through [_runner].
   const ProjectMaintenanceService(this._runner);
 
-  /// Runs `flutter pub outdated` and returns the table it printed, as text
-  /// and parsed into one [OutdatedPackage] per package name.
+  /// Runs `flutter pub outdated` and returns what it reported, as text and
+  /// by package name.
   ///
-  /// Throws a [MaintenanceException] with the command's stderr when it
-  /// fails.
-  Future<({String output, Map<String, OutdatedPackage> packages})>
+  /// Throws a [MaintenanceException] when the command fails or prints
+  /// something else than its JSON report.
+  Future<({String output, Map<String, PubOutdatedPackage> packages})>
   outdatedReport(String projectPath) async {
-    final result = await _runner.runChecked(
-      FlutterSdk.executable,
-      ['pub', 'outdated'],
-      workingDirectory: projectPath,
-      error: (result) => MaintenanceException('${result.stderr}'),
-    );
-    final output = result.stdout.toString();
-    return (output: output, packages: OutdatedPackage.parseTable(output));
+    final outdated = await _outdated(projectPath);
+    return (output: outdated.summary, packages: outdated.byName);
   }
 
   /// Raises direct and dev dependency constraints in pubspec.yaml to their
@@ -48,22 +41,7 @@ class ProjectMaintenanceService {
   Future<List<PubOutdatedPackage>> upgradeToResolvable(
     String projectPath,
   ) async {
-    final result = await _runner.runChecked(
-      FlutterSdk.executable,
-      ['pub', 'outdated', '--json'],
-      workingDirectory: projectPath,
-      error: (result) =>
-          MaintenanceException('Failed to check outdated: ${result.stderr}'),
-    );
-
-    final PubOutdated outdated;
-    try {
-      outdated = PubOutdated.parse(result.stdout.toString());
-    } on FormatException catch (e) {
-      throw MaintenanceException(
-        'Invalid JSON response from flutter pub outdated: ${e.message}',
-      );
-    }
+    final outdated = await _outdated(projectPath);
 
     final pubspecFile = File(ProjectPaths(projectPath).pubspec);
     if (!pubspecFile.existsSync()) {
@@ -82,6 +60,27 @@ class ProjectMaintenanceService {
       'get',
     ], workingDirectory: projectPath);
     return upgrade.upgraded;
+  }
+
+  /// What `flutter pub outdated --json` reports for the project at
+  /// [projectPath]; the one run of it, for the report and the upgrade.
+  ///
+  /// Throws a [MaintenanceException] on command or parse failure.
+  Future<PubOutdated> _outdated(String projectPath) async {
+    final result = await _runner.runChecked(
+      FlutterSdk.executable,
+      ['pub', 'outdated', '--json'],
+      workingDirectory: projectPath,
+      error: (result) =>
+          MaintenanceException('Failed to check outdated: ${result.stderr}'),
+    );
+    try {
+      return PubOutdated.parse(result.stdout.toString());
+    } on FormatException catch (e) {
+      throw MaintenanceException(
+        'Invalid JSON response from flutter pub outdated: ${e.message}',
+      );
+    }
   }
 
   /// Runs a command to completion.

@@ -10,6 +10,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/file_system/overlay_file_system.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:fide/models/class_split_result.dart';
+import 'package:fide/models/dart_imports.dart';
 import 'package:fide/models/project_name.dart';
 import 'package:fide/models/text_offsets.dart';
 import 'package:fide/services/compile_errors.dart';

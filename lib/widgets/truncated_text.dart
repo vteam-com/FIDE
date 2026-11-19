@@ -1,4 +1,3 @@
-import 'package:fide/constants/constants.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// [text] on one line, cut short with an ellipsis when too long, showing
@@ -18,7 +17,6 @@ class TruncatedText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Tooltip(
       message: text,
-      waitDuration: AppDuration.tooltipWait,
       child: Text(
         text,
         style: style,

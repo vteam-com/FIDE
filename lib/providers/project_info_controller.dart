@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:fide/models/action_outcome.dart';
+import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/project_info_state.dart';
 import 'package:fide/models/project_metrics.dart';
 import 'package:fide/models/project_paths.dart';
-import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/project_actions.dart';
+import 'package:fide/providers/project_lifecycle_providers.dart';
+import 'package:fide/providers/project_metrics_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/file_entry_service.dart';
 import 'package:fide/services/project_analyzer.dart';
@@ -138,11 +140,11 @@ class ProjectInfoController extends StateNotifier<ProjectInfoState>
         final failure = await analyze();
         if (failure != null) return failure;
         return upgraded.isNotEmpty
-            ? const ActionOutcome.success(
-                'Packages upgraded to compatible versions!',
+            ? ActionOutcome.success(
+                'Upgraded ${upgraded.length.count('package')}',
               )
             : const ActionOutcome.info(
-                'All packages already up to date with compatible versions.',
+                'Every package is at its latest resolvable version',
               );
       } on VersionConflictException catch (conflict) {
         updateState(

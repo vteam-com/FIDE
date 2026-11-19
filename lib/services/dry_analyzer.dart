@@ -10,6 +10,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/scope.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/element/type_system.dart';
+import 'package:fide/models/dart_imports.dart';
 import 'package:fide/models/dry_review.dart';
 import 'package:fide/models/unique_name.dart';
 import 'package:fide/services/dart_references.dart';
@@ -25,7 +26,7 @@ part 'dry_analyzer.source_file.dart';
 part 'dry_analyzer.state_finder.dart';
 part 'dry_analyzer.widget_call.dart';
 
-/// Finds the widget settings a Flutter project repeats, the DRY Review's
+/// Finds the widget settings a Flutter project repeats, the Repeated Widget Settings review's
 /// findings: knowing every project is a Flutter app, it compares only the
 /// styling settings of the widgets built (sizes, colors, text styles,
 /// paddings, icons, enums…), never their content (children, text,

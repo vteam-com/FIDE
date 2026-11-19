@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fide/models/dependency_version.dart';
-import 'package:fide/models/outdated_package.dart';
 import 'package:fide/models/project_metrics.dart';
 import 'package:fide/models/pub_outdated.dart';
 import 'package:fide/services/process_runner.dart';
@@ -91,42 +90,46 @@ void main() {
     });
   });
 
-  test('OutdatedPackage.parseTable reads package rows and skips headers', () {
-    final parsed = OutdatedPackage.parseTable('''
-Package  Current  Upgradable  Resolvable  Latest
-http     1.0.0    1.1.0       1.1.0       2.0.0
-''');
-
-    expect(parsed.keys, ['http']);
-    expect(parsed['http']!.toJson(), {
-      'current': '1.0.0',
-      'upgradable': '1.1.0',
-      'resolvable': '1.1.0',
-      'latest': '2.0.0',
-    });
-  });
-
-  test('outdatedReport returns the table as text and rows', () async {
-    const table =
-        'Package  Current  Upgradable  Resolvable  Latest\n'
-        'http     1.0.0    1.1.0       1.1.0       2.0.0\n';
+  test('outdatedReport reads pub\'s JSON once, as text and by name', () async {
     final runner = FakeRunRunner({
-      'flutter pub outdated': ProcessResult(0, 0, table, ''),
+      'flutter pub outdated --json': ProcessResult(
+        0,
+        0,
+        jsonEncode({
+          'packages': [
+            {
+              'package': 'http',
+              'kind': 'direct',
+              'current': {'version': '1.0.0'},
+              'upgradable': {'version': '1.1.0'},
+              'resolvable': {'version': '1.1.0'},
+              'latest': {'version': '2.0.0'},
+            },
+          ],
+        }),
+        '',
+      ),
     });
 
     final report = await ProjectMaintenanceService(runner)
         .outdatedReport(project.path);
 
-    expect(report.output, table);
-    expect(report.packages['http']!.latest, '2.0.0');
+    expect(report.output, 'http 1.0.0 → 1.1.0 (latest 2.0.0)');
+    final http = report.packages['http']!;
+    expect((http.upgradable, http.latest), ('1.1.0', '2.0.0'));
+    expect(PubOutdatedPackage.fromJson(http.toJson())!.toJson(), http.toJson());
     expect(
       ProjectMaintenanceService(
         FakeRunRunner({
-          'flutter pub outdated': ProcessResult(0, 1, '', 'offline'),
+          'flutter pub outdated --json': ProcessResult(0, 1, '', 'offline'),
         }),
       ).outdatedReport(project.path),
       throwsA(
-        isA<MaintenanceException>().having((e) => '$e', 'message', 'offline'),
+        isA<MaintenanceException>().having(
+          (e) => '$e',
+          'message',
+          contains('offline'),
+        ),
       ),
     );
   });

@@ -30,33 +30,37 @@ class ProjectFiles {
     }
   }
 
+  /// Paths of the files directly in the folder [folder] ending with
+  /// [extension], leaving out the hidden ones; none when [folder] does not
+  /// exist.
+  static Future<List<String>> filesIn(
+    String folder, {
+    required String extension,
+  }) async {
+    final directory = Directory(folder);
+    if (!await directory.exists()) return [];
+    return [
+      await for (final entity in directory.list())
+        if (entity is File && _isListed(entity.path, extension)) entity.path,
+    ];
+  }
+
   /// The files under the folder [root], only those ending with
   /// [extension] when given, without going into the folders left out;
   /// throws when [root] can't be listed.
-  static Stream<File> walk(String root, {String? extension}) =>
-      entities(root)
-          .where(
-            (entity) =>
-                entity is File &&
-                (extension == null || p.extension(entity.path) == extension),
-          )
-          .cast<File>();
+  static Stream<File> walk(String root, {String? extension}) => entities(root)
+      .where((entity) => entity is File && _isListed(entity.path, extension))
+      .cast<File>();
 
   /// Paths of the files in the loaded tree under [root], in tree order.
-  static List<String> under(ProjectNode root) {
-    final files = <String>[];
-    void collect(ProjectNode node) {
-      for (final child in node.uniqueChildren) {
-        if (isSkipped(child.name)) continue;
-        if (child.isDirectory) {
-          collect(child);
-        } else {
-          files.add(child.path);
-        }
-      }
-    }
+  static List<String> under(ProjectNode root) => [
+    for (final file in root.files(skip: (node) => isSkipped(node.name)))
+      file.path,
+  ];
 
-    collect(root);
-    return files;
-  }
+  /// Whether the file at [path] is listed when looking for [extension]:
+  /// it has that extension, when one is given, and isn't left out.
+  static bool _isListed(String path, String? extension) =>
+      !isSkipped(p.basename(path)) &&
+      (extension == null || p.extension(path) == extension);
 }

@@ -182,7 +182,7 @@ Runs the Flutter application in debug mode.
     return _runProjectAction(
       id,
       platform,
-      startMessages: ['Building for $label...'],
+      startMessages: ['Building for $label…'],
       command: (projectPath, output) =>
           _buildService.build(projectPath, platform, output, target: target),
       successMessage: 'Build completed successfully for $label',
@@ -196,7 +196,7 @@ Runs the Flutter application in debug mode.
   Future<void> _clean(FlutterPlatform platform) => _runProjectAction(
     ExecutePanel._cleanId,
     platform,
-    startMessages: ['Cleaning Flutter project...'],
+    startMessages: ['Cleaning Flutter project…'],
     // A failed clean throws, so reaching the end means success
     command: (projectPath, output) async {
       await _buildService.clean(projectPath, output);
@@ -219,7 +219,7 @@ Runs the Flutter application in debug mode.
   }) => _runProjectAction(
     id,
     platform,
-    startMessages: ['${isDebug ? 'Debugging' : 'Running'} Flutter app...'],
+    startMessages: ['${isDebug ? 'Debugging' : 'Running'} Flutter app…'],
     // Process runs continuously until stopped
     command: (projectPath, output) => _buildService.run(
       projectPath,

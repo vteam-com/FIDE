@@ -23,8 +23,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
-/// The Analyzer tab: the DRY Review of the open project, the widget
-/// settings it repeats ("Don't Repeat Yourself"); each kind of repetition
+/// The Analyzer tab: the open project's Repeated Widget Settings, the
+/// widget settings it writes more than once; each kind of repetition
 /// with what to do about it, each finding with the code it is written as
 /// and where, a click away in the editor beside the review, and the
 /// deterministic fixes code can make: Fix on a finding, Fix all on a
@@ -33,8 +33,9 @@ class AnalyzerPanel extends ConsumerWidget {
   /// Creates the review of the open project.
   const AnalyzerPanel({super.key});
 
-  /// The review's name, atop the tab.
-  static const String title = 'DRY Review';
+  /// The review's name, atop the tab; the AI's D.R.Y. review is fCheck's
+  /// duplicate code, another review.
+  static const String title = 'Repeated Widget Settings';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -128,7 +129,7 @@ class AnalyzerPanel extends ConsumerWidget {
       children: [
         Expanded(child: SectionTitle(title)),
         PrimaryButton(
-          icon: Icons.auto_fix_high,
+          icon: AppIcon.fix,
           label: 'Fix all',
           busy: running == kind,
           onPressed: running != null
@@ -195,8 +196,8 @@ class AnalyzerPanel extends ConsumerWidget {
   }) {
     if (finding.fixes.isEmpty) {
       return SecondaryButton(
-        icon: Icons.auto_awesome,
-        label: 'Ask AI',
+        icon: AppIcon.ai,
+        label: 'Fix with AI',
         onPressed: () => ref.read(aiRequestsProvider).ask(finding.aiRequest),
       );
     }
@@ -206,7 +207,7 @@ class AnalyzerPanel extends ConsumerWidget {
       children: [
         for (final fix in finding.fixes)
           PrimaryButton(
-            icon: Icons.auto_fix_high,
+            icon: AppIcon.fix,
             label: fix.label,
             busy: identical(running, fix),
             onPressed: running != null

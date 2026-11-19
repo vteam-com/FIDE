@@ -19,7 +19,7 @@ class ShortcutHelpEntry {
   static const String alt = '⌥';
 
   /// Ellipsis ending labels of commands that ask for more input.
-  static const String _ellipsis = '...';
+  static const String _ellipsis = '…';
 
   /// The keys that run the command, each as macOS menus show it, such as
   /// `⇧⌘O`; the menu's own shortcut first.

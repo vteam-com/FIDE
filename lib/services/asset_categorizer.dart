@@ -35,7 +35,7 @@ class AssetCategorizer {
       final node = await _find(root, relativePath);
       if (node == null) continue;
       if (node.isDirectory) await _reader.loadTree(node);
-      for (final file in _files(node)) {
+      for (final file in node.files(skip: (child) => child.isHidden)) {
         assets[file.path] = file;
       }
     }
@@ -73,28 +73,14 @@ class AssetCategorizer {
   /// The node at project-relative [relativePath] under [root], loading
   /// folders on the way; null when it doesn't exist or leaves the project.
   Future<ProjectNode?> _find(ProjectNode root, String relativePath) async {
-    final normalized = p.normalize(relativePath);
-    if (p.isAbsolute(normalized) || normalized.startsWith('..')) return null;
-    ProjectNode? current = root;
-    for (final part in p.split(normalized)) {
-      if (current == null || current.isFile) return null;
-      if (current.children.isEmpty) await _reader.loadChildren(current);
-      current = current.children
-          .where((child) => child.name == part)
-          .firstOrNull;
+    final names = ProjectNode.namesTo(relativePath);
+    if (names == null) return null;
+    ProjectNode? node = root;
+    for (final name in names) {
+      if (node == null || node.isFile) return null;
+      if (node.children.isEmpty) await _reader.loadChildren(node);
+      node = node.childNamed(name);
     }
-    return current;
-  }
-
-  /// [node] when it is a file, else every hidden-free file in its subtree.
-  static Iterable<ProjectNode> _files(ProjectNode node) sync* {
-    if (node.isHidden) return;
-    if (node.isFile) {
-      yield node;
-      return;
-    }
-    for (final child in node.children) {
-      yield* _files(child);
-    }
+    return node;
   }
 }

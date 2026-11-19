@@ -22,6 +22,10 @@ abstract interface class EditorCommands {
   /// Saves the active document to disk; completes once written.
   Future<void> save();
 
+  /// Shows the active document's changes since the last commit side by
+  /// side, as the editor header's Show Diff View does.
+  void showDiff();
+
   /// The selected text a search should start with, or empty when nothing
   /// usable is selected.
   String get searchSeed;

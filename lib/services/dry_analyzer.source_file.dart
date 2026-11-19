@@ -8,9 +8,6 @@ class _SourceFile {
       libraryUri = result.libraryElement.uri.toString(),
       _imports = result.libraryFragment.libraryImports;
 
-  /// The `package:` scheme every project library URI starts with.
-  static const String _packageScheme = 'package:';
-
   /// The core library, which no file imports.
   static const String _coreLibrary = 'dart:core';
 
@@ -24,8 +21,8 @@ class _SourceFile {
   final List<LibraryImport> _imports;
 
   /// The project's package name; null without a package configuration.
-  String? get package => libraryUri.startsWith(_packageScheme)
-      ? libraryUri.substring(_packageScheme.length).split('/').first
+  String? get package => libraryUri.startsWith(packageScheme)
+      ? libraryUri.substring(packageScheme.length).split('/').first
       : null;
 
   /// The URI another project file imports to see [element]: an unprefixed
@@ -45,7 +42,7 @@ class _SourceFile {
       }
     }
     final package = this.package;
-    return package != null && uri.startsWith('$_packageScheme$package/')
+    return package != null && uri.startsWith('$packageScheme$package/')
         ? uri
         : null;
   }

@@ -50,7 +50,7 @@ void main() {
     expect(await const GitService(ProcessRunner()).getHeadContent(newFile), '');
   });
 
-  test('getBytesAt reads binary content from HEAD and the index', () async {
+  test('getHeadBytes reads binary content from HEAD', () async {
     final image = path.join(repo.path, 'lib', 'pixel.bin');
     File(image).writeAsBytesSync([0, 255, 10, 0, 13, 0]);
     _git(repo.path, ['add', '.']);
@@ -60,12 +60,8 @@ void main() {
     File(image).writeAsBytesSync([3]);
     const git = GitService(ProcessRunner());
 
-    expect(await git.getBytesAt(image), [0, 255, 10, 0, 13, 0]);
-    expect(await git.getBytesAt(image, revision: GitService.indexRevision), [
-      1,
-      2,
-    ]);
-    expect(await git.getBytesAt(path.join(repo.path, 'missing.bin')), isNull);
+    expect(await git.getHeadBytes(image), [0, 255, 10, 0, 13, 0]);
+    expect(await git.getHeadBytes(path.join(repo.path, 'missing.bin')), isNull);
   });
 
   test('a changed binary file has changes without line counts', () async {
@@ -81,17 +77,6 @@ void main() {
     expect(stats!.isBinary, isTrue);
     expect(stats.hasChanges, isTrue);
     expect((stats.added, stats.removed), (0, 0));
-  });
-
-  test('getStagedContent reads the index, not the working copy', () async {
-    File(nestedFile).writeAsStringSync('staged\n');
-    _git(repo.path, ['add', 'lib/main.dart']);
-    File(nestedFile).writeAsStringSync('working\n');
-
-    expect(
-      await const GitService(ProcessRunner()).getStagedContent(nestedFile),
-      'staged\n',
-    );
   });
 
   test('getFileDiff is empty for an unchanged tracked file', () async {
@@ -387,17 +372,15 @@ void main() {
     expect((diff!.oldText, diff.newText), ('committed\n', 'buffer\n'));
   });
 
-  test('diffAgainstHead reads the index or the working copy', () async {
+  test('diffAgainstHead reads the working copy, staged or not', () async {
     File(nestedFile).writeAsStringSync('staged\n');
     _git(repo.path, ['add', 'lib/main.dart']);
     File(nestedFile).writeAsStringSync('working\n');
-    const git = GitService(ProcessRunner());
 
-    final staged = await git.diffAgainstHead(nestedFile, staged: true);
-    final working = await git.diffAgainstHead(nestedFile);
+    final diff = await const GitService(ProcessRunner())
+        .diffAgainstHead(nestedFile);
 
-    expect(staged!.newText, 'staged\n');
-    expect(working!.newText, 'working\n');
+    expect(diff!.newText, 'working\n');
   });
 
   test('diffAgainstHead is null outside a repository', () async {

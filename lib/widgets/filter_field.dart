@@ -9,7 +9,7 @@ class FilterField extends StatelessWidget {
   const FilterField({
     super.key,
     required this.controller,
-    this.hintText = 'Filter...',
+    this.hintText = 'Filter…',
   });
 
   /// Holds the query; listeners see every change, including clearing.

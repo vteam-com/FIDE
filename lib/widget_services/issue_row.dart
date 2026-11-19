@@ -5,7 +5,7 @@ import 'package:fide/models/string_review.dart';
 import 'package:fide/providers/ai_request.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/quick_fix_controller.dart';
-import 'package:fide/services/quick_fix_runner.dart';
+import 'package:fide/widget_services/quick_fix_prompts.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/location_row.dart';
@@ -67,23 +67,6 @@ class IssueRow extends ConsumerWidget {
     ),
   );
 
-  /// Asks the user to confirm a quick fix in a dialog over [context];
-  /// false once the row is gone.
-  static QuickFixConfirmation _confirm(BuildContext context) =>
-      (fix, message) async =>
-          context.mounted &&
-          await MessageBox.confirm(
-            context,
-            title: fix.label,
-            message: message,
-            confirmLabel: fix.label,
-          );
-
-  /// Shows a quick fix's messages over [context] while the row is there.
-  static QuickFixNotice _notify(BuildContext context) => (message, tone) {
-    if (context.mounted) MessageBox.show(context, message, tone);
-  };
-
   /// Has the user pick strings of the open project to fix in a
   /// [StringReviewDialog], then applies the fix they picked.
   void _reviewStrings(BuildContext context, WidgetRef ref) {
@@ -98,8 +81,8 @@ class IssueRow extends ConsumerWidget {
                       openFileAtLine(ref, string.path, string.line),
                 )
               : null,
-          confirm: _confirm(context),
-          notify: _notify(context),
+          confirm: confirmQuickFixOver(context),
+          notify: quickFixNoticesOver(context),
         );
   }
 
@@ -189,25 +172,19 @@ class IssueRow extends ConsumerWidget {
               label: quickFix.label,
               onPressed: () {
                 Navigator.of(context).pop();
-                ref
-                    .read(quickFixControllerProvider)
-                    .apply(
-                      quickFix,
-                      confirm: _confirm(context),
-                      notify: _notify(context),
-                    );
+                applyQuickFix(context, ref, quickFix);
               },
             ),
         if (fixRequest != null)
           // Secondary to the instant quick fixes
           quickFixes.isEmpty
               ? PrimaryButton(
-                  icon: Icons.auto_fix_high,
+                  icon: AppIcon.ai,
                   label: issue.aiActionLabel!,
                   onPressed: () => _askAi(context, ref, fixRequest),
                 )
               : SecondaryButton(
-                  icon: Icons.auto_fix_high,
+                  icon: AppIcon.ai,
                   label: issue.aiActionLabel!,
                   onPressed: () => _askAi(context, ref, fixRequest),
                 ),

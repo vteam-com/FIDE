@@ -12,7 +12,11 @@ class GitRepoState {
     required this.ahead,
     required this.behind,
     required this.canAmend,
+    this.activity,
   });
+
+  /// The network action running, or null.
+  final GitActivity? activity;
 
   /// Staged, unstaged and untracked files.
   final GitStatus status;
@@ -35,4 +39,16 @@ class GitRepoState {
 
   /// Whether the last commit is unpushed, so it can be amended.
   final bool canAmend;
+
+  /// This state with [activity] running.
+  GitRepoState withActivity(GitActivity? activity) => GitRepoState(
+    status: status,
+    commits: commits,
+    stagedStats: stagedStats,
+    unstagedStats: unstagedStats,
+    ahead: ahead,
+    behind: behind,
+    canAmend: canAmend,
+    activity: activity,
+  );
 }

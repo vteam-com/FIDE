@@ -125,4 +125,53 @@ void main() {
       ('b.txt', 2),
     ]);
   });
+
+  group('loaded tree walks', () {
+    ProjectNode node(String path, [List<ProjectNode>? children]) => ProjectNode(
+      name: path.split('/').last,
+      path: path,
+      type: children == null ? ProjectNodeType.file : ProjectNodeType.directory,
+      children: children,
+    );
+
+    final tree = node('/p', [
+      node('/p/.git', [node('/p/.git/HEAD')]),
+      node('/p/lib', [
+        node('/p/lib/src', [node('/p/lib/src/a.dart')]),
+        node('/p/lib/main.dart'),
+      ]),
+      node('/p/README.md'),
+    ]);
+
+    test('files lists the files in tree order, skipping what it is told', () {
+      expect(
+        [for (final file in tree.files()) file.path],
+        [
+          '/p/.git/HEAD',
+          '/p/lib/src/a.dart',
+          '/p/lib/main.dart',
+          '/p/README.md',
+        ],
+      );
+      expect(
+        [
+          for (final file in tree.files(skip: (child) => child.isHidden))
+            file.path,
+        ],
+        ['/p/lib/src/a.dart', '/p/lib/main.dart', '/p/README.md'],
+      );
+      expect(
+        tree.descendantAt('README.md')!.files().single.path,
+        '/p/README.md',
+      );
+    });
+
+    test('descendantAt finds loaded nodes, never outside the node', () {
+      expect(tree.descendantAt('lib/src')!.path, '/p/lib/src');
+      expect(tree.descendantAt('lib/src/a.dart')!.path, '/p/lib/src/a.dart');
+      expect(tree.descendantAt('lib/missing'), isNull);
+      expect(tree.descendantAt('../p/lib'), isNull);
+      expect(tree.descendantAt('/p/lib'), isNull);
+    });
+  });
 }

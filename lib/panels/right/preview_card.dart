@@ -10,8 +10,8 @@ import 'package:fide/services/preview_size_fixer.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
+import 'package:fide/widgets/empty_label.dart';
 import 'package:fide/widgets/image_backdrop_box.dart';
-import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/resizable_splitter.dart';
 import 'package:fide/widgets/surface_padding.dart';
@@ -111,7 +111,11 @@ class _PreviewCardState extends ConsumerState<PreviewCard> {
               ],
             ],
           ),
-          if (frame == null) const InlineSpinner() else _buildResizable(frame),
+          // The Preview tab's ring shows the host rendering it
+          if (frame == null)
+            const EmptyLabel('Not rendered yet')
+          else
+            _buildResizable(frame),
         ],
       ),
     );

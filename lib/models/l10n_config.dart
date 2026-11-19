@@ -1,3 +1,4 @@
+import 'package:fide/models/dart_imports.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -20,6 +21,12 @@ class L10nConfig {
   static const String _defaultTemplateArbFile = 'app_en.arb';
   static const String _defaultOutputClass = 'AppLocalizations';
   static const String _defaultOutputFile = 'app_localizations.dart';
+
+  /// The package `synthetic-package: true` generates the classes into.
+  static const String _syntheticPackage = 'flutter_gen';
+
+  /// The folder of that package holding the generated classes.
+  static const String _syntheticDir = 'gen_l10n';
 
   /// A localized file name, such as `app_pt_BR.arb` or
   /// `app_localizations_en.dart`: a prefix ending with `_`, then a locale
@@ -94,9 +101,14 @@ class L10nConfig {
 
   /// The import of the generated class for the package [packageName].
   String importUri(String packageName) {
-    if (syntheticPackage) return 'package:flutter_gen/gen_l10n/$outputFile';
+    if (syntheticPackage) {
+      return packageUriOf(
+        _syntheticPackage,
+        p.posix.join(_syntheticDir, outputFile),
+      );
+    }
     final inLib = p.posix.relative(outputDir ?? arbDir, from: 'lib');
-    return 'package:$packageName/$inLib/$outputFile';
+    return packageUriOf(packageName, p.posix.join(inLib, outputFile));
   }
 
   /// [templateArbFile] split into the file prefix every ARB file shares

@@ -131,11 +131,7 @@ class TreeRow extends StatelessWidget {
           leading: icon,
           title: tooltip == null
               ? text
-              : Tooltip(
-                  message: tooltip,
-                  waitDuration: AppDuration.tooltipWait,
-                  child: text,
-                ),
+              : Tooltip(message: tooltip, child: text),
           trailing: extras.isEmpty
               ? null
               : Row(

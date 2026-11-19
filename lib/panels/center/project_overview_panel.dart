@@ -63,7 +63,8 @@ class ProjectOverviewPanel extends ConsumerWidget {
             ),
       details: [if (platforms.isNotEmpty) 'On ${platforms.join(', ')}'],
       action: SecondaryButton(
-        icon: Icons.auto_fix_high,
+        // The App Icons view's own glyph, which it opens
+        icon: Icons.apps,
         label: 'Review',
         onPressed: () => showCenterView(ref, CenterView.appIcons),
       ),

@@ -345,7 +345,7 @@ class AiChatNotifier extends StateNotifier<AiChat> {
     Future<String> Function(fcheck.ProjectMetrics) write, {
     bool nearDuplicates = false,
   }) async {
-    addReply('🔍 Analyzing the project with fcheck...', isProgress: true);
+    addReply('🔍 Analyzing the project with fcheck…', isProgress: true);
     // Near duplicates need their own settings; the others reuse the
     // overview's analysis while no file changed since
     final latest = nearDuplicates ? null : await _latest?.call(projectPath);

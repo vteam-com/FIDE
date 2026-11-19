@@ -165,6 +165,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
     // Only a different file means the editor must load new content
     if (widget.filePath != oldWidget.filePath) {
+      // The diff shown was the previous file's; showing it again loads
+      // this file's
+      _showDiffView = false;
       _loadDocument();
       _codeController.showFindings(
         ref.read(qualityIssuesProvider),
@@ -365,6 +368,11 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
   @override
   String get searchSeed => _search.seed;
+
+  @override
+  void showDiff() {
+    if (!_showDiffView) _toggleDiffView();
+  }
 
   /// Builds syntax highlight styles from a full highlight.js theme with the
   /// app's own colors layered on top.

@@ -134,7 +134,7 @@ void main() {
   ) async {
     await pumpPanel(tester, _review);
 
-    expect(find.text('DRY Review'), findsOneWidget);
+    expect(find.text(AnalyzerPanel.title), findsOneWidget);
     expect(find.text('1 finding in 3 files'), findsOneWidget);
     expect(find.text('Drifted copies (1)'), findsOneWidget);
     expect(find.text('Icon · color'), findsOneWidget);
@@ -175,7 +175,7 @@ void main() {
     await pumpPanel(tester, _review);
 
     expect(find.text(DryFindingKind.drift.noFix), findsOneWidget);
-    expect(find.text('Ask AI'), findsOneWidget);
+    expect(find.text('Fix with AI'), findsOneWidget);
   });
 
   testWidgets('extracting a widget asks its name, then writes it', (

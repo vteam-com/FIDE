@@ -1,13 +1,12 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/relative_time.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/git_repo_controller.dart';
-import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/chat_model.dart';
-import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/git_service.dart';
-import 'package:fide/widget_services/image_diff.dart';
 import 'package:fide/widget_services/selected_file_builder.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
@@ -24,7 +23,6 @@ import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/refresh_button.dart';
 import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/section_panel.dart';
-import 'package:fide/widgets/side_by_side_diff.dart';
 import 'package:fide/widgets/task_button.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter/services.dart';
@@ -55,9 +53,6 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   final TextEditingController _commitController = TextEditingController();
   bool _isCommitting = false;
 
-  /// Whether Check again is reloading and fetching the repository.
-  bool _isRefreshing = false;
-
   /// Stops the AI writing the commit message; null while it isn't.
   AiCancelToken? _messageCancel;
 
@@ -83,16 +78,9 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   }
 
   /// Reloads the repository and fetches from the remote, so Pull shows
-  /// commits that arrived there; stops once the panel is gone, as
-  /// switching tabs disposes it.
-  Future<void> _refresh() async {
-    if (!mounted) return;
-    setState(() => _isRefreshing = true);
-    try {
-      await _repo.refresh();
-    } finally {
-      if (mounted) setState(() => _isRefreshing = false);
-    }
+  /// commits that arrived there, as File › Refresh Status does.
+  void _refresh() {
+    if (mounted) _repo.refresh();
   }
 
   /// Runs a Git [action] on the repository and shows its [outcome] as
@@ -119,10 +107,13 @@ class _GitPanelState extends ConsumerState<GitPanel> {
   Future<void> _unstageFiles(List<String> files) =>
       _runGitAction((repo) => repo.unstage(files), GitMessages.unstage);
 
-  /// Push or Pull: an outline [idleIcon] while there is nothing to move,
-  /// a solid [pendingIcon] in the primary color while [pending] commits
-  /// wait, with the count in the tooltip.
-  Widget _buildSyncButton({
+  /// Push or Pull, [activity] of [repo]: an outline [idleIcon] while there
+  /// is nothing to move, a solid [pendingIcon] on the accent color while
+  /// [pending] commits wait, with the count in the tooltip; its ring spins
+  /// while it runs, and it is disabled while another network action does.
+  Widget _buildSyncButton(
+    GitRepoState repo, {
+    required GitActivity activity,
     required String label,
     required int pending,
     required IconData idleIcon,
@@ -130,13 +121,12 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     required VoidCallback onPressed,
   }) {
     final hasPending = pending > 0;
-    return CompactIconButton(
+    return TaskButton(
       icon: hasPending ? pendingIcon : idleIcon,
-      selected: hasPending,
-      onPressed: onPressed,
-      tooltip: hasPending
-          ? '$label $pending commit${pending == 1 ? '' : 's'}'
-          : label,
+      prominent: hasPending,
+      running: repo.activity == activity,
+      onRun: repo.activity == null ? onPressed : null,
+      tooltip: hasPending ? '$label ${pending.count('commit')}' : label,
     );
   }
 
@@ -218,52 +208,6 @@ class _GitPanelState extends ConsumerState<GitPanel> {
     await _runGitAction((repo) => repo.discard(files), GitMessages.discard);
   }
 
-  /// Shows the changes to the repository-relative [filePath] since HEAD:
-  /// its staged content when [staged], else its working copy.
-  Future<void> _viewDiff(String filePath, {required bool staged}) async {
-    final absolutePath = p.join(widget.projectPath, filePath);
-    final git = ref.read(gitServiceProvider);
-    final Widget diff;
-    if (FileTypeUtils.isImageFile(absolutePath)) {
-      final oldBytes = await git.getBytesAt(absolutePath);
-      final newBytes = staged
-          ? await git.getBytesAt(
-              absolutePath,
-              revision: GitService.indexRevision,
-            )
-          : await _readBytes(absolutePath);
-      if (newBytes == null) return;
-      diff = ImageDiff(
-        path: absolutePath,
-        oldBytes: oldBytes,
-        newBytes: newBytes,
-      );
-    } else {
-      final texts = await git.diffAgainstHead(absolutePath, staged: staged);
-      if (texts == null) return;
-      diff = SideBySideDiff(oldText: texts.oldText, newText: texts.newText);
-    }
-    if (!mounted) return;
-    final windowSize = MediaQuery.of(context).size;
-    MessageBox.showDetails(
-      context,
-      title: Text('Git Diff: ${p.basename(filePath)}'),
-      // The diff scrolls its own lines within a fixed share of the window
-      scrollable: false,
-      content: SizedBox(
-        width: windowSize.width * AppSize.diffDialogWidthFactor,
-        height: windowSize.height * AppSize.diffDialogHeightFactor,
-        child: diff,
-      ),
-    );
-  }
-
-  /// The bytes of the file at [path], or null when it is missing.
-  Future<Uint8List?> _readBytes(String path) async {
-    final reader = ref.read(fileContentReaderProvider);
-    return await reader.exists(path) ? reader.readBytes(path) : null;
-  }
-
   @override
   Widget build(BuildContext context) {
     return ref
@@ -291,6 +235,8 @@ class _GitPanelState extends ConsumerState<GitPanel> {
               Row(
                 children: [
                   _buildSyncButton(
+                    repo,
+                    activity: GitActivity.push,
                     label: 'Push',
                     pending: repo.ahead,
                     idleIcon: Icons.cloud_upload_outlined,
@@ -298,6 +244,8 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                     onPressed: _push,
                   ),
                   _buildSyncButton(
+                    repo,
+                    activity: GitActivity.pull,
                     label: 'Pull',
                     pending: repo.behind,
                     idleIcon: Icons.cloud_download_outlined,
@@ -305,7 +253,10 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                     onPressed: _pull,
                   ),
                   const Spacer(),
-                  RefreshButton(busy: _isRefreshing, onPressed: _refresh),
+                  RefreshButton(
+                    busy: repo.activity == GitActivity.refresh,
+                    onPressed: repo.activity == null ? _refresh : null,
+                  ),
                 ],
               ),
 
@@ -323,11 +274,11 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                         controller: _commitController,
                         hintText: _isWritingMessage
                             ? 'Writing commit message… Esc to stop'
-                            : 'Enter commit message...',
+                            : 'Enter commit message…',
                         maxLines: AppMetric.aiInputMaxLines,
                         readOnly: _isWritingMessage,
                         trailing: TaskButton(
-                          icon: Icons.auto_awesome,
+                          icon: AppIcon.ai,
                           tooltip: 'Write commit message with AI',
                           running: _isWritingMessage,
                           onRun: _writeCommitMessage,
@@ -370,7 +321,6 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   kindOf: (file) =>
                       status.stagedKinds[file] ?? GitFileStatus.added,
                   stats: repo.stagedStats,
-                  staged: true,
                   onStage: null,
                   onUnstage: _unstageFiles,
                   canDiscard: false,
@@ -457,14 +407,12 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
   /// A collapsible list of [files] titled [titleText]: each file is colored
   /// by the change [kindOf] reports and shows its +/- line counts from
-  /// [stats], with the stage, unstage and discard actions that apply; its
-  /// diffs show the staged content when [staged].
+  /// [stats], with the stage, unstage and discard actions that apply.
   Widget _buildFileSection(
     String titleText,
     List<String> files, {
     required GitFileStatus Function(String) kindOf,
     required Map<String, GitDiffStats> stats,
-    bool staged = false,
     Function(List<String>)? onStage,
     Function(List<String>)? onUnstage,
     bool canDiscard = false,
@@ -526,11 +474,13 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                 ),
               ),
             ),
-            CompactIconButton(
-              icon: Icons.difference,
-              onPressed: () => _viewDiff(file, staged: staged),
-              tooltip: 'View Diff',
-            ),
+            // The editor's diff view; a deleted file has none to open
+            if (item.gitStatus != GitFileStatus.deleted)
+              CompactIconButton(
+                icon: Icons.difference,
+                onPressed: () => openFileDiff(ref, filePath),
+                tooltip: 'Show Diff View',
+              ),
             if (onStage != null)
               CompactIconButton(
                 icon: Icons.add,

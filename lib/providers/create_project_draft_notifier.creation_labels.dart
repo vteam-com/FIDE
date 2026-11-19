@@ -11,12 +11,12 @@ abstract final class CreationLabels {
 
   /// What each pending step says.
   static const Map<CreationStep, String> _pending = {
-    CreationStep.validate: 'Validating settings and checking dependencies...',
-    CreationStep.flutterCreate: 'Creating Flutter project...',
-    CreationStep.localization: 'Setting up localization...',
-    CreationStep.codegen: 'Generating initial code structure...',
-    CreationStep.gitInit: 'Initializing Git repository...',
-    CreationStep.verification: 'Final verification and cleanup...',
+    CreationStep.validate: 'Validating settings and checking dependencies…',
+    CreationStep.flutterCreate: 'Creating Flutter project…',
+    CreationStep.localization: 'Setting up localization…',
+    CreationStep.codegen: 'Generating initial code structure…',
+    CreationStep.gitInit: 'Initializing Git repository…',
+    CreationStep.verification: 'Final verification and cleanup…',
   };
 
   /// What each outcome says, apart from the ones carrying a detail.

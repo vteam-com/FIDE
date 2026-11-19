@@ -42,6 +42,12 @@ class ProjectConfigReader {
     return content == null ? null : Pubspec.parse(content);
   }
 
+  /// The package name of the project at [projectPath]; throws when it
+  /// has no pubspec or no name in it, as nothing can import its files.
+  Future<String> requirePackageName(String projectPath) async =>
+      await packageName(projectPath) ??
+      (throw Exception('pubspec.yaml has no name'));
+
   /// The text of the file at [path]; null when there is none.
   static Future<String?> readIfExists(String path) async {
     final file = File(path);

@@ -70,6 +70,11 @@ class AppTheme {
         centerTitle: false,
         titleTextStyle: AppTextStyle.title,
       ),
+      // Every tooltip waits alike before showing, as the platform's do, so
+      // moving the pointer across rows and buttons doesn't flash them
+      tooltipTheme: const TooltipThemeData(
+        waitDuration: AppDuration.tooltipWait,
+      ),
       popupMenuTheme: PopupMenuThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(AppRadius.small)),

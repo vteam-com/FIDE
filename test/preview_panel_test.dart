@@ -7,7 +7,6 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/preview_controller.dart';
 import 'package:fide/services/preview_scanner.dart';
 import 'package:fide/widgets/header_bar.dart';
-import 'package:fide/widgets/inline_spinner.dart';
 import 'package:image/image.dart' as img;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -100,7 +99,7 @@ Widget darkPreview() => const SizedBox();
     // nothing
     expect(find.byIcon(Icons.expand_more), findsOneWidget);
     expect(find.byIcon(Icons.chevron_right), findsNWidgets(2));
-    expect(find.byType(InlineSpinner), findsOneWidget);
+    expect(find.text('Not rendered yet'), findsOneWidget);
 
     await tester.tap(find.text('badgePreview'));
     expect(controller.toggled, ['badgePreview']);
@@ -119,7 +118,7 @@ Widget darkPreview() => const SizedBox();
         ],
       ),
     );
-    expect(find.byType(InlineSpinner), findsNWidgets(2));
+    expect(find.text('Not rendered yet'), findsNWidgets(2));
     final header = tester.widget(find.byType(HeaderBar));
     final container = ProviderScope.containerOf(
       tester.element(find.byType(PreviewPanel)),
@@ -139,7 +138,7 @@ Widget darkPreview() => const SizedBox();
     await tester.pump();
 
     expect(find.byType(Image), findsOneWidget);
-    expect(find.byType(InlineSpinner), findsOneWidget);
+    expect(find.text('Not rendered yet'), findsOneWidget);
     // The panel didn't build again: its header is the same widget
     expect(identical(tester.widget(find.byType(HeaderBar)), header), isTrue);
   });

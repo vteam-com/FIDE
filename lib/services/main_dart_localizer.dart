@@ -1,6 +1,7 @@
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:fide/models/dart_imports.dart';
 import 'package:logging/logging.dart';
 
 part 'main_dart_localizer.material_app_title_visitor.dart';
@@ -31,9 +32,6 @@ class MainDartLocalizer {
   /// A plain `title: '...'` argument.
   static final RegExp _titleArgument = RegExp(r"title\s*:\s*'([^']*)'");
 
-  /// An import directive.
-  static final RegExp _import = RegExp(r'import .+;');
-
   /// A `MaterialApp(` call.
   static final RegExp _materialApp = RegExp(r'MaterialApp\s*\(');
 
@@ -63,13 +61,11 @@ class MainDartLocalizer {
   /// old one as the fallback) and the delegates and locales passed to
   /// `MaterialApp`; what it already has is left as it is.
   static String localize(String content, {required String importUri}) {
-    var localized = content;
-    final importLine = "import '$importUri';";
-    if (!localized.contains(importLine)) {
-      if (_import.firstMatch(localized) case final match?) {
-        localized = _insert(localized, match.end, '\n$importLine\n');
-      }
-    }
+    var localized = withImport(
+      content,
+      importUri,
+      isImported: (uri) => uri == importUri,
+    );
     if (!localized.contains(_titleLookup)) {
       final title =
           _titleArgument.firstMatch(localized)?.group(1) ?? defaultTitle;
@@ -81,8 +77,8 @@ class MainDartLocalizer {
     }
     if (!localized.contains(_delegates)) {
       if (_materialApp.firstMatch(localized) case final match?) {
-        localized = _insert(
-          localized,
+        localized = localized.replaceRange(
+          match.end,
           match.end,
           '\n  $_delegates,\n  $_locales,\n',
         );
@@ -90,8 +86,4 @@ class MainDartLocalizer {
     }
     return localized;
   }
-
-  /// [text] with [inserted] at [offset].
-  static String _insert(String text, int offset, String inserted) =>
-      '${text.substring(0, offset)}$inserted${text.substring(offset)}';
 }

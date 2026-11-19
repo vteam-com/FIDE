@@ -9,7 +9,7 @@ import 'package:fide/services/file_content_reader.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:path/path.dart' as p;
 
-/// Applies the DRY Review's fixes; its state is the key of the one being
+/// Applies the Repeated Widget Settings review's fixes; its state is the key of the one being
 /// written, null while none is.
 final dryFixControllerProvider =
     StateNotifierProvider.autoDispose<DryFixController, Object?>(

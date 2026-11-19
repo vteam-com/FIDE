@@ -1,4 +1,4 @@
-import 'package:path/path.dart' as p;
+import 'package:fide/models/file_extension.dart';
 
 /// What an asset is for, which groups it in the Organized view's Assets
 /// section; values are in display order.
@@ -22,7 +22,7 @@ enum AssetKind {
   icons('Icons', {'ico'}),
 
   /// Font files.
-  fonts('Fonts', {'ttf', 'otf', 'woff', 'woff2'}),
+  fonts('Fonts', {'ttf', 'otf', 'ttc', 'woff', 'woff2'}),
 
   /// Rive and Lottie animations, including Lottie JSON in an animation
   /// folder.
@@ -60,10 +60,7 @@ enum AssetKind {
   /// The kind of the asset at project-relative [relativePath], read from
   /// its extension and the names of its file and folders.
   static AssetKind of(String relativePath) {
-    final extension = p
-        .extension(relativePath)
-        .replaceFirst('.', '')
-        .toLowerCase();
+    final extension = fileExtensionOf(relativePath);
     final kind = values.firstWhere(
       (kind) => kind.extensions.contains(extension),
       orElse: () => other,

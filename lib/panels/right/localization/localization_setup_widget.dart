@@ -29,7 +29,7 @@ class LocalizationSetupWidget extends StatelessWidget {
         ),
         ActionCard(
           title: 'Initialize Localization',
-          icon: Icons.auto_fix_high,
+          icon: AppIcon.fix,
           description:
               'Automatically configure everything needed for localization',
           steps: const [
@@ -38,7 +38,7 @@ class LocalizationSetupWidget extends StatelessWidget {
             'Generate AppLocalizations class',
           ],
           action: PrimaryButton(
-            icon: Icons.auto_fix_high,
+            icon: AppIcon.fix,
             label: 'Initialize',
             onPressed: onInitializeLocalization,
           ),

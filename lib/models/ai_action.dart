@@ -7,7 +7,7 @@ enum AiAction {
   /// Free-form question, answered with the selected file as context.
   ask(
     'Ask AI',
-    'Ask me anything about your code...',
+    'Ask me anything about your code…',
     editsFiles: true,
     context: AiContext.selectedFile,
   ),
@@ -15,14 +15,14 @@ enum AiAction {
   /// Explain the pasted code.
   explain(
     'Explain Code',
-    'Paste code here to get explanation...',
+    'Paste code here to get explanation…',
     instruction: 'Explain what this code does in simple terms:',
   ),
 
   /// Generate code from a description.
   generate(
     'Generate Code',
-    'Describe what code you want to generate...',
+    'Describe what code you want to generate…',
     editsFiles: true,
     instruction: 'Generate Flutter/Dart code for the following requirement:',
   ),
@@ -30,7 +30,7 @@ enum AiAction {
   /// Refactor the pasted code.
   refactor(
     'Refactor Code',
-    'Paste code and describe how to refactor it...',
+    'Paste code and describe how to refactor it…',
     editsFiles: true,
     instruction:
         'Refactor this code with the following instruction: Please '
@@ -42,7 +42,7 @@ enum AiAction {
   /// it.
   fixBuild(
     'Fix Build',
-    'Send to fix the last failed build, or paste build errors...',
+    'Send to fix the last failed build, or paste build errors…',
     editsFiles: true,
     think: true,
     context: AiContext.buildErrors,
@@ -55,7 +55,7 @@ enum AiAction {
   /// Review the duplicate code fcheck finds in the project.
   dryReview(
     'D.R.Y. review',
-    'Send to review duplicated code, or add what to focus on...',
+    'Send to review duplicated code, or add what to focus on…',
     think: true,
     context: AiContext.duplicates,
     instruction:
@@ -68,7 +68,7 @@ enum AiAction {
   /// Review fcheck's largest and most coupled code against SOLID.
   solidReview(
     'S.O.L.I.D. review',
-    'Send to review the design against SOLID, or add what to focus on...',
+    'Send to review the design against SOLID, or add what to focus on…',
     think: true,
     context: AiContext.design,
     instruction:

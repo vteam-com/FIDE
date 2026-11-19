@@ -72,6 +72,17 @@ void main() {
         expect(FileIconUtils.iconOf(FileCategory.font), Icons.font_download);
       });
 
+      test('opens the image and font assets its viewers can read', () {
+        expect(FileTypeUtils.viewKindOf('Noto.ttc'), FileViewKind.font);
+        expect(
+          FileTypeUtils.viewKindOf('photo.HEIC'),
+          FileViewKind.unsupported,
+        );
+        expect(FileTypeUtils.categoryOf('photo.heic'), FileCategory.image);
+        expect(FileTypeUtils.isSvg('/p/assets/Logo.SVG'), isTrue);
+        expect(FileTypeUtils.isSvg('/p/assets/logo.png'), isFalse);
+      });
+
       test('is unsupported for recognized-only, unknown and empty paths', () {
         expect(FileTypeUtils.viewKindOf('doc.pdf'), FileViewKind.unsupported);
         expect(FileTypeUtils.viewKindOf('a.xyz'), FileViewKind.unsupported);

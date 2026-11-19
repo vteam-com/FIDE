@@ -29,7 +29,7 @@ void main() {
           PlatformMenuItemGroup(
             members: [
               const PlatformMenuItem(
-                label: 'Go to File...',
+                label: 'Go to File…',
                 shortcut: AppShortcut.quickOpen,
               ),
               const PlatformMenuItem(label: 'Open folder'),

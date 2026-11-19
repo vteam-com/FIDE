@@ -65,4 +65,14 @@ void main() {
 
     expect((await reader.l10nConfig(project.path)).arbDir, 'lib/l10n');
   });
+
+  test('requirePackageName throws without a name in the pubspec', () async {
+    await expectLater(
+      reader.requirePackageName(project.path),
+      throwsA(isA<Exception>()),
+    );
+
+    write('pubspec.yaml', 'name: demo\n');
+    expect(await reader.requirePackageName(project.path), 'demo');
+  });
 }

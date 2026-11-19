@@ -7,6 +7,7 @@ export 'core_constants.dart';
 part 'constants.app_size.dart';
 part 'constants.app_padding.dart';
 part 'constants.app_spacing.dart';
+part 'constants.app_icon.dart';
 part 'constants.app_icon_size.dart';
 part 'constants.app_font_size.dart';
 part 'constants.app_text_style.dart';

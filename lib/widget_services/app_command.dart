@@ -12,24 +12,20 @@ typedef AppCommandAction = void Function(BuildContext context, WidgetRef ref);
 /// bar's project menu offer, so the two read and act alike.
 enum AppCommand {
   quickOpen(
-    'Go to File...',
+    'Go to File…',
     Icons.search,
     quickOpenFile,
     shortcut: AppShortcut.quickOpen,
   ),
   openFile(
-    'Open File...',
+    'Open File…',
     Icons.file_open_outlined,
     _pickAndOpenFile,
     shortcut: AppShortcut.openFile,
   ),
-  openProject(
-    'Open Existing Project...',
-    Icons.folder_open,
-    _pickAndOpenProject,
-  ),
+  openProject('Open Existing Project…', Icons.folder_open, _pickAndOpenProject),
   createProject(
-    'Create New Project...',
+    'Create New Project…',
     Icons.add_box_outlined,
     _showCreateProject,
   ),

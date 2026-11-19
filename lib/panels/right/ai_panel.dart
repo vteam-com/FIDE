@@ -7,15 +7,13 @@ import 'package:fide/panels/right/ai_panel.ai_transcript_entry.dart';
 import 'package:fide/providers/ai_chat_notifier.dart';
 import 'package:fide/providers/ollama_model_provider.dart';
 import 'package:fide/providers/ollama_status_notifier.dart';
+import 'package:fide/widget_services/ollama_setup_action.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/dropdown_menu_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/icon_menu_item.dart';
-import 'package:fide/widgets/loading_indicator.dart';
-import 'package:fide/widgets/message_box.dart';
-import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/task_button.dart';
 import 'package:fide/widgets/truncated_text.dart';
 import 'package:flutter/services.dart';
@@ -71,7 +69,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
             child: ActionCard(
               title: 'Setup',
               icon: Icons.info_outline,
-              child: _buildSetupState(setup.value),
+              child: const OllamaSetupAction(),
             ),
           ),
 
@@ -175,37 +173,6 @@ class _AIPanelState extends ConsumerState<AIPanel> {
         style: AppTextStyle.secondary(context),
       ),
     );
-  }
-
-  /// The first missing piece of the Ollama setup, with the button that
-  /// fixes it, or that it is ready; while a fix runs, the AI tab's ring
-  /// shows it; [step] is null while it is being checked.
-  Widget _buildSetupState(OllamaStep? step) {
-    if (step == null) return const LoadingIndicator();
-    final actionLabel = step.actionLabel;
-    final isFixing = ref.watch(ollamaSetupRunningProvider);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: AppSpacing.medium,
-      children: [
-        Text(
-          isFixing ? 'Setting up Ollama…' : step.message,
-          style: AppTextStyle.caption,
-        ),
-        if (actionLabel != null && !isFixing)
-          PrimaryButton(onPressed: () => _fixSetup(step), label: actionLabel),
-      ],
-    );
-  }
-
-  /// Runs the fix of setup [step] and reports how it went.
-  Future<void> _fixSetup(OllamaStep step) async {
-    try {
-      final done = await ref.read(ollamaStatusProvider.notifier).fix();
-      if (mounted && done != null) MessageBox.showInfo(context, done);
-    } catch (e) {
-      if (mounted) MessageBox.showError(context, '${step.errorPrefix}: $e');
-    }
   }
 
   /// Scrolls the chat to its latest message.

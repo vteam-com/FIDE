@@ -7,7 +7,7 @@ enum RightPanelTab {
   info(Key('keyTabInfo'), 'Info', icon: Icons.info_outline),
   preview(Key('keyTabPreview'), 'Preview', icon: Icons.preview_outlined),
   localize(Key('keyTabLocalize'), 'Localize', icon: Icons.translate),
-  analyzer(Key('keyTabAnalyzer'), 'Analyzer', icon: Icons.difference_outlined),
+  analyzer(Key('keyTabAnalyzer'), 'Analyzer', icon: Icons.repeat),
   ai(Key('keyTabAI'), 'AI', svgAsset: 'assets/ollama.svg');
 
   /// Key the integration tests find the tab by.

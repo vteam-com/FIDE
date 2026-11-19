@@ -53,19 +53,19 @@ class LocalizationSetup {
       }
     }
 
-    onStep?.call('Adding flutter_localizations and intl packages...');
+    onStep?.call('Adding flutter_localizations and intl packages…');
     await runTool(
       () => _addPackage(projectPath, 'flutter_localizations', sdk: 'flutter'),
     );
     await runTool(() => _addPackage(projectPath, 'intl'));
 
-    onStep?.call('Configuring pubspec.yaml...');
+    onStep?.call('Configuring pubspec.yaml…');
     await _enableGenerate(projectPath);
 
-    onStep?.call('Creating template ARB files...');
+    onStep?.call('Creating template ARB files…');
     await _createTemplateArbFiles(projectPath);
 
-    onStep?.call('Generating localization classes...');
+    onStep?.call('Generating localization classes…');
     await runTool(() => _generator.generateClasses(projectPath));
   }
 

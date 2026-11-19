@@ -6,6 +6,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/arb_keys.dart';
 import 'package:fide/models/l10n_config.dart';
 import 'package:fide/models/localization_data.dart';
+import 'package:fide/models/project_files.dart';
 import 'package:fide/models/text_truncation.dart';
 import 'package:fide/services/code_formatter.dart';
 import 'package:fide/services/project_config_reader.dart';
@@ -25,7 +26,7 @@ class ArbService {
   static const String localeKey = '@@locale';
 
   /// Extension of ARB files.
-  static const String _arbExtension = '.arb';
+  static const String arbExtension = '.arb';
 
   /// Byte-order mark some editors put at the start of ARB files.
   static const String _byteOrderMark = '\uFEFF';
@@ -57,8 +58,8 @@ class ArbService {
   /// The ARB file at [path], decoded; null when it does not exist or is
   /// not a JSON object.
   static Future<Map<String, dynamic>?> read(String path) async {
-    final file = File(path);
-    return await file.exists() ? decode(await file.readAsString()) : null;
+    final content = await ProjectConfigReader.readIfExists(path);
+    return content == null ? null : decode(content);
   }
 
   /// Writes [arb] as the ARB file at [path].
@@ -80,14 +81,8 @@ class ArbService {
 
   /// Paths of the ARB files directly in [directory]; none when it does
   /// not exist.
-  static Future<List<String>> arbFilesIn(String directory) async {
-    final folder = Directory(directory);
-    if (!await folder.exists()) return [];
-    return [
-      await for (final entity in folder.list())
-        if (entity is File && entity.path.endsWith(_arbExtension)) entity.path,
-    ];
-  }
+  static Future<List<String>> arbFilesIn(String directory) =>
+      ProjectFiles.filesIn(directory, extension: arbExtension);
 
   /// Number of translatable entries (keys not starting with `@`) in ARB
   /// [content], or null when it isn't valid.
@@ -121,19 +116,20 @@ class ArbService {
     final malformed = <String>[];
 
     if (await directory.exists()) {
-      await for (final entity in directory.list(recursive: true)) {
-        if (entity is File && entity.path.endsWith(_arbExtension)) {
-          ArbFile? arbFile;
-          try {
-            arbFile = await parseArbFile(entity.path);
-          } catch (e) {
-            _logger.severe('Error parsing ARB file ${entity.path}: $e');
-          }
-          if (arbFile == null) {
-            malformed.add(entity.path);
-          } else {
-            valid.add(arbFile);
-          }
+      await for (final file in ProjectFiles.walk(
+        directoryPath,
+        extension: arbExtension,
+      )) {
+        ArbFile? arbFile;
+        try {
+          arbFile = await parseArbFile(file.path);
+        } catch (e) {
+          _logger.severe('Error parsing ARB file ${file.path}: $e');
+        }
+        if (arbFile == null) {
+          malformed.add(file.path);
+        } else {
+          valid.add(arbFile);
         }
       }
     }

@@ -9,7 +9,7 @@ part 'dry_review.dry_fix.dart';
 part 'dry_review.dry_location.dart';
 part 'dry_review.dry_variant.dart';
 
-/// What the DRY Review shows for a project: the repeated widget settings
+/// What the Analyzer tab's Repeated Widget Settings review shows for a project: the repeated widget settings
 /// found across its `lib` folder, read once off the UI thread.
 ///
 /// Evaluation: FIDE finds these itself for now; once they prove useful,

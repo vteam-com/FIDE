@@ -58,7 +58,7 @@ class DryFinding {
         '- `${variant.source}` at ${variant.locations.join(', ')}',
     ];
     return [
-      'DRY Review finding "$title" (${kind.label}): $widget is built '
+      'Repeated widget settings "$title" (${kind.label}): $widget is built '
           '${setting == null ? 'alike' : 'alike except for `$setting`'} in '
           '$locationCount places of $fileCount files, written as:',
       ...places,

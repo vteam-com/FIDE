@@ -24,7 +24,6 @@ class _FakeGit extends GitService {
   Future<({String oldText, String newText})?> diffAgainstHead(
     String filePath, {
     String? newText,
-    bool staged = false,
   }) async {
     final oldText = headText;
     if (oldText == null) return null;

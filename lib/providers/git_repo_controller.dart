@@ -8,6 +8,7 @@ import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+part 'git_repo_controller.git_activity.dart';
 part 'git_repo_controller.git_messages.dart';
 part 'git_repo_controller.git_repo_state.dart';
 
@@ -28,6 +29,10 @@ class GitRepoController extends AsyncNotifier<GitRepoState> {
 
   /// Folder of the repository.
   final String projectPath;
+
+  /// The network action running now, which every state loaded meanwhile
+  /// carries.
+  GitActivity? _activity;
 
   /// The reload running now, if any.
   Future<void>? _reloading;
@@ -86,14 +91,14 @@ class GitRepoController extends AsyncNotifier<GitRepoState> {
   ///
   /// The editor's line counts are read again too, with which repository
   /// each file is in: the repository may just have been initialized.
-  Future<void> refresh() async {
+  Future<void> refresh() => _run(GitActivity.refresh, () async {
     invalidateGitDiffStats(ref, repositories: true);
     await reload();
     if (!ref.mounted) return;
     if (await ref.read(gitServiceProvider).fetch(projectPath)) {
       await reload();
     }
-  }
+  });
 
   /// A commit message the AI writes from the staged changes; empty when
   /// it writes none. Throws an `AiCancelledException` when [cancel] stops
@@ -132,10 +137,12 @@ class GitRepoController extends AsyncNotifier<GitRepoState> {
       _mutate((git) => git.amend(projectPath, message));
 
   /// Pushes local commits.
-  Future<void> push() => _mutate((git) => git.push(projectPath));
+  Future<void> push() =>
+      _run(GitActivity.push, () => _mutate((git) => git.push(projectPath)));
 
   /// Pulls remote commits.
-  Future<void> pull() => _mutate((git) => git.pull(projectPath));
+  Future<void> pull() =>
+      _run(GitActivity.pull, () => _mutate((git) => git.pull(projectPath)));
 
   /// Status, then everything derived from it, of the repository.
   Future<GitRepoState> _load(GitService git) async {
@@ -154,7 +161,30 @@ class GitRepoController extends AsyncNotifier<GitRepoState> {
       ahead: counts.ahead,
       behind: counts.behind,
       canAmend: canAmend,
+      activity: _activity,
     );
+  }
+
+  /// Runs [action] as [activity], which the state shows meanwhile; does
+  /// nothing while another network action runs.
+  Future<void> _run(
+    GitActivity activity,
+    Future<void> Function() action,
+  ) async {
+    if (_activity != null) return;
+    _showActivity(activity);
+    try {
+      await action();
+    } finally {
+      _showActivity(null);
+    }
+  }
+
+  /// Marks [activity] as running, on the loaded state too.
+  void _showActivity(GitActivity? activity) {
+    _activity = activity;
+    final current = ref.mounted ? state.value : null;
+    if (current != null) state = AsyncData(current.withActivity(activity));
   }
 
   /// Runs the mutating Git [action], then reloads, also the editor's line

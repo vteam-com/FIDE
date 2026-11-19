@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fide/models/dart_imports.dart';
 import 'package:fide/models/preview_scan.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:path/path.dart' as p;
@@ -29,17 +30,14 @@ class PreviewRegistry {
       '({String function, int line, Object Function() annotation, '
       'Object? Function() build})';
 
-  /// Prefix of the package URIs of the project's `lib` files.
-  static const String _packageScheme = 'package:';
-
   /// The project's root folder.
   final String projectPath;
 
   /// The project's package name.
   final String packageName;
 
-  /// The host's folder, absolute.
-  String get _hostPath => p.join(projectPath, folder);
+  /// The registry file, absolute.
+  String get _registryPath => p.join(projectPath, folder, _registryFile);
 
   /// Writes the host's entry point from [hostSource].
   Future<void> writeHost(String hostSource) =>
@@ -47,11 +45,10 @@ class PreviewRegistry {
 
   /// Writes the registry of the previews [scan] found in [filePath].
   Future<void> writeRegistry(String filePath, PreviewScan scan) =>
-      _write(p.join(_hostPath, _registryFile), source(filePath, scan));
+      _write(_registryPath, source(filePath, scan));
 
   /// Writes a registry listing no preview, so the host renders nothing.
-  Future<void> writeEmptyRegistry() =>
-      _write(p.join(_hostPath, _registryFile), emptySource);
+  Future<void> writeEmptyRegistry() => _write(_registryPath, emptySource);
 
   /// Writes [content] to the file at absolute [path], creating its folder.
   static Future<void> _write(String path, String content) async {
@@ -114,10 +111,8 @@ class PreviewRegistry {
   /// How the host imports the file at absolute [path].
   String _uriOfFile(String path) {
     final lib = ProjectPaths(projectPath).libDir;
-    if (p.isWithin(lib, path)) {
-      final relative = p.split(p.relative(path, from: lib));
-      return '$_packageScheme$packageName/${p.url.joinAll(relative)}';
-    }
-    return p.url.joinAll(p.split(p.relative(path, from: _hostPath)));
+    return p.isWithin(lib, path)
+        ? packageUriOf(packageName, p.relative(path, from: lib))
+        : relativeUriOf(path, from: _registryPath);
   }
 }

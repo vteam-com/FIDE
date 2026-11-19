@@ -3,17 +3,20 @@ import 'package:fide/models/action_outcome.dart';
 import 'package:fide/models/dependency_version.dart';
 import 'package:fide/models/project_info_state.dart';
 import 'package:fide/models/project_metrics.dart';
+import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/project_info_controller.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widget_services/output_panel.dart';
+import 'package:fide/widget_services/quick_fix_prompts.dart';
 import 'package:fide/widgets/busy_bar.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/empty_label.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/open_url.dart';
+import 'package:fide/widgets/quick_fix_icon.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -96,13 +99,16 @@ class PackagesSection extends ConsumerWidget {
                     ? null
                     : () => show(controller.checkOutdated()),
               ),
+              // The quick fix the CocoaPods issue offers too: one upgrade,
+              // confirmed alike
               CompactTextButton(
-                icon: Icons.arrow_upward,
+                icon: QuickFix.upgradePackages.icon,
                 label: 'Upgrade',
                 tooltip: 'Raise constraints to the latest resolvable versions',
                 onPressed: pubBusy
                     ? null
-                    : () => show(controller.upgradePackages()),
+                    : () =>
+                          applyQuickFix(context, ref, QuickFix.upgradePackages),
               ),
               CompactIconButton(
                 icon: Icons.edit_note,
@@ -117,7 +123,7 @@ class PackagesSection extends ConsumerWidget {
         // What pub printed, always shown when present
         if (info.outdatedOutput case final output?)
           OutputPanel(
-            title: 'Package Analysis Output',
+            title: 'Outdated Packages',
             text: output,
             isExpanded: true,
           ),

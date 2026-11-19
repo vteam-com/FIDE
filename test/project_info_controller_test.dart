@@ -1,4 +1,3 @@
-import 'package:fide/models/outdated_package.dart';
 import 'package:fide/models/project_info_state.dart';
 import 'package:fide/models/project_metrics.dart';
 import 'package:fide/models/pub_outdated.dart';
@@ -43,14 +42,16 @@ class FakeMaintenance extends ProjectMaintenanceService {
   static List<PubOutdatedPackage> upgraded = const [];
 
   @override
-  Future<({String output, Map<String, OutdatedPackage> packages})>
+  Future<({String output, Map<String, PubOutdatedPackage> packages})>
   outdatedReport(String projectPath) async {
     chores.add('outdated');
     if (failure case final error?) throw error;
     return (
       output: 'http 1.0.0 -> 1.1.0',
       packages: {
-        'http': const OutdatedPackage(
+        'http': const PubOutdatedPackage(
+          name: 'http',
+          kind: PubOutdatedPackage.directKind,
           current: '1.0.0',
           upgradable: '1.1.0',
           resolvable: '1.1.0',

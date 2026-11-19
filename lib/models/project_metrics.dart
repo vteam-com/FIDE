@@ -1,5 +1,5 @@
 import 'package:fide/models/dependency_version.dart';
-import 'package:fide/models/outdated_package.dart';
+import 'package:fide/models/pub_outdated.dart';
 
 /// What the Info panel shows about a project; produced by `ProjectAnalyzer`
 /// and cached per project by `ProjectMetricsNotifier`.
@@ -32,7 +32,7 @@ class ProjectMetrics {
   final Map<String, int> directoryStructure;
 
   /// Packages `flutter pub outdated` reported, by name.
-  final Map<String, OutdatedPackage> outdated;
+  final Map<String, PubOutdatedPackage> outdated;
 
   /// Creates metrics from an analysis.
   const ProjectMetrics({
@@ -62,12 +62,11 @@ class ProjectMetrics {
       devDependencies: versionsOf('devDependencies'),
       fileStats: mapOf<int>('fileStats'),
       directoryStructure: mapOf<int>('directoryStructure'),
-      outdated: outdated.map(
-        (package, row) => MapEntry(
-          package,
-          OutdatedPackage.fromJson(row as Map<String, dynamic>),
-        ),
-      ),
+      // Rows cached before pub's JSON was read have no name: dropped
+      outdated: {
+        for (final MapEntry(key: name, value: row) in outdated.entries)
+          name: ?PubOutdatedPackage.fromJson(row as Map<String, dynamic>),
+      },
     );
   }
 
@@ -75,7 +74,7 @@ class ProjectMetrics {
   int get totalFiles => fileStats.values.fold(0, (sum, count) => sum + count);
 
   /// Returns a copy with the outdated packages replaced.
-  ProjectMetrics copyWith({Map<String, OutdatedPackage>? outdated}) {
+  ProjectMetrics copyWith({Map<String, PubOutdatedPackage>? outdated}) {
     return ProjectMetrics(
       name: name,
       version: version,

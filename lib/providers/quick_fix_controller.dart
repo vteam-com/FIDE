@@ -1,3 +1,4 @@
+import 'package:fide/models/arb_translation.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/readable_error.dart';
 import 'package:fide/models/status_tone.dart';
@@ -5,6 +6,8 @@ import 'package:fide/models/string_review.dart';
 import 'package:fide/providers/ai_chat_notifier.dart';
 import 'package:fide/providers/ai_request.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/arb_translator.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/quick_fix_runner.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,6 +23,7 @@ final quickFixControllerProvider = Provider<QuickFixController>(
     chat: ref.watch(aiChatProvider.notifier),
     requests: ref.watch(aiRequestsProvider),
     documents: ref.watch(openDocumentsProvider.notifier),
+    translator: ref.read(arbTranslatorProvider),
   ),
 );
 
@@ -30,15 +34,16 @@ final quickFixControllerProvider = Provider<QuickFixController>(
 class QuickFixController {
   /// Creates the controller running fixes with [_runner] on the project
   /// [_projectPath] gives, showing those asking the model in [_chat] and
-  /// sending the strings no fix can rewrite through [_requests]; the files
-  /// a fix writes are reloaded in [_documents], which re-analyzes the
-  /// project.
+  /// sending the strings no fix can rewrite through [_requests] and
+  /// translating one key with [_translator]; the files a fix writes are
+  /// reloaded in [_documents], which re-analyzes the project.
   QuickFixController({
     required this._projectPath,
     required this._runner,
     required this._chat,
     required this._requests,
     required this._documents,
+    required this._translator,
   });
 
   /// Label of the action reviewing hardcoded strings.
@@ -53,6 +58,8 @@ class QuickFixController {
   final AiRequests _requests;
 
   final QuickFixRunner _runner;
+
+  final ArbTranslator _translator;
 
   /// Applies [fix] to the open project once the user confirms it through
   /// [confirm], telling [notify] the outcome; a fix asking the model runs
@@ -97,16 +104,41 @@ class QuickFixController {
       fix.quickFix,
       confirm: confirm,
       notify: notify,
-      rewrite: (runner) => runner.applyStrings(review, fix, choice.strings),
+      rewrite: (_, _) => _runner.applyStrings(review, fix, choice.strings),
     );
   }
 
-  /// Runs [fix], or [rewrite] when given, as [apply] says.
+  /// Translates one ARB key into one language, [translation], as
+  /// [QuickFix.translateKeys] does every key: a task in the AI panel,
+  /// which its Stop cancels, once the AI is free; [notify] says when it
+  /// isn't. Does nothing without a project.
+  Future<void> translateKey(
+    ArbTranslation translation, {
+    required QuickFixNotice notify,
+  }) => _run(
+    QuickFix.translateKeys,
+    // The one key and language the user picked: nothing to confirm
+    confirm: (_, _) async => true,
+    notify: notify,
+    rewrite: (projectPath, cancel) async {
+      final result = await _translator.apply(
+        projectPath,
+        [translation],
+        onProgress: (step) => _chat.addReply(step, isProgress: true),
+        cancel: cancel,
+      );
+      return (summary: result.summary, changedFiles: result.changedFiles);
+    },
+  );
+
+  /// Runs [fix], or [rewrite] of the project with the task's cancel token
+  /// when given, as [apply] says.
   Future<void> _run(
     QuickFix fix, {
     required QuickFixConfirmation confirm,
     required QuickFixNotice notify,
-    Future<QuickFixOutcome> Function(QuickFixRunner)? rewrite,
+    Future<QuickFixOutcome> Function(String projectPath, AiCancelToken cancel)?
+    rewrite,
   }) async {
     final projectPath = _projectPath();
     if (projectPath == null) return;
@@ -127,9 +159,11 @@ class QuickFixController {
     }
 
     if (!fix.usesAi) notify('${fix.label}…', StatusTone.info);
+    // A rewrite runs unasked: the user picked what it rewrites
+    if (rewrite != null) showInChat();
     try {
       final outcome =
-          await (rewrite?.call(_runner) ??
+          await (rewrite?.call(projectPath, cancel) ??
               _runner.run(
                 projectPath,
                 fix,

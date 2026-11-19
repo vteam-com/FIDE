@@ -1,8 +1,11 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/ollama_step.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/create_project_draft_notifier.dart';
+import 'package:fide/providers/ollama_status_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/tool_availability_provider.dart';
+import 'package:fide/widget_services/ollama_setup_action.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/check_list_tile.dart';
 import 'package:fide/widgets/secondary_button.dart';
@@ -81,7 +84,8 @@ class _CreateProjectStep1State extends ConsumerState<CreateProjectStep1> {
     final draft = ref.watch(createProjectDraftProvider);
     final tools = ref.watch(toolAvailabilityProvider).value;
     final packageName = draft.packageName;
-    final ollamaAvailable = tools?.ollamaAvailable ?? false;
+    // Ready as the AI panel sees it: installed, running, with a model
+    final aiReady = ref.watch(ollamaStatusProvider).value == OllamaStep.ready;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: AppSpacing.xxLarge,
@@ -141,15 +145,16 @@ class _CreateProjectStep1State extends ConsumerState<CreateProjectStep1> {
             style: AppTextStyle.label,
           ),
           value: draft.useAi,
-          onChanged: ollamaAvailable ? _notifier.setUseAi : null,
+          onChanged: aiReady ? _notifier.setUseAi : null,
         ),
+        if (!aiReady) const OllamaSetupAction(),
 
         // Description field only if AI is enabled AND Ollama is available
-        if (draft.useAi && ollamaAvailable)
+        if (draft.useAi && aiReady)
           AppTextField(
             controller: _descriptionController,
             labelText: 'App Description (AI-powered generation)',
-            hintText: 'Describe what kind of app you want to create...',
+            hintText: 'Describe what kind of app you want to create…',
             maxLines: AppMetric.aiInputMaxLines,
             minLines: AppMetric.doubleLineLimit,
             onChanged: _notifier.setDescription,

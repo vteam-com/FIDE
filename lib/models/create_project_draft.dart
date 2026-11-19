@@ -95,16 +95,19 @@ class CreateProjectDraft {
   );
 
   /// The request creating this draft's project with the installed [tools];
-  /// AI generation and Git only run when their tool is available.
-  ProjectCreationRequest toRequest(ToolAvailability tools) =>
-      ProjectCreationRequest(
-        name: packageName ?? ProjectName.fallback,
-        parentDirectory: parentDirectory ?? '',
-        flutterAvailable: tools.flutterAvailable,
-        languages: wantsLocalization ? {...languages} : null,
-        defaultLanguage: defaultLanguage,
-        useAi: useAi && tools.ollamaAvailable,
-        description: useAi ? description.trim() : '',
-        initGit: tools.gitAvailable,
-      );
+  /// Git only runs when it is installed, AI generation when the model is
+  /// [aiReady].
+  ProjectCreationRequest toRequest(
+    ToolAvailability tools, {
+    required bool aiReady,
+  }) => ProjectCreationRequest(
+    name: packageName ?? ProjectName.fallback,
+    parentDirectory: parentDirectory ?? '',
+    flutterAvailable: tools.flutterAvailable,
+    languages: wantsLocalization ? {...languages} : null,
+    defaultLanguage: defaultLanguage,
+    useAi: useAi && aiReady,
+    description: useAi ? description.trim() : '',
+    initGit: tools.gitAvailable,
+  );
 }

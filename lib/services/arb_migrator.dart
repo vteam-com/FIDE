@@ -42,6 +42,9 @@ class ArbMigrator {
   /// Suffix of the file the hand-written code moves to.
   static const String _movedSuffix = '_extensions.dart';
 
+  /// Extension of Dart files.
+  static const String _dartExtension = '.dart';
+
   final CodeFormatter _formatter;
 
   final ProjectConfigReader _config;
@@ -61,8 +64,7 @@ class ArbMigrator {
     fcheck.LocalizationSync sync,
   ) async {
     final config = await _config.l10nConfig(projectPath);
-    final packageName = await _config.packageName(projectPath);
-    if (packageName == null) throw Exception('pubspec.yaml has no name');
+    final packageName = await _config.requirePackageName(projectPath);
     final outputDir = p.dirname(sync.generatedFilePath);
     final stem = p.basenameWithoutExtension(sync.generatedFilePath);
     final template = config.templateParts;
@@ -103,8 +105,8 @@ class ArbMigrator {
       moved,
     );
     final snapshot = await _snapshot([
-      ...await _filesIn(arbDir, '.arb'),
-      ...await _filesIn(outputDir, '.dart'),
+      ...await ProjectFiles.filesIn(arbDir, extension: ArbService.arbExtension),
+      ...await ProjectFiles.filesIn(outputDir, extension: _dartExtension),
       ...callers.keys,
       movedPath,
     ]);
@@ -123,9 +125,10 @@ class ArbMigrator {
           "import 'package:flutter/widgets.dart';\n\n"
           "import '$stem.dart';\n\n${moved.source}\n",
         );
-        final movedUri =
-            'package:$packageName/'
-            '${p.posix.relative(p.relative(movedPath, from: projectPath), from: 'lib')}';
+        final movedUri = packageUriOf(
+          packageName,
+          p.relative(movedPath, from: ProjectPaths(projectPath).libDir),
+        );
         for (final MapEntry(key: path, value: content) in callers.entries) {
           await File(path).writeAsString(
             withImport(
@@ -192,7 +195,7 @@ class ArbMigrator {
     final classUse = RegExp('\\b$outputClass\\b');
     await for (final file in ProjectFiles.walk(
       ProjectPaths(projectPath).libDir,
-      extension: '.dart',
+      extension: _dartExtension,
     )) {
       final path = file.path;
       if (p.isWithin(outputDir, path) || p.equals(p.dirname(path), outputDir)) {
@@ -216,17 +219,6 @@ class ArbMigrator {
     return callers;
   }
 
-  /// Files directly in [directory] ending with [extension]; none when it
-  /// does not exist.
-  Future<List<String>> _filesIn(String directory, String extension) async {
-    final folder = Directory(directory);
-    if (!await folder.exists()) return [];
-    return [
-      await for (final entity in folder.list())
-        if (entity is File && entity.path.endsWith(extension)) entity.path,
-    ];
-  }
-
   /// Each locale's translations from the `<stem>_<locale>.dart` files in
   /// [outputDir].
   Future<Map<String, DartTranslations>> _readLocales(
@@ -235,7 +227,10 @@ class ArbMigrator {
     String outputClass,
   ) async {
     return {
-      for (final path in await _filesIn(outputDir, '.dart'))
+      for (final path in await ProjectFiles.filesIn(
+        outputDir,
+        extension: _dartExtension,
+      ))
         if (L10nConfig.localeParts(p.basename(path))
             case (:final prefix, :final locale) when prefix == '${stem}_')
           locale: _translations.parse(
@@ -248,7 +243,10 @@ class ArbMigrator {
   /// Puts back every file of [snapshot] and deletes the Dart files
   /// generated in [outputDir] since.
   Future<void> _restore(Map<String, String?> snapshot, String outputDir) async {
-    for (final path in await _filesIn(outputDir, '.dart')) {
+    for (final path in await ProjectFiles.filesIn(
+      outputDir,
+      extension: _dartExtension,
+    )) {
       if (!snapshot.containsKey(path)) await File(path).delete();
     }
     for (final MapEntry(key: path, value: content) in snapshot.entries) {
@@ -264,7 +262,7 @@ class ArbMigrator {
   /// The content of each of [paths], null for files that do not exist.
   Future<Map<String, String?>> _snapshot(Iterable<String> paths) async => {
     for (final path in paths)
-      path: await File(path).exists() ? await File(path).readAsString() : null,
+      path: await ProjectConfigReader.readIfExists(path),
   };
 
   /// Writes [dart]'s messages into the ARB file at [path], keeping its

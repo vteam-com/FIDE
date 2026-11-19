@@ -7,7 +7,6 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/project_actions.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/arb_service.dart';
-import 'package:fide/services/arb_translator.dart';
 import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/process_runner.dart';
@@ -31,7 +30,6 @@ final localizationControllerProvider =
         setup: ref.read(localizationSetupProvider),
         generator: ref.read(l10nGeneratorProvider),
         arb: ref.read(arbServiceProvider),
-        translator: ref.read(arbTranslatorProvider),
       );
       ref.listen(stringIssuesProvider, (previous, next) {
         if (previous != null && next != null) controller.reload();
@@ -63,15 +61,12 @@ class LocalizationController extends StateNotifier<LocalizationState>
   @override
   final String? projectPath;
 
-  final ArbTranslator _translator;
-
   /// Creates a controller for the project at [projectPath].
   LocalizationController(
     this.projectPath, {
     required this._setup,
     required this._generator,
     required this._arb,
-    required this._translator,
   }) : super(LocalizationState.initial);
 
   /// Generates the localization classes with `flutter gen-l10n`, once the
@@ -97,7 +92,7 @@ class LocalizationController extends StateNotifier<LocalizationState>
       projectPath,
     ) async {
       await _setup.initializeLocalization(projectPath, onStep: onStep);
-      onStep?.call('Updating main.dart...');
+      onStep?.call('Updating main.dart…');
       await _setup.updateMainDartForLocalization(projectPath);
       await reload();
       return const ActionOutcome.success(
@@ -122,32 +117,21 @@ class LocalizationController extends StateNotifier<LocalizationState>
     await _loadArbFiles(projectPath);
   }
 
-  /// Translates [comparison]'s English value into [language] with the
-  /// shared [ArbTranslator], writing it to that language's ARB file.
-  Future<ActionOutcome?> translate(ArbComparison comparison, String language) {
-    return runAction('Error translating', _busy, (projectPath) async {
-      final source = comparison.englishValue;
-      final target = state.arbFiles
-          .where((file) => file.languageCode == language)
-          .firstOrNull;
-      if (source == null || target == null) {
-        return ActionOutcome.failure(
-          'Nothing to translate for "${comparison.key}" into $language',
-        );
-      }
-      final result = await _translator.apply(projectPath, [
-        ArbTranslation(
-          key: comparison.key,
-          source: source,
-          language: language,
-          arbPath: target.path,
-        ),
-      ]);
-      await reload();
-      return result.rewritten > 0
-          ? ActionOutcome.success('Translated "${comparison.key}" to $language')
-          : ActionOutcome.failure('Translation failed: ${result.summary}');
-    });
+  /// The translation of [comparison]'s English value into [language],
+  /// written to that language's ARB file; null when there is no English
+  /// value or no ARB file for [language].
+  ArbTranslation? translationOf(ArbComparison comparison, String language) {
+    final source = comparison.englishValue;
+    final target = state.arbFiles
+        .where((file) => file.languageCode == language)
+        .firstOrNull;
+    if (source == null || target == null) return null;
+    return ArbTranslation(
+      key: comparison.key,
+      source: source,
+      language: language,
+      arbPath: target.path,
+    );
   }
 
   /// Wires the generated localizations into `main.dart`.

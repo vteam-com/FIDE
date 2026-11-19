@@ -11,6 +11,19 @@ const String _l10n = 'l10n';
 /// The `const` keyword with the spaces after it.
 final RegExp _constKeyword = RegExp(r'const\s+');
 
+/// The edits deleting the `const` keyword at each of [offsets] in
+/// [content], with the spaces after it, as offset → (length, replacement);
+/// an offset no longer holding one is left out. fCheck gives the offsets
+/// of the keywords that would make a localized string's lookup constant.
+Map<int, (int, String)> constKeywordRemovals(
+  String content,
+  Iterable<int> offsets,
+) => {
+  for (final offset in offsets)
+    if (_constKeyword.matchAsPrefix(content, offset) case final match?)
+      offset: (match.end - offset, ''),
+};
+
 /// Turns [LookupField]s into lookup functions: each field's `String` type
 /// becomes `String Function(AppLocalizations l10n)`, each read calls it
 /// with the localizations of the `BuildContext` there, each hardcoded
@@ -98,13 +111,12 @@ class LookupRewrite {
           argument.length,
           '($_l10n) => ${string.message.lookup(_l10n, key)}',
         );
-        final content = contents[argument.path]!;
-        for (final offset in string.site.constKeywordOffsets) {
-          final match = _constKeyword.matchAsPrefix(content, offset);
-          if (match != null) {
-            edit(argument.path, offset, match.end - offset, '');
-          }
-        }
+        (edits[argument.path] ??= {}).addAll(
+          constKeywordRemovals(
+            contents[argument.path]!,
+            string.site.constKeywordOffsets,
+          ),
+        );
         localized++;
       }
       for (final read in field.reads) {

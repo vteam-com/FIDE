@@ -11,7 +11,7 @@ class _FileFacts {
       isApp = content.contains('MaterialApp('),
       declaresWidget = _declaresWidget(content),
       showsDialog = content.contains('showDialog'),
-      arbEntries = path.endsWith(ProjectCategorizer._arbExtension)
+      arbEntries = path.endsWith(ArbService.arbExtension)
           ? ArbService.countEntries(content)
           : null;
 

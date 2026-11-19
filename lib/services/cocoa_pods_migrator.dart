@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/models/cocoa_pods_migration.dart';
 import 'package:fide/models/flutter_platform.dart';
+import 'package:fide/models/project_files.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/pubspec.dart';
 import 'package:fide/services/process_runner.dart';
@@ -133,18 +134,17 @@ class CocoaPodsMigrator {
   /// Drops the CocoaPods `#include` lines of the xcconfig files in
   /// [folder]; returns the files it rewrote.
   Future<List<String>> _dropPodsIncludes(String folder) async {
-    final directory = Directory(folder);
-    if (!directory.existsSync()) return const [];
     final changed = <String>[];
-    await for (final entity in directory.list()) {
-      if (entity is! File || p.extension(entity.path) != _xcconfigExtension) {
-        continue;
-      }
-      final content = await entity.readAsString();
+    for (final path in await ProjectFiles.filesIn(
+      folder,
+      extension: _xcconfigExtension,
+    )) {
+      final file = File(path);
+      final content = await file.readAsString();
       final cleaned = withoutPodsIncludes(content);
       if (cleaned != content) {
-        await entity.writeAsString(cleaned);
-        changed.add(entity.path);
+        await file.writeAsString(cleaned);
+        changed.add(path);
       }
     }
     return changed;

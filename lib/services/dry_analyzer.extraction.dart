@@ -106,7 +106,7 @@ class _Extraction {
       for (final name in fields.keys)
         if (_group.every((call) => call.argumentNamed(name) != null)) name,
     };
-    final importUri = 'package:$package/${_widgetPath(withLib: false)}';
+    final importUri = packageUriOf(package, _widgetPath(withLib: false));
     return DryFix(
       'Extract widget…',
       [for (final call in _group) _rewrite(call, fields, importUri)],

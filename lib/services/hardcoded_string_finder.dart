@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/models/hardcoded_string.dart';
-import 'package:path/path.dart' as p;
+import 'package:fide/models/quality_issues.dart';
 
 /// Finds the hardcoded strings fCheck located that can still be rewritten
 /// where they are, for the quick fixes that rewrite them.
@@ -47,9 +47,7 @@ class HardcodedStringFinder {
         count(skipped, unparsed);
         continue;
       }
-      final path = p.normalize(
-        p.join(metrics.analysisRootPath, issue.filePath),
-      );
+      final path = metrics.absolutePathOf(issue.filePath);
       // Adjacent strings share one site
       (sitesByFile[path] ??= {})[site.offset] = (issue.lineNumber, site);
     }

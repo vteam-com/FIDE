@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:path/path.dart' as p;
 
@@ -22,17 +23,11 @@ abstract class DesktopShell {
   factory DesktopShell.forOperatingSystem(
     String operatingSystem,
     ProcessRunner runner,
-  ) => switch (operatingSystem) {
-    macOS => MacDesktopShell(runner),
-    windows => WindowsDesktopShell(runner),
+  ) => switch (FlutterPlatform.fromId(operatingSystem)) {
+    FlutterPlatform.macos => MacDesktopShell(runner),
+    FlutterPlatform.windows => WindowsDesktopShell(runner),
     _ => LinuxDesktopShell(runner),
   };
-
-  /// [Platform.operatingSystem] on macOS.
-  static const String macOS = 'macos';
-
-  /// [Platform.operatingSystem] on Windows.
-  static const String windows = 'windows';
 
   /// Launches the shell's commands.
   final ProcessRunner runner;

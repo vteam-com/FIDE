@@ -34,8 +34,8 @@ class ProjectCategorizer {
   /// The facts of the files read, by path, kept across runs.
   final Map<String, _FileFacts> _facts = {};
 
-  /// Extension of ARB files, whose translations are counted.
-  static const String _arbExtension = '.arb';
+  /// The project's Dart source folder.
+  static const String _libFolder = 'lib';
 
   /// Creates a categorizer that loads unread folders with [_reader],
   /// groups assets with [_assets] and reads files with [_readFile]
@@ -65,8 +65,8 @@ class ProjectCategorizer {
     };
     for (final category in CodeCategory.values) {
       for (final directory in category.directories) {
-        final node = _findDirectory(root, directory);
-        if (node == null) continue;
+        final node = root.descendantAt(directory);
+        if (node == null || node.isFile) continue;
         if (node.children.isEmpty) await _reader.loadChildren(node);
         nodes[category]!.addAll(node.children);
       }
@@ -75,12 +75,12 @@ class ProjectCategorizer {
     final categorized = {
       for (final list in nodes.values) ..._files(list).map((node) => node.path),
     };
-    final lib = _findDirectory(root, 'lib');
-    final unmatched = lib == null
+    final lib = root.descendantAt(_libFolder);
+    final unmatched = lib == null || lib.isFile
         ? const <ProjectNode>[]
-        : _files([
-            lib,
-          ]).where((node) => _isDart(node) && !categorized.contains(node.path));
+        : lib.files().where(
+            (node) => _isDart(node) && !categorized.contains(node.path),
+          );
     for (final file in unmatched) {
       final facts = await factsOf(file);
       if (facts == null) continue;
@@ -192,7 +192,7 @@ class ProjectCategorizer {
           multiClassFiles[file.path] = rulePublicClasses;
         }
       } else if (category == CodeCategory.localization &&
-          file.path.endsWith(_arbExtension)) {
+          file.path.endsWith(ArbService.arbExtension)) {
         elements += (await factsOf(file))?.arbEntries ?? 0;
       }
     }
@@ -203,27 +203,9 @@ class ProjectCategorizer {
     );
   }
 
-  /// The loaded directory at project-relative [relativePath], or null.
-  static ProjectNode? _findDirectory(ProjectNode root, String relativePath) {
-    ProjectNode? current = root;
-    for (final part in relativePath.split('/')) {
-      current = current?.children
-          .where((child) => child.isDirectory && child.name == part)
-          .firstOrNull;
-    }
-    return current;
-  }
-
   /// Every file in [nodes] and their loaded subtrees.
-  static Iterable<ProjectNode> _files(Iterable<ProjectNode> nodes) sync* {
-    for (final node in nodes) {
-      if (node.isDirectory) {
-        yield* _files(node.children);
-      } else {
-        yield node;
-      }
-    }
-  }
+  static Iterable<ProjectNode> _files(Iterable<ProjectNode> nodes) =>
+      nodes.expand((node) => node.files());
 
   static bool _isDart(ProjectNode node) =>
       !node.isDirectory && node.path.endsWith('.dart');

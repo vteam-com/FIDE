@@ -12,7 +12,7 @@ final dryAnalyzerProvider = Provider<DryAnalyzer>((_) => const DryAnalyzer());
 /// The reviews behind [dryReviewProvider], one at a time.
 final _dryReviewRunsProvider = Provider<SerialRuns>((_) => SerialRuns());
 
-/// What the Analyzer tab's DRY Review shows for the open project:
+/// What the Analyzer tab's Repeated Widget Settings review shows for the open project:
 /// reviewed again once saves pause while the tab shows it, one review at
 /// a time, and kept while other tabs do (a review takes seconds); null
 /// without a project.

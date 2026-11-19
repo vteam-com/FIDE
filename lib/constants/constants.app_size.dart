@@ -107,12 +107,6 @@ class AppSize {
   /// Width of the audio editor's trim handles and playhead.
   static const double audioMarkerWidth = 2;
 
-  /// Share of the window's width a file's diff dialog takes.
-  static const double diffDialogWidthFactor = 0.8;
-
-  /// Share of the window's height a file's diff dialog takes.
-  static const double diffDialogHeightFactor = 0.6;
-
   /// Width of the details beside the architecture graph.
   static const double architectureDetailsWidth = 320;
 

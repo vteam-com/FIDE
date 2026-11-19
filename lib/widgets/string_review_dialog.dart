@@ -65,7 +65,6 @@ class StringReviewDialog extends StatefulWidget {
 
 class _StringReviewDialogState extends State<StringReviewDialog> {
   /// Marks the strings and the action left to the AI.
-  static const IconData _aiIcon = Icons.auto_fix_high;
 
   /// Strings by role, the empty roles left out.
   late final Map<fcheck.HardcodedStringRole, List<HardcodedString>> _byRole = {
@@ -156,7 +155,7 @@ class _StringReviewDialogState extends State<StringReviewDialog> {
             ),
         if (forAi.isNotEmpty)
           _action(
-            icon: _aiIcon,
+            icon: AppIcon.ai,
             label: 'Fix with AI',
             fix: null,
             strings: forAi,
@@ -240,7 +239,7 @@ class _StringReviewDialogState extends State<StringReviewDialog> {
     if (!isFixable) {
       return ListTile(
         dense: true,
-        leading: const Icon(_aiIcon),
+        leading: const Icon(AppIcon.ai),
         title: title,
         subtitle: subtitle,
         trailing: open,

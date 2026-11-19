@@ -59,8 +59,7 @@ class StringConstantsExtractor {
     fcheck.ProjectMetrics metrics,
   ) async {
     final paths = ProjectPaths(projectPath);
-    final packageName = await _config.packageName(projectPath);
-    if (packageName == null) throw Exception('pubspec.yaml has no name');
+    final packageName = await _config.requirePackageName(projectPath);
     final found = await HardcodedStringFinder.find(
       metrics,
       reject: (string) =>
@@ -69,7 +68,7 @@ class StringConstantsExtractor {
     return ConstantsPlan(
       className: _className,
       constantsPath: p.join(paths.libDir, _fileInLib),
-      importUri: 'package:$packageName/$_fileInLib',
+      importUri: packageUriOf(packageName, _fileInLib),
       candidates: found.candidates,
       rejected: found.rejected,
       skipped: found.skipped,
@@ -84,9 +83,7 @@ class StringConstantsExtractor {
     Iterable<HardcodedString> selected,
   ) async {
     final constantsFile = File(plan.constantsPath);
-    final existing = await constantsFile.exists()
-        ? await constantsFile.readAsString()
-        : null;
+    final existing = await ProjectConfigReader.readIfExists(plan.constantsPath);
     final nameByValue = {
       for (final match in _declaration.allMatches(existing ?? ''))
         DartStringLiteral.valueOf(match.namedGroup('value')!): match.namedGroup(

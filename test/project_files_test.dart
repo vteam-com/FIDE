@@ -61,4 +61,34 @@ void main() {
       throwsA(isA<FileSystemException>()),
     );
   });
+
+  test(
+    'filesIn lists the files directly in a folder with the extension',
+    () async {
+      for (final path in [
+        'l10n/app_en.arb',
+        'l10n/.app_fr.arb',
+        'l10n/x/app_de.arb',
+        'l10n/README.md',
+      ]) {
+        File(p.join(project.path, path)).createSync(recursive: true);
+      }
+
+      final files = await ProjectFiles.filesIn(
+        p.join(project.path, 'l10n'),
+        extension: '.arb',
+      );
+
+      expect(relative([for (final path in files) File(path)]), [
+        p.join('l10n', 'app_en.arb'),
+      ]);
+      expect(
+        await ProjectFiles.filesIn(
+          p.join(project.path, 'missing'),
+          extension: '.arb',
+        ),
+        isEmpty,
+      );
+    },
+  );
 }

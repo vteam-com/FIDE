@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fide/constants/constants.dart';
 import 'package:fide/providers/theme_mode_notifier.dart';
 import 'package:material_ui/material_ui.dart';
@@ -45,6 +47,19 @@ void main() {
       await notifier.select(ThemeMode.dark);
 
       expect(stateOf(notifier), ThemeMode.dark);
+    });
+
+    test('a load ending after a new value keeps the new value', () async {
+      SharedPreferences.setMockInitialValues({PrefKeys.themeMode: 'dark'});
+      final prefs = Completer<SharedPreferences>();
+      final notifier = ThemeModeNotifier(prefs.future);
+
+      final load = notifier.load();
+      final select = notifier.select(ThemeMode.light);
+      prefs.complete(await SharedPreferences.getInstance());
+      await (load, select).wait;
+
+      expect(stateOf(notifier), ThemeMode.light);
     });
 
     test('ignores a saved value it cannot decode', () async {

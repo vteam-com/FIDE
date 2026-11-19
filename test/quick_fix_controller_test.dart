@@ -1,15 +1,25 @@
 import 'dart:io';
 
+import 'package:fide/models/arb_translation.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/models/string_rewrite.dart';
 import 'package:fide/providers/ai_chat_notifier.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/quick_fix_controller.dart';
+import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/arb_translator.dart';
+import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/code_review.dart';
+import 'package:fide/services/l10n_generator.dart';
+import 'package:fide/services/process_runner.dart';
+import 'package:fide/services/project_config_reader.dart';
 import 'package:fide/services/quick_fix_handler.dart';
 import 'package:fide/services/quick_fix_runner.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'fake_chat_model.dart';
 
 /// A handler confirming once, then reporting [summary].
 class _ConfirmingHandler implements QuickFixHandler {
@@ -25,10 +35,39 @@ class _ConfirmingHandler implements QuickFixHandler {
   }
 }
 
+/// Reports every translation as written without asking a model.
+class _FakeTranslator extends ArbTranslator {
+  _FakeTranslator()
+    : super(
+        FakeChatModel(),
+        const ProjectConfigReader(),
+        const L10nGenerator(ProcessRunner()),
+      );
+
+  final List<ArbTranslation> applied = [];
+
+  @override
+  Future<StringRewrite> apply(
+    String projectPath,
+    List<ArbTranslation> translations, {
+    AiCancelToken? cancel,
+    void Function(String)? onProgress,
+  }) async {
+    applied.addAll(translations);
+    return StringRewrite(
+      action: 'Translated',
+      rewritten: translations.length,
+      changedFiles: const [],
+      skipped: const {},
+    );
+  }
+}
+
 void main() {
   late Directory project;
   late ProviderContainer container;
   late List<(String, StatusTone)> notices;
+  late _FakeTranslator translator;
 
   setUp(() {
     project = Directory.systemTemp.createTempSync('fide_quick_fix_');
@@ -37,8 +76,10 @@ void main() {
       ..createSync(recursive: true)
       ..writeAsStringSync('/// A.\nclass A {}\n');
     notices = [];
+    translator = _FakeTranslator();
     container = ProviderContainer(
       overrides: [
+        arbTranslatorProvider.overrideWithValue(translator),
         quickFixRunnerProvider.overrideWith(
           (ref) => QuickFixRunner(
             review: const CodeReview(),
@@ -86,6 +127,28 @@ void main() {
       [for (final message in chat.messages) message.content],
       [QuickFix.translateKeys.label, 'Working…', 'Translated'],
     );
+    expect(chat.isBusy, isFalse);
+  });
+
+  test('translates one key as a task in the AI panel', () async {
+    const translation = ArbTranslation(
+      key: 'hi',
+      source: 'Hello',
+      language: 'fr',
+      arbPath: '/p/lib/l10n/app_fr.arb',
+    );
+
+    await container
+        .read(quickFixControllerProvider)
+        .translateKey(
+          translation,
+          notify: (message, tone) => notices.add((message, tone)),
+        );
+
+    final chat = container.read(aiChatProvider);
+    expect(translator.applied, [translation]);
+    expect(notices, isEmpty);
+    expect(chat.messages.first.content, QuickFix.translateKeys.label);
     expect(chat.isBusy, isFalse);
   });
 

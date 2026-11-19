@@ -40,6 +40,11 @@ extension QualityIssues on fcheck.ProjectMetrics {
       'base language, keep every `{placeholder}` of the template, and '
       'remove duplicate or unused keys.';
 
+  /// The absolute, normalized path of a finding's [path], which fCheck
+  /// gives absolute or relative to the analyzed folder.
+  String absolutePathOf(String path) =>
+      p.normalize(p.join(analysisRootPath, path));
+
   /// The issue of the analyzer named [domain], or null when it found
   /// nothing that lowered the score.
   QualityIssue? issueFor(fcheck.AnalyzerDomain domain) {
@@ -225,9 +230,5 @@ extension QualityIssues on fcheck.ProjectMetrics {
   /// A finding at [line] of [path], which fCheck gives absolute or
   /// relative to the analyzed folder; a missing line is the first.
   QualityFinding _finding(String path, int? line, String text) =>
-      QualityFinding(
-        path: p.normalize(p.join(analysisRootPath, path)),
-        line: line ?? 1,
-        text: text,
-      );
+      QualityFinding(path: absolutePathOf(path), line: line ?? 1, text: text);
 }

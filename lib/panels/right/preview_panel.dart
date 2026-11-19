@@ -232,7 +232,7 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
             if (logs != null) () => logs,
           ]),
         ),
-        FilterField(controller: _filter, hintText: 'Filter previews...'),
+        FilterField(controller: _filter, hintText: 'Filter previews…'),
       ],
     );
   }
@@ -353,14 +353,16 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
           if (generated > 0)
             PrimaryButton(
               label: 'Generate Previews',
-              icon: Icons.auto_fix_high,
-              busy: state.isGenerating,
-              onPressed: _generate,
+              icon: AppIcon.fix,
+              // The Preview tab's ring shows the previews being written
+              onPressed: state.isGenerating ? null : _generate,
             ),
           if (skipped.isNotEmpty)
             SecondaryButton(
-              label: 'Ask AI for ${skipped.map((w) => w.name).join(', ')}',
-              icon: Icons.auto_awesome,
+              label:
+                  'Write previews of '
+                  '${skipped.map((w) => w.name).join(', ')} with AI',
+              icon: AppIcon.ai,
               onPressed: () => _controller.askAiForPreviews(skipped),
             ),
         ],

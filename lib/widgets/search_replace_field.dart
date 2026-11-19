@@ -81,7 +81,7 @@ class _SearchReplaceFieldState extends State<SearchReplaceField> {
                   AppTextField(
                     controller: widget.replaceController,
                     focusNode: _replaceFocusNode,
-                    hintText: 'Replace with...',
+                    hintText: 'Replace with…',
                     icon: Icons.find_replace,
                     onSubmitted: onReplace == null ? null : (_) => onReplace(),
                   ),

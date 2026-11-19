@@ -42,7 +42,7 @@ class _EditorScreenImageDiffViewState
   Future<({Uint8List? oldBytes, Uint8List newBytes})> _read() async {
     final path = widget.filePath;
     return (
-      oldBytes: await ref.read(gitServiceProvider).getBytesAt(path),
+      oldBytes: await ref.read(gitServiceProvider).getHeadBytes(path),
       newBytes: await ref.read(fileContentReaderProvider).readBytes(path),
     );
   }

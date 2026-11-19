@@ -238,10 +238,10 @@ class _Planner {
     final String newContent;
     if (tangled) {
       newContent =
-          "part of '${_relativeUri(rootPath, newPath)}';\n\n$classText\n";
+          "part of '${relativeUriOf(rootPath, from: newPath)}';\n\n$classText\n";
       insert(
         rootPath,
-        "part '${_relativeUri(newPath, rootPath)}';",
+        "part '${relativeUriOf(newPath, from: rootPath)}';",
         isPart: true,
       );
     } else {
@@ -255,7 +255,7 @@ class _Planner {
                   r.top.library == libraryElement &&
                   !isMoving(r.top),
             ))
-              "import '${_relativeUri(rootPath, newPath)}';",
+              "import '${relativeUriOf(rootPath, from: newPath)}';",
           ]..sort(
             (a, b) => _uriOrder(_lineUri(a)).compareTo(_uriOrder(_lineUri(b))),
           );
@@ -265,7 +265,7 @@ class _Planner {
       ].join('\n');
 
       if (outer.any((r) => r.top == moved)) {
-        insert(rootPath, "import '${_relativeUri(newPath, rootPath)}';");
+        insert(rootPath, "import '${relativeUriOf(newPath, from: rootPath)}';");
       }
       // Imports only the moved class used are no longer needed here
       for (final (neededUnit, directive) in needed) {
@@ -510,18 +510,17 @@ class _Planner {
     return source.replaceRange(
       start,
       start + directive.uri.length,
-      "'${_relativeUri(target, newPath)}'",
+      "'${relativeUriOf(target, from: newPath)}'",
     );
   }
-
-  /// Posix URI of [target] relative to the folder of [from].
-  static String _relativeUri(String target, String from) =>
-      p.posix.joinAll(p.split(p.relative(target, from: p.dirname(from))));
 
   /// [uri], which names [rootPath], re-pointed at [newPath].
   static String _siblingUri(String uri, String rootPath, String newPath) =>
       p.posix.normalize(
-        p.posix.join(p.posix.dirname(uri), _relativeUri(newPath, rootPath)),
+        p.posix.join(
+          p.posix.dirname(uri),
+          relativeUriOf(newPath, from: rootPath),
+        ),
       );
 
   /// [declaration]'s text with its comments, from the line after the
@@ -574,7 +573,7 @@ class _Planner {
   static String _uriOrder(String uri) {
     final group = uri.startsWith('dart:')
         ? _dartUriGroup
-        : uri.startsWith('package:')
+        : uri.startsWith(packageScheme)
         ? _packageUriGroup
         : _relativeUriGroup;
     return '$group$uri';

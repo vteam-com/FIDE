@@ -2,6 +2,7 @@
 // ignore: fcheck_dead_code
 
 import 'package:fide/models/asset_kind.dart';
+import 'package:fide/models/file_extension.dart';
 import 'package:path/path.dart' as p;
 import 'package:re_highlight/languages/bash.dart';
 import 'package:re_highlight/languages/c.dart';
@@ -44,6 +45,16 @@ part 'file_type_utils.file_view_kind.dart';
 class FileTypeUtils {
   /// The extension of Dart source files, as [extensionOf] gives it.
   static const String _dartExtension = 'dart';
+
+  /// The extension of vector images, as [extensionOf] gives it.
+  static const String _svgExtension = 'svg';
+
+  /// Image extensions the image viewer can't decode: HEIC needs a codec
+  /// neither Flutter on the desktop nor the `image` package has.
+  static const Set<String> _undecodedImages = {'heic'};
+
+  /// Font extensions the font viewer can't load: compressed web fonts.
+  static const Set<String> _unloadedFonts = {'woff', 'woff2'};
 
   /// Files typed by their whole name rather than their extension, such as
   /// extensionless scripts.
@@ -125,26 +136,20 @@ class FileTypeUtils {
     'out': const FileTypeInfo.text(FileCategory.text),
     'gitignore': const FileTypeInfo.text(FileCategory.text),
     'dockerignore': const FileTypeInfo.text(FileCategory.text),
-    // Images shown in the image viewer
-    'png': const FileTypeInfo.image(),
-    'jpg': const FileTypeInfo.image(),
-    'jpeg': const FileTypeInfo.image(),
-    'gif': const FileTypeInfo.image(),
-    'bmp': const FileTypeInfo.image(),
-    'webp': const FileTypeInfo.image(),
-    'tiff': const FileTypeInfo.image(),
-    'tif': const FileTypeInfo.image(),
-    'svg': const FileTypeInfo.image(),
+    // Images shown in the image viewer, except the ones it can't decode
+    for (final extension in AssetKind.images.extensions)
+      extension: _undecodedImages.contains(extension)
+          ? const FileTypeInfo.other(FileCategory.image)
+          : const FileTypeInfo.image(),
     // Sounds shown in the audio editor
     for (final extension in AssetKind.audio.extensions)
       extension: const FileTypeInfo.audio(),
-    // Fonts shown in the font viewer
-    'ttf': const FileTypeInfo.font(),
-    'otf': const FileTypeInfo.font(),
-    'ttc': const FileTypeInfo.font(),
+    // Fonts shown in the font viewer, except the ones it can't load
+    for (final extension in AssetKind.fonts.extensions)
+      extension: _unloadedFonts.contains(extension)
+          ? const FileTypeInfo.other(FileCategory.font)
+          : const FileTypeInfo.font(),
     // Recognized but not opened
-    'woff': const FileTypeInfo.other(FileCategory.font),
-    'woff2': const FileTypeInfo.other(FileCategory.font),
     'ora': const FileTypeInfo.other(FileCategory.image),
     'pdf': const FileTypeInfo.other(FileCategory.pdf),
     'zip': const FileTypeInfo.other(FileCategory.archive),
@@ -169,6 +174,9 @@ class FileTypeUtils {
   static bool isDartFile(String filePath) =>
       extensionOf(filePath) == _dartExtension;
 
+  /// Whether [filePath] is an SVG vector image, by its extension.
+  static bool isSvg(String filePath) => extensionOf(filePath) == _svgExtension;
+
   /// Check if a file is a supported image file
   static bool isImageFile(String filePath) {
     return viewKindOf(filePath) == FileViewKind.image;
@@ -190,16 +198,9 @@ class FileTypeUtils {
     return _typeOf(filePath)?.category ?? FileCategory.other;
   }
 
-  /// The lowercase extension of [filePath]'s file name, without its dot:
-  /// the text after the name's last dot, empty when the name has none
-  /// (`Makefile`, or `/a.b/Makefile`, whose folder's dot doesn't count).
-  /// A dotfile with no other dot is typed by its name, so `.gitignore`
-  /// gives `gitignore`.
-  static String extensionOf(String filePath) {
-    final name = p.basename(filePath);
-    final extension = name.lastIndexOf('.') == 0 ? name : p.extension(name);
-    return extension.isEmpty ? '' : extension.substring(1).toLowerCase();
-  }
+  /// The lowercase extension of [filePath]'s file name, without its dot,
+  /// as [fileExtensionOf] reads it: `.gitignore` gives `gitignore`.
+  static String extensionOf(String filePath) => fileExtensionOf(filePath);
 
   /// Name of [filePath]'s language for the status bar; `Text` for plain
   /// text and unknown types.
