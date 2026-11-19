@@ -50,6 +50,8 @@ FIDE uses fCheck as a Dart package (`package:fcheck/fcheck.dart`). fCheck is the
 
 FIDE never reimplements analysis. When FIDE needs a new finding or metric, it is added to fCheck first, kept general for all of fCheck's users, and then used by FIDE.
 
+An analysis still being evaluated can start in FIDE, written the way fCheck's analyzers are, and moves into fCheck once it proves its value: today the Analyzer tab's **Repeated Widget Settings** and the **Color contrast** check.
+
 FIDE holds itself to the same standard: its own code must score 100% with `fcheck --strict` (see `tool/check.sh`).
 
 ## Features
@@ -81,6 +83,7 @@ FIDE holds itself to the same standard: its own code must score 100% with `fchec
 - **Project overview**: icon, version, fCheck score, code size, platforms, tests, coverage and translations, shown when no file is open
 - **Info panel**, the right panel's first tab, about what is selected, then the project: the selected file's path and actions (and an image's dimensions, color mode, transparency and dominant colors); the declaration under the cursor with its **callers** and what it **calls** in the project, each a click away; the live **preview** of the widget class the cursor is in, when it has a `@Preview`; then the project's version and every fCheck deduction with its findings and the best practice that fixes it
 - **Localize panel**: sets up `gen-l10n`, lists each ARB key with its translations, and translates missing keys with the local model
+- **Color contrast**: each text and icon color the code gives, and each on-color of the project's color schemes, against what it is drawn on in every theme the app renders, at WCAG 2 level AA; colors that fall short are listed with their file and line among the quality issues and lower the score. End a line with `// ignore: fcheck_color_contrast` to skip it
 
 ### Git
 

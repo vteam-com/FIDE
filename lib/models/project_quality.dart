@@ -4,8 +4,9 @@ import 'package:fide/models/quality_issue.dart';
 
 /// The open project's one quality picture, the same wherever it shows (the
 /// title bar's light bulb, the overview, the Info tab, the editor): fCheck's
-/// score less what `dart analyze`'s diagnostics cost, over every issue
-/// found by fCheck, `dart analyze` and the project's health checks.
+/// score less what `dart analyze`'s diagnostics and the colors below WCAG 2
+/// level AA cost, over every issue found by fCheck, `dart analyze`, the
+/// color contrast analyzer and the project's health checks.
 class ProjectQuality {
   /// Creates the quality of [score] with [issues].
   const ProjectQuality({required this.score, required this.issues});
@@ -13,8 +14,8 @@ class ProjectQuality {
   /// Every problem found, the most pressing first.
   final List<QualityIssue> issues;
 
-  /// fCheck's compliance score less `dart analyze`'s deduction, from 0 to
-  /// [AppMetric.maxScore].
+  /// fCheck's compliance score less the deductions of `dart analyze` and
+  /// the color contrast analyzer, from 0 to [AppMetric.maxScore].
   final int score;
 
   /// Whether the score is below [AppMetric.maxScore] or anything was

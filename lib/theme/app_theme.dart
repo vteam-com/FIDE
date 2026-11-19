@@ -1,6 +1,7 @@
 // ignore: fcheck_dead_code
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/wcag_color.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:re_highlight/styles/atom-one-dark.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
@@ -106,14 +107,11 @@ class AppTheme {
   }
 
   /// Least contrast ratio of text against its background, WCAG 2 level AA.
-  static const double minTextContrast = 4.5;
+  static const double minTextContrast = WcagColor.minTextContrast;
 
   /// Least contrast ratio of an icon or other glyph that carries meaning
   /// against its background, WCAG 2 level AA for non-text content.
-  static const double minGlyphContrast = 3;
-
-  /// Luminance WCAG adds to both colors of a contrast ratio, for flare.
-  static const double _contrastFlare = 0.05;
+  static const double minGlyphContrast = WcagColor.minLargeContrast;
 
   /// Lightness [readable] moves a color by per step.
   static const double _lightnessStep = 0.05;
@@ -161,12 +159,10 @@ class AppTheme {
       },
   };
 
-  /// The WCAG contrast ratio between [a] and [b], from 1 to 21.
-  static double contrast(Color a, Color b) {
-    final la = a.computeLuminance() + _contrastFlare;
-    final lb = b.computeLuminance() + _contrastFlare;
-    return la > lb ? la / lb : lb / la;
-  }
+  /// The WCAG contrast ratio between [a] and [b], from 1 to 21, as the
+  /// color contrast analyzer measures a project's colors.
+  static double contrast(Color a, Color b) =>
+      WcagColor(a.toARGB32()).contrastWith(WcagColor(b.toARGB32()));
 
   /// The fill of the selected entry of a list, tree or grid.
   static Color selectedFill(BuildContext context) =>

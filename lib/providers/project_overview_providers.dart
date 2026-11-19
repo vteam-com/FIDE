@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:math' as math;
 
 import 'package:fide/constants/core_constants.dart';
+import 'package:fide/models/color_contrast_issues.dart';
+import 'package:fide/models/color_contrast_report.dart';
 import 'package:fide/models/dart_analysis.dart';
 import 'package:fide/models/health_indicators.dart';
 import 'package:fide/models/project_files.dart';
@@ -49,6 +52,10 @@ final _overviewRunsProvider = Provider<SerialRuns>((_) => SerialRuns());
 
 /// The health checks behind [healthIndicatorsProvider], one at a time.
 final _healthRunsProvider = Provider<SerialRuns>((_) => SerialRuns());
+
+/// The color contrast analyses behind [colorContrastProvider], one at a
+/// time.
+final _colorContrastRunsProvider = Provider<SerialRuns>((_) => SerialRuns());
 
 /// When the analysis behind [projectOverviewProvider]'s latest result
 /// started, by project folder; files changed since are not in it.
@@ -132,40 +139,65 @@ final healthIndicatorsProvider = FutureProvider<HealthIndicators?>((ref) async {
   );
 });
 
+/// What the color contrast analyzer finds in the current project, or null
+/// without one; run again once saves pause, one run at a time, off the UI
+/// thread.
+final colorContrastProvider = FutureProvider<ColorContrastReport?>((ref) async {
+  final projectPath = ref.watch(currentProjectPathProvider);
+  if (projectPath == null) return null;
+  final analyzer = ref.read(colorContrastAnalyzerProvider);
+  return afterSavesPause(
+    ref,
+    ref.read(_colorContrastRunsProvider),
+    () => Isolate.run(() => analyzer.analyze(projectPath)),
+  );
+});
+
 /// The open project's quality: fCheck's score less what `dart analyze`'s
-/// diagnostics cost, over the issues of fCheck, `dart analyze` (errors
-/// first) and the health checks;
-/// null until fCheck has analyzed the project. `dart analyze` adds its
-/// issues once it is done.
+/// diagnostics and the colors below WCAG 2 level AA cost, over the issues
+/// of fCheck, `dart analyze` (errors first), the color contrast analyzer
+/// and the health checks; null until fCheck has analyzed the project. The
+/// others add their issues once they are done.
 final projectQualityProvider = Provider<ProjectQuality?>((ref) {
   final projectPath = ref.watch(currentProjectPathProvider);
   final code = ref.watch(projectOverviewProvider).value?.code;
   if (projectPath == null || code == null) return null;
   final dart = ref.watch(dartAnalysisProvider);
-  final deduction = dart.hasError ? 0 : dart.value?.deduction ?? 0;
+  final colors = ref.watch(colorContrastProvider);
+  final deduction =
+      (dart.hasError ? 0 : dart.value?.deduction ?? 0) +
+      (colors.hasError ? 0 : colors.value?.deduction ?? 0);
   return ProjectQuality(
     score: (code.complianceScore - deduction).clamp(0, AppMetric.maxScore),
     issues: [
       // A failed run keeps the last one's value: show the failure alone
       if (dart.error case final error?)
-        QualityIssue(
-          label: '${DartAnalysis.title} did not run',
-          tone: StatusTone.info,
-          guidance: '$error',
-        )
+        _didNotRun(DartAnalysis.title, error)
       else
         ...?dart.value?.issues,
       ...code.qualityIssues,
+      if (colors.error case final error?)
+        _didNotRun(ColorContrastIssues.title, error)
+      else
+        ?colors.value?.issue(projectPath),
       ...?ref.watch(healthIndicatorsProvider).value?.issues(projectPath),
     ],
   );
 });
 
+/// The issue telling that the analysis [title] failed with [error].
+QualityIssue _didNotRun(String title, Object error) => QualityIssue(
+  label: '$title did not run',
+  tone: StatusTone.info,
+  guidance: '$error',
+);
+
 /// The analyses the open project's quality is made of: fCheck's overview,
-/// `dart analyze` and the health checks.
+/// `dart analyze`, the color contrast analyzer and the health checks.
 final List<FutureProvider<Object?>> _qualitySources = [
   projectOverviewProvider,
   dartAnalysisProvider,
+  colorContrastProvider,
   healthIndicatorsProvider,
 ];
 

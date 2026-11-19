@@ -1,7 +1,10 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/color_contrast_issues.dart';
+import 'package:fide/models/color_contrast_report.dart';
 import 'package:fide/models/dart_analysis.dart';
+import 'package:fide/models/wcag_color.dart';
 import 'package:fide/models/project_quality.dart';
 import 'package:fide/models/quality_issue.dart';
 import 'package:fide/models/status_tone.dart';
@@ -25,7 +28,53 @@ warning - lib/b.dart:9:1 - Dead code. - dead_code
 /// The command [DartAnalyzer] runs.
 const String _command = 'dart analyze';
 
+/// A report of [count] grey texts on white in `/demo/lib/a.dart`.
+ColorContrastReport _greyTexts(int count) => ColorContrastReport(
+  fileCount: 1,
+  findings: [
+    for (var line = 1; line <= count; line++)
+      ColorContrastFinding(
+        kind: ColorContrastKind.lowContrast,
+        path: '/demo/lib/a.dart',
+        line: line,
+        foreground: 'Colors.grey',
+        foregroundColor: const WcagColor(0xFF9E9E9E),
+        background: 'Colors.white',
+        backgroundColor: const WcagColor(0xFFFFFFFF),
+        minimum: WcagColor.minTextContrast,
+      ),
+  ],
+);
+
 void main() {
+  group('ColorContrastIssues', () {
+    test('lists every color below AA in one issue, with how to fix it', () {
+      final issue = _greyTexts(2).issue('/demo')!;
+
+      expect(
+        issue.label,
+        'Color contrast: -${2 * AppMetric.colorContrastPoints}% '
+        '(2 colors below WCAG AA)',
+      );
+      expect(
+        issue.findings.first.text,
+        'Colors.grey text (#9E9E9E) on Colors.white (#FFFFFF): 2.6:1, '
+        'needs 4.5:1',
+      );
+      expect(issue.shownPath(issue.findings.first), 'lib/a.dart');
+      expect(issue.fixRequest, contains('onSurfaceVariant'));
+    });
+
+    test('caps what the colors cost, and a clean project has no issue', () {
+      expect(
+        _greyTexts(AppMetric.colorContrastPointsMax + 1).deduction,
+        AppMetric.colorContrastPointsMax,
+      );
+      expect(_greyTexts(0).issue('/demo'), isNull);
+      expect(_greyTexts(0).deduction, 0);
+    });
+  });
+
   group('DartAnalysis', () {
     test('lists one issue per severity, errors first', () {
       final analysis = DartAnalysis.parse(_report, rootPath: '/demo');

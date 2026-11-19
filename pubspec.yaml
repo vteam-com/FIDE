@@ -44,6 +44,9 @@ dependencies:
   image: 4.13.1
   intl: 0.20.3
   logging: ^1.3.0
+  # Pinned by the Flutter SDK; the color contrast analyzer generates
+  # ColorScheme.fromSeed's colors with it, without Flutter
+  material_color_utilities: 0.13.0
   material_ui: 1.11.1
   package_info_plus: 10.2.2
   path: 1.9.1

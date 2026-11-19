@@ -26,6 +26,7 @@
   - when FIDE needs a new finding or metric, propose the fCheck change to the user first (it has its own users, so keep it general); only after they authorize it, add it to fCheck and use it from FIDE
   - never import `package:fcheck/src/...`; export what FIDE needs from fCheck instead
   - `AnalyzeFolder.analyze()` is synchronous: run it with `Isolate.run`
+  - an analysis under evaluation (the Analyzer tab's Repeated Widget Settings, the Color contrast check) lives in FIDE until the user decides it has proven its value, written as fCheck's analyzers are (plain Dart without Flutter, parsed code, `// ignore: fcheck_<name>` comments) so it moves into fCheck as is
 - AI panel: when the user asks to fix or change code, the AI edits the project files (through `CodeEditAgent`); it never replies with code for the user to paste
   - code decides whether a prompt asks for a change (`PromptIntent`), not the model: any other prompt is answered by an agent whose tools only read, as a local model given editing tools edits files even for "2+2="
   - the agent is offered FIDE's whole-project quick fixes only when the request names their subject (`QuickFix.topics`), never all of them

@@ -130,6 +130,12 @@ class AppMetric {
 
   /// Most quality-score points `dart analyze` infos cost together.
   static const int dartInfoPointsMax = 10;
+
+  /// Quality-score points each color below WCAG 2 level AA costs.
+  static const int colorContrastPoints = 1;
+
+  /// Most quality-score points colors below WCAG 2 level AA cost together.
+  static const int colorContrastPointsMax = 10;
   static const int aiInputMaxLines = 3;
   static const int duplicateThreshold = 2;
   static const int gitHashShortLength = 7;

@@ -14,6 +14,7 @@ import 'package:fide/services/audio_file_service.dart';
 import 'package:fide/services/build_artifacts_inspector.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/cocoa_pods_migrator.dart';
+import 'package:fide/services/color_contrast_analyzer.dart';
 import 'package:fide/services/code_formatter.dart';
 import 'package:fide/services/code_review.dart';
 import 'package:fide/services/commit_message_writer.dart';
@@ -295,6 +296,12 @@ final fileContentReaderProvider = Provider<FileContentReader>(
 /// entries with.
 final fileEntryServiceProvider = Provider<FileEntryService>(
   (_) => const FileEntryService(),
+);
+
+/// Provides the [ColorContrastAnalyzer] behind the color contrast issue of
+/// the project's quality.
+final colorContrastAnalyzerProvider = Provider<ColorContrastAnalyzer>(
+  (_) => const ColorContrastAnalyzer(),
 );
 
 /// Provides the [HealthChecker] behind the health issues of the project's
