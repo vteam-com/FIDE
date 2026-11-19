@@ -2,6 +2,22 @@
 
 What changed in each FIDE release, newest first. `tool/release.sh` adds each release's entry: one line per commit since the release before.
 
+## 1.4.0 - 2026-11-19
+
+- release.sh: push unpushed commits of main with the release instead of stopping; stop only when origin/main has commits not pulled
+- Accessibility card on the Project Overview and an Accessibility view: elements judged at WCAG AA by kind and contrast range, each theme's color scheme and where it is defined, and every color the code writes, most used first
+- accessibiility gate
+- Every console output (Outdated Packages, Dependency Conflicts, Preview Failed, dart analyze) has a Clear button: OutputPanel.onClear is required, each owner drops its text
+- Dependencies: keep Outdated/Conflicts output inside the section, and keep section header actions as icons in narrow panels (count hides, title ellipsizes) via PriorityRow.essentialTrailing
+- Accessibility: every text and icon color reads at WCAG AA in both themes (solid badge/toast fills with white or black text via AppTheme.onFill, readable syntax colors incl. Atom One Light, visible operators, line numbers and hidden folders in onSurfaceVariant, subtler workspace glow under the title bar and settings, brighter terminal grey), guarded by color_contrast_test
+- AI agent: an icon per step action (👓 read, ✏️ write, 🔍 search, 🔨 build…), tools answer with what the model would re-read for (edited lines, the code under each build error, where a failed replace's text is), replace_all for renames, and a 50-step cap
+- AI panel: show each run of steps as one compact entry with repeats counted, stop clipping the hover copy toolbar, and stop the agent looping on a repeated call when nothing changed
+- Fix Ollama "XML syntax error" on agent tool calls: check_build takes a parameter (qwen3-coder left parameterless calls unclosed), and retries tell the model its call was unreadable instead of resending the same request
+- Faster local AI (analyze instead of build, bounded agent context, paged reads + search, streaming, warm-up, tool-call retry), opt-in Claude (in-app Anthropic sign-in or API key) / Bring-your-own AI providers in Settings › AI, and fix the template integration test's Ollama setup
+- DRY follow-ups: one diff view (Git panel opens the editor's), one Upgrade via its quick fix, one pub outdated JSON model, Ollama readiness and setup shared with the wizard, Git refresh/push/pull ring from repo state, per-key Translate as an AI task, no spinners under ringing tabs, AppIcon.ai/fix and "… with AI" labels, Analyzer's "Repeated Widget Settings", one tooltip wait, "…" everywhere, shared URI/file/tree/path/config/version helpers, ProjectMetricsNotifier on PersistedNotifier
+- DRY review: shared DropdownMenuButton, LoadingActionsProgress, RecentProjectIcon, DetailSection, CenterViewCloseButton, revealInFileManager; CommandRunner writes ✓/✗; Welcome buttons from AppCommand; real editor tooltip shortcuts; ReadableError, uniqueName, LocaleNumber.count, cached Dart SDK; drop dead Localize card, loading Retry, Preview "Clear" restart and OllamaInstaller.ensureReady
+- Blue Update Button
+
 ## 1.3.0 - 2026-11-18
 
 - fix build
