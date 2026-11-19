@@ -25,6 +25,7 @@ import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/services/code_formatter.dart';
 import 'package:fide/services/editor_commands.dart';
 import 'package:fide/services/file_type_utils.dart';
+import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
@@ -34,8 +35,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
-import 'package:re_highlight/styles/atom-one-dark.dart';
-import 'package:re_highlight/styles/atom-one-light.dart';
 
 /// Full-featured code editor widget with syntax highlighting, search, diff view, and file-save support.
 ///
@@ -374,15 +373,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     if (!_showDiffView) _toggleDiffView();
   }
 
-  /// Builds syntax highlight styles from a full highlight.js theme with the
-  /// app's own colors layered on top.
-  Map<String, TextStyle> _buildCodeTheme(ThemeData theme) => {
-    ...(theme.brightness == Brightness.dark
-        ? atomOneDarkTheme
-        : atomOneLightTheme),
-    ...AppTextStyle.codeTokens(theme),
-  };
-
   Widget _buildDiffView() {
     final diff = _session.diff;
     if (diff == null) {
@@ -465,7 +455,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       return _codeTheme!;
     }
     _codeThemeSource = theme;
-    _codeTheme = _buildCodeTheme(theme);
+    _codeTheme = AppTheme.codeTheme(theme);
 
     return _codeTheme!;
   }

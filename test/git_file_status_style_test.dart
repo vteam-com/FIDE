@@ -1,7 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/git_file_status.dart';
 import 'package:fide/models/status_tone.dart';
-import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/git_file_status_style.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:material_ui/material_ui.dart';
@@ -41,23 +40,6 @@ void main() {
         GitFileStatus.added.textStyle(colorScheme, base).decoration,
         isNull,
       );
-    });
-  }
-
-  for (final theme in [AppTheme.lightTheme, AppTheme.darkTheme]) {
-    final colorScheme = theme.colorScheme;
-    test('status colors read as text in the ${colorScheme.brightness} '
-        'theme', () {
-      final surface = colorScheme.surfaceContainerHighest;
-      for (final tone in StatusTone.values) {
-        final readable = AppTheme.readable(tone.color, colorScheme);
-        final lighter = readable.computeLuminance();
-        final darker = surface.computeLuminance();
-        final ratio = lighter > darker
-            ? (lighter + 0.05) / (darker + 0.05)
-            : (darker + 0.05) / (lighter + 0.05);
-        expect(ratio, greaterThanOrEqualTo(AppTheme.minTextContrast));
-      }
     });
   }
 

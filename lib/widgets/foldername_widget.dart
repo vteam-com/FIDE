@@ -50,8 +50,8 @@ class FolderNameWidget extends StatelessWidget {
       nameColor = StatusTone.error.readableIn(colorScheme);
       iconColor = StatusTone.error.readableIn(colorScheme);
     } else if (node.isHidden) {
-      nameColor = colorScheme.onSurface.withValues(alpha: AppOpacity.disabled);
-      iconColor = colorScheme.primary.withValues(alpha: AppOpacity.disabled);
+      nameColor = colorScheme.onSurfaceVariant;
+      iconColor = colorScheme.onSurfaceVariant;
     } else {
       nameColor = isExpanded ? colorScheme.primary : null;
       iconColor = colorScheme.primary;

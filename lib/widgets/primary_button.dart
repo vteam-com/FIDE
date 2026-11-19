@@ -41,7 +41,7 @@ class PrimaryButton extends StatelessWidget {
     final style = destructive
         ? FilledButton.styleFrom(
             backgroundColor: StatusTone.error.color,
-            foregroundColor: AppTheme.onStatusColor,
+            foregroundColor: AppTheme.onFill(StatusTone.error.color),
           )
         : null;
     final onPressed = busy ? null : this.onPressed;

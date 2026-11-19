@@ -72,7 +72,7 @@ class TaskButton extends StatelessWidget {
             padding: EdgeInsets.zero,
             style: IconButton.styleFrom(
               backgroundColor: StatusTone.error.color,
-              foregroundColor: AppTheme.onStatusColor,
+              foregroundColor: AppTheme.onFill(StatusTone.error.color),
             ),
             icon: const Icon(Icons.stop_rounded, size: AppIconSize.mediumLarge),
           )

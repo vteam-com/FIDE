@@ -138,11 +138,11 @@ class AppTextStyle {
     );
   }
 
-  /// The code editor's line numbers.
+  /// The line numbers of the code editor and of a diff, in the secondary
+  /// text color: dimmer than the code, yet readable.
   static TextStyle lineNumber(BuildContext context) => TextStyle(
     letterSpacing: -1,
-    color: Theme.of(context).colorScheme.onSurface
-        .withValues(alpha: AppOpacity.disabled),
+    color: Theme.of(context).colorScheme.onSurfaceVariant,
   );
 
   /// Syntax colors layered over the highlight.js theme in the code editor.
@@ -177,7 +177,8 @@ class AppTextStyle {
             ? Colors.blue[AppShade.muted]
             : Colors.blue[AppShade.strong],
       ),
-      'operator': TextStyle(color: colorScheme.onPrimary, fontWeight: _strong),
+      // In the code's own color: the bold sets operators apart
+      'operator': strong,
     };
   }
 

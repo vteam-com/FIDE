@@ -7,7 +7,6 @@ import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/project_info_controller.dart';
-import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widget_services/output_panel.dart';
 import 'package:fide/widget_services/quick_fix_prompts.dart';
 import 'package:fide/widgets/busy_bar.dart';
@@ -199,9 +198,6 @@ class PackagesSection extends ConsumerWidget {
           openUrl(context, 'https://pub.dev/packages/$packageName');
         }
       },
-      backgroundColor: isProblematic || hasIncompatibleVersion
-          ? AppTheme.errorBackground
-          : null,
       labelPadding: AppPadding.chipLabel,
       visualDensity: VisualDensity.compact,
     );

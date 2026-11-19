@@ -6,9 +6,9 @@ import 'package:material_ui/material_ui.dart';
 
 /// A small tinted label marking a status, a count or a short code.
 ///
-/// Every badge of the app looks the same: a fill and outline in [color]
-/// with light text; only [large] badges, used as the headline value of a
-/// stat card, are bigger.
+/// Every badge of the app looks the same: a solid fill in [color] with
+/// text that reads on it, white or, on light fills, black; only [large]
+/// badges, used as the headline value of a stat card, are bigger.
 class BadgeStatus extends StatelessWidget {
   /// Creates a badge showing [text] in [color].
   const BadgeStatus({
@@ -123,7 +123,7 @@ class BadgeStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fontSize = large ? AppFontSize.title : AppFontSize.badge;
-    final textColor = AppTheme.onStatusColor;
+    final textColor = AppTheme.onFill(color);
     final icon = this.icon;
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -131,9 +131,8 @@ class BadgeStatus extends StatelessWidget {
         vertical: AppSpacing.micro,
       ),
       decoration: BoxDecoration(
-        color: color.withAlpha(AppAlpha.badgeFill),
+        color: color,
         borderRadius: BorderRadius.circular(AppRadius.tiny),
-        border: Border.all(color: color, width: AppBorderWidth.emphasized),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

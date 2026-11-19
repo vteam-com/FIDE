@@ -12,12 +12,13 @@ class AppOpacity {
   static const double secondaryText = 0.7;
   static const double emphasis = 0.8;
 
-  /// Primary tint blended into the workspace gradient's core.
-  static const double workspaceGlow = 0.6;
+  /// Primary tint blended into the workspace gradient's core, light enough
+  /// for the title bar's and the settings' text to read on it.
+  static const double workspaceGlow = 0.25;
 
   /// Shadow blended into the outer edge of the workspace gradient to deepen
-  /// contrast.
-  static const double workspaceShade = 0.2;
+  /// contrast, light enough for the title bar's icons to read on it.
+  static const double workspaceShade = 0.1;
 
   /// The modified image faded under the changed-pixel mask of an image
   /// diff's Difference mode, so the mask stands out but keeps its context.

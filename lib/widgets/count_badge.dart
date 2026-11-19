@@ -16,11 +16,12 @@ class CountBadge extends StatelessWidget {
   final int count;
   @override
   Widget build(BuildContext context) {
+    final fill = StatusTone.warning.color;
     return Badge.count(
       count: count,
       isLabelVisible: count > 0,
-      backgroundColor: StatusTone.warning.color,
-      textColor: AppTheme.onStatusColor,
+      backgroundColor: fill,
+      textColor: AppTheme.onFill(fill),
       child: child,
     );
   }

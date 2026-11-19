@@ -76,7 +76,7 @@ class _MessageWidgetState extends State<MessageWidget>
   @override
   Widget build(BuildContext context) {
     final backgroundColor = widget.type.color;
-    final foregroundColor = AppTheme.onStatusColor;
+    final foregroundColor = AppTheme.onFill(backgroundColor);
     final semanticLabel = widget.type.messageLabel;
 
     return FadeTransition(
@@ -138,9 +138,7 @@ class _MessageWidgetState extends State<MessageWidget>
                             )
                           : CompactIconButton(
                               icon: Icons.copy,
-                              color: foregroundColor.withValues(
-                                alpha: AppOpacity.secondaryText,
-                              ),
+                              color: foregroundColor,
                               onPressed: () async {
                                 await Clipboard.setData(
                                   ClipboardData(text: widget.message),
@@ -166,9 +164,7 @@ class _MessageWidgetState extends State<MessageWidget>
                   const SizedBox(width: AppSpacing.tiny),
                   CompactIconButton(
                     icon: Icons.close,
-                    color: foregroundColor.withValues(
-                      alpha: AppOpacity.secondaryText,
-                    ),
+                    color: foregroundColor,
                     onPressed: _dismiss,
                     tooltip: 'Close message',
                   ),

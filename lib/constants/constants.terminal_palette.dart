@@ -10,7 +10,9 @@ class TerminalPalette {
   static const Color magenta = Color(0xFFFF6AC1);
   static const Color cyan = Color(0xFF9AEDFE);
   static const Color white = Color(0xFFF1F1F0);
-  static const Color brightBlack = Color(0xFF686868);
+  /// Dim grey text, such as hints and timestamps, light enough to read on
+  /// [background].
+  static const Color brightBlack = Color(0xFF8A8A8A);
   static const Color brightWhite = Color(0xFFFFFFFF);
 
   const TerminalPalette._();

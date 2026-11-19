@@ -2,6 +2,8 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:re_highlight/styles/atom-one-dark.dart';
+import 'package:re_highlight/styles/atom-one-light.dart';
 
 /// Represents `AppTheme`.
 class AppTheme {
@@ -24,11 +26,13 @@ class AppTheme {
     0xFF616161,
   ); // Dark grey for neutral states
 
-  /// Text and glyphs drawn on a status color, such as a badge or a message.
-  static Color get onStatusColor => Colors.white.withAlpha(AppAlpha.badgeText);
-
-  /// Fill behind content marked as an error, such as a broken dependency.
-  static Color get errorBackground => errorColor.withAlpha(AppAlpha.badgeFill);
+  /// Text and glyphs drawn on [fill], such as a badge, a message or a red
+  /// Stop button: white, the same on every fill, unless white falls short
+  /// of [minTextContrast] there, as on the warning orange, then black.
+  static Color onFill(Color fill) =>
+      contrast(Colors.white, fill) >= minTextContrast
+      ? Colors.white
+      : Colors.black;
 
   /// Builds the shared theme configuration used by both theme modes.
   static ThemeData _buildTheme({
@@ -104,6 +108,10 @@ class AppTheme {
   /// Least contrast ratio of text against its background, WCAG 2 level AA.
   static const double minTextContrast = 4.5;
 
+  /// Least contrast ratio of an icon or other glyph that carries meaning
+  /// against its background, WCAG 2 level AA for non-text content.
+  static const double minGlyphContrast = 3;
+
   /// Luminance WCAG adds to both colors of a contrast ratio, for flare.
   static const double _contrastFlare = 0.05;
 
@@ -126,7 +134,7 @@ class AppTheme {
         ? _lightnessStep
         : -_lightnessStep;
     var hsl = HSLColor.fromColor(color);
-    while (_contrast(hsl.toColor(), surface) < minTextContrast) {
+    while (contrast(hsl.toColor(), surface) < minTextContrast) {
       final lightness = (hsl.lightness + step).clamp(0.0, 1.0);
       if (lightness == hsl.lightness) break;
       hsl = hsl.withLightness(lightness);
@@ -134,8 +142,27 @@ class AppTheme {
     return hsl.toColor();
   }
 
+  /// The code editor's syntax highlighting: the highlight.js Atom One
+  /// theme of [theme]'s brightness with [AppTextStyle.codeTokens] layered
+  /// on top, every color made [readable], as some of Atom One Light's are
+  /// too pale to read.
+  static Map<String, TextStyle> codeTheme(ThemeData theme) => {
+    for (final MapEntry(:key, :value) in {
+      ...(theme.brightness == Brightness.dark
+          ? atomOneDarkTheme
+          : atomOneLightTheme),
+      ...AppTextStyle.codeTokens(theme),
+    }.entries)
+      key: switch (value.color) {
+        final color? => value.copyWith(
+          color: readable(color, theme.colorScheme),
+        ),
+        null => value,
+      },
+  };
+
   /// The WCAG contrast ratio between [a] and [b], from 1 to 21.
-  static double _contrast(Color a, Color b) {
+  static double contrast(Color a, Color b) {
     final la = a.computeLuminance() + _contrastFlare;
     final lb = b.computeLuminance() + _contrastFlare;
     return la > lb ? la / lb : lb / la;
@@ -155,30 +182,38 @@ class AppTheme {
     BuildContext context, {
     Alignment center = Alignment.topCenter,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final base = Theme.of(context).brightness == Brightness.light
-        ? colorScheme.surfaceDim
-        : colorScheme.surfaceContainerLowest;
     return BoxDecoration(
       gradient: RadialGradient(
         center: center,
         radius: AppGradient.workspaceRadius,
-        colors: [
-          Color.alphaBlend(
-            colorScheme.primary.withValues(alpha: AppOpacity.workspaceGlow),
-            base,
-          ),
-          Color.alphaBlend(
-            colorScheme.shadow.withValues(alpha: AppOpacity.workspaceShade),
-            base,
-          ),
-        ],
+        colors: workspaceColors(Theme.of(context).colorScheme),
         stops: const [
           AppGradient.workspaceCoreStop,
           AppGradient.workspaceEdgeStop,
         ],
       ),
     );
+  }
+
+  /// The [workspaceBackground] gradient's two colors: its primary glow, then
+  /// its shaded edge.
+  ///
+  /// The title bar and the settings draw straight on them, so both stay
+  /// subtle enough for text and icons to read on either.
+  static List<Color> workspaceColors(ColorScheme colorScheme) {
+    final base = colorScheme.brightness == Brightness.light
+        ? colorScheme.surfaceDim
+        : colorScheme.surfaceContainerLowest;
+    return [
+      Color.alphaBlend(
+        colorScheme.primary.withValues(alpha: AppOpacity.workspaceGlow),
+        base,
+      ),
+      Color.alphaBlend(
+        colorScheme.shadow.withValues(alpha: AppOpacity.workspaceShade),
+        base,
+      ),
+    ];
   }
 
   /// Vertical surface gradient behind the full-screen welcome, loading and

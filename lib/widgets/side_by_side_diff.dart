@@ -326,9 +326,7 @@ class _SideBySideDiffState extends State<SideBySideDiff> {
               width: AppSize.diffLineNumberWidth,
               child: Text(
                 lineNumber,
-                style: style.copyWith(
-                  color: onSurface.withValues(alpha: AppOpacity.disabled),
-                ),
+                style: style.merge(AppTextStyle.lineNumber(context)),
                 textAlign: TextAlign.right,
               ),
             ),
