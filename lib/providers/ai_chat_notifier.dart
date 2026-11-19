@@ -370,7 +370,7 @@ class AiChatNotifier extends StateNotifier<AiChat> {
       files: ProjectFileStore(projectPath, reader: _reader),
       cancelToken: cancel,
       hooks: CodeEditHooks(
-        onStep: (step) => addReply('🔧 $step', isProgress: true),
+        onStep: (step) => addReply(step, isProgress: true),
         onText: _showDraft,
         onFileWritten: (path) => _documents.reloadWritten([path]),
         // FIDE's own fixes, run without asking, for the model to call

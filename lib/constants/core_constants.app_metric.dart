@@ -16,7 +16,17 @@ class AppMetric {
   /// rows.
   static const int projectSearchMaxResults = 2000;
   static const int aiContextPreviewChars = 2000;
-  static const int aiMaxToolRounds = 25;
+
+  /// Most steps the agent takes for an edit: a local model edits in small
+  /// steps, and a loop stops well before, after [aiMaxRepeatedCalls].
+  static const int aiMaxToolRounds = 50;
+
+  /// Lines shown around an edit in what `replace_in_file` answers.
+  static const int aiEditContextLines = 3;
+
+  /// Most characters of the lines `replace_in_file` shows when it can't
+  /// replace, where the text, or its first line, is.
+  static const int aiEditHintChars = 3000;
 
   /// Calls the agent repeats, with nothing changed in between, before it
   /// stops: a local model can loop on one, such as `check_build`.

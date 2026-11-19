@@ -3,7 +3,8 @@ part of 'code_edit_agent.dart';
 /// Callbacks a [CodeEditAgent] runs as it works, so the caller can show
 /// progress, refresh what the edits touch and rebuild the project.
 class CodeEditHooks {
-  /// Receives a one-line description of each skill the model runs.
+  /// Receives a one-line description of each skill the model runs,
+  /// starting with the skill's icon.
   final void Function(String) onStep;
 
   /// Receives the text of the model's reply in progress as it streams

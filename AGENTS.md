@@ -31,12 +31,13 @@
 - never regress the local AI's speed or judgment; every AI change keeps these, and re-measures against a real Ollama model when it touches the agent, its prompts or tools:
   - keep the model's context small, as it slows down sharply as it fills (on an M4 Max, qwen3-coder reads 1,200 tokens/s near the start, 300 at 24k; writes 129 tokens/s, 25 at 28k): the agent stays within `ChatModel.contextBudget`, dropping the oldest tool outputs first, never letting Ollama overflow and cut the conversation
   - tools return bounded output: `list_files` capped, files read in parts, `search` before reading, history capped
+  - tools answer with what the model would otherwise read the file again for: an edit answers with the lines it changed, `check_build` quotes the line of code under each error, a replace it can't make shows where the text (or its first line) is; `replace_in_file` takes `replace_all` for renames; every step costs a round trip
   - the agent checks its work with `dart analyze` (seconds), building only to fix a failed build (a release build takes minutes)
   - stream replies, warm the model up when the prompt takes focus, and retry Ollama's malformed tool calls with a request that says what went wrong: the same request writes the same broken call
   - a call the model repeats with nothing changed in between gets its earlier result and a note instead of running again, and the agent stops after `AppMetric.aiMaxRepeatedCalls` of them: a local model can loop on one, such as `check_build`
   - every agent tool takes at least one required parameter: qwen3-coder can leave a call with none unclosed (`<function=…>` without `</function>`), which Ollama fails as "XML syntax error … unexpected EOF"
   - the routing above: a question gets read-only tools, quick fixes only when named
-  - reference timings to stay at or under: "2+2=" answered in one step without tools, in ~4 s; a question needing one file read ~5 s; a multi-file Fix Build of 10 errors ~53 s
+  - reference timings to stay at or under: "2+2=" answered in one step without tools, in ~4 s; a question needing one file read ~5 s; a rename in one file 6 steps, ~8 s; a multi-file Fix Build of 10 errors ~20 steps, ~40 s; the step cap (`AppMetric.aiMaxToolRounds`) stays far above what a task takes
 
 # Workflow
 

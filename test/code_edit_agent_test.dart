@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:fide/constants/core_constants.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/services/chat_model.dart';
@@ -26,7 +28,9 @@ class _MemoryFileStore extends ProjectFileStore {
   }
 
   @override
-  Future<String> read(String path) async => files[_relative(path)]!;
+  Future<String> read(String path) async =>
+      files[_relative(path)] ??
+      (throw FileSystemException('No such file', path));
 
   @override
   Future<List<String>> search(String text, {required int limit}) async => [
@@ -280,7 +284,7 @@ void main() {
     expect(found, 'lib/main.dart:1: void main() { print(1) }');
     expect(
       await agentOf(FakeChatModel()).search('missing'),
-      'No match for "missing".',
+      startsWith('No match for "missing".'),
     );
   });
 
@@ -459,5 +463,135 @@ void main() {
 
     expect(await agent.edit('fix main', const []), 'Done.');
     expect(checks, 2);
+  });
+
+  test('each step starts with the icon of its action', () async {
+    final steps = <String>[];
+    final model = FakeChatModel(
+      chatReplies: [
+        toolCall('read_file', {'path': 'lib/main.dart'}),
+        toolCall('replace_in_file', {
+          'path': 'lib/main.dart',
+          'old_text': 'print(1)',
+          'new_text': 'print(1);',
+        }),
+        toolCall('check_build', {'changes': 'Added a semicolon'}),
+        toolCall('delete_everything', {'path': '.'}),
+        answer('Done.'),
+      ],
+    );
+    final agent = CodeEditAgent(
+      model,
+      files: store,
+      hooks: CodeEditHooks(
+        onStep: steps.add,
+        onFileWritten: (_) async {},
+        checkBuild: () async => '',
+      ),
+    );
+
+    await agent.edit('fix main', const []);
+
+    expect(steps, [
+      '👓 read_file lib/main.dart',
+      '✏️ replace_in_file lib/main.dart',
+      '🔨 check_build Added a semicolon',
+      '${AiSkill.unknownIcon} delete_everything .',
+    ]);
+  });
+
+  test(
+    'an edit answers with its lines, so the file needn\'t be read again',
+    () async {
+      store.files['lib/long.dart'] = [
+        for (var line = 1; line <= 20; line++) 'line $line',
+      ].join('\n');
+
+      final result = await agentOf(FakeChatModel())
+          .replaceInFile('lib/long.dart', 'line 10', 'line ten');
+
+      expect(result, startsWith('Saved lib/long.dart. Now lines 7 to 13:'));
+      expect(result, contains('line 9\nline ten\nline 11'));
+      expect(result, isNot(contains('line 6\n')));
+    },
+  );
+
+  test('a replace it can\'t make says where the text is', () async {
+    store.files['lib/twice.dart'] = [
+      for (var line = 1; line <= 20; line++)
+        line == 5 || line == 15 ? '  return a.cut();' : 'line $line',
+    ].join('\n');
+    final agent = agentOf(FakeChatModel());
+
+    // Twice: both places shown, numbered
+    await expectLater(
+      agent.replaceInFile('lib/twice.dart', 'return a.cut();', 'x'),
+      throwsA(
+        isA<FormatException>().having(
+          (e) => e.message,
+          'message',
+          allOf(
+            contains('occurs 2 times'),
+            contains('lines 2 to 8:'),
+            contains('lines 12 to 18:'),
+          ),
+        ),
+      ),
+    );
+    // Wrong indentation: where its first line is
+    await expectLater(
+      agent.replaceInFile('lib/twice.dart', 'line 9\n  line 10', 'x'),
+      throwsA(
+        isA<FormatException>().having(
+          (e) => e.message,
+          'message',
+          allOf(contains('not found'), contains('lines 6 to 12:')),
+        ),
+      ),
+    );
+    // Every occurrence, when asked
+    expect(
+      await agent.replaceInFile(
+        'lib/twice.dart',
+        'return a.cut();',
+        'return a.trim();',
+        all: true,
+      ),
+      contains('Replaced 2 occurrences'),
+    );
+    expect(store.files['lib/twice.dart'], isNot(contains('cut')));
+  });
+
+  test('build errors come with the line of code they point to', () async {
+    store.files['lib/main.dart'] = 'void main() {\n  final a = b;\n}';
+    final model = FakeChatModel(
+      chatReplies: [
+        toolCall('check_build', {'changes': 'x'}),
+        answer('Seen.'),
+      ],
+    );
+    final agent = CodeEditAgent(
+      model,
+      files: store,
+      hooks: CodeEditHooks(
+        onStep: (_) {},
+        onFileWritten: (_) async {},
+        checkBuild: () async =>
+            "lib/main.dart:2: Undefined name 'b'.\n"
+            "lib/main.dart:2:13: Error: Undefined name 'b'.\n"
+            'lib/gone.dart:1: Missing file.',
+      ),
+    );
+
+    await agent.edit('fix main', const []);
+
+    expect(
+      toolResults(model).single['content'],
+      "lib/main.dart:2: Undefined name 'b'.\n"
+      '    2 | final a = b;\n'
+      "lib/main.dart:2:13: Error: Undefined name 'b'.\n"
+      '    2 | final a = b;\n'
+      'lib/gone.dart:1: Missing file.',
+    );
   });
 }

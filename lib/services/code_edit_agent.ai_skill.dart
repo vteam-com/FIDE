@@ -3,8 +3,15 @@ part of 'code_edit_agent.dart';
 /// One tool the model may call: its name, what it does, the JSON schema
 /// of its arguments and the code that runs it.
 class AiSkill {
+  /// Marks a step of a tool the model isn't given.
+  static const String unknownIcon = '🔧';
+
   /// Name the model calls the skill by.
   final String name;
+
+  /// The emoji starting the skill's step lines in the chat, telling the
+  /// action at a glance, such as 👓 for reading and ✏️ for writing.
+  final String icon;
 
   /// What the skill does, for the model.
   final String description;
@@ -32,6 +39,7 @@ class AiSkill {
   /// Creates a skill.
   const AiSkill({
     required this.name,
+    required this.icon,
     required this.description,
     required this.parameters,
     this.optionalParameters = const {},

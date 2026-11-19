@@ -26,6 +26,11 @@ class CodeEditAgent {
   /// Name of the tool running FIDE's whole-project fixes.
   static const String _quickFixName = 'run_quick_fix';
 
+  /// Where a build or analyzer error points: a Dart file and a line.
+  static final RegExp _errorLocation = RegExp(
+    r'(?<path>[^\s:]+\.dart):(?<line>\d+)',
+  );
+
   /// Stops the agent's model requests and skills; see [cancel].
   final AiCancelToken _cancelToken;
 
@@ -69,21 +74,24 @@ class CodeEditAgent {
   late final List<AiSkill> _readSkills = [
     AiSkill(
       name: 'list_files',
+      icon: '📂',
       description: 'Lists the files under a project folder, recursively.',
       parameters: {'path': 'Folder relative to the project root, or "."'},
       run: (args) => listFiles(_argument(args, 'path')),
     ),
     AiSkill(
       name: 'search',
+      icon: '🔍',
       description:
           'Finds the lines of the project files holding a text, whatever '
-          'its case, as path:line: text. Faster than reading files to find '
-          'where something is.',
+          'its case, as path:line: text. Plain text, not a pattern. Faster '
+          'than reading files to find where something is.',
       parameters: {'text': 'Text to find, such as a class or method name'},
       run: (args) => search(_argument(args, 'text')),
     ),
     AiSkill(
       name: 'read_file',
+      icon: '👓',
       description:
           'Returns the content of a project file; a long one in parts, '
           'saying how to read on.',
@@ -102,23 +110,30 @@ class CodeEditAgent {
   late final List<AiSkill> _editSkills = [
     AiSkill(
       name: 'replace_in_file',
+      icon: '✏️',
       description:
-          'Replaces text that occurs exactly once in a project file. '
-          'Prefer it to write_file for small fixes.',
+          'Replaces text that occurs exactly once in a project file, or '
+          'every occurrence with replace_all. Prefer it to write_file for '
+          'small fixes. Answers with the lines it changed.',
       parameters: {
         'path': 'File relative to the project root',
         'old_text': 'Exact text to replace, including whitespace',
         'new_text': 'Replacement text',
+      },
+      optionalParameters: {
+        'replace_all': '"true" to replace every occurrence, as for a rename',
       },
       changesProject: true,
       run: (args) => replaceInFile(
         _argument(args, 'path'),
         _argument(args, 'old_text'),
         _argument(args, 'new_text'),
+        all: '${args['replace_all']}'.toLowerCase() == 'true',
       ),
     ),
     AiSkill(
       name: 'write_file',
+      icon: '✏️',
       description: 'Creates or overwrites a project file with new content.',
       parameters: {
         'path': 'File relative to the project root',
@@ -130,6 +145,7 @@ class CodeEditAgent {
     ),
     AiSkill(
       name: 'check_build',
+      icon: '🔨',
       description:
           'Checks the project for compile errors and returns them, or says '
           'the build succeeded.',
@@ -141,7 +157,8 @@ class CodeEditAgent {
         final errors = await hooks.checkBuild();
         return errors.isEmpty
             ? 'Build succeeded.'
-            : errors.truncated(AppMetric.aiBuildErrorChars);
+            : (await _withSourceLines(errors))
+                  .truncated(AppMetric.aiBuildErrorChars);
       },
     ),
   ];
@@ -153,6 +170,7 @@ class CodeEditAgent {
     if (runQuickFix == null || fixes.isEmpty) return null;
     return AiSkill(
       name: _quickFixName,
+      icon: '🪄',
       description:
           'Has FIDE do a whole-project fix itself, faster and safer than '
           'editing files: ${[for (final fix in fixes) '${fix.name} ${fix.purpose}'].join('; ')}. '
@@ -179,7 +197,10 @@ class CodeEditAgent {
   /// text` per line, at most [AppMetric.aiSearchMaxResults] of them.
   Future<String> search(String text) async {
     final found = await files.search(text, limit: AppMetric.aiSearchMaxResults);
-    return found.isEmpty ? 'No match for "$text".' : found.join('\n');
+    return found.isEmpty
+        ? 'No match for "$text". Search takes plain text, not a pattern: '
+              'try a shorter part of it.'
+        : found.join('\n');
   }
 
   /// The content of [path], whole when it fits in
@@ -206,29 +227,121 @@ class CodeEditAgent {
     return '$shown[Lines ${first + 1} to $end of ${lines.length}.$more]';
   }
 
-  /// Replaces the single occurrence of [oldText] in [path] with [newText].
+  /// Replaces the single occurrence of [oldText] in [path] with
+  /// [newText], or every one when [all], and answers with the lines it
+  /// changed.
   ///
-  /// Throws a [FormatException] when [oldText] is missing or not unique,
-  /// so the model can retry with more context.
+  /// Throws a [FormatException] when [oldText] is missing or, unless
+  /// [all], not unique, showing where it, or its first line, is, so the
+  /// model can retry without reading the file.
   Future<String> replaceInFile(
     String path,
     String oldText,
-    String newText,
-  ) async {
+    String newText, {
+    bool all = false,
+  }) async {
     final content = await files.read(path);
-    final index = content.indexOf(oldText);
-    if (oldText.isEmpty || index < 0) {
-      throw FormatException('old_text not found in $path');
-    }
-    if (content.indexOf(oldText, index + oldText.length) >= 0) {
+    final starts = oldText.isEmpty
+        ? const <int>[]
+        : [for (final match in oldText.allMatches(content)) match.start];
+    if (starts.isEmpty) {
       throw FormatException(
-        'old_text occurs more than once in $path; include more lines',
+        'old_text not found in $path. ${_nearMatches(content, oldText)}'
+            .truncated(AppMetric.aiEditHintChars),
       );
     }
-    return _write(
-      path,
-      content.replaceRange(index, index + oldText.length, newText),
+    if (starts.length > 1 && !all) {
+      throw FormatException(
+        'old_text occurs ${starts.length} times in $path: include more of '
+                'the lines around the one to change, or set replace_all to '
+                'true to change them all.\n'
+                '${[for (final start in starts) _excerpt(content, start, start + oldText.length)].join('\n')}'
+            .truncated(AppMetric.aiEditHintChars),
+      );
+    }
+    if (all) {
+      final saved = await _write(path, content.replaceAll(oldText, newText));
+      return '$saved Replaced ${starts.length} occurrences.';
+    }
+    final start = starts.single;
+    final replaced = content.replaceRange(
+      start,
+      start + oldText.length,
+      newText,
     );
+    final saved = await _write(path, replaced);
+    return '$saved Now ${_excerpt(replaced, start, start + newText.length)}'
+        .truncated(AppMetric.aiReadFileChars);
+  }
+
+  /// Where the first line of [oldText], which [content] doesn't hold as
+  /// is, appears once indentation is set aside: most often the model
+  /// mistyped the whitespace. Empty when it appears nowhere either.
+  static String _nearMatches(String content, String oldText) {
+    final first = const LineSplitter()
+        .convert(oldText)
+        .map((line) => line.trim())
+        .firstWhere((line) => line.isNotEmpty, orElse: () => '');
+    if (first.isEmpty) return '';
+    final near = [
+      for (final match in first.allMatches(content))
+        _excerpt(content, match.start, match.end),
+    ];
+    return near.isEmpty
+        ? 'Read the file to copy the text exactly.'
+        : 'Its first line is in these lines; copy old_text from them '
+              'exactly, whitespace included:\n${near.join('\n')}';
+  }
+
+  /// The lines of [content] from the one holding [start] to the one
+  /// holding [end], with [AppMetric.aiEditContextLines] more on each side,
+  /// exactly as the file has them, under a heading numbering them from 1:
+  /// what an edit made, or where a text is, so the model needn't read the
+  /// file to see it.
+  static String _excerpt(String content, int start, int end) {
+    final lines = const LineSplitter().convert(content);
+    int lineOf(int offset) =>
+        '\n'.allMatches(content.substring(0, offset)).length;
+    final first = (lineOf(start) - AppMetric.aiEditContextLines).clamp(
+      0,
+      lines.length,
+    );
+    final last = (lineOf(end) + AppMetric.aiEditContextLines + 1).clamp(
+      first,
+      lines.length,
+    );
+    return 'lines ${first + 1} to $last:\n'
+        '${lines.sublist(first, last).join('\n')}';
+  }
+
+  /// [errors] with each line naming a project file and line, as
+  /// `lib/a.dart:12: …` or `lib/a.dart:12:5: Error: …`, followed by that
+  /// line of code, so the model needn't read the file to find it.
+  Future<String> _withSourceLines(String errors) async {
+    final contents = <String, List<String>?>{};
+    final annotated = <String>[];
+    for (final error in const LineSplitter().convert(errors)) {
+      annotated.add(error);
+      final match = _errorLocation.firstMatch(error);
+      if (match == null) continue;
+      final path = match.namedGroup('path')!;
+      final lines = contents[path] ??= await _linesOf(path);
+      final number = int.parse(match.namedGroup('line')!);
+      if (lines != null && number >= 1 && number <= lines.length) {
+        annotated.add('    $number | ${lines[number - 1].trim()}');
+      }
+    }
+    return annotated.join('\n');
+  }
+
+  /// The lines of the project file at [path], or null when it can't be
+  /// read.
+  Future<List<String>?> _linesOf(String path) async {
+    try {
+      return const LineSplitter().convert(await files.read(path));
+    } on Exception {
+      return null;
+    }
   }
 
   /// Answers the user's [question], with the earlier chat [history]
@@ -368,7 +481,7 @@ class CodeEditAgent {
         final earlier = unchanged[key];
         final String result;
         if (earlier != null) {
-          _reportStep(name, arguments);
+          _reportStep(skills, name, arguments);
           if (++repeats >= AppMetric.aiMaxRepeatedCalls) {
             return 'Stopped: the model kept calling $name with nothing '
                 'changed in between; the change may be incomplete.';
@@ -486,7 +599,7 @@ class CodeEditAgent {
     String name,
     Map<String, dynamic> arguments,
   ) async {
-    _reportStep(name, arguments);
+    _reportStep(skills, name, arguments);
     final skill = skills.where((s) => s.name == name).firstOrNull;
     if (skill == null) return 'Error: unknown tool $name';
     try {
@@ -499,11 +612,19 @@ class CodeEditAgent {
   }
 
   /// Reports the call of the skill [name] with [arguments] to
-  /// [CodeEditHooks.onStep], as one line naming what it works on.
-  void _reportStep(String name, Map<String, dynamic> arguments) {
+  /// [CodeEditHooks.onStep], as one line starting with the skill's icon
+  /// and naming what it works on.
+  void _reportStep(
+    List<AiSkill> skills,
+    String name,
+    Map<String, dynamic> arguments,
+  ) {
+    final icon =
+        skills.where((skill) => skill.name == name).firstOrNull?.icon ??
+        AiSkill.unknownIcon;
     final subject =
         arguments['path'] ?? arguments['text'] ?? arguments['changes'];
-    hooks.onStep(subject == null ? name : '$name $subject');
+    hooks.onStep(subject == null ? '$icon $name' : '$icon $name $subject');
   }
 
   /// Writes [content] to the project file at [path] and runs
