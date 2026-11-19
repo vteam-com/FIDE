@@ -12,9 +12,6 @@ class _Extraction {
   /// what they name is taken: `SharedText`.
   static const String _sharedPrefix = 'Shared';
 
-  /// The first number added to a proposed name taken already.
-  static const int _firstSuffix = 2;
-
   /// Name of the parameter every widget takes its key in.
   static const String _keyName = 'key';
 
@@ -250,12 +247,7 @@ class _Extraction {
     }.take(_maxNameWords);
     final named = '${words.join()}$widget';
     if (words.isNotEmpty && !_takenNames.contains(named)) return named;
-    final shared = '$_sharedPrefix$widget';
-    var hint = shared;
-    for (var suffix = _firstSuffix; _takenNames.contains(hint); suffix++) {
-      hint = '$shared$suffix';
-    }
-    return hint;
+    return uniqueName('$_sharedPrefix$widget', _takenNames.contains);
   }
 
   /// The declarations [type] names, to import; null for a type with type

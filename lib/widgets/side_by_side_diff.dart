@@ -4,6 +4,7 @@ import 'dart:isolate';
 
 import 'package:diff_match_patch/diff_match_patch.dart';
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/widgets/busy_bar.dart';
 import 'package:fide/widgets/loading_indicator.dart';
@@ -264,9 +265,7 @@ class _SideBySideDiffState extends State<SideBySideDiff> {
         final count = _changeStarts.length;
         final reached = _changeStarts.where((s) => s <= _anchorLine).length;
         return PreviousNextButtons(
-          label: reached == 0
-              ? '$count ${count == 1 ? 'change' : 'changes'}'
-              : '$reached of $count',
+          label: reached == 0 ? count.count('change') : '$reached of $count',
           onPrevious: previous == null ? null : () => _jumpTo(previous),
           onNext: next == null ? null : () => _jumpTo(next),
           previousTooltip: 'Previous change',

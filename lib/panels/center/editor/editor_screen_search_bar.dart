@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/shortcut_help_entry.dart';
 import 'package:fide/panels/center/editor/editor_search_controller.dart';
 import 'package:fide/widgets/app_text_field.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
@@ -75,8 +76,15 @@ class EditorScreenSearchBar extends StatelessWidget {
                       '${controller.matchCount}',
                   onPrevious: onPreviousMatch,
                   onNext: onNextMatch,
-                  previousTooltip: 'Previous (Shift+F3)',
-                  nextTooltip: 'Next (F3)',
+                  // As the Edit menu names them
+                  previousTooltip: ShortcutHelpEntry.tooltip(
+                    'Find Previous',
+                    AppShortcut.findPrevious,
+                  ),
+                  nextTooltip: ShortcutHelpEntry.tooltip(
+                    'Find Next',
+                    AppShortcut.findNext,
+                  ),
                 ),
             ],
           ),

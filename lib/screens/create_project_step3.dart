@@ -1,13 +1,9 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/status_tone.dart';
-import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/create_project_draft_notifier.dart';
-import 'package:fide/widgets/loading_actions_log.dart';
-import 'package:fide/widgets/loading_progress_bar.dart';
+import 'package:fide/widget_services/loading_actions_progress.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/section_title.dart';
-import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -20,53 +16,30 @@ class CreateProjectStep3 extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final draft = ref.watch(createProjectDraftProvider);
-    final loadingActions = ref.watch(loadingActionsProvider);
-    final hasFailed = loadingActions.any(
-      (action) => action.status == LoadingStatus.failed,
-    );
-
-    return Container(
-      width: AppSize.panelFallbackHeight,
-      constraints: const BoxConstraints(maxHeight: AppSize.terminalMaxHeight),
-      child: Column(
-        spacing: AppSpacing.xLarge,
-        children: [
-          // Project info
-          OutlinedSurface(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: AppSpacing.medium,
-              children: [
-                SectionTitle('Creating project: ${draft.packageName}'),
-                PathText(
-                  draft.projectPath ?? '',
-                  selectable: true,
-                  style: AppTextStyle.label,
-                ),
-              ],
-            ),
-          ),
-
-          LoadingProgressBar(actions: loadingActions),
-
-          if (loadingActions.isNotEmpty)
-            Expanded(
-              child: LoadingActionsLog(actions: loadingActions, framed: true),
-            ),
-
-          // Error message if failed
-          if (hasFailed)
-            Text(
-              'Project creation failed. Please check the errors above.',
-              style: AppTextStyle.label.copyWith(
-                color: StatusTone.error.readableIn(
-                  Theme.of(context).colorScheme,
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: AppSpacing.xLarge,
+      children: [
+        // Project info
+        OutlinedSurface(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: AppSpacing.medium,
+            children: [
+              SectionTitle('Creating project: ${draft.packageName}'),
+              PathText(
+                draft.projectPath ?? '',
+                selectable: true,
+                style: AppTextStyle.label,
               ),
-              textAlign: TextAlign.center,
-            ),
-        ],
-      ),
+            ],
+          ),
+        ),
+        const LoadingActionsProgress(
+          failureMessage:
+              'Project creation failed. Please check the errors above.',
+        ),
+      ],
     );
   }
 }

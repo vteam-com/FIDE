@@ -1,23 +1,18 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/status_tone.dart';
-import 'package:fide/providers/app_providers.dart';
+import 'package:fide/widget_services/loading_actions_progress.dart';
+import 'package:fide/widgets/centered_scroll_view.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
-import 'package:fide/widgets/loading_actions_log.dart';
-import 'package:fide/widgets/loading_progress_bar.dart';
 import 'package:fide/widgets/path_text.dart';
-import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/screen_scaffold.dart';
-import 'package:fide/widgets/status_tone_style.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
 /// Full-screen progress view shown while a project loads.
 ///
-/// Transparent, so the workspace gradient shows through behind it.
-class LoadingScreen extends StatefulWidget {
+/// Transparent, so the workspace gradient shows through behind it. The app
+/// leaves it once loading ends, for the IDE or, on a failure, the welcome
+/// screen.
+class LoadingScreen extends StatelessWidget {
   /// Creates the loading view for the project at [loadingProjectName].
   const LoadingScreen({super.key, required this.loadingProjectName});
 
@@ -25,13 +20,8 @@ class LoadingScreen extends StatefulWidget {
   final String? loadingProjectName;
 
   @override
-  State<LoadingScreen> createState() => _LoadingScreenState();
-}
-
-class _LoadingScreenState extends State<LoadingScreen> {
-  @override
   Widget build(BuildContext context) {
-    final projectPath = widget.loadingProjectName!;
+    final projectPath = loadingProjectName!;
     return ScreenScaffold(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -44,62 +34,13 @@ class _LoadingScreenState extends State<LoadingScreen> {
               style: AppTextStyle.label,
             ),
           ),
-
-          Center(
-            child: SizedBox(
-              width: AppSize.panelFallbackHeight,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppSpacing.xLarge),
-                child: Consumer(
-                  builder: (context, ref, _) {
-                    final loadingActions = ref.watch(loadingActionsProvider);
-                    final hasFailed = loadingActions.any(
-                      (action) => action.status == LoadingStatus.failed,
-                    );
-
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: AppSpacing.xLarge,
-                      children: [
-                        // Project Path
-
-                        LoadingProgressBar(actions: loadingActions),
-
-                        if (loadingActions.isNotEmpty)
-                          LoadingActionsLog(actions: loadingActions),
-
-                        // Error message and retry button if failed
-                        if (hasFailed)
-                          Column(
-                            spacing: AppSpacing.xLarge,
-                            children: [
-                              Text(
-                                'Project loading failed. Please check the errors above.',
-                                style: AppTextStyle.label.copyWith(
-                                  color: StatusTone.error.readableIn(
-                                    Theme.of(context).colorScheme,
-                                  ),
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              PrimaryButton(
-                                label: 'Retry',
-                                onPressed: () {
-                                  // Clear loading state and let user try again
-                                  ref
-                                          .read(loadingActionsProvider.notifier)
-                                          .state =
-                                      [];
-                                  // The main app should handle retry logic
-                                },
-                              ),
-                            ],
-                          ),
-                      ],
-                    );
-                  },
-                ),
+          const SizedBox(height: AppSpacing.huge),
+          const Expanded(
+            child: CenteredScrollView(
+              maxWidth: AppSize.wizardMaxWidth,
+              child: LoadingActionsProgress(
+                failureMessage:
+                    'Project loading failed. Please check the errors above.',
               ),
             ),
           ),

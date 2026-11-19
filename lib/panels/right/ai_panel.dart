@@ -9,7 +9,7 @@ import 'package:fide/providers/ollama_model_provider.dart';
 import 'package:fide/providers/ollama_status_notifier.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_text_field.dart';
-import 'package:fide/widgets/dropdown_label.dart';
+import 'package:fide/widgets/dropdown_menu_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/icon_menu_item.dart';
@@ -67,7 +67,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
         // Setup instructions if no messages and not all ready
         if (messages.isEmpty && !isReady)
           Padding(
-            padding: const EdgeInsets.all(AppSpacing.medium),
+            padding: AppPadding.panelContent,
             child: ActionCard(
               title: 'Setup',
               icon: Icons.info_outline,
@@ -115,8 +115,9 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     return Row(
       spacing: AppSpacing.medium,
       children: [
-        PopupMenuButton<AiAction>(
+        DropdownMenuButton<AiAction>(
           tooltip: 'Action',
+          initialValue: selected,
           itemBuilder: (_) => [
             for (final action in AiAction.values)
               IconMenuItem(
@@ -126,9 +127,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
               ),
           ],
           onSelected: notifier.selectAction,
-          child: DropdownLabel(
-            child: Text(selected.label, style: AppTextStyle.caption),
-          ),
+          label: Text(selected.label, style: AppTextStyle.caption),
         ),
         const Spacer(),
         if (isReady)

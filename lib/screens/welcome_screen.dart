@@ -1,8 +1,9 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/app_view_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/widget_services/app_command.dart';
+import 'package:fide/widget_services/recent_project_icon.dart';
 import 'package:fide/widgets/centered_scroll_view.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/hero_title_widget.dart';
@@ -11,7 +12,6 @@ import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/screen_scaffold.dart';
 import 'package:fide/widgets/secondary_button.dart';
-import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
@@ -28,7 +28,6 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   @override
   Widget build(BuildContext context) {
-    final view = ref.read(appViewProvider.notifier);
     final appVersion = ref.watch(appVersionProvider).value ?? '';
     return ScreenScaffold(
       child: LayoutBuilder(
@@ -66,15 +65,18 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       spacing: AppSpacing.xLarge,
                       children: [
+                        // The File menu's commands, as the menus show them
                         PrimaryButton(
-                          onPressed: view.pickAndOpenProject,
-                          icon: Icons.folder_open,
-                          label: 'Open Flutter Project',
+                          onPressed: () =>
+                              AppCommand.openProject.run(context, ref),
+                          icon: AppCommand.openProject.icon,
+                          label: AppCommand.openProject.label,
                         ),
                         SecondaryButton(
-                          onPressed: view.showCreateProject,
-                          icon: Icons.add,
-                          label: 'Create New Project',
+                          onPressed: () =>
+                              AppCommand.createProject.run(context, ref),
+                          icon: AppCommand.createProject.icon,
+                          label: AppCommand.createProject.label,
                         ),
                         // Recent Projects Section
                         Column(
@@ -94,24 +96,20 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     );
   }
 
-  /// Builds the list of recent project tiles from [mruFolders], limited to the most recent entries.
+  /// The tiles of the recent projects, which [mruFoldersProvider] keeps
+  /// few.
   List<Widget> _buildRecentProjectsList() {
     final accessibleFolders = ref.watch(accessibleMruFoldersProvider);
-    final validMruFolders = ref
-        .watch(mruFoldersProvider)
-        .where((path) => path.isNotEmpty)
-        .take(AppMetric.mruFolderLimit) // Limit to configured recent projects
-        .toList();
-
-    return validMruFolders.map((path) {
+    return ref.watch(mruFoldersProvider).map((path) {
       final projectName = p.basename(path);
       final hasAccess = accessibleFolders.contains(path);
 
       return OutlinedListTile(
-        icon: hasAccess ? Icons.folder : Icons.folder_off,
-        iconColor: hasAccess
-            ? null
-            : StatusTone.error.readableIn(Theme.of(context).colorScheme),
+        leading: RecentProjectIcon(
+          projectPath: path,
+          hasAccess: hasAccess,
+          size: AppIconSize.large,
+        ),
         title: projectName,
         subtitle: path,
         trailing: CompactIconButton(

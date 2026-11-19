@@ -1,16 +1,17 @@
 import 'package:fide/models/class_split_result.dart';
 import 'package:fide/services/class_splitter.dart';
 import 'package:fide/services/code_formatter.dart';
-import 'package:fide/services/flutter_sdk.dart';
 
 /// Plans [ClassSplitter] splits against the Flutter SDK's Dart SDK, with
 /// every resulting file formatted; writing them is left to the caller.
 class ClassSplitService {
-  /// Creates a service resolving the SDK through [_flutterSdk] and
-  /// formatting with [_formatter].
-  const ClassSplitService(this._flutterSdk, this._formatter);
+  /// Creates a service finding the Dart SDK with [_dartSdkPath], such as
+  /// the session's `dartSdkPathProvider`, and formatting with [_formatter].
+  const ClassSplitService(this._dartSdkPath, this._formatter);
 
-  final FlutterSdk _flutterSdk;
+  /// Root of the Dart SDK bundled with Flutter; null when Flutter isn't
+  /// found.
+  final Future<String?> Function() _dartSdkPath;
 
   final CodeFormatter _formatter;
 
@@ -21,7 +22,7 @@ class ClassSplitService {
     required String projectPath,
     required String filePath,
   }) async {
-    final sdkPath = await _flutterSdk.dartSdkPath();
+    final sdkPath = await _dartSdkPath();
     if (sdkPath == null) {
       throw const ClassSplitException('Flutter SDK not found');
     }

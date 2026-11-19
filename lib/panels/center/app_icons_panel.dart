@@ -9,10 +9,10 @@ import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/right_panel_tab.dart';
 import 'package:fide/widget_services/app_icon_slot_tile.dart';
+import 'package:fide/widget_services/center_view_close_button.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/clickable.dart';
-import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_label.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/page_header.dart';
@@ -60,11 +60,7 @@ class AppIconsPanel extends ConsumerWidget {
               busy: reviewing.isLoading,
               onPressed: () => ref.invalidate(appIconReviewProvider),
             ),
-            CompactIconButton(
-              tooltip: 'Close',
-              icon: Icons.close,
-              onPressed: () => closeCenterView(ref),
-            ),
+            const CenterViewCloseButton(),
           ],
         ),
         _masterCard(

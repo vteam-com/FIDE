@@ -21,12 +21,6 @@ class AppPadding {
   /// Inset of a full page's or overlay's content from its edges.
   static const EdgeInsets pageContent = EdgeInsets.all(AppSpacing.xLarge);
 
-  /// Insets of one action's row in an action list.
-  static const EdgeInsets actionRow = EdgeInsets.symmetric(
-    horizontal: AppSpacing.medium,
-    vertical: AppSpacing.micro,
-  );
-
   /// Insets of an action's details, aligned under its title.
   static const EdgeInsets actionRowDetails = EdgeInsets.only(
     left: AppSpacing.medium + AppIconSize.large + AppSpacing.medium,

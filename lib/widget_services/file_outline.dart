@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/outline_node.dart';
+import 'package:fide/models/readable_error.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/models/widget_wrapper.dart';
 import 'package:fide/providers/active_editor.dart';
@@ -268,7 +269,10 @@ class FileOutline extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        MessageBox.showError(context, 'Widget edit failed: $e');
+        MessageBox.showError(
+          context,
+          'Widget edit failed: ${ReadableError.describe(e)}',
+        );
       }
     }
   }
@@ -308,7 +312,12 @@ class FileOutline extends ConsumerWidget {
             : 'Renamed $name to $newName in ${files.length} files',
       );
     } catch (e) {
-      if (context.mounted) MessageBox.showError(context, 'Rename failed: $e');
+      if (context.mounted) {
+        MessageBox.showError(
+          context,
+          'Rename failed: ${ReadableError.describe(e)}',
+        );
+      }
     }
   }
 }

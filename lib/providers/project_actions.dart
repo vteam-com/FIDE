@@ -1,4 +1,5 @@
 import 'package:fide/models/action_outcome.dart';
+import 'package:fide/models/readable_error.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
@@ -24,7 +25,9 @@ mixin ProjectActions<T> on StateNotifier<T> {
     try {
       return await action(path);
     } catch (e) {
-      return ActionOutcome.failure('$failurePrefix: $e');
+      return ActionOutcome.failure(
+        '$failurePrefix: ${ReadableError.describe(e)}',
+      );
     } finally {
       updateState((state) => busy(state, false));
     }

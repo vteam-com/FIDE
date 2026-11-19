@@ -1,4 +1,5 @@
 import 'package:fide/models/quick_fix.dart';
+import 'package:fide/models/readable_error.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/models/string_review.dart';
 import 'package:fide/providers/ai_chat_notifier.dart';
@@ -79,7 +80,10 @@ class QuickFixController {
     try {
       review = await _runner.reviewStrings(projectPath);
     } catch (e) {
-      notify('$reviewStringsLabel: $e', StatusTone.error);
+      notify(
+        '$reviewStringsLabel: ${ReadableError.describe(e)}',
+        StatusTone.error,
+      );
       return;
     }
     final choice = await choose(review);
@@ -146,9 +150,9 @@ class QuickFixController {
       }
     } catch (e) {
       if (inChat) {
-        _chat.endTask('Error: $e');
+        _chat.endTask('Error: ${ReadableError.describe(e)}');
       } else {
-        notify('${fix.label}: $e', StatusTone.error);
+        notify('${fix.label}: ${ReadableError.describe(e)}', StatusTone.error);
       }
     }
   }

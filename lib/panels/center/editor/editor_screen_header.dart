@@ -7,7 +7,7 @@ import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/diff_counter.dart';
-import 'package:fide/widgets/dropdown_label.dart';
+import 'package:fide/widgets/dropdown_menu_button.dart';
 import 'package:fide/widgets/file_icon_utils.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/icon_menu_row.dart';
@@ -89,7 +89,7 @@ class EditorScreenHeader extends ConsumerWidget {
               children: [
                 if (filePaths.isNotEmpty)
                   Flexible(
-                    child: PopupMenuButton<int>(
+                    child: DropdownMenuButton<int>(
                       key: const Key('keyMruForFiles'),
                       initialValue: activeIndex,
                       itemBuilder: (_ /*context*/) {
@@ -110,15 +110,13 @@ class EditorScreenHeader extends ConsumerWidget {
                         }).toList();
                       },
                       onSelected: onDocumentSelected,
-                      child: DropdownLabel(
-                        child: activeIndex < filePaths.length
-                            ? _documentRow(
-                                filePaths[activeIndex],
-                                projectPath,
-                                diffStats,
-                              )
-                            : const SizedBox.shrink(),
-                      ),
+                      label: activeIndex < filePaths.length
+                          ? _documentRow(
+                              filePaths[activeIndex],
+                              projectPath,
+                              diffStats,
+                            )
+                          : const SizedBox.shrink(),
                     ),
                   ),
                 if (isDirty)
@@ -169,7 +167,7 @@ class EditorScreenHeader extends ConsumerWidget {
             icon: Icons.close,
             onPressed: onClose,
             tooltip: ShortcutHelpEntry.tooltip(
-              'Close Editor',
+              'Close Document',
               AppShortcut.closeDocument,
             ),
           ),

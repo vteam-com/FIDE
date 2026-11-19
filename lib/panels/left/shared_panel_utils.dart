@@ -9,6 +9,7 @@ import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/services/desktop_shell.dart';
 import 'package:fide/services/file_entry_service.dart';
 import 'package:fide/services/git_service.dart';
+import 'package:fide/widget_services/file_actions.dart';
 import 'package:fide/widgets/icon_menu_item.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';

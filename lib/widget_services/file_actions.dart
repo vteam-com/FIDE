@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/readable_error.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/editor_navigation.dart';
@@ -43,7 +44,10 @@ class FileActions extends ConsumerWidget {
         await action();
       } catch (e) {
         if (context.mounted) {
-          MessageBox.showError(context, 'Failed to $verb the file: $e');
+          MessageBox.showError(
+            context,
+            'Failed to $verb the file: ${ReadableError.describe(e)}',
+          );
         }
       }
     }
@@ -103,12 +107,35 @@ class FileActions extends ConsumerWidget {
             CompactTextButton(
               icon: Icons.folder_open,
               label: 'Reveal in ${shell.fileManagerName}',
-              onPressed: () =>
-                  runOrShowError(() => shell.revealFile(path), 'reveal'),
+              onPressed: () => revealInFileManager(context, ref, path),
             ),
           ],
         ),
       ],
     );
+  }
+}
+
+/// Shows [path] in the file manager: a folder opened, a file selected in
+/// its folder, for every Reveal in Finder (or Explorer, or Files); tells
+/// the user when it can't.
+Future<void> revealInFileManager(
+  BuildContext context,
+  WidgetRef ref,
+  String path, {
+  bool isDirectory = false,
+}) async {
+  final shell = ref.read(desktopShellProvider);
+  try {
+    await (isDirectory
+        ? shell.revealInFileManager(path)
+        : shell.revealFile(path));
+  } catch (e) {
+    if (context.mounted) {
+      MessageBox.showError(
+        context,
+        'Failed to reveal ${p.basename(path)}: ${ReadableError.describe(e)}',
+      );
+    }
   }
 }

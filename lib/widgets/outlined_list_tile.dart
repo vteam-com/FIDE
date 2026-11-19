@@ -3,26 +3,23 @@ import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// A list entry in an outlined box: [icon], [title] over [subtitle], an
+/// A list entry in an outlined box: [leading], [title] over [subtitle], an
 /// optional [trailing] widget, and a tap action; disabled when [onTap] is
 /// null.
 class OutlinedListTile extends StatelessWidget {
   /// Creates the entry for [title].
   const OutlinedListTile({
     super.key,
-    required this.icon,
+    required this.leading,
     required this.title,
     required this.subtitle,
-    this.iconColor,
     this.trailing,
     this.onTap,
   });
 
-  /// Leading glyph.
-  final IconData icon;
-
-  /// Color of [icon]; the primary color when null.
-  final Color? iconColor;
+  /// Picture before the text, such as a project's icon, sized
+  /// [AppIconSize.large].
+  final Widget leading;
 
   /// Called when the entry is tapped; the entry is disabled when null.
   final VoidCallback? onTap;
@@ -38,7 +35,6 @@ class OutlinedListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return OutlinedSurface(
       padding: SurfacePadding.none,
       // Transparent Material so the ListTile's ink effects paint above
@@ -55,11 +51,7 @@ class OutlinedListTile extends StatelessWidget {
             horizontal: AppSpacing.xLarge,
             vertical: AppSpacing.tiny,
           ),
-          leading: Icon(
-            icon,
-            color: iconColor ?? theme.colorScheme.primary,
-            size: AppIconSize.large,
-          ),
+          leading: leading,
           title: Text(
             title,
             style: AppTextStyle.label,

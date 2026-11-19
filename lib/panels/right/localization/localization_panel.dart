@@ -139,13 +139,8 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
               'The loaded project does not appear to be a Flutter project.',
         );
       case LocalizationStatus.notStarted:
-        return SingleChildScrollView(
-          child: LocalizationSetupWidget(
-            onInitializeLocalization: _initializeLocalization,
-            showUpdateMainDart: false, // Not needed for initial setup
-            onUpdateMainDart: _updateMainDart,
-            isInitializing: state.isBusy,
-          ),
+        return LocalizationSetupWidget(
+          onInitializeLocalization: _initializeLocalization,
         );
       case LocalizationStatus.partial:
         return _buildPartialView(state);

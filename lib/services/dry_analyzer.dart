@@ -11,6 +11,7 @@ import 'package:analyzer/dart/element/scope.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/element/type_system.dart';
 import 'package:fide/models/dry_review.dart';
+import 'package:fide/models/unique_name.dart';
 import 'package:fide/services/dart_references.dart';
 import 'package:path/path.dart' as p;
 

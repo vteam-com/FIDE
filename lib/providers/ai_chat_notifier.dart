@@ -6,6 +6,7 @@ import 'package:fide/models/chat_message.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/output_log.dart';
+import 'package:fide/models/readable_error.dart';
 import 'package:fide/models/text_truncation.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/command_runner.dart';
@@ -234,7 +235,7 @@ class AiChatNotifier extends StateNotifier<AiChat> {
         );
       }
     } catch (e) {
-      if (!isStopped()) addReply('Error: $e');
+      if (!isStopped()) addReply('Error: ${ReadableError.describe(e)}');
     } finally {
       if (!isStopped()) {
         _cancelToken = null;
@@ -273,7 +274,7 @@ class AiChatNotifier extends StateNotifier<AiChat> {
             await _documents.reloadWritten(outcome.changedFiles);
             return outcome.summary;
           } on Exception catch (e) {
-            return '${fix.label} failed: $e';
+            return '${fix.label} failed: ${ReadableError.describe(e)}';
           }
         },
         checkBuild: () async {

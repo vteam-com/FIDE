@@ -178,9 +178,9 @@ Validates test organization and naming conventions.
       startMessages: ['Running flutter test${coverage ? ' --coverage' : ''}'],
       command: (output) =>
           tests.run(projectPath, output, select: select, coverage: coverage),
-      successMessage: '✅ Tests completed successfully',
-      failureMessage: (exitCode) => '❌ Tests failed with exit code: $exitCode',
-      errorPrefix: '❌ Error running tests: ',
+      successMessage: 'Tests completed successfully',
+      failureMessage: (exitCode) => 'Tests failed with exit code $exitCode',
+      errorPrefix: 'Test error: ',
     );
     if (!context.mounted) return;
     if (succeeded) {
@@ -200,10 +200,10 @@ Validates test organization and naming conventions.
           logKey: _logKey,
           startMessages: const [],
           command: (output) => tests.reportStructure(projectPath, output),
-          successMessage: '✅ Test structure validated',
+          successMessage: 'Test structure validated',
           failureMessage: (_) =>
-              '⚠️ No test directory found: create test/ to add tests',
-          errorPrefix: '❌ Error analyzing test structure: ',
+              'No test directory found: create test/ to add tests',
+          errorPrefix: 'Test structure error: ',
         );
   }
 }

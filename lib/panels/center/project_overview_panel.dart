@@ -8,11 +8,11 @@ import 'package:fide/providers/app_icon_review_provider.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/panel_actions.dart';
+import 'package:fide/widget_services/center_view_close_button.dart';
 import 'package:fide/widget_services/issue_row.dart';
 import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/card_grid.dart';
-import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/page_header.dart';
 import 'package:fide/widgets/page_scroll_view.dart';
@@ -213,11 +213,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
             ),
             // Shown over open files: closing returns to them
             if (ref.watch(centerViewProvider) == CenterView.overview)
-              CompactIconButton(
-                tooltip: 'Close',
-                icon: Icons.close,
-                onPressed: () => closeCenterView(ref),
-              ),
+              const CenterViewCloseButton(),
           ],
         ),
         CardGrid(

@@ -10,6 +10,7 @@ import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/l10n_config.dart';
 import 'package:fide/models/project_creation_request.dart';
 import 'package:fide/models/project_paths.dart';
+import 'package:fide/models/readable_error.dart';
 import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/flutter_sdk.dart';
@@ -107,7 +108,7 @@ class ProjectCreationService {
       report(CreationOutcome.verified);
       return true;
     } catch (e) {
-      report(CreationOutcome.error, '$e');
+      report(CreationOutcome.error, ReadableError.describe(e));
       return false;
     }
   }
@@ -170,7 +171,7 @@ class ProjectCreationService {
       }
       return (CreationOutcome.aiGenerated, '');
     } on AiServiceException catch (e) {
-      return (CreationOutcome.aiFailed, '$e');
+      return (CreationOutcome.aiFailed, ReadableError.describe(e));
     } on TimeoutException {
       return (CreationOutcome.aiTimedOut, '');
     } catch (_) {

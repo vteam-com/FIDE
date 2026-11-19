@@ -49,8 +49,8 @@ class EditorScreenStatusBar extends StatelessWidget {
               icon: regionsExpanded ? Icons.unfold_less : Icons.unfold_more,
               onPressed: onToggleAllRegions,
               tooltip: regionsExpanded
-                  ? 'Collapse All Regions (Ctrl+Shift+[)'
-                  : 'Expand All Regions (Ctrl+Shift+])',
+                  ? 'Collapse All Regions'
+                  : 'Expand All Regions',
             ),
             const SizedBox(width: AppSpacing.medium),
             Text('Ln $currentLineNumber', style: AppTextStyle.caption),
@@ -69,7 +69,7 @@ class EditorScreenStatusBar extends StatelessWidget {
             CompactIconButton(
               icon: Icons.format_indent_increase,
               onPressed: onFormatFile,
-              tooltip: 'Format File (Shift+Alt+F)',
+              tooltip: 'Format File',
             ),
           const SizedBox(width: AppSpacing.medium),
           Text(fileLanguage, style: AppTextStyle.caption),

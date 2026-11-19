@@ -31,7 +31,7 @@ void main() {
         .resolveSymbolicLinksSync();
     finder = ReferenceFinder(
       projectPath: project,
-      flutterSdk: const _TestSdk(),
+      dartSdkPath: const _TestSdk().dartSdkPath,
     );
   });
   tearDown(() {

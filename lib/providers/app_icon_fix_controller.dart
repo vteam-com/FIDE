@@ -2,6 +2,7 @@ import 'package:fcheck/fcheck.dart' as fcheck;
 import 'package:fide/models/action_outcome.dart';
 import 'package:fide/models/app_icon_review.dart';
 import 'package:fide/models/locale_number.dart';
+import 'package:fide/models/readable_error.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/app_icon_fixer.dart';
@@ -79,7 +80,7 @@ class AppIconFixController extends StateNotifier<Set<String>> {
         written.add(source);
         _useMaster(source);
       } catch (e) {
-        failures.add('Master image: $e');
+        failures.add('Master image: ${ReadableError.describe(e)}');
       }
       _update({...state}..remove(masterId));
     }
@@ -92,7 +93,7 @@ class AppIconFixController extends StateNotifier<Set<String>> {
         );
         written.addAll([for (final path in files) p.join(projectPath, path)]);
       } catch (e) {
-        failures.add('${platform.label}: $e');
+        failures.add('${platform.label}: ${ReadableError.describe(e)}');
       }
       _update({...state}..remove(platform.id));
     }

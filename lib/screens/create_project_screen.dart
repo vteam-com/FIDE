@@ -109,17 +109,15 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     );
   }
 
-  /// The page of [step]; the form steps scroll within the wizard's width.
+  /// The page of [step], scrolling within the wizard's width.
   static Widget _stepContent(CreateProjectStep step) {
-    final Widget form;
-    switch (step) {
-      case CreateProjectStep.nameAndFolder:
-        form = const CreateProjectStep1();
-      case CreateProjectStep.localization:
-        form = const CreateProjectStep2();
-      case CreateProjectStep.creating:
-        return const Center(child: CreateProjectStep3());
-    }
-    return CenteredScrollView(maxWidth: AppSize.wizardMaxWidth, child: form);
+    return CenteredScrollView(
+      maxWidth: AppSize.wizardMaxWidth,
+      child: switch (step) {
+        CreateProjectStep.nameAndFolder => const CreateProjectStep1(),
+        CreateProjectStep.localization => const CreateProjectStep2(),
+        CreateProjectStep.creating => const CreateProjectStep3(),
+      },
+    );
   }
 }

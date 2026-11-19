@@ -7,10 +7,12 @@ import 'package:fide/models/preview_pointer_phase.dart';
 import 'package:fide/models/preview_scan.dart';
 import 'package:fide/models/preview_scope.dart';
 import 'package:fide/models/preview_settings.dart';
+import 'package:fide/models/readable_error.dart';
 import 'package:fide/providers/ai_request.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/preview_scope_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/preview_generator.dart';
 import 'package:fide/services/preview_host.dart';
 import 'package:fide/services/preview_project_scanner.dart';
@@ -242,7 +244,10 @@ class PreviewController extends Notifier<PreviewState> {
       Object error,
     ) {
       if (ref.mounted) {
-        state = state.copyWith(status: PreviewStatus.failed, message: '$error');
+        state = state.copyWith(
+          status: PreviewStatus.failed,
+          message: ReadableError.describe(error),
+        );
       }
     });
   }
@@ -266,7 +271,7 @@ class PreviewController extends Notifier<PreviewState> {
       state = state.copyWith(filePath: path);
       return;
     }
-    if (path == null || !_isDart(path)) {
+    if (path == null || !FileTypeUtils.isDartFile(path)) {
       state = _fresh(path, PreviewStatus.noFile);
       return;
     }
@@ -284,9 +289,6 @@ class PreviewController extends Notifier<PreviewState> {
     scope: state.scope,
   );
 
-  /// Whether [path] is a Dart file, which alone can have previews.
-  static bool _isDart(String path) => p.extension(path) == '.dart';
-
   /// Scans the file, or the project, again and renders its previews as
   /// saved.
   Future<void> _refresh() =>
@@ -295,7 +297,7 @@ class PreviewController extends Notifier<PreviewState> {
   /// Scans the file shown again and renders its previews.
   Future<void> _refreshFile() async {
     final path = state.filePath;
-    if (path == null || !_isDart(path)) {
+    if (path == null || !FileTypeUtils.isDartFile(path)) {
       state = state.copyWith(status: PreviewStatus.noFile);
       return;
     }
@@ -412,7 +414,7 @@ class PreviewController extends Notifier<PreviewState> {
       if (!ref.mounted) return;
       state = state.copyWith(
         status: PreviewStatus.failed,
-        message: error is StateError ? error.message : '$error',
+        message: ReadableError.describe(error),
       );
       return;
     }

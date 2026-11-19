@@ -287,14 +287,14 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
     );
   }
 
-  /// Why the previews failed, with a retry; null when they didn't.
+  /// Why the previews failed; null when they didn't. The toolbar's Restart
+  /// Previews retries.
   Widget? _buildFailure(PreviewState state) {
     if (state.status != PreviewStatus.failed) return null;
     return OutputPanel(
       title: 'Preview Failed',
       text: state.message,
       isExpanded: true,
-      onClear: _controller.restart,
     );
   }
 

@@ -96,7 +96,12 @@ mixin ProjectTreePanelState<T extends ConsumerStatefulWidget>
       case NodeAction.open:
         openNode(node);
       case NodeAction.reveal:
-        _reveal(node);
+        revealInFileManager(
+          context,
+          ref,
+          node.path,
+          isDirectory: node.isDirectory,
+        );
       case NodeAction.copyFullPath:
         _copyPath(node.path, 'Full path copied to clipboard');
       case NodeAction.copyRelativePath:
@@ -135,19 +140,6 @@ mixin ProjectTreePanelState<T extends ConsumerStatefulWidget>
   /// Copies [text] to the clipboard and confirms it with [confirmation].
   void _copyPath(String text, String confirmation) {
     MessageBox.copyToClipboard(context, text, confirmation: confirmation);
-  }
-
-  /// Shows [node]'s folder, or [node] selected in its folder, in the file
-  /// manager.
-  Future<void> _reveal(ProjectNode node) async {
-    final shell = ref.read(desktopShellProvider);
-    try {
-      await (node.isDirectory
-          ? shell.revealInFileManager(node.path)
-          : shell.revealFile(node.path));
-    } catch (e) {
-      showError('Failed to reveal ${node.name}: $e');
-    }
   }
 
   /// Tags [node], under [root], with its change in [status], the

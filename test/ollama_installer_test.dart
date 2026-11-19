@@ -9,10 +9,9 @@ import 'package:flutter_test/flutter_test.dart';
 /// the command lines run; `ollama list` outputs [models].
 class _ScriptedRunner extends ProcessRunner {
   final Map<String, int> exitCodes;
-  final String models;
   final List<String> commands = [];
 
-  _ScriptedRunner({this.exitCodes = const {}, this.models = ''});
+  _ScriptedRunner({this.exitCodes = const {}});
 
   @override
   Future<ProcessResult> run(
@@ -24,12 +23,7 @@ class _ScriptedRunner extends ProcessRunner {
     final command = [executable, ...arguments].join(' ');
     commands.add(command);
     final exitCode = exitCodes[command] ?? 0;
-    return ProcessResult(
-      0,
-      exitCode,
-      command == 'ollama list' ? models : '',
-      '',
-    );
+    return ProcessResult(0, exitCode, '', '');
   }
 }
 
@@ -65,43 +59,21 @@ void main() {
     );
   });
 
-  test('ensureReady reports each step and downloads the model', () async {
+  test('finds Ollama installed and running, and pulls the model', () async {
     final runner = _ScriptedRunner();
-    final steps = <String>[];
-    final installer = OllamaInstaller(
-      runner,
-      operatingSystem: 'linux',
-      onStep: steps.add,
-    );
+    final installer = OllamaInstaller(runner, operatingSystem: 'linux');
 
     expect(await installer.isInstalled(), isTrue);
     expect(await installer.isRunning(), isTrue);
-    expect(await installer.isModelInstalled(), isFalse);
-    expect(await installer.ensureReady(), isTrue);
-    expect(steps, [
-      'Downloading ${AiModel.ollama} model...',
-      '${AiModel.ollama} model downloaded',
-    ]);
+    await installer.downloadModel();
     expect(runner.commands.last, 'ollama pull ${AiModel.ollama}');
   });
 
-  test('ensureReady is false when a download fails', () async {
+  test('a failed model download throws', () async {
     final runner = _ScriptedRunner(
       exitCodes: {'ollama pull ${AiModel.ollama}': 1},
     );
-    final steps = <String>[];
-    final installer = OllamaInstaller(runner, onStep: steps.add);
 
-    expect(await installer.ensureReady(), isFalse);
-    expect(steps.last, startsWith('Failed to ensure Ollama readiness'));
-    expect(installer.downloadModel(), throwsException);
-  });
-
-  test('ensureReady is already satisfied with the model listed', () async {
-    final runner = _ScriptedRunner(models: '${AiModel.ollama}:latest');
-    final installer = OllamaInstaller(runner);
-
-    expect(await installer.ensureReady(), isTrue);
-    expect(runner.commands, isNot(contains('ollama pull ${AiModel.ollama}')));
+    expect(OllamaInstaller(runner).downloadModel(), throwsException);
   });
 }

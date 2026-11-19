@@ -50,6 +50,15 @@ class CommandRunner extends StateNotifier<CommandRuns> {
   /// `reportsBuildErrors` (none after a success) to [onBuildErrors].
   CommandRunner({required this._onBuildErrors}) : super(const CommandRuns());
 
+  /// Mark before the line closing a run that succeeded.
+  static const String successMark = '✓ ';
+
+  /// Mark before the line closing a run that failed or threw.
+  static const String failureMark = '✗ ';
+
+  /// Line closing a run [stop] ended.
+  static const String stoppedLine = '⏹ Stopped';
+
   /// Bumped by [reset], so runs it ended stop reporting.
   int _generation = 0;
 
@@ -97,6 +106,10 @@ class CommandRunner extends StateNotifier<CommandRuns> {
   /// [command] returns or the error it throws. [command] reports through
   /// the [BuildOutput] it is given, which writes to the log and tracks the
   /// processes it starts. Returns whether it succeeded.
+  ///
+  /// The run ends with [successMessage], [failureMessage] or [errorPrefix]
+  /// then the error, each after its [successMark] or [failureMark]: every
+  /// panel's runs close alike.
   ///
   /// The status returns to idle after a pause, except when [resetWhenDone]
   /// is false (app runs), whose final state stays visible. The action
@@ -157,20 +170,23 @@ class CommandRunner extends StateNotifier<CommandRuns> {
       final stopped = _stopping.contains(id);
       succeeded = !stopped && exitCode == 0;
       if (stopped) {
-        write((log) => log.addOutput('⏹ Stopped'));
+        write((log) => log.addOutput(stoppedLine));
         setStatus(ActionStatus.idle);
       } else if (succeeded) {
-        write((log) => log.addOutput(successMessage));
+        write((log) => log.addOutput('$successMark$successMessage'));
         setStatus(ActionStatus.success);
       } else {
-        write((log) => log.addError(failureMessage(exitCode)));
+        write((log) => log.addError('$failureMark${failureMessage(exitCode)}'));
         setStatus(ActionStatus.error);
       }
     } on BuildException catch (e) {
-      write((log) => log.addError('$errorPrefix${BuildNarration.failed(e)}'));
+      write(
+        (log) =>
+            log.addError('$failureMark$errorPrefix${BuildNarration.failed(e)}'),
+      );
       setStatus(ActionStatus.error);
     } catch (e) {
-      write((log) => log.addError('$errorPrefix$e'));
+      write((log) => log.addError('$failureMark$errorPrefix$e'));
       setStatus(ActionStatus.error);
     } finally {
       if (isCurrent()) {

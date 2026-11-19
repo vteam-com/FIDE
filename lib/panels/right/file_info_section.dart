@@ -1,3 +1,4 @@
+import 'package:fide/constants/constants.dart';
 import 'package:fide/panels/right/image_details_panel.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/widget_services/file_actions.dart';
@@ -21,6 +22,7 @@ class FileInfoSection extends StatelessWidget {
       isExpanded: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: AppSpacing.large,
         children: [
           FileActions(path: path),
           if (FileTypeUtils.isImageFile(path)) ImageDetailsPanel(path: path),

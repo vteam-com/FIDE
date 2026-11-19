@@ -12,6 +12,7 @@ import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/detail_row.dart';
+import 'package:fide/widgets/detail_section.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/section_title.dart';
@@ -102,7 +103,7 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
           // Status Row
           Row(
             children: [
-              _buildHeading('Status:'),
+              const SectionTitle('Status'),
               const SizedBox(width: AppSpacing.medium),
               Row(
                 spacing: AppSpacing.medium,
@@ -121,19 +122,11 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
 
           const SizedBox(height: AppSpacing.small),
 
-          // Build Info
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeading('Build Info:'),
-              const SizedBox(height: AppSpacing.tiny),
-              DetailRow('Last Build:', _artifacts.lastBuildTime),
-              const SizedBox(height: AppSpacing.micro),
-              DetailRow('Size:', _artifacts.size),
-              const SizedBox(height: AppSpacing.micro),
-              DetailRow('Location:', p.basename(_artifacts.location)),
-            ],
-          ),
+          DetailSection('Build Info', [
+            DetailRow('Last Build', _artifacts.lastBuildTime),
+            DetailRow('Size', _artifacts.size),
+            DetailRow('Location', p.basename(_artifacts.location)),
+          ]),
 
           // Enable instructions (if not supported)
           if (!widget.isSupported) ...[
@@ -209,11 +202,6 @@ class _PlatformInfoSectionState extends ConsumerState<PlatformInfoSection> {
           '\nClick to review and fix them.',
       onTap: () => showCenterView(ref, CenterView.appIcons),
     );
-  }
-
-  /// A bold caption introducing a group of details.
-  Widget _buildHeading(String label) {
-    return Text(label, style: AppTextStyle.captionStrong);
   }
 
   /// Returns the platform icon widget — either an SVG asset or a Material icon fallback.

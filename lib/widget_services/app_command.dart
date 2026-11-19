@@ -25,7 +25,7 @@ enum AppCommand {
   ),
   openProject(
     'Open Existing Project...',
-    Icons.create_new_folder_outlined,
+    Icons.folder_open,
     _pickAndOpenProject,
   ),
   createProject(

@@ -117,13 +117,13 @@ class PackagesSection extends ConsumerWidget {
         // What pub printed, always shown when present
         if (info.outdatedOutput case final output?)
           OutputPanel(
-            title: '📄 Package Analysis Output',
+            title: 'Package Analysis Output',
             text: output,
             isExpanded: true,
           ),
         if (info.conflictSummary case final conflict?)
           OutputPanel(
-            title: '⚠️ Dependency Conflicts',
+            title: 'Dependency Conflicts',
             text: conflict,
             isExpanded: true,
           ),

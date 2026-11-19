@@ -6,9 +6,9 @@ import 'package:fide/models/relative_time.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/image_providers.dart';
 import 'package:fide/widgets/detail_row.dart';
+import 'package:fide/widgets/detail_section.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/loading_indicator.dart';
-import 'package:fide/widgets/section_title.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -99,53 +99,57 @@ class _ImageDetailsPanelState extends ConsumerState<ImageDetailsPanel> {
         // Vector images have no pixels: no color mode, and colors counted
         // by use rather than by area
         final isRaster = details.colorMode != null;
+        final sections = [
+          DetailSection('File', [
+            DetailRow('Format', details.format),
+            DetailRow('Size', details.fileBytes.readableSize),
+            DetailRow('Modified', details.modified.timeAgo()),
+            DetailRow('Date', details.modified.toString().split('.').first),
+          ]),
+          DetailSection('Image', [
+            if (details.width case final width?)
+              if (details.height case final height?) ...[
+                DetailRow('Dimensions', '$width × $height px'),
+                DetailRow('Aspect ratio', details.aspectRatio ?? '?'),
+                DetailRow(
+                  'Megapixels',
+                  (width * height / _pixelsPerMegapixel).localized,
+                ),
+              ],
+            if (details.frames > 1)
+              DetailRow('Frames', details.frames.localized),
+          ]),
+          DetailSection('Color', [
+            if (details.colorMode case final mode?) DetailRow('Mode', mode),
+            if (details.bitsPerChannel case final bits?)
+              DetailRow('Bit depth', '$bits bits per channel'),
+            if (isRaster)
+              DetailRow('Transparency', switch (details.transparentShare) {
+                null => 'None (no alpha channel)',
+                0 => 'Alpha channel, every pixel opaque',
+                final share => '${(share * _percent).localized}% of pixels',
+              }),
+          ]),
+          DetailSection(isRaster ? 'Dominant colors' : 'Colors used', [
+            for (final color in details.dominantColors)
+              DetailRow(
+                _hex(color.argb),
+                '${(color.share * _percent).round()}%'
+                '${isRaster ? '' : ' of uses'}',
+                leading: _swatch(color.argb),
+              ),
+          ]),
+          DetailSection('${details.format} details', [
+            for (final MapEntry(:key, :value) in details.formatDetails.entries)
+              DetailRow(key, value),
+          ]),
+        ];
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: AppSpacing.large,
           children: [
-            ..._section('File', [
-              DetailRow('Format', details.format),
-              DetailRow('Size', details.fileBytes.readableSize),
-              DetailRow('Modified', details.modified.timeAgo()),
-              DetailRow('Date', details.modified.toString().split('.').first),
-            ]),
-            ..._section('Image', [
-              if (details.width case final width?)
-                if (details.height case final height?) ...[
-                  DetailRow('Dimensions', '$width × $height px'),
-                  DetailRow('Aspect ratio', details.aspectRatio ?? '?'),
-                  DetailRow(
-                    'Megapixels',
-                    (width * height / _pixelsPerMegapixel).localized,
-                  ),
-                ],
-              if (details.frames > 1)
-                DetailRow('Frames', details.frames.localized),
-            ]),
-            ..._section('Color', [
-              if (details.colorMode case final mode?) DetailRow('Mode', mode),
-              if (details.bitsPerChannel case final bits?)
-                DetailRow('Bit depth', '$bits bits per channel'),
-              if (isRaster)
-                DetailRow('Transparency', switch (details.transparentShare) {
-                  null => 'None (no alpha channel)',
-                  0 => 'Alpha channel, every pixel opaque',
-                  final share => '${(share * _percent).localized}% of pixels',
-                }),
-            ]),
-            ..._section(isRaster ? 'Dominant colors' : 'Colors used', [
-              for (final color in details.dominantColors)
-                DetailRow(
-                  _hex(color.argb),
-                  '${(color.share * _percent).round()}%'
-                  '${isRaster ? '' : ' of uses'}',
-                  leading: _swatch(color.argb),
-                ),
-            ]),
-            ..._section('${details.format} details', [
-              for (final MapEntry(:key, :value)
-                  in details.formatDetails.entries)
-                DetailRow(key, value),
-            ]),
+            for (final section in sections)
+              if (section.rows.isNotEmpty) section,
           ],
         );
       },
@@ -155,25 +159,6 @@ class _ImageDetailsPanelState extends ConsumerState<ImageDetailsPanel> {
   /// [argb] as `#RRGGBB`.
   static String _hex(int argb) =>
       '#${(argb & _rgbMask).toRadixString(_hexRadix).padLeft(_rgbHexDigits, '0').toUpperCase()}';
-
-  /// A titled group of [rows]; nothing when there are none.
-  List<Widget> _section(String title, List<Widget> rows) => rows.isEmpty
-      ? const []
-      : [
-          Padding(
-            padding: const EdgeInsets.only(
-              top: AppSpacing.large,
-              bottom: AppSpacing.small,
-            ),
-            child: SectionTitle(title),
-          ),
-          ...rows.map(
-            (row) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.micro),
-              child: row,
-            ),
-          ),
-        ];
 
   /// A small square of [argb], outlined so white shows on light themes.
   Widget _swatch(int argb) {

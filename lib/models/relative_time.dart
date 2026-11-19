@@ -1,4 +1,5 @@
 import 'package:fide/constants/core_constants.dart';
+import 'package:fide/models/locale_number.dart';
 
 /// Describes a past moment relative to now, the way people say it.
 extension RelativeTime on DateTime {
@@ -19,17 +20,16 @@ extension RelativeTime on DateTime {
     ).difference(DateTime(year, month, day)).inDays;
     if (days == 0) return 'today';
     if (days == 1) return 'yesterday';
-    if (days < DateTime.daysPerWeek) return '$days days ago';
+    if (days < DateTime.daysPerWeek) return _ago(days, 'day');
     if (days < AppMetric.daysPerMonth) {
-      return _plural(days ~/ DateTime.daysPerWeek, 'week');
+      return _ago(days ~/ DateTime.daysPerWeek, 'week');
     }
     if (days < AppMetric.daysPerYear) {
-      return _plural(days ~/ AppMetric.daysPerMonth, 'month');
+      return _ago(days ~/ AppMetric.daysPerMonth, 'month');
     }
-    return _plural(days ~/ AppMetric.daysPerYear, 'year');
+    return _ago(days ~/ AppMetric.daysPerYear, 'year');
   }
 
   /// `[count] [unit]s ago`, singular when [count] is one.
-  static String _plural(int count, String unit) =>
-      '$count $unit${count == 1 ? '' : 's'} ago';
+  static String _ago(int count, String unit) => '${count.count(unit)} ago';
 }

@@ -12,22 +12,16 @@ import 'package:fide/services/process_runner.dart';
 class OllamaInstaller {
   final ProcessRunner _runner;
 
-  /// Receives each step of [ensureReady] as it happens.
-  final ProcessOutputCallback onStep;
-
   /// The operating system installed on, as `Platform.operatingSystem`
   /// names it: macOS and Linux install with Ollama's script, Windows by
   /// hand.
   final String operatingSystem;
 
   /// Creates an installer that launches commands through [_runner] on
-  /// [operatingSystem] (the one FIDE runs on by default), reporting its
-  /// steps to [onStep] (ignored by default).
-  OllamaInstaller(
-    this._runner, {
-    this.onStep = _ignoreStep,
-    String? operatingSystem,
-  }) : operatingSystem = operatingSystem ?? Platform.operatingSystem;
+  /// [operatingSystem] (the one FIDE runs on by default). Which steps run
+  /// is the AI panel's `OllamaStatusNotifier`'s call.
+  OllamaInstaller(this._runner, {String? operatingSystem})
+    : operatingSystem = operatingSystem ?? Platform.operatingSystem;
 
   /// Downloads [AiModel.ollama].
   Future<void> downloadModel() async {
@@ -38,37 +32,6 @@ class OllamaInstaller {
         'Failed to download ${AiModel.ollama} model: ${result.stderr}',
       ),
     );
-  }
-
-  /// Installs, starts and downloads whatever is missing; true when ready.
-  Future<bool> ensureReady() async {
-    try {
-      if (!await isInstalled()) {
-        onStep('Ollama not installed, attempting installation...');
-        await install();
-        onStep('Ollama installed successfully');
-      }
-
-      if (!await isRunning()) {
-        onStep('Starting Ollama service...');
-        await start();
-        if (!await isRunning()) {
-          throw Exception('Failed to start Ollama service');
-        }
-        onStep('Ollama service started');
-      }
-
-      if (!await isModelInstalled()) {
-        onStep('Downloading ${AiModel.ollama} model...');
-        await downloadModel();
-        onStep('${AiModel.ollama} model downloaded');
-      }
-
-      return true;
-    } catch (e) {
-      onStep('Failed to ensure Ollama readiness: $e');
-      return false;
-    }
   }
 
   /// Installs Ollama with the official script, then downloads
@@ -102,12 +65,6 @@ class OllamaInstaller {
     return _runner.succeeds('which', ['ollama']);
   }
 
-  /// Whether [AiModel.ollama] has been downloaded.
-  Future<bool> isModelInstalled() async {
-    final models = await _runner.outputOf('ollama', ['list']);
-    return models?.contains(AiModel.ollama) ?? false;
-  }
-
   /// Whether the Ollama server answers.
   Future<bool> isRunning() {
     return _runner.succeeds('ollama', ['list']);
@@ -118,7 +75,4 @@ class OllamaInstaller {
     await _runner.start('ollama', ['serve'], mode: ProcessStartMode.detached);
     await Future.delayed(AppDuration.ollamaStartupDelay);
   }
-
-  /// The default [onStep], which drops the step.
-  static void _ignoreStep(String _) {}
 }

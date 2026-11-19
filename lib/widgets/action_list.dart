@@ -69,7 +69,7 @@ class _ActionRowState extends State<_ActionRow> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: AppPadding.actionRow,
+                padding: AppPadding.listItem,
                 child: Row(
                   spacing: AppSpacing.medium,
                   children: [

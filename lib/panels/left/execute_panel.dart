@@ -185,9 +185,9 @@ Runs the Flutter application in debug mode.
       startMessages: ['Building for $label...'],
       command: (projectPath, output) =>
           _buildService.build(projectPath, platform, output, target: target),
-      successMessage: '✓ Build completed successfully for $label',
-      failureMessage: (exitCode) => '✗ Build failed with exit code $exitCode',
-      errorPrefix: '✗ Build error: ',
+      successMessage: 'Build completed successfully for $label',
+      failureMessage: (exitCode) => 'Build failed with exit code $exitCode',
+      errorPrefix: 'Build error: ',
     );
   }
 
@@ -196,15 +196,15 @@ Runs the Flutter application in debug mode.
   Future<void> _clean(FlutterPlatform platform) => _runProjectAction(
     ExecutePanel._cleanId,
     platform,
-    startMessages: ['🧹 Cleaning Flutter project...'],
+    startMessages: ['Cleaning Flutter project...'],
     // A failed clean throws, so reaching the end means success
     command: (projectPath, output) async {
       await _buildService.clean(projectPath, output);
       return 0;
     },
-    successMessage: '✓ Project cleaned successfully',
-    failureMessage: (exitCode) => '✗ Clean failed with exit code $exitCode',
-    errorPrefix: '✗ Clean error: ',
+    successMessage: 'Project cleaned successfully',
+    failureMessage: (exitCode) => 'Clean failed with exit code $exitCode',
+    errorPrefix: 'Clean error: ',
   );
 
   /// Key of the log of [platform]'s actions.
@@ -227,10 +227,10 @@ Runs the Flutter application in debug mode.
       output,
       isDebug: isDebug,
     ),
-    successMessage: '✓ App ${isDebug ? 'debugged' : 'ran'} successfully',
+    successMessage: 'App ${isDebug ? 'debugged' : 'ran'} successfully',
     failureMessage: (exitCode) =>
-        '✗ App ${isDebug ? 'debug' : 'run'} failed with exit code $exitCode',
-    errorPrefix: '✗ Run error: ',
+        'App ${isDebug ? 'debug' : 'run'} failed with exit code $exitCode',
+    errorPrefix: 'Run error: ',
     resetWhenDone: false,
   );
 

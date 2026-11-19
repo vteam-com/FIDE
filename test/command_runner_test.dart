@@ -54,8 +54,8 @@ void main() {
     final runs = stateOf(runner);
     expect(runs.statusOf('build'), ActionStatus.error);
     expect(runs.logOf(_log).output, 'start\n');
-    expect(runs.logOf(_log).errors, 'failed 1\n');
-    expect(buildErrors, ['failed 1\n']);
+    expect(runs.logOf(_log).errors, '${CommandRunner.failureMark}failed 1\n');
+    expect(buildErrors, ['${CommandRunner.failureMark}failed 1\n']);
   });
 
   test('stop kills the process and the run ends idle', () async {
@@ -266,7 +266,10 @@ void main() {
     await done;
     // The end of the run shows its last lines at once
     expect(publications, 2);
-    expect(stateOf(runner).logOf(_log).output, endsWith('last line\nok\n'));
+    expect(
+      stateOf(runner).logOf(_log).output,
+      endsWith('last line\n${CommandRunner.successMark}ok\n'),
+    );
   });
 
   test('narrates a failed flutter command in the log', () async {
@@ -281,6 +284,9 @@ void main() {
     );
 
     final log = stateOf(runner).logOf(_log);
-    expect(log.errors, 'error: Flutter pub get failed with exit code 1\n');
+    expect(
+      log.errors,
+      '${CommandRunner.failureMark}error: Flutter pub get failed with exit code 1\n',
+    );
   });
 }

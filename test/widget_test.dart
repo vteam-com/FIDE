@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fide/main.dart';
+import 'package:fide/widget_services/app_command.dart';
 
 void main() {
   testWidgets('App should render without errors', (WidgetTester tester) async {
@@ -26,7 +27,7 @@ void main() {
       // Verify that the welcome screen is shown in full width when no project is loaded
       // (explorer panel is hidden, welcome screen takes full width)
       expect(find.text('Welcome to FIDE'), findsOneWidget);
-      expect(find.text('Create New Project'), findsOneWidget);
+      expect(find.text(AppCommand.createProject.label), findsOneWidget);
     },
   );
 }

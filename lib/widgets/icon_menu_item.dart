@@ -4,11 +4,12 @@ import 'package:material_ui/material_ui.dart';
 /// A popup menu entry worth [value], showing an [IconMenuRow] of [icon]
 /// and [label]; every menu builds its entries from it.
 class IconMenuItem<T> extends PopupMenuItem<T> {
-  /// Creates the entry; [isError], [leading] and [trailing] are passed to
-  /// its [IconMenuRow].
+  /// Creates the entry, which can't be picked unless [enabled]; [isError],
+  /// [leading] and [trailing] are passed to its [IconMenuRow].
   IconMenuItem({
     super.key,
     required T super.value,
+    super.enabled,
     required IconData? icon,
     required String label,
     bool isError = false,

@@ -2,6 +2,7 @@ import 'package:fide/models/action_outcome.dart';
 import 'package:fide/models/arb_translation.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/localization_state.dart';
+import 'package:fide/models/readable_error.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/project_actions.dart';
 import 'package:fide/providers/service_providers.dart';
@@ -172,7 +173,9 @@ class LocalizationController extends StateNotifier<LocalizationState>
       );
     } catch (e) {
       updateState(
-        (state) => state.copyWith(loadError: 'Error loading ARB files: $e'),
+        (state) => state.copyWith(
+          loadError: 'Error loading ARB files: ${ReadableError.describe(e)}',
+        ),
       );
     }
   }

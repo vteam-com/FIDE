@@ -8,21 +8,14 @@ import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Scrollable list of load steps, each with a pending, success or failure
-/// icon; failed steps are shown in the error color.
+/// Scrollable list of load steps in an outlined box, each with a pending,
+/// success or failure icon; failed steps are shown in the error color.
 class LoadingActionsLog extends StatelessWidget {
   /// Creates a log of [actions].
-  const LoadingActionsLog({
-    super.key,
-    required this.actions,
-    this.framed = false,
-  });
+  const LoadingActionsLog({super.key, required this.actions});
 
   /// Steps reported so far.
   final List<LoadingAction> actions;
-
-  /// Whether to draw the log inside an outlined, padded box.
-  final bool framed;
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +28,9 @@ class LoadingActionsLog extends StatelessWidget {
         itemBuilder: (_, index) {
           final action = actions[index];
           return Padding(
-            padding: EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               vertical: AppSpacing.tiny,
-              horizontal: framed ? AppSpacing.xLarge : 0,
+              horizontal: AppSpacing.xLarge,
             ),
             child: Row(
               spacing: AppSpacing.medium,
@@ -59,9 +52,7 @@ class LoadingActionsLog extends StatelessWidget {
         },
       ),
     );
-    return framed
-        ? OutlinedSurface(padding: SurfacePadding.none, child: log)
-        : log;
+    return OutlinedSurface(padding: SurfacePadding.none, child: log);
   }
 
   /// Returns a spinner while [status] is pending, else a success or

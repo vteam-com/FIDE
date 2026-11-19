@@ -1,5 +1,6 @@
 import 'package:fide/models/dart_imports.dart';
 import 'package:fide/models/preview_scan.dart';
+import 'package:fide/models/unique_name.dart';
 import 'package:fide/services/preview_scanner.dart';
 
 /// A sample argument for a widget parameter: its [code], whether it is a
@@ -30,10 +31,6 @@ class PreviewGenerator {
 
   /// The library declaring `Colors` and `Icons`.
   static const String _materialImport = 'package:flutter/material.dart';
-
-  /// The number appended to a preview name already taken, as in
-  /// `myWidgetPreview2`.
-  static const int _firstNameSuffix = 2;
 
   static const PreviewSample _null = (
     code: 'null',
@@ -185,11 +182,7 @@ class PreviewGenerator {
     final base =
         '${className[0].toLowerCase()}${className.substring(1)}'
         '${PreviewScanner.previewClass}';
-    var name = base;
-    for (var suffix = _firstNameSuffix; taken.contains(name); suffix++) {
-      name = '$base$suffix';
-    }
-    return name;
+    return uniqueName(base, taken.contains);
   }
 
   /// [name], such as `subtitleText`, as words: `Subtitle text`.

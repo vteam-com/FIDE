@@ -81,7 +81,7 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
       autofocus: true,
       backgroundOpacity: 1,
       // Keeps the first and last rows and columns clear of the panel edges
-      padding: const EdgeInsets.all(AppSpacing.medium),
+      padding: AppPadding.panelContent,
       theme: TerminalTheme(
         cursor: Colors.white,
         selection: Colors.blue.withAlpha(AppSize.gutterDividerAlpha.toInt()),

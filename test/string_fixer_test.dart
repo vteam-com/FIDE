@@ -117,7 +117,7 @@ void main() {
     setUp(() {
       finder = ReferenceFinder(
         projectPath: project.path,
-        flutterSdk: const FlutterSdk(ProcessRunner()),
+        dartSdkPath: const FlutterSdk(ProcessRunner()).dartSdkPath,
       );
     });
     tearDown(() => finder.dispose());

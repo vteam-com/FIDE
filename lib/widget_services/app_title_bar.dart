@@ -15,11 +15,11 @@ import 'package:fide/providers/side_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widget_services/app_command.dart';
 import 'package:fide/widget_services/project_icon.dart';
+import 'package:fide/widget_services/recent_project_icon.dart';
 import 'package:fide/widget_services/update_button.dart';
 import 'package:fide/widgets/app_menu_bar.dart';
-import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
-import 'package:fide/widgets/dropdown_label.dart';
+import 'package:fide/widgets/dropdown_menu_button.dart';
 import 'package:fide/widgets/icon_menu_item.dart';
 import 'package:fide/widgets/priority_row.dart';
 import 'package:fide/widgets/status_tone_style.dart';
@@ -156,24 +156,26 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     List<String> mruFolders,
     WidgetRef ref,
   ) {
-    return Clickable(
-      onTap: () => _showProjectMenu(context, mruFolders, ref),
-      child: DropdownLabel(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          spacing: AppSpacing.medium,
-          children: [
-            ProjectIcon(projectPath: currentProjectPath),
-            Flexible(
-              child: Text(
-                p.basename(currentProjectPath),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-                style: AppTextStyle.label,
-              ),
+    return DropdownMenuButton<VoidCallback>(
+      itemBuilder: (_ /*context*/) => _buildDropdownMenuItems(
+        mruFolders,
+        ref.read(accessibleMruFoldersProvider),
+      ),
+      onSelected: (action) => action(),
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: AppSpacing.medium,
+        children: [
+          ProjectIcon(projectPath: currentProjectPath),
+          Flexible(
+            child: Text(
+              p.basename(currentProjectPath),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+              style: AppTextStyle.label,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -257,43 +259,19 @@ class _TitleBarState extends ConsumerState<AppTitleBar> {
     ];
   }
 
-  /// The menu entry switching to [folderPath], shown locked when not
-  /// [hasAccess].
+  /// The menu entry switching to [folderPath], disabled and in the error
+  /// color when not [hasAccess], as the welcome screen's list shows it.
   PopupMenuItem<VoidCallback> _buildRecentProjectItem(
     String folderPath,
     bool hasAccess,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
     return IconMenuItem(
       value: () => ref.read(appViewProvider.notifier).loadProject(folderPath),
-      icon: Icons.folder_off,
-      leading: hasAccess ? ProjectIcon(projectPath: folderPath) : null,
+      icon: null,
+      leading: RecentProjectIcon(projectPath: folderPath, hasAccess: hasAccess),
       label: p.basename(folderPath),
+      enabled: hasAccess,
       isError: !hasAccess,
-      trailing: hasAccess
-          ? null
-          : Icon(
-              Icons.lock,
-              color: StatusTone.error.readableIn(colorScheme),
-              size: AppIconSize.small,
-            ),
-    );
-  }
-
-  /// Shows a positioned popup menu anchored below the project name button.
-  void _showProjectMenu(
-    BuildContext context,
-    List<String> mruFolders,
-    WidgetRef ref,
-  ) {
-    final button = context.findRenderObject() as RenderBox;
-    showActionMenu(
-      context,
-      button.localToGlobal(button.size.bottomLeft(Offset.zero)),
-      _buildDropdownMenuItems(
-        mruFolders,
-        ref.read(accessibleMruFoldersProvider),
-      ),
     );
   }
 }

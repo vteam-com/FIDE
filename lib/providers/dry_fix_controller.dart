@@ -1,6 +1,7 @@
 import 'package:fide/models/action_outcome.dart';
 import 'package:fide/models/dry_review.dart';
 import 'package:fide/models/locale_number.dart';
+import 'package:fide/models/readable_error.dart';
 import 'package:fide/providers/open_documents_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/code_formatter.dart';
@@ -83,7 +84,7 @@ class DryFixController extends StateNotifier<Object?> {
       });
       return ActionOutcome.success('Fixed ${count.count('place')}');
     } catch (e) {
-      return ActionOutcome.failure('$e');
+      return ActionOutcome.failure(ReadableError.describe(e));
     } finally {
       _update(null);
     }

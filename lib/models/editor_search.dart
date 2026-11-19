@@ -1,3 +1,5 @@
+import 'package:fide/models/locale_number.dart';
+
 /// Find-in-file state for the editor: the query, its options, and where it
 /// matches the text.
 class EditorSearch {
@@ -105,7 +107,7 @@ class EditorSearch {
   /// Confirmation that [count] occurrences were replaced, naming the
   /// [fileCount] files when more than one.
   static String replacedMessage(int count, {int fileCount = 1}) {
-    final occurrences = '$count occurrence${count == 1 ? '' : 's'}';
+    final occurrences = count.count('occurrence');
     return fileCount == 1
         ? 'Replaced $occurrences'
         : 'Replaced $occurrences in $fileCount files';

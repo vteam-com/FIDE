@@ -15,7 +15,6 @@ import 'package:fide/models/lookup_field.dart';
 import 'package:fide/models/search_result.dart';
 import 'package:fide/models/text_offsets.dart';
 import 'package:fide/services/compile_errors.dart';
-import 'package:fide/services/flutter_sdk.dart';
 import 'package:path/path.dart' as p;
 
 part 'reference_finder.callee_visitor.dart';
@@ -44,10 +43,13 @@ class ReferenceFinder {
   static const String superseded = 'A newer lookup replaced this one';
 
   /// Creates a finder for the project at `projectPath`, resolving against
-  /// the Dart SDK `flutterSdk` bundles.
-  ReferenceFinder({required this._projectPath, required this._flutterSdk});
+  /// the Dart SDK `dartSdkPath` finds, such as the session's
+  /// `dartSdkPathProvider`.
+  ReferenceFinder({required this._projectPath, required this._dartSdkPath});
 
-  final FlutterSdk _flutterSdk;
+  /// Root of the Dart SDK bundled with Flutter; null when Flutter isn't
+  /// found.
+  final Future<String?> Function() _dartSdkPath;
 
   Isolate? _isolate;
 
@@ -138,7 +140,7 @@ class ReferenceFinder {
 
   /// Starts the analysis isolate and returns its request port.
   Future<SendPort> _spawn() async {
-    final sdkPath = await _flutterSdk.dartSdkPath();
+    final sdkPath = await _dartSdkPath();
     if (sdkPath == null) {
       _worker = null;
       throw Exception('Flutter SDK not found');
