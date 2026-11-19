@@ -47,6 +47,30 @@ void main() {
     return path;
   }
 
+  test('fails its lookups when the analysis can\'t start', () async {
+    // The analyzer refuses a path with a trailing slash; the lookup must
+    // say so rather than wait forever on a worker that died
+    final broken = ReferenceFinder(
+      projectPath: '$project/',
+      dartSdkPath: const _TestSdk().dartSdkPath,
+    );
+    addTearDown(broken.dispose);
+    final path = write('lib/a.dart', 'class A {}');
+
+    await expectLater(
+      broken
+          .find(filePath: path, line: 1, column: 1)
+          .timeout(const Duration(seconds: 30)),
+      throwsA(
+        isA<Exception>().having(
+          (e) => '$e',
+          'message',
+          contains("Can't analyze"),
+        ),
+      ),
+    );
+  });
+
   test('finds uses of a class across files, not its own', () async {
     final gallery = write('lib/gallery.dart', '''
 class Gallery {

@@ -9,27 +9,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'fake_chat_model.dart';
+
 /// A model whose replies only end when cancelled, as a slow local model
 /// the user stops.
-class _StoppableModel implements ChatModel {
+class _StoppableModel extends FakeChatModel {
   @override
   Future<String> generate(
     String prompt,
     Duration timeout, {
     bool think = false,
     AiCancelToken? cancel,
+    ReplyText? onText,
   }) async {
     await cancel!.whenCancelled;
     throw const AiCancelledException();
   }
-
-  @override
-  Future<Map<String, dynamic>> chat(
-    List<Map<String, dynamic>> messages,
-    List<Map<String, dynamic>> tools, {
-    bool think = false,
-    AiCancelToken? cancel,
-  }) => throw UnimplementedError();
 }
 
 /// A repository with one staged file and no remote, answered without

@@ -25,15 +25,23 @@ class AiAssistant {
   ///
   /// Without a context of its own, the action works on [text] as told by
   /// its [AiAction.instruction]; with one, [text] adds to the instruction.
-  /// Throws an [AiServiceException] when the request fails.
+  /// [onText] receives the answer as it streams in. Throws an
+  /// [AiServiceException] when the request fails.
   Future<String> respond(
     AiAction action,
     String text,
     String context, {
     AiCancelToken? cancel,
+    ReplyText? onText,
   }) {
     if (action.isReview) {
-      return review(action.instruction, text, context, cancel: cancel);
+      return review(
+        action.instruction,
+        text,
+        context,
+        cancel: cancel,
+        onText: onText,
+      );
     }
     final textIsContext = action.context == AiContext.none;
     return suggest(
@@ -44,18 +52,21 @@ class AiAssistant {
       textIsContext ? text : context,
       think: action.think,
       cancel: cancel,
+      onText: onText,
     );
   }
 
   /// Reviews the project [findings] (fcheck's results and the code they
   /// point to) as [instructions] say, with the user's [notes] on what to
   /// focus on, and returns the review in Markdown. A thinking model
-  /// reasons first, as judging the findings is what the review is for.
+  /// reasons first, as judging the findings is what the review is for;
+  /// [onText] receives the review as it streams in.
   Future<String> review(
     String instructions,
     String notes,
     String findings, {
     AiCancelToken? cancel,
+    ReplyText? onText,
   }) {
     return _model.generate(
       '''
@@ -71,17 +82,19 @@ $findings''',
       AppDuration.aiReviewTimeout,
       think: true,
       cancel: cancel,
+      onText: onText,
     );
   }
 
   /// Requests a coding suggestion for [request] with contextual text;
   /// empty when the model has nothing to say. [think] lets a thinking
-  /// model reason first.
+  /// model reason first; [onText] receives the answer as it streams in.
   Future<String> suggest(
     String request,
     String context, {
     bool think = false,
     AiCancelToken? cancel,
+    ReplyText? onText,
   }) {
     return _model.generate(
       '''
@@ -95,6 +108,7 @@ Please provide a helpful response focused on the coding request.''',
       think ? AppDuration.aiToolStepTimeout : AppDuration.aiGenerateTimeout,
       think: think,
       cancel: cancel,
+      onText: onText,
     );
   }
 }

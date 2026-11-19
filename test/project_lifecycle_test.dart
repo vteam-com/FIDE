@@ -142,6 +142,19 @@ void main() {
       );
     });
 
+    test(
+      'opens a path given with a trailing slash as the plain path',
+      () async {
+        // The Dart analyzer refuses paths that aren't normalized
+        final path = flutterProject('one');
+
+        await container.read(projectManagerProvider).loadProject('$path/');
+
+        expect(container.read(currentProjectPathProvider), path);
+        expect(container.read(mruFoldersProvider), [path]);
+      },
+    );
+
     test('unloads the open project and its documents first', () async {
       final one = flutterProject('one');
       final two = flutterProject('two');

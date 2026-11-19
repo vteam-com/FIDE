@@ -1,13 +1,14 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/text_tool_calls.dart';
 import 'package:fide/services/chat_model.dart';
+import 'package:fide/services/model_http.dart';
 import 'package:http/http.dart' as http;
 
 /// The local Ollama model as a [ChatModel]: picks the model among the
-/// downloaded ones and sends prompts and chats to Ollama's HTTP API.
+/// downloaded ones and streams prompts and chats through Ollama's HTTP
+/// API.
 ///
 /// Failed requests throw an [AiServiceException]; requests stopped through
 /// their [AiCancelToken] throw an [AiCancelledException].
@@ -33,15 +34,27 @@ class OllamaClient implements ChatModel {
   /// Capability Ollama reports for models that reason before answering.
   static const String _thinkingCapability = 'thinking';
 
-  final http.Client _client;
+  final ModelHttp _http;
 
   String _model = AiModel.ollama;
   bool _isModelResolved = false;
   bool _supportsTools = true;
   bool _supportsThinking = false;
 
-  /// Creates a client sending requests through [_client].
-  OllamaClient(this._client);
+  /// The warm-up in flight, so the panel asking again joins it.
+  Future<void>? _warmingUp;
+
+  /// Creates a client sending requests through [client].
+  OllamaClient(http.Client client)
+    : _http = ModelHttp(
+        client,
+        service: 'Ollama',
+        unreachableHint:
+            'Make sure Ollama is installed and running on $ollamaHost',
+        slowHint:
+            ': the model may be too large for the memory free, or the '
+            'prompt too long',
+      );
 
   /// Whether [model] stands in for [AiModel.ollama], which isn't
   /// downloaded or can't call tools.
@@ -50,8 +63,14 @@ class OllamaClient implements ChatModel {
   /// The model requests go to; see [resolveModel].
   String get model => _model;
 
-  /// Whether [model] can call tools, which editing files needs.
+  @override
+  String get name => _model;
+
+  @override
   bool get supportsTools => _supportsTools;
+
+  @override
+  int? get contextBudget => AppMetric.aiContextBudgetTokens;
 
   /// Picks the model requests go to among the downloaded ones and returns
   /// it, or null when none is downloaded: [AiModel.ollama] first,
@@ -59,8 +78,8 @@ class OllamaClient implements ChatModel {
   ///
   /// Throws an [AiServiceException] when Ollama can't be reached.
   Future<String?> resolveModel({AiCancelToken? cancel}) async {
-    final tags = await _send(
-      _tagsPath,
+    final tags = await _http.json(
+      Uri.http(ollamaHost, _tagsPath),
       AppDuration.aiSuggestionTimeout,
       cancel: cancel,
     );
@@ -95,21 +114,30 @@ class OllamaClient implements ChatModel {
     return chosen;
   }
 
+  /// Loads the model in memory, as a request with no prompt does, so the
+  /// first question doesn't wait for it: a large model takes seconds to
+  /// load. A model already loaded answers at once.
+  @override
+  Future<void> warmUp() =>
+      _warmingUp ??= _loadModel().whenComplete(() => _warmingUp = null);
+
   @override
   Future<String> generate(
     String prompt,
     Duration timeout, {
     bool think = false,
     AiCancelToken? cancel,
+    ReplyText? onText,
   }) async {
-    final data = await _post(
+    final reply = await _stream(
       _generatePath,
       {'prompt': prompt},
       timeout,
       think: think,
       cancel: cancel,
+      onText: onText,
     );
-    return data?['response']?.toString() ?? '';
+    return reply.text;
   }
 
   @override
@@ -118,16 +146,21 @@ class OllamaClient implements ChatModel {
     List<Map<String, dynamic>> tools, {
     bool think = false,
     AiCancelToken? cancel,
+    ReplyText? onText,
   }) async {
-    final data = await _post(
+    final reply = await _stream(
       _chatPath,
       {'messages': messages, 'tools': tools},
       AppDuration.aiToolStepTimeout,
       think: think,
       cancel: cancel,
+      onText: onText,
     );
-    final message = data?['message'];
-    return message is Map<String, dynamic> ? message : const {};
+    return _withWrittenCalls({
+      'role': 'assistant',
+      'content': reply.text,
+      if (reply.toolCalls.isNotEmpty) 'tool_calls': reply.toolCalls,
+    });
   }
 
   /// The capabilities Ollama reports for [name], or null when it doesn't
@@ -136,8 +169,8 @@ class OllamaClient implements ChatModel {
     String name,
     AiCancelToken? cancel,
   ) async {
-    final details = await _send(
-      _showPath,
+    final details = await _http.json(
+      Uri.http(ollamaHost, _showPath),
       AppDuration.aiSuggestionTimeout,
       body: {'model': name},
       cancel: cancel,
@@ -154,9 +187,28 @@ class OllamaClient implements ChatModel {
   bool _isPreferred(String name) =>
       name == AiModel.ollama || name.startsWith('${AiModel.ollama}:');
 
-  /// Sends [body] (plus the model name) to Ollama's [path], resolving the
-  /// model first when [resolveModel] hasn't, and returns the reply like
-  /// [_send].
+  /// Sends a request with no prompt, which loads the model; a failure is
+  /// left to the requests that follow, which report it.
+  Future<void> _loadModel() async {
+    try {
+      await _stream(
+        _generatePath,
+        const {},
+        AppDuration.aiGenerateTimeout,
+        think: false,
+        cancel: null,
+        onText: null,
+      );
+    } on AiServiceException {
+      // Reported by the next request
+    }
+  }
+
+  /// Streams [body] (plus the model name) to Ollama's [path], resolving
+  /// the model first when [resolveModel] hasn't, and returns the reply's
+  /// text, which [onText] receives as it grows, and the tool calls it
+  /// lists. A malformed tool call, which Ollama fails the request for, is
+  /// asked for again.
   ///
   /// A thinking model reasons before answering only when [think] is set:
   /// on a local model the hidden reasoning costs most of the time and
@@ -164,12 +216,13 @@ class OllamaClient implements ChatModel {
   /// model stays loaded for [AppDuration.aiModelKeepAlive] so the next
   /// request doesn't reload it, with one [AppMetric.aiContextTokens]
   /// context window for every request.
-  Future<Map<String, dynamic>?> _post(
+  Future<({String text, List<Object?> toolCalls})> _stream(
     String path,
     Map<String, Object> body,
     Duration timeout, {
     required bool think,
     required AiCancelToken? cancel,
+    required ReplyText? onText,
   }) async {
     if (!_isModelResolved) {
       try {
@@ -180,75 +233,48 @@ class OllamaClient implements ChatModel {
         // The request below reports the failure
       }
     }
-    return _send(
-      path,
-      timeout,
-      body: {
-        'model': _model,
-        'stream': false,
-        'keep_alive': AppDuration.aiModelKeepAlive.inSeconds,
-        'options': {'num_ctx': AppMetric.aiContextTokens},
-        if (_supportsThinking) 'think': think,
-        ...body,
-      },
-      cancel: cancel,
-    );
+    return ModelHttp.retrying(cancel: cancel, () async {
+      final text = StringBuffer();
+      final toolCalls = <Object?>[];
+      await for (final chunk in _http.jsonLines(
+        Uri.http(ollamaHost, path),
+        timeout,
+        body: {
+          'model': _model,
+          'stream': true,
+          'keep_alive': AppDuration.aiModelKeepAlive.inSeconds,
+          'options': {'num_ctx': AppMetric.aiContextTokens},
+          if (_supportsThinking) 'think': think,
+          ...body,
+        },
+        cancel: cancel,
+      )) {
+        final message = chunk['message'];
+        final words = message is Map ? message['content'] : chunk['response'];
+        if (words is String && words.isNotEmpty) {
+          text.write(words);
+          onText?.call(TextToolCalls.textBefore(text.toString()));
+        }
+        final calls = message is Map ? message['tool_calls'] : null;
+        if (calls is List) toolCalls.addAll(calls);
+      }
+      return (text: text.toString(), toolCalls: toolCalls);
+    });
   }
 
-  /// Posts [body] to Ollama's [path], or gets it when [body] is null, and
-  /// returns the decoded JSON reply, or null when it isn't a JSON object.
-  ///
-  /// Throws an [AiServiceException] when Ollama can't be reached or
-  /// doesn't answer in full within [timeout] (the request is then aborted,
-  /// so Ollama stops generating) or answers with an error status, and an
-  /// [AiCancelledException] when [cancel] stops it.
-  Future<Map<String, dynamic>?> _send(
-    String path,
-    Duration timeout, {
-    Map<String, Object>? body,
-    AiCancelToken? cancel,
-  }) async {
-    cancel?.throwIfCancelled();
-    // Ollama answers a request only once generated: the deadline covers
-    // the wait for the answer, not just reading it
-    final deadline = Completer<void>();
-    final timer = Timer(timeout, deadline.complete);
-    final request = http.AbortableRequest(
-      body == null ? 'GET' : 'POST',
-      Uri.http(ollamaHost, path),
-      abortTrigger: Future.any([?cancel?.whenCancelled, deadline.future]),
-    );
-    if (body != null) {
-      request.headers['Content-Type'] = 'application/json';
-      request.body = jsonEncode(body);
-    }
-    final http.Response response;
-    try {
-      response = await http.Response.fromStream(await _client.send(request));
-    } on http.RequestAbortedException {
-      if (cancel?.isCancelled ?? false) throw const AiCancelledException();
-      throw AiServiceException(
-        'Ollama gave no answer within ${timeout.inSeconds} s: the model may '
-        'be too large for the memory free, or the prompt too long.',
-      );
-    } catch (e) {
-      throw AiServiceException(
-        '$e\n\nMake sure Ollama is installed and running on $ollamaHost',
-      );
-    } finally {
-      timer.cancel();
-    }
-    if (response.statusCode != HttpStatus.ok) {
-      throw AiServiceException(
-        'Failed to get AI response (${response.statusCode}). Make sure Ollama is running with the $_model model.\n${response.body}',
-      );
-    }
-    final Object? data;
-    try {
-      data = jsonDecode(response.body);
-    } on FormatException {
-      return null;
-    }
-    return data is Map<String, dynamic> ? data : null;
+  /// [reply], with the tool calls the model wrote in its text as its
+  /// `tool_calls` when Ollama found none, so they run, and so the history
+  /// shows the model proper calls rather than text it would imitate.
+  static Map<String, dynamic> _withWrittenCalls(Map<String, dynamic> reply) {
+    final calls = reply['tool_calls'];
+    if (calls is List && calls.isNotEmpty) return reply;
+    final content = reply['content']?.toString() ?? '';
+    final written = TextToolCalls.parse(content);
+    if (written.isEmpty) return reply;
+    return {
+      ...reply,
+      'content': TextToolCalls.textBefore(content),
+      'tool_calls': written,
+    };
   }
 }

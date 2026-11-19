@@ -28,6 +28,7 @@ class AppDuration {
   static const Duration aiToolStepTimeout = Duration(seconds: 180);
   static const Duration aiReviewTimeout = Duration(seconds: 300);
   static const Duration aiModelKeepAlive = Duration(minutes: 30);
+
   static const Duration ollamaStartupDelay = Duration(seconds: 3);
   static const Duration projectCreateTimeout = Duration(seconds: 60);
   static const Duration aiProjectCreateTimeout = Duration(seconds: 120);
@@ -52,8 +53,9 @@ class AppDuration {
   /// file, before the project's quality is analyzed again.
   static const Duration saveBurstPause = Duration(milliseconds: 500);
 
-  /// Longest a command's new output lines wait before they are shown, so
-  /// a burst of lines updates the view a few times, not once per line.
+  /// Longest new output waits before it is shown, a command's lines or
+  /// the words of an AI reply, so a burst updates the view a few times,
+  /// not once per line or word.
   static const Duration outputLogPublish = Duration(milliseconds: 50);
 
   /// How long saves and file changes must pause before Git reads the

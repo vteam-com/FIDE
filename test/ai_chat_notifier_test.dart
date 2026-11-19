@@ -1,5 +1,10 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:fide/constants/core_constants.dart';
 import 'package:fide/models/ai_action.dart';
 import 'package:fide/providers/ai_chat_notifier.dart';
+import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/ai_panel_busy_provider.dart';
 import 'package:fide/providers/ollama_status_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
@@ -91,5 +96,57 @@ void main() {
     expect(state.isBusy, isFalse);
     expect(state.messages.last.content, '⏹ Stopped.');
     expect(task.isCancelled, isTrue);
+  });
+
+  test('shows the reply as it streams in, until it lands', () async {
+    final release = Completer<void>();
+    final streaming = StreamingChatModel(
+      start: 'It prints',
+      answer: 'It prints a greeting.',
+      release: release.future,
+    );
+    final streamed = ProviderContainer(
+      overrides: [chatModelProvider.overrideWithValue(streaming)],
+    );
+    addTearDown(streamed.dispose);
+
+    final reply = streamed
+        .read(aiChatProvider.notifier)
+        .send('Explain', action: AiAction.explain);
+    await Future<void>.delayed(AppDuration.outputLogPublish * 2);
+    expect(streamed.read(aiChatProvider).draft, 'It prints');
+
+    release.complete();
+    await reply;
+    final chat = streamed.read(aiChatProvider);
+    expect(chat.draft, isEmpty);
+    expect(chat.messages.last.content, 'It prints a greeting.');
+  });
+
+  test('Ask AI answers a question without editing the project', () async {
+    final project = Directory.systemTemp.createTempSync('fide_ask_');
+    addTearDown(() => project.deleteSync(recursive: true));
+    final agentModel = FakeChatModel(chatReplies: [answer('4')]);
+    final asked = ProviderContainer(
+      overrides: [chatModelProvider.overrideWithValue(agentModel)],
+    );
+    addTearDown(asked.dispose);
+    asked.read(currentProjectPathProvider.notifier).state = project.path;
+
+    await asked
+        .read(aiChatProvider.notifier)
+        .send('2+2=', action: AiAction.ask);
+
+    expect(asked.read(aiChatProvider).messages.last.content, '4');
+    expect(agentModel.toolNames.single, isNot(contains('write_file')));
+    expect(agentModel.toolNames.single, isNot(contains('run_quick_fix')));
+    // The open file isn't named to a question not about it
+    expect(agentModel.chats.single.last['content'], '2+2=');
+  });
+
+  test('warms the model up', () async {
+    await container.read(aiChatProvider.notifier).warmUp();
+
+    expect(model.warmUps, 1);
   });
 }

@@ -236,4 +236,172 @@ void main() {
 
     expect(await client.chat([], []), {'role': 'assistant', 'content': 'done'});
   });
+
+  /// A streamed Ollama answer of one JSON object per line.
+  http.StreamedResponse streamed(List<Map<String, Object>> chunks) =>
+      http.StreamedResponse(
+        Stream.fromIterable([
+          for (final chunk in chunks) utf8.encode('${jsonEncode(chunk)}\n'),
+        ]),
+        HttpStatus.ok,
+      );
+
+  test('streams the reply, its text as it grows', () async {
+    final client = OllamaClient(
+      MockClient.streaming((request, _) async {
+        if (request.method == 'GET') return reply('');
+        return streamed([
+          {
+            'message': {'role': 'assistant', 'content': 'Let me '},
+          },
+          {
+            'message': {'role': 'assistant', 'content': 'look.'},
+          },
+          {
+            'message': {
+              'role': 'assistant',
+              'content': '',
+              'tool_calls': [
+                {
+                  'id': 'call_1',
+                  'function': {
+                    'name': 'read_file',
+                    'arguments': {'path': 'lib/main.dart'},
+                  },
+                },
+              ],
+            },
+            'done': true,
+          },
+        ]);
+      }),
+    );
+    final texts = <String>[];
+
+    final message = await client.chat([], [], onText: texts.add);
+
+    expect(texts, ['Let me', 'Let me look.']);
+    expect(message['content'], 'Let me look.');
+    expect((message['tool_calls'] as List).single['id'], 'call_1');
+  });
+
+  test('recovers a tool call the model wrote as text', () async {
+    // qwen3-coder's call without its opening tag, which Ollama leaves as
+    // text
+    final client = clientAnswering(
+      http.Response(
+        jsonEncode({
+          'message': {
+            'role': 'assistant',
+            'content':
+                'Let me check the file:\n\n<function=read_file>\n'
+                '<parameter=path>\nlib/main.dart\n</parameter>\n</function>\n'
+                '</tool_call>',
+          },
+        }),
+        HttpStatus.ok,
+      ),
+    );
+
+    final message = await client.chat([], []);
+
+    expect(message['content'], 'Let me check the file:');
+    final call = (message['tool_calls'] as List).single as Map;
+    expect(call['function'], {
+      'name': 'read_file',
+      'arguments': {'path': 'lib/main.dart'},
+    });
+  });
+
+  test('asks again when Ollama fails on a malformed tool call', () async {
+    var chats = 0;
+    final client = OllamaClient(
+      MockClient((request) async {
+        if (request.method == 'GET') return http.Response('{}', HttpStatus.ok);
+        chats++;
+        if (chats == 1) {
+          return http.Response(
+            jsonEncode({'error': 'XML syntax error on line 3: unexpected EOF'}),
+            HttpStatus.internalServerError,
+          );
+        }
+        return http.Response(
+          jsonEncode({
+            'message': {'role': 'assistant', 'content': 'done'},
+          }),
+          HttpStatus.ok,
+        );
+      }),
+    );
+
+    expect((await client.chat([], []))['content'], 'done');
+    expect(chats, 2);
+  });
+
+  test(
+    'warming up loads the model with no prompt, as requests set it',
+    () async {
+      final bodies = <Map<String, dynamic>>[];
+      final client = clientWithModels(
+        ['${AiModel.ollama}:latest'],
+        {'${AiModel.ollama}:latest'},
+        [],
+        bodies: bodies,
+      );
+
+      await Future.wait([client.warmUp(), client.warmUp()]);
+      await client.generate('tip?', timeout);
+
+      // Both calls share one load, with the options every request has
+      final load = bodies.first;
+      expect(bodies, hasLength(2));
+      expect(load.containsKey('prompt'), isFalse);
+      expect(jsonEncode(load['options']), jsonEncode(bodies.last['options']));
+      expect(load['keep_alive'], bodies.last['keep_alive']);
+    },
+  );
+
+  test('stopping or timing out mid-answer says so, not a raw error', () async {
+    /// A client streaming one word, then nothing until aborted.
+    OllamaClient stalling() => OllamaClient(
+      MockClient.streaming((request, _) async {
+        if (request.method == 'GET') return reply('');
+        final aborted = (request as http.Abortable).abortTrigger!;
+        final words = StreamController<List<int>>();
+        words.add(utf8.encode('${jsonEncode({'response': 'Hel'})}\n'));
+        unawaited(
+          aborted.then((_) {
+            words.addError(http.RequestAbortedException(request.url));
+            words.close();
+          }),
+        );
+        return http.StreamedResponse(words.stream, HttpStatus.ok);
+      }),
+    );
+    final cancel = AiCancelToken();
+    final texts = <String>[];
+
+    final stopped = stalling().generate(
+      'tip?',
+      timeout,
+      cancel: cancel,
+      onText: (text) {
+        texts.add(text);
+        cancel.cancel();
+      },
+    );
+
+    await expectLater(stopped, throwsA(isA<AiCancelledException>()));
+    expect(texts, ['Hel']);
+    await expectLater(
+      stalling().generate('tip?', const Duration(milliseconds: 1)),
+      throwsA(
+        isA<AiServiceException>().having(
+          (e) => e.message,
+          'message',
+          contains('no answer within'),
+        ),
+      ),
+    );
+  });
 }

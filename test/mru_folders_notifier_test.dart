@@ -45,6 +45,18 @@ void main() {
     expect(stateOf(notifier), folders);
   });
 
+  test('load lists a folder saved with a trailing slash once', () async {
+    final folder = makeFolders(1).single;
+    SharedPreferences.setMockInitialValues({
+      PrefKeys.mruFolders: ['$folder/', folder],
+    });
+
+    final restored = make();
+    await restored.load();
+
+    expect(stateOf(restored), [folder]);
+  });
+
   test('touch moves a folder to the front and caps the list', () async {
     final folders = makeFolders(AppMetric.mruFolderLimit + 1);
 

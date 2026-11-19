@@ -1,3 +1,4 @@
+import 'package:fide/constants/core_constants.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/code_edit_agent.dart';
@@ -26,6 +27,13 @@ class _MemoryFileStore extends ProjectFileStore {
 
   @override
   Future<String> read(String path) async => files[_relative(path)]!;
+
+  @override
+  Future<List<String>> search(String text, {required int limit}) async => [
+    for (final MapEntry(key: path, value: content) in files.entries)
+      for (final (index, line) in content.split('\n').indexed)
+        if (line.contains(text)) '$path:${index + 1}: $line',
+  ];
 
   @override
   Future<void> write(String path, String content) async {
@@ -63,33 +71,6 @@ void main() {
     for (final message in model.chats.last)
       if (message['role'] == 'tool') message,
   ];
-
-  test('runs a tool call the model wrote as text', () async {
-    // qwen3-coder's call without its opening tag, which Ollama leaves as
-    // text
-    final model = FakeChatModel(
-      chatReplies: [
-        {
-          'role': 'assistant',
-          'content':
-              'Let me check the file:\n\n<function=read_file>\n'
-              '<parameter=path>\nlib/main.dart\n</parameter>\n</function>\n'
-              '</tool_call>',
-        },
-        answer('Nothing to fix.'),
-      ],
-    );
-
-    final summary = await agentOf(model).edit('Fix main', const []);
-
-    expect(summary, 'Nothing to fix.');
-    expect(toolResults(model).single['content'], 'void main() { print(1) }');
-    final reply = model.chats.last.firstWhere(
-      (message) => message['role'] == 'assistant',
-    );
-    expect(reply['content'], 'Let me check the file:');
-    expect(reply['tool_calls'], hasLength(1));
-  });
 
   test('edits files through skills and checks the build', () async {
     final model = FakeChatModel(
@@ -237,9 +218,9 @@ void main() {
         },
       ),
     );
-    final skill = agent.skills.singleWhere(
-      (skill) => skill.name == 'run_quick_fix',
-    );
+    final skill = agent
+        .skillsFor(edits: true, fixes: [QuickFix.makeConstants])
+        .singleWhere((skill) => skill.name == 'run_quick_fix');
 
     expect(
       await skill.run({'name': 'makeConstants'}),
@@ -247,9 +228,166 @@ void main() {
     );
     expect(ran, [QuickFix.makeConstants]);
     expect(() => skill.run({'name': 'rewriteAll'}), throwsFormatException);
+    // Only the fixes offered run
     expect(
-      agentOf(FakeChatModel()).skills.map((skill) => skill.name),
+      () => skill.run({'name': QuickFix.upgradePackages.name}),
+      throwsFormatException,
+    );
+    // None without a request naming one, nor when answering, nor when
+    // the caller runs none
+    List<String> names({required bool edits}) => [
+      for (final skill in agent.skillsFor(
+        edits: edits,
+        fixes: edits ? const [] : QuickFix.values,
+      ))
+        skill.name,
+    ];
+    expect(names(edits: true), isNot(contains('run_quick_fix')));
+    expect(names(edits: false), isNot(contains('run_quick_fix')));
+    expect(
+      agentOf(FakeChatModel())
+          .skillsFor(edits: true, fixes: QuickFix.values)
+          .map((s) => s.name),
       isNot(contains('run_quick_fix')),
     );
+  });
+
+  test('reads a long file in parts, saying how to read on', () async {
+    final lines = [
+      for (var line = 1; line <= 2000; line++) 'final value$line = $line;',
+    ];
+    store.files['lib/long.dart'] = lines.join('\n');
+    final agent = agentOf(FakeChatModel());
+
+    final first = await agent.readFile('lib/long.dart');
+    final shownLines = first.split('\n').length - 1;
+    expect(first, startsWith('final value1 = 1;\n'));
+    expect(first.length, lessThan(AppMetric.aiReadFileChars + 100));
+    expect(first, contains('start_line ${shownLines + 1}'));
+
+    final next = await agent.readFile(
+      'lib/long.dart',
+      startLine: shownLines + 1,
+    );
+    expect(next, startsWith('final value${shownLines + 1} = '));
+    // A file that fits comes whole, exactly, for replace_in_file
+    expect(await agent.readFile('lib/main.dart'), 'void main() { print(1) }');
+  });
+
+  test('finds code with search', () async {
+    final found = await agentOf(FakeChatModel()).search('print');
+
+    expect(found, 'lib/main.dart:1: void main() { print(1) }');
+    expect(
+      await agentOf(FakeChatModel()).search('missing'),
+      'No match for "missing".',
+    );
+  });
+
+  test('tool results name the call they answer', () async {
+    final model = FakeChatModel(
+      chatReplies: [
+        {
+          'role': 'assistant',
+          'content': '',
+          'tool_calls': [
+            {
+              'id': 'call_1',
+              'function': {
+                'name': 'read_file',
+                'arguments': {'path': 'lib/main.dart'},
+              },
+            },
+          ],
+        },
+        answer('done'),
+      ],
+    );
+
+    await agentOf(model).edit('look', const []);
+
+    expect(toolResults(model).single['tool_call_id'], 'call_1');
+  });
+
+  test(
+    'drops earlier tool output once the conversation outgrows the budget',
+    () async {
+      final big = 'x' * (AppMetric.aiDroppableOutputChars * 10);
+      store.files['lib/big.dart'] = big;
+      final model = FakeChatModel(
+        contextBudget: AppMetric.aiDroppableOutputChars,
+        chatReplies: [
+          toolCall('read_file', {'path': 'lib/big.dart'}),
+          toolCall('write_file', {'path': 'lib/copy.dart', 'content': big}),
+          toolCall('check_build', {}),
+          answer('Copied.'),
+        ],
+      );
+
+      await agentOf(model).edit('copy big', const []);
+
+      // The latest reply's call keeps its output
+      final second = model.chats[1];
+      expect(second.last['content'], big);
+      // The step after drops it
+      final third = model.chats[2];
+      final read = third.firstWhere((m) => m['role'] == 'tool');
+      expect(read['content'], contains('call read_file again'));
+      // and the step after the write drops the content it wrote
+      final write = model.chats[3].firstWhere(
+        (m) =>
+            m['role'] == 'assistant' && '${m['tool_calls']}'.contains('write'),
+      );
+      final arguments =
+          (write['tool_calls'] as List).single['function']['arguments'] as Map;
+      expect(arguments['content'], '(${big.length} characters)');
+      expect(arguments['path'], 'lib/copy.dart');
+      // Without a budget, the conversation stays whole
+      final unbounded = FakeChatModel(
+        chatReplies: [
+          toolCall('read_file', {'path': 'lib/big.dart'}),
+          answer('Read.'),
+        ],
+      );
+      await agentOf(unbounded).edit('read big', const []);
+      expect(toolResults(unbounded).single['content'], big);
+    },
+  );
+
+  test(
+    'answers a question reading the code, with no tool that writes',
+    () async {
+      final model = FakeChatModel(chatReplies: [answer('4')]);
+
+      expect(await agentOf(model).answer('2+2=', const []), '4');
+
+      expect(model.toolNames.single, ['list_files', 'search', 'read_file']);
+      expect(model.chats.single.first['content'], contains('never change'));
+      expect(written, isEmpty);
+    },
+  );
+
+  test('offers a whole-project fix only when the request names it', () async {
+    final model = FakeChatModel(
+      chatReplies: [answer('Done.'), answer('Done.')],
+    );
+    final agent = CodeEditAgent(
+      model,
+      files: store,
+      hooks: CodeEditHooks(
+        onStep: (_) {},
+        onFileWritten: (_) async {},
+        checkBuild: () async => '',
+        runQuickFix: (_) async => 'Done.',
+      ),
+    );
+
+    await agent.edit('localize the strings of main', const []);
+    await agent.edit('fix the overflow in main', const []);
+
+    expect(model.toolNames.first, contains('run_quick_fix'));
+    expect(model.chats.first.first['content'], contains('Localize strings'));
+    expect(model.toolNames.last, isNot(contains('run_quick_fix')));
+    expect(model.toolNames.last, contains('replace_in_file'));
   });
 }

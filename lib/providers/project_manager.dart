@@ -5,6 +5,7 @@ import 'package:fide/services/loading_progress.dart';
 import 'package:fide/services/project_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 
 /// Provides the [ProjectManager] every open and close of a project goes
 /// through.
@@ -60,13 +61,18 @@ class ProjectManager {
   /// Unloads the open project, then loads the one at [directoryPath],
   /// logging the steps for the loading screen; a project that opens moves
   /// to the top of the recent projects. Returns whether it opened.
+  ///
+  /// The path is made absolute and normalized first, without a trailing
+  /// slash, as the Dart analyzer requires of the project path every
+  /// feature gets.
   Future<bool> loadProject(String directoryPath) async {
+    final projectPath = p.normalize(p.absolute(directoryPath));
     _setLoading(true);
     try {
       if (_isLoaded()) unloadProject();
       _progress.start();
-      final success = await _service.loadProject(directoryPath, _progress);
-      if (success) await _recentFolders.touch(directoryPath);
+      final success = await _service.loadProject(projectPath, _progress);
+      if (success) await _recentFolders.touch(projectPath);
       return success;
     } catch (e) {
       _logger.severe('Error loading project: $e');

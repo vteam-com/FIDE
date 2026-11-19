@@ -24,7 +24,17 @@
   - never import `package:fcheck/src/...`; export what FIDE needs from fCheck instead
   - `AnalyzeFolder.analyze()` is synchronous: run it with `Isolate.run`
 - AI panel: when the user asks to fix or change code, the AI edits the project files (through `CodeEditAgent`); it never replies with code for the user to paste
+  - code decides whether a prompt asks for a change (`PromptIntent`), not the model: any other prompt is answered by an agent whose tools only read, as a local model given editing tools edits files even for "2+2="
+  - the agent is offered FIDE's whole-project quick fixes only when the request names their subject (`QuickFix.topics`), never all of them
 - prefer deterministic code refactorings (quick fixes) over sending work to the AI: the local model is too slow for mechanical changes; leave the AI only what code cannot decide or rewrite
+- AI is private, local and fast: it runs only on the local Ollama model, offline, and the code never leaves the computer; no cloud or remote AI provider (they were tried and removed as too complex to set up)
+- never regress the local AI's speed or judgment; every AI change keeps these, and re-measures against a real Ollama model when it touches the agent, its prompts or tools:
+  - keep the model's context small, as it slows down sharply as it fills (on an M4 Max, qwen3-coder reads 1,200 tokens/s near the start, 300 at 24k; writes 129 tokens/s, 25 at 28k): the agent stays within `ChatModel.contextBudget`, dropping the oldest tool outputs first, never letting Ollama overflow and cut the conversation
+  - tools return bounded output: `list_files` capped, files read in parts, `search` before reading, history capped
+  - the agent checks its work with `dart analyze` (seconds), building only to fix a failed build (a release build takes minutes)
+  - stream replies, warm the model up when the prompt takes focus, and retry Ollama's malformed tool calls
+  - the routing above: a question gets read-only tools, quick fixes only when named
+  - reference timings to stay at or under: "2+2=" answered in one step without tools, in ~4 s; a question needing one file read ~5 s; a multi-file Fix Build of 10 errors ~53 s
 
 # Workflow
 

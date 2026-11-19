@@ -2,23 +2,31 @@ import 'dart:io';
 
 import 'package:fide/models/project_files.dart';
 import 'package:fide/services/file_content_reader.dart';
+import 'package:fide/services/project_search_service.dart';
 import 'package:path/path.dart' as p;
 
-/// The files of the project at [root], listed, read and written by
-/// project-relative path; every path must lie inside [root].
+/// The files of the project at [root], listed, searched, read and written
+/// by project-relative path; every path must lie inside [root].
 ///
 /// `CodeEditAgent` edits through it, so tests give the agent an in-memory
 /// store instead of a project on disk.
 class ProjectFileStore {
   /// Creates the store of the project at [root], reading and writing its
-  /// files with [reader].
-  const ProjectFileStore(this.root, {this.reader = const FileContentReader()});
+  /// files with [reader] and searching them with [searcher].
+  const ProjectFileStore(
+    this.root, {
+    this.reader = const FileContentReader(),
+    this.searcher = const ProjectSearchService(),
+  });
 
   /// Absolute path of the project.
   final String root;
 
   /// Reads and writes the files.
   final FileContentReader reader;
+
+  /// Searches the files.
+  final ProjectSearchService searcher;
 
   /// The files under [folder] (relative to [root], `.` for all), relative
   /// to [root] and sorted, skipping those [ProjectFiles] ignores and
@@ -39,6 +47,18 @@ class ProjectFileStore {
   /// Throws a [FormatException] when [path] is outside the project and a
   /// [FileSystemException] when the file can't be read.
   Future<String> read(String path) async => reader.read(resolve(path));
+
+  /// The lines of the project's files holding [text], whatever its case,
+  /// at most [limit] of them, each as `path:line: text` with the path
+  /// relative to [root].
+  Future<List<String>> search(String text, {required int limit}) async {
+    final hits = await searcher.search(root, text, limit: limit);
+    return [
+      for (final hit in hits.results)
+        '${p.relative(hit.filePath, from: root)}:${hit.lineNumber}: '
+            '${hit.lineContent.trim()}',
+    ];
+  }
 
   /// The absolute path of [path], relative to [root] or absolute inside it.
   ///

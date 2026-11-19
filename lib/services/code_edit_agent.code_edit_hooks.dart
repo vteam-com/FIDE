@@ -6,11 +6,15 @@ class CodeEditHooks {
   /// Receives a one-line description of each skill the model runs.
   final void Function(String) onStep;
 
+  /// Receives the text of the model's reply in progress as it streams
+  /// in; null when nothing shows it.
+  final ReplyText? onText;
+
   /// Runs after a skill writes the file at this absolute path.
   final Future<void> Function(String path) onFileWritten;
 
-  /// Rebuilds the project; completes with the build's error output, empty
-  /// when the build succeeds.
+  /// Checks the project for compile errors, building it when the caller
+  /// needs to; completes with the errors, empty when there are none.
   final Future<String> Function() checkBuild;
 
   /// Runs a FIDE quick fix on the project and completes with its outcome
@@ -23,5 +27,6 @@ class CodeEditHooks {
     required this.onFileWritten,
     required this.checkBuild,
     this.runQuickFix,
+    this.onText,
   });
 }

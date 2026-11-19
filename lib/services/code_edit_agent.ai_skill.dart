@@ -9,8 +9,12 @@ class AiSkill {
   /// What the skill does, for the model.
   final String description;
 
-  /// Argument names mapped to their descriptions; all are strings.
+  /// Required argument names mapped to their descriptions; all are
+  /// strings.
   final Map<String, String> parameters;
+
+  /// Arguments the model may leave out, as [parameters] lists them.
+  final Map<String, String> optionalParameters;
 
   /// Runs the skill with the model's arguments and returns its result for
   /// the model. Throws a [FormatException] or [FileSystemException] the
@@ -22,6 +26,7 @@ class AiSkill {
     required this.name,
     required this.description,
     required this.parameters,
+    this.optionalParameters = const {},
     required this.run,
   });
 
@@ -34,8 +39,10 @@ class AiSkill {
       'parameters': {
         'type': 'object',
         'properties': {
-          for (final MapEntry(key: name, value: description)
-              in parameters.entries)
+          for (final MapEntry(key: name, value: description) in {
+            ...parameters,
+            ...optionalParameters,
+          }.entries)
             name: {'type': 'string', 'description': description},
         },
         'required': parameters.keys.toList(),

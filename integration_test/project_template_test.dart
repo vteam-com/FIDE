@@ -1,9 +1,10 @@
 import 'dart:io';
 
+import 'package:fide/models/ollama_step.dart';
+import 'package:fide/providers/ollama_status_notifier.dart';
 import 'package:fide/services/ollama_client.dart';
-import 'package:fide/services/ollama_installer.dart';
-import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_template.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
@@ -223,7 +224,27 @@ Future<ProcessResult> runCommand(
   return Process.run(command, args, workingDirectory: workingDir);
 }
 
-/// Helper function to start Ollama if not running and wait for it to be ready
+/// Completes the local Ollama setup as the AI panel's Setup button does,
+/// one step at a time (install, start, download the model), through the
+/// app's own [OllamaStatusNotifier]; true once ready. Each step runs at
+/// most once, so a step that never completes can't loop.
 Future<bool> startOllamaIfNeeded() async {
-  return OllamaInstaller(const ProcessRunner()).ensureReady();
+  final container = ProviderContainer();
+  try {
+    for (var attempt = 0; attempt < OllamaStep.values.length; attempt++) {
+      final step = await container.read(ollamaStatusProvider.future);
+      if (step == OllamaStep.ready) return true;
+      substep(step.message);
+      final done = await container.read(ollamaStatusProvider.notifier).fix();
+      if (done == null) return false;
+      substep(done);
+    }
+    return await container.read(ollamaStatusProvider.future) ==
+        OllamaStep.ready;
+  } catch (e) {
+    substep('⚠️ $e');
+    return false;
+  } finally {
+    container.dispose();
+  }
 }

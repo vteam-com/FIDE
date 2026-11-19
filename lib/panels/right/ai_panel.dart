@@ -2,6 +2,7 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/ai_action.dart';
+import 'package:fide/models/chat_message.dart';
 import 'package:fide/models/ollama_step.dart';
 import 'package:fide/panels/right/ai_panel.ai_transcript_entry.dart';
 import 'package:fide/providers/ai_chat_notifier.dart';
@@ -34,9 +35,14 @@ class _AIPanelState extends ConsumerState<AIPanel> {
   final TextEditingController _promptController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
+  /// The prompt's focus: taking it gets the model ready, so the local
+  /// model loads while the question is typed.
+  final FocusNode _promptFocus = FocusNode();
+
   @override
   void initState() {
     super.initState();
+    _promptFocus.addListener(_warmUpOnFocus);
 
     // Back to the latest message of a chat kept while the panel was hidden
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToEnd());
@@ -46,6 +52,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
   void dispose() {
     _promptController.dispose();
     _scrollController.dispose();
+    _promptFocus.dispose();
     super.dispose();
   }
 
@@ -55,8 +62,9 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     final messages = chat.messages;
     final setup = ref.watch(ollamaStatusProvider);
     final isReady = setup.value == OllamaStep.ready;
+    // Follows new messages and the reply as it streams in
     ref.listen(
-      aiChatProvider.select((chat) => chat.messages.length),
+      aiChatProvider.select((chat) => (chat.messages.length, chat.draft)),
       (_, _) =>
           WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToEnd()),
     );
@@ -89,7 +97,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
                     itemBuilder: (_ /*context*/, index) =>
                         index < messages.length
                         ? AiTranscriptEntry(message: messages[index])
-                        : _buildWorking(),
+                        : _buildWorking(chat.draft),
                   ),
                 ),
         ),
@@ -150,6 +158,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
       },
       child: AppTextField(
         controller: _promptController,
+        focusNode: _promptFocus,
         hintText: hint,
         maxLines: AppMetric.aiInputMaxLines,
         minLines: 1,
@@ -164,9 +173,15 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     );
   }
 
-  /// The last transcript line while a reply or task is pending; the ring
-  /// around the prompt's Stop button shows the progress.
-  Widget _buildWorking() {
+  /// The last transcript entry while a reply or task is pending: the
+  /// reply as it streams in, [draft], else a line saying how to stop; the
+  /// ring around the prompt's Stop button shows the progress.
+  Widget _buildWorking(String draft) {
+    if (draft.isNotEmpty) {
+      return AiTranscriptEntry(
+        message: ChatMessage(content: draft, isUser: false),
+      );
+    }
     return SelectionContainer.disabled(
       child: Text(
         'Working… Esc to stop',
@@ -183,6 +198,11 @@ class _AIPanelState extends ConsumerState<AIPanel> {
       duration: AppDuration.messageAnimation,
       curve: Curves.easeOut,
     );
+  }
+
+  /// Gets the model ready once the prompt takes focus.
+  void _warmUpOnFocus() {
+    if (_promptFocus.hasFocus) ref.read(aiChatProvider.notifier).warmUp();
   }
 
   /// Sends the prompt, ignored while a reply is pending like the disabled

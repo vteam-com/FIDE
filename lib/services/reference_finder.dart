@@ -145,14 +145,22 @@ class ReferenceFinder {
       _worker = null;
       throw Exception('Flutter SDK not found');
     }
+    // A worker failing to start reports its error, or just exits, on the
+    // same port, so the lookups waiting on it fail instead of hanging
     final ready = ReceivePort();
-    _isolate = await Isolate.spawn(_ReferenceWorker.main, (
-      ready.sendPort,
-      _projectPath,
-      sdkPath,
-    ));
-    final port = await ready.first as SendPort;
+    _isolate = await Isolate.spawn(
+      _ReferenceWorker.main,
+      (ready.sendPort, _projectPath, sdkPath),
+      onError: ready.sendPort,
+      onExit: ready.sendPort,
+    );
+    final started = await ready.first;
     ready.close();
-    return port;
+    if (started is SendPort) return started;
+    _worker = null;
+    throw Exception(
+      "Can't analyze $_projectPath: "
+      '${started is List ? started.first : 'the analysis stopped'}',
+    );
   }
 }

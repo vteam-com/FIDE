@@ -4,11 +4,13 @@ part 'ai_action.ai_context.dart';
 /// says what it sends with the prompt, how the model is told to handle
 /// it and whether the agent edits the files, so a new action is one entry.
 enum AiAction {
-  /// Free-form question, answered with the selected file as context.
+  /// Free-form prompt: a request to change the code edits the files, any
+  /// other prompt is answered, the selected file as context.
   ask(
     'Ask AI',
     'Ask me anything about your code…',
     editsFiles: true,
+    editsOnlyWhenAsked: true,
     context: AiContext.selectedFile,
   ),
 
@@ -90,6 +92,11 @@ enum AiAction {
   /// is open and the model can call tools.
   final bool editsFiles;
 
+  /// Whether the action edits only prompts asking for a change, as
+  /// `PromptIntent.asksForChange` reads them, and answers the others,
+  /// reading the project's code without changing it.
+  final bool editsOnlyWhenAsked;
+
   /// Whether a thinking model reasons before answering, for actions
   /// needing judgment.
   final bool think;
@@ -105,6 +112,7 @@ enum AiAction {
     this.label,
     this.hint, {
     this.editsFiles = false,
+    this.editsOnlyWhenAsked = false,
     this.think = false,
     this.context = AiContext.none,
     this.instruction = '',

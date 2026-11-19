@@ -15,6 +15,7 @@ enum QuickFix {
     'Localize strings',
     'moves the hardcoded strings users read into the ARB files and looks '
         'them up through the generated class',
+    topics: {'locali', 'l10n', 'hardcoded'},
     domain: fcheck.AnalyzerDomain.hardcodedStrings,
     appliesTo: _canLocalize,
   ),
@@ -27,6 +28,7 @@ enum QuickFix {
     'localizes the hardcoded strings users read that are passed, where no '
         'BuildContext is, to a widget\'s String field, by making the field '
         'a lookup function the widget calls with its context',
+    topics: {'locali', 'l10n', 'lookup'},
   ),
 
   /// Move translations written as Dart localizations classes into ARB
@@ -35,6 +37,7 @@ enum QuickFix {
     'Migrate to ARB',
     'moves translations written by hand in the generated localizations '
         'classes into the ARB files, once',
+    topics: {'arb'},
   ),
 
   /// Make hardcoded strings the code compares or looks up, such as
@@ -43,6 +46,7 @@ enum QuickFix {
     'Make string constants',
     'makes the hardcoded strings the code compares or looks up, such as '
         'Firestore collection and field names, named constants',
+    topics: {'constant'},
     domain: fcheck.AnalyzerDomain.hardcodedStrings,
     appliesTo: _hasConstantStrings,
   ),
@@ -52,6 +56,7 @@ enum QuickFix {
     'Remove unused keys',
     'removes the ARB keys the code never uses from every ARB file, with '
         'their metadata, and regenerates the classes',
+    topics: {'unused key', 'arb'},
     domain: fcheck.AnalyzerDomain.localization,
     appliesTo: _solvesLocalizationProblems,
     localizationProblems: {'unusedKey'},
@@ -63,6 +68,7 @@ enum QuickFix {
     'Sort members',
     'sorts the members of widget and State classes, and the imports, of '
         'every file in the order fCheck checks',
+    topics: {'sort'},
     domain: fcheck.AnalyzerDomain.sourceSorting,
   ),
 
@@ -72,6 +78,7 @@ enum QuickFix {
     'Upgrade packages',
     'raises every dependency constraint in pubspec.yaml to its latest '
         'resolvable version and runs flutter pub get',
+    topics: {'upgrade', 'outdated', 'dependenc'},
   ),
 
   /// Remove CocoaPods from the iOS and macOS projects once no plugin
@@ -81,6 +88,7 @@ enum QuickFix {
     'runs pod deintegrate and deletes the Podfiles, Pods folders and '
         'CocoaPods xcconfig includes of the iOS and macOS projects, once '
         'every plugin supports Swift Package Manager',
+    topics: {'cocoapod', 'podfile'},
   ),
 
   /// Translate missing, empty or untranslated ARB keys one short prompt at
@@ -90,6 +98,7 @@ enum QuickFix {
     'translates the missing, empty or untranslated ARB keys of every '
         'language',
     usesAi: true,
+    topics: {'translat'},
     domain: fcheck.AnalyzerDomain.localization,
     appliesTo: _solvesLocalizationProblems,
     localizationProblems: {
@@ -103,6 +112,7 @@ enum QuickFix {
   const QuickFix(
     this.label,
     this.purpose, {
+    required this.topics,
     this.usesAi = false,
     this.domain,
     this._appliesTo = _always,
@@ -118,6 +128,18 @@ enum QuickFix {
 
   /// Whether the fix asks the model, so it runs as a task in the AI panel.
   final bool usesAi;
+
+  /// Starts of words, lowercase, a request names the fix's subject with,
+  /// such as `locali` for localize and localization: the AI agent is
+  /// offered only the fixes a request names, as it would otherwise run a
+  /// whole-project fix on its own.
+  final Set<String> topics;
+
+  /// Whether [request] names the fix's subject, one of its [topics].
+  bool isNamedIn(String request) {
+    final text = request.toLowerCase();
+    return topics.any(text.contains);
+  }
 
   /// The analyzer whose issue offers the fix, when [appliesTo] its
   /// findings; null for fixes offered elsewhere.

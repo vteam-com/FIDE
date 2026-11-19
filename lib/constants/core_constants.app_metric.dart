@@ -17,9 +17,32 @@ class AppMetric {
   static const int projectSearchMaxResults = 2000;
   static const int aiContextPreviewChars = 2000;
   static const int aiMaxToolRounds = 25;
+
+  /// Most steps the agent takes to answer a question, reading the code it
+  /// needs: fewer than an edit, which also writes and checks.
+  static const int aiMaxAnswerRounds = 12;
   static const int aiChatHistoryMessages = 6;
-  static const int aiMaxListedFiles = 500;
-  static const int aiMaxReadChars = 40000;
+
+  /// Most characters of earlier chat messages sent with a new request,
+  /// the latest kept first, so a long reply doesn't fill the local model's
+  /// context before the agent starts.
+  static const int aiHistoryChars = 12000;
+
+  /// Most paths the agent's `list_files` returns: enough to find a file,
+  /// few enough to cost the local model little to read.
+  static const int aiMaxListedFiles = 200;
+
+  /// Most characters one `read_file` returns, cut at a line end; the
+  /// agent reads on from a later line. A whole large file would cost a
+  /// local model tens of seconds to read, again on every later step.
+  static const int aiReadFileChars = 16000;
+
+  /// Most characters of build or analyzer errors the agent is sent: the
+  /// first errors, which the others often follow from.
+  static const int aiBuildErrorChars = 8000;
+
+  /// Most lines the agent's `search` returns.
+  static const int aiSearchMaxResults = 50;
   static const int aiCommitDiffChars = 12000;
   static const int aiReviewContextChars = 40000;
 
@@ -28,6 +51,34 @@ class AppMetric {
   /// full context, whose memory can spill onto the CPU and slow it many
   /// times over, and reloads the model whenever the size changes.
   static const int aiContextTokens = 32768;
+
+  /// Tokens the agent's conversation with the local model may reach
+  /// before it drops the output of its oldest tool calls: room left in
+  /// [aiContextTokens] for a reply and one more file part. Past the
+  /// window, Ollama would cut the start of the conversation, the request
+  /// with it, and read the rest again on every step, at a few hundred
+  /// tokens per second that deep (on an M4 Max, qwen3-coder reads 1,200
+  /// tokens per second near the start, 300 at 24k).
+  static const int aiContextBudgetTokens = 24000;
+
+  /// Share of [aiContextBudgetTokens] the agent's conversation is brought
+  /// back under once it outgrows it, dropping the oldest outputs first:
+  /// the latest ones, which the model is working from, stay, so it
+  /// doesn't read them again.
+  static const double aiContextKeptShare = 2 / 3;
+
+  /// Characters per token when guessing a conversation's size: code runs
+  /// about three, prose four, so this guess errs on the large side.
+  static const int aiCharsPerToken = 3;
+
+  /// Shortest tool output the agent drops to stay within
+  /// [aiContextBudgetTokens]: shorter ones cost less than the note that
+  /// replaces them saves.
+  static const int aiDroppableOutputChars = 400;
+
+  /// Times a model request is sent again after a retryable failure, such
+  /// as a busy server or a local model's malformed tool call.
+  static const int aiRequestRetries = 2;
 
   static const int aiReviewMaxItems = 15;
 

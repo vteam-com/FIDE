@@ -3,6 +3,7 @@ import 'package:fide/providers/persisted_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Recently opened project folders, newest first; see [MruFoldersNotifier].
@@ -38,10 +39,14 @@ class MruFoldersNotifier extends PersistedNotifier<List<String>> {
   /// Whether a saved folder still exists on disk.
   final bool Function(String folderPath) _folderExists;
 
+  /// The saved folders that exist, normalized as projects load, each
+  /// once: a path saved with a trailing slash is the same folder.
   @override
   List<String> read(SharedPreferences prefs) =>
       (prefs.getStringList(PrefKeys.mruFolders) ?? const [])
+          .map(p.normalize)
           .where(_folderExists)
+          .toSet()
           .toList();
 
   /// Removes [path] from the list.
