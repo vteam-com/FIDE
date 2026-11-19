@@ -163,6 +163,9 @@ class PreviewController extends Notifier<PreviewState> {
   /// Forgets the errors the previews reported.
   void clearLogs() => state = state.copyWith(logs: const []);
 
+  /// Forgets why the previews failed, until they fail again.
+  void clearFailure() => state = state.copyWith(message: '');
+
   /// Adds a preview to the file for each widget that has none and whose
   /// arguments can be picked from their types; the saved file then
   /// reloads the previews. Returns what was generated.

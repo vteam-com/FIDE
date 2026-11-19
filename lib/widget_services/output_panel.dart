@@ -10,9 +10,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Command output in a collapsible section; `path:line:column` references
-/// to existing files, relative ones resolved against the open project, are
-/// links that open the file at that line.
+/// Command output in a collapsible section, with Copy, Wrap and Clear in
+/// its header; `path:line:column` references to existing files, relative
+/// ones resolved against the open project, are links that open the file at
+/// that line.
 class OutputPanel extends ConsumerStatefulWidget {
   /// Creates a section titled [title] showing [text].
   const OutputPanel({
@@ -20,14 +21,15 @@ class OutputPanel extends ConsumerStatefulWidget {
     required this.title,
     this.isExpanded = false,
     required this.text,
-    this.onClear,
+    required this.onClear,
   });
 
   /// Whether the section starts expanded.
   final bool isExpanded;
 
-  /// Clears the output; no Clear button when null.
-  final Function? onClear;
+  /// Clears the output, as the header's Clear button does; the owner drops
+  /// the text, which hides the section until there is output again.
+  final VoidCallback onClear;
 
   /// The command output shown.
   final String text;
@@ -89,12 +91,11 @@ class _OutputPanelState extends ConsumerState<OutputPanel> {
                 ? 'Disable text wrapping'
                 : 'Enable text wrapping',
           ),
-          if (widget.onClear != null)
-            CompactIconButton(
-              icon: Icons.backspace,
-              onPressed: () => widget.onClear?.call(),
-              tooltip: 'Clear output',
-            ),
+          CompactIconButton(
+            icon: Icons.backspace,
+            onPressed: widget.onClear,
+            tooltip: 'Clear output',
+          ),
         ],
       ),
 

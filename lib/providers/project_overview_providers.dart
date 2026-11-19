@@ -115,6 +115,11 @@ final dartAnalysisProvider = FutureProvider<DartAnalysis?>((ref) async {
       .analyze(projectPath, stop: stale.future);
 });
 
+/// The `dart analyze` run whose output the Info panel cleared, hidden
+/// there until the next run; null when none is. The run itself stays, as
+/// the health checks read it.
+final clearedDartAnalysisProvider = StateProvider<DartAnalysis?>((_) => null);
+
 /// The open project's health checks, or null without one; run again once
 /// saves pause, one run at a time.
 final healthIndicatorsProvider = FutureProvider<HealthIndicators?>((ref) async {

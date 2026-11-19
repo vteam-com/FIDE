@@ -46,7 +46,8 @@ class PreviewState {
   /// The host's list [items] come from; frames of another are dropped.
   final int generation;
 
-  /// Why the previews failed, with the compile errors; empty otherwise.
+  /// Why the previews failed, with the compile errors; empty otherwise, or
+  /// once cleared.
   final String message;
 
   /// The latest errors the previews reported while running.

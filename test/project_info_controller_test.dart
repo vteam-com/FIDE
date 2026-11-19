@@ -159,6 +159,15 @@ void main() {
     expect(controller.state.isCheckingOutdated, isFalse);
   });
 
+  test('clearing the outdated output keeps the packages flagged', () async {
+    await controller.checkOutdated();
+
+    controller.clearOutdatedOutput();
+
+    expect(controller.state.outdatedOutput, isNull);
+    expect(metrics.state.outdated.keys, ['http']);
+  });
+
   test('an upgrade says whether anything changed', () async {
     expect((await controller.upgradePackages())?.tone, StatusTone.info);
 
@@ -181,6 +190,11 @@ void main() {
     expect(controller.state.conflictSummary, 'http 2.0.0 conflicts');
     expect(controller.state.problematicPackages, {'http'});
     expect(controller.state.isUpgrading, isFalse);
+
+    // Clearing the conflict's text keeps the package it blames flagged
+    controller.clearConflict();
+    expect(controller.state.conflictSummary, isNull);
+    expect(controller.state.problematicPackages, {'http'});
 
     // The next upgrade starts from a clean slate
     FakeMaintenance.failure = null;

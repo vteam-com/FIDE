@@ -6,7 +6,7 @@ class ProjectInfoState {
   static const ProjectInfoState initial = ProjectInfoState();
 
   /// Pub's one-line explanation of why the last upgrade could not resolve
-  /// the dependencies; null when it could.
+  /// the dependencies; null when it could, or once cleared.
   final String? conflictSummary;
 
   /// Whether the project is being analyzed.
@@ -18,7 +18,8 @@ class ProjectInfoState {
   /// Whether the dependencies are being upgraded.
   final bool isUpgrading;
 
-  /// What the last `flutter pub outdated` printed; null until it ran.
+  /// What the last `flutter pub outdated` printed; null until it ran, or
+  /// once cleared.
   final String? outdatedOutput;
 
   /// The packages pub blamed for a failed resolution.
@@ -35,7 +36,7 @@ class ProjectInfoState {
   });
 
   /// Returns a copy with the given fields replaced; [clearConflict] drops
-  /// [conflictSummary].
+  /// [conflictSummary], [clearOutdated] drops [outdatedOutput].
   ProjectInfoState copyWith({
     bool? isAnalyzing,
     bool? isCheckingOutdated,
@@ -43,6 +44,7 @@ class ProjectInfoState {
     String? conflictSummary,
     bool clearConflict = false,
     String? outdatedOutput,
+    bool clearOutdated = false,
     Set<String>? problematicPackages,
   }) {
     return ProjectInfoState(
@@ -52,7 +54,9 @@ class ProjectInfoState {
       conflictSummary: clearConflict
           ? null
           : conflictSummary ?? this.conflictSummary,
-      outdatedOutput: outdatedOutput ?? this.outdatedOutput,
+      outdatedOutput: clearOutdated
+          ? null
+          : outdatedOutput ?? this.outdatedOutput,
       problematicPackages: problematicPackages ?? this.problematicPackages,
     );
   }

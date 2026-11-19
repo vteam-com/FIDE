@@ -82,12 +82,14 @@ class PackagesSection extends ConsumerWidget {
             title: 'Outdated Packages',
             text: output,
             isExpanded: true,
+            onClear: controller.clearOutdatedOutput,
           ),
         if (info.conflictSummary case final conflict?)
           OutputPanel(
             title: 'Dependency Conflicts',
             text: conflict,
             isExpanded: true,
+            onClear: controller.clearConflict,
           ),
       ],
     );

@@ -163,6 +163,16 @@ class ProjectInfoController extends StateNotifier<ProjectInfoState>
     });
   }
 
+  /// Forgets what the last `flutter pub outdated` printed; the packages it
+  /// found stay flagged.
+  void clearOutdatedOutput() =>
+      updateState((state) => state.copyWith(clearOutdated: true));
+
+  /// Forgets why the last upgrade could not resolve the dependencies; the
+  /// package pub blamed stays flagged.
+  void clearConflict() =>
+      updateState((state) => state.copyWith(clearConflict: true));
+
   /// Marks the analysis running or done.
   static ProjectInfoState _analyzing(ProjectInfoState state, bool busy) =>
       state.copyWith(isAnalyzing: busy);

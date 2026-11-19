@@ -89,9 +89,19 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
                 ),
 
               // What dart analyze printed, links opening each place it
-              // names
-              if (ref.watch(dartAnalysisProvider).value case final analysis?)
-                OutputPanel(title: 'dart analyze', text: analysis.output),
+              // names, until cleared
+              if (ref.watch(dartAnalysisProvider).value case final analysis?
+                  when !identical(
+                    analysis,
+                    ref.watch(clearedDartAnalysisProvider),
+                  ))
+                OutputPanel(
+                  title: 'dart analyze',
+                  text: analysis.output,
+                  onClear: () =>
+                      ref.read(clearedDartAnalysisProvider.notifier).state =
+                          analysis,
+                ),
             ],
           ),
         ),

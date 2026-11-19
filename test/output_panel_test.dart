@@ -7,16 +7,34 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
 void main() {
-  /// Shows an [OutputPanel] of [text].
-  Future<void> show(WidgetTester tester, String text) => tester.pumpWidget(
+  /// Shows an [OutputPanel] of [text], cleared by [onClear].
+  Future<void> show(
+    WidgetTester tester,
+    String text, {
+    VoidCallback? onClear,
+  }) => tester.pumpWidget(
     ProviderScope(
       child: MaterialApp(
         home: Scaffold(
-          body: OutputPanel(title: 'Output', isExpanded: true, text: text),
+          body: OutputPanel(
+            title: 'Output',
+            isExpanded: true,
+            text: text,
+            onClear: onClear ?? () {},
+          ),
         ),
       ),
     ),
   );
+
+  testWidgets('every output offers to clear it', (tester) async {
+    var clears = 0;
+    await show(tester, 'done', onClear: () => clears++);
+
+    await tester.tap(find.byTooltip('Clear output').hitTestable());
+
+    expect(clears, 1);
+  });
 
   /// The link spans of the panel's text, by their text.
   Map<String, TapGestureRecognizer> links(WidgetTester tester) {
