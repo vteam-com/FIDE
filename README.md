@@ -18,13 +18,21 @@ FIDE is an open-source, opinionated IDE for Flutter development, built in Flutte
 | Windows | [FIDE-windows.zip](https://github.com/vteam-com/FIDE/releases/latest/download/FIDE-windows.zip) |
 | Linux | [FIDE-linux.tar.gz](https://github.com/vteam-com/FIDE/releases/latest/download/FIDE-linux.tar.gz) |
 
-The macOS build is signed and notarized by Apple, so it opens like any app downloaded from the Internet. The Windows and Linux builds are not signed: on Windows, pick **More info › Run anyway**. To run FIDE from its source code instead, see [Getting Started](#getting-started). What changed in each release is in [CHANGELOG.md](CHANGELOG.md).
+### Install
+
+FIDE drives the Flutter SDK installed on your computer instead of bundling one: install the [requirements](#requirements) first. Then unpack the build for your OS:
+
+- **macOS**: move `FIDE.app` to **Applications** and open it. The build is signed and notarized by Apple, so macOS only asks you to confirm opening an app downloaded from the Internet.
+- **Windows**: unzip it into a folder you own and run `fide.exe`. The build isn't signed yet: when Windows protects your PC, pick **More info › Run anyway**.
+- **Linux**: untar it into a folder you own and run `bundle/fide`.
+
+To run FIDE from its source code instead, see [Getting Started](#getting-started). What changed in each release is in [CHANGELOG.md](CHANGELOG.md).
 
 ### Updates
 
 FIDE keeps itself up to date. It looks for a newer release at launch and every four hours; when one is out, it tells you and shows an update button in the title bar, beside Settings. Click it when you're ready: FIDE downloads the new build, saves your open files, quits, and restarts updated. **Settings › Updates** shows the version you run and checks again on demand.
 
-FIDE replaces itself where it is installed, so it needs to be able to write there: on macOS, move `FIDE.app` to **Applications** before its first launch (an app opened from **Downloads** runs from a read-only copy), and on Windows and Linux keep its folder in one you own. FIDE run from its source code never updates itself: Git does.
+FIDE replaces itself where it is installed, which is why [Install](#install) puts it in **Applications** or a folder you own: macOS runs an app opened from **Downloads** from a read-only copy. FIDE run from its source code never updates itself: Git does.
 
 ## Philosophy
 
