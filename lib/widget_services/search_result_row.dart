@@ -32,7 +32,7 @@ class SearchResultRow extends ConsumerWidget {
       path: result.filePath,
       line: result.lineNumber,
       rootPath: rootPath,
-      onTap: () => openFileAtLine(ref, result.filePath, result.lineNumber),
+      onTap: () => openPlace(ref, result),
     );
   }
 }

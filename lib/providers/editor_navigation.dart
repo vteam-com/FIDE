@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
+import 'package:fide/models/search_result.dart';
 import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/center_view.dart';
@@ -40,6 +41,15 @@ Future<void> openFileAtLine(
   await Future.delayed(AppDuration.editorScroll);
   editor.navigateToLine(line, column: column);
 }
+
+/// Opens the file of [place] (a search match, a caller, a callee, a
+/// definition) with the caret on the name it marks.
+Future<void> openPlace(WidgetRef ref, SearchResult place) => openFileAtLine(
+  ref,
+  place.filePath,
+  place.lineNumber,
+  column: place.matchStart + 1,
+);
 
 /// Opens [filePath] in the editor showing its changes since the last
 /// commit, the one diff view, wherever it is asked for.

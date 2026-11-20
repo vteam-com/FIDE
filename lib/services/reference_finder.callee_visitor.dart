@@ -38,7 +38,7 @@ class _CalleeVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitSimpleIdentifier(SimpleIdentifier node) {
-    _add(node.element);
+    _add(_NameLocator.referencedBy(node));
     super.visitSimpleIdentifier(node);
   }
 }

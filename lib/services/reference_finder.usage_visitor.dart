@@ -159,7 +159,7 @@ class _UsageVisitor extends GeneralizingAstVisitor<void> {
 
   @override
   void visitSimpleIdentifier(SimpleIdentifier node) {
-    _check(node.element, node.offset, node.length);
+    _check(_NameLocator.referencedBy(node), node.offset, node.length);
     super.visitSimpleIdentifier(node);
   }
 }

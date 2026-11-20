@@ -389,12 +389,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
         content: _codeController.text,
       );
       if (!mounted) return;
-      await openFileAtLine(
-        ref,
-        place.filePath,
-        place.lineNumber,
-        column: place.matchStart + 1,
-      );
+      await openPlace(ref, place);
     } catch (error) {
       final message = ReadableError.describe(error);
       // A newer lookup replaced this one: only its answer shows

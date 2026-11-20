@@ -1,8 +1,14 @@
 part of 'reference_finder.dart';
 
-/// Finds what a name in resolved code refers to, for Go to Definition.
+/// Finds what a name in resolved code refers to: the one name every
+/// lookup (callers, callees, renames, Go to Definition) reads it through.
 class _NameLocator {
   const _NameLocator._();
+
+  /// What [name] refers to: its element, else, for a name an assignment,
+  /// `++` or `--` writes, what the writing expression records.
+  static Element? referencedBy(SimpleIdentifier name) =>
+      name.element ?? _written(name);
 
   /// What the name at the caret [offset] of [unit] refers to: the name the
   /// character after the caret is in, else the one before it, so a caret
@@ -31,7 +37,7 @@ class _NameLocator {
   static Element? _elementOf(AstNode node, int offset) {
     bool spans(int start, int end) => start <= offset && offset < end;
     final element = switch (node) {
-      SimpleIdentifier() => node.element ?? _written(node),
+      SimpleIdentifier() => referencedBy(node),
       NamedType(:final name, :final parent) when spans(name.offset, name.end) =>
         parent is ConstructorName ? parent.element : node.element,
       ImportPrefixReference() => node.element,

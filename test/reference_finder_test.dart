@@ -110,6 +110,40 @@ void paint(Circle c, Square s) {
     expect(uses.map((u) => u.lineNumber), [10, 12]);
   });
 
+  test('finds the writes of a field and a variable as their uses, and '
+      'renames them', () async {
+    final code = write('lib/code.dart', '''
+class Circle {
+  int radius = 0;
+}
+
+int count = 0;
+
+void grow(Circle c) {
+  c.radius = 2;
+  c.radius += 1;
+  count++;
+  print(c.radius + count);
+}
+''');
+
+    final radius = await finder.find(filePath: code, line: 2, column: 7);
+    final count = await finder.find(filePath: code, line: 5, column: 5);
+
+    expect(radius.map((use) => use.lineNumber), [8, 9, 11]);
+    expect(count.map((use) => use.lineNumber), [10, 11]);
+
+    // Renaming misses no write, so it doesn't break the build
+    final renamed = await finder.rename(
+      filePath: code,
+      line: 5,
+      column: 5,
+      newName: 'total',
+    );
+    expect(renamed[code], contains('  total++;'));
+    expect(renamed[code], isNot(contains('count')));
+  });
+
   test('fails rather than count zero when no declaration is there', () {
     final a = write('lib/a.dart', 'class A {}\n');
 
@@ -183,6 +217,23 @@ class Label {}
       // constructor is its class
       expect(names(calls), ['_outline', 'area', 'origin', 'Label']);
       expect(calls.first.lineNumber, 13);
+    });
+
+    test('lists an explicit setter an assignment calls', () async {
+      final code = write('lib/code.dart', '''
+class Gauge {
+  int _level = 0;
+  set level(int value) => _level = value;
+  void reset() {
+    level = 0;
+  }
+}
+''');
+
+      final calls = await finder.callees(filePath: code, line: 4, column: 3);
+
+      expect(names(calls), ['level']);
+      expect(calls.single.lineNumber, 3);
     });
 
     test('lists calls into other project files, not the SDK or '
