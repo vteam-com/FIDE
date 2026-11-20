@@ -2,6 +2,12 @@
 
 What changed in each FIDE release, newest first. `tool/release.sh` adds each release's entry: one line per commit since the release before.
 
+## 1.4.3 - 2026-11-20
+
+- DRY: one openPlace for search matches, callers, callees and Go to Definition (caret on the name), one name resolution for callers, callees, rename and Go to Definition, so writes (=, +=, ++) count as uses and get renamed, and explicit setters as callees
+- Go to Definition: ⌘-click a name (Ctrl-click off macOS) or press F12 to jump to where the project declares it, resolved by the Dart analyzer with unsaved edits included; Edit menu item, shared overlay helper in the reference worker
+- README: install steps per OS, the macOS build now signed and notarized
+
 ## 1.4.2 - 2026-11-20
 
 - Release workflow signs the macOS build with Developer ID and notarizes it (hardened runtime, stapled ticket), so it opens without Open Anyway; README documents the signing secrets
