@@ -116,8 +116,8 @@ class NativeMenuBuilder {
     );
   }
 
-  /// Builds the Edit menu with the find, go-to-line, go back and forward,
-  /// and clear terminal items.
+  /// Builds the Edit menu with the find, go-to-line, go-to-definition, go
+  /// back and forward, and clear terminal items.
   PlatformMenu _buildEditMenu() {
     final editor = ref.read(activeEditorProvider);
     final documents = ref.read(openDocumentsProvider.notifier);
@@ -143,6 +143,11 @@ class NativeMenuBuilder {
           label: 'Go to Line',
           shortcut: AppShortcut.goToLine,
           onSelected: () => GotoLineDialog.show(context, editor),
+        ),
+        PlatformMenuItem(
+          label: 'Go to Definition',
+          shortcut: AppShortcut.goToDefinition,
+          onSelected: editor.goToDefinition,
         ),
         PlatformMenuItemGroup(
           members: [

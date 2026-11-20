@@ -28,6 +28,9 @@ class ActiveEditor implements EditorCommands {
   void findPrevious() => _editor?.findPrevious();
 
   @override
+  Future<void> goToDefinition() async => _editor?.goToDefinition();
+
+  @override
   void openSearch() => _editor?.openSearch();
 
   @override

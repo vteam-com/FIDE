@@ -22,11 +22,13 @@ part 'reference_finder.callee_visitor.dart';
 part 'reference_finder.callees_request.dart';
 part 'reference_finder.check_compiles_request.dart';
 part 'reference_finder.declaration_request.dart';
+part 'reference_finder.definition_request.dart';
 part 'reference_finder.file_texts.dart';
 part 'reference_finder.find_references_request.dart';
 part 'reference_finder.lookup_field_request.dart';
 part 'reference_finder.lookup_fields.dart';
 part 'reference_finder.lookup_fields_request.dart';
+part 'reference_finder.name_locator.dart';
 part 'reference_finder.reference_request.dart';
 part 'reference_finder.reference_worker.dart';
 part 'reference_finder.rename_request.dart';
@@ -85,6 +87,21 @@ class ReferenceFinder {
     required int line,
     required int column,
   }) => _request(CalleesRequest(filePath, line, column));
+
+  /// Where the project declares what the name at the caret [offset] of
+  /// [filePath] refers to (Go to Definition), as the place of its name:
+  /// a class, constructor, function, method, field, variable, parameter
+  /// or import prefix. [content] is the file's text as the editor shows
+  /// it, unsaved edits included, which is analyzed instead of the file.
+  ///
+  /// Throws, saying why, when no name is at [offset] or the project
+  /// doesn't declare it (such as a Flutter class), and as [find] does,
+  /// [superseded] included.
+  Future<SearchResult> definition({
+    required String filePath,
+    required int offset,
+    required String content,
+  }) => _request(DefinitionRequest(filePath, offset, content));
 
   /// The `String` field the argument starting at [offset] of [filePath]
   /// fills through a `this.` parameter, with every value passed to it and

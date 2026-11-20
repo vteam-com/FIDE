@@ -85,6 +85,8 @@ class _ReferenceWorker {
         CalleesRequest(:final filePath, :final line, :final column) => _callees(
           await _targetAt(filePath, line, column),
         ),
+        DefinitionRequest(:final filePath, :final offset, :final content) =>
+          await _definition(filePath, offset, content),
         RenameRequest(
           :final filePath,
           :final line,
@@ -120,14 +122,44 @@ class _ReferenceWorker {
       if (!_UsageVisitor.same(callee, target.element)) ?_declarationOf(callee),
   ];
 
-  /// Where [callee] is declared, as a place in the code naming it (its
-  /// class for an implicit constructor); null when the project doesn't
-  /// declare it.
-  SearchResult? _declarationOf(ExecutableElement callee) {
-    final declared = switch (callee) {
+  /// See [ReferenceFinder.definition].
+  Future<SearchResult> _definition(
+    String filePath,
+    int offset,
+    String content,
+  ) async {
+    if (!p.isWithin(_projectPath, filePath)) {
+      throw StateError('${p.basename(filePath)} isn\'t in the project');
+    }
+    // Unsaved edits are analyzed as the file, so the offset lands on them
+    final edited = content == _analysis.read(filePath)
+        ? const <String, String>{}
+        : {filePath: content};
+    return _overlaid(edited, () async {
+      final unit = await _resolvedUnit(filePath);
+      if (unit == null) throw StateError('Can\'t analyze $filePath');
+      final element = _NameLocator.elementAt(unit.unit, offset);
+      if (element == null) throw StateError('No name to go to at the caret');
+      final place = _declarationOf(element);
+      if (place != null) return place;
+      final library = element.library?.uri;
+      throw StateError(
+        '${element.displayName} is declared outside the project'
+        '${library == null ? '' : ', in $library'}',
+      );
+    });
+  }
+
+  /// Where [element] is declared, as a place in the code naming it (its
+  /// class for an implicit constructor, its field for an implicit getter
+  /// or setter); null when the project doesn't declare it.
+  SearchResult? _declarationOf(Element element) {
+    final declared = switch (element) {
       ConstructorElement(isOriginDeclaration: false, :final enclosingElement) =>
         enclosingElement,
-      _ => callee,
+      PropertyAccessorElement(isOriginDeclaration: false, :final variable) =>
+        variable,
+      _ => element,
     };
     final fragment = declared.firstFragment;
     final library = fragment.libraryFragment;
@@ -214,10 +246,22 @@ class _ReferenceWorker {
     String action,
   ) async {
     final before = await _analysis.errorCounts(contents.keys);
+    await _overlaid(
+      contents,
+      () => _analysis.checkNoNewErrors(contents.keys, before, action: action),
+    );
+  }
+
+  /// What [body] answers with [contents] analyzed as their files' text;
+  /// the files on disk are analyzed again afterwards, even when it throws.
+  Future<T> _overlaid<T>(
+    Map<String, String> contents,
+    Future<T> Function() body,
+  ) async {
     try {
       contents.forEach(_analysis.overlay);
       await _analysis.applyChanges();
-      await _analysis.checkNoNewErrors(contents.keys, before, action: action);
+      return await body();
     } finally {
       contents.keys.forEach(_analysis.removeOverlay);
       await _analysis.applyChanges();

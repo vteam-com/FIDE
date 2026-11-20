@@ -201,6 +201,233 @@ int count(int n) => n == 0 ? 0 : count(n - 1) + twice(n).abs();
     });
   });
 
+  group('definition', () {
+    /// The name [place] marks, its file and its line.
+    (String, String, int) named(SearchResult place) => (
+      p.basename(place.filePath),
+      place.lineContent.substring(place.matchStart, place.matchEnd),
+      place.lineNumber,
+    );
+
+    /// Where [finder] says the name at the [nth] occurrence of [text] in
+    /// [path], whose editor text is [content], is declared; [skip] moves
+    /// the caret that many characters into the occurrence.
+    Future<(String, String, int)> definitionAt(
+      String path,
+      String content,
+      String text, {
+      int nth = 0,
+      int skip = 0,
+    }) async {
+      var offset = -1;
+      for (var i = 0; i <= nth; i++) {
+        offset = content.indexOf(text, offset + 1);
+      }
+      expect(offset, isNonNegative, reason: '"$text" #$nth not in the code');
+      return named(
+        await finder.definition(
+          filePath: path,
+          offset: offset + skip,
+          content: content,
+        ),
+      );
+    }
+
+    const shapes = '''
+class Circle {
+  Circle(this.radius);
+  Circle.unit() : this(1);
+  int radius;
+  int get area => radius * radius;
+  void draw() {}
+}
+
+class Square {
+  void draw() {}
+}
+
+class Label {}
+
+int count = 0;
+''';
+
+    test('goes to classes, constructors and methods in other files', () async {
+      write('lib/shapes.dart', shapes);
+      const content = '''
+import 'shapes.dart' as s;
+
+void paint(s.Circle c, s.Square q) {
+  c.draw();
+  q.draw();
+  s.Circle(2);
+  s.Circle.unit();
+  s.Label();
+}
+''';
+      final paint = write('lib/paint.dart', content);
+
+      expect(await definitionAt(paint, content, 'Circle c'), (
+        'shapes.dart',
+        'Circle',
+        1,
+      ));
+      // That class's method, not a same-named one
+      expect(await definitionAt(paint, content, 'draw'), (
+        'shapes.dart',
+        'draw',
+        6,
+      ));
+      expect(await definitionAt(paint, content, 'draw', nth: 1), (
+        'shapes.dart',
+        'draw',
+        10,
+      ));
+      // A constructor call's class name is the constructor, where it
+      // starts, as an unnamed one has no name to mark; an implicit
+      // constructor is its class
+      final constructor = await finder.definition(
+        filePath: paint,
+        offset: content.indexOf('Circle(2)'),
+        content: content,
+      );
+      expect((constructor.lineNumber, constructor.matchStart), (2, 2));
+      expect(await definitionAt(paint, content, 'unit'), (
+        'shapes.dart',
+        'unit',
+        3,
+      ));
+      expect(await definitionAt(paint, content, 'Label'), (
+        'shapes.dart',
+        'Label',
+        13,
+      ));
+      // An import prefix is its import
+      expect(await definitionAt(paint, content, 's.Square'), (
+        'paint.dart',
+        's',
+        1,
+      ));
+    });
+
+    test('goes to the field an implicit getter or setter, a write or a '
+        'this. parameter names', () async {
+      final shapesPath = write('lib/shapes.dart', shapes);
+      const content = '''
+import 'shapes.dart';
+
+void grow(Circle c) {
+  c.radius = c.area;
+  count++;
+  c.radius += 1;
+}
+''';
+      final grow = write('lib/grow.dart', content);
+
+      expect(await definitionAt(grow, content, 'radius ='), (
+        'shapes.dart',
+        'radius',
+        4,
+      ));
+      expect(await definitionAt(grow, content, 'area'), (
+        'shapes.dart',
+        'area',
+        5,
+      ));
+      expect(await definitionAt(grow, content, 'count'), (
+        'shapes.dart',
+        'count',
+        15,
+      ));
+      expect(await definitionAt(grow, content, 'radius +='), (
+        'shapes.dart',
+        'radius',
+        4,
+      ));
+      expect(await definitionAt(shapesPath, shapes, 'radius', skip: 1), (
+        'shapes.dart',
+        'radius',
+        4,
+      ));
+    });
+
+    test('goes to locals, parameters and named arguments, with the caret '
+        'just past a name', () async {
+      const content = '''
+class Base {
+  Base({required this.id});
+  final int id;
+}
+
+class Child extends Base {
+  Child({required super.id});
+}
+
+int twice(int value) {
+  final doubled = value * 2;
+  return doubled;
+}
+
+final child = Child(id: twice(1));
+''';
+      final code = write('lib/code.dart', content);
+
+      expect(await definitionAt(code, content, 'doubled;', skip: 7), (
+        'code.dart',
+        'doubled',
+        11,
+      ));
+      expect(await definitionAt(code, content, 'value *'), (
+        'code.dart',
+        'value',
+        10,
+      ));
+      expect(await definitionAt(code, content, 'id: '), ('code.dart', 'id', 7));
+      // A super. parameter is the parameter it fills
+      expect(await definitionAt(code, content, 'id});', nth: 1), (
+        'code.dart',
+        'id',
+        2,
+      ));
+    });
+
+    test('reads unsaved edits, then the file on disk again', () async {
+      const saved = 'int answer() => 42;\n\nfinal value = answer();\n';
+      final code = write('lib/code.dart', saved);
+      // Edits the editor hasn't saved yet move the declaration down
+      const edited = '\n\nint answer() => 42;\n\nfinal value = answer();\n';
+
+      expect(await definitionAt(code, edited, 'answer', nth: 1), (
+        'code.dart',
+        'answer',
+        3,
+      ));
+      expect(await definitionAt(code, saved, 'answer', nth: 1), (
+        'code.dart',
+        'answer',
+        1,
+      ));
+    });
+
+    test('says why when the project doesn\'t declare the name', () async {
+      const content = 'void main() {\n  print(1);\n}\n';
+      final main = write('lib/main.dart', content);
+
+      Future<void> expectError(int offset, String message) => expectLater(
+        finder.definition(filePath: main, offset: offset, content: content),
+        throwsA(predicate((e) => '$e'.contains(message))),
+      );
+
+      await expectError(
+        content.indexOf('print'),
+        'print is declared outside the project, in dart:core',
+      );
+      await expectError(
+        content.indexOf('  print'),
+        'No name to go to at the caret',
+      );
+    });
+  });
+
   group('FileTexts', () {
     final first = DateTime(2024);
     final later = DateTime(2025);

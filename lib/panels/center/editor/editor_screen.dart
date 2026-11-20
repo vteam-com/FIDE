@@ -21,17 +21,20 @@ import 'package:fide/panels/center/editor/editor_session.dart';
 import 'package:fide/panels/center/editor/quality_diagnostics.dart';
 import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/services/code_formatter.dart';
 import 'package:fide/services/editor_commands.dart';
 import 'package:fide/services/file_type_utils.dart';
+import 'package:fide/services/reference_finder.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
@@ -69,6 +72,11 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   ThemeData? _codeThemeSource;
 
   bool _editorHasFocus = false;
+
+  /// Whether the press under way is a primary click with the
+  /// [_isDefinitionKeyPressed] key down, which goes to the definition of
+  /// the name it puts the caret on.
+  bool _isDefinitionClick = false;
 
   bool _isDisposed = false;
 
@@ -309,15 +317,20 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
               // its tickers while the caret isn't visible.
               child: TickerMode(
                 enabled: _editorHasFocus && _appIsActive,
-                child: CodeForge(
-                  controller: _codeController,
-                  language:
-                      _document?.language ??
-                      FileTypeUtils.languageForFile(_currentFile),
-                  gutterStyle: GutterStyle(
-                    lineNumberStyle: AppTextStyle.lineNumber(context),
+                // Sees each click after CodeForge has put the caret there
+                child: Listener(
+                  onPointerDown: _onCodePointerDown,
+                  onPointerUp: _onCodePointerUp,
+                  child: CodeForge(
+                    controller: _codeController,
+                    language:
+                        _document?.language ??
+                        FileTypeUtils.languageForFile(_currentFile),
+                    gutterStyle: GutterStyle(
+                      lineNumberStyle: AppTextStyle.lineNumber(context),
+                    ),
+                    editorTheme: _getCodeTheme(),
                   ),
-                  editorTheme: _getCodeTheme(),
                 ),
               ),
             ),
@@ -357,6 +370,38 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   @override
   void findPrevious() {
     if (_search.findPrevious()) _focusEditorAfterFrame();
+  }
+
+  @override
+  Future<void> goToDefinition() async {
+    final finder = ref.read(referenceFinderProvider);
+    if (finder == null || _showDiffView || _viewKind != FileViewKind.code) {
+      return;
+    }
+    if (!FileTypeUtils.isDartFile(_currentFile)) {
+      MessageBox.showInfo(context, 'Go to Definition reads Dart files only');
+      return;
+    }
+    try {
+      final place = await finder.definition(
+        filePath: _currentFile,
+        offset: _codeController.selection.extentOffset,
+        content: _codeController.text,
+      );
+      if (!mounted) return;
+      await openFileAtLine(
+        ref,
+        place.filePath,
+        place.lineNumber,
+        column: place.matchStart + 1,
+      );
+    } catch (error) {
+      final message = ReadableError.describe(error);
+      // A newer lookup replaced this one: only its answer shows
+      if (mounted && message != ReferenceFinder.superseded) {
+        MessageBox.showInfo(context, message);
+      }
+    }
   }
 
   @override
@@ -487,6 +532,27 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
         }
       }
     }
+  }
+
+  /// Whether the key that makes a click go to the definition is down: ⌘
+  /// on macOS, Ctrl elsewhere, as in VS Code.
+  static bool get _isDefinitionKeyPressed =>
+      defaultTargetPlatform == TargetPlatform.macOS
+      ? HardwareKeyboard.instance.isMetaPressed
+      : HardwareKeyboard.instance.isControlPressed;
+
+  /// Notes whether [event] starts a click going to a definition.
+  void _onCodePointerDown(PointerDownEvent event) {
+    _isDefinitionClick =
+        event.buttons == kPrimaryButton && _isDefinitionKeyPressed;
+  }
+
+  /// Goes to the definition of the name a click going to one put the
+  /// caret on; a drag selecting text doesn't.
+  void _onCodePointerUp(PointerUpEvent _) {
+    if (!_isDefinitionClick) return;
+    _isDefinitionClick = false;
+    if (_codeController.selection.isCollapsed) goToDefinition();
   }
 
   /// Moves the cursor to a specific line and column in the editor.

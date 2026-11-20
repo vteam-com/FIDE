@@ -12,6 +12,10 @@ abstract interface class EditorCommands {
   /// Selects the previous search match.
   void findPrevious();
 
+  /// Shows where the project declares the name at the caret, the caret on
+  /// its name, or says why it can't; completes once shown.
+  Future<void> goToDefinition();
+
   /// Opens the in-editor search bar and focuses it, starting from the
   /// selected text when there is a [searchSeed].
   void openSearch();

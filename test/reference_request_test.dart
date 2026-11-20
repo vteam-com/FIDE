@@ -19,6 +19,14 @@ void main() {
     );
     expect(check.contents, {'/p/a.dart': 'class B {}'});
     expect(check.action, 'Renaming');
+
+    final definition = await Isolate.run(
+      () => const DefinitionRequest('/p/a.dart', 4, 'class B {}'),
+    );
+    expect(
+      (definition.filePath, definition.offset, definition.content),
+      ('/p/a.dart', 4, 'class B {}'),
+    );
   });
 
   test('each request reads its answer as its own type', () {
@@ -40,6 +48,7 @@ void main() {
   test('only the latest lookup of a kind is answered, every rename is', () {
     expect(const FindReferencesRequest('/p/a.dart', 1, 1).isLatestOnly, isTrue);
     expect(const CalleesRequest('/p/a.dart', 1, 1).isLatestOnly, isTrue);
+    expect(const DefinitionRequest('/p/a.dart', 0, '').isLatestOnly, isTrue);
     expect(const RenameRequest('/p/a.dart', 1, 1, 'B').isLatestOnly, isFalse);
   });
 

@@ -84,6 +84,13 @@ class AppShortcut {
     control: true,
   );
 
+  /// Go to Definition: show where the project declares the name at the
+  /// caret (as in VS Code), as ⌘-clicking a name (Ctrl-clicking off macOS)
+  /// does.
+  static const SingleActivator goToDefinition = SingleActivator(
+    LogicalKeyboardKey.f12,
+  );
+
   /// Go Back: show the file shown before the showing one (as in VS Code).
   static const SingleActivator goBack = SingleActivator(
     LogicalKeyboardKey.minus,
