@@ -2,6 +2,11 @@
 
 What changed in each FIDE release, newest first. `tool/release.sh` adds each release's entry: one line per commit since the release before.
 
+## 1.4.2 - 2026-11-20
+
+- Release workflow signs the macOS build with Developer ID and notarizes it (hardened runtime, stapled ticket), so it opens without Open Anyway; README documents the signing secrets
+- DRY review fixes: one Save (fixes ⌘S writing empty media files), one FileAction list, AI actions folded into Ask AI, shared side-panel tabs, stacked messages, toggle/badge/status-glyph/label consistency, token cleanup, shared non-UI helpers (imports, overlay analysis, parseDart, Debouncer, model/ARB/pubspec keys, SDK lookup)
+
 ## 1.4.1 - 2026-11-19
 
 - Workspace gradient tints the panel surface with primary: brighter than the panels in dark mode (+20% contrast), darker blue in light mode up to the AA limit
