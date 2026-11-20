@@ -18,7 +18,7 @@ FIDE is an open-source, opinionated IDE for Flutter development, built in Flutte
 | Windows | [FIDE-windows.zip](https://github.com/vteam-com/FIDE/releases/latest/download/FIDE-windows.zip) |
 | Linux | [FIDE-linux.tar.gz](https://github.com/vteam-com/FIDE/releases/latest/download/FIDE-linux.tar.gz) |
 
-The builds are not signed: on macOS, allow the first launch in **System Settings › Privacy & Security › Open Anyway**; on Windows, pick **More info › Run anyway**. To run FIDE from its source code instead, see [Getting Started](#getting-started). What changed in each release is in [CHANGELOG.md](CHANGELOG.md).
+The macOS build is signed and notarized by Apple, so it opens like any app downloaded from the Internet. The Windows and Linux builds are not signed: on Windows, pick **More info › Run anyway**. To run FIDE from its source code instead, see [Getting Started](#getting-started). What changed in each release is in [CHANGELOG.md](CHANGELOG.md).
 
 ### Updates
 
@@ -147,7 +147,25 @@ tool/release.sh patch   # or minor, major, or an exact version such as 1.2.0
 
 The script sets the new version in `pubspec.yaml` (the build number goes up by one) and adds the release to [CHANGELOG.md](CHANGELOG.md), one line per commit subject since the last release, which it shows before you confirm. It then runs the analyzer, the tests, `fcheck --strict` and a macOS build, commits the version and the changelog, tags them `v1.2.0` and pushes both, with any commits of `main` not pushed yet; it stops at the start when `origin/main` has commits you haven't pulled. If any step fails, both files are put back and nothing is committed. A release tag found only on your machine, never pushed, is left over from an earlier try: the release moves it.
 
-The pushed tag starts the Release workflow, which checks that the tag matches `pubspec.yaml`, tests the code, builds it for macOS, Windows and Linux, and publishes the three builds as the latest GitHub Release, which the [Download](#download) links serve as soon as the workflow ends, and which running FIDEs then offer to [update](#updates) to. It then deletes the older releases (their tags stay), so GitHub stores only the latest build. To try a release first, run the Release workflow from the Actions tab: it builds any branch and keeps the builds as workflow artifacts, without making a release. Each Release run deletes the build artifacts of the runs before it.
+The pushed tag starts the Release workflow, which checks that the tag matches `pubspec.yaml`, tests the code, builds it for macOS, Windows and Linux, [signs and notarizes](#signing-the-macos-build) the macOS build, and publishes the three builds as the latest GitHub Release, which the [Download](#download) links serve as soon as the workflow ends, and which running FIDEs then offer to [update](#updates) to. It then deletes the older releases (their tags stay), so GitHub stores only the latest build. To try a release first, run the Release workflow from the Actions tab: it builds any branch and keeps the builds as workflow artifacts, without making a release. Each Release run deletes the build artifacts of the runs before it.
+
+### Signing the macOS build
+
+The Release workflow signs the macOS app with a Developer ID certificate and has Apple notarize it, so macOS opens it without asking to allow it in Privacy & Security; the macOS build fails when the secrets below are missing. To set them up once, with a paid Apple Developer account:
+
+1. **Developer ID certificate** (only the team's Account Holder can create one): in Xcode › Settings › Accounts, select the team, click **Manage Certificates…**, then **+ › Developer ID Application**. In Keychain Access › My Certificates, right-click **Developer ID Application: …** and export it, with its private key, as a `.p12` file protected by a password.
+2. **Notarization key**: in [App Store Connect › Users and Access › Integrations](https://appstoreconnect.apple.com/access/integrations/api), generate a Team Key with the Developer role and download its `AuthKey_<KEY ID>.p8` (Apple offers the download only once). Note its Key ID and the Issuer ID shown above the keys.
+3. **Repository secrets**, from the repository folder:
+
+   ```sh
+   base64 -i DeveloperID.p12 | gh secret set MACOS_CERTIFICATE
+   gh secret set MACOS_CERTIFICATE_PASSWORD          # asks for the .p12 password
+   gh secret set APPLE_API_KEY < AuthKey_<KEY ID>.p8
+   gh secret set APPLE_API_KEY_ID --body <KEY ID>
+   gh secret set APPLE_API_ISSUER_ID --body <ISSUER ID>
+   ```
+
+Then run the Release workflow from the Actions tab to try the signing out before the next release. Apple shows the certificate's expiration date when it creates it: before then, make a new one and update the two `MACOS_CERTIFICATE` secrets (builds signed before stay valid).
 
 ## Requirements
 
