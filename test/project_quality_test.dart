@@ -178,6 +178,15 @@ void main() {
       );
     });
 
+    test('information alone needs no attention', () {
+      const quality = ProjectQuality(
+        score: AppMetric.maxScore,
+        issues: [QualityIssue(label: '7 large files', tone: StatusTone.info)],
+      );
+
+      expect(quality.needsAttention, false);
+    });
+
     test('a lower score needs attention', () {
       expect(
         const ProjectQuality(

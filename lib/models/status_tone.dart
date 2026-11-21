@@ -45,6 +45,10 @@ enum StatusTone {
   /// Whether a message of this tone offers to copy its text.
   final bool messageCopyable;
 
+  /// Whether a status of this tone asks the user to act: a warning or an
+  /// error, not information.
+  bool get needsAttention => this == warning || this == error;
+
   /// How long a message of this tone stays on screen.
   final Duration messageDuration;
 

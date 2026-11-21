@@ -18,9 +18,11 @@ class ProjectQuality {
   /// the color contrast analyzer, from 0 to [AppMetric.maxScore].
   final int score;
 
-  /// Whether the score is below [AppMetric.maxScore] or anything was
-  /// found.
-  bool get needsAttention => score < AppMetric.maxScore || issues.isNotEmpty;
+  /// Whether the score is below [AppMetric.maxScore] or a warning or error
+  /// was found; information, such as large files, lists without asking.
+  bool get needsAttention =>
+      score < AppMetric.maxScore ||
+      issues.any((issue) => issue.tone.needsAttention);
 
   /// The score, then the most pressing issue on one line with how many
   /// others there are: the light bulb's tooltip.
