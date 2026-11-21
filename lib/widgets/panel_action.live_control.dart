@@ -1,7 +1,8 @@
 part of 'panel_action.dart';
 
-/// A task a live [PanelAction] offers beside its Stop, such as a running
-/// app's hot reload: one more task button on the action's row.
+/// A task a live [PanelAction] offers with its Stop, such as a running
+/// app's hot reload: one more task button, on a line under the action's
+/// row.
 class LiveControl {
   /// Creates the control starting its task with [onRun]; its action has
   /// [status] while the task runs.

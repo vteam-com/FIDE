@@ -13,8 +13,8 @@ import 'package:material_ui/material_ui.dart';
 
 /// Panel actions as one compact row each: the action's status-aware icon,
 /// its title, an info toggle revealing its details, and a round run (or
-/// stop) button. Every action stays one click away and shows its own
-/// status.
+/// stop) button, with the action's live controls on a line below while it
+/// is live. Every action stays one click away and shows its own status.
 class ActionList extends StatelessWidget {
   /// Creates the list of [actions].
   const ActionList({super.key, required this.actions});
@@ -58,6 +58,7 @@ class _ActionRowState extends State<_ActionRow> {
   Widget build(BuildContext context) {
     final action = widget.action;
     final colorScheme = Theme.of(context).colorScheme;
+    final liveControls = _buildLiveControls();
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppRadius.small),
       child: Material(
@@ -71,24 +72,39 @@ class _ActionRowState extends State<_ActionRow> {
             children: [
               Padding(
                 padding: AppPadding.listItem,
-                child: Row(
-                  spacing: AppSpacing.medium,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: AppSpacing.tiny,
                   children: [
-                    _buildLeading(colorScheme),
-                    Expanded(
-                      child: TruncatedText(
-                        action.title,
-                        style: AppTextStyle.label,
+                    Row(
+                      spacing: AppSpacing.medium,
+                      children: [
+                        _buildLeading(colorScheme),
+                        Expanded(
+                          child: TruncatedText(
+                            action.title,
+                            style: AppTextStyle.label,
+                          ),
+                        ),
+                        CompactToggleButton(
+                          icon: Icons.info_outline,
+                          tooltip: 'Details',
+                          isOn: _expanded,
+                          onChanged: (_) => _toggle(),
+                        ),
+                        _buildRunButton(),
+                      ],
+                    ),
+                    if (liveControls.isNotEmpty)
+                      // A line of their own, under Stop: beside it they
+                      // leave the title no room in a panel of the default
+                      // width
+                      Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: AppSpacing.medium,
+                        runSpacing: AppSpacing.tiny,
+                        children: liveControls,
                       ),
-                    ),
-                    CompactToggleButton(
-                      icon: Icons.info_outline,
-                      tooltip: 'Details',
-                      isOn: _expanded,
-                      onChanged: (_) => _toggle(),
-                    ),
-                    ..._buildLiveControls(),
-                    _buildRunButton(),
                   ],
                 ),
               ),

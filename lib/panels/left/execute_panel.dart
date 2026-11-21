@@ -158,7 +158,7 @@ Runs the Flutter application in release mode.
 Runs the Flutter application in debug mode.
 
 • Each save hot reloads the running app, keeping its state; a change hot reload can't apply restarts it
-• Hot Reload and Hot Restart beside Stop, or in the Run menu, apply the saved code at once
+• Hot Reload and Hot Restart under Stop, or in the Run menu, apply the saved code at once
 • Includes debugging tools and assertions
       ''',
       onRun: () => _runApp(ExecutePanel._debugId, platform, isDebug: true),
