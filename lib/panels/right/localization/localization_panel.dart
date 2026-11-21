@@ -242,6 +242,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       hasEntries ? state.comparisons : const [],
       entry: (comparison) => LocalizationEntryWidget(
         comparison: comparison,
+        templateLocale: state.templateLocale,
         onTranslate: (language) {
           if (_controller.translationOf(comparison, language)
               case final translation?) {
@@ -382,6 +383,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
                   filteredComparisons,
                   entry: (comparison) => LocalizationEntryWidget(
                     comparison: comparison,
+                    templateLocale: state.templateLocale,
                     showWarning: duplicatedValues.contains(
                       comparison.englishValue,
                     ),

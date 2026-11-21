@@ -43,6 +43,7 @@ class ProjectOverviewService {
       appIconPath: appIconPath,
       code: code,
       languages: ArbFile.localesOf(arbFiles.valid),
+      templateLocale: arbFiles.templateLocale,
       platforms: platforms,
       cocoaPods: await _cocoaPods.inspect(
         projectPath,

@@ -149,7 +149,10 @@ class ProjectOverviewPanel extends ConsumerWidget {
       title: 'Localization',
       value: languages.isEmpty
           ? StatCard.text('Off')
-          : LocaleBadges(locales: languages),
+          : LocaleBadges(
+              locales: languages,
+              defaultLocale: overview.templateLocale,
+            ),
       details: [
         if (languages.isEmpty)
           'No ARB files in lib/l10n'

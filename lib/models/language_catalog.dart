@@ -3,6 +3,17 @@
 class LanguageCatalog {
   const LanguageCatalog._();
 
+  /// English: Flutter's default template locale, which a new localization
+  /// keeps unless another language is made the default.
+  static const String english = 'en';
+
+  /// French, which a new localization starts with beside [english].
+  static const String french = 'fr';
+
+  /// The locales a localization starts with unless others are picked:
+  /// [english], the template, and [french], both given starter messages.
+  static const Set<String> starterLocales = {english, french};
+
   /// Separates a locale's language from its script or region, as in
   /// `pt_BR`.
   static const String _subtagSeparator = '_';

@@ -8,6 +8,7 @@ import 'package:fide/models/creation_report.dart';
 import 'package:fide/models/creation_step.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/l10n_config.dart';
+import 'package:fide/models/language_catalog.dart';
 import 'package:fide/models/project_creation_request.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/pubspec.dart';
@@ -32,8 +33,7 @@ typedef CreationProgress = void Function(CreationReport report);
 /// [CreationOutcome]; the wizard words them.
 class ProjectCreationService {
   /// Language whose ARB template `LocalizationSetup` already writes.
-  static const String _templateLanguage =
-      ProjectCreationRequest.englishLanguage;
+  static const String _templateLanguage = LanguageCatalog.english;
 
   /// gen-l10n settings of a new project, whose ARB files stay in Flutter's
   /// default folder.

@@ -29,16 +29,6 @@ typedef DartSource = ({String path, String content});
 class LocalizationSetup {
   static final Logger _logger = Logger('LocalizationSetup');
 
-  /// The template ARB file's locale, whose starter messages the others
-  /// fall back to.
-  static const String _templateLocale = 'en';
-
-  /// The other locale given starter messages.
-  static const String _frenchLocale = 'fr';
-
-  /// The locales [initializeLocalization] sets up unless told others.
-  static const Set<String> starterLocales = {_templateLocale, _frenchLocale};
-
   /// Package name assumed when the pubspec has none.
   static const String _fallbackPackageName = 'my_app';
 
@@ -97,7 +87,7 @@ class LocalizationSetup {
     String projectPath, {
     ProcessOutputCallback? onStep,
     bool tolerateToolFailures = false,
-    Set<String> locales = starterLocales,
+    Set<String> locales = LanguageCatalog.starterLocales,
   }) async {
     Future<void> runTool(Future<void> Function() tool) async {
       try {
@@ -281,9 +271,9 @@ class LocalizationSetup {
         : extractedTitle;
 
     for (final (locale, title, greeting) in [
-      (_templateLocale, appTitle, 'Hello World'),
-      if (locales.contains(_frenchLocale))
-        (_frenchLocale, 'Mon Application', 'Bonjour le monde'),
+      (LanguageCatalog.english, appTitle, 'Hello World'),
+      if (locales.contains(LanguageCatalog.french))
+        (LanguageCatalog.french, 'Mon Application', 'Bonjour le monde'),
     ]) {
       await ArbService.write(config.arbPathFor(projectPath, locale), {
         ArbService.localeKey: locale,

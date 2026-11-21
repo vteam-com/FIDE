@@ -79,15 +79,12 @@ class LocalizationController extends StateNotifier<LocalizationState>
 
   /// Adds [locale] to the project, as [LocalizationSetup.addLocale] does,
   /// and reloads.
-  Future<ActionOutcome?> addLocale(String locale) {
-    final label = LanguageCatalog.labelOf(locale);
-    return runAction('Error adding $label', _busy, (projectPath) async {
-      final path = await _setup.addLocale(projectPath, locale);
-      await _reloadWritten([path]);
-      await reload();
-      return ActionOutcome.success('Added $label');
-    });
-  }
+  Future<ActionOutcome?> addLocale(String locale) => _changeLocale(
+    locale,
+    _setup.addLocale,
+    failure: 'Error adding',
+    success: 'Added',
+  );
 
   /// Generates the localization classes with `flutter gen-l10n`, once the
   /// pubspec enables code generation.
@@ -139,15 +136,12 @@ class LocalizationController extends StateNotifier<LocalizationState>
 
   /// Removes [locale] from the project, as
   /// [LocalizationSetup.removeLocale] does, and reloads.
-  Future<ActionOutcome?> removeLocale(String locale) {
-    final label = LanguageCatalog.labelOf(locale);
-    return runAction('Error removing $label', _busy, (projectPath) async {
-      final path = await _setup.removeLocale(projectPath, locale);
-      await _reloadWritten([path]);
-      await reload();
-      return ActionOutcome.success('Removed $label');
-    });
-  }
+  Future<ActionOutcome?> removeLocale(String locale) => _changeLocale(
+    locale,
+    _setup.removeLocale,
+    failure: 'Error removing',
+    success: 'Removed',
+  );
 
   /// The translation of [comparison]'s template value into [locale],
   /// written to that locale's ARB file, with the template's description of
@@ -183,6 +177,23 @@ class LocalizationController extends StateNotifier<LocalizationState>
       final appFile = await _setup.wireApp(projectPath);
       await reload();
       return ActionOutcome.success('$appFile updated successfully!');
+    });
+  }
+
+  /// Runs [change] of [locale]'s ARB file, which returns the file's path,
+  /// as an action ending in [success] or [failure] followed by the
+  /// locale's label, then reloads the file in the editor and the panel.
+  Future<ActionOutcome?> _changeLocale(
+    String locale,
+    Future<String> Function(String projectPath, String locale) change, {
+    required String failure,
+    required String success,
+  }) {
+    final label = LanguageCatalog.labelOf(locale);
+    return runAction('$failure $label', _busy, (projectPath) async {
+      await _reloadWritten([await change(projectPath, locale)]);
+      await reload();
+      return ActionOutcome.success('$success $label');
     });
   }
 

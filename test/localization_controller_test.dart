@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:fide/models/language_catalog.dart';
 import 'package:fide/models/localization_checks.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/localization_state.dart';
@@ -67,7 +68,7 @@ class FakeLocalizationSetup extends LocalizationSetup {
     String projectPath, {
     ProcessOutputCallback? onStep,
     bool tolerateToolFailures = false,
-    Set<String> locales = LocalizationSetup.starterLocales,
+    Set<String> locales = LanguageCatalog.starterLocales,
   }) => actions.act();
 
   @override

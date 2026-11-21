@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fide/models/language_catalog.dart';
 import 'package:fide/models/creation_outcome.dart';
 import 'package:fide/models/creation_report.dart';
 import 'package:fide/models/creation_step.dart';
@@ -84,7 +85,7 @@ void main() {
   ProjectCreationRequest request({
     bool flutterAvailable = true,
     Set<String>? languages,
-    String defaultLanguage = ProjectCreationRequest.englishLanguage,
+    String defaultLanguage = LanguageCatalog.english,
     String description = '',
     bool useAi = false,
     bool initGit = false,

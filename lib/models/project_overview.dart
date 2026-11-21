@@ -17,6 +17,10 @@ class ProjectOverview {
   /// Language codes of the project's ARB files.
   final List<String> languages;
 
+  /// The locale of the ARB file the others fall back to; null without
+  /// ARB files.
+  final String? templateLocale;
+
   /// Platforms the project has a folder for.
   final Set<FlutterPlatform> platforms;
 
@@ -35,6 +39,7 @@ class ProjectOverview {
     required this.appIconPath,
     required this.code,
     required this.languages,
+    this.templateLocale,
     required this.platforms,
     required this.cocoaPods,
     required this.translations,

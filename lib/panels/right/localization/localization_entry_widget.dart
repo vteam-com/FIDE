@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/language_catalog.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/status_tone.dart';
@@ -12,9 +13,10 @@ import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// One ARB key: its name, its value in every language that has it, the
-/// languages missing it and, given [onTranslate], a Translate button per
-/// missing language.
+/// One ARB key: its name, its value in every locale that has it, the
+/// template's first, the locales missing it and, given [onTranslate], a
+/// Translate button per missing locale; each locale written as its badge
+/// is.
 ///
 /// The one rendering of an ARB key in the localization panel.
 class LocalizationEntryWidget extends StatelessWidget {
@@ -22,6 +24,7 @@ class LocalizationEntryWidget extends StatelessWidget {
   const LocalizationEntryWidget({
     super.key,
     required this.comparison,
+    this.templateLocale,
     this.showWarning = false,
     this.onTranslate,
   });
@@ -36,22 +39,23 @@ class LocalizationEntryWidget extends StatelessWidget {
   /// Whether to flag the key's English value as duplicated.
   final bool showWarning;
 
+  /// The locale of [comparison]'s template value; English, Flutter's
+  /// default template, when null.
+  final String? templateLocale;
+
   @override
   Widget build(BuildContext context) {
-    // Collect all available translations
-    final translations = <String, String>{};
-
-    // Add English if available
-    if (comparison.englishValue != null) {
-      translations['EN'] = comparison.englishValue!;
-    }
-
-    // Add other languages that have this key
-    for (final entry in comparison.otherValues.entries) {
-      if (entry.value != null) {
-        translations[entry.key.toUpperCase()] = entry.value!;
-      }
-    }
+    final template = templateLocale ?? LanguageCatalog.english;
+    // Every value by locale, the template's first
+    final translations = <String, String>{
+      template: ?comparison.englishValue,
+      for (final MapEntry(:key, :value) in comparison.otherValues.entries)
+        key: ?value,
+    };
+    final missing = [
+      if (comparison.isMissingInEnglish) template,
+      ...comparison.missingInLanguages,
+    ];
 
     return Container(
       margin: const EdgeInsets.symmetric(
@@ -80,20 +84,20 @@ class LocalizationEntryWidget extends StatelessWidget {
             // Translations
             Column(
               spacing: AppSpacing.medium,
-              children: translations.entries.map((entry) {
-                /// Handles `_buildLocString`.
-                return _buildLocString(entry.key, entry.value);
-              }).toList(),
+              children: [
+                for (final MapEntry(:key, :value) in translations.entries)
+                  _buildLocString(key, value),
+              ],
             ),
 
-            // Show missing languages if any
-            if (comparison.missingInLanguages.isNotEmpty ||
-                comparison.isMissingInEnglish) ...[
+            // Show missing locales if any
+            if (missing.isNotEmpty) ...[
               const Divider(),
               Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.medium),
                 child: Text(
-                  'Missing in: ${comparison.isMissingInEnglish ? 'EN, ' : ''}${comparison.missingInLanguages.join(', ')}',
+                  'Missing in: '
+                  '${missing.map(LanguageCatalog.badgeOf).join(', ')}',
                   style: AppTextStyle.caption.copyWith(
                     color: StatusTone.error.readableIn(
                       Theme.of(context).colorScheme,
@@ -110,7 +114,8 @@ class LocalizationEntryWidget extends StatelessWidget {
                       // One key of Translate with AI
                       PrimaryButton(
                         icon: QuickFix.translateKeys.icon,
-                        label: 'Translate to $language',
+                        label:
+                            'Translate to ${LanguageCatalog.nameOf(language)}',
                         onPressed: comparison.englishValue == null
                             ? null
                             : () => translate(language),
@@ -124,14 +129,13 @@ class LocalizationEntryWidget extends StatelessWidget {
     );
   }
 
-  /// Handles `_buildLocString`.
-  Widget _buildLocString(String languageCode, String translation) {
+  /// The [translation] of [locale], after its badge text.
+  Widget _buildLocString(String locale, String translation) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: AppSpacing.tiny,
       children: [
-        // Language label
-        Text(languageCode, style: AppTextStyle.badgeStrong),
+        Text(LanguageCatalog.badgeOf(locale), style: AppTextStyle.badgeStrong),
         // Translation value
         Expanded(
           child: OutlinedSurface(

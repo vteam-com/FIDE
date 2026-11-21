@@ -113,6 +113,33 @@ void main() {
     expect(find.text(LocaleBadges.addLabel), findsOneWidget);
   });
 
+  testWidgets(
+    'an entry labels each value with its locale, the template\'s too',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: LocalizationEntryWidget(
+              comparison: ArbComparison(
+                key: 'hi',
+                englishValue: 'Salut',
+                otherValues: {'en': 'Hi', 'de': null},
+                missingInLanguages: ['de'],
+              ),
+              templateLocale: 'fr',
+              onTranslate: (_) {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('FR'), findsOneWidget);
+      expect(find.text('EN'), findsOneWidget);
+      expect(find.text('Missing in: DE'), findsOneWidget);
+      expect(find.text('Translate to German'), findsOneWidget);
+    },
+  );
+
   for (final (name, generated) in [('partial', false), ('complete', true)]) {
     testWidgets('the $name view builds only the keys in view', (tester) async {
       await pumpPanel(

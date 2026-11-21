@@ -1,10 +1,8 @@
+import 'package:fide/models/language_catalog.dart';
 import 'package:path/path.dart' as p;
 
 /// The choices the new-project wizard collects before creation starts.
 class ProjectCreationRequest {
-  /// Language the template ARB file uses when none is chosen.
-  static const String englishLanguage = 'en';
-
   /// Pub package name for the new project.
   final String name;
 
@@ -36,7 +34,7 @@ class ProjectCreationRequest {
     required this.parentDirectory,
     required this.flutterAvailable,
     this.languages,
-    this.defaultLanguage = englishLanguage,
+    this.defaultLanguage = LanguageCatalog.english,
     this.description = '',
     this.useAi = false,
     this.initGit = false,

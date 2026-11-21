@@ -1135,7 +1135,7 @@
 <rect x="394.0" y="900.0" width="200.0" height="68.0" rx="8.0" ry="8.0" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1"/>
 <g class="packageMetadataPill"><title>Flutter &gt;=3.44.0</title><rect x="455.2" y="955.0" width="77.6" height="9.0" rx="4.5" ry="4.5" class="packageMetadataPillShape"/><text x="494.0" y="960" class="packageLabelMetadata" text-anchor="middle" dominant-baseline="middle">Flutter &gt;=3.44.0</text></g>
 <text x="494.0" y="920.0" class="packageLabelNodeName packageLabelCaption" text-anchor="middle">flutter_svg</text>
-<text x="494.0" y="933.0" class="packageLabelNodeVersion" text-anchor="middle">v2.4.0</text>
+<text x="494.0" y="933.0" class="packageLabelNodeVersion" text-anchor="middle">v2.5.0</text>
 </g>
 <g class="badge outgoingBadge">
   <path d="M 388.0,934.0 L 400.0,927.0 Q 403.0,927.0 403.0,930.0 L 403.0,938.0 Q 403.0,941.0 400.0,941.0 Z" fill="#10b981"/>

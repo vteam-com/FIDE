@@ -1,4 +1,5 @@
 import 'package:fide/models/create_project_step.dart';
+import 'package:fide/models/language_catalog.dart';
 import 'package:fide/models/project_creation_request.dart';
 import 'package:fide/models/project_name.dart';
 import 'package:fide/models/tool_availability.dart';
@@ -7,19 +8,14 @@ import 'package:path/path.dart' as p;
 /// What the new-project wizard has collected so far, shared by its steps.
 class CreateProjectDraft {
   /// Language every project starts with as its default.
-  static const String initialLanguage = ProjectCreationRequest.englishLanguage;
-
-  /// Languages selected when the wizard opens.
-  static const Set<String> initialLanguages = {initialLanguage, _french};
-
-  static const String _french = 'fr';
+  static const String initialLanguage = LanguageCatalog.english;
 
   /// Creates a draft; every value defaults to what the wizard opens with.
   const CreateProjectDraft({
     this.name = '',
     this.parentDirectory,
     this.wantsLocalization = true,
-    this.languages = initialLanguages,
+    this.languages = LanguageCatalog.starterLocales,
     this.defaultLanguage = initialLanguage,
     this.useAi = false,
     this.description = '',
