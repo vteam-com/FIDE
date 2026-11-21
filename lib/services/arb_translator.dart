@@ -43,6 +43,15 @@ class ArbTranslator {
   /// Texts per model request.
   static const int _batchSize = AppMetric.aiTranslateBatch;
 
+  /// Field of a request item naming its ARB key.
+  static const String _keyField = 'key';
+
+  /// Field of a request item holding the text to translate.
+  static const String _textField = 'text';
+
+  /// Field of a request item saying where the text appears.
+  static const String _descriptionField = 'description';
+
   /// Reasoning a thinking model may leave in its reply.
   static final RegExp _thinking = RegExp(r'<think>[\s\S]*?</think>');
 
@@ -207,9 +216,9 @@ class ArbTranslator {
     final items = [
       for (final text in texts)
         {
-          'key': text.key,
-          'text': text.source,
-          'description': ?text.description,
+          _keyField: text.key,
+          _textField: text.source,
+          _descriptionField: ?text.description,
         },
     ];
     final response = await _model.generate(
@@ -229,12 +238,44 @@ ${jsonEncode(items)}''',
     if (start < 0 || end < start) return none;
     try {
       final Object? decoded = jsonDecode(reply.substring(start, end + 1));
-      if (decoded is! List || decoded.length != texts.length) return none;
+      if (decoded is! List) return none;
       return [
-        for (final item in decoded) item is String ? item.trim().unquoted : '',
+        for (final text in _repliedTexts(decoded, texts) ?? none)
+          text.trim().unquoted,
       ];
     } on FormatException {
       return none;
     }
+  }
+
+  /// The translation of each of [texts] in the model's reply [items]: the
+  /// strings asked for, in order, or, as a model may answer in the shape
+  /// of the request, items whose [_textField] is translated, matched by
+  /// their [_keyField] when they have one; empty for a text without one.
+  /// Null when [items] matches neither shape.
+  static List<String>? _repliedTexts(
+    List<Object?> items,
+    List<ArbTranslation> texts,
+  ) {
+    final byKey = {
+      for (final item in items)
+        if (item case {
+          _keyField: final String key,
+          _textField: final String text,
+        })
+          key: text,
+    };
+    if (byKey.isNotEmpty) {
+      return [for (final text in texts) byKey[text.key] ?? ''];
+    }
+    if (items.length != texts.length) return null;
+    return [
+      for (final item in items)
+        switch (item) {
+          final String text => text,
+          {_textField: final String text} => text,
+          _ => '',
+        },
+    ];
   }
 }

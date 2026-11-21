@@ -74,6 +74,43 @@ void main() {
     );
   });
 
+  test('reads a reply in the shape of the request, by key', () async {
+    // qwen3-coder answers a short batch so at times, out of order here
+    final ai = FakeChatModel(
+      answer: (_) =>
+          '[{"key":"stop","text":"Detener"},'
+          '{"key":"speaking","text":"El tutor está hablando…"}]',
+    );
+    final arbPath = p.join(project.path, 'app_es.arb');
+    File(arbPath).writeAsStringSync('{"@@locale": "es"}');
+
+    final result =
+        await ArbTranslator(
+          ai,
+          const ProjectConfigReader(),
+          L10nGenerator(FakeFlutterRunner()),
+        ).apply(project.path, [
+          for (final (key, source) in [
+            ('speaking', 'The tutor is speaking…'),
+            ('stop', 'Stop'),
+          ])
+            ArbTranslation(
+              key: key,
+              source: source,
+              language: 'Spanish',
+              arbPath: arbPath,
+            ),
+        ]);
+
+    expect(result.rewritten, 2);
+    expect(result.skipped, isEmpty);
+    expect(jsonDecode(File(arbPath).readAsStringSync()), {
+      '@@locale': 'es',
+      'speaking': 'El tutor está hablando…',
+      'stop': 'Detener',
+    });
+  });
+
   test('marks a translation the same as the template reviewed', () async {
     final ai = FakeChatModel(answer: (_) => '["Photos"]');
     final arbPath = p.join(project.path, 'app_fr.arb');
