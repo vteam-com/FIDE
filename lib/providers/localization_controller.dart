@@ -85,18 +85,18 @@ class LocalizationController extends StateNotifier<LocalizationState>
     });
   }
 
-  /// Sets localization up and wires it into `main.dart`; [onStep] is told
-  /// about each step.
+  /// Sets localization up and wires it into the app widget; [onStep] is
+  /// told about each step.
   Future<ActionOutcome?> initialize({ProcessOutputCallback? onStep}) {
     return runAction('Error initializing localization', _busy, (
       projectPath,
     ) async {
       await _setup.initializeLocalization(projectPath, onStep: onStep);
-      onStep?.call('Updating main.dart…');
-      await _setup.updateMainDartForLocalization(projectPath);
+      onStep?.call('Wiring the app…');
+      final appFile = await _setup.wireApp(projectPath);
       await reload();
-      return const ActionOutcome.success(
-        'Localization system initialized and main.dart updated successfully!',
+      return ActionOutcome.success(
+        'Localization system initialized and $appFile updated successfully!',
       );
     });
   }
@@ -134,12 +134,12 @@ class LocalizationController extends StateNotifier<LocalizationState>
     );
   }
 
-  /// Wires the generated localizations into `main.dart`.
-  Future<ActionOutcome?> updateMainDart() {
-    return runAction('Error updating main.dart', _busy, (projectPath) async {
-      await _setup.updateMainDartForLocalization(projectPath);
+  /// Wires the generated localizations into the app widget.
+  Future<ActionOutcome?> wireApp() {
+    return runAction('Error wiring the app', _busy, (projectPath) async {
+      final appFile = await _setup.wireApp(projectPath);
       await reload();
-      return const ActionOutcome.success('main.dart updated successfully!');
+      return ActionOutcome.success('$appFile updated successfully!');
     });
   }
 

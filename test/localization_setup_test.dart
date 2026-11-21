@@ -128,6 +128,38 @@ void main() {
     });
   }
 
+  test('wires the app widget built outside main.dart', () async {
+    final main = File('${project.path}/lib/main.dart')
+      ..writeAsStringSync(
+        "import 'package:demo/app.dart';\n\nvoid main() => runApp(App());\n",
+      );
+    final app = File('${project.path}/lib/app.dart')
+      ..writeAsStringSync(
+        "Widget build() => MaterialApp.router(title: 'Demo');\n",
+      );
+    final service = setupWith(FakeFlutterRunner());
+
+    expect((await service.inspect(project.path)).hasAppIntegration, false);
+    expect(await service.wireApp(project.path), 'lib/app.dart');
+    expect((await service.inspect(project.path)).hasAppIntegration, true);
+    expect(main.readAsStringSync(), isNot(contains('l10n')));
+    // No template ARB file with a title to look up
+    expect(app.readAsStringSync(), contains("title: 'Demo'"));
+    expect(
+      app.readAsStringSync(),
+      contains("import 'package:demo/l10n/app_localizations.dart';"),
+    );
+  });
+
+  test('wiring fails without an app widget', () async {
+    File('${project.path}/lib/main.dart').writeAsStringSync('void main() {}\n');
+
+    await expectLater(
+      setupWith(FakeFlutterRunner()).wireApp(project.path),
+      throwsA(isA<Exception>()),
+    );
+  });
+
   test('inspect reports what the project already has', () async {
     final service = setupWith(FakeFlutterRunner());
 

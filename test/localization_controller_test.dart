@@ -57,8 +57,10 @@ class FakeLocalizationSetup extends LocalizationSetup {
   }
 
   @override
-  Future<void> updateMainDartForLocalization(String projectPath) =>
-      actions.act();
+  Future<String> wireApp(String projectPath) async {
+    await actions.act();
+    return 'lib/main.dart';
+  }
 
   @override
   Future<void> initializeLocalization(
@@ -118,7 +120,7 @@ void main() {
 
   test('an action is busy while running and idle after success', () async {
     actions.gate = Completer<void>();
-    final outcome = controller.updateMainDart();
+    final outcome = controller.wireApp();
 
     expect(controller.state.isBusy, true);
     actions.gate!.complete();
@@ -187,7 +189,7 @@ void main() {
     );
     addTearDown(idle.dispose);
 
-    expect(await idle.updateMainDart(), isNull);
+    expect(await idle.wireApp(), isNull);
     expect(idle.state.status, LocalizationStatus.checking);
   });
 

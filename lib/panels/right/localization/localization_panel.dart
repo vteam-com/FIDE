@@ -87,8 +87,8 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     ),
   );
 
-  /// Wires the generated localizations into `main.dart`.
-  void _updateMainDart() => _show(_controller.updateMainDart());
+  /// Wires the generated localizations into the app widget.
+  void _wireApp() => _show(_controller.wireApp());
 
   /// Runs `flutter gen-l10n`.
   void _generateLocalizationClasses() => _show(_controller.generateClasses());
@@ -199,7 +199,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
         const BulletList([
           'ARB files (translation files in lib/l10n/)',
           'Generated AppLocalizations class',
-          'Integration in main.dart',
+          'Integration in the app widget',
         ]),
         Text('Here\'s the current status:', style: AppTextStyle.label),
 
@@ -251,10 +251,10 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           ),
         ] else if (!hasAppIntegration) ...[
           _buildActionItem(
-            'Update main.dart',
-            'Add localization delegates and supported locales to MaterialApp',
+            'Wire the app',
+            'Add localization delegates and supported locales to the app widget, such as MaterialApp',
             Icons.code,
-            _updateMainDart,
+            _wireApp,
           ),
         ],
 

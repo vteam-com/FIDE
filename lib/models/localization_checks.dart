@@ -14,7 +14,8 @@ class LocalizationChecks {
     hasGenerateFlag: false,
   );
 
-  /// Whether `main.dart` wires `AppLocalizations` delegates and locales.
+  /// Whether an app widget in `lib` is given localization delegates and
+  /// locales.
   final bool hasAppIntegration;
 
   /// Whether `lib/l10n` holds at least one ARB file.

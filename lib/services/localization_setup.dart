@@ -3,21 +3,26 @@ import 'dart:io';
 import 'package:fide/models/arb_keys.dart';
 import 'package:fide/models/arb_message.dart';
 import 'package:fide/models/localization_checks.dart';
+import 'package:fide/models/project_files.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/pubspec.dart';
+import 'package:fide/services/app_widget_localizer.dart';
 import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/l10n_generator.dart';
-import 'package:fide/services/main_dart_localizer.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
+/// A Dart file of a project and its text.
+typedef DartSource = ({String path, String content});
+
 /// Sets a project's localization up: adds the packages, enables code
-/// generation, writes template ARB files, wires `main.dart` (rewritten by
-/// [MainDartLocalizer]) and reports which of those pieces a project
+/// generation, writes template ARB files, wires the app widget (rewritten
+/// by [AppWidgetLocalizer]) and reports which of those pieces a project
 /// already has.
 class LocalizationSetup {
   static final Logger _logger = Logger('LocalizationSetup');
@@ -89,9 +94,6 @@ class LocalizationSetup {
   Future<LocalizationChecks> inspect(String projectPath) async {
     final pubspec = await _config.pubspec(projectPath);
     final config = await _config.l10nConfig(projectPath);
-    final mainDart = await ProjectConfigReader.readIfExists(
-      ProjectPaths(projectPath).mainDart,
-    );
     final hasArbFiles = (await ArbService.arbFilesIn(
       config.arbDirIn(projectPath),
     )).isNotEmpty;
@@ -102,12 +104,8 @@ class LocalizationSetup {
       hasArbFiles: hasArbFiles,
       hasGeneratedClasses: await File(config.generatedPathIn(projectPath))
           .exists(),
-      hasAppIntegration:
-          mainDart != null &&
-          MainDartLocalizer.isLocalized(
-            mainDart,
-            outputClass: config.outputClass,
-          ),
+      hasAppIntegration: await _libSources(projectPath)
+          .any((source) => AppWidgetLocalizer.isLocalized(source.content)),
       hasDependencies:
           pubspec != null &&
           pubspec.dependsOn(_localizationsPackage) &&
@@ -116,40 +114,76 @@ class LocalizationSetup {
     );
   }
 
-  /// Updates `main.dart` to wire generated localization delegates and title lookup.
-  Future<void> updateMainDartForLocalization(String projectPath) async {
-    final paths = ProjectPaths(projectPath);
-    final mainFile = File(paths.mainDart);
-    if (!await mainFile.exists()) {
-      throw Exception('main.dart not found in project');
+  /// Gives the app widget of the project at [projectPath] the generated
+  /// localization delegates and locales, and looks its title up when the
+  /// template ARB file has one; returns the path of the file building it,
+  /// relative to the project. Throws when no file of `lib` builds an app
+  /// widget.
+  Future<String> wireApp(String projectPath) async {
+    final app = await _appSource(projectPath);
+    if (app == null) {
+      throw Exception(
+        'No MaterialApp, CupertinoApp or WidgetsApp found in lib',
+      );
     }
-
     final packageName =
         await _config.packageName(projectPath) ?? _fallbackPackageName;
     final config = await _config.l10nConfig(projectPath);
-    await mainFile.writeAsString(
-      MainDartLocalizer.localize(
-        await mainFile.readAsString(),
-        importUri: config.importUri(packageName),
-        outputClass: config.outputClass,
-      ),
+    final template = await ArbService.read(config.templatePathIn(projectPath));
+    final localized = AppWidgetLocalizer.localize(
+      app.content,
+      config: config,
+      importUri: config.importUri(packageName),
+      hasTitleKey: template?.containsKey(AppWidgetLocalizer.titleKey) ?? false,
     );
+    if (localized != app.content) {
+      await File(app.path).writeAsString(localized);
+    }
+    return p.relative(app.path, from: projectPath);
+  }
+
+  /// The Dart file of the project at [projectPath] building its app
+  /// widget: the first of [_libSources] that builds one; null when none
+  /// does.
+  Future<DartSource?> _appSource(String projectPath) async {
+    await for (final source in _libSources(projectPath)) {
+      if (AppWidgetLocalizer.buildsApp(source.content)) return source;
+    }
+    return null;
+  }
+
+  /// The Dart files of `lib` in the project at [projectPath], read as
+  /// they are listened to: `main.dart` first, where the app is usually
+  /// built, then the others by path.
+  Stream<DartSource> _libSources(String projectPath) async* {
+    final paths = ProjectPaths(projectPath);
+    final mainDart = await ProjectConfigReader.readIfExists(paths.mainDart);
+    if (mainDart != null) yield (path: paths.mainDart, content: mainDart);
+    if (!await Directory(paths.libDir).exists()) return;
+    final others = [
+      await for (final file in ProjectFiles.walk(
+        paths.libDir,
+        extension: ProjectFiles.dartExtension,
+      ))
+        if (!p.equals(file.path, paths.mainDart)) file.path,
+    ]..sort();
+    for (final path in others) {
+      yield (path: path, content: await File(path).readAsString());
+    }
   }
 
   /// Writes English and French template ARB files into the project's ARB
-  /// folder, using the app title from `main.dart` when one is set.
+  /// folder, using the app widget's title when one is set.
   Future<void> _createTemplateArbFiles(String projectPath) async {
     final config = await _config.l10nConfig(projectPath);
     await Directory(config.arbDirIn(projectPath)).create(recursive: true);
 
-    final mainDart = await ProjectConfigReader.readIfExists(
-      ProjectPaths(projectPath).mainDart,
-    );
-    final extractedTitle = mainDart == null
+    final app = await _appSource(projectPath);
+    final extractedTitle = app == null
         ? null
-        : MainDartLocalizer.appTitle(mainDart);
+        : AppWidgetLocalizer.appTitle(app.content);
     final appTitle = extractedTitle == null || extractedTitle.isEmpty
-        ? MainDartLocalizer.defaultTitle
+        ? AppWidgetLocalizer.defaultTitle
         : extractedTitle;
 
     for (final (locale, title, greeting) in [
@@ -158,8 +192,8 @@ class LocalizationSetup {
     ]) {
       await ArbService.write(config.arbPathFor(projectPath, locale), {
         ArbService.localeKey: locale,
-        MainDartLocalizer.titleKey: title,
-        ArbKeys.metadataKeyOf(MainDartLocalizer.titleKey): {
+        AppWidgetLocalizer.titleKey: title,
+        ArbKeys.metadataKeyOf(AppWidgetLocalizer.titleKey): {
           ArbMessage.descriptionKey: 'The title of the application',
         },
         _greetingKey: greeting,
