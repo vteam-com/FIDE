@@ -11,9 +11,9 @@ class AppIconSize {
   static const double xLarge = 24;
   static const double emptyState = 48;
 
-  /// A picture leading a `PanelHeader`, as tall as its title and
-  /// subtitle lines, such as the project's app icon.
-  static const double panelHeaderLeading = 32;
+  /// The project's app icon leading a compact `ProjectHeader`, about as
+  /// tall as its title and a subtitle line.
+  static const double headerLogo = 32;
 
   /// Icons in the strip atop each panel: the side panels' tabs and the
   /// editor header's buttons, so they read alike.

@@ -111,9 +111,10 @@ class _OutputPanelState extends ConsumerState<OutputPanel> {
         ],
       ),
 
-      child: Container(
+      // Inset as every section's content, so the output lines up with
+      // the text in the sections around it
+      child: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: AppSize.terminalMaxHeight),
-        padding: const EdgeInsets.all(AppSpacing.large),
         child: SingleChildScrollView(
           child: _wrapText
               ? _buildText()

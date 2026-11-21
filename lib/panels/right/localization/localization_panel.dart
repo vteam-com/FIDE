@@ -160,7 +160,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: AppPadding.panelContent,
+          padding: AppPadding.panelSections,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: AppSpacing.sectionGap,
@@ -325,7 +325,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     final sections = header ?? const <Widget>[];
     final gap = header == null ? 0.0 : AppSpacing.sectionGap;
     return ListView.separated(
-      padding: header == null ? null : AppPadding.panelContent,
+      padding: header == null ? null : AppPadding.panelSections,
       itemCount: sections.length + comparisons.length,
       itemBuilder: (_ /*context*/, index) => index < sections.length
           ? sections[index]

@@ -7,11 +7,8 @@ import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/quick_fix.dart';
 
 /// What the center panel shows about the project when no file is open:
-/// its icon, fCheck's analysis, platforms, translations and test coverage.
+/// fCheck's analysis, platforms, translations and test coverage.
 class ProjectOverview {
-  /// The project's own app icon, or null when it has none.
-  final String? appIconPath;
-
   /// fCheck's analysis: name, version, score, code size and tests.
   final fcheck.ProjectMetrics code;
 
@@ -37,7 +34,6 @@ class ProjectOverview {
 
   /// Creates the overview of one project.
   const ProjectOverview({
-    required this.appIconPath,
     required this.code,
     required this.languages,
     this.templateLocale,

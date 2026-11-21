@@ -111,6 +111,10 @@ class AppMetric {
   static const double aiReviewDuplicateSimilarity = 0.75;
   static const int translationPreviewLines = 5;
   static const int doubleLineLimit = 2;
+
+  /// Lines a side panel header's subtitle wraps to, such as the project's
+  /// description, before it is cut short.
+  static const int panelHeaderSubtitleMaxLines = 3;
   static const int largeFileThresholdMb = 10;
   static const int maxAllowedLargeFiles = 3;
   static const int maxScore = 100;

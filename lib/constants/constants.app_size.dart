@@ -65,6 +65,10 @@ class AppSize {
   static const double splitterGripThickness = 4;
   static const double heroLogoHeight = 100;
   static const double cardWidth = 260;
+
+  /// Narrowest the project header draws hero-sized: the width of two
+  /// overview cards side by side, as a `CardGrid` lays them out.
+  static const double heroHeaderMinWidth = cardWidth * 2 + AppSpacing.xLarge;
   static const double appIconPreview = 64;
   static const double appIconSlot = 72;
   static const double appIconSlotMinDrawn = 16;

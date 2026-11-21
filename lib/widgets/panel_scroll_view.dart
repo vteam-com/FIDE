@@ -2,7 +2,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// A side panel's scrolling content: [children] stacked full width, one
-/// section gap apart, inset by the panels' content padding (inside the
+/// section gap apart, inset by [AppPadding.panelSections] (inside the
 /// scroll view, so content scrolls to the panel's edges).
 class PanelScrollView extends StatelessWidget {
   /// Creates the scrolling stack of [children].
@@ -14,7 +14,7 @@ class PanelScrollView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: AppPadding.panelContent,
+      padding: AppPadding.panelSections,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: AppSpacing.sectionGap,

@@ -3,19 +3,16 @@ import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/project_overview.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/services/arb_service.dart';
-import 'package:fide/services/build_artifacts_inspector.dart';
 import 'package:fide/services/cocoa_pods_migrator.dart';
 import 'package:fide/services/code_review.dart';
 import 'package:fide/services/project_config_reader.dart';
 
 /// Gathers a [ProjectOverview] from the services that already read each
-/// part: fCheck through [CodeReview], ARB files through [ArbService], the
-/// app icon through [BuildArtifactsInspector] and the move off CocoaPods
-/// through [CocoaPodsMigrator].
+/// part: fCheck through [CodeReview], ARB files through [ArbService] and
+/// the move off CocoaPods through [CocoaPodsMigrator].
 class ProjectOverviewService {
   final CodeReview _codeReview;
   final ArbService _arbService;
-  final BuildArtifactsInspector _inspector;
   final ProjectConfigReader _config;
   final CocoaPodsMigrator _cocoaPods;
 
@@ -23,7 +20,6 @@ class ProjectOverviewService {
   const ProjectOverviewService(
     this._codeReview,
     this._arbService,
-    this._inspector,
     this._config,
     this._cocoaPods,
   );
@@ -32,15 +28,13 @@ class ProjectOverviewService {
   /// with fCheck on a background isolate.
   Future<ProjectOverview> load(String projectPath) async {
     final paths = ProjectPaths(projectPath);
-    final (code, arbFiles, appIconPath, coverage) = await (
+    final (code, arbFiles, coverage) = await (
       _codeReview.analyze(projectPath),
       _arbService.loadProject(projectPath),
-      _inspector.projectIconPath(projectPath),
       _readCoverage(paths.coverageLcov),
     ).wait;
     final platforms = _config.platforms(projectPath);
     return ProjectOverview(
-      appIconPath: appIconPath,
       code: code,
       languages: ArbFile.localesOf(arbFiles.valid),
       templateLocale: arbFiles.templateLocale,

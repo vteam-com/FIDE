@@ -390,7 +390,6 @@ final projectOverviewServiceProvider = Provider<ProjectOverviewService>(
   (ref) => ProjectOverviewService(
     ref.read(codeReviewProvider),
     ref.read(arbServiceProvider),
-    ref.read(buildArtifactsInspectorProvider),
     ref.read(projectConfigReaderProvider),
     ref.read(cocoaPodsMigratorProvider),
   ),

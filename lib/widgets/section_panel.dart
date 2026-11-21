@@ -107,7 +107,7 @@ class _SectionPanelState extends State<SectionPanel> {
             ),
           ),
           if (_isExpanded && content != null)
-            Padding(padding: AppPadding.panelContent, child: content),
+            Padding(padding: AppPadding.panelSections, child: content),
         ],
       ),
     );

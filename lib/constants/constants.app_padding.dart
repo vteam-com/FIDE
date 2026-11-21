@@ -35,8 +35,18 @@ class AppPadding {
     vertical: AppSpacing.medium,
   );
 
-  /// Inset of every side panel's content from the panel's top-left edge.
+  /// Inset of a side panel's content, such as its header bar, from the
+  /// panel's edges; its stacked sections take [panelSections].
   static const EdgeInsets panelContent = EdgeInsets.all(AppSpacing.medium);
+
+  /// Inset of a side panel's stacked sections from its edges, and of a
+  /// section's content from its card: a section gap above and below, as
+  /// between the sections, and the content padding at the sides, where a
+  /// side panel has no width to spare.
+  static const EdgeInsets panelSections = EdgeInsets.symmetric(
+    horizontal: AppSpacing.medium,
+    vertical: AppSpacing.sectionGap,
+  );
   static const EdgeInsets chipLabel = EdgeInsets.symmetric(
     horizontal: AppSpacing.small,
   );

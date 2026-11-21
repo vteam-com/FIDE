@@ -12,16 +12,15 @@ import 'package:fide/providers/center_view.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/widget_services/center_view_close_button.dart';
 import 'package:fide/widget_services/issue_row.dart';
-import 'package:fide/widgets/app_icon_image.dart';
+import 'package:fide/widget_services/project_header.dart';
+import 'package:fide/widget_services/project_quality_card.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/card_grid.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/locale_badges.dart';
-import 'package:fide/widgets/page_header.dart';
 import 'package:fide/widgets/page_scroll_view.dart';
 import 'package:fide/widgets/platform_icon.dart';
 import 'package:fide/widgets/project_analysis_view.dart';
-import 'package:fide/widgets/refresh_button.dart';
 import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/stat_card.dart';
 import 'package:fide/widgets/status_indicator.dart';
@@ -29,7 +28,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Shown in the center panel when no file is open, or over open files as
-/// [CenterView.overview]: the current project's icon, version, quality
+/// [CenterView.overview]: the current project's [ProjectHeader], quality
 /// (fCheck's score less what `dart analyze` and the color contrast
 /// analyzer find, over the issues of those and the health checks), code
 /// size, packages still on CocoaPods, supported platforms, tests,
@@ -241,24 +240,11 @@ class ProjectOverviewPanel extends ConsumerWidget {
   Widget _overview(WidgetRef ref, ProjectOverview overview) {
     final code = overview.code;
     final coverage = overview.coverage;
-    final quality = ref.watch(projectQualityProvider);
-    final issues = quality?.issues ?? const [];
 
     return PageScrollView(
       children: [
-        PageHeader(
-          title: code.projectName,
-          subTitle: 'Version ${code.version}',
-          logo: AppIconImage(
-            path: overview.appIconPath,
-            size: AppSize.heroLogoHeight,
-            fallback: const Icon(Icons.flutter_dash),
-          ),
+        ProjectHeader(
           actions: [
-            RefreshButton(
-              busy: ref.watch(projectQualityBusyProvider),
-              onPressed: () => refreshProjectQuality(ref.invalidate),
-            ),
             // Shown over open files: closing returns to them
             if (ref.watch(centerViewProvider) == CenterView.overview)
               const CenterViewCloseButton(),
@@ -266,20 +252,8 @@ class ProjectOverviewPanel extends ConsumerWidget {
         ),
         CardGrid(
           children: [
-            StatCard(
-              icon: Icons.verified_outlined,
-              title: 'Quality',
-              value: BadgeStatus.score(
-                quality?.score ?? code.complianceScore,
-                large: true,
-              ),
-              rows: IssueRow.all(issues),
-              details: [
-                if (issues.isEmpty)
-                  'Every fCheck analyzer at 100%, nothing from dart analyze '
-                      'nor the color contrast check',
-              ],
-            ),
+            if (ref.watch(projectQualityProvider) case final quality?)
+              ProjectQualityCard(quality),
             StatCard(
               icon: Icons.code,
               title: 'Sources',
