@@ -38,6 +38,12 @@ class ProjectOverviewPanel extends ConsumerWidget {
   /// Creates the overview of the current project.
   const ProjectOverviewPanel({super.key});
 
+  /// Whether the overview draws straight on the workspace gradient, its
+  /// cards floating there: all but its analysis failure, whose error
+  /// color reads at WCAG AA only on the panel surface.
+  static bool isClear(WidgetRef ref) =>
+      !ref.watch(projectOverviewProvider).hasError;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ProjectAnalysisView(

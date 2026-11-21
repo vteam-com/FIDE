@@ -106,7 +106,15 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
       builder: (_ /*context*/, constraints) => Column(
         children: [
           // Main content takes remaining space
-          Expanded(child: PanelIsland(child: mainContent)),
+          // The overview's cards float on the gradient, as the settings do
+          Expanded(
+            child: PanelIsland(
+              isClear:
+                  mainContent is ProjectOverviewPanel &&
+                  ProjectOverviewPanel.isClear(ref),
+              child: mainContent,
+            ),
+          ),
           // Terminal section (always shown if visible, independent of editor state)
           if (widget.terminalVisible) ...[
             // Resizable splitter

@@ -80,8 +80,8 @@ void main() {
       }
     });
 
-    test('the title bar and settings read on the $brightness workspace '
-        'gradient', () {
+    test('the title bar, settings and project overview read on the '
+        '$brightness workspace gradient', () {
       final [glow, edge] = AppTheme.workspaceColors(colorScheme);
       for (var i = 0; i <= _gradientSamples; i++) {
         final background = Color.lerp(glow, edge, i / _gradientSamples)!;

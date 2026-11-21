@@ -6,7 +6,9 @@ import 'package:material_ui/material_ui.dart';
 
 /// A rounded, borderless surface that floats a workspace panel above the
 /// `AppTheme.workspaceBackground` gradient; the contrast with the gradient
-/// alone separates the panels.
+/// alone separates the panels. A page of its own boxes, such as the
+/// project overview's cards, leaves the island clear, so they float on
+/// the gradient instead.
 ///
 /// A click or the focus inside makes its [panel] the
 /// [activePanelProvider], which the gradient centers on: on the island
@@ -19,13 +21,22 @@ import 'package:material_ui/material_ui.dart';
 class PanelIsland extends ConsumerWidget {
   /// Creates an island around [child], holding [panel] or, when null, the
   /// editor area.
-  const PanelIsland({super.key, required this.child, this.panel});
+  const PanelIsland({
+    super.key,
+    required this.child,
+    this.panel,
+    this.isClear = false,
+  });
   static const BorderRadius _radius = BorderRadius.all(
     Radius.circular(AppRadius.island),
   );
 
   /// The panel content, clipped to the island's rounded corners.
   final Widget child;
+
+  /// Whether [child] shows straight on the gradient, without the
+  /// island's surface behind it.
+  final bool isClear;
 
   /// The side panel the island holds; null for the editor area.
   final SidePanel? panel;
@@ -50,10 +61,12 @@ class PanelIsland extends ConsumerWidget {
           child: RepaintBoundary(
             child: ClipRRect(
               borderRadius: _radius,
-              child: ColoredBox(
-                color: Theme.of(context).colorScheme.surface,
-                child: child,
-              ),
+              child: isClear
+                  ? child
+                  : ColoredBox(
+                      color: Theme.of(context).colorScheme.surface,
+                      child: child,
+                    ),
             ),
           ),
         ),

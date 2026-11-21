@@ -195,8 +195,9 @@ class AppTheme {
   /// The [workspaceBackground] gradient's two colors: its glow, then its
   /// edge.
   ///
-  /// The title bar and the settings draw straight on them, so both stay
-  /// subtle enough for text and icons to read on either.
+  /// The title bar, the settings and the project overview draw straight
+  /// on them, so both stay subtle enough for text and icons to read on
+  /// either; the status colors' text doesn't, so it stays in boxes.
   static List<Color> workspaceColors(ColorScheme colorScheme) {
     final light = colorScheme.brightness == Brightness.light;
     Color tint(double alpha) => Color.alphaBlend(
