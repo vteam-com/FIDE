@@ -2,6 +2,11 @@
 
 What changed in each FIDE release, newest first. `tool/release.sh` adds each release's entry: one line per commit since the release before.
 
+## 1.4.5 - 2026-11-21
+
+- Title bar: light the quality bulb only for a score below 100% or a warning or error, not for information such as large files
+- Project Overview: draw transparent over the workspace gradient, its cards floating there as the settings do; the island stays opaque only for an analysis failure, whose error color reads only on the surface
+
 ## 1.4.4 - 2026-11-21
 
 - Localization panel: list the project's locales as the Status card does, add one from a language menu (then offer Translate with AI) or remove one (not the template nor a regional locale's fallback, deleting gen-l10n's leftover file); every key shows a row per locale, the template's first: its value, what fCheck finds missing with its Translate button, or the template's text the app shows where the key is intentionally the same, with the key's description saying why; the Status card counts fCheck's findings; the New Project wizard picks its languages with the same badges and creates only the ones chosen; Translate with AI reads a reply echoing the request's {key, text} items, which qwen3-coder sends for most short batches
