@@ -2,6 +2,18 @@
 
 What changed in each FIDE release, newest first. `tool/release.sh` adds each release's entry: one line per commit since the release before.
 
+## 1.4.4 - 2026-11-21
+
+- Localization panel: list the project's locales as the Status card does, add one from a language menu (then offer Translate with AI) or remove one (not the template nor a regional locale's fallback, deleting gen-l10n's leftover file); every key shows a row per locale, the template's first: its value, what fCheck finds missing with its Translate button, or the template's text the app shows where the key is intentionally the same, with the key's description saying why; the Status card counts fCheck's findings; the New Project wizard picks its languages with the same badges and creates only the ones chosen; Translate with AI reads a reply echoing the request's {key, text} items, which qwen3-coder sends for most short batches
+- Localization panel: list the project's locales as the Status card does, add one from a language menu (then offer to translate it with the local model) or remove one (not the template nor a regional locale's fallback, deleting gen-l10n's leftover file); key entries label every value by its real locale; the New Project wizard picks its languages with the same badges and creates only the ones chosen; Translate with AI reads a reply echoing the request's {key, text} items, which qwen3-coder sends for most short batches and was dropped as "no reply"
+- Localization panel: list the project's locales as the Status card does, add one from a language menu (then offer to translate it with the local model) or remove one (not the template nor a regional locale's fallback, deleting gen-l10n's leftover file); key entries label every value by its real locale; the New Project wizard picks its languages with the same badges and creates only the ones chosen
+- flutter_svg: 2.5.0
+- Localization panel: list the project's locales as the Status card does, add one from a language menu (then offer to translate it with the local model) or remove one (not the template nor a regional locale's fallback, deleting gen-l10n's leftover file); the New Project wizard picks its languages with the same badges and creates only the ones chosen
+- Run Debug: Hot Reload and Hot Restart on a line under Stop while the app runs, so a live action no longer overflows a side panel of the default width
+- Localization: detect and wire the app widget wherever lib builds it (MaterialApp/CupertinoApp/WidgetsApp, .router too), not only in main.dart; Wire the app adds just the missing arguments and the import only when used, honors nullable-getter, and looks the title up only when the ARB files have appTitle
+- View as Markdown: editor toolbar toggle shows every Markdown file rendered or as text, saved across launches; going to a line shows that file's text; relative images load and file links open in the editor; .markdown files open as Markdown
+- Remove CocoaPods: give launched processes a UTF-8 LANG when FIDE, opened from Finder, inherits no locale, so pod no longer fails with Encoding::CompatibilityError
+
 ## 1.4.3 - 2026-11-20
 
 - DRY: one openPlace for search matches, callers, callees and Go to Definition (caret on the name), one name resolution for callers, callees, rename and Go to Definition, so writes (=, +=, ++) count as uses and get renamed, and explicit setters as callees
