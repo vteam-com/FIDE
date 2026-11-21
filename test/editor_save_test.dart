@@ -9,12 +9,15 @@ import 'package:fide/providers/git_diff_stats_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   late Directory folder;
   late ProviderContainer container;
 
   setUp(() {
+    // The editor reads the saved View as Markdown choice
+    SharedPreferences.setMockInitialValues({});
     folder = Directory.systemTemp.createTempSync('editor_save_');
     container = ProviderContainer(
       overrides: [

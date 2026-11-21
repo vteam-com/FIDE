@@ -29,8 +29,10 @@ class EditorScreenHeader extends ConsumerWidget {
     required this.viewKind,
     required this.isDirty,
     required this.showDiffView,
+    required this.showMarkdown,
     required this.onDocumentSelected,
     required this.onToggleDiffView,
+    this.onShowMarkdown,
     required this.onToggleSearch,
     required this.onSave,
     required this.onClose,
@@ -47,6 +49,13 @@ class EditorScreenHeader extends ConsumerWidget {
   /// Paths of the open files in tab order.
   final List<String> filePaths;
   final bool showDiffView;
+
+  /// Whether the Markdown file shows rendered rather than as its text.
+  final bool showMarkdown;
+
+  /// Shows Markdown files rendered, or as their text; null hides the
+  /// toggle, as for files other than Markdown.
+  final ValueChanged<bool>? onShowMarkdown;
 
   /// How the editor shows [currentFile].
   final FileViewKind viewKind;
@@ -152,10 +161,19 @@ class EditorScreenHeader extends ConsumerWidget {
               isOn: showDiffView,
               onChanged: (_) => onToggleDiffView(),
             ),
+          if (onShowMarkdown case final onShowMarkdown?)
+            CompactToggleButton.header(
+              key: const Key('keyEditorMarkdown'),
+              icon: Icons.preview,
+              tooltip: 'View as Markdown',
+              isOn: showMarkdown,
+              onChanged: onShowMarkdown,
+            ),
           CompactIconButton.header(
             key: const Key('keyEditorFind'),
             icon: Icons.search,
-            onPressed: showDiffView ? null : onToggleSearch,
+            // Find searches the text, which neither view shows
+            onPressed: showDiffView || showMarkdown ? null : onToggleSearch,
             tooltip: ShortcutHelpEntry.tooltip('Find', AppShortcut.find),
           ),
           CompactIconButton.header(

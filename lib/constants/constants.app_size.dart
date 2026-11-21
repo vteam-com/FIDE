@@ -82,6 +82,10 @@ class AppSize {
   static const double wizardMaxWidth = 600;
   static const double welcomeContentWidth = 700;
 
+  /// Widest a rendered document gets, such as a Markdown file in the
+  /// editor, so its lines stay readable in a wide window.
+  static const double documentMaxWidth = 900;
+
   /// Width of a menu listing files by path, such as the editor's open
   /// files; longer paths shorten their folders.
   static const double fileMenuWidth = 400;

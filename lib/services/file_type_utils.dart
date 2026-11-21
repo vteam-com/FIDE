@@ -108,8 +108,12 @@ class FileTypeUtils {
     'csv': const FileTypeInfo.text(FileCategory.data),
     'dot': const FileTypeInfo.text(FileCategory.data),
     // Documentation
-    'md': FileTypeInfo.text(FileCategory.document, langMarkdown),
-    'markdown': const FileTypeInfo.other(FileCategory.document),
+    'md': FileTypeInfo.text(FileCategory.document, langMarkdown, 'Markdown'),
+    'markdown': FileTypeInfo.text(
+      FileCategory.document,
+      langMarkdown,
+      'Markdown',
+    ),
     'rst': const FileTypeInfo.text(FileCategory.document),
     'adoc': const FileTypeInfo.text(FileCategory.document),
     'txt': const FileTypeInfo.text(FileCategory.text),
@@ -173,6 +177,11 @@ class FileTypeUtils {
   /// Whether [filePath] is Dart source, by its extension.
   static bool isDartFile(String filePath) =>
       extensionOf(filePath) == _dartExtension;
+
+  /// Whether [filePath] is Markdown, which the editor can also show
+  /// rendered, by its extension.
+  static bool isMarkdown(String filePath) =>
+      _typeOf(filePath)?.language == langMarkdown;
 
   /// Whether [filePath] is an SVG vector image, by its extension.
   static bool isSvg(String filePath) => extensionOf(filePath) == _svgExtension;

@@ -13,6 +13,7 @@ import 'package:fide/panels/center/editor/editor_screen_font_view.dart';
 import 'package:fide/panels/center/editor/editor_screen_header.dart';
 import 'package:fide/panels/center/editor/editor_screen_image_diff_view.dart';
 import 'package:fide/panels/center/editor/editor_screen_image_view.dart';
+import 'package:fide/panels/center/editor/editor_screen_markdown_view.dart';
 import 'package:fide/panels/center/editor/editor_screen_search_bar.dart';
 import 'package:fide/panels/center/editor/editor_screen_status_bar.dart';
 import 'package:fide/panels/center/editor/editor_screen_unsupported_file_view.dart';
@@ -22,6 +23,7 @@ import 'package:fide/panels/center/editor/quality_diagnostics.dart';
 import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
+import 'package:fide/providers/markdown_preview_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/services/code_formatter.dart';
@@ -115,6 +117,11 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
   bool _showDiffView = false;
 
+  /// Whether going to a line made this Markdown file show its text though
+  /// View as Markdown is on; only until another file shows or the toggle
+  /// is used, so the choice still holds for the next Markdown file.
+  bool _showsLine = false;
+
   /// The editor's text and selection.
   CodeForgeController get _codeController => _session.code;
 
@@ -175,6 +182,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       // The diff shown was the previous file's; showing it again loads
       // this file's
       _showDiffView = false;
+      _showsLine = false;
       _mediaSave = null;
       _loadDocument();
       _codeController.showFindings(
@@ -205,6 +213,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
         (d) => d.documentOf(widget.filePath)?.asPlainText,
       ),
     );
+    ref.watch(markdownPreviewProvider);
 
     return Column(
       children: [
@@ -215,6 +224,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
           viewKind: _viewKind,
           isDirty: _pendingSave != null,
           showDiffView: _showDiffView,
+          showMarkdown: _showsMarkdown,
+          onShowMarkdown: _canShowMarkdown ? _showMarkdown : null,
           onDocumentSelected: (newIndex) {
             ref.read(openDocumentsProvider.notifier).activate(newIndex);
           },
@@ -265,8 +276,38 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
         onSaveChanged: (save) => setState(() => _mediaSave = save),
       ),
       FileViewKind.font => EditorScreenFontView(filePath: _currentFile),
-      FileViewKind.code => _showDiffView ? _buildDiffView() : _buildCodeView(),
+      FileViewKind.code =>
+        _showDiffView
+            ? _buildDiffView()
+            : _showsMarkdown
+            ? EditorScreenMarkdownView(
+                filePath: _currentFile,
+                text: _codeController.text,
+              )
+            : _buildCodeView(),
     };
+  }
+
+  /// Whether [_currentFile] is Markdown shown in the code editor, which can
+  /// also show it rendered.
+  bool get _canShowMarkdown =>
+      _viewKind == FileViewKind.code && FileTypeUtils.isMarkdown(_currentFile);
+
+  /// Whether [_currentFile] shows as rendered Markdown: the user chose it
+  /// for Markdown files, and neither the diff view, which shows the text's
+  /// changes, nor a line gone to shows instead.
+  bool get _showsMarkdown =>
+      !_showDiffView &&
+      !_showsLine &&
+      _canShowMarkdown &&
+      ref.read(markdownPreviewProvider);
+
+  /// Shows Markdown files rendered when [show], else as their text,
+  /// leaving the diff view, and remembers the choice.
+  void _showMarkdown(bool show) {
+    if (_showDiffView) _toggleDiffView();
+    setState(() => _showsLine = false);
+    ref.read(markdownPreviewProvider.notifier).setPreview(show);
   }
 
   /// How [_currentFile] shows: as code once opened as plain text, else as
@@ -565,6 +606,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       column: column,
     );
     if (_codeController.text.isEmpty || offset == null) return;
+
+    // The line shows in the text, not in the rendered Markdown
+    if (_showsMarkdown) _showsLine = true;
 
     _codeController.selection = TextSelection.fromPosition(
       TextPosition(offset: offset),

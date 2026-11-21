@@ -12,6 +12,7 @@ import 'package:fide/providers/ui_state_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   late Directory folder;
@@ -19,6 +20,8 @@ void main() {
   late ProviderContainer container;
 
   setUp(() {
+    // The editor reads the saved View as Markdown choice
+    SharedPreferences.setMockInitialValues({});
     folder = Directory.systemTemp.createTempSync('editor_rebuilds_');
     path = '${folder.path}/notes.md';
     File(path).writeAsStringSync('# Title\n\nSome text\n');

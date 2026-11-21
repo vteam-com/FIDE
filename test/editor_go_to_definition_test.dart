@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// A finder answering each definition lookup with [answer], recording
 /// what it was asked.
@@ -51,6 +52,8 @@ void main() {
   const content = 'final value = answer();\n';
 
   setUp(() {
+    // The editor reads the saved View as Markdown choice
+    SharedPreferences.setMockInitialValues({});
     folder = Directory.systemTemp.createTempSync('editor_definition_');
     code = p.join(folder.path, 'code.dart');
     File(code).writeAsStringSync(content);

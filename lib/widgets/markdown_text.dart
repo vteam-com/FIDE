@@ -2,21 +2,37 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/widgets/open_url.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:path/path.dart' as p;
 
 /// Renders Markdown [data] as selectable rich text in [color]; inside a
 /// `SelectionArea` it is part of that area's selection.
 ///
 /// Code spans and fenced blocks use [AppTextStyle.monospace] on a tinted
-/// background; links open in the system browser.
+/// background; links open in the system browser unless [onTapLink] opens
+/// them.
 class MarkdownText extends StatelessWidget {
-  /// Creates a Markdown view of [data] drawn in [color].
-  const MarkdownText({super.key, required this.data, required this.color});
+  /// Creates a Markdown view of [data] drawn in [color], its relative
+  /// image paths read from [imageDirectory].
+  const MarkdownText({
+    super.key,
+    required this.data,
+    required this.color,
+    this.imageDirectory,
+    this.onTapLink,
+  });
 
   /// The base text color; headings, lists and code inherit it.
   final Color color;
 
   /// The Markdown source to render.
   final String data;
+
+  /// The folder relative image paths are read from, such as a Markdown
+  /// file's own; null when [data] isn't read from a file.
+  final String? imageDirectory;
+
+  /// Opens a link's target; null to open it in the system browser.
+  final ValueChanged<String>? onTapLink;
 
   @override
   Widget build(BuildContext context) {
@@ -31,10 +47,17 @@ class MarkdownText extends StatelessWidget {
     final divider = BorderSide(color: theme.dividerColor);
     // The package's own fallback reads the SDK material Theme, which a
     // material_ui app doesn't provide: every theme-colored field is set here
+    final imageDirectory = this.imageDirectory;
     final body = MarkdownBody(
       data: data,
+      // Joined to each image's path as is, so it ends with a separator
+      imageDirectory: imageDirectory == null
+          ? null
+          : '$imageDirectory${p.separator}',
       onTapLink: (_, href, _) {
-        if (href != null) openUrl(context, href);
+        if (href == null) return;
+        final onTapLink = this.onTapLink;
+        onTapLink == null ? openUrl(context, href) : onTapLink(href);
       },
       styleSheet: MarkdownStyleSheet(
         p: baseStyle,

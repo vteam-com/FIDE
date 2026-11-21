@@ -113,6 +113,16 @@ void main() {
         expect(FileTypeUtils.languageLabel('build.gradle.kts'), 'Kotlin');
       });
 
+      test('opens both Markdown extensions as Markdown', () {
+        for (final path in ['README.md', 'CHANGELOG.markdown']) {
+          expect(FileTypeUtils.isTextFile(path), true);
+          expect(FileTypeUtils.isMarkdown(path), true);
+          expect(FileTypeUtils.languageLabel(path), 'Markdown');
+        }
+        expect(FileTypeUtils.isMarkdown('notes.txt'), false);
+        expect(FileTypeUtils.isMarkdown('main.dart'), false);
+      });
+
       test('types gradlew by its name as a shell script', () {
         expect(FileTypeUtils.isTextFile('android/gradlew'), true);
         expect(FileTypeUtils.languageForFile('android/gradlew'), langBash);

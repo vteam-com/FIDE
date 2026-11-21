@@ -9,6 +9,9 @@ class PrefKeys {
   /// Absolute path of the file last opened in the editor.
   static const String lastOpenedFile = 'last_opened_file';
 
+  /// Whether the editor shows Markdown files rendered rather than as text.
+  static const String markdownPreview = 'markdown_preview';
+
   /// Recently opened project folders, newest first.
   static const String mruFolders = 'mru_folders';
 
