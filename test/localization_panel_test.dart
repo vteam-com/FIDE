@@ -12,6 +12,7 @@ import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:fide/widgets/locale_badges.dart';
+import 'package:fide/widgets/primary_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -113,32 +114,61 @@ void main() {
     expect(find.text(LocaleBadges.addLabel), findsOneWidget);
   });
 
-  testWidgets(
-    'an entry labels each value with its locale, the template\'s too',
-    (tester) async {
-      await tester.pumpWidget(
+  /// Shows the entry of a key whose template is French, with fCheck's
+  /// [untranslated] locales.
+  Future<void> pumpEntry(WidgetTester tester, Set<String>? untranslated) =>
+      tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: LocalizationEntryWidget(
               comparison: ArbComparison(
-                key: 'hi',
+                key: 'title',
                 englishValue: 'Salut',
-                otherValues: {'en': 'Hi', 'de': null},
-                missingInLanguages: ['de'],
+                otherValues: {'en': 'Hi', 'de': null, 'es': null},
+                description: 'App name. DO NOT TRANSLATE.',
               ),
               templateLocale: 'fr',
+              untranslated: untranslated,
               onTranslate: (_) {},
             ),
           ),
         ),
       );
 
-      expect(find.text('FR'), findsOneWidget);
-      expect(find.text('EN'), findsOneWidget);
-      expect(find.text('Missing in: DE'), findsOneWidget);
-      expect(find.text('Translate to German'), findsOneWidget);
-    },
-  );
+  testWidgets('an entry shows a row per locale, the template\'s first', (
+    tester,
+  ) async {
+    // fCheck leaves Spanish out, as for a key not to translate
+    await pumpEntry(tester, const {'de'});
+
+    final rows = [
+      for (final label in ['FR', 'DE', 'EN', 'ES'])
+        tester.getTopLeft(find.text(label)).dy,
+    ];
+    expect(rows, orderedEquals([...rows]..sort()));
+    expect(find.text('Hi'), findsOneWidget);
+    expect(find.text('Missing'), findsOneWidget);
+    expect(find.text('Translate to German'), findsOneWidget);
+    expect(find.text('Translate to Spanish'), findsNothing);
+    // The app shows the French text in Spanish, as the description says
+    expect(find.text('Salut'), findsNWidgets(2));
+    expect(
+      find.text(
+        'Intentionally the same as French: App name. DO NOT TRANSLATE.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('an entry judges no locale while fCheck analyzes', (
+    tester,
+  ) async {
+    await pumpEntry(tester, null);
+
+    expect(find.text('Not in this locale\'s file'), findsNWidgets(2));
+    expect(find.text('Missing'), findsNothing);
+    expect(find.byType(PrimaryButton), findsNothing);
+  });
 
   for (final (name, generated) in [('partial', false), ('complete', true)]) {
     testWidgets('the $name view builds only the keys in view', (tester) async {

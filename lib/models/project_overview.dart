@@ -4,6 +4,7 @@ import 'package:fide/models/cocoa_pods_migration.dart';
 import 'package:fide/models/code_coverage.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/localization_data.dart';
+import 'package:fide/models/quick_fix.dart';
 
 /// What the center panel shows about the project when no file is open:
 /// its icon, fCheck's analysis, platforms, translations and test coverage.
@@ -46,12 +47,13 @@ class ProjectOverview {
     required this.coverage,
   });
 
-  /// Translations missing across every language, the base one included.
-  int get missingTranslations => translations.fold(
-    0,
-    (sum, key) =>
-        sum + key.missingInLanguages.length + (key.isMissingInEnglish ? 1 : 0),
-  );
+  /// The translations fCheck finds missing or still to make, as Translate
+  /// with AI counts them: a key it leaves out, such as one marked not to be
+  /// translated, counts none.
+  int get missingTranslations => QuickFix.translateKeys
+      .localesByKey(code)
+      .values
+      .fold(0, (sum, locales) => sum + locales.length);
 
   /// Share of Dart lines reachable from tests, in percent; fCheck's static
   /// estimate, no tests run.

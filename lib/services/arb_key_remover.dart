@@ -23,10 +23,7 @@ class ArbKeyRemover {
   static List<String> unusedKeys(fcheck.ProjectMetrics metrics) => {
     for (final issue in metrics.localizationIssues)
       for (final detail in issue.details)
-        if (QuickFix.removeUnusedKeys.localizationProblems.contains(
-          detail.problemType.name,
-        ))
-          detail.key,
+        if (QuickFix.removeUnusedKeys.solves(detail)) detail.key,
   }.toList();
 
   /// Removes [keys] and their metadata from the ARB files of the project

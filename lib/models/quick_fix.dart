@@ -156,6 +156,26 @@ enum QuickFix {
   /// [domain].
   bool appliesTo(fcheck.ProjectMetrics metrics) => _appliesTo(this, metrics);
 
+  /// The locales fCheck finds each ARB key with a problem the fix solves
+  /// in, by key, in [metrics]: the keys [translateKeys] translates where;
+  /// none for a key fCheck leaves out, such as one marked not to be
+  /// translated.
+  Map<String, Set<String>> localesByKey(fcheck.ProjectMetrics metrics) {
+    final locales = <String, Set<String>>{};
+    for (final issue in metrics.localizationIssues) {
+      for (final detail in issue.details) {
+        if (solves(detail)) {
+          (locales[detail.key] ??= {}).add(issue.languageCode);
+        }
+      }
+    }
+    return locales;
+  }
+
+  /// Whether the fix solves fCheck's localization problem [detail].
+  bool solves(fcheck.LocalizationIssueDetail detail) =>
+      localizationProblems.contains(detail.problemType.name);
+
   /// Any findings: the analyzer's issue alone calls for the fix.
   static bool _always(QuickFix _, fcheck.ProjectMetrics _) => true;
 
@@ -180,9 +200,5 @@ enum QuickFix {
   static bool _solvesLocalizationProblems(
     QuickFix fix,
     fcheck.ProjectMetrics metrics,
-  ) => metrics.localizationIssues.any(
-    (issue) => issue.details.any(
-      (detail) => fix.localizationProblems.contains(detail.problemType.name),
-    ),
-  );
+  ) => metrics.localizationIssues.any((issue) => issue.details.any(fix.solves));
 }

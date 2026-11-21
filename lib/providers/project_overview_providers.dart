@@ -13,6 +13,7 @@ import 'package:fide/models/project_overview.dart';
 import 'package:fide/models/project_quality.dart';
 import 'package:fide/models/quality_issue.dart';
 import 'package:fide/models/quality_issues.dart';
+import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/providers/open_documents_notifier.dart';
 import 'package:fide/providers/project_lifecycle_providers.dart';
@@ -231,6 +232,17 @@ final qualityIssuesProvider = Provider<List<QualityIssue>?>(
 final stringIssuesProvider = Provider<List<QualityIssue>?>(
   (ref) => ref.watch(projectOverviewProvider).value?.code.stringIssues,
 );
+
+/// The locales fCheck finds each ARB key of the open project untranslated
+/// in, by key, as Translate with AI translates them
+/// ([QuickFix.localesByKey]); null until the overview is analyzed and
+/// while it is analyzed again, as a key may have been added or translated
+/// since.
+final untranslatedLocalesProvider = Provider<Map<String, Set<String>>?>((ref) {
+  final overview = ref.watch(projectOverviewProvider);
+  final metrics = overview.isLoading ? null : overview.value?.code;
+  return metrics == null ? null : QuickFix.translateKeys.localesByKey(metrics);
+});
 
 /// The open project's string findings, flagged on the Localize tab; an
 /// issue without listed findings counts once.

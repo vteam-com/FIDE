@@ -4,16 +4,19 @@ part of 'localization_data.dart';
 class ArbComparison {
   final String key;
   final String? englishValue;
+
+  /// The value of each other locale, null where the key is missing.
   final Map<String, String?> otherValues;
-  final bool isMissingInEnglish;
-  final List<String> missingInLanguages;
+
+  /// The template's description of the key, saying where it appears or how
+  /// to translate it, such as "DO NOT TRANSLATE"; null when it has none.
+  final String? description;
 
   ArbComparison({
     required this.key,
     this.englishValue,
     required this.otherValues,
-    this.isMissingInEnglish = false,
-    this.missingInLanguages = const [],
+    this.description,
   });
 
   /// Whether the key, the English value or any translation contains

@@ -59,8 +59,8 @@ void main() {
     final byKey = {for (final c in comparisons) c.key: c};
     expect(byKey['hi']?.englishValue, 'Salut');
     expect(byKey['hi']?.otherValues, {'en': 'Hi'});
-    expect(byKey['bye']?.isMissingInEnglish, true);
-    expect(byKey['extra']?.missingInLanguages, ['en']);
+    expect(byKey['bye']?.englishValue, isNull);
+    expect(byKey['extra']?.otherValues, {'en': null});
   });
 
   test('loadProject reads the ARB folder l10n.yaml names', () async {
@@ -76,7 +76,7 @@ void main() {
     expect(loaded.valid.map((file) => file.languageCode).toSet(), {'fr', 'en'});
     expect(loaded.templateLocale, 'fr');
     final bye = loaded.comparisons.singleWhere((c) => c.key == 'bye');
-    expect(bye.isMissingInEnglish, true);
+    expect(bye.englishValue, isNull);
   });
 
   test('isMessageKey and countEntries leave metadata out', () {

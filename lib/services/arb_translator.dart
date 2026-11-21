@@ -76,39 +76,18 @@ class ArbTranslator {
       for (final issue in metrics.localizationIssues)
         if (issue.languageCode != template.locale)
           for (final detail in issue.details)
-            if (QuickFix.translateKeys.localizationProblems.contains(
-                  detail.problemType.name,
-                ) &&
+            if (QuickFix.translateKeys.solves(detail) &&
                 source[detail.key] is String)
               ArbTranslation(
                 key: detail.key,
                 source: source[detail.key] as String,
-                description: descriptionOf(
+                description: ArbMessage.descriptionOf(
                   source[ArbKeys.metadataKeyOf(detail.key)],
                 ),
                 language: issue.languageName,
                 arbPath: config.arbPathFor(projectPath, issue.languageCode),
               ),
     ];
-  }
-
-  /// What translating [translations] does, as the user is asked to
-  /// confirm it.
-  static String describe(List<ArbTranslation> translations) {
-    final languages = {for (final t in translations) t.language};
-    return 'The local model translates ${translations.length.count('key')} '
-        'into ${languages.join(', ')} in short batches, keeping every '
-        '{placeholder}; FIDE writes the ARB files and regenerates the '
-        'classes.';
-  }
-
-  /// The `description` of an ARB key's [metadata], or null when it has
-  /// none.
-  static String? descriptionOf(Object? metadata) {
-    final description = metadata is Map
-        ? metadata[ArbMessage.descriptionKey]
-        : null;
-    return description is String && description.isNotEmpty ? description : null;
   }
 
   /// Asks the model for [translations] in batches per language, telling

@@ -37,6 +37,13 @@ class ArbMessage {
   /// Key of the description in a message's `@key` metadata.
   static const String descriptionKey = 'description';
 
+  /// The [descriptionKey] of a message's `@key` [metadata], saying where
+  /// it appears or how to translate it; null when it has none.
+  static String? descriptionOf(Object? metadata) {
+    final description = metadata is Map ? metadata[descriptionKey] : null;
+    return description is String && description.isNotEmpty ? description : null;
+  }
+
   /// Key of the placeholders in a message's `@key` metadata.
   static const String placeholdersKey = 'placeholders';
 

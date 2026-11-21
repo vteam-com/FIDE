@@ -7,6 +7,7 @@ import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/localization_state.dart';
 import 'package:fide/models/localization_status.dart';
+import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/panels/right/localization/localization_entry_widget.dart';
 import 'package:fide/panels/right/localization/localization_setup_widget.dart';
@@ -98,19 +99,14 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
   void _generateLocalizationClasses() => _show(_controller.generateClasses());
 
   /// Adds [locale], then offers to translate its strings with the local
-  /// model.
+  /// model, as Translate with AI does.
   Future<void> _addLocale(String locale) async {
     final outcome = await _controller.addLocale(locale);
     if (outcome == null || !mounted) return;
     MessageBox.showOutcome(context, outcome);
-    if (!outcome.succeeded) return;
-    await ref
-        .read(quickFixControllerProvider)
-        .translate(
-          _controller.translationsInto(locale),
-          confirm: confirmQuickFixOver(context),
-          notify: quickFixNoticesOver(context),
-        );
+    // Translate with AI, which fCheck's fresh analysis tells the keys to
+    // translate, leaving out those marked not to be
+    if (outcome.succeeded) applyQuickFix(context, ref, QuickFix.translateKeys);
   }
 
   /// Removes [locale] once the user confirms deleting its ARB file.
@@ -238,20 +234,10 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     final hasAppIntegration = checks.hasAppIntegration;
 
     final hasEntries = state.arbFiles.isNotEmpty;
+    final entry = _entryBuilder(state);
     return _entryList(
       hasEntries ? state.comparisons : const [],
-      entry: (comparison) => LocalizationEntryWidget(
-        comparison: comparison,
-        templateLocale: state.templateLocale,
-        onTranslate: (language) {
-          if (_controller.translationOf(comparison, language)
-              case final translation?) {
-            ref.read(quickFixControllerProvider).translate([
-              translation,
-            ], notify: quickFixNoticesOver(context));
-          }
-        },
-      ),
+      entry: entry,
       header: [
         const SectionTitle('Localization Partially Set Up'),
         Text(
@@ -364,6 +350,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
     final duplicatedValues = ArbService.duplicatedEnglishValues(
       filteredComparisons,
     );
+    final entry = _entryBuilder(state, duplicatedValues: duplicatedValues);
 
     return Column(
       children: [
@@ -379,16 +366,7 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
         Expanded(
           child: state.arbFiles.isEmpty
               ? const EmptyState(message: 'No ARB files found')
-              : _entryList(
-                  filteredComparisons,
-                  entry: (comparison) => LocalizationEntryWidget(
-                    comparison: comparison,
-                    templateLocale: state.templateLocale,
-                    showWarning: duplicatedValues.contains(
-                      comparison.englishValue,
-                    ),
-                  ),
-                ),
+              : _entryList(filteredComparisons, entry: entry),
         ),
         // Filter bar
         FilterField(
@@ -396,6 +374,33 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
           hintText: 'Filter localization keys…',
         ),
       ],
+    );
+  }
+
+  /// Builds the entry of each key of [state], with fCheck's untranslated
+  /// locales, read now as list items build after this panel, and a
+  /// Translate button for each; one whose template value is among
+  /// [duplicatedValues] is flagged.
+  Widget Function(ArbComparison comparison) _entryBuilder(
+    LocalizationState state, {
+    Set<String> duplicatedValues = const {},
+  }) {
+    final untranslated = ref.watch(untranslatedLocalesProvider);
+    return (comparison) => LocalizationEntryWidget(
+      comparison: comparison,
+      templateLocale: state.templateLocale,
+      untranslated: untranslated == null
+          ? null
+          : untranslated[comparison.key] ?? const {},
+      showWarning: duplicatedValues.contains(comparison.englishValue),
+      onTranslate: (locale) {
+        if (_controller.translationOf(comparison, locale)
+            case final translation?) {
+          ref.read(quickFixControllerProvider).translate([
+            translation,
+          ], notify: quickFixNoticesOver(context));
+        }
+      },
     );
   }
 

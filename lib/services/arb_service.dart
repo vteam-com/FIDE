@@ -4,6 +4,7 @@ import 'dart:isolate';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/arb_keys.dart';
+import 'package:fide/models/arb_message.dart';
 import 'package:fide/models/l10n_config.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/project_files.dart';
@@ -208,11 +209,9 @@ class ArbService {
             for (final file in otherFiles)
               file.languageCode: file.entries[key]?.value,
           },
-          isMissingInEnglish: template.entries[key]?.value == null,
-          missingInLanguages: [
-            for (final file in otherFiles)
-              if (!file.entries.containsKey(key)) file.languageCode,
-          ],
+          description: ArbMessage.descriptionOf(
+            template.entries[key]?.metadata,
+          ),
         ),
     ];
   }

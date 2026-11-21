@@ -8,7 +8,6 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/project_actions.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/arb_service.dart';
-import 'package:fide/services/arb_translator.dart';
 import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/process_runner.dart';
@@ -151,25 +150,14 @@ class LocalizationController extends StateNotifier<LocalizationState>
     final source = comparison.englishValue;
     final target = state.arbFileOf(locale);
     if (source == null || target == null) return null;
-    final template = state.arbFileOf(state.templateLocale);
     return ArbTranslation(
       key: comparison.key,
       source: source,
-      description: ArbTranslator.descriptionOf(
-        template?.entries[comparison.key]?.metadata,
-      ),
+      description: comparison.description,
       language: LanguageCatalog.nameOf(locale),
       arbPath: target.path,
     );
   }
-
-  /// The translations of every key [locale] is missing, as
-  /// [translationOf] makes them, such as all of a locale just added.
-  List<ArbTranslation> translationsInto(String locale) => [
-    for (final comparison in state.comparisons)
-      if (comparison.missingInLanguages.contains(locale))
-        ?translationOf(comparison, locale),
-  ];
 
   /// Wires the generated localizations into the app widget.
   Future<ActionOutcome?> wireApp() {

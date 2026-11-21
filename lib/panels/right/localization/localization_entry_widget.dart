@@ -13,10 +13,12 @@ import 'package:fide/widgets/status_tone_style.dart';
 import 'package:fide/widgets/surface_padding.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// One ARB key: its name, its value in every locale that has it, the
-/// template's first, the locales missing it and, given [onTranslate], a
-/// Translate button per missing locale; each locale written as its badge
-/// is.
+/// One ARB key: its name, then one row per locale, the template's first,
+/// each its badge text before its value. A locale fCheck finds the key
+/// [untranslated] in says so, with, given [onTranslate], its Translate
+/// button; one lacking a key fCheck leaves out, such as one marked not to
+/// be translated, shows the template's text, which the app shows there,
+/// with the key's description saying why.
 ///
 /// The one rendering of an ARB key in the localization panel.
 class LocalizationEntryWidget extends StatelessWidget {
@@ -25,6 +27,7 @@ class LocalizationEntryWidget extends StatelessWidget {
     super.key,
     required this.comparison,
     this.templateLocale,
+    this.untranslated,
     this.showWarning = false,
     this.onTranslate,
   });
@@ -32,8 +35,8 @@ class LocalizationEntryWidget extends StatelessWidget {
   /// The key and its value per language.
   final ArbComparison comparison;
 
-  /// Called with a language the key is missing in to translate it there;
-  /// no Translate buttons when null.
+  /// Called with a locale the key is untranslated in to translate it
+  /// there; no Translate buttons when null.
   final ValueChanged<String>? onTranslate;
 
   /// Whether to flag the key's English value as duplicated.
@@ -43,19 +46,14 @@ class LocalizationEntryWidget extends StatelessWidget {
   /// default template, when null.
   final String? templateLocale;
 
+  /// The locales fCheck finds the key untranslated in; null while fCheck
+  /// analyzes the project, when the entry judges none.
+  final Set<String>? untranslated;
   @override
   Widget build(BuildContext context) {
     final template = templateLocale ?? LanguageCatalog.english;
-    // Every value by locale, the template's first
-    final translations = <String, String>{
-      template: ?comparison.englishValue,
-      for (final MapEntry(:key, :value) in comparison.otherValues.entries)
-        key: ?value,
-    };
-    final missing = [
-      if (comparison.isMissingInEnglish) template,
-      ...comparison.missingInLanguages,
-    ];
+    final templateValue = comparison.englishValue;
+    final others = comparison.otherValues.keys.toList()..sort();
 
     return Container(
       margin: const EdgeInsets.symmetric(
@@ -81,75 +79,122 @@ class LocalizationEntryWidget extends StatelessWidget {
               ],
             ),
 
-            // Translations
+            // One row per locale, the template's first
             Column(
               spacing: AppSpacing.medium,
               children: [
-                for (final MapEntry(:key, :value) in translations.entries)
-                  _buildLocString(key, value),
+                _localeRow(
+                  template,
+                  templateValue == null
+                      ? Text(
+                          'Not in the template file',
+                          style: AppTextStyle.secondary(context),
+                        )
+                      : _valueBox(templateValue, AppTextStyle.code),
+                ),
+                for (final locale in others)
+                  _localeRow(locale, _otherValue(context, locale, template)),
               ],
             ),
-
-            // Show missing locales if any
-            if (missing.isNotEmpty) ...[
-              const Divider(),
-              Padding(
-                padding: const EdgeInsets.only(top: AppSpacing.medium),
-                child: Text(
-                  'Missing in: '
-                  '${missing.map(LanguageCatalog.badgeOf).join(', ')}',
-                  style: AppTextStyle.caption.copyWith(
-                    color: StatusTone.error.readableIn(
-                      Theme.of(context).colorScheme,
-                    ),
-                  ),
-                ),
-              ),
-              if (onTranslate case final translate?)
-                Wrap(
-                  spacing: AppSpacing.medium,
-                  runSpacing: AppSpacing.tiny,
-                  children: [
-                    for (final language in comparison.missingInLanguages)
-                      // One key of Translate with AI
-                      PrimaryButton(
-                        icon: QuickFix.translateKeys.icon,
-                        label:
-                            'Translate to ${LanguageCatalog.nameOf(language)}',
-                        onPressed: comparison.englishValue == null
-                            ? null
-                            : () => translate(language),
-                      ),
-                  ],
-                ),
-            ],
           ],
         ),
       ),
     );
   }
 
-  /// The [translation] of [locale], after its badge text.
-  Widget _buildLocString(String locale, String translation) {
+  /// The row of [locale]: its badge text, then [value].
+  static Widget _localeRow(String locale, Widget value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: AppSpacing.tiny,
       children: [
         Text(LanguageCatalog.badgeOf(locale), style: AppTextStyle.badgeStrong),
-        // Translation value
-        Expanded(
-          child: OutlinedSurface(
-            padding: SurfacePadding.dense,
-            child: Text(
-              translation,
-              softWrap: true,
-              maxLines: AppMetric.translationPreviewLines,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyle.code,
-            ),
-          ),
-        ),
+        Expanded(child: value),
       ],
     );
   }
+
+  /// What the row of [locale], another than the [template]'s, shows: its
+  /// value; what fCheck finds wrong with it and its Translate button; or,
+  /// where the key is missing as intended, the template's text the app
+  /// shows instead, dimmed, and why.
+  Widget _otherValue(BuildContext context, String locale, String template) {
+    final value = comparison.otherValues[locale];
+    final untranslated = this.untranslated;
+    final templateValue = comparison.englishValue;
+    final secondary = AppTextStyle.secondary(context);
+
+    if (untranslated != null && untranslated.contains(locale)) {
+      final translate = onTranslate;
+      return _valueColumn([
+        if (value != null) _valueBox(value, AppTextStyle.code),
+        Wrap(
+          spacing: AppSpacing.medium,
+          runSpacing: AppSpacing.tiny,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(
+              value == null ? 'Missing' : 'Needs translation',
+              style: AppTextStyle.caption.copyWith(
+                color: StatusTone.error.readableIn(
+                  Theme.of(context).colorScheme,
+                ),
+              ),
+            ),
+            if (translate != null)
+              // One key of Translate with AI
+              PrimaryButton(
+                icon: QuickFix.translateKeys.icon,
+                label: 'Translate to ${LanguageCatalog.nameOf(locale)}',
+                onPressed: templateValue == null
+                    ? null
+                    : () => translate(locale),
+              ),
+          ],
+        ),
+      ]);
+    }
+    if (value != null) return _valueBox(value, AppTextStyle.code);
+    // Missing: fCheck still analyzing, nothing to judge yet
+    if (untranslated == null) {
+      return Text('Not in this locale\'s file', style: secondary);
+    }
+    // Missing as intended: the app shows the template's text
+    final description = comparison.description;
+    return _valueColumn([
+      if (templateValue != null)
+        _valueBox(
+          templateValue,
+          AppTextStyle.code.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      Text(
+        'Intentionally the same as ${LanguageCatalog.nameOf(template)}'
+        '${description == null ? '' : ': $description'}',
+        style: secondary,
+      ),
+    ]);
+  }
+
+  /// [text] in a box, in [style].
+  static Widget _valueBox(String text, TextStyle style) {
+    return OutlinedSurface(
+      padding: SurfacePadding.dense,
+      child: Text(
+        text,
+        softWrap: true,
+        maxLines: AppMetric.translationPreviewLines,
+        overflow: TextOverflow.ellipsis,
+        style: style,
+      ),
+    );
+  }
+
+  /// [children] stacked in a locale's row, as wide as its value boxes.
+  static Widget _valueColumn(List<Widget> children) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    spacing: AppSpacing.tiny,
+    children: children,
+  );
 }
