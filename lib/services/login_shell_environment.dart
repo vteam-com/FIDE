@@ -4,16 +4,38 @@ import 'dart:io';
 
 import 'package:fide/constants/core_constants.dart';
 
-/// The `PATH` of the user's login shell, for launching tools like `flutter`.
+/// The `PATH` of the user's login shell, and a UTF-8 locale, for launching
+/// tools like `flutter` or `pod`.
 ///
 /// A macOS app opened from the Dock or Finder inherits launchd's minimal
 /// `PATH` (`/usr/bin:/bin:/usr/sbin:/sbin`), not the one the user's shell
 /// profile builds, so commands such as `flutter`, `pod` or `ollama` are not
 /// found. [load] asks the login shell for its `PATH` once, and [overrides]
 /// hands it to every launched process.
+///
+/// launchd sets no locale either, which leaves CocoaPods reading paths as
+/// ASCII: `pod` warns that it requires UTF-8 and fails. [overrides] then
+/// sets [utf8Locale], as Flutter does when it runs `pod`.
 class LoginShellEnvironment {
   static const String _pathKey = 'PATH';
   static const String _marker = '__FIDE_PATH__';
+
+  /// Environment variable naming the locale of whatever no `LC_*`
+  /// variable names.
+  static const String _langKey = 'LANG';
+
+  /// Environment variables naming the locale of text encoding, the first
+  /// set one winning.
+  static const List<String> _encodingLocaleKeys = [
+    'LC_ALL',
+    'LC_CTYPE',
+    _langKey,
+  ];
+
+  /// The locale launched processes get when the app's environment names
+  /// none: the one Flutter gives `pod`, with English messages, as tools
+  /// print without a locale.
+  static const String utf8Locale = 'en_US.UTF-8';
 
   /// Environment variable naming the user's shell.
   static const String _shellKey = 'SHELL';
@@ -53,17 +75,21 @@ class LoginShellEnvironment {
       unawaited(
         _read().then((overrides) {
           _retrying = false;
-          if (overrides.isNotEmpty) _overrides = Future.value(overrides);
+          if (overrides.containsKey(_pathKey)) {
+            _overrides = Future.value(overrides);
+          }
         }),
       );
     }
     return _overrides ??= _read();
   }
 
-  /// Reads the overrides, noting when the read fails.
+  /// Reads the overrides, noting when the read of `PATH` fails.
   static Future<Map<String, String>> _read() async {
     final overrides = await _readOverrides();
-    _failedAt = overrides.isEmpty && _needsLoginShell ? DateTime.now() : null;
+    _failedAt = !overrides.containsKey(_pathKey) && _needsLoginShell
+        ? DateTime.now()
+        : null;
     return overrides;
   }
 
@@ -71,13 +97,23 @@ class LoginShellEnvironment {
   static bool get _needsLoginShell => Platform.isMacOS || Platform.isLinux;
 
   /// Environment variables to set on launched processes: the login shell's
-  /// `PATH`, or nothing when it couldn't be read or isn't needed.
+  /// `PATH`, unless it couldn't be read, and [utf8Locale] when the app's
+  /// environment names no locale; nothing where neither is needed.
   static Future<Map<String, String>> get overrides => load();
 
   static Future<Map<String, String>> _readOverrides() async {
     if (!_needsLoginShell) return const {};
     final path = await _readLoginShellPath();
-    return path == null ? const {} : {_pathKey: path};
+    return {...localeOverrides(Platform.environment), _pathKey: ?path};
+  }
+
+  /// `LANG` set to [utf8Locale] when [environment] names no locale for
+  /// text encoding, else nothing: a locale the user chose is kept.
+  static Map<String, String> localeOverrides(Map<String, String> environment) {
+    final named = _encodingLocaleKeys.any(
+      (key) => environment[key]?.isNotEmpty ?? false,
+    );
+    return named ? const {} : const {_langKey: utf8Locale};
   }
 
   /// Runs the user's shell as an interactive login shell, so every profile

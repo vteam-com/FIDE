@@ -71,8 +71,9 @@ void main() {
 
     test('every $brightness syntax color reads in the editor', () {
       final surface = colorScheme.surfaceContainerHighest;
-      for (final MapEntry(key: token, value: style)
-          in AppTheme.codeTheme(theme).entries) {
+      for (final MapEntry(key: token, value: style) in AppTheme.codeTheme(
+        theme,
+      ).entries) {
         final color = style.color;
         if (color == null) continue;
         expectContrast(color, surface, AppTheme.minTextContrast, token);

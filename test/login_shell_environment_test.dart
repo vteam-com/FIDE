@@ -13,4 +13,25 @@ void main() {
       expect(overrides, isEmpty);
     }
   });
+
+  group('localeOverrides', () {
+    test('sets a UTF-8 LANG when no locale is named, as launchd leaves '
+        'an app opened from Finder', () {
+      expect(LoginShellEnvironment.localeOverrides(const {'HOME': '/'}), {
+        'LANG': LoginShellEnvironment.utf8Locale,
+      });
+      expect(LoginShellEnvironment.localeOverrides(const {'LANG': ''}), {
+        'LANG': LoginShellEnvironment.utf8Locale,
+      });
+    });
+
+    test('keeps a locale the user named', () {
+      for (final key in ['LC_ALL', 'LC_CTYPE', 'LANG']) {
+        expect(
+          LoginShellEnvironment.localeOverrides({key: 'fr_CA.UTF-8'}),
+          isEmpty,
+        );
+      }
+    });
+  });
 }
