@@ -2,6 +2,7 @@
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/action_outcome.dart';
+import 'package:fide/models/language_catalog.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/localization_state.dart';
@@ -24,20 +25,23 @@ import 'package:fide/widgets/compact_text_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/filter_field.dart';
 import 'package:fide/widgets/loading_indicator.dart';
+import 'package:fide/widgets/locale_badges.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/panel_scroll_view.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/refresh_button.dart';
+import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:path/path.dart' as p;
 
-/// Shows the open project's localization setup and ARB keys, rendering
-/// [localizationControllerProvider] and calling its actions.
+/// Shows the open project's localization setup, locales and ARB keys,
+/// rendering [localizationControllerProvider] and calling its actions.
 class LocalizationPanel extends ConsumerStatefulWidget {
   /// Creates the panel.
   const LocalizationPanel({super.key});
@@ -93,6 +97,40 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
   /// Runs `flutter gen-l10n`.
   void _generateLocalizationClasses() => _show(_controller.generateClasses());
 
+  /// Adds [locale], then offers to translate its strings with the local
+  /// model.
+  Future<void> _addLocale(String locale) async {
+    final outcome = await _controller.addLocale(locale);
+    if (outcome == null || !mounted) return;
+    MessageBox.showOutcome(context, outcome);
+    if (!outcome.succeeded) return;
+    await ref
+        .read(quickFixControllerProvider)
+        .translate(
+          _controller.translationsInto(locale),
+          confirm: confirmQuickFixOver(context),
+          notify: quickFixNoticesOver(context),
+        );
+  }
+
+  /// Removes [locale] once the user confirms deleting its ARB file.
+  Future<void> _removeLocale(String locale) async {
+    final file = ref.read(localizationControllerProvider).arbFileOf(locale);
+    if (file == null) return;
+    final name = LanguageCatalog.nameOf(locale);
+    final confirmed = await MessageBox.confirm(
+      context,
+      title: 'Remove $name',
+      message:
+          'Deletes ${p.basename(file.path)} and its '
+          '${file.entries.length.count('translation')}, then generates the '
+          'localization classes again: the app no longer supports $name. '
+          'This cannot be undone.',
+      confirmLabel: 'Remove',
+    );
+    if (confirmed && mounted) await _show(_controller.removeLocale(locale));
+  }
+
   @override
   Widget build(BuildContext context) {
     final projectRoot = ref.watch(currentProjectRootProvider);
@@ -112,20 +150,46 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
 
     final statusView = _buildStatusContent(state);
     final issues = ref.watch(stringIssuesProvider);
-    if (issues == null) return statusView;
+    final sections = [
+      if (state.arbFiles.isNotEmpty) _localesSection(state),
+      if (issues != null)
+        IssueSection(
+          title: 'Strings',
+          issues: issues,
+          emptyLabel: 'Every string is localized',
+        ),
+    ];
+    if (sections.isEmpty) return statusView;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: AppPadding.panelContent,
-          child: IssueSection(
-            title: 'Strings',
-            issues: issues,
-            emptyLabel: 'Every string is localized',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: AppSpacing.sectionGap,
+            children: sections,
           ),
         ),
         Expanded(child: statusView),
       ],
+    );
+  }
+
+  /// The project's locales, the template's kept, the others removable,
+  /// with a menu adding more.
+  Widget _localesSection(LocalizationState state) {
+    final locales = state.locales;
+    return SectionPanel(
+      title: 'Locales',
+      isExpanded: true,
+      count: locales.length,
+      child: LocaleBadges(
+        locales: locales,
+        defaultLocale: state.templateLocale,
+        onAdd: _addLocale,
+        onRemove: _removeLocale,
+      ),
     );
   }
 
@@ -181,12 +245,9 @@ class _LocalizationPanelState extends ConsumerState<LocalizationPanel> {
         onTranslate: (language) {
           if (_controller.translationOf(comparison, language)
               case final translation?) {
-            ref
-                .read(quickFixControllerProvider)
-                .translateKey(
-                  translation,
-                  notify: quickFixNoticesOver(context),
-                );
+            ref.read(quickFixControllerProvider).translate([
+              translation,
+            ], notify: quickFixNoticesOver(context));
           }
         },
       ),

@@ -29,6 +29,10 @@ class LocalizationState {
   /// Whether an action (setup, generation, translation...) is running.
   final bool isBusy;
 
+  /// The locale of the ARB file the others are compared against and fall
+  /// back to; null until the files are loaded, or without any.
+  final String? templateLocale;
+
   /// Creates a state.
   const LocalizationState({
     this.checks,
@@ -38,7 +42,15 @@ class LocalizationState {
     this.malformedArbFiles = const [],
     this.loadError,
     this.isBusy = false,
+    this.templateLocale,
   });
+
+  /// The locales of [arbFiles], sorted.
+  List<String> get locales => ArbFile.localesOf(arbFiles);
+
+  /// The ARB file of [locale], or null when it has none.
+  ArbFile? arbFileOf(String? locale) =>
+      arbFiles.where((file) => file.languageCode == locale).firstOrNull;
 
   /// The status that picks which view to show.
   LocalizationStatus get status {
@@ -57,6 +69,7 @@ class LocalizationState {
     String? loadError,
     bool clearLoadError = false,
     bool? isBusy,
+    String? templateLocale,
   }) {
     return LocalizationState(
       checks: checks ?? this.checks,
@@ -66,6 +79,7 @@ class LocalizationState {
       malformedArbFiles: malformedArbFiles ?? this.malformedArbFiles,
       loadError: clearLoadError ? null : loadError ?? this.loadError,
       isBusy: isBusy ?? this.isBusy,
+      templateLocale: templateLocale ?? this.templateLocale,
     );
   }
 }

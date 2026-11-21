@@ -203,8 +203,8 @@ class ProjectCreationService {
     return true;
   }
 
-  /// Sets up localization and an empty ARB file for each extra language,
-  /// making the default language the template.
+  /// Sets up localization with an ARB file for each language, making the
+  /// default language the template.
   Future<CreationOutcome> _setUpLocalization(
     ProjectCreationRequest request,
   ) async {
@@ -214,12 +214,8 @@ class ProjectCreationService {
     await _localization.initializeLocalization(
       request.projectPath,
       tolerateToolFailures: true,
+      locales: languages,
     );
-    for (final language in languages) {
-      if (language == _templateLanguage) continue;
-      final arb = _l10n.arbPathFor(request.projectPath, language);
-      if (!await File(arb).exists()) await ArbService.write(arb, {});
-    }
     if (request.defaultLanguage != _templateLanguage) {
       await _makeTemplate(request.projectPath, request.defaultLanguage);
     }

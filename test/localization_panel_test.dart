@@ -11,12 +11,16 @@ import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_config_reader.dart';
+import 'package:fide/widgets/locale_badges.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// How many ARB keys the project has.
 const int _keyCount = 500;
+
+/// How far each step scrolls to a heading of the checklist.
+const double _scrollStep = 200;
 
 /// A controller showing [shown] without inspecting any project.
 class _FixedController extends LocalizationController {
@@ -30,6 +34,7 @@ class _FixedController extends LocalizationController {
         ),
         generator: const L10nGenerator(ProcessRunner()),
         arb: const ArbService(),
+        reloadWritten: (_) async {},
       ) {
     state = shown;
   }
@@ -38,8 +43,14 @@ class _FixedController extends LocalizationController {
 /// A state of [checks] with [_keyCount] keys in English and French.
 LocalizationState _state(LocalizationChecks checks) => LocalizationState(
   checks: checks,
+  templateLocale: 'en',
   arbFiles: [
-    ArbFile(path: '/p/lib/l10n/app_en.arb', languageCode: 'en', entries: {}),
+    for (final locale in ['fr', 'en'])
+      ArbFile(
+        path: '/p/lib/l10n/app_$locale.arb',
+        languageCode: locale,
+        entries: {},
+      ),
   ],
   comparisons: [
     for (var i = 0; i < _keyCount; i++)
@@ -75,6 +86,33 @@ void main() {
     );
   }
 
+  /// Checks of a fully set up project.
+  const complete = LocalizationChecks(
+    hasPubspec: true,
+    isFlutterProject: true,
+    hasArbFiles: true,
+    hasGeneratedClasses: true,
+    hasAppIntegration: true,
+    hasDependencies: true,
+    hasGenerateFlag: true,
+  );
+
+  testWidgets('lists the locales, each but the template removable', (
+    tester,
+  ) async {
+    await pumpPanel(tester, _state(complete));
+
+    final badges = find.byType(LocaleBadges);
+    expect(badges, findsOneWidget);
+    expect(
+      find.descendant(of: badges, matching: find.text('EN')),
+      findsOneWidget,
+    );
+    expect(find.byTooltip('Remove French'), findsOneWidget);
+    expect(find.byTooltip('Remove English'), findsNothing);
+    expect(find.text(LocaleBadges.addLabel), findsOneWidget);
+  });
+
   for (final (name, generated) in [('partial', false), ('complete', true)]) {
     testWidgets('the $name view builds only the keys in view', (tester) async {
       await pumpPanel(
@@ -95,7 +133,12 @@ void main() {
       final built = find.byType(LocalizationEntryWidget).evaluate().length;
       expect(built, lessThan(_keyCount));
       if (!generated) {
-        expect(find.text('ARB File Management'), findsOneWidget);
+        // Below the locales, past the checklist
+        await tester.scrollUntilVisible(
+          find.text('ARB File Management'),
+          _scrollStep,
+          scrollable: find.byType(Scrollable).first,
+        );
         expect(find.text('Generate localization classes'), findsOneWidget);
       }
 

@@ -194,11 +194,8 @@ class ArbService {
     List<ArbFile> arbFiles,
     String? templateLocale,
   ) {
-    if (arbFiles.isEmpty) return [];
-    final template = arbFiles.firstWhere(
-      (file) => file.languageCode == templateLocale,
-      orElse: () => arbFiles.first,
-    );
+    final template = templateOf(arbFiles, templateLocale);
+    if (template == null) return [];
     final otherFiles = arbFiles.where((file) => file != template).toList();
     final allKeys = {for (final file in arbFiles) ...file.entries.keys};
 
@@ -220,23 +217,35 @@ class ArbService {
     ];
   }
 
+  /// The one of [arbFiles] the others are compared against: the file of
+  /// [templateLocale], else the first; null when there is none.
+  static ArbFile? templateOf(List<ArbFile> arbFiles, String? templateLocale) =>
+      arbFiles
+          .where((file) => file.languageCode == templateLocale)
+          .firstOrNull ??
+      arbFiles.firstOrNull;
+
   /// The ARB files of the project at [projectPath], from the folder its
   /// `l10n.yaml` names, split like [loadArbFiles] and compared against its
-  /// template locale like [compareArbFiles].
+  /// template locale like [compareArbFiles], with the locale of the file
+  /// they are compared against ([templateOf]); null without valid files.
   Future<
     ({
       List<ArbFile> valid,
       List<String> malformed,
       List<ArbComparison> comparisons,
+      String? templateLocale,
     })
   >
   loadProject(String projectPath) async {
     final config = await _config.l10nConfig(projectPath);
     final files = await loadArbFiles(config.arbDirIn(projectPath));
+    final templateLocale = config.templateParts?.locale;
     return (
       valid: files.valid,
       malformed: files.malformed,
-      comparisons: compareArbFiles(files.valid, config.templateParts?.locale),
+      comparisons: compareArbFiles(files.valid, templateLocale),
+      templateLocale: templateOf(files.valid, templateLocale)?.languageCode,
     );
   }
 }

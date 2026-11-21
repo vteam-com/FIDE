@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fide/services/arb_service.dart';
 import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/process_runner.dart';
@@ -158,6 +159,95 @@ void main() {
       setupWith(FakeFlutterRunner()).wireApp(project.path),
       throwsA(isA<Exception>()),
     );
+  });
+
+  test('initializeLocalization writes only the locales asked for', () async {
+    await setupWith(FakeFlutterRunner())
+        .initializeLocalization(project.path, locales: {'en', 'de'});
+
+    final l10n = '${project.path}/lib/l10n';
+    expect(File('$l10n/app_en.arb').existsSync(), true);
+    expect(File('$l10n/app_fr.arb').existsSync(), false);
+    final german = ArbService.decode(
+      File('$l10n/app_de.arb').readAsStringSync(),
+    );
+    expect(german, {ArbService.localeKey: 'de'});
+  });
+
+  group('locales', () {
+    late String l10n;
+
+    /// Writes the ARB file of [locale], with one message.
+    void arb(String locale) =>
+        File('$l10n/app_$locale.arb').writeAsStringSync('{"hi": "Hi"}');
+
+    setUp(() {
+      l10n = '${project.path}/lib/l10n';
+      Directory(l10n).createSync(recursive: true);
+      arb('en');
+    });
+
+    test('adding one writes its ARB file without regenerating yet', () async {
+      final runner = FakeFlutterRunner();
+
+      final path = await setupWith(runner).addLocale(project.path, 'de');
+
+      expect(path, '$l10n/app_de.arb');
+      expect(ArbService.decode(File(path).readAsStringSync()), {
+        ArbService.localeKey: 'de',
+      });
+      // No generated classes yet: the next build generates them
+      expect(runner.commands, isEmpty);
+      await expectLater(
+        setupWith(runner).addLocale(project.path, 'de'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('adding one regenerates the generated classes', () async {
+      File('$l10n/app_localizations.dart').writeAsStringSync('');
+      final runner = FakeFlutterRunner();
+
+      await setupWith(runner).addLocale(project.path, 'de');
+
+      expect(runner.commands, ['flutter gen-l10n']);
+    });
+
+    test('removing one deletes its ARB and leftover generated files', () async {
+      arb('de');
+      arb('pt');
+      arb('pt_BR');
+      File('$l10n/app_localizations.dart').writeAsStringSync('');
+      final german = File('$l10n/app_localizations_de.dart')
+        ..writeAsStringSync('');
+      final portuguese = File('$l10n/app_localizations_pt.dart')
+        ..writeAsStringSync('');
+      final runner = FakeFlutterRunner();
+      final setup = setupWith(runner);
+
+      expect(await setup.removeLocale(project.path, 'de'), '$l10n/app_de.arb');
+      expect(File('$l10n/app_de.arb').existsSync(), false);
+      expect(german.existsSync(), false);
+      expect(runner.commands, ['flutter gen-l10n']);
+
+      // pt_BR falls back to pt, whose generated file pt_BR's class shares
+      await expectLater(
+        setup.removeLocale(project.path, 'pt'),
+        throwsA(
+          isA<Exception>().having((e) => '$e', 'message', contains('pt_BR')),
+        ),
+      );
+      await setup.removeLocale(project.path, 'pt_BR');
+      expect(portuguese.existsSync(), true);
+    });
+
+    test('the template locale cannot be removed', () async {
+      await expectLater(
+        setupWith(FakeFlutterRunner()).removeLocale(project.path, 'en'),
+        throwsA(isA<Exception>()),
+      );
+      expect(File('$l10n/app_en.arb').existsSync(), true);
+    });
   });
 
   test('inspect reports what the project already has', () async {

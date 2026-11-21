@@ -74,7 +74,7 @@ class ArbTranslator {
               ArbTranslation(
                 key: detail.key,
                 source: source[detail.key] as String,
-                description: _description(
+                description: descriptionOf(
                   source[ArbKeys.metadataKeyOf(detail.key)],
                 ),
                 language: issue.languageName,
@@ -83,9 +83,19 @@ class ArbTranslator {
     ];
   }
 
+  /// What translating [translations] does, as the user is asked to
+  /// confirm it.
+  static String describe(List<ArbTranslation> translations) {
+    final languages = {for (final t in translations) t.language};
+    return 'The local model translates ${translations.length.count('key')} '
+        'into ${languages.join(', ')} in short batches, keeping every '
+        '{placeholder}; FIDE writes the ARB files and regenerates the '
+        'classes.';
+  }
+
   /// The `description` of an ARB key's [metadata], or null when it has
   /// none.
-  static String? _description(Object? metadata) {
+  static String? descriptionOf(Object? metadata) {
     final description = metadata is Map
         ? metadata[ArbMessage.descriptionKey]
         : null;

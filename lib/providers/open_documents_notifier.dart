@@ -15,6 +15,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:path/path.dart' as p;
 
+/// Reloads the files at the given absolute paths in the editor, as
+/// [OpenDocumentsNotifier.reloadWritten] does.
+typedef ReloadWritten = Future<void> Function(Iterable<String> paths);
+
 /// The editor's open documents and active tab.
 final openDocumentsProvider =
     StateNotifierProvider<OpenDocumentsNotifier, OpenDocuments>(
@@ -158,7 +162,8 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
   }
 
   /// Closes the tabs of [filePaths] that are open, then reopens the one
-  /// that was showing, so it shows the files' current content.
+  /// that was showing, so it shows the files' current content, unless it
+  /// was deleted.
   Future<void> reload(Iterable<String> filePaths) async {
     final paths = filePaths.toSet();
     final activePath = state.active?.filePath;
@@ -173,7 +178,9 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
           ? OpenDocuments.noActiveDocument
           : kept.indexWhere((d) => d.filePath == activePath),
     );
-    if (activePath != null && paths.contains(activePath)) {
+    if (activePath != null &&
+        paths.contains(activePath) &&
+        await reader.exists(activePath)) {
       await open(activePath);
     }
   }

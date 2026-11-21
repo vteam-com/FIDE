@@ -14,4 +14,8 @@ class ArbFile {
 
   /// [languageCode] of a file whose name has no `_<locale>` suffix.
   static const String unknownLanguageCode = 'unknown';
+
+  /// The locales of [files], sorted.
+  static List<String> localesOf(Iterable<ArbFile> files) =>
+      [for (final file in files) file.languageCode]..sort();
 }

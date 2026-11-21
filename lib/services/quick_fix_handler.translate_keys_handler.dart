@@ -15,13 +15,7 @@ class TranslateKeysHandler implements QuickFixHandler {
       request.metrics,
     );
     if (translations.isEmpty) return _nothingToDo('Nothing to translate');
-    final languages = {for (final t in translations) t.language};
-    if (!await request.confirm(
-      'The local model translates ${translations.length.localized} keys '
-      'into ${languages.join(', ')} in short batches, keeping every '
-      '{placeholder}; FIDE writes the ARB files and regenerates the '
-      'classes.',
-    )) {
+    if (!await request.confirm(ArbTranslator.describe(translations))) {
       return null;
     }
     final result = await _translator.apply(

@@ -100,6 +100,15 @@ class L10nConfig {
   String generatedPathIn(String root) =>
       p.join(root, outputDir ?? arbDir, outputFile);
 
+  /// Path of the file `flutter gen-l10n` generates for the messages of
+  /// [language] in the project at [root], such as
+  /// `app_localizations_fr.dart`, next to [generatedPathIn].
+  String generatedLanguagePathIn(String root, String language) => p.join(
+    root,
+    outputDir ?? arbDir,
+    '${p.basenameWithoutExtension(outputFile)}_$language.dart',
+  );
+
   /// The import of the generated class for the package [packageName].
   String importUri(String packageName) {
     if (syntheticPackage) {

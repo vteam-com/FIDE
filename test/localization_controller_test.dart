@@ -67,7 +67,24 @@ class FakeLocalizationSetup extends LocalizationSetup {
     String projectPath, {
     ProcessOutputCallback? onStep,
     bool tolerateToolFailures = false,
+    Set<String> locales = LocalizationSetup.starterLocales,
   }) => actions.act();
+
+  @override
+  Future<String> addLocale(String projectPath, String locale) async {
+    await actions.act();
+    final path = '$projectPath/lib/l10n/app_$locale.arb';
+    File(path).writeAsStringSync('{}');
+    return path;
+  }
+
+  @override
+  Future<String> removeLocale(String projectPath, String locale) async {
+    await actions.act();
+    final path = '$projectPath/lib/l10n/app_$locale.arb';
+    File(path).deleteSync();
+    return path;
+  }
 }
 
 /// Generates nothing: runs through [actions].
@@ -85,21 +102,26 @@ void main() {
   late FakeActions actions;
   late FakeLocalizationSetup service;
   late LocalizationController controller;
+  late List<String> reloaded;
 
   setUp(() {
     project = Directory.systemTemp.createTempSync('fide_l10n_ctrl_');
     Directory('${project.path}/lib/l10n').createSync(recursive: true);
-    File('${project.path}/lib/l10n/app_en.arb')
-        .writeAsStringSync('{"hello": "Hello", "hi": "Hello"}');
+    File('${project.path}/lib/l10n/app_en.arb').writeAsStringSync(
+      '{"hello": "Hello", "hi": "Hello", '
+      '"@hi": {"description": "A greeting"}}',
+    );
     File('${project.path}/lib/l10n/app_fr.arb')
         .writeAsStringSync('{"hello": "Bonjour"}');
     actions = FakeActions();
     service = FakeLocalizationSetup(actions);
+    reloaded = [];
     controller = LocalizationController(
       project.path,
       setup: service,
       generator: FakeL10nGenerator(actions),
       arb: const ArbService(),
+      reloadWritten: (paths) async => reloaded.addAll(paths),
     );
   });
 
@@ -176,8 +198,34 @@ void main() {
     final translation = controller.translationOf(missing, 'fr');
 
     expect(translation!.key, 'hi');
+    expect(translation.language, 'French');
+    expect(translation.description, 'A greeting');
     expect(translation.arbPath, endsWith('app_fr.arb'));
     expect(controller.translationOf(missing, 'xx'), isNull);
+  });
+
+  test('an added locale reloads with every key to translate', () async {
+    await controller.reload();
+
+    final outcome = await controller.addLocale('de');
+
+    expect(outcome!.succeeded, true);
+    expect(reloaded.single, endsWith('app_de.arb'));
+    expect(controller.state.locales, ['de', 'en', 'fr']);
+    expect(controller.state.templateLocale, 'en');
+    expect([
+      for (final t in controller.translationsInto('de')) t.key,
+    ], unorderedEquals(['hello', 'hi']));
+    expect(controller.state.isBusy, false);
+  });
+
+  test('a removed locale reloads without it', () async {
+    await controller.reload();
+
+    final outcome = await controller.removeLocale('fr');
+
+    expect(outcome!.succeeded, true);
+    expect(controller.state.locales, ['en']);
   });
 
   test('without a project, actions do nothing', () async {
@@ -186,6 +234,7 @@ void main() {
       setup: service,
       generator: FakeL10nGenerator(actions),
       arb: const ArbService(),
+      reloadWritten: (_) async {},
     );
     addTearDown(idle.dispose);
 

@@ -1,6 +1,7 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/language_catalog.dart';
 import 'package:fide/providers/create_project_draft_notifier.dart';
-import 'package:fide/widgets/check_list_tile.dart';
+import 'package:fide/widgets/locale_badges.dart';
 import 'package:fide/widgets/outlined_surface.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/step_header.dart';
@@ -15,22 +16,6 @@ class CreateProjectStep2 extends ConsumerWidget {
 
   /// This step's place in the wizard.
   static const int _stepNumber = 2;
-
-  /// Languages offered, by code.
-  static const Map<String, String> _languages = {
-    'en': 'English (EN)',
-    'fr': 'French (FR)',
-    'es': 'Spanish (ES)',
-    'de': 'German (DE)',
-    'it': 'Italian (IT)',
-    'pt': 'Portuguese (PT)',
-    'ja': 'Japanese (JA)',
-    'ko': 'Korean (KO)',
-    'zh': 'Chinese (ZH)',
-    'ar': 'Arabic (AR)',
-    'hi': 'Hindi (HI)',
-    'ru': 'Russian (RU)',
-  };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -88,17 +73,12 @@ class CreateProjectStep2 extends ConsumerWidget {
 
           const SectionTitle('Select languages to support'),
 
-          Column(
-            children: _languages.entries
-                .map(
-                  (entry) => CheckListTile(
-                    title: Text(entry.value),
-                    value: draft.languages.contains(entry.key),
-                    onChanged: (selected) =>
-                        notifier.setLanguage(entry.key, selected: selected),
-                  ),
-                )
-                .toList(),
+          LocaleBadges(
+            locales: draft.languages,
+            defaultLocale: draft.defaultLanguage,
+            onAdd: (language) => notifier.setLanguage(language, selected: true),
+            onRemove: (language) =>
+                notifier.setLanguage(language, selected: false),
           ),
 
           const SizedBox(height: AppSpacing.xLarge),
@@ -112,7 +92,7 @@ class CreateProjectStep2 extends ConsumerWidget {
               children: draft.languages
                   .map(
                     (lang) => RadioListTile<String>(
-                      title: Text(_languages[lang]!),
+                      title: Text(LanguageCatalog.labelOf(lang)),
                       value: lang,
                     ),
                   )

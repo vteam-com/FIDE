@@ -22,9 +22,6 @@ final appIconFixControllerProvider =
       ),
     );
 
-/// Reloads the files at the given absolute paths in the editor.
-typedef ReloadWritten = Future<void> Function(Iterable<String> paths);
-
 /// Makes the master image at the given absolute path the one icons are
 /// generated from.
 typedef UseMaster = void Function(String path);

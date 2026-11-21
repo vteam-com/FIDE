@@ -138,18 +138,44 @@ void main() {
       arbPath: '/p/lib/l10n/app_fr.arb',
     );
 
-    await container
-        .read(quickFixControllerProvider)
-        .translateKey(
-          translation,
-          notify: (message, tone) => notices.add((message, tone)),
-        );
+    await container.read(quickFixControllerProvider).translate([
+      translation,
+    ], notify: (message, tone) => notices.add((message, tone)));
 
     final chat = container.read(aiChatProvider);
     expect(translator.applied, [translation]);
     expect(notices, isEmpty);
     expect(chat.messages.first.content, QuickFix.translateKeys.label);
     expect(chat.isBusy, isFalse);
+  });
+
+  test('translates a new locale once the user accepts', () async {
+    const translations = [
+      ArbTranslation(
+        key: 'hi',
+        source: 'Hello',
+        language: 'German',
+        arbPath: '/p/lib/l10n/app_de.arb',
+      ),
+    ];
+    final asked = <String>[];
+
+    for (final accept in [false, true]) {
+      await container
+          .read(quickFixControllerProvider)
+          .translate(
+            translations,
+            confirm: (fix, message) async {
+              asked.add(message);
+              return accept;
+            },
+            notify: (message, tone) => notices.add((message, tone)),
+          );
+    }
+
+    expect(asked, List.filled(2, ArbTranslator.describe(translations)));
+    expect(asked.first, contains('1 key into German'));
+    expect(translator.applied, translations);
   });
 
   test('a fix asking the model waits for the busy AI', () async {

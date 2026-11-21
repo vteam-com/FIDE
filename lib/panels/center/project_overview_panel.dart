@@ -16,6 +16,7 @@ import 'package:fide/widgets/app_icon_image.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/card_grid.dart';
 import 'package:fide/widgets/empty_state.dart';
+import 'package:fide/widgets/locale_badges.dart';
 import 'package:fide/widgets/page_header.dart';
 import 'package:fide/widgets/page_scroll_view.dart';
 import 'package:fide/widgets/platform_icon.dart';
@@ -148,14 +149,7 @@ class ProjectOverviewPanel extends ConsumerWidget {
       title: 'Localization',
       value: languages.isEmpty
           ? StatCard.text('Off')
-          : Wrap(
-              spacing: AppSpacing.medium,
-              runSpacing: AppSpacing.medium,
-              children: [
-                for (final language in languages)
-                  BadgeStatus.info(text: language.toUpperCase(), large: true),
-              ],
-            ),
+          : LocaleBadges(locales: languages),
       details: [
         if (languages.isEmpty)
           'No ARB files in lib/l10n'

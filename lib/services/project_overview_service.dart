@@ -1,4 +1,5 @@
 import 'package:fide/models/code_coverage.dart';
+import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/project_overview.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/services/arb_service.dart';
@@ -41,7 +42,7 @@ class ProjectOverviewService {
     return ProjectOverview(
       appIconPath: appIconPath,
       code: code,
-      languages: [for (final file in arbFiles.valid) file.languageCode]..sort(),
+      languages: ArbFile.localesOf(arbFiles.valid),
       platforms: platforms,
       cocoaPods: await _cocoaPods.inspect(
         projectPath,

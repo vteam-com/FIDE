@@ -108,28 +108,51 @@ class QuickFixController {
     );
   }
 
-  /// Translates one ARB key into one language, [translation], as
-  /// [QuickFix.translateKeys] does every key: a task in the AI panel,
-  /// which its Stop cancels, once the AI is free; [notify] says when it
-  /// isn't. Does nothing without a project.
-  Future<void> translateKey(
-    ArbTranslation translation, {
+  /// Translates [translations], such as the one key and language the user
+  /// picked or every key of a new locale, as [QuickFix.translateKeys] does
+  /// every missing key: a task in the AI panel, which its Stop cancels,
+  /// once the AI is free; [notify] says when it isn't. Given [confirm], the
+  /// user is asked first, as that fix asks. Does nothing without a project
+  /// or [translations].
+  Future<void> translate(
+    List<ArbTranslation> translations, {
     required QuickFixNotice notify,
-  }) => _run(
-    QuickFix.translateKeys,
-    // The one key and language the user picked: nothing to confirm
-    confirm: (_, _) async => true,
-    notify: notify,
-    rewrite: (projectPath, cancel) async {
-      final result = await _translator.apply(
-        projectPath,
-        [translation],
-        onProgress: (step) => _chat.addReply(step, isProgress: true),
-        cancel: cancel,
-      );
-      return (summary: result.summary, changedFiles: result.changedFiles);
-    },
-  );
+    QuickFixConfirmation? confirm,
+  }) async {
+    const fix = QuickFix.translateKeys;
+    if (translations.isEmpty ||
+        _projectPath() == null ||
+        _isAiBusy(fix, notify)) {
+      return;
+    }
+    if (confirm != null &&
+        !await confirm(fix, ArbTranslator.describe(translations))) {
+      return;
+    }
+    await _run(
+      fix,
+      // Confirmed above, or the keys the user picked
+      confirm: (_, _) async => true,
+      notify: notify,
+      rewrite: (projectPath, cancel) async {
+        final result = await _translator.apply(
+          projectPath,
+          translations,
+          onProgress: (step) => _chat.addReply(step, isProgress: true),
+          cancel: cancel,
+        );
+        return (summary: result.summary, changedFiles: result.changedFiles);
+      },
+    );
+  }
+
+  /// Whether [fix] asks the model while the AI is busy, which [notify] is
+  /// told: the fix must wait.
+  bool _isAiBusy(QuickFix fix, QuickFixNotice notify) {
+    if (!fix.usesAi || !_chat.isBusy) return false;
+    notify('The AI is busy: wait for it or stop it', StatusTone.error);
+    return true;
+  }
 
   /// Runs [fix], or [rewrite] of the project with the task's cancel token
   /// when given, as [apply] says.
@@ -141,11 +164,7 @@ class QuickFixController {
     rewrite,
   }) async {
     final projectPath = _projectPath();
-    if (projectPath == null) return;
-    if (fix.usesAi && _chat.isBusy) {
-      notify('The AI is busy: wait for it or stop it', StatusTone.error);
-      return;
-    }
+    if (projectPath == null || _isAiBusy(fix, notify)) return;
 
     // A fix asking the model runs as a task in the AI panel once confirmed,
     // which the panel's Stop button cancels

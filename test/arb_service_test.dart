@@ -74,6 +74,7 @@ void main() {
     final loaded = await service.loadProject(project.path);
 
     expect(loaded.valid.map((file) => file.languageCode).toSet(), {'fr', 'en'});
+    expect(loaded.templateLocale, 'fr');
     final bye = loaded.comparisons.singleWhere((c) => c.key == 'bye');
     expect(bye.isMissingInEnglish, true);
   });

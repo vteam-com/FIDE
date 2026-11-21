@@ -1,5 +1,6 @@
 import 'package:fide/models/action_outcome.dart';
 import 'package:fide/models/arb_translation.dart';
+import 'package:fide/models/language_catalog.dart';
 import 'package:fide/models/localization_data.dart';
 import 'package:fide/models/localization_state.dart';
 import 'package:fide/models/readable_error.dart';
@@ -7,6 +8,7 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/project_actions.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/arb_service.dart';
+import 'package:fide/services/arb_translator.dart';
 import 'package:fide/services/l10n_generator.dart';
 import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/process_runner.dart';
@@ -30,6 +32,7 @@ final localizationControllerProvider =
         setup: ref.read(localizationSetupProvider),
         generator: ref.read(l10nGeneratorProvider),
         arb: ref.read(arbServiceProvider),
+        reloadWritten: ref.read(openDocumentsProvider.notifier).reloadWritten,
       );
       ref.listen(stringIssuesProvider, (previous, next) {
         if (previous != null && next != null) controller.reload();
@@ -56,18 +59,35 @@ class LocalizationController extends StateNotifier<LocalizationState>
 
   final L10nGenerator _generator;
 
+  final ReloadWritten _reloadWritten;
+
   final LocalizationSetup _setup;
 
   @override
   final String? projectPath;
 
-  /// Creates a controller for the project at [projectPath].
+  /// Creates a controller for the project at [projectPath], reloading the
+  /// ARB files it adds or removes with [_reloadWritten], which refreshes
+  /// the views derived from them.
   LocalizationController(
     this.projectPath, {
     required this._setup,
     required this._generator,
     required this._arb,
+    required this._reloadWritten,
   }) : super(LocalizationState.initial);
+
+  /// Adds [locale] to the project, as [LocalizationSetup.addLocale] does,
+  /// and reloads.
+  Future<ActionOutcome?> addLocale(String locale) {
+    final label = LanguageCatalog.labelOf(locale);
+    return runAction('Error adding $label', _busy, (projectPath) async {
+      final path = await _setup.addLocale(projectPath, locale);
+      await _reloadWritten([path]);
+      await reload();
+      return ActionOutcome.success('Added $label');
+    });
+  }
 
   /// Generates the localization classes with `flutter gen-l10n`, once the
   /// pubspec enables code generation.
@@ -117,22 +137,45 @@ class LocalizationController extends StateNotifier<LocalizationState>
     await _loadArbFiles(projectPath);
   }
 
-  /// The translation of [comparison]'s English value into [language],
-  /// written to that language's ARB file; null when there is no English
-  /// value or no ARB file for [language].
-  ArbTranslation? translationOf(ArbComparison comparison, String language) {
+  /// Removes [locale] from the project, as
+  /// [LocalizationSetup.removeLocale] does, and reloads.
+  Future<ActionOutcome?> removeLocale(String locale) {
+    final label = LanguageCatalog.labelOf(locale);
+    return runAction('Error removing $label', _busy, (projectPath) async {
+      final path = await _setup.removeLocale(projectPath, locale);
+      await _reloadWritten([path]);
+      await reload();
+      return ActionOutcome.success('Removed $label');
+    });
+  }
+
+  /// The translation of [comparison]'s template value into [locale],
+  /// written to that locale's ARB file, with the template's description of
+  /// the key; null when there is no template value or no ARB file for
+  /// [locale].
+  ArbTranslation? translationOf(ArbComparison comparison, String locale) {
     final source = comparison.englishValue;
-    final target = state.arbFiles
-        .where((file) => file.languageCode == language)
-        .firstOrNull;
+    final target = state.arbFileOf(locale);
     if (source == null || target == null) return null;
+    final template = state.arbFileOf(state.templateLocale);
     return ArbTranslation(
       key: comparison.key,
       source: source,
-      language: language,
+      description: ArbTranslator.descriptionOf(
+        template?.entries[comparison.key]?.metadata,
+      ),
+      language: LanguageCatalog.nameOf(locale),
       arbPath: target.path,
     );
   }
+
+  /// The translations of every key [locale] is missing, as
+  /// [translationOf] makes them, such as all of a locale just added.
+  List<ArbTranslation> translationsInto(String locale) => [
+    for (final comparison in state.comparisons)
+      if (comparison.missingInLanguages.contains(locale))
+        ?translationOf(comparison, locale),
+  ];
 
   /// Wires the generated localizations into the app widget.
   Future<ActionOutcome?> wireApp() {
@@ -152,6 +195,7 @@ class LocalizationController extends StateNotifier<LocalizationState>
           arbFiles: arbFiles.valid,
           comparisons: arbFiles.comparisons,
           malformedArbFiles: arbFiles.malformed,
+          templateLocale: arbFiles.templateLocale,
           clearLoadError: true,
         ),
       );
