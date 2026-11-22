@@ -47,8 +47,7 @@ class PreviewSampler {
     'AsyncValueGetter': 'Future<T> Function()',
     'WidgetBuilder': 'Widget Function(BuildContext context)',
     'IndexedWidgetBuilder': 'Widget Function(BuildContext context, int index)',
-    'TransitionBuilder':
-        'Widget Function(BuildContext context, Widget? child)',
+    'TransitionBuilder': 'Widget Function(BuildContext context, Widget? child)',
   };
 
   static const PreviewSample _null = (
@@ -118,9 +117,10 @@ class PreviewSampler {
       if (!_use(symbol)) return null;
       final isConst =
           type.isConstConstructor &&
-          [...positional, for (final (_, sample) in named) sample].every(
-            (sample) => sample.isConst,
-          );
+          [
+            ...positional,
+            for (final (_, sample) in named) sample,
+          ].every((sample) => sample.isConst);
       final arguments = [
         for (final sample in positional) _inside(sample, isConst: isConst),
         for (final (name, sample) in named)
@@ -278,9 +278,8 @@ class PreviewSampler {
     required String library,
     required int depth,
   }) {
-    final parameters = [
-      for (var i = 1; i <= type.parameterCount; i++) '_' * i,
-    ].join(', ');
+    final parameters = [for (var i = 1; i <= type.parameterCount; i++) '_' * i]
+        .join(', ');
     final returned = type.returnType ?? '';
     final result = DartTypeText.parse(returned);
     if (_returnsNothing(result)) return _value('($parameters) {}');

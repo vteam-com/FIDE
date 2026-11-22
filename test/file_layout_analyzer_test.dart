@@ -184,6 +184,48 @@ class Details extends StatelessWidget {
     ]);
   });
 
+  test('the views are the files declaring a screen, private too, and '
+      'those named as one in a views folder, with their parts', () {
+    review({
+      'lib/main.dart': '''
+import 'package:flutter/material.dart';
+
+void main() => runApp(const MaterialApp(home: Text('')));
+
+class _Splash extends StatelessWidget {
+  const _Splash();
+
+  @override
+  Widget build(BuildContext context) => const Scaffold();
+}
+''',
+      'lib/widgets/home_screen.dart': _screen.replaceFirst(
+        'class',
+        "part 'home_screen.tile.dart';\n\nclass",
+      ),
+      'lib/widgets/home_screen.tile.dart': '''
+part of 'home_screen.dart';
+
+class _Tile extends StatelessWidget {
+  const _Tile();
+
+  @override
+  Widget build(BuildContext context) => const Text('');
+}
+''',
+      'lib/ui/score_card.dart': _pureWidget,
+      'lib/screens/accounts_view.dart': _pureWidget,
+      'lib/ui/accounts_view.dart': _pureWidget,
+    });
+
+    expect(const FileLayoutAnalyzer().viewsOf(project.path), {
+      'lib/main.dart',
+      'lib/screens/accounts_view.dart',
+      'lib/widgets/home_screen.dart',
+      'lib/widgets/home_screen.tile.dart',
+    });
+  });
+
   test('the app, its localizations and an ignored file stay', () {
     final layout = review({
       'lib/app.dart':

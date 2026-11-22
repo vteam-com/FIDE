@@ -40,13 +40,12 @@ import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
-// The SDK's Material library, for the localizations of the widgets that
-// CodeForge's markdown cards still build with it
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart' as sdk show DefaultMaterialLocalizations;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
+import 'package:material_ui/material_ui.dart'
+    as sdk
+    show DefaultMaterialLocalizations;
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 

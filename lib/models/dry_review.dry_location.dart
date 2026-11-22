@@ -1,12 +1,23 @@
 part of 'dry_review.dart';
 
-/// Where a widget is built: a project-relative [path] and 1-based [line].
+/// Where a widget is built: a project-relative [path] and 1-based [line],
+/// in a view or in a widget.
 class DryLocation {
-  /// Creates the location in [path] at [line], inside [className].
-  const DryLocation(this.path, this.line, {this.className});
+  /// Creates the location in [path] at [line], inside [className], in a
+  /// view when [isInView].
+  const DryLocation(
+    this.path,
+    this.line, {
+    this.className,
+    this.isInView = false,
+  });
 
   /// The class the widget is built in; null outside a class.
   final String? className;
+
+  /// Whether the widget is built in a view, a file declaring a screen as
+  /// the File Layout review judges it, wherever it is; else in a widget.
+  final bool isInView;
 
   /// 1-based line.
   final int line;

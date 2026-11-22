@@ -1,12 +1,14 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/code_category.dart';
 import 'package:fide/models/dry_review.dart';
 import 'package:fide/models/locale_number.dart';
+import 'package:fide/panels/right/analyzer_findings_list.dart';
 import 'package:fide/providers/ai_request.dart';
 import 'package:fide/providers/analyzer_fix_controller.dart';
 import 'package:fide/providers/dry_review_provider.dart';
-import 'package:fide/panels/right/analyzer_findings_list.dart';
 import 'package:fide/widget_services/file_location_row.dart';
 import 'package:fide/widgets/action_card.dart';
+import 'package:fide/widgets/code_category_icon.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/secondary_button.dart';
@@ -18,9 +20,9 @@ import 'package:path/path.dart' as p;
 /// The Repeated Widget Settings review of the project at [projectPath]:
 /// the widget settings it writes more than once; each kind of repetition
 /// with what to do about it, each finding with the code it is written as
-/// and where, a click away in the editor beside the review, and the
-/// deterministic fixes code can make: Fix on a finding, Fix all on a
-/// kind.
+/// and where, in a view or a widget, a click away in the editor beside
+/// the review, and the deterministic fixes code can make: Fix on a
+/// finding, Fix all on a kind.
 class RepeatedSettingsList
     extends AnalyzerFindingsList<DryFindingKind, DryFinding> {
   /// Creates the list of [review]'s findings.
@@ -62,16 +64,27 @@ class RepeatedSettingsList
             Text(finding.kind.noFix, style: AppTextStyle.secondary(context)),
           for (final variant in finding.variants) ...[
             SelectableText(variant.source, style: AppTextStyle.code),
-            for (final location in variant.locations)
-              FileLocationRow(
-                name: location.className ?? p.basename(location.path),
-                path: p.join(projectPath, location.path),
-                line: location.line,
-                rootPath: projectPath,
-              ),
+            for (final location in variant.locations) _rowOf(location),
           ],
         ],
       ),
+    );
+  }
+
+  /// The row of [location]: its class, else its file, with the glyph of
+  /// the code it is in, a view's or a widget's, as File Layout's, said in
+  /// its tooltip.
+  Widget _rowOf(DryLocation location) {
+    final (kind, note) = location.isInView
+        ? (CodeCategory.views, 'In a view')
+        : (CodeCategory.widgets, 'In a widget');
+    return FileLocationRow(
+      name: location.className ?? p.basename(location.path),
+      path: p.join(projectPath, location.path),
+      line: location.line,
+      rootPath: projectPath,
+      icon: kind.icon,
+      note: note,
     );
   }
 

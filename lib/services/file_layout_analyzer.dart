@@ -151,25 +151,8 @@ class FileLayoutAnalyzer {
   /// Reviews the `lib` folder of the project at [projectPath]; synchronous,
   /// so run it off the UI thread.
   FileLayoutReview analyze(String projectPath) {
-    final libPath = p.join(projectPath, ProjectPaths.libFolder);
     final packageName = _packageName(projectPath);
-    final files = {
-      for (final file in ParsedSourceFile.readAll(
-        libPath,
-        ignoreName: ignoreName,
-      ))
-        file.path: file,
-    };
-    final libraries = {
-      for (final file in files.values)
-        if (!file.unit.directives.any((d) => d is PartOfDirective))
-          file.path: _Library(
-            file,
-            files: files,
-            projectPath: projectPath,
-            packageName: packageName,
-          ),
-    };
+    final libraries = _librariesOf(projectPath, packageName);
     final kinds = _Kinds(libraries.values);
     final readsState = _tainted(
       libraries,
@@ -196,7 +179,6 @@ class FileLayoutAnalyzer {
         kinds,
         readsState: readsState.contains(path),
         isPlainDart: !notPlainDart.contains(path),
-        isInViews: FileLayoutReview.isPlaced(CodeCategory.views, relative),
       );
       if (placed == null) continue;
       final (:category, :main) = placed;
@@ -272,6 +254,62 @@ class FileLayoutAnalyzer {
     );
   }
 
+  /// The views of the `lib` folder of the project at [projectPath], by
+  /// project-relative path with `/` separators: each file declaring a
+  /// screen, private or public, wherever it is, or [_isNamedView], with
+  /// its parts; ignored files too, as the comment only keeps a file where
+  /// it is. Synchronous, so run it off the UI thread.
+  Set<String> viewsOf(String projectPath) {
+    final libraries = _librariesOf(projectPath, _packageName(projectPath));
+    final kinds = _Kinds(libraries.values);
+    return {
+      for (final library in libraries.values)
+        if (library.classes.any(kinds.isScreen) ||
+            _isNamedView(library, kinds)) ...[
+          library.relativePath,
+          for (final part in library.parts) _relative(projectPath, part),
+        ],
+    };
+  }
+
+  /// Whether [library] is a view by its name, which the review leaves in
+  /// place: in a views folder, its file or one of its public widgets is
+  /// named as a view (`accounts_view.dart`, `ViewAccounts`).
+  static bool _isNamedView(_Library library, _Kinds kinds) =>
+      FileLayoutReview.isPlaced(CodeCategory.views, library.relativePath) &&
+      (_viewFile.hasMatch(p.basenameWithoutExtension(library.file.path)) ||
+          library.publicTypes.whereType<ClassDeclaration>().any(
+            (declaration) =>
+                kinds.isWidget(declaration) &&
+                _viewName.hasMatch(_Kinds._nameOf(declaration)),
+          ));
+
+  /// The libraries of the `lib` folder of the project at [projectPath],
+  /// whose `package:` imports start with [packageName], by absolute path,
+  /// each read with its parts.
+  static Map<String, _Library> _librariesOf(
+    String projectPath,
+    String? packageName,
+  ) {
+    final files = {
+      for (final file in ParsedSourceFile.readAll(
+        p.join(projectPath, ProjectPaths.libFolder),
+        ignoreName: ignoreName,
+      ))
+        file.path: file,
+    };
+    return {
+      for (final file in files.values)
+        if (!file.unit.directives.any((d) => d is PartOfDirective))
+          file.path: _Library(
+            file,
+            files: files,
+            projectPath: projectPath,
+            packageName: packageName,
+          ),
+    };
+  }
+
   /// [move] as [plan], its plan made alone, has it: with the files moved
   /// along, the Layers issues it fixes, or the one it would add.
   static FileMove _planned(FileMove move, FileLayoutPlan plan) => FileMove(
@@ -291,16 +329,14 @@ class FileLayoutAnalyzer {
   /// the app's entry point or widget, or a file mixing kinds.
   ///
   /// A file declaring a screen is a view; one declaring only widgets and
-  /// their states, none [readsState], a widget, unless it [isInViews] and
-  /// its name or a widget's says it is a view (`accounts_view.dart`,
-  /// `ViewAccounts`); one declaring a type holding data, and no notifier
-  /// nor class of static members only, all [isPlainDart], a model.
+  /// their states, none [readsState], a widget, unless [_isNamedView];
+  /// one declaring a type holding data, and no notifier nor class of
+  /// static members only, all [isPlainDart], a model.
   static ({CodeCategory category, CompilationUnitMember main})? _placeOf(
     _Library library,
     _Kinds kinds, {
     required bool readsState,
     required bool isPlainDart,
-    required bool isInViews,
   }) {
     if (library.declaresMain || library.created.any(_apps.contains)) {
       return null;
@@ -323,12 +359,9 @@ class FileLayoutAnalyzer {
     if (screens.isNotEmpty) {
       return (category: CodeCategory.views, main: mainOf(screens));
     }
-    final namesView =
-        _viewFile.hasMatch(stem) ||
-        widgets.any((widget) => _viewName.hasMatch(_Kinds._nameOf(widget)));
     if (widgets.isNotEmpty &&
         !readsState &&
-        !(isInViews && namesView) &&
+        !_isNamedView(library, kinds) &&
         classes.every(kinds.isWidgetOrState)) {
       return (category: CodeCategory.widgets, main: mainOf(widgets));
     }

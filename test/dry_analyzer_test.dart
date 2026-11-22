@@ -257,6 +257,37 @@ List<Widget> $name(IconData icon, Color color) => [
     expect(found.takenNames, containsAll(['Icon', 'AppIconSize']));
   });
 
+  test('says whether each place is in a view or a widget', () async {
+    write('framework.dart', _framework);
+    for (final (file, name) in [
+      ('home_screen.dart', 'HomeScreen'),
+      ('widgets/score_card.dart', 'ScoreCard'),
+    ]) {
+      write(file, '''
+import '${file.contains('/') ? '../' : ''}framework.dart';
+
+class $name extends StatelessWidget {
+  const $name();
+
+  @override
+  Widget build(BuildContext context) =>
+      const Text('$name', maxLines: 1, overflow: TextOverflow.ellipsis);
+}
+''');
+    }
+
+    final found = await review();
+
+    final places = found.of(DryFindingKind.clone).single.variants.single;
+    expect(
+      {
+        for (final location in places.locations)
+          location.path: location.isInView,
+      },
+      {'lib/home_screen.dart': true, 'lib/widgets/score_card.dart': false},
+    );
+  });
+
   test('a project without repetition has no finding', () async {
     write('framework.dart', _framework);
     write('a.dart', '''

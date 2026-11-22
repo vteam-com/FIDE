@@ -15,6 +15,7 @@ import 'package:fide/models/dry_review.dart';
 import 'package:fide/models/import_graph.dart';
 import 'package:fide/models/unique_name.dart';
 import 'package:fide/services/dart_references.dart';
+import 'package:fide/services/file_layout_analyzer.dart';
 import 'package:path/path.dart' as p;
 
 part 'dry_analyzer.argument.dart';
@@ -36,6 +37,10 @@ part 'dry_analyzer.widget_call.dart';
 /// A setting reading the widget's own state (its fields, parameters and
 /// locals) is compared by shape only, so `Icon(icon, size: AppIconSize.medium)`
 /// matches whatever `icon` is.
+///
+/// Each place says whether it is in a view or in a widget, as the File
+/// Layout review tells them apart ([FileLayoutAnalyzer.viewsOf]), never by
+/// the folder it is in.
 ///
 /// Evaluation: FIDE finds these itself for now; once they prove useful,
 /// the analysis moves into fCheck.
@@ -79,15 +84,18 @@ class DryAnalyzer {
   Future<DryReview> review(String projectPath, String sdkPath) =>
       Isolate.run(() => _review(projectPath, sdkPath));
 
-  /// [review]'s work, on the background isolate: resolves every Dart file
-  /// of `lib`, collects the widgets built, then derives each kind of
-  /// finding from them.
+  /// [review]'s work, on the background isolate: finds the views, resolves
+  /// every Dart file of `lib`, collects the widgets built, then derives
+  /// each kind of finding from them.
   static Future<DryReview> _review(String projectPath, String sdkPath) async {
     final collection = AnalysisContextCollection(
       includedPaths: [p.join(projectPath, 'lib')],
       sdkPath: sdkPath,
     );
-    final collector = _CallCollector(projectPath);
+    final collector = _CallCollector(
+      projectPath,
+      views: const FileLayoutAnalyzer().viewsOf(projectPath),
+    );
     var fileCount = 0;
     // The dependencies between the files, so no fix adds a Layers issue
     final edges = <String, Set<String>>{};

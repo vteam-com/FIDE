@@ -4,8 +4,8 @@ import 'package:fide/widgets/tree_row.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// A place in the code, such as a finding's: [icon], [name], then the
-/// file name and line, the full path as the tooltip; tapping it opens
-/// the file there.
+/// file name and line, the full path and [note] as the tooltip; tapping
+/// it opens the file there.
 class LocationRow extends StatelessWidget {
   /// Creates the row of [line] in the file at [path].
   const LocationRow({
@@ -16,6 +16,7 @@ class LocationRow extends StatelessWidget {
     required this.line,
     this.rootPath,
     this.match,
+    this.note,
     this.onTap,
   });
 
@@ -30,6 +31,10 @@ class LocationRow extends StatelessWidget {
 
   /// What is there.
   final String name;
+
+  /// A line of the tooltip under the path, such as the kind of code the
+  /// place is in; none when null.
+  final String? note;
 
   /// Opens the file at [line].
   final VoidCallback? onTap;
@@ -48,6 +53,7 @@ class LocationRow extends StatelessWidget {
       path: path,
       rootPath: rootPath,
       match: match,
+      note: note,
       trailing: [
         PathText(
           path,

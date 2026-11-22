@@ -6,6 +6,7 @@ import 'package:fide/panels/right/analyzer_findings_list.dart';
 import 'package:fide/providers/analyzer_fix_controller.dart';
 import 'package:fide/widget_services/file_location_row.dart';
 import 'package:fide/widgets/action_card.dart';
+import 'package:fide/widgets/code_category_icon.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/section_title.dart';
@@ -55,7 +56,7 @@ class FileLayoutList extends AnalyzerFindingsList<CodeCategory, FileMove> {
         };
     final along = move.along;
     return ActionCard(
-      icon: _iconOf(move.category),
+      icon: move.category.icon,
       title: p.posix.basename(move.path),
       description:
           'From ${p.posix.dirname(move.path)} to '
@@ -161,11 +162,4 @@ class FileLayoutList extends AnalyzerFindingsList<CodeCategory, FileMove> {
         .move(projectPath, moves, packageName: review.packageName, key: key);
     if (context.mounted) MessageBox.showOutcome(context, outcome);
   }
-
-  /// The glyph of files of [category].
-  static IconData _iconOf(CodeCategory category) => switch (category) {
-    CodeCategory.views => Icons.web_asset,
-    CodeCategory.models => Icons.data_object,
-    _ => Icons.widgets_outlined,
-  };
 }

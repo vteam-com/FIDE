@@ -90,7 +90,11 @@ class PreviewTypeResolver {
   /// The type [name] names in the code of the library at [library],
   /// written after the import prefix [prefix] when not null; null when the
   /// library sees no such type but maybe one of the SDK's.
-  PreviewSymbol? resolve(String name, {required String library, String? prefix}) {
+  PreviewSymbol? resolve(
+    String name, {
+    required String library,
+    String? prefix,
+  }) {
     final scope = _scopeOf(library);
     return prefix == null ? scope.names[name] : scope.prefixed[prefix]?[name];
   }
@@ -143,8 +147,9 @@ class PreviewTypeResolver {
       library: declared.library,
       import: import,
     );
-    for (final MapEntry(key: name, value: declared)
-        in _declared(library).entries) {
+    for (final MapEntry(key: name, value: declared) in _declared(
+      library,
+    ).entries) {
       names[name] = symbol(name, declared, library);
     }
     for (final directive in scanOf(library).imports) {
@@ -178,8 +183,9 @@ class PreviewTypeResolver {
     if (cached != null) return cached;
     _exports[library] = (names: const {}, sdk: const {});
     final names = {
-      for (final MapEntry(key: name, value: declared)
-          in _declared(library).entries)
+      for (final MapEntry(key: name, value: declared) in _declared(
+        library,
+      ).entries)
         if (!_isPrivate(name)) name: declared,
     };
     final sdk = <String>{};
@@ -207,8 +213,7 @@ class PreviewTypeResolver {
     final files = [
       (library, scan),
       for (final part in scan.parts)
-        if (_pathOf(part, from: library) case final path?)
-          (path, scanOf(path)),
+        if (_pathOf(part, from: library) case final path?) (path, scanOf(path)),
     ];
     return {
       for (final (path, file) in files)

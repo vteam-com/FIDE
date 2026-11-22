@@ -4,7 +4,7 @@ part of 'dry_analyzer.dart';
 /// their styling settings, the numbers in those settings, and the numeric
 /// constants the project defines.
 class _CallCollector {
-  _CallCollector(this.projectPath);
+  _CallCollector(this.projectPath, {this.views = const {}});
 
   /// Code standing for state read by a setting, compared by shape only.
   static const String _state = r'$';
@@ -85,6 +85,10 @@ class _CallCollector {
   /// Root of the project, which locations are relative to.
   final String projectPath;
 
+  /// The project-relative paths of its views, the files declaring a
+  /// screen, as [FileLayoutAnalyzer.viewsOf] finds them.
+  final Set<String> views;
+
   /// The widgets built, in file order.
   final List<_WidgetCall> calls = [];
 
@@ -104,7 +108,9 @@ class _CallCollector {
   /// Collects what [result] builds and declares.
   void collect(ResolvedUnitResult result) {
     final unit = result.unit;
-    final path = p.relative(result.path, from: projectPath);
+    final path = p.posix.joinAll(
+      p.split(p.relative(result.path, from: projectPath)),
+    );
     final file = _SourceFile(result);
     for (final library in [
       result.libraryElement,
@@ -145,6 +151,7 @@ class _CallCollector {
           ?.namePart
           .typeName
           .lexeme,
+      isInView: views.contains(path),
     );
     final settings = <String, String>{};
     final sources = <String, String>{};

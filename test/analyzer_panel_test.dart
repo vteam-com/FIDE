@@ -14,8 +14,10 @@ import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/file_mover.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/busy_bar.dart';
+import 'package:fide/widgets/code_category_icon.dart';
 import 'package:fide/widgets/task_button.dart';
 import 'package:fide/widgets/task_ring.dart';
+import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -24,7 +26,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'fake_code_formatter.dart';
 import 'fake_file_content_reader.dart';
 
-/// An `Icon` whose color drifted between two files.
+/// An `Icon` whose color drifted between a view and a widget.
 const DryReview _review = DryReview(
   widgetCount: 12,
   fileCount: 3,
@@ -35,7 +37,12 @@ const DryReview _review = DryReview(
       setting: 'color',
       variants: [
         DryVariant('AppTheme.readable(color, colorScheme)', [
-          DryLocation('lib/widgets/status.dart', 41, className: 'Status'),
+          DryLocation(
+            'lib/ui/status_screen.dart',
+            41,
+            className: 'StatusScreen',
+            isInView: true,
+          ),
         ]),
         DryVariant('color ?? colorScheme.primary', [
           DryLocation('lib/widgets/menu_row.dart', 56, className: 'MenuRow'),
@@ -221,6 +228,32 @@ void main() {
     expect(find.text('Icon · color'), findsOneWidget);
     expect(find.text('color ?? colorScheme.primary'), findsOneWidget);
     expect(find.text('MenuRow'), findsOneWidget);
+  });
+
+  testWidgets('each place shows whether it is in a view or a widget, with '
+      "File Layout's glyphs", (tester) async {
+    await pumpPanel(tester, _review);
+
+    Finder glyphOf(String name) => find.descendant(
+      of: find.ancestor(of: find.text(name), matching: find.byType(TreeRow)),
+      matching: find.byType(Icon),
+    );
+    expect(
+      tester.widget<Icon>(glyphOf('StatusScreen')).icon,
+      CodeCategory.views.icon,
+    );
+    expect(
+      tester.widget<Icon>(glyphOf('MenuRow')).icon,
+      CodeCategory.widgets.icon,
+    );
+    expect(
+      find.byTooltip('lib/ui/status_screen.dart\n\nIn a view'),
+      findsOneWidget,
+    );
+    expect(
+      find.byTooltip('lib/widgets/menu_row.dart\n\nIn a widget'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a place opens its file, the review staying in view', (
