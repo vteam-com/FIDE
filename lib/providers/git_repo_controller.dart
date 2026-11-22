@@ -98,8 +98,8 @@ class GitRepoController extends AsyncNotifier<GitRepoState> {
     }
   });
 
-  /// A commit message the AI writes from the staged changes; empty when
-  /// it writes none. Throws an `AiCancelledException` when [cancel] stops
+  /// A commit message the AI writes from the staged changes, in the style
+  /// of the project's recent ones; empty when it writes none. Throws an `AiCancelledException` when [cancel] stops
   /// it, and a [GitException] worded for the user when the staged changes
   /// can't be read.
   Future<String> writeCommitMessage(AiCancelToken cancel) async {
@@ -109,8 +109,18 @@ class GitRepoController extends AsyncNotifier<GitRepoState> {
     } on GitException catch (e) {
       throw GitException(GitMessages.stagedDiffFailed, e.details);
     }
+    // The project's recent messages show the model its style
+    final recent = await ref
+        .read(gitServiceProvider)
+        .getRecentCommits(projectPath, count: AppMetric.aiCommitStyleExamples);
     cancel.throwIfCancelled();
-    return ref.read(commitMessageWriterProvider).write(diff, cancel: cancel);
+    return ref
+        .read(commitMessageWriterProvider)
+        .write(
+          diff,
+          examples: [for (final commit in recent) commit.message],
+          cancel: cancel,
+        );
   }
 
   /// Stages [files].

@@ -46,6 +46,7 @@
   - every agent tool takes at least one required parameter: qwen3-coder can leave a call with none unclosed (`<function=…>` without `</function>`), which Ollama fails as "XML syntax error … unexpected EOF"
   - the routing above: a question gets read-only tools, quick fixes only when named
   - reference timings to stay at or under: "2+2=" answered in one step without tools, in ~4 s; a question needing one file read ~5 s; a rename in one file 6 steps, ~8 s; upgrading one package through `run_command` ~10 steps, ~12 s; a multi-file Fix Build of 10 errors ~20 steps, ~40 s; the step cap (`AppMetric.aiMaxToolRounds`) stays far above what a task takes
+  - the AI commit message reads a `CommitDigest` of the staged changes (files, documentation and declarations added, test names, then code), never the head of the diff, with the project's recent subjects as its style; re-measure it with `FIDE_AI_REPLAY=12 flutter test test/commit_message_replay_test.dart`, which replays recent commits on the local model: on qwen3-coder, 33% of the hand-written subject's words and its area named 7 times in 12, ~1.7 s each
 
 # Workflow
 

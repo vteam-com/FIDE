@@ -64,7 +64,18 @@ class AppMetric {
 
   /// Most lines the agent's `search` returns.
   static const int aiSearchMaxResults = 50;
+
+  /// Most characters of the staged changes the commit message writer
+  /// reads, as a digest of the whole change.
   static const int aiCommitDiffChars = 12000;
+
+  /// Most recent commit messages the commit message writer is shown as
+  /// the project's style.
+  static const int aiCommitStyleExamples = 5;
+
+  /// Most characters of those recent commit messages.
+  static const int aiCommitStyleChars = 1500;
+
   static const int aiReviewContextChars = 40000;
 
   /// Context window of every model request, in tokens: room for Fix

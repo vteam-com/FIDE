@@ -240,15 +240,15 @@ class GitService {
   }
 
   /// Returns a summary of the staged changes followed by their unified
-  /// diff, so a cut diff still names every staged file; empty when nothing
-  /// is staged.
+  /// diff, a moved file shown as renamed, so a cut diff still names every
+  /// staged file; empty when nothing is staged.
   ///
   /// Throws a [GitException] when git fails.
   Future<String> getStagedDiff(String path) async {
     final output = StringBuffer();
     for (final args in [
-      ['diff', '--cached', '--stat'],
-      ['diff', '--cached'],
+      ['diff', '--cached', '-M', '--stat'],
+      ['diff', '--cached', '-M'],
     ]) {
       final result = await _runChecked(path, args);
       output.writeln(result.stdout.toString().trim());

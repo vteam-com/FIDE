@@ -169,6 +169,17 @@ void main() {
     expect(diff, isNot(contains('other.txt')));
   });
 
+  test('staged diff shows a moved file as renamed', () async {
+    _git(repo.path, ['mv', 'lib/main.dart', 'lib/app.dart']);
+
+    final diff = await const GitService(
+      ProcessRunner(),
+    ).getStagedDiff(repo.path);
+
+    expect(diff, contains('rename from lib/main.dart'));
+    expect(diff, isNot(contains('-committed')));
+  });
+
   test(
     'syncCounts reports commits to push and, after a fetch, to pull',
     () async {
