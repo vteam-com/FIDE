@@ -2,6 +2,20 @@
 
 What changed in each FIDE release, newest first. `tool/release.sh` adds each release's entry: one line per commit since the release before.
 
+## 1.5.0 - 2026-11-22
+
+- Editor: CodeForge gets the SDK's Material localizations again (SdkMaterialLocalizations), imported from the SDK's own library so dart fix no longer rewrites them to material_ui's
+- Analyzer tab: Repeated Widget Settings shows each place in a view or a widget, with File Layout's glyphs, told apart as File Layout does (FileLayoutAnalyzer.viewsOf), never by folder
+- Git panel: a moved or renamed file is one row, new ← old path, staged or not (git pairs unstaged moves on a copy of the index), with its real line counts and diff, Stage/Unstage/Discard acting on both ends; File Layout moves, Split Classes and Repeated Widget Settings never add a Layers issue (ImportGraph judged by fCheck's validateLayers)
+- AI commit message: the model reads a digest of the whole staged change (files, docs and declarations added, test names, then code) and the project's recent subjects as its style, instead of the head of the diff; FIDE_AI_REPLAY replays recent commits on the local model to measure it
+- Analyzer tab: File Layout review moves screens to lib/views, pure widgets to lib/widgets and plain models to lib/models, rewriting every import (Move / Move All)
+- Overview: the CocoaPods check joins the Supported platforms card, shown only with iOS or macOS, instead of its own Swift packages card
+- Blend backdrop: spread its color spots across wide, short previews and images, each cell after the first shuffling and moving them so no pattern repeats
+- Previews by code alone: Generate Previews builds the project's and packages' classes by following imports, no AI fallback; project localizations for previews without their own; no debug banner; button labels are short action names (rule in AGENTS.md)
+- Left panel: Explorer is the first tab; dot files dimmed like hidden folders, keeping their Git colors
+- Code completion and live errors from the Dart language server: completions, hover docs, parameter hints and diagnostics of the code as typed, one dart language-server per project, the open file's diagnostics merged with fCheck's findings, popups styled as menus with outline icons
+- Project header and quality card: one ProjectHeader and ProjectQualityCard for the overview and the Info tab, large at two cards' width and compact in a side panel; side panel sections one larger gap apart
+
 ## 1.4.5 - 2026-11-21
 
 - Title bar: light the quality bulb only for a score below 100% or a warning or error, not for information such as large files
