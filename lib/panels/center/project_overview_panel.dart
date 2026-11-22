@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/cocoa_pods_migration.dart';
 import 'package:fide/models/color_contrast_issues.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/models/locale_number.dart';
@@ -31,7 +32,7 @@ import 'package:material_ui/material_ui.dart';
 /// [CenterView.overview]: the current project's [ProjectHeader], quality
 /// (fCheck's score less what `dart analyze` and the color contrast
 /// analyzer find, over the issues of those and the health checks), code
-/// size, packages still on CocoaPods, supported platforms, tests,
+/// size, supported platforms with the packages still on CocoaPods, tests,
 /// coverage, translations, app icons, architecture and accessibility.
 class ProjectOverviewPanel extends ConsumerWidget {
   /// Creates the overview of the current project.
@@ -173,12 +174,20 @@ class ProjectOverviewPanel extends ConsumerWidget {
     );
   }
 
-  /// Every platform's icon, the project's own ones highlighted.
+  /// Every platform's icon, the project's own ones highlighted; with iOS
+  /// or macOS among them, how far their apps are from Swift Package
+  /// Manager only: the packages and pods still needing CocoaPods, or
+  /// removing it once nothing does.
   Widget _platformsCard(ProjectOverview overview) {
     final platforms = overview.platforms;
     final missing = FlutterPlatform.values.where(
       (platform) => !platforms.contains(platform),
     );
+    // CocoaPods only matters to the Apple apps
+    final cocoaPods = platforms.any((platform) => platform.isApple)
+        ? overview.cocoaPods
+        : null;
+    final podPlatforms = cocoaPods?.podPlatforms ?? const {};
     return StatCard(
       icon: Icons.devices_outlined,
       title: 'Supported platforms',
@@ -200,41 +209,36 @@ class ProjectOverviewPanel extends ConsumerWidget {
             ),
         ],
       ),
+      rows: [
+        if (cocoaPods != null) ...[
+          _cocoaPodsStatus(cocoaPods),
+          ...IssueRow.all(cocoaPods.issues),
+        ],
+      ],
       details: [
         '${platforms.length.localized} of '
             '${FlutterPlatform.values.length.localized} platforms',
         if (missing.isNotEmpty)
           'Not configured: ${missing.map((p) => p.displayName).join(', ')}',
-      ],
-    );
-  }
-
-  /// How far the iOS and macOS apps are from Swift Package Manager only:
-  /// the packages and pods still needing CocoaPods, or removing it once
-  /// nothing does.
-  Widget _swiftPackagesCard(ProjectOverview overview) {
-    final migration = overview.cocoaPods;
-    final podPlatforms = migration.podPlatforms;
-    return StatCard(
-      icon: Icons.apple,
-      title: 'Swift packages',
-      value: migration.isDone
-          ? StatusIndicator.tone(StatusTone.success, label: 'No CocoaPods')
-          : StatusIndicator.tone(
-              StatusTone.warning,
-              label: migration.canRemove
-                  ? 'CocoaPods can go'
-                  : 'Still on CocoaPods',
-            ),
-      rows: IssueRow.all(migration.issues),
-      details: [
         if (podPlatforms.isNotEmpty)
           'Podfile in ${podPlatforms.map((platform) => platform.displayName).join(', ')}'
-        else if (migration.isDone)
+        else if (cocoaPods?.isDone ?? false)
           'Every plugin uses Swift Package Manager',
       ],
     );
   }
+
+  /// Whether the Apple apps of [migration] are off CocoaPods, can drop
+  /// it, or still need it.
+  static Widget _cocoaPodsStatus(CocoaPodsMigration migration) =>
+      migration.isDone
+      ? StatusIndicator.tone(StatusTone.success, label: 'No CocoaPods')
+      : StatusIndicator.tone(
+          StatusTone.warning,
+          label: migration.canRemove
+              ? 'CocoaPods can go'
+              : 'Still on CocoaPods',
+        );
 
   /// The header and one card per measure.
   Widget _overview(WidgetRef ref, ProjectOverview overview) {
@@ -278,8 +282,6 @@ class ProjectOverviewPanel extends ConsumerWidget {
                 '${code.devDependencyCount.localized} dev dependencies',
               ],
             ),
-            if (overview.platforms.any((platform) => platform.isApple))
-              _swiftPackagesCard(overview),
             _platformsCard(overview),
             StatCard(
               icon: Icons.science_outlined,
