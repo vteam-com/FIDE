@@ -15,7 +15,8 @@ class AppColor {
 
   /// The soft spots of color melting into one another over [blendBase]
   /// behind an image preview: unrelated hues scattered out of spectrum
-  /// order, so each region mixes different light, dark and saturated tones.
+  /// order, so each region mixes different light, dark and saturated tones;
+  /// placed in a near-square cell, repeated along a long box.
   static const List<({Alignment center, Color color})> blendSpots = [
     (center: Alignment(-0.85, -0.75), color: Color(0xFFFF6F61)),
     (center: Alignment(0.15, -0.95), color: Color(0xFFFFD166)),

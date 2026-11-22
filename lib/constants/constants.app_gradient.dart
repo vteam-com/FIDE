@@ -8,6 +8,11 @@ class AppGradient {
   /// overlap and melt into one another.
   static const double blendSpotRadius = 0.5;
 
+  /// How far each spot of the blend backdrop moves from its place in each
+  /// cell after the first of a long box, along each axis, in alignment
+  /// units (the cell spans -1 to 1), so the cells don't look repeated.
+  static const double blendSpotJitter = 0.35;
+
   /// Radius as a fraction of the window's shortest side; corners sit beyond
   /// it so they take the full edge shade.
   static const double workspaceRadius = 1.0;
