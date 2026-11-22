@@ -141,7 +141,7 @@ class DryAnalyzer {
         suggestion: suggested == null
             ? 'Extract a shared widget'
             : 'Use ${suggested.location.className} '
-                  '(${suggested.location.path})',
+                  '(${suggested.location.path})${suggested.shared!.addition}',
         fixes: [?use?.fix ?? _Extraction.fixOf(group, takenNames)],
       );
     }

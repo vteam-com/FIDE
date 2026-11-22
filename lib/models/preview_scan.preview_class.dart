@@ -1,17 +1,28 @@
 part of 'preview_scan.dart';
 
-/// A public widget class of a scanned file, with the constructor a
-/// generated preview calls.
+/// A public class of a scanned file, with the constructor code calls to
+/// build it: a widget to preview, or a value a constructor requires.
 @immutable
-class PreviewWidget {
+class PreviewClass {
   /// The class name.
   final String name;
 
   /// The 1-based line of the class.
   final int line;
 
-  /// The name of the constructor a preview calls: empty for the unnamed
-  /// one.
+  /// Whether the class extends a widget class: its superclass's name
+  /// ends with `Widget`, such as `StatelessWidget`.
+  final bool isWidget;
+
+  /// The names of the classes it extends, implements or mixes in, without
+  /// prefix or type arguments.
+  final List<String> supertypes;
+
+  /// Whether code can build it: it is concrete, or abstract with a public
+  /// factory constructor, and has a public constructor or none declared.
+  final bool isConstructible;
+
+  /// The name of the constructor code calls: empty for the unnamed one.
   final String constructorName;
 
   /// Whether that constructor is `const`.
@@ -20,10 +31,13 @@ class PreviewWidget {
   /// That constructor's parameters, in declaration order.
   final List<PreviewParameter> parameters;
 
-  /// Creates the widget.
-  const PreviewWidget({
+  /// Creates the class.
+  const PreviewClass({
     required this.name,
     required this.line,
+    this.isWidget = false,
+    this.supertypes = const [],
+    this.isConstructible = true,
     this.constructorName = '',
     this.isConstConstructor = false,
     this.parameters = const [],

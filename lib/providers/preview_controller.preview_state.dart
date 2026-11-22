@@ -60,6 +60,9 @@ class PreviewState {
   /// Whether previews are being generated for the file's widgets.
   final bool isGenerating;
 
+  /// The widgets the last generation couldn't preview, and why.
+  final List<PreviewSkip> skipped;
+
   /// Which previews the panel lists.
   final PreviewScope scope;
 
@@ -84,11 +87,24 @@ class PreviewState {
     this.logs = const [],
     this.brightness = ThemeMode.system,
     this.isGenerating = false,
+    this.skipped = const [],
     this.scope = PreviewScope.file,
     this.projectFiles = const [],
     this.expanded,
     this.isScanning = false,
   });
+
+  /// The widgets of the file still without a preview that the last
+  /// generation couldn't preview, and why.
+  List<PreviewSkip> get unpreviewable {
+    final missing = {
+      for (final widget in scan.widgetsWithoutPreview) widget.name,
+    };
+    return [
+      for (final skip in skipped)
+        if (missing.contains(skip.widget)) skip,
+    ];
+  }
 
   /// Whether the host is busy starting or reloading.
   bool get isBusy =>
@@ -107,6 +123,7 @@ class PreviewState {
     List<String>? logs,
     ThemeMode? brightness,
     bool? isGenerating,
+    List<PreviewSkip>? skipped,
     PreviewScope? scope,
     List<PreviewFileScan>? projectFiles,
     ({PreviewKey? key})? expanded,
@@ -122,6 +139,7 @@ class PreviewState {
       logs: logs ?? this.logs,
       brightness: brightness ?? this.brightness,
       isGenerating: isGenerating ?? this.isGenerating,
+      skipped: skipped ?? this.skipped,
       scope: scope ?? this.scope,
       projectFiles: projectFiles ?? this.projectFiles,
       expanded: expanded == null ? this.expanded : expanded.key,

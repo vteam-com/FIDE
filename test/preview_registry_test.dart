@@ -1,3 +1,4 @@
+import 'package:fide/models/l10n_config.dart';
 import 'package:fide/services/preview_registry.dart';
 import 'package:fide/services/preview_scanner.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,6 +38,33 @@ Widget cardPreview() => const SizedBox();
         "(function: 'cardPreview', line: 4, "
         "annotation: () => const Preview(name: 'Card'), "
         'build: () => cardPreview()),',
+      ),
+    );
+  });
+
+  test("gives the project's generated localizations to the host", () {
+    final scan = const PreviewScanner().scan(source);
+    const path = '/work/app/lib/widgets/card.dart';
+    expect(
+      registry.source(path, scan),
+      contains('PreviewLocalizationsData? fideLocalizations() => null;'),
+    );
+    const localized = PreviewRegistry(
+      projectPath: '/work/app',
+      packageName: 'app',
+      l10n: L10nConfig(outputClass: 'Strings'),
+    );
+    final localizedSource = localized.source(path, scan);
+    expect(
+      localizedSource,
+      contains(
+        "import 'package:app/l10n/app_localizations.dart' as fide_l10n;",
+      ),
+    );
+    expect(
+      localizedSource,
+      contains(
+        'localizationsDelegates: fide_l10n.Strings.localizationsDelegates,',
       ),
     );
   });

@@ -62,6 +62,8 @@ final GlobalKey<_PreviewHostState> _hostKey = GlobalKey<_PreviewHostState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // No debug banner on any preview, even one building its own MaterialApp
+  WidgetsApp.debugAllowBannerOverride = false;
   _socket = await WebSocket.connect('ws://127.0.0.1:$_port');
   FlutterError.onError = (details) => _send({
     'type': 'log',
@@ -444,7 +446,6 @@ class _PreviewHostState extends State<_PreviewHost> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
       home: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -488,7 +489,10 @@ class _PreviewHostState extends State<_PreviewHost> {
       final themed = child;
       child = Builder(builder: (context) => theme.apply(context, themed));
     }
-    final localizations = preview.localizations?.call();
+    // The project's own localizations for a preview that sets none, so
+    // widgets looking up its generated class render
+    final localizations =
+        preview.localizations?.call() ?? registry.fideLocalizations();
     if (localizations != null) {
       child = Localizations(
         locale:

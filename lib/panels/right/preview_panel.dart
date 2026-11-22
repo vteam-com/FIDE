@@ -8,11 +8,11 @@ import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/preview_controller.dart';
 import 'package:fide/providers/preview_scope_notifier.dart';
 import 'package:fide/providers/right_panel_tab.dart';
-import 'package:fide/services/preview_generator.dart';
 import 'package:fide/services/preview_project_scanner.dart';
 import 'package:fide/widget_services/image_backdrop_buttons.dart';
 import 'package:fide/widget_services/output_panel.dart';
 import 'package:fide/widget_services/preview_viewport.dart';
+import 'package:fide/widgets/bullet_list.dart';
 import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/compact_text_button.dart';
@@ -22,7 +22,6 @@ import 'package:fide/widgets/filter_field.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/primary_button.dart';
-import 'package:fide/widgets/secondary_button.dart';
 import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/theme_mode_buttons.dart';
 import 'package:fide/widgets/tree_branch.dart';
@@ -33,8 +32,8 @@ import 'package:material_ui/material_ui.dart';
 
 /// The Preview tab: the live widget previews of the selected Dart file,
 /// rendered by the project's preview host and updated as files are saved,
-/// with a button generating them for a file without; or every preview of
-/// the project, collapsed, the one expanded rendered.
+/// with a button generating them, by code, for its widgets without; or
+/// every preview of the project, collapsed, the one expanded rendered.
 class PreviewPanel extends ConsumerStatefulWidget {
   /// Creates the panel.
   const PreviewPanel({super.key});
@@ -172,9 +171,10 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
   /// widgets still without one and the errors the previews reported.
   Widget _buildPreviews(PreviewState state) {
     final groups = {for (final item in state.items) item.group};
-    final missing = state.scan.widgetsWithoutPreview.length;
+    final missing = _generatable(state);
     final path = state.filePath ?? '';
     final failure = _buildFailure(state);
+    final unpreviewable = _buildUnpreviewable(state);
     final logs = _buildLogs(state);
     return _buildLazyList([
       if (failure != null) () => failure,
@@ -188,10 +188,12 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
           alignment: Alignment.centerLeft,
           child: CompactTextButton(
             icon: AppIcon.fix,
-            label: 'Generate Previews for ${missing.count('more widget')}',
+            label: _generateLabel,
+            tooltip: 'Add a preview for ${missing.count('widget')} without one',
             onPressed: _generate,
           ),
         ),
+      if (unpreviewable != null) () => unpreviewable,
       if (logs != null) () => logs,
     ]);
   }
@@ -333,7 +335,7 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
   }
 
   /// For a file without previews: generating them for its widgets, by
-  /// code for those whose arguments it can pick, by AI for the others.
+  /// code, and the widgets it couldn't preview.
   Widget _buildGenerate(PreviewState state) {
     final widgets = state.scan.widgets;
     if (widgets.isEmpty) {
@@ -342,8 +344,7 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
         message: 'This file has no widget to preview',
       );
     }
-    final skipped = const PreviewGenerator().skippedIn(state.scan);
-    final generated = widgets.length - skipped.length;
+    final unpreviewable = _buildUnpreviewable(state);
     return EmptyState(
       icon: _icon,
       title: 'No Previews',
@@ -353,24 +354,37 @@ class _PreviewPanelState extends ConsumerState<PreviewPanel> {
       child: Column(
         spacing: AppSpacing.medium,
         children: [
-          if (generated > 0)
+          if (_generatable(state) > 0)
             PrimaryButton(
-              label: 'Generate Previews',
+              label: _generateLabel,
               icon: AppIcon.fix,
               // The Preview tab's ring shows the previews being written
               onPressed: state.isGenerating ? null : _generate,
             ),
-          if (skipped.isNotEmpty)
-            SecondaryButton(
-              label:
-                  'Write previews of '
-                  '${skipped.map((w) => w.name).join(', ')} with AI',
-              icon: AppIcon.ai,
-              onPressed: () => _controller.askAiForPreviews(skipped),
-            ),
+          ?unpreviewable,
         ],
       ),
     );
+  }
+
+  /// The label of the action adding the file's missing previews.
+  static const String _generateLabel = 'Generate Previews';
+
+  /// How many widgets of the file without a preview code can preview.
+  static int _generatable(PreviewState state) =>
+      state.scan.widgetsWithoutPreview.length - state.unpreviewable.length;
+
+  /// The widgets code couldn't preview, each with the argument it couldn't
+  /// build; null when there are none.
+  static Widget? _buildUnpreviewable(PreviewState state) {
+    final skipped = state.unpreviewable;
+    if (skipped.isEmpty) return null;
+    return BulletList([
+      for (final skip in skipped)
+        skip.type.isEmpty
+            ? "${skip.widget}: FIDE can't build its arguments"
+            : "${skip.widget}: FIDE can't build its ${skip.type}",
+    ]);
   }
 
   /// Generates the previews code can write.

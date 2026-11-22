@@ -145,7 +145,8 @@ class LocalizationEntryWidget extends StatelessWidget {
               // One key of Translate with AI
               PrimaryButton(
                 icon: QuickFix.translateKeys.icon,
-                label: 'Translate to ${LanguageCatalog.nameOf(locale)}',
+                // Its row's badge names the language
+                label: 'Translate',
                 onPressed: templateValue == null
                     ? null
                     : () => translate(locale),

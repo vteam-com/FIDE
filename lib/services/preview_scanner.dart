@@ -3,8 +3,9 @@ import 'package:analyzer/source/line_info.dart';
 import 'package:fide/models/dart_parse.dart';
 import 'package:fide/models/preview_scan.dart';
 
-/// Finds the widget previews, widgets and imports of a Dart file from its
-/// syntax alone, so it works on any file, even one that doesn't compile.
+/// Finds the widget previews, classes, enums, type aliases and directives
+/// of a Dart file from its syntax alone, so it works on any file, even one
+/// that doesn't compile.
 ///
 /// A preview is a public top-level function, static method or constructor
 /// without required parameters, annotated with `Preview`, a subclass whose
@@ -25,6 +26,9 @@ class PreviewScanner {
   /// `StatelessWidget` or `ConsumerWidget`.
   static const String _widgetSuffix = 'Widget';
 
+  /// The return type of a function type alias that writes none.
+  static const String _void = 'void';
+
   /// Scans Dart [content]; [PreviewScan.empty] when it can't be parsed.
   PreviewScan scan(String content) {
     final CompilationUnit unit;
@@ -35,8 +39,9 @@ class PreviewScanner {
     }
     final lines = unit.lineInfo;
     final previews = <PreviewDeclaration>[];
-    final widgets = <PreviewWidget>[];
+    final classes = <PreviewClass>[];
     final enums = <String, String>{};
+    final typedefs = <String, String>{};
     final names = <String>{};
     for (final member in unit.declarations) {
       switch (member) {
@@ -49,28 +54,45 @@ class PreviewScanner {
           names.add(name);
           if (_isPrivate(name)) continue;
           previews.addAll(_classPreviews(name, member, lines));
-          final widget = _widget(name, member, lines);
-          if (widget != null) widgets.add(widget);
+          classes.add(_class(name, member, lines));
         case EnumDeclaration():
           final name = member.namePart.typeName.lexeme;
           names.add(name);
           final first = member.body.constants.firstOrNull;
           if (first != null) enums[name] = '$name.${first.name.lexeme}';
+        case GenericTypeAlias():
+          names.add(member.name.lexeme);
+          typedefs[member.name.lexeme] = member.type.toSource();
+        case FunctionTypeAlias():
+          names.add(member.name.lexeme);
+          typedefs[member.name.lexeme] =
+              '${member.returnType?.toSource() ?? _void} '
+              'Function${member.parameters.toSource()}';
         case TopLevelVariableDeclaration():
           names.addAll(member.variables.variables.map((v) => v.name.lexeme));
         default:
       }
     }
+    final directives = unit.directives;
     return PreviewScan(
       previews: previews,
-      widgets: widgets,
+      classes: classes,
       imports: [
-        for (final directive in unit.directives)
-          if (directive is ImportDirective) _import(content, directive),
+        for (final directive in directives.whereType<ImportDirective>())
+          _directive(content, directive),
+      ],
+      exports: [
+        for (final directive in directives.whereType<ExportDirective>())
+          _directive(content, directive),
+      ],
+      parts: [
+        for (final directive in directives.whereType<PartDirective>())
+          ?directive.uri.stringValue,
       ],
       enumFirstValues: enums,
+      typedefs: typedefs,
       topLevelNames: names,
-      isPart: unit.directives.any((d) => d is PartOfDirective),
+      isPart: directives.any((d) => d is PartOfDirective),
     );
   }
 
@@ -161,29 +183,40 @@ class PreviewScanner {
     );
   }
 
-  /// [node] as a widget class with the constructor a preview would call,
-  /// or null when it isn't a concrete widget.
-  PreviewWidget? _widget(String name, ClassDeclaration node, LineInfo lines) {
+  /// [node] as a class with the constructor code calls to build it: the
+  /// unnamed one when public, else the first public one; for an abstract
+  /// class, the first public factory.
+  PreviewClass _class(String name, ClassDeclaration node, LineInfo lines) {
+    final isAbstract =
+        node.abstractKeyword != null || node.sealedKeyword != null;
     final superclass = node.extendsClause?.superclass.name.lexeme;
-    if (superclass == null ||
-        !superclass.endsWith(_widgetSuffix) ||
-        node.abstractKeyword != null) {
-      return null;
-    }
     final constructors = node.body.members
         .whereType<ConstructorDeclaration>()
-        .where((c) => !_isPrivate(c.name?.lexeme ?? ''))
+        .where(
+          (c) =>
+              !_isPrivate(c.name?.lexeme ?? '') &&
+              (!isAbstract || c.factoryKeyword != null),
+        )
         .toList();
     final constructor =
         constructors.where((c) => c.name == null).firstOrNull ??
         constructors.firstOrNull;
-    if (constructor == null && node.body.members.any(_isConstructor)) {
-      // Only private constructors: no preview can build it
-      return null;
-    }
-    return PreviewWidget(
+    return PreviewClass(
       name: name,
       line: lines.getLocation(node.offset).lineNumber,
+      isWidget: superclass?.endsWith(_widgetSuffix) ?? false,
+      supertypes: [
+        ?superclass,
+        for (final type in [
+          ...?node.implementsClause?.interfaces,
+          ...?node.withClause?.mixinTypes,
+        ])
+          type.name.lexeme,
+      ],
+      // Without a constructor declared, a concrete class has the default
+      isConstructible:
+          constructor != null ||
+          (!isAbstract && !node.body.members.any(_isConstructor)),
       constructorName: constructor?.name?.lexeme ?? '',
       isConstConstructor: constructor?.constKeyword != null,
       parameters: [
@@ -211,20 +244,31 @@ class PreviewScanner {
     return null;
   }
 
-  /// [directive] of [content] with the offsets of its URIs in its source.
-  PreviewImport _import(String content, ImportDirective directive) {
+  /// [directive] of [content] with the offsets of its URIs in its source,
+  /// its prefix and the names its `show` and `hide` combinators list.
+  PreviewDirective _directive(String content, NamespaceDirective directive) {
     final start = directive.offset;
     final literals = [
       directive.uri,
       for (final configuration in directive.configurations) configuration.uri,
     ];
-    return PreviewImport(
+    final combinators = directive.combinators;
+    final shows = combinators.whereType<ShowCombinator>();
+    return PreviewDirective(
       source: content.substring(start, directive.end),
       uris: [
         for (final literal in literals)
           if (literal.stringValue case final uri?)
             (start: literal.offset - start, end: literal.end - start, uri: uri),
       ],
+      prefix: directive is ImportDirective ? directive.prefix?.name : null,
+      shown: shows.isEmpty
+          ? null
+          : {for (final show in shows) ...show.shownNames.map((n) => n.name)},
+      hidden: {
+        for (final hide in combinators.whereType<HideCombinator>())
+          ...hide.hiddenNames.map((n) => n.name),
+      },
     );
   }
 

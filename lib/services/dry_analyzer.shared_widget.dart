@@ -43,10 +43,13 @@ class _SharedWidget {
   /// as a `Tooltip`: what using it adds.
   final List<String> wrappers;
 
-  /// What the fix using it says: `Use TruncatedText (adds its Tooltip)`.
-  String get label => wrappers.isEmpty
-      ? 'Use $name'
-      : 'Use $name (adds its ${wrappers.join(', ')})';
+  /// What the fix using it says: `Use TruncatedText`.
+  String get label => 'Use $name';
+
+  /// What using it adds around the repeated widget, for the suggestion:
+  /// `, which adds its Tooltip`; empty when it adds nothing.
+  String get addition =>
+      wrappers.isEmpty ? '' : ', which adds its ${wrappers.join(', ')}';
 
   /// The shared widget [element] declares, its `build` returning the
   /// repeated widget inside [wrappers], when its unnamed constructor's

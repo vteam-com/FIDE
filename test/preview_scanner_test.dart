@@ -117,6 +117,57 @@ void main() {
     expect(scan.topLevelNames, containsAll(['Greeting', 'greetingPreview']));
   });
 
+  test('lists every public class with its supertypes and constructor', () {
+    final scan = const PreviewScanner().scan('''
+import 'a.dart' as a show A, B;
+export 'src/b.dart' hide Hidden;
+part 'models.part.dart';
+
+abstract class Repository {}
+abstract class Store { factory Store.memory() = MemoryStore; }
+class MemoryStore with Logging implements Store, Repository {}
+class Locked { Locked._(); }
+class _Private {}
+
+typedef OnPick = void Function(String id);
+typedef void OnDrop(int index);
+''');
+    expect(scan.classes.map((c) => c.name), [
+      'Repository',
+      'Store',
+      'MemoryStore',
+      'Locked',
+    ]);
+    expect(scan.classes.map((c) => c.isConstructible), [
+      false,
+      true,
+      true,
+      false,
+    ]);
+    expect(scan.classNamed('Store')?.constructorCall, 'Store.memory');
+    expect(scan.classNamed('MemoryStore')?.supertypes, [
+      'Store',
+      'Repository',
+      'Logging',
+    ]);
+    expect(scan.widgets, isEmpty);
+    expect(scan.typedefs, {
+      'OnPick': 'void Function(String id)',
+      'OnDrop': 'void Function(int index)',
+    });
+    final import = scan.imports.single;
+    expect(
+      (import.prefix, import.shows('A'), import.shows('C')),
+      ('a', true, false),
+    );
+    final export = scan.exports.single;
+    expect(
+      (export.uri, export.shows('B'), export.shows('Hidden')),
+      ('src/b.dart', true, false),
+    );
+    expect(scan.parts, ['models.part.dart']);
+  });
+
   test('tells a part file', () {
     expect(const PreviewScanner().scan("part of 'a.dart';").isPart, isTrue);
     expect(scan.isPart, isFalse);

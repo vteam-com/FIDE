@@ -148,8 +148,8 @@ void main() {
     expect(rows, orderedEquals([...rows]..sort()));
     expect(find.text('Hi'), findsOneWidget);
     expect(find.text('Missing'), findsOneWidget);
-    expect(find.text('Translate to German'), findsOneWidget);
-    expect(find.text('Translate to Spanish'), findsNothing);
+    // Only German's row offers it
+    expect(find.text('Translate'), findsOneWidget);
     // The app shows the French text in Spanish, as the description says
     expect(find.text('Salut'), findsNWidgets(2));
     expect(

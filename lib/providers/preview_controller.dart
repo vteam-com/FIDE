@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:fide/models/preview_frame.dart';
@@ -8,7 +9,6 @@ import 'package:fide/models/preview_scan.dart';
 import 'package:fide/models/preview_scope.dart';
 import 'package:fide/models/preview_settings.dart';
 import 'package:fide/models/readable_error.dart';
-import 'package:fide/providers/ai_request.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/preview_scope_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
@@ -166,22 +166,33 @@ class PreviewController extends Notifier<PreviewState> {
   /// Forgets why the previews failed, until they fail again.
   void clearFailure() => state = state.copyWith(message: '');
 
-  /// Adds a preview to the file for each widget that has none and whose
-  /// arguments can be picked from their types; the saved file then
-  /// reloads the previews. Returns what was generated.
+  /// Adds a preview to the file for each widget that has none, by code
+  /// alone (see [PreviewGenerator]); the saved file then reloads the
+  /// previews, and the widgets it couldn't preview show why. Returns what
+  /// was generated.
   Future<PreviewGeneration?> generatePreviews() async {
     final path = state.filePath;
-    if (path == null) return null;
-    state = state.copyWith(isGenerating: true);
+    final project = _projectPath;
+    if (path == null || project == null) return null;
+    state = state.copyWith(isGenerating: true, skipped: const []);
     PreviewGeneration? generation;
     try {
-      await _editFile(path, (content) {
-        final result = generation = const PreviewGenerator().generate(
-          content,
-          const PreviewScanner().scan(content),
+      final content = await ref.read(fileContentReaderProvider).read(path);
+      final result = generation = await const PreviewGenerator().generateFile(
+        projectPath: project,
+        path: path,
+        content: content,
+      );
+      if (result.added.isNotEmpty) {
+        // Written only over the content it was generated from
+        await _editFile(
+          path,
+          (current) => current == content ? result.content : null,
         );
-        return result.added.isEmpty ? null : result.content;
-      });
+      }
+      if (ref.mounted && state.filePath == path) {
+        state = state.copyWith(skipped: result.skipped);
+      }
     } finally {
       if (ref.mounted) state = state.copyWith(isGenerating: false);
     }
@@ -218,26 +229,6 @@ class PreviewController extends Notifier<PreviewState> {
     await ref
         .read(openDocumentsProvider.notifier)
         .applyFileEdit(path, edit, formatter: ref.read(codeFormatterProvider));
-  }
-
-  /// Has the AI panel write previews for [widgets], whose arguments need
-  /// sample values only someone who knows the code can pick.
-  void askAiForPreviews(List<PreviewWidget> widgets) {
-    final path = state.filePath;
-    if (path == null || widgets.isEmpty) return;
-    final project = _projectPath;
-    final file = project == null ? path : p.relative(path, from: project);
-    final names = widgets.map((widget) => widget.name).join(', ');
-    ref
-        .read(aiRequestsProvider)
-        .ask(
-          'In $file, add a widget preview for each of these widgets: $names. '
-          'For each one, write a public top-level function returning the '
-          "widget, annotated with @Preview(name: '<widget name>') from "
-          "'${PreviewGenerator.previewImport}', and build its required "
-          'arguments with realistic sample values. Don\'t change the '
-          'widgets themselves.',
-        );
   }
 
   /// Runs [job] after the jobs before it, so starts and reloads never
@@ -428,14 +419,19 @@ class PreviewController extends Notifier<PreviewState> {
     state = state.copyWith(status: PreviewStatus.ready);
   }
 
-  /// The registry of the project at [projectPath].
+  /// The registry of the project at [projectPath], with its generated
+  /// localizations when they exist.
   Future<PreviewRegistry> _registry(String projectPath) async {
-    final name = await ref
-        .read(projectConfigReaderProvider)
-        .packageName(projectPath);
+    final config = ref.read(projectConfigReaderProvider);
+    final name = await config.packageName(projectPath);
+    final l10n = await config.l10nConfig(projectPath);
+    final hasL10n =
+        !l10n.syntheticPackage &&
+        await File(l10n.generatedPathIn(projectPath)).exists();
     return PreviewRegistry(
       projectPath: projectPath,
       packageName: name ?? p.basename(projectPath),
+      l10n: hasL10n ? l10n : null,
     );
   }
 

@@ -167,4 +167,30 @@ class Plain extends StatelessWidget {
     expect(tester.takeException(), isNull);
     expect(find.text('Generate Previews'), findsOneWidget);
   });
+
+  testWidgets("tells the widgets code can't preview, without AI", (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      PreviewState(
+        filePath: '$_project/lib/user_card.dart',
+        status: PreviewStatus.noPreviews,
+        scan: _scan('''
+class UserCard extends StatelessWidget {
+  const UserCard({super.key, required this.user});
+  final User user;
+}
+'''),
+        skipped: const [(widget: 'UserCard', type: 'User')],
+      ),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text('Generate Previews'), findsNothing);
+    expect(
+      find.textContaining("UserCard: FIDE can't build its User"),
+      findsOneWidget,
+    );
+    expect(find.textContaining('AI'), findsNothing);
+  });
 }
