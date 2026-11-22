@@ -106,6 +106,18 @@ class AppTheme {
     );
   }
 
+  /// The app's theme of [brightness], [lightTheme] or [darkTheme], built
+  /// once: the theme a view animating from one to the other ends on, for
+  /// a widget that reads its colors only once.
+  static ThemeData of(Brightness brightness) =>
+      brightness == Brightness.dark ? _dark : _light;
+
+  /// [darkTheme], built once for [of].
+  static final ThemeData _dark = darkTheme;
+
+  /// [lightTheme], built once for [of].
+  static final ThemeData _light = lightTheme;
+
   /// Least contrast ratio of text against its background, WCAG 2 level AA.
   static const double minTextContrast = WcagColor.minTextContrast;
 
@@ -166,8 +178,11 @@ class AppTheme {
 
   /// The fill of the selected entry of a list, tree or grid.
   static Color selectedFill(BuildContext context) =>
-      Theme.of(context).colorScheme.primaryContainer
-          .withValues(alpha: AppOpacity.divider);
+      selectedFillIn(Theme.of(context).colorScheme);
+
+  /// [selectedFill] in [colorScheme].
+  static Color selectedFillIn(ColorScheme colorScheme) =>
+      colorScheme.primaryContainer.withValues(alpha: AppOpacity.divider);
 
   /// Radial gradient the workspace panel islands float on.
   ///

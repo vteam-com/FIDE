@@ -75,6 +75,10 @@ class AppSize {
   static const double transparencySquare = 6;
   static const double compactTextButtonMinWidth = 50;
   static const double compactTextButtonHeight = 28;
+
+  /// Height of one completion in the code editor's list: a tree row, as
+  /// the outline draws its symbols, with room around it.
+  static const double completionRowHeight = 28;
   static const double initialSidePanelWidth = 250;
 
   /// Narrowest the left and right panels can be dragged.

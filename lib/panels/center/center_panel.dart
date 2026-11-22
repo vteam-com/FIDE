@@ -7,9 +7,11 @@ import 'package:fide/panels/center/project_overview_panel.dart';
 import 'package:fide/panels/center/terminal_panel.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/center_view.dart';
+import 'package:fide/providers/dart_language_server_provider.dart';
 import 'package:fide/providers/side_panel.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/widget_services/panel_island.dart';
+import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/resizable_splitter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -66,6 +68,21 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
     return _terminalHeight.clamp(AppSize.terminalMinHeight, _maxTerminalHeight);
   }
 
+  /// The editor of [filePath], once the project's Dart language server
+  /// started, or couldn't, which takes a fraction of a second the first
+  /// time; the editor uses that server for as long as it lives, so a new
+  /// server makes a new editor.
+  Widget _editorOf(String filePath) =>
+      switch (ref.watch(dartLanguageServerProvider)) {
+        AsyncValue(isLoading: true) => const LoadingIndicator(),
+        AsyncValue(:final value) => EditorScreen(
+          key: ValueKey(value),
+          filePath: filePath,
+          languageServer: value,
+          onClose: widget.onClose,
+        ),
+      };
+
   @override
   Widget build(BuildContext context) {
     // Only the active file's path: its text and caret change on each edit
@@ -95,10 +112,7 @@ class _CenterPanelState extends ConsumerState<CenterPanel> {
       CenterView.appIcons => const AppIconsPanel(),
       CenterView.architecture => const ArchitecturePanel(),
       CenterView.accessibility => const AccessibilityPanel(),
-      null when activeFile != null => EditorScreen(
-        filePath: activeFile,
-        onClose: widget.onClose,
-      ),
+      null when activeFile != null => _editorOf(activeFile),
       null => const ProjectOverviewPanel(),
     };
 

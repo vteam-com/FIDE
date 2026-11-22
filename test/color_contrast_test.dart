@@ -1,8 +1,11 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/git_file_status.dart';
+import 'package:fide/models/outline_kind.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/panels/center/editor/editor_popup_style.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/git_file_status_style.dart';
+import 'package:fide/widgets/outline_kind_style.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -77,6 +80,39 @@ void main() {
         final color = style.color;
         if (color == null) continue;
         expectContrast(color, surface, AppTheme.minTextContrast, token);
+      }
+    });
+
+    test('the $brightness code editor popups read', () {
+      final hover = EditorPopupStyle.hover(theme);
+      final suggestions = EditorPopupStyle.suggestions(theme);
+      final background = EditorPopupStyle.background(colorScheme);
+      expect(hover.backgroundColor, background);
+      expect(suggestions.backgroundColor, background);
+      // A completion row fills itself when selected, as a tree row does
+      final fills = {
+        'popup': background,
+        'selected completion': Color.alphaBlend(
+          AppTheme.selectedFillIn(colorScheme),
+          background,
+        ),
+      };
+      for (final MapEntry(key: name, value: fill) in fills.entries) {
+        for (final MapEntry(key: text, value: color) in {
+          'hover text': hover.textStyle.color!,
+          'completion name': suggestions.textStyle.color!,
+          'completion detail': colorScheme.onSurfaceVariant,
+        }.entries) {
+          expectContrast(color, fill, AppTheme.minTextContrast, '$text, $name');
+        }
+        for (final kind in OutlineKind.values) {
+          expectContrast(
+            kind.colorIn(colorScheme),
+            fill,
+            AppTheme.minGlyphContrast,
+            '${kind.name} completion icon, $name',
+          );
+        }
       }
     });
 

@@ -5,6 +5,7 @@ import 'package:fide/models/document_state.dart';
 import 'package:fide/models/editor_diff_outcome.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/services/code_formatter.dart';
+import 'package:fide/services/dart_language_server.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:flutter/widgets.dart';
 import 'package:logging/logging.dart';
@@ -15,21 +16,37 @@ import 'package:logging/logging.dart';
 /// open documents; a caret move is not, as it changes no text: the caret
 /// is published when the session leaves the file (see [load] and
 /// [dispose]). Listeners are told of each change.
+///
+/// With a Dart language server, each Dart file of the project loaded is
+/// shown to it, which then completes and checks the text as typed.
 class EditorSession extends ChangeNotifier {
   /// Creates a session publishing to the open documents, formatting with
-  /// the code formatter and diffing against HEAD with the git service.
+  /// the code formatter, diffing against HEAD with the git service, and
+  /// showing its Dart files to [languageServer] when there is one.
   EditorSession({
     required this._documents,
     required this._formatter,
     required this._git,
-  }) {
+    DartLanguageServer? languageServer,
+  }) : _languageServer = languageServer,
+       code = CodeForgeController(lspConfig: languageServer?.config) {
+    // Opening a file, CodeForge would show the server the file as saved,
+    // read from disk, unless it is served from a URL
+    if (languageServer != null) code.fileUrl = _servedFromEditor;
     code.addListener(_onCodeChanged);
   }
 
+  /// The [CodeForgeController.fileUrl] telling CodeForge that the text is
+  /// the editor's own, so it shows the language server the file loaded,
+  /// unsaved edits included.
+  static const String _servedFromEditor = 'fide-editor:';
+
   /// The editor's text and selection.
-  final CodeForgeController code = CodeForgeController();
+  final CodeForgeController code;
 
   final OpenDocumentsNotifier _documents;
+
+  final DartLanguageServer? _languageServer;
 
   final CodeFormatter _formatter;
 
@@ -109,6 +126,7 @@ class EditorSession extends ChangeNotifier {
     _publishSelection();
     _filePath = document.filePath;
     _quietly(() => code.text = document.content);
+    _showToLanguageServer();
     restoreSelection(document.selection);
     _publishedVersion = code.contentVersion;
     _publishedSelection = document.selection;
@@ -142,8 +160,8 @@ class EditorSession extends ChangeNotifier {
   }
 
   /// Writes unsaved edits to disk at once, as the closing editor can
-  /// neither wait nor report, publishes the caret, then releases the
-  /// controller.
+  /// neither wait nor report, publishes the caret, stops showing the file
+  /// to the language server, then releases the controller.
   @override
   void dispose() {
     _isDisposed = true;
@@ -156,6 +174,7 @@ class EditorSession extends ChangeNotifier {
         _logger.warning('Error auto-saving file on close: $e');
       }
     }
+    if (code.openedFile case final shown?) _languageServer?.close(shown);
     code.dispose();
     super.dispose();
   }
@@ -205,6 +224,24 @@ class EditorSession extends ChangeNotifier {
     scheduleMicrotask(() {
       if (documents.mounted) documents.update(filePath, selection: selection);
     });
+  }
+
+  /// Shows [filePath] to the language server when it analyzes the file,
+  /// with the text just loaded. The file shown before stops being shown,
+  /// else the server would keep analyzing it as the editor left it rather
+  /// than as saved, even once changed on disk.
+  void _showToLanguageServer() {
+    final server = _languageServer;
+    if (server == null) return;
+    final shown = code.openedFile;
+    if (server.analyzes(_filePath)) {
+      // CodeForge stops showing the file shown before itself; the text
+      // just loaded goes to the server with the file
+      code.openFile = _filePath;
+    } else if (shown != null) {
+      code.openFile = null;
+      server.close(shown);
+    }
   }
 
   /// Runs [change] on [code] without publishing it as an edit; the caret

@@ -8,6 +8,9 @@ import 'package:fide/models/editor_search.dart';
 import 'package:fide/models/readable_error.dart';
 import 'package:fide/models/text_offsets.dart';
 import 'package:fide/panels/center/editor/code_folding.dart';
+import 'package:fide/panels/center/editor/completion_row.dart';
+import 'package:fide/panels/center/editor/editor_diagnostics.dart';
+import 'package:fide/panels/center/editor/editor_popup_style.dart';
 import 'package:fide/panels/center/editor/editor_screen_audio_view.dart';
 import 'package:fide/panels/center/editor/editor_screen_font_view.dart';
 import 'package:fide/panels/center/editor/editor_screen_header.dart';
@@ -19,7 +22,6 @@ import 'package:fide/panels/center/editor/editor_screen_status_bar.dart';
 import 'package:fide/panels/center/editor/editor_screen_unsupported_file_view.dart';
 import 'package:fide/panels/center/editor/editor_search_controller.dart';
 import 'package:fide/panels/center/editor/editor_session.dart';
-import 'package:fide/panels/center/editor/quality_diagnostics.dart';
 import 'package:fide/providers/active_editor.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
@@ -27,6 +29,7 @@ import 'package:fide/providers/markdown_preview_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/providers/ui_state_providers.dart';
 import 'package:fide/services/code_formatter.dart';
+import 'package:fide/services/dart_language_server.dart';
 import 'package:fide/services/editor_commands.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/reference_finder.dart';
@@ -37,6 +40,10 @@ import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
+// The SDK's Material library, for the localizations of the widgets that
+// CodeForge's markdown cards still build with it
+// ignore: deprecated_member_use
+import 'package:flutter/material.dart' as sdk show DefaultMaterialLocalizations;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
@@ -49,12 +56,26 @@ import 'package:path/path.dart' as p;
 /// and caret when the file changes, and watches only the document's
 /// fields it renders, so edits don't rebuild it through the open
 /// documents.
+///
+/// With the project's Dart language server, it completes the code, shows
+/// the documentation of what the pointer rests on and the parameters of
+/// the call typed, and underlines the problems of the code as typed.
 class EditorScreen extends ConsumerStatefulWidget {
-  /// Creates the editor of the open [filePath].
-  const EditorScreen({super.key, required this.filePath, this.onClose});
+  /// Creates the editor of the open [filePath], using [languageServer]
+  /// when there is one.
+  const EditorScreen({
+    super.key,
+    required this.filePath,
+    this.languageServer,
+    this.onClose,
+  });
 
   /// The open file to show.
   final String filePath;
+
+  /// The project's Dart language server, which the editor uses for as
+  /// long as it lives; none when null.
+  final DartLanguageServer? languageServer;
 
   /// Closes the editor's file, from its header's Close or a command.
   final VoidCallback? onClose;
@@ -104,7 +125,15 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     documents: ref.read(openDocumentsProvider.notifier),
     formatter: ref.read(codeFormatterProvider),
     git: ref.read(gitServiceProvider),
+    languageServer: widget.languageServer,
   )..addListener(_onSessionChanged);
+
+  /// The problems the editor underlines: the language server's and the
+  /// project's quality findings.
+  late final EditorDiagnostics _diagnostics = EditorDiagnostics(
+    _codeController,
+    server: widget.languageServer?.diagnostics,
+  );
 
   /// Find and replace in the editor's text.
   late final EditorSearchController _search = EditorSearchController(
@@ -134,9 +163,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
     _loadDocument();
 
-    _codeController.showFindings(ref.read(qualityIssuesProvider), _currentFile);
+    _diagnostics.show(_currentFile, ref.read(qualityIssuesProvider));
     ref.listenManual(qualityIssuesProvider, (_, issues) {
-      _codeController.showFindings(issues, _currentFile);
+      _diagnostics.show(_currentFile, issues);
       setState(() {}); // The status bar shows the cursor line's findings
     });
 
@@ -166,6 +195,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       ..removeListener(_onSearchChanged)
       ..dispose();
     _searchKeysFocusNode.dispose();
+    _diagnostics.dispose();
     // Auto-saves unsaved changes
     _session
       ..removeListener(_onSessionChanged)
@@ -185,10 +215,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       _showsLine = false;
       _mediaSave = null;
       _loadDocument();
-      _codeController.showFindings(
-        ref.read(qualityIssuesProvider),
-        _currentFile,
-      );
+      _diagnostics.show(_currentFile, ref.read(qualityIssuesProvider));
       setState(() => _isLoading = false);
 
       // Set selection safely after the build cycle, checking mounted status and not disposed
@@ -331,6 +358,11 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
 
   /// The code editor with its find bar and status bar.
   Widget _buildCodeView() {
+    // CodeForge reads its popups' styles once, so a new theme makes a new
+    // one, styled by the theme a theme change animates to, not by a frame
+    // of the animation
+    final brightness = Theme.of(context).brightness;
+    final popupTheme = AppTheme.of(brightness);
     // ignore: deprecated_member_use
     return KeyboardListener(
       focusNode: _searchKeysFocusNode,
@@ -362,15 +394,35 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
                 child: Listener(
                   onPointerDown: _onCodePointerDown,
                   onPointerUp: _onCodePointerUp,
-                  child: CodeForge(
-                    controller: _codeController,
-                    language:
-                        _document?.language ??
-                        FileTypeUtils.languageForFile(_currentFile),
-                    gutterStyle: GutterStyle(
-                      lineNumberStyle: AppTextStyle.lineNumber(context),
+                  // CodeForge's documentation cards are built with the
+                  // SDK's Material library, whose localizations differ
+                  // from the app's material_ui ones
+                  child: Localizations.override(
+                    context: context,
+                    delegates: const [
+                      sdk.DefaultMaterialLocalizations.delegate,
+                    ],
+                    child: CodeForge(
+                      key: ValueKey(brightness),
+                      controller: _codeController,
+                      // With a language server CodeForge needs the
+                      // file, which the session already shows it, if any
+                      filePath: _codeController.openedFile ?? '',
+                      language:
+                          _document?.language ??
+                          FileTypeUtils.languageForFile(_currentFile),
+                      gutterStyle: GutterStyle(
+                        lineNumberStyle: AppTextStyle.lineNumber(context),
+                      ),
+                      editorTheme: _getCodeTheme(),
+                      suggestionStyle: EditorPopupStyle.suggestions(popupTheme),
+                      lspSuggestionBuilder: (_, completion, isSelected) =>
+                          CompletionRow(
+                            completion: completion,
+                            isSelected: isSelected,
+                          ),
+                      hoverDetailsStyle: EditorPopupStyle.hover(popupTheme),
                     ),
-                    editorTheme: _getCodeTheme(),
                   ),
                 ),
               ),
@@ -384,7 +436,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
               regionsExpanded: _regionsExpanded,
               currentLineNumber: _getCurrentLineNumber(),
               currentColumnNumber: _getCurrentColumnNumber(),
-              findings: _codeController.findingsAt(_getCurrentLineNumber() - 1),
+              findings: _diagnostics.onLine(_getCurrentLineNumber() - 1),
               currentMatchIndex: _search.currentIndex,
               matchCount: _search.matchCount,
               canFormat: !_showDiffView && _session.canFormat,

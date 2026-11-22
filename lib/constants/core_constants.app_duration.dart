@@ -58,5 +58,15 @@ class AppDuration {
   /// not once per line or word.
   static const Duration outputLogPublish = Duration(milliseconds: 50);
 
+  /// Longest the Dart language server may take to start, Dart SDK lookup
+  /// included, before the editor opens without it; it starts in well
+  /// under a second.
+  static const Duration languageServerStart = Duration(seconds: 10);
+
+  /// Least time the Dart language server must have run for it to start
+  /// again once it stops by itself: one stopping sooner would only stop
+  /// again.
+  static const Duration languageServerMinUptime = Duration(minutes: 1);
+
   const AppDuration._();
 }

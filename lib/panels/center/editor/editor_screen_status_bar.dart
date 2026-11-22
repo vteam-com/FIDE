@@ -28,8 +28,8 @@ class EditorScreenStatusBar extends StatelessWidget {
   final int currentMatchIndex;
   final String fileLanguage;
 
-  /// The fCheck findings on the cursor line, with their most severe tone;
-  /// none when null.
+  /// The diagnostics on the cursor line, the Dart language server's and
+  /// the quality findings, with their most severe tone; none when null.
   final ({StatusTone tone, String message})? findings;
   final int matchCount;
   final VoidCallback onFormatFile;
