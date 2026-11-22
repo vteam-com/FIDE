@@ -4,10 +4,12 @@ import 'dart:typed_data';
 import 'package:fide/constants/core_constants.dart';
 
 /// Reads and writes the content of project files: text, refusing files
-/// too big to edit, and bytes.
+/// too big to edit, and bytes; deletes the files a project-wide edit
+/// moves.
 ///
 /// Kept apart from the tree models so they stay plain data, and next to
-/// `FileEntryService`, which creates, renames and deletes the entries.
+/// `FileEntryService`, which creates, renames and deletes the entries the
+/// user picks.
 /// Notifiers and widgets go through it instead of `dart:io` so tests can
 /// fake the disk.
 class FileContentReader {
@@ -55,6 +57,15 @@ class FileContentReader {
     final file = File(filePath);
     await file.parent.create(recursive: true);
     await file.writeAsString(content);
+  }
+
+  /// Deletes the file at [filePath], moved by a project-wide edit, then
+  /// its folder when that is left empty.
+  Future<void> delete(String filePath) async {
+    final file = File(filePath);
+    await file.delete();
+    final folder = file.parent;
+    if (await folder.list().isEmpty) await folder.delete();
   }
 
   /// [write] without waiting, for a caller that is closing and can't.

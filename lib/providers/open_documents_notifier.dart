@@ -110,6 +110,33 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
     return files;
   }
 
+  /// Applies a project-wide edit moving files, [moves] giving each one's
+  /// new absolute path by its current one: [edit]'s files are written as
+  /// [applyEdits] writes them, the moved ones among them at their new
+  /// path, then the moved files are deleted where they were, and a tab
+  /// showing one shows it at its new path, in the same place.
+  Future<Map<String, String>> applyMoves(
+    Map<String, String> moves,
+    Future<Map<String, String>> Function() edit,
+  ) async {
+    final files = await applyEdits(edit);
+    for (final path in moves.keys) {
+      await reader.delete(path);
+    }
+    _show([
+      for (final document in state.documents)
+        if (moves[document.filePath] case final moved?)
+          DocumentState(
+            filePath: moved,
+            content: files[moved] ?? document.content,
+            language: document.language,
+          )
+        else
+          document,
+    ], state.activeIndex);
+    return files;
+  }
+
   /// Rewrites the file at [path] with what [edit] makes of its saved text,
   /// formatted by [formatter], through [applyEdits]; returns the text
   /// [edit] made and the formatted text written, or null, writing

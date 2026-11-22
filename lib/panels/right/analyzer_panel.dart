@@ -1,275 +1,115 @@
-import 'package:fide/constants/constants.dart';
+import 'package:fide/models/analyzer_review.dart';
 import 'package:fide/models/dry_review.dart';
+import 'package:fide/models/file_layout_review.dart';
 import 'package:fide/models/locale_number.dart';
-import 'package:fide/providers/ai_request.dart';
+import 'package:fide/panels/right/file_layout_list.dart';
+import 'package:fide/panels/right/repeated_settings_list.dart';
+import 'package:fide/providers/analyzer_review_notifier.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/dry_fix_controller.dart';
 import 'package:fide/providers/dry_review_provider.dart';
-import 'package:fide/providers/editor_navigation.dart';
-import 'package:fide/widgets/action_card.dart';
-import 'package:fide/widgets/empty_state.dart';
-import 'package:fide/widgets/file_icon_utils.dart';
-import 'package:fide/widgets/location_row.dart';
-import 'package:fide/widgets/message_box.dart';
+import 'package:fide/providers/file_layout_review_provider.dart';
+import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/panel_header.dart';
-import 'package:fide/widgets/panel_scroll_view.dart';
-import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/project_analysis_view.dart';
 import 'package:fide/widgets/refresh_button.dart';
-import 'package:fide/widgets/secondary_button.dart';
-import 'package:fide/widgets/section_title.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:path/path.dart' as p;
 
-/// The Analyzer tab: the open project's Repeated Widget Settings, the
-/// widget settings it writes more than once; each kind of repetition
-/// with what to do about it, each finding with the code it is written as
-/// and where, a click away in the editor beside the review, and the
-/// deterministic fixes code can make: Fix on a finding, Fix all on a
-/// kind.
-class AnalyzerPanel extends ConsumerWidget {
-  /// Creates the review of the open project.
+/// The Analyzer tab: one of the open project's refactoring reviews,
+/// picked in its header, each with the deterministic changes code can
+/// make: the File Layout, the files outside the folder their kind belongs
+/// in, moved there with Move; the Repeated Widget Settings, the widget
+/// settings it writes more than once, removed with Fix.
+class AnalyzerPanel extends ConsumerStatefulWidget {
+  /// Creates the reviews of the open project.
   const AnalyzerPanel({super.key});
 
-  /// The review's name, atop the tab; the AI's D.R.Y. review is fCheck's
-  /// duplicate code, another review.
-  static const String title = 'Repeated Widget Settings';
+  @override
+  ConsumerState<AnalyzerPanel> createState() => _AnalyzerPanelState();
+}
+
+class _AnalyzerPanelState extends ConsumerState<AnalyzerPanel> {
+  @override
+  void initState() {
+    super.initState();
+    ref.read(analyzerReviewProvider.notifier).load();
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final projectPath = ref.watch(currentProjectPathProvider);
     if (projectPath == null) return const NoProjectPlaceholder();
-    final analysis = ref.watch(dryReviewProvider);
-    final review = analysis.value;
-    final running = ref.watch(dryFixControllerProvider);
+    return switch (ref.watch(analyzerReviewProvider)) {
+      AnalyzerReview.layout => _review<FileLayoutReview>(
+        AnalyzerReview.layout,
+        fileLayoutReviewProvider,
+        subtitle: (review) =>
+            '${review.moves.length.count('file')} to move, of '
+            '${review.fileCount}',
+        loadingMessage: 'Placing the files of lib…',
+        builder: (review) =>
+            FileLayoutList(projectPath: projectPath, review: review),
+      ),
+      AnalyzerReview.repeated => _review<DryReview>(
+        AnalyzerReview.repeated,
+        dryReviewProvider,
+        subtitle: (review) =>
+            '${review.findings.length.count('finding')} in '
+            '${review.fileCount.count('file')}',
+        loadingMessage: 'Comparing the widgets of lib…',
+        builder: (review) =>
+            RepeatedSettingsList(projectPath: projectPath, review: review),
+      ),
+    };
+  }
 
+  /// The tab showing [shown], its review read from [provider]: its name
+  /// and [subtitle] atop, with the reviews to pick from and Refresh, then
+  /// what [builder] makes of it, or [loadingMessage] before the first
+  /// result, the tab's ring showing it running.
+  Widget _review<T extends Object>(
+    AnalyzerReview shown,
+    FutureProvider<T?> provider, {
+    required String Function(T review) subtitle,
+    required String loadingMessage,
+    required Widget Function(T review) builder,
+  }) {
+    final analysis = ref.watch(provider);
+    final review = analysis.value;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         PanelHeader(
-          title: title,
-          subtitle: review == null
-              ? null
-              : '${review.findings.length.count('finding')} in '
-                    '${review.fileCount.count('file')}',
+          title: shown.label,
+          subtitle: review == null ? null : subtitle(review),
           actions: [
+            ChoiceButtons<AnalyzerReview>(
+              values: AnalyzerReview.values,
+              selected: shown,
+              icon: (choice) => Icon(choice.icon),
+              label: (choice) => choice.label,
+              onSelected: ref.read(analyzerReviewProvider.notifier).select,
+            ),
             // The Analyzer tab's ring shows the review running
             RefreshButton(
               onPressed: analysis.isLoading
                   ? null
-                  : () => ref.invalidate(dryReviewProvider),
+                  : () => ref.invalidate(provider),
             ),
           ],
         ),
         Expanded(
-          child: ProjectAnalysisView(
+          child: ProjectAnalysisView<T?>(
             analysis: analysis,
-            loadingMessage: 'Comparing the widgets of lib…',
+            loadingMessage: loadingMessage,
             // The Analyzer tab rings meanwhile
             isRinged: true,
-            builder: (review) => review == null || review.findings.isEmpty
-                ? const EmptyState(
-                    icon: Icons.check_circle_outline,
-                    message: 'No repeated widget settings found',
-                  )
-                : PanelScrollView(
-                    children: [
-                      for (final kind in DryFindingKind.values)
-                        if (review.of(kind) case final findings
-                            when findings.isNotEmpty) ...[
-                          _sectionTitle(
-                            context,
-                            ref,
-                            projectPath,
-                            kind,
-                            findings,
-                            running: running,
-                          ),
-                          Text(
-                            kind.description,
-                            style: AppTextStyle.secondary(context),
-                          ),
-                          for (final finding in findings)
-                            _findingCard(
-                              context,
-                              ref,
-                              projectPath,
-                              finding,
-                              running: running,
-                            ),
-                        ],
-                    ],
-                  ),
+            builder: (review) =>
+                review == null ? const SizedBox.shrink() : builder(review),
           ),
         ),
       ],
     );
   }
-
-  /// The title of the section of [findings] of [kind], with Fix all when
-  /// several of them have a single fix, one taking no choice; disabled
-  /// while a fix is [running], showing it running when it is its own.
-  Widget _sectionTitle(
-    BuildContext context,
-    WidgetRef ref,
-    String projectPath,
-    DryFindingKind kind,
-    List<DryFinding> findings, {
-    required Object? running,
-  }) {
-    final title = '${kind.label} (${findings.length})';
-    final fixes = [
-      for (final finding in findings)
-        if (finding.fixes case [final fix] when fix.nameHint == null) fix,
-    ];
-    if (fixes.length < minFixAll) return SectionTitle(title);
-    return Row(
-      children: [
-        Expanded(child: SectionTitle(title)),
-        PrimaryButton(
-          icon: AppIcon.fix,
-          label: 'Fix all',
-          busy: running == kind,
-          onPressed: running != null
-              ? null
-              : () => _fix(
-                  context,
-                  ref,
-                  projectPath,
-                  DryFix.all('Fix all', fixes),
-                  key: kind,
-                ),
-        ),
-      ],
-    );
-  }
-
-  /// Fewest findings with a single fix for their section to offer Fix all.
-  static const int minFixAll = 2;
-
-  /// Makes [fix]'s edits, after asking the name of the widget it extracts
-  /// when it does (a class name no file of the project sees yet), then
-  /// tells how it went; [key] names the button that started it, [fix]
-  /// when null.
-  static Future<void> _fix(
-    BuildContext context,
-    WidgetRef ref,
-    String projectPath,
-    DryFix fix, {
-    Object? key,
-  }) async {
-    var named = fix;
-    if (fix.nameHint case final hint?) {
-      final name = await MessageBox.promptForText(
-        context,
-        title: 'Extract Widget',
-        labelText: 'Widget name',
-        hintText: hint,
-        initialText: hint,
-        confirmLabel: 'Extract',
-      );
-      if (name == null || name.isEmpty || !context.mounted) return;
-      final taken = ref.read(dryReviewProvider).value?.takenNames ?? const {};
-      if (DryFix.nameError(name, taken) case final error?) {
-        MessageBox.showError(context, error);
-        return;
-      }
-      named = fix.named(name);
-    }
-    final outcome = await ref
-        .read(dryFixControllerProvider.notifier)
-        .fix(projectPath, named, key: key ?? fix);
-    if (context.mounted) MessageBox.showOutcome(context, outcome);
-  }
-
-  /// [finding]'s actions: a button per fix, or Ask AI when code can make
-  /// none; the fixes disabled while one is [running], showing it running
-  /// when it is their own.
-  Widget _actionsOf(
-    BuildContext context,
-    WidgetRef ref,
-    String projectPath,
-    DryFinding finding, {
-    required Object? running,
-  }) {
-    if (finding.fixes.isEmpty) {
-      return SecondaryButton(
-        icon: AppIcon.ai,
-        label: 'Fix with AI',
-        onPressed: () => ref.read(aiRequestsProvider).ask(finding.aiRequest),
-      );
-    }
-    return Wrap(
-      spacing: AppSpacing.medium,
-      runSpacing: AppSpacing.small,
-      children: [
-        for (final fix in finding.fixes)
-          PrimaryButton(
-            icon: AppIcon.fix,
-            label: fix.label,
-            busy: identical(running, fix),
-            onPressed: running != null
-                ? null
-                : () => _fix(context, ref, projectPath, fix),
-          ),
-      ],
-    );
-  }
-
-  /// [finding]'s card: its title, the fix it calls for with its
-  /// [_actionsOf], why code can't fix it when it can't, and each way its
-  /// code is written with where.
-  Widget _findingCard(
-    BuildContext context,
-    WidgetRef ref,
-    String projectPath,
-    DryFinding finding, {
-    required Object? running,
-  }) {
-    return ActionCard(
-      action: _actionsOf(context, ref, projectPath, finding, running: running),
-      icon: _iconOf(finding.kind),
-      title: finding.title,
-      description:
-          '${finding.locationCount.count('place')} in '
-          '${finding.fileCount.count('file')}'
-          '${finding.suggestion == null ? '' : ': ${finding.suggestion}'}',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: AppSpacing.small,
-        children: [
-          if (finding.fixes.isEmpty)
-            Text(finding.kind.noFix, style: AppTextStyle.secondary(context)),
-          for (final variant in finding.variants) ...[
-            SelectableText(variant.source, style: AppTextStyle.code),
-            for (final location in variant.locations)
-              _locationRow(ref, projectPath, location),
-          ],
-        ],
-      ),
-    );
-  }
-
-  /// The row of [location], opening its file at its line when tapped.
-  Widget _locationRow(WidgetRef ref, String projectPath, DryLocation location) {
-    final path = p.join(projectPath, location.path);
-    return LocationRow(
-      icon: FileIconUtils.ofPath(path),
-      name: location.className ?? p.basename(path),
-      path: path,
-      line: location.line,
-      rootPath: projectPath,
-      onTap: () => openFileAtLine(ref, path, location.line),
-    );
-  }
-
-  /// The glyph of findings of [kind].
-  static IconData _iconOf(DryFindingKind kind) => switch (kind) {
-    DryFindingKind.clone => Icons.copy_all_outlined,
-    DryFindingKind.drift => Icons.call_split,
-    DryFindingKind.sameEverywhere => Icons.palette_outlined,
-    DryFindingKind.literal => Icons.pin_outlined,
-  };
 }

@@ -114,4 +114,14 @@ void main() {
       throwsRangeError,
     );
   });
+
+  test('a line runs from its start through its line break', () {
+    const text = 'ab\ncd\nef';
+
+    expect(TextOffsets.lineStartOf(text, 4), 3);
+    expect(TextOffsets.lineStartOf(text, 3), 3);
+    expect(TextOffsets.lineStartOf(text, 0), 0);
+    expect(TextOffsets.lineEndAfter(text, 4), 6);
+    expect(TextOffsets.lineEndAfter(text, 7), text.length);
+  });
 }

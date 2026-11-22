@@ -26,6 +26,11 @@ class FakeFileContentReader extends FileContentReader {
   }
 
   @override
+  Future<void> delete(String filePath) async {
+    files.remove(filePath);
+  }
+
+  @override
   void writeSync(String filePath, String content) {
     syncWrites++;
     files[filePath] = content;

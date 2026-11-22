@@ -22,6 +22,7 @@ import 'package:fide/services/dart_analyzer.dart';
 import 'package:fide/services/desktop_shell.dart';
 import 'package:fide/services/file_content_reader.dart';
 import 'package:fide/services/file_entry_service.dart';
+import 'package:fide/services/file_mover.dart';
 import 'package:fide/services/file_system_watcher.dart';
 import 'package:fide/services/flutter_build_service.dart';
 import 'package:fide/services/flutter_sdk.dart';
@@ -300,6 +301,12 @@ final audioFileServiceProvider = Provider<AudioFileService>(
 /// editor and the outline.
 final fileContentReaderProvider = Provider<FileContentReader>(
   (_) => const FileContentReader(),
+);
+
+/// Provides the [FileMover] the File Layout review moves files with,
+/// reading them as the editor does.
+final fileMoverProvider = Provider<FileMover>(
+  (ref) => FileMover(reader: ref.read(fileContentReaderProvider)),
 );
 
 /// Provides the [FileEntryService] the tree panels create, rename and delete

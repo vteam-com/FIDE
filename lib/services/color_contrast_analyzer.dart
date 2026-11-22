@@ -1,6 +1,3 @@
-import 'dart:io';
-
-import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
@@ -8,6 +5,7 @@ import 'package:fide/models/color_contrast_report.dart';
 import 'package:fide/models/color_roles.dart';
 import 'package:fide/models/material_palette.dart';
 import 'package:fide/models/wcag_color.dart';
+import 'package:fide/services/parsed_source_file.dart';
 import 'package:path/path.dart' as p;
 
 part 'color_contrast_analyzer.backdrop.dart';
@@ -19,7 +17,6 @@ part 'color_contrast_analyzer.declaration_collector.dart';
 part 'color_contrast_analyzer.fill.dart';
 part 'color_contrast_analyzer.project_theme.dart';
 part 'color_contrast_analyzer.scheme_definition.dart';
-part 'color_contrast_analyzer.source_file.dart';
 
 /// Finds the colors of a Flutter project that fall below WCAG 2 level AA,
 /// reading the Dart code of its `lib` folder without resolving it, as
@@ -57,7 +54,10 @@ class ColorContrastAnalyzer {
   /// Reads the `lib` folder of the project at [projectPath]; synchronous,
   /// so run it off the UI thread.
   ColorContrastReport analyze(String projectPath) {
-    final files = _SourceFile.readAll(p.join(projectPath, 'lib'));
+    final files = ParsedSourceFile.readAll(
+      p.join(projectPath, 'lib'),
+      ignoreName: ignoreName,
+    );
     final theme = _ProjectTheme.collect(files);
     final judged = [
       for (final file in files) _ContrastVisitor.judge(file, theme),

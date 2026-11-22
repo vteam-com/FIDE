@@ -21,7 +21,7 @@ class _SchemeDefinition {
 
   /// Each on-color of the scheme judged on its fill, where the code gives
   /// one of the two, in [file].
-  List<ColorContrastCheck> pairChecks(_SourceFile file) => [
+  List<ColorContrastCheck> pairChecks(ParsedSourceFile file) => [
     for (final (fill, on) in ColorRoles.pairs)
       if ((given[on] ?? given[fill]) case final value?
           when !unread.contains(fill) &&

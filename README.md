@@ -58,7 +58,7 @@ FIDE uses fCheck as a Dart package (`package:fcheck/fcheck.dart`). fCheck is the
 
 FIDE never reimplements analysis. When FIDE needs a new finding or metric, it is added to fCheck first, kept general for all of fCheck's users, and then used by FIDE.
 
-An analysis still being evaluated can start in FIDE, written the way fCheck's analyzers are, and moves into fCheck once it proves its value: today the Analyzer tab's **Repeated Widget Settings** and the **Color contrast** check.
+An analysis still being evaluated can start in FIDE, written the way fCheck's analyzers are, and moves into fCheck once it proves its value: today the Analyzer tab's **File Layout** and **Repeated Widget Settings**, and the **Color contrast** check.
 
 FIDE holds itself to the same standard: its own code must score 100% with `fcheck --strict` (see `tool/check.sh`).
 
@@ -92,6 +92,9 @@ FIDE holds itself to the same standard: its own code must score 100% with `fchec
 
 - **Project overview**: icon, version, fCheck score, code size, platforms, tests, coverage and translations, shown when no file is open
 - **Info panel**, the right panel's first tab, about what is selected, then the project: the selected file's path and actions (and an image's dimensions, color mode, transparency and dominant colors); the declaration under the cursor with its **callers** and what it **calls** in the project, each a click away; the live **preview** of the widget class the cursor is in, when it has a `@Preview`; then the project's version and every fCheck deduction with its findings and the best practice that fixes it
+- **Analyzer panel**, the right panel's refactoring reviews, each with the changes FIDE's own code makes, no AI involved:
+  - **File Layout**: the files outside the folder their kind belongs in: screens and pages (widgets building a `Scaffold`, or opened as a route) in `lib/views`, widgets reading no app state, even through what they import, in `lib/widgets`, and plain Dart types, without Flutter, I/O or async code, in `lib/models`. **Move** moves a file there with its parts, or **Move All** a whole kind, pointing every `import`, `export` and `part` naming it at its new place across `lib`, `test` and the rest of the project. A file already in a folder named for its kind, at any depth, stays; start a file with `// ignore: fcheck_file_layout` to keep it where it is
+  - **Repeated Widget Settings**: the widget settings the code writes more than once, with **Fix** to use a shared widget or constant
 - **Localize panel**: sets up `gen-l10n`, lists each ARB key with its translations, and translates missing keys with the local model
 - **Accessibility**: each text and icon color the code gives, and each on-color of the project's color schemes, judged against what it is drawn on in every theme the app renders, at WCAG 2 level AA. The overview's Accessibility card shows the share that reads; its view counts the elements judged by kind and contrast range, shows the color scheme of each theme and where it is defined, and lists every color the code writes, the most used first. Colors that fall short are listed with their file and line among the quality issues and lower the score; end a line with `// ignore: fcheck_color_contrast` to skip it
 

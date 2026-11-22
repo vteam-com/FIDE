@@ -504,21 +504,18 @@ class _Planner {
     final previous = index > 0 ? members[index - 1] : null;
     final offset = previous == null
         ? declaration.offset
-        : _lineEndAfter(content, previous.end);
-    return (offset: offset, end: _lineEndAfter(content, declaration.end));
+        : TextOffsets.lineEndAfter(content, previous.end);
+    return (
+      offset: offset,
+      end: TextOffsets.lineEndAfter(content, declaration.end),
+    );
   }
 
   /// [node]'s whole line or lines, through the line break.
-  static _Removal _lineRange(String content, AstNode node) {
-    final lineStart = content.lastIndexOf('\n', node.offset) + 1;
-    return (offset: lineStart, end: _lineEndAfter(content, node.end));
-  }
-
-  /// Offset just past the line break at or after [offset].
-  static int _lineEndAfter(String content, int offset) {
-    final lineBreak = content.indexOf('\n', offset);
-    return lineBreak == -1 ? content.length : lineBreak + 1;
-  }
+  static _Removal _lineRange(String content, AstNode node) => (
+    offset: TextOffsets.lineStartOf(content, node.offset),
+    end: TextOffsets.lineEndAfter(content, node.end),
+  );
 
   /// [content] with [removals] cut, then the directive lines
   /// [insertions] added, each placed by [withDirective].

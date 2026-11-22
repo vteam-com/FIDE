@@ -1,10 +1,16 @@
 import 'dart:async';
 
+import 'package:fide/constants/core_constants.dart';
+import 'package:fide/models/analyzer_review.dart';
+import 'package:fide/models/code_category.dart';
 import 'package:fide/models/dry_review.dart';
+import 'package:fide/models/file_layout_review.dart';
 import 'package:fide/panels/right/analyzer_panel.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/dry_review_provider.dart';
+import 'package:fide/providers/file_layout_review_provider.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/file_mover.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/busy_bar.dart';
 import 'package:fide/widgets/task_button.dart';
@@ -12,6 +18,7 @@ import 'package:fide/widgets/task_ring.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_code_formatter.dart';
 import 'fake_file_content_reader.dart';
@@ -96,21 +103,62 @@ const DryReview _extractReview = DryReview(
 /// Offset of the number in [_numberReview]'s file, `Icon(size: 32)`.
 const int _numberOffset = 11;
 
+/// A pure widget kept with the screens, and a model kept with the
+/// services whose place is taken.
+const FileLayoutReview _layoutReview = FileLayoutReview(
+  fileCount: 10,
+  packageName: 'demo',
+  moves: [
+    FileMove(
+      category: CodeCategory.widgets,
+      path: 'lib/screens/score_card.dart',
+      target: 'lib/widgets/score_card.dart',
+      name: 'ScoreCard',
+      line: 3,
+    ),
+    FileMove(
+      category: CodeCategory.models,
+      path: 'lib/services/score.dart',
+      target: 'lib/models/score.dart',
+      name: 'Score',
+      line: 1,
+      blocker: 'lib/models/score.dart already exists',
+    ),
+  ],
+);
+
 void main() {
-  /// Shows the Analyzer tab reviewing [review], still reviewing when
-  /// null, reading and writing the files of [reader] when given; returns
-  /// its provider scope.
+  /// Shows the Analyzer tab with [shown] picked, its Repeated Widget
+  /// Settings reviewing [review] and its File Layout [layout], each still
+  /// reviewing when null, reading, writing and listing the files of
+  /// [reader] when given; returns its provider scope.
   Future<ProviderContainer> pumpPanel(
     WidgetTester tester,
     DryReview? review, {
+    FileLayoutReview? layout,
+    AnalyzerReview shown = AnalyzerReview.repeated,
     FakeFileContentReader? reader,
   }) async {
+    SharedPreferences.setMockInitialValues({
+      PrefKeys.analyzerReview: shown.name,
+    });
     final container = ProviderContainer(
       overrides: [
         dryReviewProvider.overrideWith(
           (_) => review ?? Completer<DryReview?>().future,
         ),
-        if (reader != null) fileContentReaderProvider.overrideWithValue(reader),
+        fileLayoutReviewProvider.overrideWith(
+          (_) => layout ?? Completer<FileLayoutReview?>().future,
+        ),
+        if (reader != null) ...[
+          fileContentReaderProvider.overrideWithValue(reader),
+          fileMoverProvider.overrideWithValue(
+            FileMover(
+              reader: reader,
+              listDartFiles: (_) async => reader.files.keys.toList(),
+            ),
+          ),
+        ],
         codeFormatterProvider.overrideWithValue(const FakeCodeFormatter()),
       ],
     );
@@ -134,7 +182,7 @@ void main() {
   ) async {
     await pumpPanel(tester, _review);
 
-    expect(find.text(AnalyzerPanel.title), findsOneWidget);
+    expect(find.text(AnalyzerReview.repeated.label), findsOneWidget);
     expect(find.text('1 finding in 3 files'), findsOneWidget);
     expect(find.text('Drifted copies (1)'), findsOneWidget);
     expect(find.text('Icon · color'), findsOneWidget);
@@ -235,5 +283,106 @@ void main() {
     );
 
     expect(find.text('No repeated widget settings found'), findsOneWidget);
+  });
+
+  testWidgets('opens on the File Layout: each kind, where it belongs and '
+      'its files outside it', (tester) async {
+    await pumpPanel(
+      tester,
+      null,
+      layout: _layoutReview,
+      shown: AnalyzerReview.layout,
+    );
+
+    expect(find.text(AnalyzerReview.layout.label), findsOneWidget);
+    expect(find.text('2 files to move, of 10'), findsOneWidget);
+    expect(find.text('Widgets (1)'), findsOneWidget);
+    expect(
+      find.text(FileLayoutReview.describe(CodeCategory.widgets)),
+      findsOneWidget,
+    );
+    expect(find.text('score_card.dart'), findsOneWidget);
+    expect(find.text('From lib/screens to lib/widgets'), findsOneWidget);
+    expect(find.text('ScoreCard'), findsOneWidget);
+  });
+
+  testWidgets('a file that cannot move says why, without Move', (tester) async {
+    await pumpPanel(
+      tester,
+      null,
+      layout: _layoutReview,
+      shown: AnalyzerReview.layout,
+    );
+
+    expect(find.text('lib/models/score.dart already exists'), findsOneWidget);
+    // Only the widget can move
+    expect(find.text('Move'), findsOneWidget);
+    expect(find.text('Move All'), findsNothing);
+  });
+
+  testWidgets('Move moves the file, its importers pointed at its new place', (
+    tester,
+  ) async {
+    final reader = FakeFileContentReader()
+      ..files['/p/lib/screens/score_card.dart'] = 'class ScoreCard {}\n'
+      ..files['/p/lib/main.dart'] =
+          "import 'package:demo/screens/score_card.dart';\n\n"
+          'void main() {}\n';
+    await pumpPanel(
+      tester,
+      null,
+      layout: _layoutReview,
+      shown: AnalyzerReview.layout,
+      reader: reader,
+    );
+
+    await tester.tap(find.text('Move'));
+    await tester.pumpAndSettle();
+
+    expect(
+      reader.files['/p/lib/widgets/score_card.dart'],
+      'class ScoreCard {}\n',
+    );
+    expect(reader.files.containsKey('/p/lib/screens/score_card.dart'), isFalse);
+    expect(
+      reader.files['/p/lib/main.dart'],
+      "import 'package:demo/widgets/score_card.dart';\n\n"
+      'void main() {}\n',
+    );
+    expect(find.text('Moved 1 file'), findsOneWidget);
+  });
+
+  testWidgets('picking the other review shows it, and is kept', (tester) async {
+    final container = await pumpPanel(
+      tester,
+      _review,
+      layout: _layoutReview,
+      shown: AnalyzerReview.layout,
+    );
+
+    await tester.tap(find.byTooltip(AnalyzerReview.repeated.label));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Icon · color'), findsOneWidget);
+    expect(find.text('score_card.dart'), findsNothing);
+    final prefs = await SharedPreferences.getInstance();
+    expect(
+      prefs.getString(PrefKeys.analyzerReview),
+      AnalyzerReview.repeated.name,
+    );
+    expect(container.read(fileLayoutReviewProvider).value, _layoutReview);
+  });
+
+  testWidgets('a project with every file in its folder says so', (
+    tester,
+  ) async {
+    await pumpPanel(
+      tester,
+      null,
+      layout: const FileLayoutReview(moves: [], fileCount: 4),
+      shown: AnalyzerReview.layout,
+    );
+
+    expect(find.text('Every file is in its folder'), findsOneWidget);
   });
 }

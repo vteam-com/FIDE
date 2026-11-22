@@ -42,7 +42,7 @@ class _ProjectTheme {
   };
 
   /// Reads what [files] declare about their colors and themes.
-  factory _ProjectTheme.collect(List<_SourceFile> files) {
+  factory _ProjectTheme.collect(List<ParsedSourceFile> files) {
     final collector = _DeclarationCollector();
     for (final file in files) {
       collector.collect(file);
@@ -71,7 +71,7 @@ class _ProjectTheme {
             case final Expression scheme)
           (scheme, fileOf[defaults.resolve(scheme).root] ?? file),
     ];
-    final sources = <(_SchemeDefinition, _SourceFile, AstNode)>[
+    final sources = <(_SchemeDefinition, ParsedSourceFile, AstNode)>[
       for (final (scheme, file) in themeSchemes)
         for (final definition in _SchemeDefinition.readAll(scheme, defaults))
           (definition, file, defaults.resolve(scheme)),
@@ -82,7 +82,7 @@ class _ProjectTheme {
         if (_SchemeDefinition.readAll(scheme, defaults).isEmpty)
           (file, defaults.resolve(scheme)),
     ];
-    (_SchemeDefinition, _SourceFile, AstNode)? sourceOf(bool isDark) {
+    (_SchemeDefinition, ParsedSourceFile, AstNode)? sourceOf(bool isDark) {
       for (final source in sources) {
         if (source.$1.roles.isDark == isDark) return source;
       }
@@ -191,7 +191,7 @@ class _ProjectTheme {
   final List<ColorSchemeSummary> schemes;
 
   /// The color schemes the code defines, each with its file and node.
-  final List<(_SchemeDefinition, _SourceFile, AstNode)> _definitions;
+  final List<(_SchemeDefinition, ParsedSourceFile, AstNode)> _definitions;
 
   /// The fill each theme gives widgets in place of their default, by
   /// brightness then widget.

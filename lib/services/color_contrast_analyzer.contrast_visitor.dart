@@ -65,7 +65,7 @@ class _ContrastVisitor extends RecursiveAstVisitor<void> {
     caseSensitive: false,
   );
 
-  final _SourceFile _file;
+  final ParsedSourceFile _file;
 
   final List<ColorContrastCheck> _checks = [];
 
@@ -226,7 +226,7 @@ class _ContrastVisitor extends RecursiveAstVisitor<void> {
   /// The texts and icons of [file] judged in [theme], and how many could
   /// not be judged.
   static ({List<ColorContrastCheck> checks, int unjudged}) judge(
-    _SourceFile file,
+    ParsedSourceFile file,
     _ProjectTheme theme,
   ) {
     if (file.isIgnored) return (checks: const [], unjudged: 0);

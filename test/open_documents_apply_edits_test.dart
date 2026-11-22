@@ -96,4 +96,24 @@ void main() {
     );
     expect(File(a).readAsStringSync(), 'class A {}');
   });
+
+  test('a move writes the file at its new place, deletes it where it was '
+      'with its emptied folder, and keeps its tab, showing it there', () async {
+    Directory(p.join(project.path, 'screens')).createSync();
+    final card = write(p.join('screens', 'card.dart'), 'class Card {}');
+    final other = write('other.dart', 'class Other {}');
+    final moved = p.join(project.path, 'widgets', 'card.dart');
+    await documents.open(card);
+    await documents.open(other);
+
+    await documents.applyMoves({
+      card: moved,
+    }, () async => {moved: 'class Card {}'});
+
+    expect(File(moved).readAsStringSync(), 'class Card {}');
+    expect(File(card).existsSync(), isFalse);
+    expect(Directory(p.dirname(card)).existsSync(), isFalse);
+    expect([for (final d in current.documents) d.filePath], [moved, other]);
+    expect(current.active!.filePath, other);
+  });
 }

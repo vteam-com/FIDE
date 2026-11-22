@@ -38,6 +38,11 @@ class WidgetCreation {
     _ => null,
   };
 
+  /// The class created, without its import prefix or constructor name:
+  /// `ListView` for `ListView.builder`, `Text` for `material.Text`.
+  String get typeName =>
+      name.split('.').firstWhere(isTypeName, orElse: () => name);
+
   /// The widget [expression] creates, or null when it creates none: a
   /// constructor call, spelled from a capital letter when read without
   /// types.

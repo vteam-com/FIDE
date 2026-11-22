@@ -13,11 +13,11 @@ class _DeclarationCollector extends RecursiveAstVisitor<void> {
 
   /// Each expression that may build a color scheme, with its file; a copy
   /// stands for the scheme it copies.
-  final List<(Expression, _SourceFile)> schemes = [];
+  final List<(Expression, ParsedSourceFile)> schemes = [];
 
   /// The `ThemeData` calls, whose brightness tells which themes the app
   /// renders, each with its file.
-  final List<(_Call, _SourceFile)> themes = [];
+  final List<(_Call, ParsedSourceFile)> themes = [];
 
   /// The `themeMode` each app gives, such as `ThemeMode.dark`.
   final Set<String> themeModes = {};
@@ -29,10 +29,10 @@ class _DeclarationCollector extends RecursiveAstVisitor<void> {
   final Set<String> _shared = {};
 
   /// The file being read.
-  late _SourceFile _file;
+  late ParsedSourceFile _file;
 
   /// Reads [file]'s declarations and calls.
-  void collect(_SourceFile file) {
+  void collect(ParsedSourceFile file) {
     _file = file;
     file.unit.accept(this);
   }

@@ -8,6 +8,17 @@ class TextOffsets {
   /// The line separator [positionOf] counts.
   static const String _newline = '\n';
 
+  /// The offset just past the line break at or after [offset] in [text];
+  /// its end when no line break follows.
+  static int lineEndAfter(String text, int offset) {
+    final lineBreak = text.indexOf(_newline, offset);
+    return lineBreak == -1 ? text.length : lineBreak + 1;
+  }
+
+  /// The offset of the start of the line [offset] is on in [text].
+  static int lineStartOf(String text, int offset) =>
+      offset == 0 ? 0 : text.lastIndexOf(_newline, offset - 1) + 1;
+
   /// [text] with each of [edits], offset → (length, replacement), applied
   /// from the end of the text so the offsets before it stay valid.
   ///

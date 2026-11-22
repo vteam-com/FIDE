@@ -34,7 +34,7 @@ class _ColorUseCollector extends GeneralizingAstVisitor<void> {
   }
 
   /// Counts the colors [file] writes.
-  void collect(_SourceFile file) => file.unit.accept(this);
+  void collect(ParsedSourceFile file) => file.unit.accept(this);
 
   @override
   void visitExpression(Expression node) {

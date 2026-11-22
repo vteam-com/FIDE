@@ -2,6 +2,9 @@ part of 'core_constants.dart';
 
 /// SharedPreferences keys, so each persisted setting is named in one place.
 class PrefKeys {
+  /// Which review the Analyzer tab shows: `layout` or `repeated`.
+  static const String analyzerReview = 'analyzer_review';
+
   /// Which way the Architecture view stacks its layers: `topDown` or
   /// `leftToRight`.
   static const String architectureOrientation = 'architecture_orientation';
