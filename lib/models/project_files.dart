@@ -22,7 +22,7 @@ class ProjectFiles {
 
   /// Whether a folder or file named [name] is left out.
   static bool isSkipped(String name) =>
-      skippedFolders.contains(name) || name.startsWith('.');
+      skippedFolders.contains(name) || ProjectNode.isHiddenName(name);
 
   /// The files and folders under the folder [root], without going into
   /// the ones left out; throws when [root] can't be listed.

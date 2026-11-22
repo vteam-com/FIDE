@@ -72,4 +72,7 @@ class FileSystemItem {
 
   /// Whether this item is a directory.
   bool get isDirectory => type == ProjectNodeType.directory;
+
+  /// Whether this item is hidden, its name starting with a dot.
+  bool get isHidden => ProjectNode.isHiddenName(name);
 }

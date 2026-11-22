@@ -13,8 +13,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// What the left panel shows under each [LeftPanelTab], in tab order.
 final List<PanelTabSpec<LeftPanelTab>> leftPanelTabs = [
-  PanelTabSpec(LeftPanelTab.organized, build: OrganizedPanel.new),
   PanelTabSpec(LeftPanelTab.folder, build: FolderPanel.new),
+  PanelTabSpec(LeftPanelTab.organized, build: OrganizedPanel.new),
   PanelTabSpec(
     LeftPanelTab.git,
     build: () => ProjectScoped((path) => GitPanel(projectPath: path)),

@@ -24,6 +24,8 @@ class ProjectNode {
   final int? size;
   final List<ProjectNode> children;
   LoadChildrenResult? loadResult;
+
+  /// Whether the entry is hidden, its name starting with a dot.
   final bool isHidden;
   GitFileStatus gitStatus;
 
@@ -36,10 +38,16 @@ class ProjectNode {
     List<ProjectNode>? children,
     this.gitStatus = GitFileStatus.clean,
   }) : children = children ?? [],
-       isHidden = name.startsWith('.');
+       isHidden = isHiddenName(name);
 
   /// The path name of a folder's parent.
   static const String _parentFolder = '..';
+
+  /// How the name of a hidden file or folder starts.
+  static const String _hiddenPrefix = '.';
+
+  /// Whether a file or folder named [name] is hidden, as dot files are.
+  static bool isHiddenName(String name) => name.startsWith(_hiddenPrefix);
 
   /// [children] with duplicate paths collapsed, keeping the last entry;
   /// incremental watcher updates can briefly add the same path twice.

@@ -50,4 +50,13 @@ void main() {
       true,
     );
   });
+
+  test('isHidden marks dot files and folders, as the tree does', () {
+    expect(FileSystemItem.fromPath('/p/.gitignore').isHidden, true);
+    expect(
+      FileSystemItem.fromPath('/p/.github', isDirectory: true).isHidden,
+      true,
+    );
+    expect(FileSystemItem.fromPath('/p/lib/main.dart').isHidden, false);
+  });
 }

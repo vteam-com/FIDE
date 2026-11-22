@@ -50,18 +50,23 @@ class FileNameWidget extends StatelessWidget {
     final gitColor = gitStatus.color(colorScheme);
     final badgeText = showGitBadge ? gitStatus.badgeSymbol() : '';
     final warning = fileItem.warning;
+    // A hidden file is dimmed as a hidden folder is
+    final dimmedColor = fileItem.isHidden ? colorScheme.onSurfaceVariant : null;
 
     return TreeRow(
-      icon: _getIcon(colorScheme),
+      icon: _getIcon(colorScheme, dimmedColor),
       name: fileItem.name,
       path: fileItem.path,
       rootPath: rootPath,
       showPath: showPath,
       note: warning,
-      // Git styling (strike-through, italic, color), recolored when the
-      // file has a warning or is selected
+      // Git styling (strike-through, italic, color) over the dimming of a
+      // hidden file, recolored when the file has a warning or is selected
       nameStyle: gitStatus
-          .textStyle(colorScheme, AppTextStyle.body)
+          .textStyle(
+            colorScheme,
+            AppTextStyle.body.copyWith(color: dimmedColor),
+          )
           .copyWith(
             color: warning != null
                 ? StatusTone.warning.readableIn(colorScheme)
@@ -84,17 +89,21 @@ class FileNameWidget extends StatelessWidget {
     );
   }
 
-  /// Returns the file-type icon widget for this entry, using the file extension or item type.
-  Widget _getIcon(ColorScheme colorScheme) {
+  /// Returns the file-type icon widget for this entry, using the file
+  /// extension or item type, in [dimmedColor] when the entry is hidden.
+  Widget _getIcon(ColorScheme colorScheme, Color? dimmedColor) {
     if (fileItem.isDirectory) {
       return Icon(
         Icons.folder,
-        color: colorScheme.primary,
+        color: dimmedColor ?? colorScheme.primary,
         size: AppIconSize.medium,
       );
     }
 
     // For files, use the shared icon utility
-    return FileIconUtils.getFileIcon(fileItem);
+    return IconTheme.merge(
+      data: IconThemeData(color: dimmedColor),
+      child: FileIconUtils.getFileIcon(fileItem),
+    );
   }
 }

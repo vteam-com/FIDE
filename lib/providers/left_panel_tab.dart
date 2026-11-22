@@ -6,17 +6,17 @@ import 'package:material_ui/material_ui.dart';
 /// The left panel's tabs, in display order; each value's `index` is its
 /// position in the tab bar.
 enum LeftPanelTab implements PanelTab {
-  organized(
-    Key('keyTabOrganize'),
-    'Organized',
-    Icons.category_outlined,
-    shortcut: AppShortcut.organized,
-  ),
   folder(
     Key('keyTabFolder'),
     'Explorer',
     Icons.folder_outlined,
     shortcut: AppShortcut.explorer,
+  ),
+  organized(
+    Key('keyTabOrganize'),
+    'Organized',
+    Icons.category_outlined,
+    shortcut: AppShortcut.organized,
   ),
   git(
     Key('keyTabGit'),
