@@ -6,14 +6,23 @@ class _Library {
   _Library(
     this.file, {
     required Map<String, ParsedSourceFile> files,
-    required String libPath,
+    required String projectPath,
     required String? packageName,
-  }) {
+  }) : relativePath = p.posix.joinAll(
+         p.split(p.relative(file.path, from: projectPath)),
+       ) {
     for (final directive in file.unit.directives) {
       if (directive is! UriBasedDirective) continue;
       final uri = directive.uri.stringValue;
       if (uri == null) continue;
-      final path = _resolve(uri, libPath, packageName);
+      final path = switch (ImportGraph.resolve(
+        uri,
+        from: relativePath,
+        packageName: packageName,
+      )) {
+        final relative? => p.joinAll([projectPath, ...p.posix.split(relative)]),
+        null => null,
+      };
       if (directive is PartDirective) {
         if (path != null && File(path).existsSync()) parts.add(path);
       } else if (path != null) {
@@ -59,6 +68,9 @@ class _Library {
   /// The library's own file.
   final ParsedSourceFile file;
 
+  /// The project-relative path of [file], with `/` separators.
+  final String relativePath;
+
   /// Whether the library runs async code or declares any: an `async`
   /// body, or a `Future` or `Stream` returned.
   bool hasAsync = false;
@@ -94,20 +106,6 @@ class _Library {
         MixinDeclaration(:final name) => name.lexeme,
         _ => null,
       };
-
-  /// The absolute path of the project file [uri] names, resolved under
-  /// [libPath] for the project's [packageName]; null for a library
-  /// outside the project.
-  String? _resolve(String uri, String libPath, String? packageName) {
-    final ownPrefix = '$packageScheme$packageName/';
-    if (packageName != null && uri.startsWith(ownPrefix)) {
-      return p.normalize(
-        p.joinAll([libPath, ...p.url.split(uri.substring(ownPrefix.length))]),
-      );
-    }
-    if (Uri.parse(uri).hasScheme) return null;
-    return p.normalize(p.joinAll([p.dirname(file.path), ...p.url.split(uri)]));
-  }
 }
 
 /// Finds async code: an `async` body, or a declared `Future`, `FutureOr`

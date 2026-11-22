@@ -37,6 +37,7 @@ class FakeRunRunner extends ProcessRunner {
     List<String> arguments, {
     String? workingDirectory,
     bool runInShell = false,
+    Map<String, String> environment = const {},
   }) async {
     final command = [executable, ...arguments].join(' ');
     commands.add(command);

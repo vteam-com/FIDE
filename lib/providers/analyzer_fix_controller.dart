@@ -1,7 +1,9 @@
 import 'package:fide/models/action_outcome.dart';
 import 'package:fide/models/dry_review.dart';
 import 'package:fide/models/file_layout_review.dart';
+import 'package:fide/models/import_graph.dart';
 import 'package:fide/models/locale_number.dart';
+import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/readable_error.dart';
 import 'package:fide/providers/open_documents_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
@@ -76,47 +78,56 @@ class AnalyzerFixController extends StateNotifier<Object?> {
   /// Makes [fix]'s edits in the project at [projectPath] and creates its
   /// files, formatting them and the files edited that were formatted; the
   /// outcome counts the places fixed, or says why nothing was, such as a
-  /// file edited since the review or one to create already there. While
-  /// it runs, the state is [key], or [fix] when null.
-  Future<ActionOutcome> fix(String projectPath, DryFix fix, {Object? key}) =>
-      _run(key ?? fix, () async {
-        var count = 0;
-        await _applyEdits(() async {
-          for (final path in fix.created.keys) {
-            if (await _reader.exists(p.join(projectPath, path))) {
-              throw StateError('$path already exists: pick another name');
-            }
-          }
-          final contents = {
-            for (final path in fix.paths)
-              path: await _reader.read(p.join(projectPath, path)),
-          };
-          final applied = fix.applyTo(contents);
-          count = applied.count;
-          return {
-            for (final MapEntry(key: path, value: content)
-                in applied.contents.entries)
-              p.join(projectPath, path): await _formatted(
-                p.join(projectPath, path),
-                content,
-                before: contents[path],
-              ),
-          };
-        });
-        return 'Fixed ${count.count('place')}';
-      });
+  /// file edited since the review, one to create already there, or a
+  /// Layers issue it would add to [layers], the dependencies between the
+  /// files of `lib` in the package [packageName]. While it runs, the state
+  /// is [key], or [fix] when null.
+  Future<ActionOutcome> fix(
+    String projectPath,
+    DryFix fix, {
+    Object? key,
+    ImportGraph layers = const ImportGraph({}),
+    String? packageName,
+  }) => _run(key ?? fix, () async {
+    var count = 0;
+    await _applyEdits(() async {
+      for (final path in fix.created.keys) {
+        if (await _reader.exists(p.join(projectPath, path))) {
+          throw StateError('$path already exists: pick another name');
+        }
+      }
+      final contents = {
+        for (final path in fix.paths)
+          path: await _reader.read(p.join(projectPath, path)),
+      };
+      final applied = fix.applyTo(contents);
+      _refuseNewIssues(layers, applied.contents, packageName);
+      count = applied.count;
+      return {
+        for (final MapEntry(key: path, value: content)
+            in applied.contents.entries)
+          p.join(projectPath, path): await _formatted(
+            p.join(projectPath, path),
+            content,
+            before: contents[path],
+          ),
+      };
+    });
+    return 'Fixed ${count.count('place')}';
+  });
 
   /// Moves the files of [moves], with their parts, in the project at
   /// [projectPath], whose package is [packageName], pointing every
   /// directive naming them at their new place; the outcome counts the
   /// files moved, or says why none was, such as a file already where one
-  /// goes. While it runs, the state is [key], or the only move when null.
+  /// goes. [moves] are a [FileLayoutPlan]'s, which adds no dependency
+  /// cycle. While it runs, the state is [key].
   Future<ActionOutcome> move(
     String projectPath,
     List<FileMove> moves, {
+    required Object key,
     String? packageName,
-    Object? key,
-  }) => _run(key ?? moves.single, () async {
+  }) => _run(key, () async {
     final paths = {for (final move in moves) ...move.paths};
     String absolute(String relative) =>
         p.joinAll([projectPath, ...p.posix.split(relative)]);
@@ -126,6 +137,31 @@ class AnalyzerFixController extends StateNotifier<Object?> {
     }, () => _mover.plan(projectPath, paths, packageName: packageName));
     return 'Moved ${moves.length.count('file')}';
   });
+
+  /// Throws when [changed], files' new text by project-relative path,
+  /// would add a Layers issue fCheck reports to [before]; checks nothing
+  /// when [before] is empty.
+  static void _refuseNewIssues(
+    ImportGraph before,
+    Map<String, String> changed,
+    String? packageName,
+  ) {
+    if (before.edges.isEmpty) return;
+    final after = before.updated({
+      for (final MapEntry(key: path, value: content) in changed.entries)
+        if (p.posix.isWithin(ProjectPaths.libFolder, path)) path: content,
+    }, packageName: packageName);
+    final added = ImportGraph.compareIssues(
+      before.layerIssues,
+      after.layerIssues,
+    ).added;
+    if (added.isNotEmpty) {
+      throw StateError(
+        'Not fixed: it would add a Layers issue fCheck reports: '
+        '${added.first.message}',
+      );
+    }
+  }
 
   /// Runs [task] with the state at [key], its outcome a success saying
   /// what [task] returns, or the failure it threw.

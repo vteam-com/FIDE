@@ -183,7 +183,13 @@ class RepeatedSettingsList
     }
     final outcome = await ref
         .read(analyzerFixControllerProvider.notifier)
-        .fix(projectPath, named, key: key ?? fix);
+        .fix(
+          projectPath,
+          named,
+          key: key ?? fix,
+          layers: review.graph,
+          packageName: review.packageName,
+        );
     if (context.mounted) MessageBox.showOutcome(context, outcome);
   }
 

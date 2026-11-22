@@ -1,4 +1,5 @@
 import 'package:fide/models/dart_imports.dart';
+import 'package:fide/models/import_graph.dart';
 import 'package:fide/models/project_name.dart';
 import 'package:fide/models/text_offsets.dart';
 
@@ -22,6 +23,8 @@ class DryReview {
     required this.widgetCount,
     required this.fileCount,
     this.takenNames = const {},
+    this.graph = const ImportGraph({}),
+    this.packageName,
   });
 
   /// Every name a file of the project sees, which a widget extracted by a
@@ -30,6 +33,14 @@ class DryReview {
 
   /// How many Dart files were read.
   final int fileCount;
+
+  /// The dependencies between the files of `lib`, so a fix adds no Layers
+  /// issue; empty when unknown.
+  final ImportGraph graph;
+
+  /// The project's package name, which its `package:` imports start with;
+  /// null without one.
+  final String? packageName;
 
   /// What was found, most repeated first.
   final List<DryFinding> findings;

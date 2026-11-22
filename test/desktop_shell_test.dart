@@ -14,6 +14,7 @@ class RecordingRunner extends ProcessRunner {
     List<String> arguments, {
     String? workingDirectory,
     bool runInShell = false,
+    Map<String, String> environment = const {},
   }) async {
     commands.add([executable, ...arguments].join(' '));
     return ProcessResult(0, 0, '', '');

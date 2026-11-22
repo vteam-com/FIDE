@@ -187,6 +187,27 @@ const _size = 3;
     expect(files['lib/card.dart'], contains('const _size = 3;'));
   });
 
+  test('a class and the file it leaves that would import each other share '
+      'one library: the class moves to a part file', () async {
+    write('lib/shop.dart', '''
+class Shop {
+  Item first() => Item(this);
+}
+
+class Item {
+  Item(this.shop);
+
+  final Shop shop;
+}
+''');
+
+    final files = await split('lib/shop.dart');
+
+    expect(files['lib/shop.item.dart'], startsWith("part of 'shop.dart';"));
+    expect(files['lib/shop.dart'], contains("part 'shop.item.dart';"));
+    expect(files.keys, isNot(contains('lib/item.dart')));
+  });
+
   test('refuses a file that already has compile errors', () async {
     write('lib/a.dart', 'class A extends Missing {}\n\nclass B {}\n');
 

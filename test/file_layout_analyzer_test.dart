@@ -218,4 +218,97 @@ class Details extends StatelessWidget {
       'lib/services/score.g.dart': 'lib/models/score.g.dart',
     });
   });
+
+  group('no Layers issue added', () {
+    /// A widget reading app state, which stays where it is, using the
+    /// files [uris] name.
+    String panelUsing(List<String> uris) => [
+      "import 'package:flutter_riverpod/flutter_riverpod.dart';",
+      for (final uri in uris) "import '$uri';",
+      _pureWidget.replaceAll('ScoreCard', 'ScorePanel'),
+    ].join('\n');
+
+    test('a widget takes along the widgets it uses and the helpers only it '
+        'uses, so no two folders depend on each other', () {
+      final layout = review({
+        'lib/panels/score_card.dart':
+            "import 'score_badge.dart';\nimport 'score_style.dart';\n"
+            '$_pureWidget',
+        'lib/panels/score_badge.dart': _pureWidget.replaceAll(
+          'ScoreCard',
+          'ScoreBadge',
+        ),
+        'lib/panels/score_style.dart':
+            "class ScoreStyle {\n  static const String font = 'mono';\n}\n",
+        'lib/panels/panel.dart': panelUsing(['score_card.dart']),
+      });
+
+      final card = layout.moves.firstWhere((m) => m.name == 'ScoreCard');
+      expect(card.canMove, isTrue);
+      expect(
+        {for (final move in card.planned) ...move.paths},
+        {
+          'lib/panels/score_card.dart': 'lib/widgets/score_card.dart',
+          'lib/panels/score_badge.dart': 'lib/widgets/score_badge.dart',
+          'lib/panels/score_style.dart': 'lib/widgets/score_style.dart',
+        },
+      );
+    });
+
+    test('a widget using a file another one there uses too stays, saying '
+        'which Layers issue moving it would add', () {
+      final layout = review({
+        'lib/panels/score_card.dart':
+            "import 'shared_style.dart';\n$_pureWidget",
+        'lib/panels/shared_style.dart':
+            "class SharedStyle {\n  static const String font = 'mono';\n}\n",
+        'lib/panels/panel.dart': panelUsing([
+          'score_card.dart',
+          'shared_style.dart',
+        ]),
+      });
+
+      final [card] = layout.moves;
+      expect(card.canMove, isFalse);
+      expect(card.addedIssue, startsWith('Cyclic folder dependency'));
+      expect(card.along, isEmpty);
+    });
+
+    test('a move fixing a Layers issue says so', () {
+      final layout = review({
+        'lib/a/score.dart': _model,
+        'lib/b/tally.dart':
+            "import '../a/score.dart';\n\n"
+            'class Tally {\n  const Tally(this.score);\n\n'
+            '  final Score score;\n}\n',
+        'lib/a/reports.dart':
+            "import '../b/tally.dart';\n\n"
+            "class Reports {\n  static String of(Tally tally) => '';\n}\n",
+      });
+
+      final score = layout.moves.firstWhere((m) => m.name == 'Score');
+      expect(
+        score.fixedIssues,
+        contains(startsWith('Cyclic folder dependency')),
+      );
+      final tally = layout.moves.firstWhere((m) => m.name == 'Tally');
+      expect([for (final move in tally.along) move.name], ['Score']);
+    });
+
+    test('Move All plans the moves together, adding no Layers issue', () {
+      final layout = review({
+        'lib/panels/score_card.dart':
+            "import 'score_badge.dart';\n$_pureWidget",
+        'lib/panels/score_badge.dart': _pureWidget.replaceAll(
+          'ScoreCard',
+          'ScoreBadge',
+        ),
+        'lib/panels/panel.dart': panelUsing(['score_card.dart']),
+      });
+
+      final plan = layout.plan(layout.of(CodeCategory.widgets));
+      expect(plan.addedIssue, isNull);
+      expect(plan.moves, hasLength(2));
+    });
+  });
 }

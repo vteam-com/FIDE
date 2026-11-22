@@ -26,6 +26,7 @@ class _RecordingRunner extends ProcessRunner {
     List<String> arguments, {
     String? workingDirectory,
     bool runInShell = false,
+    Map<String, String> environment = const {},
   }) async {
     final command = [executable, ...arguments];
     ran.add(command);

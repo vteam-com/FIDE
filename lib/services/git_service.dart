@@ -58,6 +58,16 @@ class GitService {
   /// The separator of `-z` output records.
   static const String _nul = '\x00';
 
+  /// The variable naming the index file git reads and writes.
+  static const String _indexFileVariable = 'GIT_INDEX_FILE';
+
+  /// Name of the temporary folder holding the copy of the index that
+  /// [_movesIn] pairs moves in.
+  static const String _movesIndexFolder = 'fide_git_moves_';
+
+  /// The pathspec of the whole repository, wherever git runs in it.
+  static const String _wholeRepository = ':/';
+
   /// Line counts of untracked files already read, by absolute path, with
   /// the modification time and size they were read at: a reload reads
   /// only the files that changed since.
@@ -144,6 +154,10 @@ class GitService {
   /// them: git walks the folder itself, leaving out what `.gitignore`
   /// ignores, such as a new package's `build/` and `.dart_tool/`.
   ///
+  /// A file moved without git, deleted at one path and untracked at
+  /// another, is one unstaged rename when git finds the two alike, as it
+  /// does once both are staged.
+  ///
   /// Throws a [GitException] when git fails.
   Future<GitStatus> getStatus(String path) async {
     final result = await _runChecked(path, [
@@ -153,9 +167,79 @@ class GitService {
     ]);
     final status = GitStatus(staged: [], unstaged: [], untracked: []);
     for (final entry in GitPorcelain.parseStatus(result.stdout.toString())) {
-      GitPorcelain.classify(entry.code, entry.path, status);
+      GitPorcelain.classify(
+        entry.code,
+        entry.path,
+        status,
+        movedFrom: entry.movedFrom,
+      );
+    }
+    if (status.mayHaveMoves) {
+      for (final MapEntry(key: to, value: stats) in (await _movesIn(
+        path,
+      )).entries) {
+        status.addMove(stats.movedFrom!, to);
+      }
     }
     return status;
+  }
+
+  /// The files of the work tree of the repository at [path] git pairs as
+  /// moved, with their line counts, by new path: a deleted file and an
+  /// untracked one alike, compared with the index, or with [base] such as
+  /// `HEAD` when given. Empty when git fails or the index can't be copied.
+  ///
+  /// Git only pairs files it tracks, so it runs on a copy of the index
+  /// where the untracked files are added intent-to-add, which records no
+  /// content and leaves the real index as it is.
+  Future<Map<String, GitDiffStats>> _movesIn(
+    String path, {
+    List<String> base = const [],
+  }) async {
+    final index = await _runner.outputOf('git', [
+      'rev-parse',
+      '--git-path',
+      'index',
+    ], workingDirectory: path);
+    if (index == null) return const {};
+    final indexFile = File(p.join(path, index.trim()));
+    if (!indexFile.existsSync()) return const {};
+    Directory? folder;
+    try {
+      folder = await Directory.systemTemp.createTemp(_movesIndexFolder);
+      final copy = await indexFile.copy(p.join(folder.path, 'index'));
+      final environment = {_indexFileVariable: copy.path};
+      final added = await _runner.outputOf(
+        'git',
+        ['add', '--intent-to-add', '--ignore-removal', _wholeRepository],
+        workingDirectory: path,
+        environment: environment,
+      );
+      if (added == null) return const {};
+      final output = await _runner.outputOf(
+        'git',
+        ['diff', ...base, '-M', '--numstat', '-z'],
+        workingDirectory: path,
+        environment: environment,
+      );
+      return {
+        for (final MapEntry(key: file, value: stats)
+            in GitDiffStats.parseNumstat(
+              output ?? '',
+              recordSeparator: _nul,
+            ).entries)
+          if (stats.movedFrom != null) file: stats,
+      };
+    } on FileSystemException {
+      // Moves are a bonus: without a copy of the index, none are paired
+      return const {};
+    } finally {
+      try {
+        await folder?.delete(recursive: true);
+      } on FileSystemException {
+        // Left for the system to clear with its other temporary files
+      }
+    }
   }
 
   /// Stages [files].
@@ -315,35 +399,54 @@ class GitService {
     throw const GitException('git diff');
   }
 
-  /// Returns the committed content of the absolute [filePath] at HEAD, or an
-  /// empty string when the file isn't in HEAD (new or untracked).
+  /// Returns the committed content of the absolute [filePath] at HEAD, or
+  /// for a file moved since, staged or not, that of the file it moved
+  /// from; an empty string when it isn't in HEAD (new or untracked).
   Future<String> getHeadContent(String filePath) async {
-    return await _showRelativeToFile(filePath, headRevision) ?? '';
+    return await _showAtHead(filePath, _runner.outputOf) ?? '';
   }
 
-  /// Returns the raw bytes of the absolute [filePath] at HEAD, or null
-  /// when it isn't there: for binary files such as images, which
-  /// [getHeadContent] would mangle.
+  /// Returns the raw bytes of the absolute [filePath] at HEAD, or of the
+  /// file it moved from, as [getHeadContent] reads them; null when it
+  /// isn't there: for binary files such as images, which [getHeadContent]
+  /// would mangle.
   Future<Uint8List?> getHeadBytes(String filePath) {
-    return _runner.bytesOf('git', [
-      'show',
-      _showSpec(filePath, headRevision),
-    ], workingDirectory: p.dirname(filePath));
+    return _showAtHead(filePath, _runner.bytesOf);
   }
 
-  /// Runs `git show <revision>:./<name>` from the file's own directory, so
-  /// the path resolves correctly wherever the repository root is.
-  Future<String?> _showRelativeToFile(String filePath, String revision) {
-    return _runner.outputOf('git', [
+  /// What [show] collects of `git show` of the absolute [filePath] at
+  /// HEAD, run from the file's own directory so the path resolves wherever
+  /// the repository root is; when the file isn't in HEAD, of the file it
+  /// moved from, run from the root. Null when neither is there.
+  Future<T?> _showAtHead<T>(
+    String filePath,
+    Future<T?> Function(
+      String executable,
+      List<String> arguments, {
+      String? workingDirectory,
+    })
+    show,
+  ) async {
+    final own = await show('git', [
       'show',
-      _showSpec(filePath, revision),
+      '$headRevision:./${p.basename(filePath)}',
     ], workingDirectory: p.dirname(filePath));
+    if (own != null) return own;
+    final location = await repoLocation(p.dirname(filePath));
+    if (location == null) return null;
+    final String? headPath;
+    try {
+      headPath = (await getStatus(location.root))
+          .headPathOf(location.pathOf(p.basename(filePath)));
+    } on GitException {
+      return null;
+    }
+    if (headPath == null) return null;
+    return show('git', [
+      'show',
+      '$headRevision:$headPath',
+    ], workingDirectory: location.root);
   }
-
-  /// The `git show` object name of [filePath] at [revision], relative to
-  /// the file's own directory.
-  static String _showSpec(String filePath, String revision) =>
-      '$revision:./${p.basename(filePath)}';
 
   /// Whether [file] is tracked in the repository at [path].
   ///
@@ -391,7 +494,8 @@ class GitService {
   /// Added/removed line counts of every changed file in [status], keyed by
   /// repository-relative path: [staged] compares the index to HEAD,
   /// [unstaged] the working copy to the index, with untracked files counted
-  /// as wholly added.
+  /// as wholly added. A renamed file, staged or not, counts the lines
+  /// changed since the file it moved from.
   Future<
     ({Map<String, GitDiffStats> staged, Map<String, GitDiffStats> unstaged})
   >
@@ -401,11 +505,15 @@ class GitService {
     for (final file in status.untracked) {
       unstaged[file] = await _newFileStats(p.join(projectPath, file));
     }
+    if (status.unstagedMovedFrom.isNotEmpty) {
+      unstaged.addAll(await _movesIn(projectPath));
+    }
     return (staged: staged, unstaged: unstaged);
   }
 
   /// Parses `git diff --numstat` of the index ([cached]) or the working
-  /// copy into line counts per file; empty when git fails.
+  /// copy into line counts per file, a rename's at its new path; empty
+  /// when git fails.
   Future<Map<String, GitDiffStats>> _numstat(
     String path, {
     required bool cached,
@@ -414,9 +522,9 @@ class GitService {
       'diff',
       if (cached) '--cached',
       '--numstat',
-      '--no-renames',
+      '-z',
     ], workingDirectory: path);
-    return GitDiffStats.parseNumstat(output ?? '');
+    return GitDiffStats.parseNumstat(output ?? '', recordSeparator: _nul);
   }
 
   /// Counts every line of the untracked file at [filePath] as added; zero
@@ -498,14 +606,16 @@ class GitService {
         'diff',
         ...base,
         '--numstat',
-        '--no-renames',
         '-z',
       ], workingDirectory: root);
       if (output == null) continue;
-      return GitHeadChanges(
-        stats: GitDiffStats.parseNumstat(output, recordSeparator: _nul),
-        untracked: _records(untracked),
-      );
+      final stats = GitDiffStats.parseNumstat(output, recordSeparator: _nul);
+      final untrackedPaths = _records(untracked);
+      // A file moved without git: deleted at one path, untracked at another
+      if (untrackedPaths.isNotEmpty && stats.values.any((s) => s.mayBeGone)) {
+        stats.addAll(await _movesIn(root, base: base));
+      }
+      return GitHeadChanges(stats: stats, untracked: untrackedPaths);
     }
     return GitHeadChanges(stats: const {}, untracked: _records(untracked));
   }
@@ -516,15 +626,19 @@ class GitService {
 
   /// Added/removed line counts against HEAD of the absolute [filePath],
   /// in the folder at [location], from its repository's [changes]; an
-  /// untracked file counts as wholly added.
+  /// untracked file counts as wholly added, unless git pairs it with the
+  /// file it moved from.
   Future<GitDiffStats> diffStatsIn(
     GitHeadChanges changes,
     GitRepoLocation location,
     String filePath,
   ) async {
     final repoPath = location.pathOf(p.basename(filePath));
-    if (changes.isUntracked(repoPath)) return _newFileStats(filePath);
-    return changes.stats[repoPath] ?? _noChanges;
+    final stats = changes.stats[repoPath];
+    if (stats?.movedFrom == null && changes.isUntracked(repoPath)) {
+      return _newFileStats(filePath);
+    }
+    return stats ?? _noChanges;
   }
 
   /// Line counts of a tracked file without changes.

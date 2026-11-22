@@ -5,6 +5,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:fide/models/code_category.dart';
 import 'package:fide/models/dart_imports.dart';
 import 'package:fide/models/file_layout_review.dart';
+import 'package:fide/models/import_graph.dart';
 import 'package:fide/models/project_name.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/pubspec.dart';
@@ -165,7 +166,7 @@ class FileLayoutAnalyzer {
           file.path: _Library(
             file,
             files: files,
-            libPath: libPath,
+            projectPath: projectPath,
             packageName: packageName,
           ),
     };
@@ -189,7 +190,7 @@ class FileLayoutAnalyzer {
     final moves = <FileMove>[];
     for (final MapEntry(key: path, value: library) in libraries.entries) {
       if (skipped.any((folder) => p.isWithin(folder, path))) continue;
-      final relative = _relative(projectPath, path);
+      final relative = library.relativePath;
       final placed = _placeOf(
         library,
         kinds,
@@ -220,12 +221,70 @@ class FileLayoutAnalyzer {
         ),
       );
     }
-    return FileLayoutReview(
+    final candidates = FileLayoutReview(
       moves: _withBlockers(projectPath, moves),
       fileCount: libraries.length,
       packageName: packageName,
+      // Parts are files of the graph too, as fCheck's
+      graph: ImportGraph({
+        for (final library in libraries.values) ...{
+          library.relativePath: ImportGraph.dependenciesIn(
+            library.relativePath,
+            library.file.unit,
+            packageName: packageName,
+          ),
+          for (final part in library.parts)
+            _relative(projectPath, part): const <String>{},
+        },
+      }),
+      parts: {
+        for (final library in libraries.values)
+          if (library.parts.isNotEmpty)
+            library.relativePath: [
+              for (final part in library.parts) _relative(projectPath, part),
+            ],
+      },
+    );
+    final movable = [
+      for (final move in candidates.moves)
+        if (move.blocker == null) move,
+    ];
+    final plans = Map.fromIterables(movable, candidates.planEach(movable));
+    final planned = [
+      for (final move in candidates.moves)
+        if (plans[move] case final plan?) _planned(move, plan) else move,
+    ];
+    return FileLayoutReview(
+      moves: planned,
+      fileCount: candidates.fileCount,
+      packageName: packageName,
+      graph: candidates.graph,
+      parts: candidates.parts,
+      allPlans: {
+        for (final category in FileLayoutReview.categories)
+          if ([
+                for (final move in planned)
+                  if (move.category == category && move.canMove) move,
+              ]
+              case final moves when moves.isNotEmpty)
+            category: candidates.planAll(moves),
+      },
     );
   }
+
+  /// [move] as [plan], its plan made alone, has it: with the files moved
+  /// along, the Layers issues it fixes, or the one it would add.
+  static FileMove _planned(FileMove move, FileLayoutPlan plan) => FileMove(
+    category: move.category,
+    path: move.path,
+    target: move.target,
+    name: move.name,
+    line: move.line,
+    parts: move.parts,
+    along: plan.addedIssue == null ? plan.moves.skip(1).toList() : const [],
+    fixedIssues: plan.fixedIssues,
+    addedIssue: plan.addedIssue,
+  );
 
   /// The kind of [library] and its main type, the one the file is named
   /// after, else its first; null when its kind is none the review places:

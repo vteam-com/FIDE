@@ -57,6 +57,7 @@ class FileNameWidget extends StatelessWidget {
       icon: _getIcon(colorScheme, dimmedColor),
       name: fileItem.name,
       path: fileItem.path,
+      movedFrom: fileItem.movedFrom,
       rootPath: rootPath,
       showPath: showPath,
       note: warning,

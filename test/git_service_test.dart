@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:fide/models/file_system_item.dart';
@@ -172,9 +173,8 @@ void main() {
   test('staged diff shows a moved file as renamed', () async {
     _git(repo.path, ['mv', 'lib/main.dart', 'lib/app.dart']);
 
-    final diff = await const GitService(
-      ProcessRunner(),
-    ).getStagedDiff(repo.path);
+    final diff = await const GitService(ProcessRunner())
+        .getStagedDiff(repo.path);
 
     expect(diff, contains('rename from lib/main.dart'));
     expect(diff, isNot(contains('-committed')));
@@ -405,6 +405,69 @@ void main() {
     );
   });
 
+  group('a file moved without git', () {
+    // Enough lines for git to find the file alike once edited
+    final committed = [for (var i = 0; i < 10; i++) 'line $i\n'].join();
+    late String moved;
+
+    setUp(() {
+      File(nestedFile).writeAsStringSync(committed);
+      _git(repo.path, ['commit', '-q', '-am', 'longer']);
+      moved = path.join(repo.path, 'lib', 'views', 'main.dart');
+      Directory(path.dirname(moved)).createSync();
+      File(nestedFile).renameSync(moved);
+      File(moved).writeAsStringSync('line 10\n', mode: FileMode.append);
+    });
+
+    test('is one unstaged rename, the index left alone', () async {
+      final status = await const GitService(ProcessRunner())
+          .getStatus(repo.path);
+
+      expect(status.unstaged, ['lib/views/main.dart']);
+      expect(status.statusOf('lib/views/main.dart'), GitFileStatus.renamed);
+      expect(status.unstagedMovedFrom, {
+        'lib/views/main.dart': 'lib/main.dart',
+      });
+      expect(status.untracked, isEmpty);
+      // Git itself still sees a deletion and an untracked folder
+      final porcelain = Process.runSync('git', [
+        'status',
+        '--porcelain',
+      ], workingDirectory: repo.path).stdout;
+      expect(porcelain, ' D lib/main.dart\n?? lib/views/\n');
+    });
+
+    test('counts the lines it changed, staged or not', () async {
+      const git = GitService(ProcessRunner());
+      final unstaged = (await git.getChangeStats(
+        repo.path,
+        await git.getStatus(repo.path),
+      )).unstaged['lib/views/main.dart']!;
+      expect((unstaged.added, unstaged.removed), (1, 0));
+      expect(unstaged.movedFrom, 'lib/main.dart');
+
+      _git(repo.path, ['add', '-A']);
+      final status = await git.getStatus(repo.path);
+      expect(status.stagedMovedFrom, {'lib/views/main.dart': 'lib/main.dart'});
+      final staged = (await git.getChangeStats(
+        repo.path,
+        status,
+      )).staged['lib/views/main.dart']!;
+      expect((staged.added, staged.removed), (1, 0));
+    });
+
+    test('diffs against where it was in HEAD, staged or not', () async {
+      const git = GitService(ProcessRunner());
+      expect(await git.getHeadContent(moved), committed);
+      expect(utf8.decode((await git.getHeadBytes(moved))!), committed);
+      expect((await git.getFileDiffStats(moved))!.added, 1);
+
+      _git(repo.path, ['add', '-A']);
+      expect(await git.getHeadContent(moved), committed);
+      expect((await git.getFileDiffStats(moved))!.removed, 0);
+    });
+  });
+
   group('GitDiffStats.parseNumstat', () {
     test('reads added and removed lines per path', () {
       final stats = GitDiffStats.parseNumstat(
@@ -429,6 +492,18 @@ void main() {
       final stats = GitDiffStats.parseNumstat('1\t0\ta\tb\n\nnot numstat\n');
 
       expect(stats.keys, ['a\tb']);
+    });
+
+    test('keys a NUL-separated rename by its new path', () {
+      final stats = GitDiffStats.parseNumstat(
+        '1\t1\t\x00a.dart\x00lib/a.dart\x002\t0\tb.dart\x00',
+        recordSeparator: '\x00',
+      );
+
+      expect(stats.keys, ['lib/a.dart', 'b.dart']);
+      expect(stats['lib/a.dart']!.movedFrom, 'a.dart');
+      expect(stats['lib/a.dart']!.added, 1);
+      expect(stats['b.dart']!.movedFrom, isNull);
     });
 
     test('reads NUL-separated records with unquoted paths', () {

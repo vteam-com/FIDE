@@ -11,17 +11,24 @@ import 'package:material_ui/material_ui.dart';
 /// Changed files in the repository.
 const int _fileCount = 40;
 
-/// A repository with [_fileCount] changed files and no remote, answered
-/// without running git.
+/// A repository with the changes [status] builds, by default
+/// [_fileCount] changed files, and no remote, answered without running
+/// git.
 class _ChangedGit extends GitService {
-  _ChangedGit() : super(const ProcessRunner());
+  _ChangedGit({this.status = _changedFiles}) : super(const ProcessRunner());
 
-  @override
-  Future<GitStatus> getStatus(String path) async => GitStatus(
+  /// Builds the repository's status.
+  final GitStatus Function() status;
+
+  /// [_fileCount] files changed and not staged.
+  static GitStatus _changedFiles() => GitStatus(
     staged: [],
     unstaged: [for (var i = 0; i < _fileCount; i++) 'file$i.dart'],
     untracked: [],
   );
+
+  @override
+  Future<GitStatus> getStatus(String path) async => status();
 
   @override
   Future<List<GitCommit>> getRecentCommits(
@@ -47,18 +54,47 @@ class _ChangedGit extends GitService {
   Future<bool> fetch(String path) async => false;
 }
 
+/// The Git panel of the repository at `/repo` that [git] answers for.
+Widget _panel(GitService git) => ProviderScope(
+  overrides: [gitServiceProvider.overrideWithValue(git)],
+  child: const MaterialApp(
+    home: Scaffold(body: GitPanel(projectPath: '/repo')),
+  ),
+);
+
 void main() {
-  testWidgets('selecting a file rebuilds its row, not every changed file', (
+  testWidgets('a moved file is one row, with where it moved from', (
     tester,
   ) async {
     await tester.pumpWidget(
-      ProviderScope(
-        overrides: [gitServiceProvider.overrideWithValue(_ChangedGit())],
-        child: const MaterialApp(
-          home: Scaffold(body: GitPanel(projectPath: '/repo')),
+      _panel(
+        _ChangedGit(
+          status: () {
+            final status = GitStatus(staged: [], unstaged: [], untracked: []);
+            GitPorcelain.classify(' D', 'lib/widgets/home.dart', status);
+            GitPorcelain.classify('??', 'lib/views/home.dart', status);
+            return status
+              ..addMove('lib/widgets/home.dart', 'lib/views/home.dart');
+          },
         ),
       ),
     );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FileNameWidget), findsOneWidget);
+    expect(find.text('Untracked'), findsNothing);
+    expect(find.text('home.dart'), findsOneWidget);
+    expect(find.text(' ← lib/widgets/home.dart'), findsOneWidget);
+    expect(
+      find.byTooltip('lib/views/home.dart\n\nMoved from lib/widgets/home.dart'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('selecting a file rebuilds its row, not every changed file', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_panel(_ChangedGit()));
     await tester.pumpAndSettle();
     expect(find.byType(FileNameWidget), findsNWidgets(_fileCount));
 

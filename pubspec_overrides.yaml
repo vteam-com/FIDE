@@ -1,0 +1,5 @@
+# Local only, not to commit: FIDE builds against ../fcheck until fCheck with
+# validateLayers is released; then bump fcheck in pubspec.yaml and delete this.
+dependency_overrides:
+  fcheck:
+    path: ../fcheck

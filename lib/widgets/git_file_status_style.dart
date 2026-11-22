@@ -9,7 +9,8 @@ import 'package:material_ui/material_ui.dart';
 /// style.
 ///
 /// Changes take the [StatusTone] colors the diff counters use, so a file's
-/// name and its `+`/`-` counts agree; the other states take the theme's
+/// name and its `+`/`-` counts agree, and a rename, neither an addition nor
+/// a deletion, the information tone; the other states take the theme's
 /// [ColorScheme].
 extension GitFileStatusStyle on GitFileStatus {
   /// Color for names and badges with this status; the theme's text color
@@ -19,6 +20,7 @@ extension GitFileStatusStyle on GitFileStatus {
       GitFileStatus.added => StatusTone.success.color,
       GitFileStatus.modified => StatusTone.warning.color,
       GitFileStatus.deleted => StatusTone.error.color,
+      GitFileStatus.renamed => StatusTone.info.color,
       GitFileStatus.untracked => colorScheme.onSurfaceVariant,
       GitFileStatus.ignored => colorScheme.outline,
       _ => colorScheme.onSurface,
@@ -50,7 +52,8 @@ extension GitFileStatusStyle on GitFileStatus {
       GitFileStatus.ignored ||
       GitFileStatus.untracked ||
       GitFileStatus.added ||
-      GitFileStatus.modified => base.copyWith(color: foreground(colorScheme)),
+      GitFileStatus.modified ||
+      GitFileStatus.renamed => base.copyWith(color: foreground(colorScheme)),
       _ => base,
     };
   }

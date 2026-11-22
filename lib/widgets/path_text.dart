@@ -3,7 +3,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
 /// A file path as FIDE shows it everywhere: its folders dimmed, then the
-/// file name bolder at full strength, and an optional `:line`.
+/// file name bolder at full strength, an optional `:line` and, for a file
+/// that moved, `← ` and where it moved from, dimmed.
 ///
 /// The path shows in full, or relative to [rootPath] when given and inside
 /// it; [showFolder] false shows the name alone. On one line (the default)
@@ -16,13 +17,21 @@ class PathText extends StatelessWidget {
     super.key,
     this.rootPath,
     this.line,
+    this.movedFrom,
     this.showFolder = true,
     this.selectable = false,
     this.style = AppTextStyle.body,
   });
 
+  /// Between the path and where it moved from.
+  static const String _movedArrow = ' ← ';
+
   /// 1-based line shown after the name, such as a finding's location.
   final int? line;
+
+  /// Where the file moved from, as an absolute path, shown after the name
+  /// as the path itself is; null when it didn't move.
+  final String? movedFrom;
 
   /// The file or folder, as an absolute path.
   final String path;
@@ -58,6 +67,10 @@ class PathText extends StatelessWidget {
     final nameStyle = style
         .merge(AppTextStyle.strong)
         .copyWith(color: style.color ?? colorScheme.onSurface);
+    final movedFrom = this.movedFrom;
+    final origin = movedFrom == null
+        ? ''
+        : '$_movedArrow${shownPath(movedFrom, rootPath)}';
 
     if (selectable) {
       return SelectableText.rich(
@@ -65,6 +78,7 @@ class PathText extends StatelessWidget {
           children: [
             if (folder.isNotEmpty) TextSpan(text: folder, style: folderStyle),
             TextSpan(text: name, style: nameStyle),
+            if (origin.isNotEmpty) TextSpan(text: origin, style: folderStyle),
           ],
         ),
       );
@@ -75,25 +89,27 @@ class PathText extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
-    if (folder.isEmpty) return nameText;
-    // The name takes what it needs, up to the whole width; the folders get
-    // the rest
+    if (folder.isEmpty && origin.isEmpty) return nameText;
+    // The name takes what it needs, up to the whole width; the folders and
+    // where the file moved from share the rest, cut short
+    Widget dimmed(String text) => Flexible(
+      child: Text(
+        text,
+        style: folderStyle,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
     return LayoutBuilder(
       builder: (_, constraints) => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Flexible(
-            child: Text(
-              folder,
-              style: folderStyle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          if (folder.isNotEmpty) dimmed(folder),
           ConstrainedBox(
             constraints: BoxConstraints(maxWidth: constraints.maxWidth),
             child: nameText,
           ),
+          if (origin.isNotEmpty) dimmed(origin),
         ],
       ),
     );

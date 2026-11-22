@@ -25,6 +25,7 @@ class ScriptedRunner extends ProcessRunner {
     List<String> arguments, {
     String? workingDirectory,
     bool runInShell = false,
+    Map<String, String> environment = const {},
   }) async {
     if (missing) {
       throw ProcessException(executable, arguments, 'No such file');

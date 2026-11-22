@@ -22,6 +22,7 @@ class _NoGitRunner extends ProcessRunner {
     List<String> arguments, {
     String? workingDirectory,
     bool runInShell = false,
+    Map<String, String> environment = const {},
   }) async => ProcessResult(0, 1, '', '');
 }
 

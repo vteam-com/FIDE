@@ -17,6 +17,7 @@ class TreeRow extends StatelessWidget {
     required this.icon,
     required this.name,
     this.path,
+    this.movedFrom,
     this.depth = 0,
     this.rootPath,
     this.note,
@@ -63,6 +64,10 @@ class TreeRow extends StatelessWidget {
   /// The part of [name] matching a search, highlighted; none when null.
   final TextRange? match;
 
+  /// Where the entry moved from, as an absolute path: shown after [path]
+  /// when the row shows it, and in the tooltip; null when it didn't move.
+  final String? movedFrom;
+
   /// The entry's name.
   final String name;
 
@@ -99,12 +104,12 @@ class TreeRow extends StatelessWidget {
     final path = this.path;
     final root = rootPath;
     final shownPath = path == null ? null : PathText.shownPath(path, root);
-    final tooltipLines = [?shownPath, ?note];
+    final tooltipLines = [?shownPath, ?_movedNote(path), ?note];
     final tooltip = tooltipLines.isEmpty ? null : tooltipLines.join('\n\n');
     final style = (highlighted ? AppTextStyle.bodyStrong : AppTextStyle.body)
         .merge(nameStyle);
     final text = showPath && path != null
-        ? PathText(path, rootPath: root, style: style)
+        ? PathText(path, rootPath: root, movedFrom: movedFrom, style: style)
         : Text.rich(
             _highlighted(context, match),
             style: style,
@@ -158,5 +163,16 @@ class TreeRow extends StatelessWidget {
         TextSpan(text: match.textAfter(name)),
       ],
     );
+  }
+
+  /// Where the entry at [path] moved from, said for the tooltip: renamed
+  /// in its folder, or moved from another; null when it didn't move.
+  String? _movedNote(String? path) {
+    final movedFrom = this.movedFrom;
+    if (movedFrom == null) return null;
+    final verb = path != null && p.dirname(path) == p.dirname(movedFrom)
+        ? 'Renamed'
+        : 'Moved';
+    return '$verb from ${PathText.shownPath(movedFrom, rootPath)}';
   }
 }

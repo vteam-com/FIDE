@@ -1,5 +1,9 @@
+import 'package:fide/services/git_service.dart';
 import 'package:fide/widgets/app_menu_bar.dart';
 import 'package:fide/widgets/compact_text_button.dart';
+import 'package:fide/widgets/diff_counter.dart';
+import 'package:fide/widgets/icon_menu_row.dart';
+import 'package:fide/widgets/path_text.dart';
 import 'package:fide/widgets/priority_row.dart';
 import 'package:fide/widgets/section_panel.dart';
 import 'package:fide/widgets/tree_row.dart';
@@ -20,6 +24,28 @@ const double _tinyWidth = 100;
 
 /// The count of changes in [_section].
 const _changeCount = 3;
+
+/// Room the open file's picker gets atop a narrow editor: less than its
+/// file icon and Git counts alone.
+const double _pickerWidth = 40;
+
+/// The open file's entry as the editor's picker shows it: its icon, its
+/// path and its Git counts.
+IconMenuRow _openFileEntry() => IconMenuRow(
+  icon: Icons.code,
+  label: 'photo_screen.dart',
+  labelWidget: const PathText(
+    '/app/lib/screens/photo_screen/photo_screen.dart',
+    rootPath: '/app',
+  ),
+  trailing: DiffCounter(
+    gitStats: GitDiffStats(
+      added: _changeCount,
+      removed: _changeCount,
+      isNewFile: false,
+    ),
+  ),
+);
 
 /// The labels of the title bar's menus off macOS.
 const _menuLabels = ['FIDE', 'File', 'Edit', 'Run', 'View'];
@@ -156,5 +182,22 @@ void main() {
     await tester.tap(menuButton);
     await tester.pumpAndSettle();
     expect(fileMenu, findsOneWidget);
+  });
+
+  testWidgets('a menu entry follows its label with its counts, hiding them '
+      'rather than overflowing atop a narrow editor', (tester) async {
+    final added = find.text('+$_changeCount').hitTestable();
+    final path = find.byType(PathText);
+
+    await _pumpIn(tester, _wideWidth, _openFileEntry());
+    expect(added, findsOneWidget);
+    expect(
+      tester.getTopLeft(added).dx,
+      greaterThan(tester.getTopRight(path).dx),
+    );
+
+    await _pumpIn(tester, _pickerWidth, _openFileEntry());
+    expect(tester.takeException(), isNull);
+    expect(added, findsNothing);
   });
 }

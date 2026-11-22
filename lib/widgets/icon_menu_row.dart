@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/widgets/priority_row.dart';
 import 'package:fide/widgets/status_tone_style.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -7,7 +8,9 @@ import 'package:material_ui/material_ui.dart';
 /// optional [trailing] widget.
 ///
 /// Entries without an icon keep its space, so labels line up; a check
-/// menu passes [Icons.check] for the selected entry only.
+/// menu passes [Icons.check] for the selected entry only. Too narrow for
+/// all of it, the label keeps its room and [trailing] hides, rather than
+/// overflowing.
 class IconMenuRow extends StatelessWidget {
   /// Creates a row showing [icon] then [label].
   const IconMenuRow({
@@ -43,34 +46,32 @@ class IconMenuRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final color = isError ? StatusTone.error.readableIn(colorScheme) : null;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    // As the row narrows, such as the open file's name atop a narrow
+    // editor, the label keeps its room and the trailing part hides
+    return PriorityRow(
+      packed: true,
       spacing: AppSpacing.medium,
-      children: [
-        SizedBox.square(
-          dimension: AppIconSize.medium,
-          child:
-              leading ??
-              (icon == null
-                  ? null
-                  : Icon(
-                      icon,
-                      size: AppIconSize.medium,
-                      color: color ?? colorScheme.primary,
-                    )),
-        ),
-        Flexible(
-          child:
-              labelWidget ??
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyle.label.copyWith(color: color),
-              ),
-        ),
-        ?trailing,
-      ],
+      leading: SizedBox.square(
+        dimension: AppIconSize.medium,
+        child:
+            leading ??
+            (icon == null
+                ? null
+                : Icon(
+                    icon,
+                    size: AppIconSize.medium,
+                    color: color ?? colorScheme.primary,
+                  )),
+      ),
+      title:
+          labelWidget ??
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyle.label.copyWith(color: color),
+          ),
+      trailing: trailing,
     );
   }
 }

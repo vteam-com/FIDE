@@ -17,8 +17,10 @@ import 'package:path/path.dart' as p;
 /// of file (views, widgets, models) which folder it belongs in, then each
 /// file outside it, a click away in the editor, with Move, which moves it
 /// there with its parts and points every import naming it at its new
-/// place; Move All on a kind with several to move. A file that can't move
-/// says why.
+/// place; Move All on a kind with several to move. No move adds a
+/// Layers issue, as fCheck judges the project's dependencies: a move
+/// takes along the files that would otherwise add one, and says which it
+/// fixes; a file that can't move says why.
 class FileLayoutList extends AnalyzerFindingsList<CodeCategory, FileMove> {
   /// Creates the list of [review]'s moves.
   const FileLayoutList({
@@ -34,8 +36,10 @@ class FileLayoutList extends AnalyzerFindingsList<CodeCategory, FileMove> {
   final FileLayoutReview review;
 
   /// [move]'s card: the file, the folder it moves from and to, with its
-  /// parts, and Move, or why it can't move; disabled while a change is
-  /// [running], showing it running when it is its own.
+  /// parts, the files moved along and the Layers issues it fixes, and
+  /// Move, or
+  /// why it can't move; disabled while a change is [running], showing it
+  /// running when it is its own.
   @override
   Widget card(
     BuildContext context,
@@ -43,7 +47,13 @@ class FileLayoutList extends AnalyzerFindingsList<CodeCategory, FileMove> {
     FileMove move, {
     required Object? running,
   }) {
-    final blocker = move.blocker;
+    final blocker =
+        move.blocker ??
+        switch (move.addedIssue) {
+          final issue? => 'Moving it would add a Layers issue: $issue',
+          null => null,
+        };
+    final along = move.along;
     return ActionCard(
       icon: _iconOf(move.category),
       title: p.posix.basename(move.path),
@@ -59,7 +69,7 @@ class FileLayoutList extends AnalyzerFindingsList<CodeCategory, FileMove> {
               busy: identical(running, move),
               onPressed: running != null
                   ? null
-                  : () => _move(context, ref, [move]),
+                  : () => _move(context, ref, move.planned, key: move),
             ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,6 +77,17 @@ class FileLayoutList extends AnalyzerFindingsList<CodeCategory, FileMove> {
         children: [
           if (blocker != null)
             Text(blocker, style: AppTextStyle.secondary(context)),
+          if (along.isNotEmpty)
+            Text(
+              'Moves along, so no Layers issue is added: '
+              '${along.map((each) => p.posix.basename(each.path)).join(', ')}',
+              style: AppTextStyle.secondary(context),
+            ),
+          for (final issue in move.fixedIssues)
+            Text(
+              'Fixes a Layers issue: $issue',
+              style: AppTextStyle.secondary(context),
+            ),
           FileLocationRow(
             name: move.name,
             path: p.joinAll([projectPath, ...p.posix.split(move.path)]),
@@ -91,8 +112,10 @@ class FileLayoutList extends AnalyzerFindingsList<CodeCategory, FileMove> {
   List<CodeCategory> get kinds => FileLayoutReview.categories;
 
   /// The title of the section of [findings], the moves of files of
-  /// [kind], with Move All when several of them can move; disabled while
-  /// a change is [running], showing it running when it is its own.
+  /// [kind], with Move All when several of them can move, which moves as
+  /// many of them together as add no Layers issue, with the files they
+  /// need along; disabled while a change is [running], showing it running
+  /// when it is its own.
   @override
   Widget sectionTitle(
     BuildContext context,
@@ -103,7 +126,7 @@ class FileLayoutList extends AnalyzerFindingsList<CodeCategory, FileMove> {
   }) {
     final movable = [
       for (final move in findings)
-        if (move.blocker == null) move,
+        if (move.canMove) move,
     ];
     return SectionTitle(
       '${kind.label} (${findings.length})',
@@ -115,18 +138,23 @@ class FileLayoutList extends AnalyzerFindingsList<CodeCategory, FileMove> {
               busy: running == kind,
               onPressed: running != null
                   ? null
-                  : () => _move(context, ref, movable, key: kind),
+                  : () => _move(
+                      context,
+                      ref,
+                      review.allPlanOf(kind).moves,
+                      key: kind,
+                    ),
             ),
     );
   }
 
   /// Moves the files of [moves], then tells how it went; [key] names the
-  /// button that started it, the only move when null.
+  /// button that started it.
   Future<void> _move(
     BuildContext context,
     WidgetRef ref,
     List<FileMove> moves, {
-    Object? key,
+    required Object key,
   }) async {
     final outcome = await ref
         .read(analyzerFixControllerProvider.notifier)

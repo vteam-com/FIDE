@@ -108,6 +108,7 @@ class FakeConverterRunner extends ProcessRunner {
     List<String> arguments, {
     String? workingDirectory,
     bool runInShell = false,
+    Map<String, String> environment = const {},
   }) async {
     commands.add([executable, ...arguments].join(' '));
     if (!installed.contains(executable)) {

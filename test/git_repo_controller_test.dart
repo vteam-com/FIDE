@@ -56,6 +56,7 @@ class _CountingRunner extends ProcessRunner {
     List<String> arguments, {
     String? workingDirectory,
     bool runInShell = false,
+    Map<String, String> environment = const {},
   }) {
     launched.add('$executable ${arguments.join(' ')}');
     return super.run(
@@ -63,6 +64,7 @@ class _CountingRunner extends ProcessRunner {
       arguments,
       workingDirectory: workingDirectory,
       runInShell: runInShell,
+      environment: environment,
     );
   }
 
@@ -151,6 +153,27 @@ void main() {
       final state = container.read(gitRepoControllerProvider(repo.path)).value!;
       expect(state.status.hasChanges, isFalse);
       expect(state.commits.first.message, 'second');
+    });
+
+    test('stage, unstage and discard act on both ends of a move', () async {
+      final moved = path.join(repo.path, 'b.txt');
+      File(file).renameSync(moved);
+      GitStatus current() =>
+          container.read(gitRepoControllerProvider(repo.path)).value!.status;
+      expect((await load()).status.unstagedMovedFrom, {'b.txt': 'a.txt'});
+
+      await controller().stage(['b.txt']);
+      expect(current().stagedMovedFrom, {'b.txt': 'a.txt'});
+      expect(current().unstaged, isEmpty);
+
+      await controller().unstage(['b.txt']);
+      expect(current().staged, isEmpty);
+      expect(current().unstagedMovedFrom, {'b.txt': 'a.txt'});
+
+      await controller().discard(['b.txt']);
+      expect(current().hasChanges, isFalse);
+      expect(File(file).existsSync(), isTrue);
+      expect(File(moved).existsSync(), isFalse);
     });
 
     test('a failed action throws and still reloads', () async {

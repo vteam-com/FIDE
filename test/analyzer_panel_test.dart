@@ -5,6 +5,7 @@ import 'package:fide/models/analyzer_review.dart';
 import 'package:fide/models/code_category.dart';
 import 'package:fide/models/dry_review.dart';
 import 'package:fide/models/file_layout_review.dart';
+import 'package:fide/models/import_graph.dart';
 import 'package:fide/panels/right/analyzer_panel.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/dry_review_provider.dart';
@@ -59,6 +60,38 @@ const DryReview _numberReview = DryReview(
       fixes: [
         DryFix('Use AppIconSize.large', [
           DryEdit('lib/a.dart', _numberOffset, '32', 'AppIconSize.large'),
+        ]),
+      ],
+    ),
+  ],
+);
+
+/// A number whose constant lives in `lib/b.dart`, which imports
+/// `lib/a.dart`: using it there would make the two import each other.
+const DryReview _cycleReview = DryReview(
+  widgetCount: 1,
+  fileCount: 2,
+  packageName: 'demo',
+  graph: ImportGraph({
+    'lib/a.dart': {},
+    'lib/b.dart': {'lib/a.dart'},
+  }),
+  findings: [
+    DryFinding(
+      kind: DryFindingKind.literal,
+      widget: '32',
+      variants: [
+        DryVariant('32', [DryLocation('lib/a.dart', 1)]),
+      ],
+      fixes: [
+        DryFix('Use Sizes.large', [
+          DryEdit(
+            'lib/a.dart',
+            _numberOffset,
+            '32',
+            'Sizes.large',
+            importUri: 'package:demo/b.dart',
+          ),
         ]),
       ],
     ),
@@ -215,6 +248,23 @@ void main() {
 
     expect(reader.files['/p/lib/a.dart'], 'Icon(size: AppIconSize.large)');
     expect(find.text('Fixed 1 place'), findsOneWidget);
+  });
+
+  testWidgets('a fix adding a Layers issue is refused, writing nothing', (
+    tester,
+  ) async {
+    final reader = FakeFileContentReader()
+      ..files['/p/lib/a.dart'] = 'Icon(size: 32)';
+    await pumpPanel(tester, _cycleReview, reader: reader);
+
+    await tester.tap(find.text('Use Sizes.large'));
+    await tester.pumpAndSettle();
+
+    expect(reader.files['/p/lib/a.dart'], 'Icon(size: 32)');
+    expect(
+      find.textContaining('Not fixed: it would add a Layers issue'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a finding code cannot fix says why and offers the AI', (

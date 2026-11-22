@@ -12,6 +12,7 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/element/type_system.dart';
 import 'package:fide/models/dart_imports.dart';
 import 'package:fide/models/dry_review.dart';
+import 'package:fide/models/import_graph.dart';
 import 'package:fide/models/unique_name.dart';
 import 'package:fide/services/dart_references.dart';
 import 'package:path/path.dart' as p;
@@ -41,6 +42,9 @@ part 'dry_analyzer.widget_call.dart';
 class DryAnalyzer {
   /// Creates a stateless analyzer.
   const DryAnalyzer();
+
+  /// The scheme of a package library's URI.
+  static const String _packageScheme = 'package';
 
   /// Fewest files a repetition spans to be reported.
   static const int minFiles = 2;
@@ -85,6 +89,9 @@ class DryAnalyzer {
     );
     final collector = _CallCollector(projectPath);
     var fileCount = 0;
+    // The dependencies between the files, so no fix adds a Layers issue
+    final edges = <String, Set<String>>{};
+    String? packageName;
     for (final context in collection.contexts) {
       final paths = context.contextRoot.analyzedFiles().toList()..sort();
       for (final path in paths) {
@@ -93,6 +100,18 @@ class DryAnalyzer {
         if (result is! ResolvedUnitResult) continue;
         fileCount++;
         collector.collect(result);
+        final library = result.libraryElement.uri;
+        packageName ??= library.isScheme(_packageScheme)
+            ? library.pathSegments.first
+            : null;
+        final relative = p.posix.joinAll(
+          p.split(p.relative(path, from: projectPath)),
+        );
+        edges[relative] = ImportGraph.dependenciesIn(
+          relative,
+          result.unit,
+          packageName: packageName,
+        );
       }
     }
     final calls = collector.calls;
@@ -107,6 +126,8 @@ class DryAnalyzer {
       widgetCount: calls.length,
       fileCount: fileCount,
       takenNames: collector.takenNames,
+      graph: ImportGraph(edges),
+      packageName: packageName,
     );
   }
 

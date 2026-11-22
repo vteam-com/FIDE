@@ -321,6 +321,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   status.staged,
                   kindOf: (file) =>
                       status.stagedKinds[file] ?? GitFileStatus.added,
+                  movedFrom: status.stagedMovedFrom,
                   stats: repo.stagedStats,
                   onStage: null,
                   onUnstage: _unstageFiles,
@@ -336,6 +337,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   status.unstaged,
                   kindOf: (file) =>
                       status.unstagedKinds[file] ?? GitFileStatus.modified,
+                  movedFrom: status.unstagedMovedFrom,
                   stats: repo.unstagedStats,
                   onStage: _stageFiles,
                   onUnstage: null,
@@ -408,11 +410,13 @@ class _GitPanelState extends ConsumerState<GitPanel> {
 
   /// A collapsible list of [files] titled [titleText]: each file is colored
   /// by the change [kindOf] reports and shows its +/- line counts from
-  /// [stats], with the stage, unstage and discard actions that apply.
+  /// [stats], a renamed one with where it moved from in [movedFrom], with
+  /// the stage, unstage and discard actions that apply.
   Widget _buildFileSection(
     String titleText,
     List<String> files, {
     required GitFileStatus Function(String) kindOf,
+    Map<String, String> movedFrom = const {},
     required Map<String, GitDiffStats> stats,
     Function(List<String>)? onStage,
     Function(List<String>)? onUnstage,
@@ -449,11 +453,13 @@ class _GitPanelState extends ConsumerState<GitPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: files.map((file) {
         final filePath = p.join(widget.projectPath, file);
+        final origin = movedFrom[file];
         // Porcelain lists an untracked folder as one entry ending in '/'
         final item = FileSystemItem.fromPath(
           filePath,
           isDirectory: file.endsWith('/'),
           gitStatus: kindOf(file),
+          movedFrom: origin == null ? null : p.join(widget.projectPath, origin),
         );
 
         return Row(

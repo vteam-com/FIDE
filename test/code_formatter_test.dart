@@ -16,6 +16,7 @@ class _CountingRunner extends ProcessRunner {
     List<String> arguments, {
     String? workingDirectory,
     bool runInShell = false,
+    Map<String, String> environment = const {},
   }) {
     started.add(arguments);
     return super.run(
@@ -23,6 +24,7 @@ class _CountingRunner extends ProcessRunner {
       arguments,
       workingDirectory: workingDirectory,
       runInShell: runInShell,
+      environment: environment,
     );
   }
 

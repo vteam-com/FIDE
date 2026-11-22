@@ -30,6 +30,10 @@ class FileSystemItem {
   /// The entry's state in Git.
   final GitFileStatus gitStatus;
 
+  /// Where the file moved from, as an absolute path, when Git has it
+  /// renamed; null otherwise.
+  final String? movedFrom;
+
   /// Creates an item from its values.
   const FileSystemItem({
     required this.name,
@@ -38,6 +42,7 @@ class FileSystemItem {
     this.modified,
     this.size,
     this.gitStatus = GitFileStatus.clean,
+    this.movedFrom,
     this.warning,
   });
 
@@ -47,12 +52,14 @@ class FileSystemItem {
     String filePath, {
     bool isDirectory = false,
     GitFileStatus gitStatus = GitFileStatus.clean,
+    String? movedFrom,
   }) {
     return FileSystemItem(
       name: p.basename(filePath),
       path: filePath,
       type: isDirectory ? ProjectNodeType.directory : ProjectNodeType.file,
       gitStatus: gitStatus,
+      movedFrom: movedFrom,
     );
   }
 

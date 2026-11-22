@@ -17,18 +17,21 @@ class ProcessRunner {
   /// Creates a runner that executes real system processes.
   const ProcessRunner();
 
-  /// Runs [executable] to completion and returns its collected output.
+  /// Runs [executable] to completion and returns its collected output;
+  /// [environment] sets variables on top of those it inherits, such as
+  /// `GIT_INDEX_FILE` pointing git at another index.
   Future<ProcessResult> run(
     String executable,
     List<String> arguments, {
     String? workingDirectory,
     bool runInShell = false,
+    Map<String, String> environment = const {},
   }) async {
     return Process.run(
       executable,
       arguments,
       workingDirectory: workingDirectory,
-      environment: await LoginShellEnvironment.overrides,
+      environment: {...await LoginShellEnvironment.overrides, ...environment},
       runInShell: runInShell,
     );
   }
@@ -138,13 +141,15 @@ class ProcessRunner {
     }
   }
 
-  /// Runs [executable] and returns its stdout when it exits 0, or null when
-  /// it fails or can't be started (for example, when it isn't installed).
+  /// Runs [executable] with [environment] as [run] does and returns its
+  /// stdout when it exits 0, or null when it fails or can't be started (for
+  /// example, when it isn't installed).
   Future<String?> outputOf(
     String executable,
     List<String> arguments, {
     String? workingDirectory,
     bool runInShell = false,
+    Map<String, String> environment = const {},
   }) async {
     try {
       final result = await run(
@@ -152,6 +157,7 @@ class ProcessRunner {
         arguments,
         workingDirectory: workingDirectory,
         runInShell: runInShell,
+        environment: environment,
       );
       return result.exitCode == 0 ? result.stdout.toString() : null;
     } catch (_) {

@@ -123,17 +123,47 @@ class GitRepoController extends AsyncNotifier<GitRepoState> {
         );
   }
 
-  /// Stages [files].
-  Future<void> stage(List<String> files) =>
-      _mutate((git) => git.stageFiles(projectPath, files));
+  /// Stages [files]; a moved one with the deletion of where it moved from,
+  /// so the index records the move.
+  Future<void> stage(List<String> files) => _mutate(
+    (git) => git.stageFiles(
+      projectPath,
+      _withOrigins(files, (status) => status.unstagedMovedFrom),
+    ),
+  );
 
-  /// Unstages [files].
-  Future<void> unstage(List<String> files) =>
-      _mutate((git) => git.unstageFiles(projectPath, files));
+  /// Unstages [files]; a renamed one with where it moved from, which comes
+  /// back to the index.
+  Future<void> unstage(List<String> files) => _mutate(
+    (git) => git.unstageFiles(
+      projectPath,
+      _withOrigins(files, (status) => status.stagedMovedFrom),
+    ),
+  );
 
-  /// Discards the changes to [files]; untracked files are deleted.
-  Future<void> discard(List<String> files) =>
-      _mutate((git) => git.discardChanges(projectPath, files));
+  /// Discards the changes to [files]; untracked files are deleted, and a
+  /// moved one goes back where it moved from.
+  Future<void> discard(List<String> files) => _mutate(
+    (git) => git.discardChanges(
+      projectPath,
+      _withOrigins(files, (status) => status.unstagedMovedFrom),
+    ),
+  );
+
+  /// [files], each moved one followed by the path it moved from in the
+  /// [movedFrom] map of the loaded status, so an action on a move covers
+  /// both its ends.
+  List<String> _withOrigins(
+    List<String> files,
+    Map<String, String> Function(GitStatus status) movedFrom,
+  ) {
+    final status = state.value?.status;
+    if (status == null) return files;
+    final origins = movedFrom(status);
+    return [
+      for (final file in files) ...[file, ?origins[file]],
+    ];
+  }
 
   /// Commits the staged changes with [message].
   Future<void> commit(String message) =>

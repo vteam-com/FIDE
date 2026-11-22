@@ -50,6 +50,7 @@ class _FakeRunner extends ProcessRunner {
     List<String> arguments, {
     String? workingDirectory,
     bool runInShell = false,
+    Map<String, String> environment = const {},
   }) async {
     commands.add(
       '${p.basename(workingDirectory!)}: $executable ${arguments.join(' ')}',

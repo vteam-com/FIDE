@@ -22,6 +22,8 @@ extension GitFileStatusDisplay on GitFileStatus {
         return '+';
       case GitFileStatus.deleted:
         return deletedSymbol;
+      case GitFileStatus.renamed:
+        return '→';
       case GitFileStatus.untracked:
         return '?';
       case GitFileStatus.ignored:

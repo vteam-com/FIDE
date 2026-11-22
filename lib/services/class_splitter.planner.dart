@@ -8,15 +8,21 @@ typedef _Removal = ({int offset, int end});
 class _Planner {
   _Planner({
     required String sdkPath,
-    required String projectPath,
+    required this._projectPath,
     required this._filePath,
     required this._readFile,
-  }) : _analysis = OverlayAnalysis(projectPath: projectPath, sdkPath: sdkPath);
+  }) : _analysis = OverlayAnalysis(projectPath: _projectPath, sdkPath: sdkPath);
+
+  /// The scheme of a package library's URI.
+  static const String _packageScheme = 'package';
 
   /// Key of the `dart:core` library, which every file imports implicitly.
   static final Uri _dartCore = Uri.parse('dart:core');
 
   final String _filePath;
+
+  /// The project's folder.
+  final String _projectPath;
 
   /// Reads a file's text from disk; see [ClassSplitter.readFile].
   final String Function(String path) _readFile;
@@ -85,6 +91,7 @@ class _Planner {
       throw const ClassSplitException('The file already has one public class');
     }
     await _checkErrors();
+    await _checkLayers();
     return ClassSplitResult(files: Map.of(_changed), createdFiles: _created);
   }
 
@@ -202,6 +209,15 @@ class _Planner {
       }
     }
 
+    // The class's file and the library importing each other would be a
+    // cycle fCheck's Layers check reports: a part file needs no import
+    final usesLibrary = inner.any(
+      (r) =>
+          r.needsImport && r.top.library == libraryElement && !isMoving(r.top),
+    );
+    final usedByLibrary = outer.any((r) => r.top == moved);
+    if (usesLibrary && usedByLibrary) tangled = true;
+
     final stem = _fileStemFor(declaration);
     final newPath = tangled
         ? p.join(
@@ -236,20 +252,14 @@ class _Planner {
       final header = [
         for (final (neededUnit, directive) in needed)
           _directiveFor(neededUnit, directive, newPath),
-        if (inner.any(
-          (r) =>
-              r.needsImport &&
-              r.top.library == libraryElement &&
-              !isMoving(r.top),
-        ))
-          "import '${relativeUriOf(rootPath, from: newPath)}';",
+        if (usesLibrary) "import '${relativeUriOf(rootPath, from: newPath)}';",
       ]..sort(compareDirectiveLines);
       newContent = [
         if (header.isNotEmpty) '${header.join('\n')}\n',
         '$classText\n',
       ].join('\n');
 
-      if (outer.any((r) => r.top == moved)) {
+      if (usedByLibrary) {
         insert(rootPath, "import '${relativeUriOf(newPath, from: rootPath)}';");
       }
       // Imports only the moved class used are no longer needed here
@@ -386,6 +396,38 @@ class _Planner {
       action: 'Splitting',
       failure: ClassSplitException.new,
     );
+  }
+
+  /// Throws when the changed files add a Layers issue fCheck would report
+  /// for `lib`, such as files or folders depending on each other.
+  Future<void> _checkLayers() async {
+    final lib = p.join(_projectPath, ProjectPaths.libFolder);
+    String relative(String path) =>
+        p.posix.joinAll(p.split(p.relative(path, from: _projectPath)));
+    final package = (await _libraryContaining(_filePath)).element.uri;
+    final packageName = package.isScheme(_packageScheme)
+        ? package.pathSegments.first
+        : null;
+    final before = ImportGraph.parse({
+      // The files as they are, without those the split creates
+      for (final path in _dartFiles)
+        if (p.isWithin(lib, path) && !_created.contains(path))
+          relative(path): _onDisk.putIfAbsent(path, () => _readFile(path)),
+    }, packageName: packageName);
+    final after = before.updated({
+      for (final MapEntry(key: path, value: content) in _changed.entries)
+        if (p.isWithin(lib, path)) relative(path): content,
+    }, packageName: packageName);
+    final added = ImportGraph.compareIssues(
+      before.layerIssues,
+      after.layerIssues,
+    ).added;
+    if (added.isNotEmpty) {
+      throw ClassSplitException(
+        'Splitting would add a Layers issue fCheck reports: '
+        '${added.first.message}',
+      );
+    }
   }
 
   /// [path]'s planned content, else its text on disk, read at most once.

@@ -10,10 +10,10 @@ void main() {
       );
 
       expect(entries, [
-        (code: 'M ', path: 'lib/a.dart'),
-        (code: ' M', path: 'lib/b.dart'),
-        (code: '??', path: 'new/'),
-        (code: 'R ', path: 'new.txt'),
+        (code: 'M ', path: 'lib/a.dart', movedFrom: null),
+        (code: ' M', path: 'lib/b.dart', movedFrom: null),
+        (code: '??', path: 'new/', movedFrom: null),
+        (code: 'R ', path: 'new.txt', movedFrom: 'old.txt'),
       ]);
     });
   });
@@ -35,10 +35,71 @@ void main() {
       expect(status.unstagedKinds['both.txt'], GitFileStatus.modified);
     });
 
-    test('kindOf treats anything but A and D as modified', () {
+    test('files a rename with where it moved from, on its side', () {
+      final status = GitStatus(staged: [], unstaged: [], untracked: []);
+
+      GitPorcelain.classify('RM', 'lib/b.dart', status, movedFrom: 'a.dart');
+
+      expect(status.stagedKinds['lib/b.dart'], GitFileStatus.renamed);
+      expect(status.stagedMovedFrom, {'lib/b.dart': 'a.dart'});
+      expect(status.unstagedKinds['lib/b.dart'], GitFileStatus.modified);
+      expect(status.unstagedMovedFrom, isEmpty);
+    });
+
+    test('kindOf treats anything but A, D and R as modified', () {
       expect(GitPorcelain.kindOf('A'), GitFileStatus.added);
       expect(GitPorcelain.kindOf('D'), GitFileStatus.deleted);
-      expect(GitPorcelain.kindOf('R'), GitFileStatus.modified);
+      expect(GitPorcelain.kindOf('R'), GitFileStatus.renamed);
+      expect(GitPorcelain.kindOf('C'), GitFileStatus.modified);
+    });
+  });
+
+  group('GitStatus moves', () {
+    GitStatus movedStatus() {
+      final status = GitStatus(staged: [], unstaged: [], untracked: []);
+      GitPorcelain.classify(' D', 'a.dart', status);
+      GitPorcelain.classify(' M', 'c.dart', status);
+      GitPorcelain.classify('??', 'lib/a.dart', status);
+      GitPorcelain.classify('??', 'other.dart', status);
+      return status;
+    }
+
+    test('addMove makes a deletion and an untracked file one rename', () {
+      final status = movedStatus();
+
+      expect(status.mayHaveMoves, isTrue);
+      status.addMove('a.dart', 'lib/a.dart');
+
+      expect(status.unstaged, ['lib/a.dart', 'c.dart']);
+      expect(status.unstagedKinds, {
+        'lib/a.dart': GitFileStatus.renamed,
+        'c.dart': GitFileStatus.modified,
+      });
+      expect(status.unstagedMovedFrom, {'lib/a.dart': 'a.dart'});
+      expect(status.untracked, ['other.dart']);
+      expect(status.statusOf('lib/a.dart'), GitFileStatus.renamed);
+      expect(status.mayHaveMoves, isFalse);
+    });
+
+    test('addMove pairs only a deletion with an untracked file', () {
+      final status = movedStatus()
+        ..addMove('c.dart', 'other.dart')
+        ..addMove('a.dart', 'c.dart');
+
+      expect(status.unstaged, ['a.dart', 'c.dart']);
+      expect(status.untracked, ['lib/a.dart', 'other.dart']);
+      expect(status.unstagedMovedFrom, isEmpty);
+    });
+
+    test('headPathOf follows an unstaged move, then a staged one', () {
+      final status = GitStatus(staged: [], unstaged: [], untracked: []);
+      GitPorcelain.classify('RD', 'b.dart', status, movedFrom: 'a.dart');
+      GitPorcelain.classify('??', 'c.dart', status);
+      status.addMove('b.dart', 'c.dart');
+
+      expect(status.headPathOf('c.dart'), 'a.dart');
+      expect(status.headPathOf('b.dart'), 'a.dart');
+      expect(status.headPathOf('a.dart'), isNull);
     });
   });
 

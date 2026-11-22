@@ -20,6 +20,7 @@ void main() {
         StatusTone.warning.color,
       );
       expect(GitFileStatus.deleted.color(colorScheme), StatusTone.error.color);
+      expect(GitFileStatus.renamed.color(colorScheme), StatusTone.info.color);
       expect(
         GitFileStatus.untracked.color(colorScheme),
         colorScheme.onSurfaceVariant,

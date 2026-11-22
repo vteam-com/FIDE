@@ -1,8 +1,8 @@
 part of 'git_service.dart';
 
-/// One entry of `git status --porcelain`: its two-letter status [code] and
-/// the [path] the change lives at.
-typedef GitStatusEntry = ({String code, String path});
+/// One entry of `git status --porcelain`: its two-letter status [code],
+/// the [path] the change lives at and, for a rename, the path [movedFrom].
+typedef GitStatusEntry = ({String code, String path, String? movedFrom});
 
 /// Parsers of Git's machine-readable output: text in, models out, with
 /// no process or disk access, so they are tested from strings.
@@ -30,51 +30,64 @@ abstract final class GitPorcelain {
   /// Porcelain status letter of an unchanged side.
   static const String _unchangedLetter = ' ';
 
+  /// Porcelain status letter of a renamed file.
+  static const String _renamedLetter = 'R';
+
   /// What `git --version` prints before the version number.
   static const String _versionPrefix = 'git version';
 
   /// The entries of `git status --porcelain` [output]; a rename or copy
-  /// lists `old -> new` and is reported at the new path, and a wholly new
-  /// directory keeps its trailing slash, as git prints it.
+  /// lists `old -> new` and is reported at the new path, with the old one
+  /// as its `movedFrom`, and a wholly new directory keeps its trailing
+  /// slash, as git prints it.
   static List<GitStatusEntry> parseStatus(String output) {
     final entries = <GitStatusEntry>[];
     for (final line in output.split('\n')) {
       if (line.length < _statusPathStart) continue;
       final code = line.substring(0, _statusCodeLength);
-      final entryPath = line.substring(_statusPathStart);
+      final paths = line.substring(_statusPathStart).split(_renameArrow);
       entries.add((
         code: code,
-        path: entryPath.contains(_renameArrow)
-            ? entryPath.split(_renameArrow).last
-            : entryPath,
+        path: paths.last,
+        movedFrom: paths.length > 1 ? paths.first : null,
       ));
     }
     return entries;
   }
 
   /// Files the porcelain entry for [file] with two-letter [code] into the
-  /// staged, unstaged and untracked lists of [into].
-  static void classify(String code, String file, GitStatus into) {
+  /// staged, unstaged and untracked lists of [into], a rename with where it
+  /// [movedFrom].
+  static void classify(
+    String code,
+    String file,
+    GitStatus into, {
+    String? movedFrom,
+  }) {
     if (code[0] == _untrackedLetter) {
       into.untracked.add(file);
       return;
     }
-    if (code[0] != _unchangedLetter) {
-      into.staged.add(file);
-      into.stagedKinds[file] = kindOf(code[0]);
-    }
-    if (code[1] != _unchangedLetter) {
-      into.unstaged.add(file);
-      into.unstagedKinds[file] = kindOf(code[1]);
+    for (final (letter, files, kinds, origins) in [
+      (code[0], into.staged, into.stagedKinds, into.stagedMovedFrom),
+      (code[1], into.unstaged, into.unstagedKinds, into.unstagedMovedFrom),
+    ]) {
+      if (letter == _unchangedLetter) continue;
+      files.add(file);
+      kinds[file] = kindOf(letter);
+      if (letter == _renamedLetter && movedFrom != null) {
+        origins[file] = movedFrom;
+      }
     }
   }
 
-  /// The change a porcelain status [letter] stands for: added, deleted, or
-  /// modified for everything else (edits, renames, type changes,
-  /// conflicts).
+  /// The change a porcelain status [letter] stands for: added, deleted,
+  /// renamed, or modified for everything else (edits, copies, type
+  /// changes, conflicts).
   static GitFileStatus kindOf(String letter) => switch (letter) {
     'A' => GitFileStatus.added,
     'D' => GitFileStatus.deleted,
+    _renamedLetter => GitFileStatus.renamed,
     _ => GitFileStatus.modified,
   };
 

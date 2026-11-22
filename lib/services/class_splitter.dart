@@ -7,8 +7,10 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:fide/models/class_split_result.dart';
 import 'package:fide/models/dart_imports.dart';
+import 'package:fide/models/import_graph.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/project_name.dart';
+import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/text_offsets.dart';
 import 'package:fide/services/compile_errors.dart';
 import 'package:fide/services/dart_references.dart';
@@ -29,7 +31,9 @@ part 'class_splitter.planner.dart';
 /// instead.
 ///
 /// The analysis is resolved against the project's packages, and a plan that
-/// would add compile errors is rejected.
+/// would add compile errors, or a Layers issue fCheck would report, is
+/// rejected. A class and the file it leaves that would import each other
+/// share one library instead: the class moves to a part file.
 class ClassSplitter {
   /// Creates a splitter resolving code against the Dart SDK at
   /// [dartSdkPath], reading the project's files through [readFile].
