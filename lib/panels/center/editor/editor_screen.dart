@@ -37,15 +37,13 @@ import 'package:fide/theme/app_theme.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/sdk_material_localizations.dart';
 import 'package:fide/widgets/side_by_side_diff.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
-import 'package:material_ui/material_ui.dart'
-    as sdk
-    show DefaultMaterialLocalizations;
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
@@ -393,14 +391,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
                 child: Listener(
                   onPointerDown: _onCodePointerDown,
                   onPointerUp: _onCodePointerUp,
-                  // CodeForge's documentation cards are built with the
-                  // SDK's Material library, whose localizations differ
-                  // from the app's material_ui ones
-                  child: Localizations.override(
-                    context: context,
-                    delegates: const [
-                      sdk.DefaultMaterialLocalizations.delegate,
-                    ],
+                  // CodeForge is built with the SDK's Material library
+                  child: SdkMaterialLocalizations(
                     child: CodeForge(
                       key: ValueKey(brightness),
                       controller: _codeController,
