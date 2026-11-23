@@ -1,8 +1,8 @@
 import 'dart:isolate';
 
 import 'package:fcheck/fcheck.dart' as fcheck;
-import 'package:fide/models/class_split_result.dart';
 import 'package:fide/models/action_outcome.dart';
+import 'package:fide/models/class_split_result.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/quality_issues.dart';

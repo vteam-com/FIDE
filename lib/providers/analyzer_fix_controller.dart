@@ -7,6 +7,8 @@ import 'package:fide/models/readable_error.dart';
 import 'package:fide/models/repeated_settings_review.dart';
 import 'package:fide/providers/open_documents_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
+import 'package:fide/services/blocking_task.dart';
+import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/code_formatter.dart';
 import 'package:fide/services/file_content_reader.dart';
 import 'package:fide/services/file_mover.dart';
@@ -43,9 +45,12 @@ typedef ApplyMoves = Future<Map<String, String>> Function(
 );
 
 /// Applies [RepeatedSettingsFix]es and [FileMove]s to the project's files, one at a
-/// time; its state is the key of the one being written, so only the
-/// button that started it shows it running, null while none is.
+/// time; its state is the key of the one being written, null while none
+/// is, the buttons disabled meanwhile.
 class AnalyzerFixController extends StateNotifier<Object?> {
+  /// The outcome of a change the user cancelled, before it wrote anything.
+  static const String cancelledMessage = 'Cancelled; nothing changed';
+
   /// Creates a controller writing files with [applyEdits] and
   /// [applyMoves], reading them with [reader], formatting them with
   /// [formatter] and planning moves with [mover].
@@ -81,13 +86,15 @@ class AnalyzerFixController extends StateNotifier<Object?> {
   /// file edited since the review, one to create already there, or a
   /// Layers issue it would add to [layers], the dependencies between the
   /// files of `lib` in the package [packageName]. While it runs, the state
-  /// is [key], or [fix] when null.
+  /// is [key], or [fix] when null; [task]'s Cancel stops it before it
+  /// writes anything.
   Future<ActionOutcome> fix(
     String projectPath,
     RepeatedSettingsFix fix, {
     Object? key,
     ImportGraph layers = const ImportGraph({}),
     String? packageName,
+    BlockingTask? task,
   }) => _run(key ?? fix, () async {
     var count = 0;
     await _applyEdits(() async {
@@ -103,7 +110,7 @@ class AnalyzerFixController extends StateNotifier<Object?> {
       final applied = fix.applyTo(contents);
       _refuseNewIssues(layers, applied.contents, packageName);
       count = applied.count;
-      return {
+      final files = {
         for (final MapEntry(key: path, value: content)
             in applied.contents.entries)
           p.join(projectPath, path): await _formatted(
@@ -112,6 +119,8 @@ class AnalyzerFixController extends StateNotifier<Object?> {
             before: contents[path],
           ),
       };
+      task?.cancelToken.throwIfCancelled();
+      return files;
     });
     return 'Fixed ${count.count('place')}';
   });
@@ -121,19 +130,33 @@ class AnalyzerFixController extends StateNotifier<Object?> {
   /// directive naming them at their new place; the outcome counts the
   /// files moved, or says why none was, such as a file already where one
   /// goes. [moves] are a [FileLayoutPlan]'s, which adds no dependency
-  /// cycle. While it runs, the state is [key].
+  /// cycle. While it runs, the state is [key]; [task]'s Cancel stops it
+  /// before it writes or deletes anything.
   Future<ActionOutcome> move(
     String projectPath,
     List<FileMove> moves, {
     required Object key,
     String? packageName,
+    BlockingTask? task,
   }) => _run(key, () async {
     final paths = {for (final move in moves) ...move.paths};
     final absolute = ProjectPaths(projectPath).absoluteOf;
-    await _applyMoves({
-      for (final MapEntry(key: from, value: to) in paths.entries)
-        absolute(from): absolute(to),
-    }, () => _mover.plan(projectPath, paths, packageName: packageName));
+    await _applyMoves(
+      {
+        for (final MapEntry(key: from, value: to) in paths.entries)
+          absolute(from): absolute(to),
+      },
+      () async {
+        final files = await _mover.plan(
+          projectPath,
+          paths,
+          packageName: packageName,
+        );
+        // Thrown, not empty: an empty plan would still delete the files
+        task?.cancelToken.throwIfCancelled();
+        return files;
+      },
+    );
     return 'Moved ${moves.length.count('file')}';
   });
 
@@ -168,6 +191,8 @@ class AnalyzerFixController extends StateNotifier<Object?> {
     _update(key);
     try {
       return ActionOutcome.success(await task());
+    } on AiCancelledException {
+      return const ActionOutcome.info(cancelledMessage);
     } catch (e) {
       return ActionOutcome.failure(ReadableError.describe(e));
     } finally {

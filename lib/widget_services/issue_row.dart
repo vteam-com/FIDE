@@ -83,6 +83,7 @@ class IssueRow extends ConsumerWidget {
               : null,
           confirm: confirmQuickFixOver(context),
           notify: quickFixNoticesOver(context),
+          block: quickFixBlockerOver(context),
         );
   }
 

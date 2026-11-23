@@ -27,8 +27,8 @@ class SplitClassesHandler implements QuickFixHandler {
     )) {
       return null;
     }
-    final splits = _SplitRun(_splitter, _files);
-    await splits.run(request.projectPath, paths);
+    final splits = _SplitRun(_splitter, _files, request);
+    await splits.run(paths, verb: 'Splitting');
     return splits.outcome('Split ${splits.results.length.count('file')}');
   }
 }

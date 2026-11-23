@@ -8,6 +8,7 @@ import 'package:fide/providers/analyzer_fix_controller.dart';
 import 'package:fide/providers/repeated_settings_review_provider.dart';
 import 'package:fide/widget_services/file_location_row.dart';
 import 'package:fide/widgets/action_card.dart';
+import 'package:fide/widgets/blocking_task_dialog.dart';
 import 'package:fide/widgets/code_category_icon.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/primary_button.dart';
@@ -108,7 +109,7 @@ class RepeatedSettingsList
 
   /// The title of the section of [findings] of [kind], with Fix All when
   /// several of them have a single fix, one taking no choice; disabled
-  /// while a fix is [running], showing it running when it is its own.
+  /// while a fix is [running].
   @override
   Widget sectionTitle(
     BuildContext context,
@@ -128,7 +129,6 @@ class RepeatedSettingsList
           : PrimaryButton(
               icon: AppIcon.fix,
               label: 'Fix All',
-              busy: running == kind,
               onPressed: running != null
                   ? null
                   : () => _fix(
@@ -142,8 +142,7 @@ class RepeatedSettingsList
   }
 
   /// [finding]'s actions: a button per fix, or Ask AI when code can make
-  /// none; the fixes disabled while one is [running], showing it running
-  /// when it is their own.
+  /// none; the fixes disabled while one is [running].
   Widget _actionsOf(
     BuildContext context,
     WidgetRef ref,
@@ -165,7 +164,6 @@ class RepeatedSettingsList
           PrimaryButton(
             icon: AppIcon.fix,
             label: fix.label,
-            busy: identical(running, fix),
             onPressed: running != null ? null : () => _fix(context, ref, fix),
           ),
       ],
@@ -173,9 +171,9 @@ class RepeatedSettingsList
   }
 
   /// Makes [fix]'s edits, after asking the name of the widget it extracts
-  /// when it does (a class name no file of the project sees yet), then
-  /// tells how it went; [key] names the button that started it, [fix]
-  /// when null.
+  /// when it does (a class name no file of the project sees yet), the app
+  /// blocked meanwhile, then tells how it went; [key] names the button
+  /// that started it, [fix] when null.
   Future<void> _fix(
     BuildContext context,
     WidgetRef ref,
@@ -202,15 +200,21 @@ class RepeatedSettingsList
       }
       named = fix.named(name);
     }
-    final outcome = await ref
-        .read(analyzerFixControllerProvider.notifier)
-        .fix(
-          projectPath,
-          named,
-          key: key ?? fix,
-          layers: review.graph,
-          packageName: review.packageName,
-        );
+    final outcome = await BlockingTaskDialog.run(
+      context,
+      title: fix.label,
+      step: 'Rewriting ${fix.paths.length.count('file')}…',
+      run: (task) => ref
+          .read(analyzerFixControllerProvider.notifier)
+          .fix(
+            projectPath,
+            named,
+            key: key ?? fix,
+            layers: review.graph,
+            packageName: review.packageName,
+            task: task,
+          ),
+    );
     if (context.mounted) MessageBox.showOutcome(context, outcome);
   }
 

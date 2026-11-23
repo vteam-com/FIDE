@@ -12,7 +12,8 @@ import 'package:material_ui/material_ui.dart';
 ///
 /// Its changes run through [analyzerFixControllerProvider], one at a
 /// time: the builders get the key of the one running, null while none
-/// is, to disable their buttons and show it running on its own.
+/// is, to disable their buttons; the app is blocked meanwhile by the
+/// dialog showing it.
 abstract class AnalyzerFindingsList<K, T> extends ConsumerWidget {
   /// Creates the list of a review of the project at [projectPath].
   const AnalyzerFindingsList({super.key, required this.projectPath});

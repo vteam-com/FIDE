@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:fcheck/fcheck.dart';
 import 'package:fide/models/class_split_result.dart';
 import 'package:fide/services/class_split_service.dart';
+import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/class_splitter.dart';
 import 'package:fide/services/file_content_reader.dart';
 import 'package:fide/services/quick_fix_handler.dart';
@@ -28,6 +29,30 @@ class _FakeSplitter implements ClassSplitService {
     return ClassSplitResult(
       files: {filePath: 'class Shapes {}\n', circle: 'class Circle {}\n'},
       createdFiles: [circle],
+    );
+  }
+}
+
+/// A splitter planning `Circle` out of each file, the user cancelling
+/// [cancel] while it plans the first.
+class _CancelledWhilePlanning implements ClassSplitService {
+  _CancelledWhilePlanning(this.cancel);
+
+  final AiCancelToken cancel;
+
+  final List<String> planned = [];
+
+  @override
+  Future<ClassSplitResult> plan({
+    required String projectPath,
+    required String filePath,
+    bool statesOnly = false,
+  }) async {
+    planned.add(p.basename(filePath));
+    cancel.cancel();
+    return ClassSplitResult(
+      files: {filePath: 'class Shapes {}\n'},
+      createdFiles: const [],
     );
   }
 }
@@ -80,6 +105,36 @@ void main() {
     expect(
       outcome.changedFiles.map(p.basename),
       unorderedEquals(['shapes.dart', 'circle.dart']),
+    );
+  });
+
+  test('reports each file as a step, and stops on Cancel before writing '
+      'the file it was planning', () async {
+    final cancel = AiCancelToken();
+    final splitter = _CancelledWhilePlanning(cancel);
+    final steps = <String>[];
+
+    final outcome =
+        await SplitClassesHandler(splitter, const FileContentReader()).run(
+          QuickFixRequest(
+            projectPath: project.path,
+            metrics: AnalyzeFolder(project).analyze(),
+            confirm: (_) async => true,
+            onProgress: steps.add,
+            cancel: cancel,
+          ),
+        );
+
+    expect(splitter.planned, hasLength(1));
+    expect(steps.single, startsWith('Splitting '));
+    expect(steps.single, endsWith(' (1 of 2)…'));
+    expect(outcome!.summary, 'Cancelled; Split 0 files');
+    expect(outcome.changedFiles, isEmpty);
+    // The file planned while cancelling keeps its classes
+    expect(
+      File(p.join(project.path, 'lib', splitter.planned.single))
+          .readAsStringSync(),
+      isNot('class Shapes {}\n'),
     );
   });
 }

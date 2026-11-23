@@ -37,6 +37,10 @@ class QuickFixRunner {
     this.latest,
   });
 
+  /// The step a fix starts at, analyzing the project's current files,
+  /// which the dialog blocking the app shows first.
+  static const String analyzingStep = 'Analyzing the project…';
+
   /// Analyzes the project with fCheck.
   final CodeReview review;
 

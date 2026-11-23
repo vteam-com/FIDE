@@ -7,6 +7,7 @@ import 'package:fide/panels/right/analyzer_findings_list.dart';
 import 'package:fide/providers/analyzer_fix_controller.dart';
 import 'package:fide/widget_services/file_location_row.dart';
 import 'package:fide/widgets/action_card.dart';
+import 'package:fide/widgets/blocking_task_dialog.dart';
 import 'package:fide/widgets/code_category_icon.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/primary_button.dart';
@@ -40,8 +41,7 @@ class FileLayoutList extends AnalyzerFindingsList<CodeCategory, FileMove> {
   /// [move]'s card: the file, the folder it moves from and to, with its
   /// parts, the files moved along and the Layers issues it fixes, and
   /// Move, or
-  /// why it can't move; disabled while a change is [running], showing it
-  /// running when it is its own.
+  /// why it can't move; disabled while a change is [running].
   @override
   Widget card(
     BuildContext context,
@@ -68,10 +68,15 @@ class FileLayoutList extends AnalyzerFindingsList<CodeCategory, FileMove> {
           : PrimaryButton(
               icon: AppIcon.fix,
               label: 'Move',
-              busy: identical(running, move),
               onPressed: running != null
                   ? null
-                  : () => _move(context, ref, move.planned, key: move),
+                  : () => _move(
+                      context,
+                      ref,
+                      move.planned,
+                      key: move,
+                      title: 'Move',
+                    ),
             ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,8 +121,7 @@ class FileLayoutList extends AnalyzerFindingsList<CodeCategory, FileMove> {
   /// The title of the section of [findings], the moves of files of
   /// [kind], with Move All when several of them can move, which moves as
   /// many of them together as add no Layers issue, with the files they
-  /// need along; disabled while a change is [running], showing it running
-  /// when it is its own.
+  /// need along; disabled while a change is [running].
   @override
   Widget sectionTitle(
     BuildContext context,
@@ -137,7 +141,6 @@ class FileLayoutList extends AnalyzerFindingsList<CodeCategory, FileMove> {
           : PrimaryButton(
               icon: AppIcon.fix,
               label: 'Move All',
-              busy: running == kind,
               onPressed: running != null
                   ? null
                   : () => _move(
@@ -145,22 +148,38 @@ class FileLayoutList extends AnalyzerFindingsList<CodeCategory, FileMove> {
                       ref,
                       review.allPlanOf(kind).moves,
                       key: kind,
+                      title: 'Move All',
                     ),
             ),
     );
   }
 
-  /// Moves the files of [moves], then tells how it went; [key] names the
-  /// button that started it.
+  /// Moves the files of [moves], the app blocked meanwhile by a dialog
+  /// titled [title], the button's label, then tells how it went; [key]
+  /// names the button that started it.
   Future<void> _move(
     BuildContext context,
     WidgetRef ref,
     List<FileMove> moves, {
     required Object key,
+    required String title,
   }) async {
-    final outcome = await ref
-        .read(analyzerFixControllerProvider.notifier)
-        .move(projectPath, moves, packageName: review.packageName, key: key);
+    final outcome = await BlockingTaskDialog.run(
+      context,
+      title: title,
+      step:
+          'Moving ${moves.length.count('file')} and pointing every import '
+          'at ${moves.length == 1 ? 'it' : 'them'}…',
+      run: (task) => ref
+          .read(analyzerFixControllerProvider.notifier)
+          .move(
+            projectPath,
+            moves,
+            packageName: review.packageName,
+            key: key,
+            task: task,
+          ),
+    );
     if (context.mounted) MessageBox.showOutcome(context, outcome);
   }
 }

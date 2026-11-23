@@ -6,6 +6,7 @@ import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/project_categories.dart';
 import 'package:fide/models/project_node.dart';
+import 'package:fide/models/status_tone.dart';
 import 'package:fide/panels/left/shared_panel_utils.dart';
 import 'package:fide/providers/app_icon_review_provider.dart';
 import 'package:fide/providers/app_providers.dart';
@@ -14,9 +15,9 @@ import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/project_categories_provider.dart';
 import 'package:fide/widget_services/file_tree_row.dart';
 import 'package:fide/widgets/asset_kind_icon.dart';
+import 'package:fide/widgets/blocking_task_dialog.dart';
 import 'package:fide/widgets/container_counter.dart';
 import 'package:fide/widgets/folder_node.dart';
-import 'package:fide/widgets/inline_spinner.dart';
 import 'package:fide/widgets/loading_indicator.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:fide/widgets/panel_scroll_view.dart';
@@ -42,9 +43,6 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
   /// The grouping of the tree shown, as of the last build; null while it
   /// is computed.
   ProjectCategories? _categories;
-
-  /// The file whose classes are being split into their own files, if any.
-  String? _splittingPath;
 
   @override
   Widget build(BuildContext context) => buildPanelContent();
@@ -251,9 +249,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
         rootPath: projectRoot!.path,
         onTap: () => handleFileTap(node),
         onContextMenu: (position) => showNodeContextMenu(node, position),
-        trailing: _splittingPath == node.path
-            ? const InlineSpinner.small()
-            : classCount == null
+        trailing: classCount == null
             ? null
             : ContainerCounter.warning(
                 icon: Icons.data_object,
@@ -262,9 +258,7 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
                     'Defines $classCount public classes; expected one per '
                     'file, a widget\'s State private beside it.\n'
                     'Click to split them.',
-                onTap: _splittingPath == null
-                    ? () => _splitClasses(node, classCount)
-                    : null,
+                onTap: () => _splitClasses(node, classCount),
               ),
       );
     }
@@ -272,7 +266,8 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
 
   /// After confirmation, saves the open files, makes each widget's public
   /// State in [node] private and moves every other public class but one
-  /// into its own file, updating imports across the project.
+  /// into its own file, updating imports across the project, with the app
+  /// blocked meanwhile.
   Future<void> _splitClasses(ProjectNode node, int classCount) async {
     final confirmed = await MessageBox.confirm(
       context,
@@ -285,29 +280,37 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     );
     if (!confirmed || !mounted) return;
 
-    setState(() => _splittingPath = node.path);
     try {
       ClassSplitResult? split;
       // The part files the split empties, filled in once it is planned:
       // they go, their tabs showing the file that took in what they held
       final merged = <String, String>{};
-      await ref.read(openDocumentsProvider.notifier).applyMoves(
-        merged,
-        () async {
-          final result = await ref
-              .read(classSplitServiceProvider)
-              .plan(projectPath: projectRoot!.path, filePath: node.path);
-          split = result;
-          merged.addAll(result.mergedFiles);
-          return result.files;
-        },
+      await BlockingTaskDialog.run(
+        context,
+        title: 'Split ${node.name}',
+        step: 'Planning the split of ${node.name}…',
+        run: (task) => ref.read(openDocumentsProvider.notifier).applyMoves(
+          merged,
+          () async {
+            final result = await ref
+                .read(classSplitServiceProvider)
+                .plan(projectPath: projectRoot!.path, filePath: node.path);
+            // Cancelled while planning: nothing is written
+            if (task.isCancelled) return const {};
+            split = result;
+            merged.addAll(result.mergedFiles);
+            return result.files;
+          },
+        ),
       );
       if (!mounted) return;
-      MessageBox.showSuccess(context, split!.summary);
+      if (split case final split?) {
+        MessageBox.showSuccess(context, split.summary);
+      } else {
+        MessageBox.show(context, 'Split cancelled', StatusTone.info);
+      }
     } catch (e) {
       if (mounted) MessageBox.showError(context, 'Split failed: $e');
-    } finally {
-      if (mounted) setState(() => _splittingPath = null);
     }
   }
 }

@@ -8,12 +8,21 @@ import 'package:fide/providers/ai_request.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/arb_translator.dart';
+import 'package:fide/services/blocking_task.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/quick_fix_runner.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Tells the user [message], in [tone]'s meaning, such as a fix's outcome.
 typedef QuickFixNotice = void Function(String message, StatusTone tone);
+
+/// Runs [run], a fix titled [title], with the app blocked meanwhile,
+/// showing the step its [BlockingTask] is at and letting the user cancel
+/// it: what the dialog blocking the app does.
+typedef QuickFixBlocker = Future<QuickFixOutcome?> Function(
+  String title,
+  Future<QuickFixOutcome?> Function(BlockingTask task) run,
+);
 
 /// Provides the [QuickFixController] the issue rows run quick fixes with.
 final quickFixControllerProvider = Provider<QuickFixController>(
@@ -63,22 +72,25 @@ class QuickFixController {
 
   /// Applies [fix] to the open project once the user confirms it through
   /// [confirm], telling [notify] the outcome; a fix asking the model runs
-  /// as a task in the AI panel, with its progress. Does nothing without a
-  /// project.
+  /// as a task in the AI panel, with its progress, any other with the app
+  /// blocked by [block], showing its steps, while it changes the files.
+  /// Does nothing without a project.
   Future<void> apply(
     QuickFix fix, {
     required QuickFixConfirmation confirm,
     required QuickFixNotice notify,
-  }) => _run(fix, confirm: confirm, notify: notify);
+    QuickFixBlocker? block,
+  }) => _run(fix, confirm: confirm, notify: notify, block: block);
 
   /// Has [choose] show the open project's hardcoded strings grouped by
   /// role and applies the fix the user picks, or has the AI rewrite the
-  /// strings no fix can; [confirm] and [notify] as for [apply]. Does
+  /// strings no fix can; [confirm], [notify] and [block] as for [apply]. Does
   /// nothing without a project.
   Future<void> reviewStrings({
     required Future<StringReviewChoice?> Function(StringReview review) choose,
     required QuickFixConfirmation confirm,
     required QuickFixNotice notify,
+    QuickFixBlocker? block,
   }) async {
     final projectPath = _projectPath();
     if (projectPath == null) return;
@@ -104,6 +116,7 @@ class QuickFixController {
       fix.quickFix,
       confirm: confirm,
       notify: notify,
+      block: block,
       rewrite: (_, _) => _runner.applyStrings(review, fix, choice.strings),
     );
   }
@@ -137,6 +150,7 @@ class QuickFixController {
     QuickFix fix, {
     required QuickFixConfirmation confirm,
     required QuickFixNotice notify,
+    QuickFixBlocker? block,
     Future<QuickFixOutcome> Function(String projectPath, AiCancelToken cancel)?
     rewrite,
   }) async {
@@ -158,23 +172,42 @@ class QuickFixController {
       _chat.beginTask(fix.label, cancel: cancel);
     }
 
-    if (!fix.usesAi) notify('${fix.label}…', StatusTone.info);
+    // A fix without the model changes files at once: the app blocks
+    final blocker = fix.usesAi ? null : block;
+    if (!fix.usesAi && blocker == null) {
+      notify('${fix.label}…', StatusTone.info);
+    }
     // A rewrite runs unasked: the user picked what it rewrites
     if (rewrite != null) showInChat();
+    Future<QuickFixOutcome?> runFix(
+      void Function(String) onProgress,
+      AiCancelToken cancel,
+    ) =>
+        rewrite?.call(projectPath, cancel) ??
+        _runner.run(
+          projectPath,
+          fix,
+          confirm: (fix, message) async {
+            final confirmed = await confirm(fix, message);
+            if (confirmed) showInChat();
+            return confirmed;
+          },
+          onProgress: onProgress,
+          cancel: cancel,
+        );
+    // Whether the user cancelled the blocked fix, which isn't a success
+    var cancelled = false;
     try {
-      final outcome =
-          await (rewrite?.call(projectPath, cancel) ??
-              _runner.run(
-                projectPath,
-                fix,
-                confirm: (fix, message) async {
-                  final confirmed = await confirm(fix, message);
-                  if (confirmed) showInChat();
-                  return confirmed;
-                },
-                onProgress: (step) => _chat.addReply(step, isProgress: true),
-                cancel: cancel,
-              ));
+      final outcome = blocker == null
+          ? await runFix(
+              (step) => _chat.addReply(step, isProgress: true),
+              cancel,
+            )
+          : await blocker(fix.label, (task) async {
+              final outcome = await runFix(task.report, task.cancelToken);
+              cancelled = task.isCancelled;
+              return outcome;
+            });
       if (outcome == null) return;
       await _documents.reloadWritten(outcome.changedFiles);
       if (inChat) {
@@ -183,7 +216,9 @@ class QuickFixController {
         // A fix that wrote nothing found nothing to do: no success
         notify(
           outcome.summary,
-          outcome.changedFiles.isEmpty ? StatusTone.info : StatusTone.success,
+          cancelled || outcome.changedFiles.isEmpty
+              ? StatusTone.info
+              : StatusTone.success,
         );
       }
     } catch (e) {

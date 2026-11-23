@@ -21,6 +21,7 @@ class FixStatesHandler implements QuickFixHandler {
   Future<QuickFixOutcome?> run(QuickFixRequest request) async {
     final projectPath = request.projectPath;
     final analyzer = _analyzer;
+    request.onProgress?.call('Finding the States out of place…');
     final findings = (await Isolate.run(() => analyzer.analyze(projectPath)))
         .findings;
     if (findings.isEmpty) return _nothingToDo('Every State is in place');
@@ -28,7 +29,7 @@ class FixStatesHandler implements QuickFixHandler {
       for (final finding in findings)
         if (finding.isFixableByCode) finding.widgetPath,
     };
-    final splits = _SplitRun(_splitter, _files);
+    final splits = _SplitRun(_splitter, _files, request);
     splits.skipped.addAll([
       for (final finding in findings)
         if (!finding.isFixableByCode && !finding.isInTest)
@@ -43,7 +44,11 @@ class FixStatesHandler implements QuickFixHandler {
         )) {
       return null;
     }
-    await splits.run(projectPath, widgetFiles, statesOnly: true);
+    await splits.run(
+      widgetFiles,
+      verb: 'Fixing the States of',
+      statesOnly: true,
+    );
     return splits.outcome(
       splits.results.isEmpty
           ? 'Fixed no State'

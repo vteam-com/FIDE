@@ -9,6 +9,7 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/quick_fix_controller.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/arb_translator.dart';
+import 'package:fide/services/blocking_task.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/code_review.dart';
 import 'package:fide/services/l10n_generator.dart';
@@ -123,6 +124,28 @@ void main() {
       ('${QuickFix.sortMembers.label}…', StatusTone.info),
       ('Sorted', StatusTone.success),
     ]);
+  });
+
+  test('a fix without the model runs with the app blocked; cancelled, it '
+      'is no success', () async {
+    String? blockedBy;
+
+    await container
+        .read(quickFixControllerProvider)
+        .apply(
+          QuickFix.sortMembers,
+          confirm: (_, _) async => true,
+          notify: (message, tone) => notices.add((message, tone)),
+          block: (title, run) async {
+            blockedBy = title;
+            final task = BlockingTask(QuickFixRunner.analyzingStep)..cancel();
+            return run(task);
+          },
+        );
+
+    expect(blockedBy, QuickFix.sortMembers.label);
+    // No message while blocked, and a cancelled fix is no success
+    expect(notices, [('Sorted', StatusTone.info)]);
   });
 
   test('a fix writing nothing is no success', () async {
