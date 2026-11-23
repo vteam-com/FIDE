@@ -24,10 +24,10 @@ part 'class_splitter.planner.dart';
 
 /// Deterministic "one public class per file" refactoring for Dart sources.
 ///
-/// A widget's `State` is part of its widget, not a class of its own: a
-/// public one no other library uses becomes private (`_FooState`), and one
-/// another library uses, through a `GlobalKey<FooState>`, stays public by
-/// its widget. Every other public class but one leaves the file for
+/// A widget's `State` is part of its widget, not a class of its own: one
+/// in a part file moves beside its widget, a public one no other library
+/// uses becomes private (`_FooState`), and one another library uses,
+/// through a `GlobalKey<FooState>`, stays public by its widget. Every other public class but one leaves the file for
 /// `<class_name>.dart` next to it, importing only what it uses; the
 /// original file and every library using the class through it get their
 /// imports updated. Private declarations only that class uses go with it,
@@ -56,10 +56,13 @@ class ClassSplitter {
   final String Function(String path) readFile;
 
   /// Plans the split of [filePath], analyzing [projectPath] in a background
-  /// isolate; throws a [ClassSplitException] when it can't be done safely.
+  /// isolate, or, when [statesOnly], only the tidying of its widgets'
+  /// `State`s: each moved beside its widget and made private; throws a
+  /// [ClassSplitException] when it can't be done safely.
   Future<ClassSplitResult> plan({
     required String projectPath,
     required String filePath,
+    bool statesOnly = false,
   }) {
     final sdkPath = dartSdkPath;
     final read = readFile;
@@ -69,6 +72,7 @@ class ClassSplitter {
         projectPath: projectPath,
         filePath: filePath,
         readFile: read,
+        statesOnly: statesOnly,
       ).run(),
     );
   }

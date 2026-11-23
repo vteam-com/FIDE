@@ -24,8 +24,8 @@ abstract class State<T extends StatefulWidget> {}
 /// The import of [_framework], written as `lib/framework.dart`.
 const String _importFramework = "import 'framework.dart';\n\n";
 
-/// A stateful widget whose State, [state], is named as given.
-String _counter(String state) =>
+/// A stateful widget, `Counter`, whose State is named [state].
+String _counterWidget(String state) =>
     '''
 /// Counts taps.
 class Counter extends StatefulWidget {
@@ -34,12 +34,20 @@ class Counter extends StatefulWidget {
   @override
   State<Counter> createState() => $state();
 }
+''';
 
+/// The State of [_counterWidget], named [state].
+String _counterState(String state) =>
+    '''
 /// [Counter]'s state.
 class $state extends State<Counter> {
   int count = 0;
 }
 ''';
+
+/// [_counterWidget] and its State, named [state], in one file.
+String _counter(String state) =>
+    '${_counterWidget(state)}\n${_counterState(state)}';
 
 void main() {
   late String project;
@@ -290,6 +298,65 @@ CounterState? counterOf(Object state) => state is CounterState ? state : null;
     expect(files['lib/counter.dart'], contains('class Counter extends'));
     expect(files['lib/counter.dart'], contains('class _CounterState extends'));
     expect(files['lib/board.dart'], isNot(contains('Counter')));
+  });
+
+  group('a State in a part file of its widget\'s library', () {
+    setUp(() {
+      write('lib/framework.dart', _framework);
+      write(
+        'lib/counter.dart',
+        "${_importFramework}part 'counter_state.dart';\n\n"
+            '${_counterWidget('CounterState')}',
+      );
+      write(
+        'lib/counter_state.dart',
+        "part of 'counter.dart';\n\n${_counterState('CounterState')}",
+      );
+    });
+
+    test('moves beside its widget, the emptied part file going', () async {
+      final result = await splitter.plan(
+        projectPath: project,
+        filePath: path('lib/counter.dart'),
+        statesOnly: true,
+      );
+
+      final counter = result.files[path('lib/counter.dart')]!;
+      expect(counter, isNot(contains('part ')));
+      expect(counter, contains("/// [Counter]'s state.\nclass _CounterState"));
+      expect(result.mergedFiles, {
+        path('lib/counter_state.dart'): path('lib/counter.dart'),
+      });
+      expect(
+        result.files.keys,
+        isNot(contains(path('lib/counter_state.dart'))),
+      );
+      expect(
+        result.summary,
+        'Moved CounterState beside its widget; Made CounterState private',
+      );
+    });
+
+    test('stays public when a test reaches it by name', () async {
+      write('test/counter_test.dart', '''
+import '../lib/counter.dart';
+
+int countOf(Object state) => (state as CounterState).count;
+''');
+
+      final result = await splitter.plan(
+        projectPath: project,
+        filePath: path('lib/counter.dart'),
+        statesOnly: true,
+      );
+
+      expect(result.gatheredStates, ['CounterState']);
+      expect(result.privatizedStates, isEmpty);
+      expect(
+        result.files[path('lib/counter.dart')],
+        contains('class CounterState extends State<Counter>'),
+      );
+    });
   });
 
   test('refuses a file that already has compile errors', () async {

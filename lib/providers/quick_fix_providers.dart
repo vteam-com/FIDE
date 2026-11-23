@@ -76,6 +76,11 @@ final quickFixHandlersProvider = Provider<Map<QuickFix, QuickFixHandler>>((
       ref.read(classSplitServiceProvider),
       ref.read(fileContentReaderProvider),
     ),
+    QuickFix.fixStates: FixStatesHandler(
+      ref.read(widgetStateAnalyzerProvider),
+      ref.read(classSplitServiceProvider),
+      ref.read(fileContentReaderProvider),
+    ),
     QuickFix.translateKeys: TranslateKeysHandler(
       ref.read(arbTranslatorProvider),
     ),

@@ -85,6 +85,15 @@ enum QuickFix {
     domain: fcheck.AnalyzerDomain.oneClassPerFile,
   ),
 
+  /// Put each widget's `State` where Flutter's convention does: beside
+  /// its widget, in its file, private unless other files name it.
+  fixStates(
+    'Fix States',
+    'moves each widget\'s State beside its widget, in its file, and makes '
+        'it private when no other file names it',
+    topics: {'widget state', 'state class'},
+  ),
+
   /// Raise the dependency constraints to their latest resolvable
   /// versions, which often bring Swift Package Manager support.
   upgradePackages(

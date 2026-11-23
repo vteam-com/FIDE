@@ -18,6 +18,7 @@ class _FakeSplitter implements ClassSplitService {
   Future<ClassSplitResult> plan({
     required String projectPath,
     required String filePath,
+    bool statesOnly = false,
   }) async {
     planned.add(p.basename(filePath));
     if (p.basename(filePath) != 'shapes.dart') {

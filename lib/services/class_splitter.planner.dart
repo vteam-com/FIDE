@@ -11,6 +11,7 @@ class _Planner {
     required this._projectPath,
     required this._filePath,
     required this._readFile,
+    required this._statesOnly,
   }) : _analysis = OverlayAnalysis(projectPath: _projectPath, sdkPath: sdkPath);
 
   /// The scheme of a package library's URI.
@@ -26,6 +27,10 @@ class _Planner {
 
   /// Reads a file's text from disk; see [ClassSplitter.readFile].
   final String Function(String path) _readFile;
+
+  /// Whether only the widgets' `State`s are tidied, no class split off;
+  /// see [ClassSplitter.plan].
+  final bool _statesOnly;
 
   /// Text of each project file read from disk so far, each read once.
   final Map<String, String> _onDisk = {};
@@ -53,14 +58,22 @@ class _Planner {
   /// The widget `State`s the plan made private, by their public name.
   final List<String> _privatized = [];
 
+  /// The widget `State`s the plan moved beside their widget, by name.
+  final List<String> _gathered = [];
+
+  /// The part files the plan emptied, to delete, each by the file that
+  /// took in what it held.
+  final Map<String, String> _merged = {};
+
   /// Compile errors of each changed file before the plan touched it; new
   /// files start at zero.
   final Map<String, int> _baselineErrors = {};
 
-  /// Makes each widget's public `State` private, unless another library
-  /// uses it, then splits [_filePath] until one public class is left
-  /// besides such `State`s, each staying with its widget; then checks that
-  /// no changed file gained compile errors.
+  /// Moves each widget's `State` beside it, from the part file holding
+  /// it, and makes it private, unless another library uses it; then,
+  /// unless [_statesOnly], splits [_filePath] until one public class is
+  /// left besides such `State`s, each staying with its widget; then checks
+  /// that no changed file gained compile errors.
   Future<ClassSplitResult> run() async {
     // Unresolved code (stale packages, broken imports) can't be split safely
     final existing = await _analysis.errorsIn(_filePath);
@@ -72,6 +85,7 @@ class _Planner {
         '${existing.first}',
       );
     }
+    await _gatherStates();
     // Public States other libraries use, which stay public by their widget
     final shared = <String>{};
     while (true) {
@@ -90,7 +104,7 @@ class _Planner {
         continue;
       }
       final splittable = classes.where((c) => !states.contains(c)).toList();
-      if (splittable.length <= 1) break;
+      if (_statesOnly || splittable.length <= 1) break;
 
       final stem = p.basenameWithoutExtension(_filePath);
       final keep = splittable.firstWhere(
@@ -105,7 +119,12 @@ class _Planner {
       ]);
     }
     if (_changed.isEmpty) {
-      throw const ClassSplitException('The file already has one public class');
+      throw ClassSplitException(
+        _statesOnly
+            ? 'Its widgets\' States are beside them already, and private '
+                  'unless other files use them'
+            : 'The file already has one public class',
+      );
     }
     await _checkErrors();
     await _checkLayers();
@@ -113,6 +132,8 @@ class _Planner {
       files: Map.of(_changed),
       createdFiles: _created,
       privatizedStates: _privatized,
+      gatheredStates: _gathered,
+      mergedFiles: _merged,
     );
   }
 
@@ -132,6 +153,88 @@ class _Planner {
         );
       }
     }
+  }
+
+  /// Moves the `State` of each widget [_filePath] declares from the other
+  /// unit of the library holding it, a part file, right after its widget,
+  /// as the `State` is part of it. A part file left without declarations
+  /// goes, with its `part` directive: [_merged] records it.
+  Future<void> _gatherStates() async {
+    final library = await _libraryContaining(_filePath);
+    final unit = _unitAt(library, _filePath);
+    final widgets = {
+      for (final declaration
+          in unit.unit.declarations.whereType<ClassDeclaration>())
+        declaration.declaredFragment!.element: declaration,
+    };
+    // Text edits by path: what replaces how many characters at an offset
+    final edits = <String, Map<int, (int, String)>>{};
+    void edit(String path, int offset, int length, String text) =>
+        (edits[path] ??= {}).update(
+          offset,
+          (earlier) => (earlier.$1 + length, earlier.$2 + text),
+          ifAbsent: () => (length, text),
+        );
+    for (final other in library.units) {
+      if (other.path == _filePath) continue;
+      final declarations = other.unit.declarations;
+      var moved = 0;
+      for (final state in declarations.whereType<ClassDeclaration>()) {
+        final widget =
+            widgets[WidgetStates.widgetOf(state.declaredFragment!.element)];
+        if (widget == null) continue;
+        final range = _declarationRange(other, state);
+        edit(other.path, range.offset, range.end - range.offset, '');
+        edit(
+          _filePath,
+          widget.end,
+          0,
+          '\n\n${other.content.substring(range.offset, range.end).trim()}',
+        );
+        _gathered.add(state.namePart.typeName.lexeme);
+        moved++;
+      }
+      final part = moved == declarations.length && moved > 0
+          ? _partDirectiveOf(library, other.path)
+          : null;
+      if (part != null) {
+        final (holder, directive) = part;
+        final line = _lineRange(holder.content, directive);
+        edit(holder.path, line.offset, line.end - line.offset, '');
+        edits.remove(other.path);
+        _merged[other.path] = _filePath;
+      }
+    }
+    if (edits.isEmpty) return;
+    for (final MapEntry(key: path, value: changes) in edits.entries) {
+      if (!_baselineErrors.containsKey(path)) {
+        _baselineErrors[path] = (await _analysis.errorsIn(path)).length;
+      }
+      _write(
+        path,
+        TextOffsets.applyEdits(_unitAt(library, path).content, changes),
+      );
+    }
+    await _analysis.applyChanges();
+  }
+
+  /// The unit of [library] holding the `part` directive naming the part
+  /// file at [path], with it; null when none names it by a relative URI.
+  static (ResolvedUnitResult, PartDirective)? _partDirectiveOf(
+    ResolvedLibraryResult library,
+    String path,
+  ) {
+    for (final unit in library.units) {
+      for (final directive in unit.unit.directives.whereType<PartDirective>()) {
+        final uri = directive.uri.stringValue;
+        if (uri != null &&
+            !uri.contains(':') &&
+            p.normalize(p.join(p.dirname(unit.path), uri)) == path) {
+          return (unit, directive);
+        }
+      }
+    }
+    return null;
   }
 
   /// The first of [states], a unit's public widget `State`s, no library but
@@ -201,7 +304,11 @@ class _Planner {
     };
     final name = element.name!;
     for (final path in {..._dartFiles, ..._created}) {
-      if (own.contains(path) || !_textOf(path).contains(name)) continue;
+      if (own.contains(path) ||
+          _merged.containsKey(path) ||
+          !_textOf(path).contains(name)) {
+        continue;
+      }
       final other = await _libraryContaining(path);
       for (final unit in other.units) {
         own.add(unit.path);
@@ -442,7 +549,7 @@ class _Planner {
     };
     // Files created by earlier moves may use the class too
     for (final path in {..._dartFiles, ..._created}) {
-      if (visited.contains(path)) continue;
+      if (visited.contains(path) || _merged.containsKey(path)) continue;
       final content = _textOf(path);
       if (!content.contains(rootName) && !content.contains(moved.name!)) {
         continue;

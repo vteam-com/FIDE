@@ -27,31 +27,8 @@ class SplitClassesHandler implements QuickFixHandler {
     )) {
       return null;
     }
-    final changed = <String>{};
-    final skipped = <String>[];
-    var split = 0;
-    for (final path in paths) {
-      try {
-        final result = await _splitter.plan(
-          projectPath: request.projectPath,
-          filePath: path,
-        );
-        for (final MapEntry(key: file, value: content)
-            in result.files.entries) {
-          await _files.write(file, content);
-        }
-        changed.addAll(result.files.keys);
-        split++;
-      } on ClassSplitException catch (e) {
-        skipped.add('${p.basename(path)}: ${e.message}');
-      }
-    }
-    return (
-      summary: [
-        'Split ${split.count('file')}',
-        if (skipped.isNotEmpty) 'left ${skipped.join('; ')}',
-      ].join('; '),
-      changedFiles: changed.toList(),
-    );
+    final splits = _SplitRun(_splitter, _files);
+    await splits.run(request.projectPath, paths);
+    return splits.outcome('Split ${splits.results.length.count('file')}');
   }
 }

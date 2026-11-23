@@ -158,6 +158,12 @@ class AppMetric {
 
   /// Most quality-score points colors below WCAG 2 level AA cost together.
   static const int colorContrastPointsMax = 10;
+
+  /// Quality-score points each widget `State` out of place costs.
+  static const int widgetStatePoints = 1;
+
+  /// Most quality-score points widget `State`s out of place cost together.
+  static const int widgetStatePointsMax = 5;
   static const int aiInputMaxLines = 3;
   static const int duplicateThreshold = 2;
   static const int gitHashShortLength = 7;

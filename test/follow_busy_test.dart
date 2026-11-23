@@ -53,4 +53,17 @@ void main() {
 
     expect(container.read(busy), isTrue);
   });
+
+  test('follows any value of the work, none until it exists', () async {
+    final pending = follow(work, (count) => count, none: -1);
+    container.listen(pending, (_, _) {});
+
+    await settle();
+    expect(container.read(pending), -1);
+    expect(builds, 0);
+
+    container.read(work.notifier).state = 3;
+    await settle();
+    expect(container.read(pending), 3);
+  });
 }

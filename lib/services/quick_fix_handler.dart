@@ -1,4 +1,7 @@
+import 'dart:isolate';
+
 import 'package:fcheck/fcheck.dart' as fcheck;
+import 'package:fide/models/class_split_result.dart';
 import 'package:fide/models/action_outcome.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/project_paths.dart';
@@ -18,14 +21,17 @@ import 'package:fide/services/code_review.dart';
 import 'package:fide/services/file_content_reader.dart';
 import 'package:fide/services/project_config_reader.dart';
 import 'package:fide/services/string_fixer.dart';
+import 'package:fide/services/widget_state_analyzer.dart';
 import 'package:path/path.dart' as p;
 
+part 'quick_fix_handler.fix_states_handler.dart';
 part 'quick_fix_handler.migrate_to_arb_handler.dart';
 part 'quick_fix_handler.quick_fix_request.dart';
 part 'quick_fix_handler.remove_cocoa_pods_handler.dart';
 part 'quick_fix_handler.remove_unused_keys_handler.dart';
 part 'quick_fix_handler.sort_members_handler.dart';
 part 'quick_fix_handler.split_classes_handler.dart';
+part 'quick_fix_handler.split_run.dart';
 part 'quick_fix_handler.string_fix_handler.dart';
 part 'quick_fix_handler.translate_keys_handler.dart';
 part 'quick_fix_handler.upgrade_packages_handler.dart';

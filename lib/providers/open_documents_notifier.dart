@@ -97,7 +97,8 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
   /// new absolute path by its current one: [edit]'s files are written as
   /// [applyEdits] writes them, the moved ones among them at their new
   /// path, then the moved files are deleted where they were, and a tab
-  /// showing one shows it at its new path, in the same place.
+  /// showing one shows it at its new path, in the same place. [moves] is
+  /// read once [edit] has run, so [edit] may fill it as it plans.
   Future<Map<String, String>> applyMoves(
     Map<String, String> moves,
     Future<Map<String, String>> Function() edit,

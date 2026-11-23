@@ -288,13 +288,20 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     setState(() => _splittingPath = node.path);
     try {
       ClassSplitResult? split;
-      await ref.read(openDocumentsProvider.notifier).applyEdits(() async {
-        final result = await ref
-            .read(classSplitServiceProvider)
-            .plan(projectPath: projectRoot!.path, filePath: node.path);
-        split = result;
-        return result.files;
-      });
+      // The part files the split empties, filled in once it is planned:
+      // they go, their tabs showing the file that took in what they held
+      final merged = <String, String>{};
+      await ref.read(openDocumentsProvider.notifier).applyMoves(
+        merged,
+        () async {
+          final result = await ref
+              .read(classSplitServiceProvider)
+              .plan(projectPath: projectRoot!.path, filePath: node.path);
+          split = result;
+          merged.addAll(result.mergedFiles);
+          return result.files;
+        },
+      );
       if (!mounted) return;
       MessageBox.showSuccess(context, split!.summary);
     } catch (e) {

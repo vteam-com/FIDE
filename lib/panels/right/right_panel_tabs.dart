@@ -4,7 +4,7 @@ import 'package:fide/panels/right/info_panel.dart';
 import 'package:fide/panels/right/localization/localization_panel.dart';
 import 'package:fide/panels/right/preview_panel.dart';
 import 'package:fide/providers/ai_panel_busy_provider.dart';
-import 'package:fide/providers/analyzer_busy_provider.dart';
+import 'package:fide/providers/analyzer_tab_providers.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/follow_busy.dart';
 import 'package:fide/providers/preview_controller.dart';
@@ -34,6 +34,7 @@ final List<PanelTabSpec<RightPanelTab>> rightPanelTabs = [
   PanelTabSpec(
     RightPanelTab.analyzer,
     build: AnalyzerPanel.new,
+    badge: analyzerFindingCountProvider,
     busy: analyzerBusyProvider,
   ),
   PanelTabSpec(RightPanelTab.ai, build: AIPanel.new, busy: aiPanelBusyProvider),
