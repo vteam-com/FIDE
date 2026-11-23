@@ -1,4 +1,5 @@
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/ai_action.dart';
 import 'package:fide/models/file_location.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
@@ -11,7 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Command output in a collapsible section, with Copy, Wrap and Clear in
-/// its header, led by Fix with AI when the output is errors the AI can fix;
+/// its header, led by Fix Build when the output is a failed build's errors;
 /// `path:line:column` references to existing files, relative
 /// ones resolved against the open project, are links that open the file at
 /// that line.
@@ -23,7 +24,7 @@ class OutputPanel extends ConsumerStatefulWidget {
     this.isExpanded = false,
     required this.text,
     required this.onClear,
-    this.onFixWithAi,
+    this.onFixBuild,
   });
 
   /// Whether the section starts expanded.
@@ -33,9 +34,9 @@ class OutputPanel extends ConsumerStatefulWidget {
   /// the text, which hides the section until there is output again.
   final VoidCallback onClear;
 
-  /// Hands the output to the AI to fix, as the header's Fix with AI button
-  /// does; no button when null.
-  final VoidCallback? onFixWithAi;
+  /// Hands the failed build to the AI to fix, as the header's Fix Build
+  /// button does, the AI panel's [AiAction.fixBuild]; no button when null.
+  final VoidCallback? onFixBuild;
 
   /// The command output shown.
   final String text;
@@ -89,11 +90,11 @@ class _OutputPanelState extends ConsumerState<OutputPanel> {
       rightWidget: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (widget.onFixWithAi case final onFixWithAi?)
+          if (widget.onFixBuild case final onFixBuild?)
             CompactIconButton(
               icon: AppIcon.ai,
-              onPressed: onFixWithAi,
-              tooltip: 'Fix with AI',
+              onPressed: onFixBuild,
+              tooltip: AiAction.fixBuild.label,
             ),
           CopyButton(text: widget.text),
           CompactIconButton(

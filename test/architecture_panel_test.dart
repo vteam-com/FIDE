@@ -12,6 +12,7 @@ import 'package:fide/providers/center_view.dart';
 import 'package:fide/theme/app_theme.dart';
 import 'package:flutter/gestures.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:fide/widget_services/project_refresh_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -67,6 +68,13 @@ void main() {
     expect(find.textContaining('Layer 3'), findsOneWidget);
     expect(find.text('home.dart'), findsOneWidget);
     expect(find.textContaining('2 imports'), findsOneWidget);
+  });
+
+  testWidgets('its Refresh checks the project again, as the project '
+      "header's does", (tester) async {
+    await pumpPanel(tester);
+
+    expect(find.byType(ProjectRefreshButton), findsOneWidget);
   });
 
   testWidgets('selecting a file lists its imports and importers', (

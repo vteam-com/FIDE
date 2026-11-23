@@ -1,6 +1,6 @@
-part of 'dry_analyzer.dart';
+part of 'repeated_settings_analyzer.dart';
 
-/// Reads resolved files for the [DryAnalyzer]: the widgets they build with
+/// Reads resolved files for the [RepeatedSettingsAnalyzer]: the widgets they build with
 /// their styling settings, the numbers in those settings, and the numeric
 /// constants the project defines.
 class _CallCollector {
@@ -108,9 +108,7 @@ class _CallCollector {
   /// Collects what [result] builds and declares.
   void collect(ResolvedUnitResult result) {
     final unit = result.unit;
-    final path = p.posix.joinAll(
-      p.split(p.relative(result.path, from: projectPath)),
-    );
+    final path = ProjectPaths(projectPath).relativeOf(result.path);
     final file = _SourceFile(result);
     for (final library in [
       result.libraryElement,
@@ -143,7 +141,7 @@ class _CallCollector {
   ) {
     final type = node.staticType;
     if (type is! InterfaceType || !_isWidget(type) || _isLayout(type)) return;
-    final location = DryLocation(
+    final location = RepeatedSettingsLocation(
       path,
       result.lineInfo.getLocation(node.offset).lineNumber,
       className: node
@@ -161,7 +159,7 @@ class _CallCollector {
     for (final argument in node.argumentList.arguments) {
       final name = argument is NamedArgument
           ? argument.name.lexeme
-          : '${DryFinding.positionalPrefix}${position++}';
+          : '${RepeatedSettingsFinding.positionalPrefix}${position++}';
       final value = argument.argumentExpression;
       arguments.add(
         _Argument(
@@ -378,7 +376,7 @@ class _CallCollector {
   /// [location] described by [context].
   void _addLiterals(
     Expression expression,
-    DryLocation location,
+    RepeatedSettingsLocation location,
     Scope scope,
     String context,
   ) {

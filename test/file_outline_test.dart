@@ -72,16 +72,16 @@ void main() {
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
     expect(find.text('Wrap with Padding'), findsOneWidget);
-    expect(find.text('Wrap with widget…'), findsOneWidget);
-    expect(find.text('Remove this widget'), findsNothing);
+    expect(find.text('Wrap with Widget…'), findsOneWidget);
+    expect(find.text('Remove Widget'), findsNothing);
     await tester.tapAt(Offset.zero);
     await tester.pumpAndSettle();
 
     // Any widget entry opens it on a secondary click
     await tester.tap(find.text('Center'), buttons: kSecondaryButton);
     await tester.pumpAndSettle();
-    expect(find.text('Remove this widget'), findsOneWidget);
-    expect(find.text('Swap with parent'), findsNothing);
+    expect(find.text('Remove Widget'), findsOneWidget);
+    expect(find.text('Swap with Parent'), findsNothing);
   });
 
   testWidgets('shows nothing while its file row folds it', (tester) async {

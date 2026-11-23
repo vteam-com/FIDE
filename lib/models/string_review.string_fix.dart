@@ -49,6 +49,11 @@ enum StringFix {
   static StringFix? of(QuickFix fix) =>
       values.where((stringFix) => stringFix.quickFix == fix).firstOrNull;
 
+  /// Whether any of [fixes] rewrites strings, so their issue offers the
+  /// review picking a fix per string.
+  static bool anyIn(Iterable<QuickFix> fixes) =>
+      fixes.any((fix) => of(fix) != null);
+
   /// Strings of [review] the fix can rewrite.
   List<HardcodedString> candidatesIn(StringReview review) =>
       _candidates(review);

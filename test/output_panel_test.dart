@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fide/models/ai_action.dart';
 import 'package:fide/widget_services/output_panel.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,12 +9,12 @@ import 'package:material_ui/material_ui.dart';
 
 void main() {
   /// Shows an [OutputPanel] of [text], cleared by [onClear] and fixed by
-  /// [onFixWithAi].
+  /// [onFixBuild].
   Future<void> show(
     WidgetTester tester,
     String text, {
     VoidCallback? onClear,
-    VoidCallback? onFixWithAi,
+    VoidCallback? onFixBuild,
   }) => tester.pumpWidget(
     ProviderScope(
       child: MaterialApp(
@@ -23,7 +24,7 @@ void main() {
             isExpanded: true,
             text: text,
             onClear: onClear ?? () {},
-            onFixWithAi: onFixWithAi,
+            onFixBuild: onFixBuild,
           ),
         ),
       ),
@@ -43,11 +44,11 @@ void main() {
     tester,
   ) async {
     await show(tester, 'error');
-    expect(find.byTooltip('Fix with AI'), findsNothing);
+    expect(find.byTooltip(AiAction.fixBuild.label), findsNothing);
 
     var fixes = 0;
-    await show(tester, 'error', onFixWithAi: () => fixes++);
-    await tester.tap(find.byTooltip('Fix with AI').hitTestable());
+    await show(tester, 'error', onFixBuild: () => fixes++);
+    await tester.tap(find.byTooltip(AiAction.fixBuild.label).hitTestable());
 
     expect(fixes, 1);
   });

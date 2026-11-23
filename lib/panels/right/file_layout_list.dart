@@ -2,6 +2,7 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/code_category.dart';
 import 'package:fide/models/file_layout_review.dart';
 import 'package:fide/models/locale_number.dart';
+import 'package:fide/models/project_paths.dart';
 import 'package:fide/panels/right/analyzer_findings_list.dart';
 import 'package:fide/providers/analyzer_fix_controller.dart';
 import 'package:fide/widget_services/file_location_row.dart';
@@ -91,7 +92,7 @@ class FileLayoutList extends AnalyzerFindingsList<CodeCategory, FileMove> {
             ),
           FileLocationRow(
             name: move.name,
-            path: p.joinAll([projectPath, ...p.posix.split(move.path)]),
+            path: ProjectPaths(projectPath).absoluteOf(move.path),
             line: move.line,
             rootPath: projectPath,
           ),

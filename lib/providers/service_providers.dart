@@ -208,7 +208,7 @@ final localizationSetupProvider = Provider<LocalizationSetup>(
   ),
 );
 
-/// Provides the [StringLocalizer] behind the Localize strings quick fix.
+/// Provides the [StringLocalizer] behind the Localize Strings quick fix.
 final stringLocalizerProvider = Provider<StringLocalizer>(
   (ref) => StringLocalizer(
     ref.read(projectConfigReaderProvider),
@@ -227,7 +227,7 @@ final arbMigratorProvider = Provider<ArbMigrator>(
   ),
 );
 
-/// Provides the [ArbKeyRemover] behind the Remove unused keys quick fix.
+/// Provides the [ArbKeyRemover] behind the Remove Unused Keys quick fix.
 final arbKeyRemoverProvider = Provider<ArbKeyRemover>(
   (ref) => ArbKeyRemover(
     ref.read(projectConfigReaderProvider),

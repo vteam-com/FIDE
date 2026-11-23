@@ -16,6 +16,8 @@ mixin ProjectTreePanelState<T extends ConsumerStatefulWidget>
   /// Create, rename and delete flows for the context menu.
   late final FileOperations _fileOperations = FileOperations(
     ref.read(fileEntryServiceProvider),
+    (from, to, {required isDirectory}) =>
+        renameInProject(ref, from, to, isDirectory: isDirectory),
   );
 
   /// Follows the loaded project, rebuilding when its tree changes in
@@ -58,9 +60,7 @@ mixin ProjectTreePanelState<T extends ConsumerStatefulWidget>
       setState(() => _seedGitStatusForFile(node, root, status?.status));
     }
 
-    ref.read(selectedFileProvider.notifier).state = FileSystemItem.fromNode(
-      node,
-    );
+    openItem(ref, FileSystemItem.fromNode(node));
   }
 
   /// Called after the tree is replaced or reloaded; panels clear caches

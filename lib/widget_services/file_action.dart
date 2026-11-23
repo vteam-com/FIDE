@@ -79,7 +79,7 @@ enum FileAction {
   }) async {
     switch (this) {
       case open:
-        openFromCenterView(ref, path);
+        openFile(ref, path);
       case openWithDefaultApp:
         await _orShowError(
           context,

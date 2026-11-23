@@ -347,7 +347,7 @@
     font-weight: 900;
   }
 </style>
-<text x="717.0" y="28.0" class="packageLabelTitle" text-anchor="middle">fide v1.4.5+13</text>
+<text x="717.0" y="28.0" class="packageLabelTitle" text-anchor="middle">fide v1.5.0+14</text>
 <g class="packageMetadataPill"><title>Dart ^3.14.0</title><rect x="644.6" y="36.0" width="61.199999999999996" height="9.0" rx="4.5" ry="4.5" class="packageMetadataPillShape"/><text x="675.2" y="41" class="packageLabelMetadata" text-anchor="middle" dominant-baseline="middle">Dart ^3.14.0</text></g>
 <g class="packageMetadataPill"><title>Flutter &gt;=3.50.0</title><rect x="711.8" y="36.0" width="77.6" height="9.0" rx="4.5" ry="4.5" class="packageMetadataPillShape"/><text x="750.5999999999999" y="41" class="packageLabelMetadata" text-anchor="middle" dominant-baseline="middle">Flutter &gt;=3.50.0</text></g>
 <text x="397.0" y="70.0" class="packageLabelSection">dependencies (29 items)</text>

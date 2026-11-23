@@ -106,7 +106,7 @@ class AppIconsPanel extends ConsumerWidget {
           ),
           PrimaryButton(
             icon: AppIcon.fix,
-            label: 'Fix all',
+            label: 'Fix All',
             // The platforms' own buttons tell they are being fixed
             busy: fixing.contains(AppIconFixController.masterId),
             onPressed:
@@ -253,7 +253,7 @@ class AppIconsPanel extends ConsumerWidget {
 
   /// Opens the image at [path] on double-click; null without one.
   VoidCallback? _onDoubleTap(WidgetRef ref, String? path) =>
-      path == null ? null : () => openFromCenterView(ref, path);
+      path == null ? null : () => openFile(ref, path);
 
   /// Shows the details of the icon file at [path] in the Info tab.
   void _select(WidgetRef ref, String path) {

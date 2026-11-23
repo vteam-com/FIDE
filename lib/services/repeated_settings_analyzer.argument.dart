@@ -1,4 +1,4 @@
-part of 'dry_analyzer.dart';
+part of 'repeated_settings_analyzer.dart';
 
 /// An argument a widget is built with, as written.
 class _Argument {
@@ -23,7 +23,7 @@ class _Argument {
   /// method, so the same code works in another widget's `build`.
   final bool isMovable;
 
-  /// The parameter's name, or [DryFinding.positionalPrefix] and its index
+  /// The parameter's name, or [RepeatedSettingsFinding.positionalPrefix] and its index
   /// for a positional argument.
   final String name;
 
@@ -34,5 +34,6 @@ class _Argument {
   final String source;
 
   /// Whether the argument is passed by position.
-  bool get isPositional => name.startsWith(DryFinding.positionalPrefix);
+  bool get isPositional =>
+      name.startsWith(RepeatedSettingsFinding.positionalPrefix);
 }

@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:fide/models/dry_review.dart';
-import 'package:fide/services/dry_analyzer.dart';
+import 'package:fide/models/repeated_settings_review.dart';
+import 'package:fide/services/repeated_settings_analyzer.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -88,7 +88,7 @@ void main() {
 
   setUp(() {
     project = Directory.systemTemp
-        .createTempSync('fide_dry_')
+        .createTempSync('fide_repeated_settings_')
         .resolveSymbolicLinksSync();
     // A package, so the project's libraries have `package:` URIs
     File(p.join(project, 'pubspec.yaml')).writeAsStringSync('name: demo\n');
@@ -104,10 +104,16 @@ void main() {
       ..writeAsStringSync(content);
   }
 
-  Future<DryReview> review() => const DryAnalyzer().review(
-    project,
-    p.join(Platform.environment['FLUTTER_ROOT']!, 'bin', 'cache', 'dart-sdk'),
-  );
+  Future<RepeatedSettingsReview> review() =>
+      const RepeatedSettingsAnalyzer().review(
+        project,
+        p.join(
+          Platform.environment['FLUTTER_ROOT']!,
+          'bin',
+          'cache',
+          'dart-sdk',
+        ),
+      );
 
   test('finds clones, drifts, shared values and numbers', () async {
     write('framework.dart', _framework);
@@ -156,7 +162,7 @@ const Widget c = Text('c', maxLines: 1, overflow: TextOverflow.ellipsis);
 
     final found = await review();
 
-    final clones = found.of(DryFindingKind.clone);
+    final clones = found.of(RepeatedSettingsFindingKind.clone);
     expect(clones, hasLength(2));
     final clone = clones.firstWhere((finding) => finding.locationCount == 3);
     expect(clone.title, 'Text');
@@ -180,14 +186,14 @@ const Widget c = Text('c', maxLines: 1, overflow: TextOverflow.ellipsis);
       "Truncated('e', style: AppStyle.label)",
     ]);
 
-    final drift = found.of(DryFindingKind.drift).single;
+    final drift = found.of(RepeatedSettingsFindingKind.drift).single;
     expect(drift.title, 'Icon · color');
     expect(
       drift.variants.map((variant) => variant.source),
       unorderedEquals(['color ?? primary', 'readable(color)']),
     );
 
-    final shared = found.of(DryFindingKind.sameEverywhere);
+    final shared = found.of(RepeatedSettingsFindingKind.sameEverywhere);
     expect(
       shared.map((finding) => finding.title),
       unorderedEquals(['Badge · tone', 'Text · maxLines', 'Text · overflow']),
@@ -197,7 +203,7 @@ const Widget c = Text('c', maxLines: 1, overflow: TextOverflow.ellipsis);
       'Make it the default of `tone` in Badge',
     );
 
-    final number = found.of(DryFindingKind.literal).single;
+    final number = found.of(RepeatedSettingsFindingKind.literal).single;
     expect(number.title, 'Number 32');
     expect(number.suggestion, 'Use AppIconSize.large');
     final fixed = number.fixes.single.applyTo({
@@ -232,7 +238,11 @@ List<Widget> $name(IconData icon, Color color) => [
 
     final found = await review();
 
-    final extract = found.of(DryFindingKind.clone).single.fixes.single;
+    final extract = found
+        .of(RepeatedSettingsFindingKind.clone)
+        .single
+        .fixes
+        .single;
     expect(extract.nameHint, 'LargeIcon');
     final named = extract.named('BigIcon');
     expect(named.created.keys, ['lib/widgets/big_icon.dart']);
@@ -278,7 +288,11 @@ class $name extends StatelessWidget {
 
     final found = await review();
 
-    final places = found.of(DryFindingKind.clone).single.variants.single;
+    final places = found
+        .of(RepeatedSettingsFindingKind.clone)
+        .single
+        .variants
+        .single;
     expect(
       {
         for (final location in places.locations)

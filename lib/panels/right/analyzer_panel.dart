@@ -1,13 +1,13 @@
 import 'package:fide/models/analyzer_review.dart';
-import 'package:fide/models/dry_review.dart';
 import 'package:fide/models/file_layout_review.dart';
 import 'package:fide/models/locale_number.dart';
+import 'package:fide/models/repeated_settings_review.dart';
 import 'package:fide/panels/right/file_layout_list.dart';
 import 'package:fide/panels/right/repeated_settings_list.dart';
 import 'package:fide/providers/analyzer_review_notifier.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/dry_review_provider.dart';
 import 'package:fide/providers/file_layout_review_provider.dart';
+import 'package:fide/providers/repeated_settings_review_provider.dart';
 import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/panel_header.dart';
@@ -51,9 +51,9 @@ class _AnalyzerPanelState extends ConsumerState<AnalyzerPanel> {
         builder: (review) =>
             FileLayoutList(projectPath: projectPath, review: review),
       ),
-      AnalyzerReview.repeated => _review<DryReview>(
+      AnalyzerReview.repeated => _review<RepeatedSettingsReview>(
         AnalyzerReview.repeated,
-        dryReviewProvider,
+        repeatedSettingsReviewProvider,
         subtitle: (review) =>
             '${review.findings.length.count('finding')} in '
             '${review.fileCount.count('file')}',

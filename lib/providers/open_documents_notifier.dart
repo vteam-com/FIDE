@@ -91,24 +91,7 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
   /// [edit] ran.
   Future<Map<String, String>> applyEdits(
     Future<Map<String, String>> Function() edit,
-  ) async {
-    await saveAll();
-    final files = await edit();
-    final editedMeanwhile = state.documents.where(
-      (document) => document.isDirty && files.containsKey(document.filePath),
-    );
-    if (editedMeanwhile.isNotEmpty) {
-      throw StateError(
-        '${p.basename(editedMeanwhile.first.filePath)} was edited '
-        'meanwhile, so nothing was changed',
-      );
-    }
-    for (final MapEntry(key: path, value: content) in files.entries) {
-      await reader.write(path, content);
-    }
-    if (files.isNotEmpty) await reloadWritten(files.keys);
-    return files;
-  }
+  ) async => _write(await _plan(edit));
 
   /// Applies a project-wide edit moving files, [moves] giving each one's
   /// new absolute path by its current one: [edit]'s files are written as
@@ -123,9 +106,75 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
     for (final path in moves.keys) {
       await reader.delete(path);
     }
+    _follow((path) => moves[path], files);
+    return files;
+  }
+
+  /// Renames the file or folder at [from], absolute, to [to] with
+  /// [rename], as a project-wide edit: [edit]'s files, keyed by their
+  /// absolute path after the rename (those naming a renamed Dart file,
+  /// rewritten), are planned as [applyEdits] plans them, before anything
+  /// moves, then [rename] runs, they are written, and a tab showing a file
+  /// renamed shows it at its new path, in the same place.
+  Future<Map<String, String>> applyRename(
+    String from,
+    String to, {
+    required Future<void> Function() rename,
+    required Future<Map<String, String>> Function() edit,
+  }) async {
+    final files = await _plan(edit);
+    await rename();
+    await _write(files);
+    _follow(
+      (path) => path == from
+          ? to
+          : p.isWithin(from, path)
+          ? p.join(to, p.relative(path, from: from))
+          : null,
+      files,
+    );
+    return files;
+  }
+
+  /// The files [edit] returns, once every document is saved; throws when
+  /// one of them was edited again while [edit] ran: see [applyEdits].
+  Future<Map<String, String>> _plan(
+    Future<Map<String, String>> Function() edit,
+  ) async {
+    await saveAll();
+    final files = await edit();
+    final editedMeanwhile = state.documents.where(
+      (document) => document.isDirty && files.containsKey(document.filePath),
+    );
+    if (editedMeanwhile.isNotEmpty) {
+      throw StateError(
+        '${p.basename(editedMeanwhile.first.filePath)} was edited '
+        'meanwhile, so nothing was changed',
+      );
+    }
+    return files;
+  }
+
+  /// Writes [files], text by absolute path, and reloads the documents
+  /// showing them; returns them.
+  Future<Map<String, String>> _write(Map<String, String> files) async {
+    for (final MapEntry(key: path, value: content) in files.entries) {
+      await reader.write(path, content);
+    }
+    if (files.isNotEmpty) await reloadWritten(files.keys);
+    return files;
+  }
+
+  /// Shows each document whose file [movedPath] gives a new path for at
+  /// that path, in the same place, with its text among [files] when
+  /// written there.
+  void _follow(
+    String? Function(String path) movedPath,
+    Map<String, String> files,
+  ) {
     _show([
       for (final document in state.documents)
-        if (moves[document.filePath] case final moved?)
+        if (movedPath(document.filePath) case final moved?)
           DocumentState(
             filePath: moved,
             content: files[moved] ?? document.content,
@@ -134,7 +183,6 @@ class OpenDocumentsNotifier extends StateNotifier<OpenDocuments> {
         else
           document,
     ], state.activeIndex);
-    return files;
   }
 
   /// Rewrites the file at [path] with what [edit] makes of its saved text,

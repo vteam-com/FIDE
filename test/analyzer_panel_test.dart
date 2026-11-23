@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:fide/constants/core_constants.dart';
 import 'package:fide/models/analyzer_review.dart';
 import 'package:fide/models/code_category.dart';
-import 'package:fide/models/dry_review.dart';
+import 'package:fide/models/repeated_settings_review.dart';
 import 'package:fide/models/file_layout_review.dart';
 import 'package:fide/models/import_graph.dart';
 import 'package:fide/panels/right/analyzer_panel.dart';
 import 'package:fide/providers/app_providers.dart';
-import 'package:fide/providers/dry_review_provider.dart';
+import 'package:fide/providers/repeated_settings_review_provider.dart';
 import 'package:fide/providers/file_layout_review_provider.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/file_mover.dart';
@@ -27,25 +27,29 @@ import 'fake_code_formatter.dart';
 import 'fake_file_content_reader.dart';
 
 /// An `Icon` whose color drifted between a view and a widget.
-const DryReview _review = DryReview(
+const RepeatedSettingsReview _review = RepeatedSettingsReview(
   widgetCount: 12,
   fileCount: 3,
   findings: [
-    DryFinding(
-      kind: DryFindingKind.drift,
+    RepeatedSettingsFinding(
+      kind: RepeatedSettingsFindingKind.drift,
       widget: 'Icon',
       setting: 'color',
       variants: [
-        DryVariant('AppTheme.readable(color, colorScheme)', [
-          DryLocation(
+        RepeatedSettingsVariant('AppTheme.readable(color, colorScheme)', [
+          RepeatedSettingsLocation(
             'lib/ui/status_screen.dart',
             41,
             className: 'StatusScreen',
             isInView: true,
           ),
         ]),
-        DryVariant('color ?? colorScheme.primary', [
-          DryLocation('lib/widgets/menu_row.dart', 56, className: 'MenuRow'),
+        RepeatedSettingsVariant('color ?? colorScheme.primary', [
+          RepeatedSettingsLocation(
+            'lib/widgets/menu_row.dart',
+            56,
+            className: 'MenuRow',
+          ),
         ]),
       ],
     ),
@@ -53,20 +57,27 @@ const DryReview _review = DryReview(
 );
 
 /// A number with a constant to use instead, in `lib/a.dart`.
-const DryReview _numberReview = DryReview(
+const RepeatedSettingsReview _numberReview = RepeatedSettingsReview(
   widgetCount: 1,
   fileCount: 1,
   findings: [
-    DryFinding(
-      kind: DryFindingKind.literal,
+    RepeatedSettingsFinding(
+      kind: RepeatedSettingsFindingKind.literal,
       widget: '32',
       variants: [
-        DryVariant('32', [DryLocation('lib/a.dart', 1)]),
+        RepeatedSettingsVariant('32', [
+          RepeatedSettingsLocation('lib/a.dart', 1),
+        ]),
       ],
       suggestion: 'Use AppIconSize.large',
       fixes: [
-        DryFix('Use AppIconSize.large', [
-          DryEdit('lib/a.dart', _numberOffset, '32', 'AppIconSize.large'),
+        RepeatedSettingsFix('Use AppIconSize.large', [
+          RepeatedSettingsEdit(
+            'lib/a.dart',
+            _numberOffset,
+            '32',
+            'AppIconSize.large',
+          ),
         ]),
       ],
     ),
@@ -75,7 +86,7 @@ const DryReview _numberReview = DryReview(
 
 /// A number whose constant lives in `lib/b.dart`, which imports
 /// `lib/a.dart`: using it there would make the two import each other.
-const DryReview _cycleReview = DryReview(
+const RepeatedSettingsReview _cycleReview = RepeatedSettingsReview(
   widgetCount: 1,
   fileCount: 2,
   packageName: 'demo',
@@ -84,15 +95,17 @@ const DryReview _cycleReview = DryReview(
     'lib/b.dart': {'lib/a.dart'},
   }),
   findings: [
-    DryFinding(
-      kind: DryFindingKind.literal,
+    RepeatedSettingsFinding(
+      kind: RepeatedSettingsFindingKind.literal,
       widget: '32',
       variants: [
-        DryVariant('32', [DryLocation('lib/a.dart', 1)]),
+        RepeatedSettingsVariant('32', [
+          RepeatedSettingsLocation('lib/a.dart', 1),
+        ]),
       ],
       fixes: [
-        DryFix('Use Sizes.large', [
-          DryEdit(
+        RepeatedSettingsFix('Use Sizes.large', [
+          RepeatedSettingsEdit(
             'lib/a.dart',
             _numberOffset,
             '32',
@@ -106,32 +119,35 @@ const DryReview _cycleReview = DryReview(
 );
 
 /// A `FittedBox` to extract into a new widget, in `lib/a.dart`.
-const DryReview _extractReview = DryReview(
+const RepeatedSettingsReview _extractReview = RepeatedSettingsReview(
   widgetCount: 2,
   fileCount: 2,
   takenNames: {'FittedBox'},
   findings: [
-    DryFinding(
-      kind: DryFindingKind.clone,
+    RepeatedSettingsFinding(
+      kind: RepeatedSettingsFindingKind.clone,
       widget: 'FittedBox',
       variants: [
-        DryVariant('fit: BoxFit.fitHeight', [DryLocation('lib/a.dart', 1)]),
+        RepeatedSettingsVariant('fit: BoxFit.fitHeight', [
+          RepeatedSettingsLocation('lib/a.dart', 1),
+        ]),
       ],
       fixes: [
-        DryFix(
+        RepeatedSettingsFix(
           'Extract widget…',
           [
-            DryEdit(
+            RepeatedSettingsEdit(
               'lib/a.dart',
               0,
               'FittedBox()',
-              '${DryFix.widgetName}()',
-              importUri: 'package:demo/widgets/${DryFix.widgetFile}.dart',
+              '${RepeatedSettingsFix.widgetName}()',
+              importUri:
+                  'package:demo/widgets/${RepeatedSettingsFix.widgetFile}.dart',
             ),
           ],
           created: {
-            'lib/widgets/${DryFix.widgetFile}.dart':
-                'class ${DryFix.widgetName} {}',
+            'lib/widgets/${RepeatedSettingsFix.widgetFile}.dart':
+                'class ${RepeatedSettingsFix.widgetName} {}',
           },
           nameHint: 'HighFittedBox',
         ),
@@ -174,7 +190,7 @@ void main() {
   /// [reader] when given; returns its provider scope.
   Future<ProviderContainer> pumpPanel(
     WidgetTester tester,
-    DryReview? review, {
+    RepeatedSettingsReview? review, {
     FileLayoutReview? layout,
     AnalyzerReview shown = AnalyzerReview.repeated,
     FakeFileContentReader? reader,
@@ -184,8 +200,8 @@ void main() {
     });
     final container = ProviderContainer(
       overrides: [
-        dryReviewProvider.overrideWith(
-          (_) => review ?? Completer<DryReview?>().future,
+        repeatedSettingsReviewProvider.overrideWith(
+          (_) => review ?? Completer<RepeatedSettingsReview?>().future,
         ),
         fileLayoutReviewProvider.overrideWith(
           (_) => layout ?? Completer<FileLayoutReview?>().future,
@@ -305,7 +321,7 @@ void main() {
   ) async {
     await pumpPanel(tester, _review);
 
-    expect(find.text(DryFindingKind.drift.noFix), findsOneWidget);
+    expect(find.text(RepeatedSettingsFindingKind.drift.noFix), findsOneWidget);
     expect(find.text('Fix with AI'), findsOneWidget);
   });
 
@@ -362,7 +378,7 @@ void main() {
   testWidgets('a project without repetition says so', (tester) async {
     await pumpPanel(
       tester,
-      const DryReview(findings: [], widgetCount: 4, fileCount: 2),
+      const RepeatedSettingsReview(findings: [], widgetCount: 4, fileCount: 2),
     );
 
     expect(find.text('No repeated widget settings found'), findsOneWidget);

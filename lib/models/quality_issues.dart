@@ -4,6 +4,7 @@ import 'package:fide/models/quality_issue.dart';
 import 'package:fide/models/quality_issue.quality_finding.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/models/string_review.dart';
 import 'package:path/path.dart' as p;
 
 /// fCheck's results as [QualityIssue]s: one per analyzer that lowered the
@@ -127,17 +128,22 @@ extension QualityIssues on fcheck.ProjectMetrics {
     _ => null,
   };
 
-  /// What the AI agent does to [domain]'s findings: localize hardcoded
-  /// strings and fix the rest; none for translations, which Translate with
-  /// AI handles key by key, nor for sorting, which Sort members does.
-  String? _aiVerb(fcheck.AnalyzerDomain? domain) => switch (domain) {
-    fcheck.AnalyzerDomain.hardcodedStrings => 'Localize',
-    // Translate with AI asks the model per key instead of the agent
-    fcheck.AnalyzerDomain.localization => null,
-    // Sorting is mechanical: fCheck's sorter does it at once
-    fcheck.AnalyzerDomain.sourceSorting => null,
-    _ => 'Fix',
-  };
+  /// What the AI agent does to [domain]'s findings, whose issue offers
+  /// [quickFixes]: localize hardcoded strings and fix the rest; none for
+  /// hardcoded strings a string fix applies to, whose review hands the AI
+  /// only the strings no fix rewrites, nor for translations, which
+  /// Translate with AI handles key by key, nor for sorting, which Sort
+  /// Members does.
+  String? _aiVerb(fcheck.AnalyzerDomain? domain, List<QuickFix> quickFixes) =>
+      switch (domain) {
+        fcheck.AnalyzerDomain.hardcodedStrings =>
+          StringFix.anyIn(quickFixes) ? null : 'Localize',
+        // Translate with AI asks the model per key instead of the agent
+        fcheck.AnalyzerDomain.localization => null,
+        // Sorting is mechanical: fCheck's sorter does it at once
+        fcheck.AnalyzerDomain.sourceSorting => null,
+        _ => 'Fix',
+      };
 
   /// The fixes FIDE applies itself to [domain]'s findings: those offered
   /// for the analyzer that apply to these metrics.
@@ -156,6 +162,7 @@ extension QualityIssues on fcheck.ProjectMetrics {
         .where((domain) => domain.configName == analyzer.key)
         .firstOrNull;
     final findings = _findings(domain);
+    final quickFixes = _quickFixes(domain);
     // The count the issue's findings list shows; fCheck counts some
     // analyzers differently, such as localization by language
     final count = findings.isEmpty ? analyzer.issueCount : findings.length;
@@ -167,10 +174,10 @@ extension QualityIssues on fcheck.ProjectMetrics {
       ),
       title: analyzer.label,
       guidance: _guidance(domain),
-      aiVerb: _aiVerb(domain),
+      aiVerb: _aiVerb(domain, quickFixes),
       findings: findings,
       rootPath: analysisRootPath,
-      quickFixes: _quickFixes(domain),
+      quickFixes: quickFixes,
     );
   }
 

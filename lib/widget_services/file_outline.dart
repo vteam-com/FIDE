@@ -189,25 +189,25 @@ class FileOutline extends ConsumerWidget {
         IconMenuItem<VoidCallback>(
           value: () => edit((editor) => editor.remove()),
           icon: Icons.layers_clear,
-          label: 'Remove this widget',
+          label: 'Remove Widget',
         ),
       if (editor.canSwapWithParent)
         IconMenuItem<VoidCallback>(
           value: () => edit((editor) => editor.swapWithParent()),
           icon: Icons.swap_vert,
-          label: 'Swap with parent',
+          label: 'Swap with Parent',
         ),
       if (editor.canMoveUp)
         IconMenuItem<VoidCallback>(
           value: () => edit((editor) => editor.moveUp()),
           icon: Icons.arrow_upward,
-          label: 'Move up',
+          label: 'Move Up',
         ),
       if (editor.canMoveDown)
         IconMenuItem<VoidCallback>(
           value: () => edit((editor) => editor.moveDown()),
           icon: Icons.arrow_downward,
-          label: 'Move down',
+          label: 'Move Down',
         ),
     ];
     showActionMenu(context, position, [
@@ -220,7 +220,7 @@ class FileOutline extends ConsumerWidget {
       IconMenuItem(
         value: () => _wrapWithNamed(context, ref, node),
         icon: Icons.add_box_outlined,
-        label: 'Wrap with widget…',
+        label: 'Wrap with Widget…',
       ),
       if (reshapes.isNotEmpty) ...[const PopupMenuDivider(), ...reshapes],
     ]);

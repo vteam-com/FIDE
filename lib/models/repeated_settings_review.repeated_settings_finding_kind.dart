@@ -1,7 +1,7 @@
-part of 'dry_review.dart';
+part of 'repeated_settings_review.dart';
 
 /// The ways a widget's settings repeat, each with the fix it calls for.
-enum DryFindingKind {
+enum RepeatedSettingsFindingKind {
   /// The same widget built with the same settings in several files.
   clone(
     'Same settings',
@@ -50,7 +50,7 @@ enum DryFindingKind {
     aiTask: 'Use the constant of the project for this number in every place.',
   );
 
-  const DryFindingKind(
+  const RepeatedSettingsFindingKind(
     this.label,
     this.description, {
     required this.noFix,

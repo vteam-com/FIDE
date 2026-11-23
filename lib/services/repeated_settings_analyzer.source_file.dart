@@ -1,4 +1,4 @@
-part of 'dry_analyzer.dart';
+part of 'repeated_settings_analyzer.dart';
 
 /// A file widgets are built in: the names it sees and the libraries it
 /// imports, telling what code moved out of it must import.

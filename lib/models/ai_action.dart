@@ -31,7 +31,7 @@ enum AiAction {
 
   /// Review the duplicate code fcheck finds in the project.
   dryReview(
-    'D.R.Y. review',
+    'D.R.Y. Review',
     'Send to review duplicated code, or add what to focus on…',
     think: true,
     context: AiContext.duplicates,
@@ -44,7 +44,7 @@ enum AiAction {
 
   /// Review fcheck's largest and most coupled code against SOLID.
   solidReview(
-    'S.O.L.I.D. review',
+    'S.O.L.I.D. Review',
     'Send to review the design against SOLID, or add what to focus on…',
     think: true,
     context: AiContext.design,

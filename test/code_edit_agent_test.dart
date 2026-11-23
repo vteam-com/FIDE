@@ -150,7 +150,7 @@ void main() {
       );
 
       final summary = await agentOf(model).edit('fix 1', [
-        {'role': 'user', 'content': 'D.R.Y. review'},
+        {'role': 'user', 'content': 'D.R.Y. Review'},
         {'role': 'assistant', 'content': '1. main prints the wrong value'},
       ]);
 
@@ -465,7 +465,7 @@ void main() {
     await agent.edit('fix the overflow in main', const []);
 
     expect(model.toolNames.first, contains('run_quick_fix'));
-    expect(model.chats.first.first['content'], contains('Localize strings'));
+    expect(model.chats.first.first['content'], contains('Localize Strings'));
     expect(model.toolNames.last, isNot(contains('run_quick_fix')));
     expect(model.toolNames.last, contains('replace_in_file'));
   });

@@ -26,7 +26,7 @@ final referenceFinderProvider = Provider<ReferenceFinder?>((ref) {
   return finder;
 });
 
-/// Provides the [StringLookupPasser] behind the Pass a lookup quick fix,
+/// Provides the [StringLookupPasser] behind the Pass a Lookup quick fix,
 /// resolving the open project; null while no project is open.
 final stringLookupPasserProvider = Provider<StringLookupPasser?>((ref) {
   final finder = ref.watch(referenceFinderProvider);

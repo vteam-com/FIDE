@@ -47,8 +47,7 @@ class FileMover {
     Map<String, String> moves, {
     String? packageName,
   }) async {
-    String absolute(String relative) =>
-        p.joinAll([projectPath, ...p.posix.split(relative)]);
+    final absolute = ProjectPaths(projectPath).absoluteOf;
     for (final MapEntry(key: from, value: to) in moves.entries) {
       if (!await reader.exists(absolute(from))) {
         throw StateError('$from is gone: check again');
@@ -63,9 +62,7 @@ class FileMover {
       for (final from in moves.keys) from: await reader.read(absolute(from)),
     };
     for (final path in await listDartFiles(projectPath)) {
-      final relative = p.posix.joinAll(
-        p.split(p.relative(path, from: projectPath)),
-      );
+      final relative = ProjectPaths(projectPath).relativeOf(path);
       if (contents.containsKey(relative)) continue;
       final content = await reader.read(path);
       if (names.any(content.contains)) contents[relative] = content;

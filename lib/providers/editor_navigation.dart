@@ -6,25 +6,22 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/center_view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Opens [filePath] in the editor.
-void openFile(WidgetRef ref, String filePath) {
-  ref.read(selectedFileProvider.notifier).state = FileSystemItem.fromPath(
-    filePath,
-  );
-}
+/// Opens [filePath] in the editor: see [openItem].
+void openFile(WidgetRef ref, String filePath) =>
+    openItem(ref, FileSystemItem.fromPath(filePath));
 
-/// Opens [filePath] in the editor from the center view showing, which
-/// closing the file returns to; the view closes even when the file was
-/// already the active one.
-void openFromCenterView(WidgetRef ref, String filePath) {
+/// Opens [item] in the editor, the one way to open a file, from any panel:
+/// closes the center view showing, which closing the file returns to,
+/// even when the file was already the active one.
+void openItem(WidgetRef ref, FileSystemItem item) {
   if (ref.read(centerViewProvider) case final view?) {
     ref.read(centerViewOpenedFileProvider.notifier).state = (
       view: view,
-      path: filePath,
+      path: item.path,
     );
   }
   ref.read(centerViewProvider.notifier).state = null;
-  openFile(ref, filePath);
+  ref.read(selectedFileProvider.notifier).state = item;
 }
 
 /// Opens [filePath] in the editor and moves the caret to 1-based [line]

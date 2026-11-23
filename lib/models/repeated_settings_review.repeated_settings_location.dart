@@ -1,11 +1,11 @@
-part of 'dry_review.dart';
+part of 'repeated_settings_review.dart';
 
 /// Where a widget is built: a project-relative [path] and 1-based [line],
 /// in a view or in a widget.
-class DryLocation {
+class RepeatedSettingsLocation {
   /// Creates the location in [path] at [line], inside [className], in a
   /// view when [isInView].
-  const DryLocation(
+  const RepeatedSettingsLocation(
     this.path,
     this.line, {
     this.className,

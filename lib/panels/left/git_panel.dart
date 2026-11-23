@@ -2,7 +2,6 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/relative_time.dart';
-import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/editor_navigation.dart';
 import 'package:fide/providers/git_repo_controller.dart';
 import 'package:fide/services/chat_model.dart';
@@ -476,8 +475,7 @@ class _GitPanelState extends ConsumerState<GitPanel> {
                   showPath: true,
                   rootPath: widget.projectPath,
                   trailing: DiffCounter(gitStats: stats[file]),
-                  onTap: () =>
-                      ref.read(selectedFileProvider.notifier).state = item,
+                  onTap: () => openItem(ref, item),
                 ),
               ),
             ),

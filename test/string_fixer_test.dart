@@ -80,7 +80,7 @@ void main() {
     final review = await fixer.review(project.path, metrics);
 
     expect(planned, [StringFix.localizeStrings, StringFix.makeConstants]);
-    expect(review.localizationBlocker, 'planned Make string constants');
+    expect(review.localizationBlocker, 'planned Make String Constants');
   });
 
   test('apply runs the fix through its rewriter', () async {

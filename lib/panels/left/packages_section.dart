@@ -115,7 +115,7 @@ class PackagesSection extends ConsumerWidget {
           // confirmed alike
           CompactTextButton(
             icon: QuickFix.upgradePackages.icon,
-            label: 'Upgrade',
+            label: QuickFix.upgradePackages.label,
             tooltip: 'Raise constraints to the latest resolvable versions',
             onPressed: pubBusy
                 ? null

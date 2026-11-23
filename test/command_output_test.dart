@@ -116,8 +116,8 @@ void main() {
     expect(identical(actionList(), before), isFalse);
   });
 
-  /// The Errors section's Fix with AI button.
-  final fixWithAi = find.byTooltip('Fix with AI');
+  /// The Errors section's Fix Build button.
+  final fixBuild = find.byTooltip(AiAction.fixBuild.label);
 
   testWidgets('the errors of a failed build offer to fix it with AI', (
     tester,
@@ -132,7 +132,7 @@ void main() {
     output.onError(error);
     await finish(tester, exit, exitCode: 1);
 
-    await tester.tap(fixWithAi.hitTestable());
+    await tester.tap(fixBuild.hitTestable());
     await tester.pump();
 
     final chat = container.read(aiChatProvider);
@@ -149,7 +149,7 @@ void main() {
     await finish(tester, exit, exitCode: 1);
 
     expect(find.text('Errors'), findsOne);
-    expect(fixWithAi, findsNothing);
+    expect(fixBuild, findsNothing);
   });
 
   testWidgets('a build that succeeds again takes the AI fix away', (
@@ -161,11 +161,11 @@ void main() {
     );
     output.onError('Error: Expected ";"');
     await finish(tester, exit, exitCode: 1);
-    expect(fixWithAi, findsWidgets);
+    expect(fixBuild, findsWidgets);
 
     container.read(lastBuildErrorsProvider.notifier).state = '';
     await tester.pump();
 
-    expect(fixWithAi, findsNothing);
+    expect(fixBuild, findsNothing);
   });
 }

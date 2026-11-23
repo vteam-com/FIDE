@@ -1,12 +1,12 @@
-part of 'dry_review.dart';
+part of 'repeated_settings_review.dart';
 
-/// One replacement a [DryFix] makes: the [original] code at [offset] in
+/// One replacement a [RepeatedSettingsFix] makes: the [original] code at [offset] in
 /// the file at [path] becomes [replacement], importing [importUri] into
 /// the file when the replacement names something it doesn't import yet.
-class DryEdit {
+class RepeatedSettingsEdit {
   /// Creates the replacement of [original], at [offset] in [path], by
   /// [replacement].
-  const DryEdit(
+  const RepeatedSettingsEdit(
     this.path,
     this.offset,
     this.original,

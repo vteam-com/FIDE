@@ -1,10 +1,10 @@
-part of 'dry_review.dart';
+part of 'repeated_settings_review.dart';
 
 /// One repetition found: the [widget] built, the [setting] concerned and
 /// the [variants] it is written as.
-class DryFinding {
+class RepeatedSettingsFinding {
   /// Creates a finding of [kind] about [widget].
-  const DryFinding({
+  const RepeatedSettingsFinding({
     required this.kind,
     required this.widget,
     required this.variants,
@@ -15,10 +15,10 @@ class DryFinding {
 
   /// The deterministic fixes offered, one per way to remove the
   /// repetition; none when it takes a choice code cannot make.
-  final List<DryFix> fixes;
+  final List<RepeatedSettingsFix> fixes;
 
   /// What repeats.
-  final DryFindingKind kind;
+  final RepeatedSettingsFindingKind kind;
 
   /// The setting that differs or repeats; null when the whole set of
   /// settings does.
@@ -29,16 +29,16 @@ class DryFinding {
 
   /// The ways the code is written: one for a repetition, several for a
   /// drift.
-  final List<DryVariant> variants;
+  final List<RepeatedSettingsVariant> variants;
 
-  /// The widget built, or the number for [DryFindingKind.literal].
+  /// The widget built, or the number for [RepeatedSettingsFindingKind.literal].
   final String widget;
 
   /// The finding's name: the widget and the setting concerned, such as
   /// `Icon · color`, or the number written.
   String get title {
     final setting = this.setting;
-    if (kind == DryFindingKind.literal) return 'Number $widget';
+    if (kind == RepeatedSettingsFindingKind.literal) return 'Number $widget';
     if (setting == null) return widget;
     final name = setting.startsWith(positionalPrefix)
         ? 'argument ${int.parse(setting.substring(1)) + 1}'

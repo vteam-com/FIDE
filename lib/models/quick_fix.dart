@@ -12,7 +12,7 @@ enum QuickFix {
   /// template ARB file and look them up through the generated
   /// localizations class.
   localizeStrings(
-    'Localize strings',
+    'Localize Strings',
     'moves the hardcoded strings users read into the ARB files and looks '
         'them up through the generated class',
     topics: {'locali', 'l10n', 'hardcoded'},
@@ -24,7 +24,7 @@ enum QuickFix {
   /// widget's `String` field, by making the field a lookup function the
   /// widget calls with its context.
   passLookup(
-    'Pass a lookup',
+    'Pass a Lookup',
     'localizes the hardcoded strings users read that are passed, where no '
         'BuildContext is, to a widget\'s String field, by making the field '
         'a lookup function the widget calls with its context',
@@ -43,7 +43,7 @@ enum QuickFix {
   /// Make hardcoded strings the code compares or looks up, such as
   /// Firestore collection and field names, named constants in one class.
   makeConstants(
-    'Make string constants',
+    'Make String Constants',
     'makes the hardcoded strings the code compares or looks up, such as '
         'Firestore collection and field names, named constants',
     topics: {'constant'},
@@ -53,7 +53,7 @@ enum QuickFix {
 
   /// Remove the ARB keys the code never uses from every ARB file.
   removeUnusedKeys(
-    'Remove unused keys',
+    'Remove Unused Keys',
     'removes the ARB keys the code never uses from every ARB file, with '
         'their metadata, and regenerates the classes',
     topics: {'unused key', 'arb'},
@@ -65,7 +65,7 @@ enum QuickFix {
   /// Sort the members of widget and `State` classes, and imports, in the
   /// order fCheck checks, with fCheck's own sorter.
   sortMembers(
-    'Sort members',
+    'Sort Members',
     'sorts the members of widget and State classes, and the imports, of '
         'every file in the order fCheck checks',
     topics: {'sort'},
@@ -75,7 +75,7 @@ enum QuickFix {
   /// Raise the dependency constraints to their latest resolvable
   /// versions, which often bring Swift Package Manager support.
   upgradePackages(
-    'Upgrade packages',
+    'Upgrade Packages',
     'raises every dependency constraint in pubspec.yaml to its latest '
         'resolvable version and runs flutter pub get',
     topics: {'upgrade', 'outdated', 'dependenc'},

@@ -1,8 +1,8 @@
-part of 'dry_analyzer.dart';
+part of 'repeated_settings_analyzer.dart';
 
 /// Finds the parts of an expression reading the code's own state: its
 /// locals, parameters and instance members, and what is read from them;
-/// the [DryAnalyzer] compares those by shape only.
+/// the [RepeatedSettingsAnalyzer] compares those by shape only.
 class _StateFinder extends RecursiveAstVisitor<void> {
   /// The expressions found, outermost only.
   final List<Expression> found = [];

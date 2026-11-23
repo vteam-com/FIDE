@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fide/models/dependency_version.dart';
 import 'package:fide/models/project_metrics.dart';
+import 'package:fide/models/quick_fix.dart';
 import 'package:fide/panels/left/packages_section.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,7 +42,7 @@ void main() {
     expect(find.text('Direct'), findsOneWidget);
     expect(find.text('Developer'), findsOneWidget);
     expect(find.text('Outdated'), findsOneWidget);
-    expect(find.text('Upgrade'), findsOneWidget);
+    expect(find.text(QuickFix.upgradePackages.label), findsOneWidget);
     // The header's actions are built full and compact, for a narrow panel
     expect(find.byTooltip('Open pubspec.yaml'), findsWidgets);
   });

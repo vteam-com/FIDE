@@ -7,7 +7,7 @@ class SectionTitle extends StatelessWidget {
   /// Creates the heading [text].
   const SectionTitle(this.text, {super.key, this.action});
 
-  /// The button acting on the whole section, such as Fix all; none when
+  /// The button acting on the whole section, such as Fix All; none when
   /// null.
   final Widget? action;
 

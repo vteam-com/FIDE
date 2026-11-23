@@ -1,4 +1,4 @@
-part of 'dry_analyzer.dart';
+part of 'repeated_settings_analyzer.dart';
 
 /// A parameter of a shared widget's constructor: its [name], the [field]
 /// it initializes (`this.text`), its [position] when positional, whether
@@ -91,7 +91,7 @@ class _SharedWidget {
   /// parameter, a required parameter would go unset, a parameter with a
   /// default would replace the widget's own, [call]'s slot takes only its
   /// own kind of widget, or [call] must be constant and this widget can't.
-  DryEdit? rewrite(_WidgetCall call, _WidgetCall built) {
+  RepeatedSettingsEdit? rewrite(_WidgetCall call, _WidgetCall built) {
     if (!call.fitsWidget || (call.mustBeConst && !isConst)) return null;
     final positional = <int, String>{};
     final named = <String, String>{};
@@ -128,7 +128,7 @@ class _SharedWidget {
         positional[position]!,
       for (final MapEntry(:key, :value) in named.entries) '$key: $value',
     ];
-    return DryEdit(
+    return RepeatedSettingsEdit(
       call.location.path,
       call.offset,
       call.source,

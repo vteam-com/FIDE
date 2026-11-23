@@ -41,7 +41,7 @@ class CommandOutput extends ConsumerWidget {
             isExpanded: true,
             text: errors,
             onClear: clear,
-            onFixWithAi: isLastBuildFailure
+            onFixBuild: isLastBuildFailure
                 ? () => ref.read(aiRequestsProvider).fixBuild()
                 : null,
           ),

@@ -157,7 +157,7 @@ class EditorScreenHeader extends ConsumerWidget {
             CompactToggleButton.header(
               key: const Key('keyEditorDiff'),
               icon: Icons.difference,
-              tooltip: 'Diff View',
+              tooltip: 'Show Diff View',
               isOn: showDiffView,
               onChanged: (_) => onToggleDiffView(),
             ),

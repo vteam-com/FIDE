@@ -23,7 +23,7 @@ class AppIconMaster {
   /// its center square is used.
   bool get isNotSquare => isReadable && width != height;
 
-  /// Whether Fix all rewrites the image: it is too small or not square.
+  /// Whether Fix All rewrites the image: it is too small or not square.
   bool get needsFix => isTooSmall || isNotSquare;
 
   /// Whether the image could be decoded.

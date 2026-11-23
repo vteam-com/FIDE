@@ -1,15 +1,15 @@
-part of 'dry_review.dart';
+part of 'repeated_settings_review.dart';
 
-/// A deterministic fix of a [DryFinding], such as using a constant for a
+/// A deterministic fix of a [RepeatedSettingsFinding], such as using a constant for a
 /// number: the [edits] it makes across the project and the files it
 /// [created], with its [label].
 ///
 /// A fix extracting a shared widget leaves its name to the user: its
 /// code says [widgetName] and [widgetFile] until [named] fills them in.
-class DryFix {
+class RepeatedSettingsFix {
   /// Creates the fix named [label] making [edits] and adding the [created]
   /// files, its widget named after [nameHint] when it has one to name.
-  const DryFix(
+  const RepeatedSettingsFix(
     this.label,
     this.edits, {
     this.created = const {},
@@ -17,7 +17,7 @@ class DryFix {
   });
 
   /// The fix of every one of [fixes] at once, named [label].
-  DryFix.all(this.label, Iterable<DryFix> fixes)
+  RepeatedSettingsFix.all(this.label, Iterable<RepeatedSettingsFix> fixes)
     : edits = [for (final fix in fixes) ...fix.edits],
       created = {for (final fix in fixes) ...fix.created},
       nameHint = null;
@@ -32,7 +32,7 @@ class DryFix {
   final Map<String, String> created;
 
   /// The replacements, in any order.
-  final List<DryEdit> edits;
+  final List<RepeatedSettingsEdit> edits;
 
   /// What the fix does, as its button says: `Use AppIconSize.large`.
   final String label;
@@ -56,15 +56,15 @@ class DryFix {
   }
 
   /// The fix with its widget called [name], in a file named after it.
-  DryFix named(String name) {
+  RepeatedSettingsFix named(String name) {
     final file = ProjectName.normalize(name) ?? name;
     String fill(String text) =>
         text.replaceAll(widgetName, name).replaceAll(widgetFile, file);
-    return DryFix(
+    return RepeatedSettingsFix(
       fill(label),
       [
         for (final edit in edits)
-          DryEdit(
+          RepeatedSettingsEdit(
             edit.path,
             edit.offset,
             edit.original,
@@ -105,7 +105,7 @@ class DryFix {
                 ? a.offset - b.offset
                 : b.original.length - a.original.length,
           );
-      final kept = <DryEdit>[];
+      final kept = <RepeatedSettingsEdit>[];
       for (final edit in edits) {
         if (kept.isNotEmpty && edit.offset < kept.last.end) continue;
         if (edit.end > content.length ||

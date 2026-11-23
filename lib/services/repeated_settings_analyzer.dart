@@ -11,22 +11,23 @@ import 'package:analyzer/dart/element/scope.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/element/type_system.dart';
 import 'package:fide/models/dart_imports.dart';
-import 'package:fide/models/dry_review.dart';
 import 'package:fide/models/import_graph.dart';
+import 'package:fide/models/project_paths.dart';
+import 'package:fide/models/repeated_settings_review.dart';
 import 'package:fide/models/unique_name.dart';
 import 'package:fide/services/dart_references.dart';
 import 'package:fide/services/file_layout_analyzer.dart';
 import 'package:path/path.dart' as p;
 
-part 'dry_analyzer.argument.dart';
-part 'dry_analyzer.call_collector.dart';
-part 'dry_analyzer.constant.dart';
-part 'dry_analyzer.extraction.dart';
-part 'dry_analyzer.literal_use.dart';
-part 'dry_analyzer.shared_widget.dart';
-part 'dry_analyzer.source_file.dart';
-part 'dry_analyzer.state_finder.dart';
-part 'dry_analyzer.widget_call.dart';
+part 'repeated_settings_analyzer.argument.dart';
+part 'repeated_settings_analyzer.call_collector.dart';
+part 'repeated_settings_analyzer.constant.dart';
+part 'repeated_settings_analyzer.extraction.dart';
+part 'repeated_settings_analyzer.literal_use.dart';
+part 'repeated_settings_analyzer.shared_widget.dart';
+part 'repeated_settings_analyzer.source_file.dart';
+part 'repeated_settings_analyzer.state_finder.dart';
+part 'repeated_settings_analyzer.widget_call.dart';
 
 /// Finds the widget settings a Flutter project repeats, the Repeated Widget Settings review's
 /// findings: knowing every project is a Flutter app, it compares only the
@@ -44,9 +45,9 @@ part 'dry_analyzer.widget_call.dart';
 ///
 /// Evaluation: FIDE finds these itself for now; once they prove useful,
 /// the analysis moves into fCheck.
-class DryAnalyzer {
+class RepeatedSettingsAnalyzer {
   /// Creates a stateless analyzer.
-  const DryAnalyzer();
+  const RepeatedSettingsAnalyzer();
 
   /// The scheme of a package library's URI.
   static const String _packageScheme = 'package';
@@ -81,13 +82,16 @@ class DryAnalyzer {
 
   /// Reviews the `lib` folder of the project at [projectPath], resolved
   /// against the Dart SDK at [sdkPath], off the UI thread.
-  Future<DryReview> review(String projectPath, String sdkPath) =>
+  Future<RepeatedSettingsReview> review(String projectPath, String sdkPath) =>
       Isolate.run(() => _review(projectPath, sdkPath));
 
   /// [review]'s work, on the background isolate: finds the views, resolves
   /// every Dart file of `lib`, collects the widgets built, then derives
   /// each kind of finding from them.
-  static Future<DryReview> _review(String projectPath, String sdkPath) async {
+  static Future<RepeatedSettingsReview> _review(
+    String projectPath,
+    String sdkPath,
+  ) async {
     final collection = AnalysisContextCollection(
       includedPaths: [p.join(projectPath, 'lib')],
       sdkPath: sdkPath,
@@ -112,9 +116,7 @@ class DryAnalyzer {
         packageName ??= library.isScheme(_packageScheme)
             ? library.pathSegments.first
             : null;
-        final relative = p.posix.joinAll(
-          p.split(p.relative(path, from: projectPath)),
-        );
+        final relative = ProjectPaths(projectPath).relativeOf(path);
         edges[relative] = ImportGraph.dependenciesIn(
           relative,
           result.unit,
@@ -129,7 +131,7 @@ class DryAnalyzer {
       ..._sameEverywhere(calls),
       ..._literals(collector.literals, collector.constants),
     ]..sort((a, b) => b.locationCount.compareTo(a.locationCount));
-    return DryReview(
+    return RepeatedSettingsReview(
       findings: findings,
       widgetCount: calls.length,
       fileCount: fileCount,
@@ -142,7 +144,7 @@ class DryAnalyzer {
   /// Widgets built with the same settings in several files, each fixed by
   /// a shared widget: an existing one, else one extracted under a name
   /// none of [takenNames].
-  static Iterable<DryFinding> _clones(
+  static Iterable<RepeatedSettingsFinding> _clones(
     List<_WidgetCall> calls,
     Set<String> takenNames,
   ) sync* {
@@ -159,11 +161,11 @@ class DryAnalyzer {
       // Only a widget the clones can be rewritten as is worth naming
       final use = _useSharedWidget(group, builds);
       final suggested = use?.built;
-      yield DryFinding(
-        kind: DryFindingKind.clone,
+      yield RepeatedSettingsFinding(
+        kind: RepeatedSettingsFindingKind.clone,
         widget: group.first.widget,
         variants: [
-          DryVariant(group.first.display(), [
+          RepeatedSettingsVariant(group.first.display(), [
             for (final call in group) call.location,
           ]),
         ],
@@ -183,7 +185,7 @@ class DryAnalyzer {
   /// `Text(name, style: …, maxLines: 1, overflow: …)`; the group's own
   /// first. Null when no clone maps onto such a widget's constructor.
   /// The shared widget's own code is left alone, lest it build itself.
-  static ({DryFix fix, _WidgetCall built})? _useSharedWidget(
+  static ({RepeatedSettingsFix fix, _WidgetCall built})? _useSharedWidget(
     List<_WidgetCall> group,
     List<_WidgetCall> builds,
   ) {
@@ -207,14 +209,16 @@ class DryAnalyzer {
             ?shared.rewrite(call, built),
       ];
       if (edits.isNotEmpty) {
-        return (fix: DryFix(shared.label, edits), built: built);
+        return (fix: RepeatedSettingsFix(shared.label, edits), built: built);
       }
     }
     return null;
   }
 
   /// Widgets built alike except for one setting, across files.
-  static Iterable<DryFinding> _drifts(List<_WidgetCall> calls) sync* {
+  static Iterable<RepeatedSettingsFinding> _drifts(
+    List<_WidgetCall> calls,
+  ) sync* {
     final groups = <String, List<_WidgetCall>>{};
     final settingOf = <String, String>{};
     for (final call in calls) {
@@ -237,13 +241,13 @@ class DryAnalyzer {
       }
       final ranked = variants.values.toList()
         ..sort((a, b) => b.length.compareTo(a.length));
-      yield DryFinding(
-        kind: DryFindingKind.drift,
+      yield RepeatedSettingsFinding(
+        kind: RepeatedSettingsFindingKind.drift,
         widget: group.first.widget,
         setting: setting,
         variants: [
           for (final variant in ranked)
-            DryVariant(variant.first.sources[setting]!, [
+            RepeatedSettingsVariant(variant.first.sources[setting]!, [
               for (final call in variant) call.location,
             ]),
         ],
@@ -252,19 +256,21 @@ class DryAnalyzer {
   }
 
   /// Settings every use of a widget gives the same value.
-  static Iterable<DryFinding> _sameEverywhere(List<_WidgetCall> calls) sync* {
+  static Iterable<RepeatedSettingsFinding> _sameEverywhere(
+    List<_WidgetCall> calls,
+  ) sync* {
     final byWidget = _groupBy(calls, (call) => call.widget);
     for (final uses in byWidget.values) {
       if (uses.length < minUses || _fileCount(uses) < minFiles) continue;
       final first = uses.first;
       for (final MapEntry(key: setting, :value) in first.settings.entries) {
         if (uses.any((call) => call.settings[setting] != value)) continue;
-        yield DryFinding(
-          kind: DryFindingKind.sameEverywhere,
+        yield RepeatedSettingsFinding(
+          kind: RepeatedSettingsFindingKind.sameEverywhere,
           widget: first.widget,
           setting: setting,
           variants: [
-            DryVariant(first.sources[setting]!, [
+            RepeatedSettingsVariant(first.sources[setting]!, [
               for (final call in uses) call.location,
             ]),
           ],
@@ -278,7 +284,7 @@ class DryAnalyzer {
 
   /// Numbers in styling settings equal to a constant of the project, each
   /// with a fix per constant it may stand for.
-  static Iterable<DryFinding> _literals(
+  static Iterable<RepeatedSettingsFinding> _literals(
     List<_LiteralUse> uses,
     Map<num, List<_Constant>> constants,
   ) sync* {
@@ -296,11 +302,11 @@ class DryAnalyzer {
     );
     for (final group in groups.values) {
       final matches = group.first.constants;
-      yield DryFinding(
-        kind: DryFindingKind.literal,
+      yield RepeatedSettingsFinding(
+        kind: RepeatedSettingsFindingKind.literal,
         widget: group.first.use.source,
         variants: [
-          DryVariant(group.first.use.source, [
+          RepeatedSettingsVariant(group.first.use.source, [
             for (final match in group) match.use.location,
           ]),
         ],
@@ -308,7 +314,7 @@ class DryAnalyzer {
             'Use ${[for (final constant in matches) constant.name].join(' or ')}',
         fixes: [
           for (final constant in matches)
-            DryFix('Use ${constant.name}', [
+            RepeatedSettingsFix('Use ${constant.name}', [
               for (final match in group) constant.editOf(match.use),
             ]),
         ],

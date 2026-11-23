@@ -9,7 +9,7 @@ class AppIcon {
   /// message: the sparkles.
   static const IconData ai = Icons.auto_awesome;
 
-  /// A fix FIDE's own code makes at once, such as Fix, Fix all or
+  /// A fix FIDE's own code makes at once, such as Fix, Fix All or
   /// Generate Previews: the magic wand.
   static const IconData fix = Icons.auto_fix_high;
 }

@@ -198,7 +198,8 @@ class FileLayoutAnalyzer {
           name: _Library.typeNameOf(main)!,
           line: ownUnit ? library.file.lineOf(main) : 1,
           parts: [
-            for (final part in library.parts) _relative(projectPath, part),
+            for (final part in library.parts)
+              ProjectPaths(projectPath).relativeOf(part),
           ],
         ),
       );
@@ -216,14 +217,15 @@ class FileLayoutAnalyzer {
             packageName: packageName,
           ),
           for (final part in library.parts)
-            _relative(projectPath, part): const <String>{},
+            ProjectPaths(projectPath).relativeOf(part): const <String>{},
         },
       }),
       parts: {
         for (final library in libraries.values)
           if (library.parts.isNotEmpty)
             library.relativePath: [
-              for (final part in library.parts) _relative(projectPath, part),
+              for (final part in library.parts)
+                ProjectPaths(projectPath).relativeOf(part),
             ],
       },
     );
@@ -267,7 +269,8 @@ class FileLayoutAnalyzer {
         if (library.classes.any(kinds.isScreen) ||
             _isNamedView(library, kinds)) ...[
           library.relativePath,
-          for (final part in library.parts) _relative(projectPath, part),
+          for (final part in library.parts)
+            ProjectPaths(projectPath).relativeOf(part),
         ],
     };
   }
@@ -388,8 +391,7 @@ class FileLayoutAnalyzer {
     }
     String? blockerOf(FileMove move) {
       for (final target in move.paths.values) {
-        if (File(p.joinAll([projectPath, ...p.posix.split(target)]))
-            .existsSync()) {
+        if (File(ProjectPaths(projectPath).absoluteOf(target)).existsSync()) {
           return '$target already exists';
         }
         if (writers[target]! > 1) {
@@ -477,10 +479,6 @@ class FileLayoutAnalyzer {
         ? Pubspec.parse(pubspec.readAsStringSync()).name
         : null;
   }
-
-  /// [path] relative to [projectPath], with `/` separators.
-  static String _relative(String projectPath, String path) =>
-      p.posix.joinAll(p.split(p.relative(path, from: projectPath)));
 
   /// The paths of [libraries] that [isTainted] accepts, or that import or
   /// export one of them or a project file not read, at any depth.

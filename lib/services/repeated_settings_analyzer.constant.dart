@@ -1,4 +1,4 @@
-part of 'dry_analyzer.dart';
+part of 'repeated_settings_analyzer.dart';
 
 /// A public numeric constant of the project, reusable for the numbers
 /// equal to it.
@@ -21,7 +21,7 @@ class _Constant {
 
   /// The edit writing [name] in place of [use], importing [libraryUri]
   /// when the file doesn't see [scopeName] yet.
-  DryEdit editOf(_LiteralUse use) => DryEdit(
+  RepeatedSettingsEdit editOf(_LiteralUse use) => RepeatedSettingsEdit(
     use.location.path,
     use.offset,
     use.source,

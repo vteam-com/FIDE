@@ -3,16 +3,16 @@ import 'dart:io';
 
 import 'package:fide/constants/core_constants.dart';
 import 'package:fide/models/app_icon_review.dart';
-import 'package:fide/models/dry_review.dart';
+import 'package:fide/models/repeated_settings_review.dart';
 import 'package:fide/models/project_overview.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/architecture_orientation_notifier.dart';
 import 'package:fide/providers/architecture_providers.dart';
-import 'package:fide/providers/dry_review_provider.dart';
+import 'package:fide/providers/repeated_settings_review_provider.dart';
 import 'package:fide/providers/app_icon_review_provider.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/app_icon_inspector.dart';
-import 'package:fide/services/dry_analyzer.dart';
+import 'package:fide/services/repeated_settings_analyzer.dart';
 import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_overview_service.dart';
@@ -25,13 +25,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'fake_file_content_reader.dart';
 
 /// A DRY review counting its runs.
-class _CountingDryAnalyzer implements DryAnalyzer {
+class _CountingRepeatedSettingsAnalyzer implements RepeatedSettingsAnalyzer {
   int runs = 0;
 
   @override
-  Future<DryReview> review(String projectPath, String sdkPath) async {
+  Future<RepeatedSettingsReview> review(
+    String projectPath,
+    String sdkPath,
+  ) async {
     runs++;
-    return const DryReview(findings: [], widgetCount: 0, fileCount: 0);
+    return const RepeatedSettingsReview(
+      findings: [],
+      widgetCount: 0,
+      fileCount: 0,
+    );
   }
 }
 
@@ -122,14 +129,14 @@ void main() {
   test(
     'a burst of saves runs one DRY review, the SDK looked up once',
     () async {
-      final analyzer = _CountingDryAnalyzer();
+      final analyzer = _CountingRepeatedSettingsAnalyzer();
       final sdk = _CountingFlutterSdk();
       final container = open([
-        dryAnalyzerProvider.overrideWithValue(analyzer),
+        repeatedSettingsAnalyzerProvider.overrideWithValue(analyzer),
         flutterSdkProvider.overrideWithValue(sdk),
       ]);
-      container.listen(dryReviewProvider, (_, _) {});
-      await container.read(dryReviewProvider.future);
+      container.listen(repeatedSettingsReviewProvider, (_, _) {});
+      await container.read(repeatedSettingsReviewProvider.future);
       expect(analyzer.runs, 1);
 
       await saveBurst(container);

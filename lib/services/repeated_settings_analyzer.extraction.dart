@@ -1,4 +1,4 @@
-part of 'dry_analyzer.dart';
+part of 'repeated_settings_analyzer.dart';
 
 /// Extracts the widget a group of clones builds alike into a new shared
 /// widget under `lib/widgets/`, named by the user: its `build` writes the
@@ -41,13 +41,15 @@ class _Extraction {
   /// such as a setting reading a private name, an argument left out
   /// somewhere whose default the new widget would replace, a generic
   /// type, or a slot taking only that kind of widget, such as an `appBar`.
-  static DryFix? fixOf(List<_WidgetCall> group, Set<String> takenNames) =>
-      _Extraction(group, takenNames)._fix();
+  static RepeatedSettingsFix? fixOf(
+    List<_WidgetCall> group,
+    Set<String> takenNames,
+  ) => _Extraction(group, takenNames)._fix();
 
   /// [fixOf]'s work: splits the arguments into the settings kept in the
   /// new widget and its parameters, checks every name it needs imports
   /// and every place can call it, then writes its code and the edits.
-  DryFix? _fix() {
+  RepeatedSettingsFix? _fix() {
     final first = _group.first;
     final package = first.file.package;
     if (package == null ||
@@ -107,7 +109,7 @@ class _Extraction {
         if (_group.every((call) => call.argumentNamed(name) != null)) name,
     };
     final importUri = packageUriOf(package, _widgetPath(withLib: false));
-    return DryFix(
+    return RepeatedSettingsFix(
       'Extract widget…',
       [for (final call in _group) _rewrite(call, fields, importUri)],
       created: {
@@ -125,11 +127,11 @@ class _Extraction {
   /// The new widget's file, under `lib` when [withLib], else relative to
   /// it as its `package:` URI is.
   static String _widgetPath({required bool withLib}) =>
-      '${withLib ? 'lib/' : ''}widgets/${DryFix.widgetFile}.dart';
+      '${withLib ? 'lib/' : ''}widgets/${RepeatedSettingsFix.widgetFile}.dart';
 
   /// The edit writing [call] as a call to the new widget with [fields],
   /// importing it from [importUri].
-  DryEdit _rewrite(
+  RepeatedSettingsEdit _rewrite(
     _WidgetCall call,
     Map<String, FormalParameterElement> fields,
     String importUri,
@@ -141,11 +143,11 @@ class _Extraction {
         if (call.argumentNamed(name) case final argument?)
           '${_fieldName(name, fields)}: ${argument.source}',
     ];
-    return DryEdit(
+    return RepeatedSettingsEdit(
       call.location.path,
       call.offset,
       call.source,
-      '${call.isConst ? 'const ' : ''}${DryFix.widgetName}'
+      '${call.isConst ? 'const ' : ''}${RepeatedSettingsFix.widgetName}'
       '(${arguments.join(', ')})',
       importUri: importUri,
     );
@@ -190,9 +192,9 @@ class _Extraction {
       for (final uri in sortedImports) "import '$uri';",
       '',
       '/// The [$widget] the project builds alike in several places.',
-      'class ${DryFix.widgetName} extends StatelessWidget {',
+      'class ${RepeatedSettingsFix.widgetName} extends StatelessWidget {',
       '  /// Creates the [$widget].',
-      '  const ${DryFix.widgetName}($constructorParameters);',
+      '  const ${RepeatedSettingsFix.widgetName}($constructorParameters);',
       for (final name in [...positional, ...named]) ...[
         '',
         "  /// Passed to [$widget]'s `${fields[name]!.name}`.",
@@ -224,13 +226,14 @@ class _Extraction {
   ) => _isPositional(name) ? fields[name]!.name ?? name : name;
 
   static bool _isPositional(String name) =>
-      name.startsWith(DryFinding.positionalPrefix);
+      name.startsWith(RepeatedSettingsFinding.positionalPrefix);
 
   /// Orders positional argument names by index.
   static int _byPosition(String a, String b) => _indexOf(a) - _indexOf(b);
 
-  static int _indexOf(String name) =>
-      int.parse(name.substring(DryFinding.positionalPrefix.length));
+  static int _indexOf(String name) => int.parse(
+    name.substring(RepeatedSettingsFinding.positionalPrefix.length),
+  );
 
   /// The name proposed for the new widget: the distinct values of up to
   /// [_maxNameWords] of the [fixed] settings, then the widget's,

@@ -8,9 +8,7 @@ class _Library {
     required Map<String, ParsedSourceFile> files,
     required String projectPath,
     required String? packageName,
-  }) : relativePath = p.posix.joinAll(
-         p.split(p.relative(file.path, from: projectPath)),
-       ) {
+  }) : relativePath = ProjectPaths(projectPath).relativeOf(file.path) {
     for (final directive in file.unit.directives) {
       if (directive is! UriBasedDirective) continue;
       final uri = directive.uri.stringValue;
@@ -20,7 +18,7 @@ class _Library {
         from: relativePath,
         packageName: packageName,
       )) {
-        final relative? => p.joinAll([projectPath, ...p.posix.split(relative)]),
+        final relative? => ProjectPaths(projectPath).absoluteOf(relative),
         null => null,
       };
       if (directive is PartDirective) {

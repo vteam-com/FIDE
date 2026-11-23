@@ -185,12 +185,12 @@ class _StringReviewDialogState extends State<StringReviewDialog> {
               ),
             ),
             CompactTextButton(
-              label: 'Select all',
+              label: 'Select All',
               onPressed: () =>
                   setState(() => _selected.addAll(strings.where(_isFixable))),
             ),
             CompactTextButton(
-              label: 'Select none',
+              label: 'Select None',
               onPressed: () => setState(() => _selected.removeAll(strings)),
             ),
           ],

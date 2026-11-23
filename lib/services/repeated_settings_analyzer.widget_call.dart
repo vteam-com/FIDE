@@ -1,4 +1,4 @@
-part of 'dry_analyzer.dart';
+part of 'repeated_settings_analyzer.dart';
 
 /// A widget built somewhere: its styling [settings], compared, and the
 /// [sources] they are written as, shown.
@@ -65,7 +65,7 @@ class _WidgetCall {
   final bool isProjectWidget;
 
   /// Where it is built.
-  final DryLocation location;
+  final RepeatedSettingsLocation location;
 
   /// Each styling setting's normalized code, by setting name.
   final Map<String, String> settings;
@@ -94,7 +94,9 @@ class _WidgetCall {
 
   /// `name: value`, or just the value of a positional setting.
   static String _named(String name, String value) =>
-      name.startsWith(DryFinding.positionalPrefix) ? value : '$name: $value';
+      name.startsWith(RepeatedSettingsFinding.positionalPrefix)
+      ? value
+      : '$name: $value';
 
   List<String> _sortedNames() => settings.keys.toList()..sort();
 }

@@ -1,13 +1,22 @@
 part of 'shared_panel_utils.dart';
 
 /// The tree panels' create, rename and delete flows: asks the user through
-/// dialogs, does the work through [FileEntryService], refreshes the tree and
-/// reports the outcome.
+/// dialogs, does the work through [FileEntryService], renaming as
+/// [renameInProject] does, refreshes the tree and reports the outcome.
 class FileOperations {
   final FileEntryService _files;
 
-  /// Creates the flows on top of [_files].
-  const FileOperations(this._files);
+  /// Renames an entry of the project, pointing every directive naming a
+  /// Dart file it renames at its new path: [renameInProject].
+  final Future<void> Function(
+    String from,
+    String to, {
+    required bool isDirectory,
+  })
+  _rename;
+
+  /// Creates the flows on top of [_files], renaming with [_rename].
+  const FileOperations(this._files, this._rename);
 
   /// Asks for a name and creates a file in the [parent] folder.
   Future<void> createNewFile(
@@ -48,7 +57,8 @@ class FileOperations {
     );
   }
 
-  /// Asks for a new name and renames [node] in place.
+  /// Asks for a new name and renames [node] in place, every directive
+  /// naming a Dart file it renames following it.
   Future<void> renameFile(
     BuildContext context,
     ProjectNode node,
@@ -82,7 +92,7 @@ class FileOperations {
     await _run(
       context,
       onRefresh,
-      () => _files.rename(node.path, newPath, isDirectory: node.isDirectory),
+      () => _rename(node.path, newPath, isDirectory: node.isDirectory),
       successMessage: 'Renamed to "$result"',
       failurePrefix: 'Failed to rename',
     );

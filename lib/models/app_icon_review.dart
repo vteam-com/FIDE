@@ -74,7 +74,7 @@ class AppIconReview {
     for (final issue in issues) issue.platformLabel,
   };
 
-  /// The platforms with a problem, the ones Fix all regenerates.
+  /// The platforms with a problem, the ones Fix All regenerates.
   List<AppIconPlatformReview> get brokenPlatforms => [
     for (final platform in platforms)
       if (platform.hasIssues) platform,

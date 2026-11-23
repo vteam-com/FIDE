@@ -1,4 +1,4 @@
-part of 'dry_analyzer.dart';
+part of 'repeated_settings_analyzer.dart';
 
 /// A number written in a widget's styling setting.
 class _LiteralUse {
@@ -18,7 +18,7 @@ class _LiteralUse {
   final String context;
 
   /// Where it is written.
-  final DryLocation location;
+  final RepeatedSettingsLocation location;
 
   /// Offset of the number in its file.
   final int offset;

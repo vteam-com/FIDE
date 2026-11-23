@@ -402,8 +402,7 @@ class _Planner {
   /// for `lib`, such as files or folders depending on each other.
   Future<void> _checkLayers() async {
     final lib = p.join(_projectPath, ProjectPaths.libFolder);
-    String relative(String path) =>
-        p.posix.joinAll(p.split(p.relative(path, from: _projectPath)));
+    final relative = ProjectPaths(_projectPath).relativeOf;
     final package = (await _libraryContaining(_filePath)).element.uri;
     final packageName = package.isScheme(_packageScheme)
         ? package.pathSegments.first

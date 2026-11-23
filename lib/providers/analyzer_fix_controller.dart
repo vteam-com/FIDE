@@ -1,10 +1,10 @@
 import 'package:fide/models/action_outcome.dart';
-import 'package:fide/models/dry_review.dart';
 import 'package:fide/models/file_layout_review.dart';
 import 'package:fide/models/import_graph.dart';
 import 'package:fide/models/locale_number.dart';
 import 'package:fide/models/project_paths.dart';
 import 'package:fide/models/readable_error.dart';
+import 'package:fide/models/repeated_settings_review.dart';
 import 'package:fide/providers/open_documents_notifier.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/code_formatter.dart';
@@ -42,7 +42,7 @@ typedef ApplyMoves = Future<Map<String, String>> Function(
   Future<Map<String, String>> Function() edit,
 );
 
-/// Applies [DryFix]es and [FileMove]s to the project's files, one at a
+/// Applies [RepeatedSettingsFix]es and [FileMove]s to the project's files, one at a
 /// time; its state is the key of the one being written, so only the
 /// button that started it shows it running, null while none is.
 class AnalyzerFixController extends StateNotifier<Object?> {
@@ -84,7 +84,7 @@ class AnalyzerFixController extends StateNotifier<Object?> {
   /// is [key], or [fix] when null.
   Future<ActionOutcome> fix(
     String projectPath,
-    DryFix fix, {
+    RepeatedSettingsFix fix, {
     Object? key,
     ImportGraph layers = const ImportGraph({}),
     String? packageName,
@@ -129,8 +129,7 @@ class AnalyzerFixController extends StateNotifier<Object?> {
     String? packageName,
   }) => _run(key, () async {
     final paths = {for (final move in moves) ...move.paths};
-    String absolute(String relative) =>
-        p.joinAll([projectPath, ...p.posix.split(relative)]);
+    final absolute = ProjectPaths(projectPath).absoluteOf;
     await _applyMoves({
       for (final MapEntry(key: from, value: to) in paths.entries)
         absolute(from): absolute(to),

@@ -152,7 +152,7 @@ class IssueRow extends ConsumerWidget {
       ),
       actions: [
         // The string fixes are picked per string, grouped by role
-        if (quickFixes.any((fix) => StringFix.of(fix) != null))
+        if (StringFix.anyIn(quickFixes))
           PrimaryButton(
             icon: Icons.checklist,
             label: QuickFixController.reviewStringsLabel,

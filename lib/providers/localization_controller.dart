@@ -17,7 +17,7 @@ import 'package:logging/logging.dart';
 
 /// The Localization panel's state for the open project, inspected when the
 /// panel opens and reloaded when the string issues change, e.g. after
-/// Localize strings rewrote the ARB files.
+/// Localize Strings rewrote the ARB files.
 final localizationControllerProvider =
     StateNotifierProvider.autoDispose<
       LocalizationController,

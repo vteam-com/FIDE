@@ -18,6 +18,16 @@ class ProjectPaths {
   /// Name of the tests folder.
   static const String testFolder = 'test';
 
+  /// [path] relative to [root], with `/` separators on every platform, as
+  /// fCheck and the import graph name the project's files.
+  String relativeOf(String path) =>
+      p.posix.joinAll(p.split(p.relative(path, from: root)));
+
+  /// The absolute path of [relative], a path relative to [root] with `/`
+  /// separators, as [relativeOf] gives.
+  String absoluteOf(String relative) =>
+      p.joinAll([root, ...p.posix.split(relative)]);
+
   /// The `build/` output directory.
   String get buildDir => p.join(root, buildFolder);
 
