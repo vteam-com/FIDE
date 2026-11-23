@@ -399,6 +399,11 @@ class CodeEditAgent {
             'answer; ask a narrower question.',
         skills: skillsFor(edits: false),
         maxRounds: AppMetric.aiMaxAnswerRounds,
+        // A local model can keep reading, or read one file again and
+        // again, after it found the answer
+        lastAsk:
+            'Answer the question now from what you have read. Call no '
+            'more tools.',
       );
 
   /// Carries out the user's [request] on the project, with the earlier
@@ -461,8 +466,11 @@ class CodeEditAgent {
 
   /// Runs the tool loop: sends [system] and [conversation] to the model
   /// with [skills], runs those it calls, and returns its first reply that
-  /// calls none, or [stoppedMessage] after [maxRounds] rounds; [think]
-  /// lets a thinking model reason before each step.
+  /// calls none, or [stoppedMessage] after [maxRounds] rounds or a call
+  /// repeated [AppMetric.aiMaxRepeatedCalls] times; [think] lets a
+  /// thinking model reason before each step. Stopped so, the model is
+  /// asked [lastAsk], when given, offered no tool: its reply, unless it
+  /// says nothing, comes back instead of the stop.
   Future<String> _converse(
     String system,
     List<Map<String, String>> conversation,
@@ -470,6 +478,7 @@ class CodeEditAgent {
     required List<AiSkill> skills,
     int maxRounds = AppMetric.aiMaxToolRounds,
     bool think = false,
+    String? lastAsk,
   }) async {
     final tools = [for (final skill in skills) skill.toTool()];
     final messages = <Map<String, dynamic>>[
@@ -480,6 +489,8 @@ class CodeEditAgent {
     // local model repeating one, as it can in a loop, gets told instead
     final unchanged = <String, String>{};
     var repeats = 0;
+    var stopped = stoppedMessage;
+    rounds:
     for (var round = 0; round < maxRounds; round++) {
       _cancelToken.throwIfCancelled();
       // Dropped outputs may be read again, once more, without repeating
@@ -512,8 +523,11 @@ class CodeEditAgent {
         if (earlier != null) {
           _reportStep(skills, name, arguments);
           if (++repeats >= AppMetric.aiMaxRepeatedCalls) {
-            return 'Stopped: the model kept calling $name with nothing '
+            messages.add(_toolResult(call, name, earlier));
+            stopped =
+                'Stopped: the model kept calling $name with nothing '
                 'changed in between; the change may be incomplete.';
+            break rounds;
           }
           result =
               '$earlier\n\n(Same result as your earlier $name call: '
@@ -529,14 +543,47 @@ class CodeEditAgent {
             }
           }
         }
-        messages.add({
-          ...ModelMessage.of(ModelMessage.toolRole, result),
-          ModelMessage.toolNameKey: name,
-          ModelMessage.toolCallIdKey: ?call[ModelMessage.idKey],
-        });
+        messages.add(_toolResult(call, name, result));
       }
     }
-    return stoppedMessage;
+    if (lastAsk == null) return stopped;
+    return await _replyWithoutTools(messages, lastAsk, think: think) ?? stopped;
+  }
+
+  /// The message answering [call] of the tool [name] with [result].
+  static Map<String, dynamic> _toolResult(
+    Object? call,
+    String name,
+    String result,
+  ) => {
+    ...ModelMessage.of(ModelMessage.toolRole, result),
+    ModelMessage.toolNameKey: name,
+    ModelMessage.toolCallIdKey: ?(call is Map
+        ? call[ModelMessage.idKey]
+        : null),
+  };
+
+  /// The text of the model's reply to [messages] then [ask], offered no
+  /// tool, as an answer from what it read: a call it still writes is left
+  /// out, as none is run; null when no text is left. [think] lets a
+  /// thinking model reason first.
+  Future<String?> _replyWithoutTools(
+    List<Map<String, dynamic>> messages,
+    String ask, {
+    required bool think,
+  }) async {
+    _cancelToken.throwIfCancelled();
+    final asked = [...messages, ModelMessage.user(ask)];
+    _fitBudget(asked, const []);
+    final reply = await _model.chat(
+      asked,
+      const [],
+      think: think,
+      cancel: _cancelToken,
+      onText: hooks.onText,
+    );
+    final text = reply[ModelMessage.contentKey]?.toString().trim() ?? '';
+    return text.isEmpty ? null : text;
   }
 
   /// Keeps [messages], sent with [tools], within the model's

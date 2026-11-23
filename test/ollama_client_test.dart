@@ -3,11 +3,15 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/local_model.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/ollama_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+
+/// Tag of the model the client prefers by default.
+final String _preferred = LocalModel.defaultModel.tag;
 
 void main() {
   const timeout = AppDuration.aiSuggestionTimeout;
@@ -156,16 +160,33 @@ void main() {
   test('uses the preferred model when it is downloaded', () async {
     final requested = <String>[];
     final client = clientWithModels(
-      ['codellama:latest', '${AiModel.ollama}:latest'],
-      {'${AiModel.ollama}:latest'},
+      ['codellama:latest', _preferred],
+      {_preferred},
       requested,
     );
 
     await client.generate('tip?', timeout);
 
-    expect(requested, ['${AiModel.ollama}:latest']);
+    expect(requested, [_preferred]);
     expect(client.isFallbackModel, isFalse);
     expect(client.supportsTools, isTrue);
+  });
+
+  test('another model picked is resolved on the next request', () async {
+    final requested = <String>[];
+    final client = clientWithModels(
+      [_preferred, LocalModel.qwenCoder.tag],
+      {_preferred, LocalModel.qwenCoder.tag},
+      requested,
+    );
+    await client.generate('tip?', timeout);
+
+    client.preferred = LocalModel.qwenCoder.tag;
+    await client.generate('tip?', timeout);
+
+    expect(requested, [_preferred, LocalModel.qwenCoder.tag]);
+    expect(client.downloaded, {_preferred, LocalModel.qwenCoder.tag});
+    expect(client.isFallbackModel, isFalse);
   });
 
   test('falls back to a downloaded model that can call tools', () async {
@@ -358,8 +379,8 @@ void main() {
     () async {
       final bodies = <Map<String, dynamic>>[];
       final client = clientWithModels(
-        ['${AiModel.ollama}:latest'],
-        {'${AiModel.ollama}:latest'},
+        [_preferred],
+        {_preferred},
         [],
         bodies: bodies,
       );

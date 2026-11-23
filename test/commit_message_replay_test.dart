@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/local_model.dart';
 import 'package:fide/models/model_reply.dart';
 import 'package:fide/models/text_truncation.dart';
 import 'package:fide/services/commit_message_writer.dart';
@@ -19,8 +20,13 @@ final String? _repo = Platform.environment['FIDE_AI_REPLAY_REPO'];
 
 /// The message written by hand for the change staged in [_repo], from
 /// `FIDE_AI_REPLAY_STAGED`; the staged change is replayed only with it.
-final String? _stagedReference =
-    Platform.environment['FIDE_AI_REPLAY_STAGED'];
+final String? _stagedReference = Platform.environment['FIDE_AI_REPLAY_STAGED'];
+
+/// The Ollama model replaying them, from `FIDE_AI_MODEL`:
+/// [LocalModel.defaultModel] when unset, or any downloaded tag, such as
+/// `qwen3.8:27b`.
+final String _model =
+    Platform.environment['FIDE_AI_MODEL'] ?? LocalModel.defaultModel.tag;
 
 /// Words too common to tell two messages apart.
 const Set<String> _stopWords = {
@@ -118,7 +124,7 @@ void main() {
     'replays recent commits through the local model, before and after '
     'the digest',
     () async {
-      final model = OllamaClient(http.Client());
+      final model = OllamaClient(http.Client(), preferred: _model);
       final cases = <_Case>[
         if (_stagedReference case final reference?)
           (

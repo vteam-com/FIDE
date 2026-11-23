@@ -1,4 +1,4 @@
-import 'package:fide/constants/constants.dart';
+import 'package:fide/models/local_model.dart';
 import 'package:fide/models/ollama_model.dart';
 import 'package:fide/providers/ollama_model_provider.dart';
 import 'package:fide/providers/ollama_status_notifier.dart';
@@ -10,6 +10,10 @@ import 'package:fide/services/process_runner.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Tag of the model picked by default.
+final String _mimo = LocalModel.defaultModel.tag;
 
 /// An installed and running Ollama.
 class _FakeInstaller extends OllamaInstaller {
@@ -26,30 +30,56 @@ class _FakeInstaller extends OllamaInstaller {
 class _FakeAi extends OllamaClient {
   _FakeAi() : super(http.Client());
 
-  String resolved = AiModel.ollama;
+  String resolved = _mimo;
 
   @override
   String get model => resolved;
 
   @override
-  bool get isFallbackModel => resolved != AiModel.ollama;
+  bool get isFallbackModel => resolved != _mimo;
+
+  @override
+  Set<String> get downloaded => {resolved};
 
   @override
   Future<String?> resolveModel({AiCancelToken? cancel}) async => resolved;
 }
 
 void main() {
-  test('labels a fallback model as standing in', () {
-    const preferred = OllamaModel(name: AiModel.ollama, isFallback: false);
-    const fallback = OllamaModel(name: 'llama3', isFallback: true);
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    expect(preferred.label, AiModel.ollama);
-    expect(fallback.label, 'llama3 (${AiModel.ollama} not available)');
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  test('names an offered model by its label, a fallback as standing in', () {
+    final preferred = OllamaModel(
+      name: _mimo,
+      isFallback: false,
+      preferred: _mimo,
+      downloaded: {_mimo},
+    );
+    final fallback = OllamaModel(
+      name: 'llama3',
+      isFallback: true,
+      preferred: _mimo,
+      downloaded: const {'llama3'},
+    );
+
+    expect(preferred.label, LocalModel.mimo.label);
+    expect(fallback.label, 'llama3 (${LocalModel.mimo.label} not available)');
     expect(
       preferred,
-      const OllamaModel(name: AiModel.ollama, isFallback: false),
+      OllamaModel(
+        name: _mimo,
+        isFallback: false,
+        preferred: _mimo,
+        downloaded: {_mimo},
+      ),
     );
     expect(preferred.hashCode, isNot(fallback.hashCode));
+    expect(preferred.isInUse(LocalModel.mimo), isTrue);
+    expect(fallback.isInUse(LocalModel.mimo), isFalse);
+    expect(preferred.isDownloaded(LocalModel.mimo), isTrue);
+    expect(fallback.isDownloaded(LocalModel.qwenCoder), isFalse);
   });
 
   test('the provider follows the model each setup check resolves', () async {
@@ -64,7 +94,8 @@ void main() {
     container.listen(ollamaModelProvider, (_, _) {});
 
     await container.read(ollamaStatusProvider.future);
-    expect(container.read(ollamaModelProvider).name, AiModel.ollama);
+    expect(container.read(ollamaModelProvider).name, _mimo);
+    expect(container.read(ollamaModelProvider).preferred, _mimo);
 
     ai.resolved = 'llama3';
     container.invalidate(ollamaStatusProvider);
@@ -72,5 +103,6 @@ void main() {
     await Future<void>.delayed(Duration.zero);
 
     expect(container.read(ollamaModelProvider).isFallback, isTrue);
+    expect(container.read(ollamaModelProvider).downloaded, {'llama3'});
   });
 }

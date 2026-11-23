@@ -9,6 +9,9 @@ class PrefKeys {
   /// `leftToRight`.
   static const String architectureOrientation = 'architecture_orientation';
 
+  /// Local model the AI panel answers with, as a `LocalModel` name.
+  static const String localModel = 'local_model';
+
   /// Absolute path of the file last opened in the editor.
   static const String lastOpenedFile = 'last_opened_file';
 

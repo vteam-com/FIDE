@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fide/constants/constants.dart';
+import 'package:fide/models/local_model.dart';
 import 'package:fide/models/model_message.dart';
 import 'package:fide/models/text_tool_calls.dart';
 import 'package:fide/services/chat_model.dart';
@@ -48,7 +49,12 @@ class OllamaClient implements ChatModel {
 
   final ModelHttp _http;
 
-  String _model = AiModel.ollama;
+  String _preferred;
+
+  late String _model = _preferred;
+
+  /// The models downloaded, as the last [resolveModel] listed them.
+  Set<String> _downloaded = const {};
   bool _isModelResolved = false;
   bool _supportsTools = true;
   bool _supportsThinking = false;
@@ -56,9 +62,12 @@ class OllamaClient implements ChatModel {
   /// The warm-up in flight, so the panel asking again joins it.
   Future<void>? _warmingUp;
 
-  /// Creates a client sending requests through [client].
-  OllamaClient(http.Client client)
-    : _http = ModelHttp(
+  /// Creates a client sending requests through [client] to the
+  /// [preferred] model when it is downloaded, [LocalModel.defaultModel]
+  /// by default.
+  OllamaClient(http.Client client, {String? preferred})
+    : _preferred = preferred ?? LocalModel.defaultModel.tag,
+      _http = ModelHttp(
         client,
         service: 'Ollama',
         unreachableHint:
@@ -68,8 +77,25 @@ class OllamaClient implements ChatModel {
             'prompt too long',
       );
 
-  /// Whether [model] stands in for [AiModel.ollama], which isn't
-  /// downloaded or can't call tools.
+  /// The model [resolveModel] picks first when it is downloaded: the
+  /// one picked in the AI panel, or another one measured against it.
+  String get preferred => _preferred;
+
+  /// Makes [tag] the [preferred] model; the next request resolves the
+  /// model again.
+  set preferred(String tag) {
+    if (tag == _preferred) return;
+    _preferred = tag;
+    _model = tag;
+    _isModelResolved = false;
+  }
+
+  /// The models downloaded, by tag, as the last [resolveModel] listed
+  /// them; empty until it ran.
+  Set<String> get downloaded => _downloaded;
+
+  /// Whether [model] stands in for [preferred], which isn't downloaded
+  /// or can't call tools.
   bool get isFallbackModel => !_isPreferred(_model);
 
   /// The model requests go to; see [resolveModel].
@@ -85,7 +111,7 @@ class OllamaClient implements ChatModel {
   int? get contextBudget => AppMetric.aiContextBudgetTokens;
 
   /// Picks the model requests go to among the downloaded ones and returns
-  /// it, or null when none is downloaded: [AiModel.ollama] first,
+  /// it, or null when none is downloaded: [preferred] first,
   /// then any model that can call tools, then any model.
   ///
   /// Throws an [AiServiceException] when Ollama can't be reached.
@@ -101,6 +127,7 @@ class OllamaClient implements ChatModel {
         for (final entry in listed)
           if (entry is Map && entry['name'] is String) entry['name'] as String,
     ];
+    _downloaded = names.toSet();
     if (names.isEmpty) return null;
     final candidates = [
       ...names.where(_isPreferred),
@@ -200,9 +227,10 @@ class OllamaClient implements ChatModel {
   static bool _canCallTools(List<Object?>? capabilities) =>
       capabilities == null || capabilities.contains(_toolsCapability);
 
-  /// Whether [name] is [AiModel.ollama] under any tag.
+  /// Whether [name] is [preferred] under any tag, or the very tag
+  /// [preferred] names.
   bool _isPreferred(String name) =>
-      name == AiModel.ollama || name.startsWith('${AiModel.ollama}:');
+      name == preferred || name.startsWith('$preferred:');
 
   /// Sends a request with no prompt, which loads the model; a failure is
   /// left to the requests that follow, which report it.

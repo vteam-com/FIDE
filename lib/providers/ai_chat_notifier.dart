@@ -239,7 +239,7 @@ class AiChatNotifier extends StateNotifier<AiChat> {
     if (asksForChange && projectPath != null && !canUseTools) {
       addReply(
         "${_model.name} can't call tools, so it can only suggest changes. "
-        'Download ${AiModel.ollama} to let it edit files.',
+        'Pick one of the models under the prompt to let it edit files.',
         isProgress: true,
       );
     }

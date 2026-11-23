@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:fide/constants/constants.dart';
 import 'package:fide/services/ollama_installer.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,17 +27,20 @@ class _ScriptedRunner extends ProcessRunner {
   }
 }
 
+/// Tag of the model downloaded.
+const String _model = 'mimo-v2.6:9b';
+
 void main() {
   test('installs with the script on macOS and Linux, then downloads', () async {
     for (final os in ['macos', 'linux']) {
       final runner = _ScriptedRunner();
       final installer = OllamaInstaller(runner, operatingSystem: os);
 
-      await installer.install();
+      await installer.install(_model);
 
       expect(runner.commands, [
         'sh -c curl -fsSL https://ollama.ai/install.sh | sh',
-        'ollama pull ${AiModel.ollama}',
+        'ollama pull $_model',
       ]);
     }
   });
@@ -48,7 +50,7 @@ void main() {
       final runner = _ScriptedRunner();
       final installer = OllamaInstaller(runner, operatingSystem: os);
 
-      await expectLater(installer.install(), throwsException);
+      await expectLater(installer.install(_model), throwsException);
       expect(runner.commands, isEmpty);
     }
   });
@@ -66,15 +68,13 @@ void main() {
 
     expect(await installer.isInstalled(), isTrue);
     expect(await installer.isRunning(), isTrue);
-    await installer.downloadModel();
-    expect(runner.commands.last, 'ollama pull ${AiModel.ollama}');
+    await installer.downloadModel(_model);
+    expect(runner.commands.last, 'ollama pull $_model');
   });
 
   test('a failed model download throws', () async {
-    final runner = _ScriptedRunner(
-      exitCodes: {'ollama pull ${AiModel.ollama}': 1},
-    );
+    final runner = _ScriptedRunner(exitCodes: {'ollama pull $_model': 1});
 
-    expect(OllamaInstaller(runner).downloadModel(), throwsException);
+    expect(OllamaInstaller(runner).downloadModel(_model), throwsException);
   });
 }

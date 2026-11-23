@@ -4,8 +4,8 @@ import 'package:fide/constants/constants.dart';
 import 'package:fide/models/flutter_platform.dart';
 import 'package:fide/services/process_runner.dart';
 
-/// Detects, installs and starts the local Ollama server and its model,
-/// [AiModel.ollama].
+/// Detects, installs and starts the local Ollama server, and downloads
+/// its models.
 ///
 /// Kept apart from `OllamaClient` so talking to the model and managing the
 /// Ollama installation can change independently.
@@ -23,22 +23,21 @@ class OllamaInstaller {
   OllamaInstaller(this._runner, {String? operatingSystem})
     : operatingSystem = operatingSystem ?? Platform.operatingSystem;
 
-  /// Downloads [AiModel.ollama].
-  Future<void> downloadModel() async {
+  /// Downloads the model tagged [model], such as `mimo-v2.6:9b`.
+  Future<void> downloadModel(String model) async {
     await _runner.runChecked(
       'ollama',
-      ['pull', AiModel.ollama],
-      error: (result) => Exception(
-        'Failed to download ${AiModel.ollama} model: ${result.stderr}',
-      ),
+      ['pull', model],
+      error: (result) =>
+          Exception('Failed to download $model model: ${result.stderr}'),
     );
   }
 
-  /// Installs Ollama with the official script, then downloads
-  /// [AiModel.ollama].
+  /// Installs Ollama with the official script, then downloads the model
+  /// tagged [model].
   ///
   /// Throws on an [operatingSystem] the script does not support.
-  Future<void> install() async {
+  Future<void> install(String model) async {
     switch (FlutterPlatform.fromId(operatingSystem)) {
       case FlutterPlatform.macos || FlutterPlatform.linux:
         await _runner.runChecked(
@@ -48,7 +47,7 @@ class OllamaInstaller {
               Exception('Failed to install Ollama: ${result.stderr}'),
         );
 
-        await downloadModel();
+        await downloadModel(model);
       case FlutterPlatform.windows:
         throw Exception(
           'Please install Ollama manually from https://ollama.ai/download for Windows.',

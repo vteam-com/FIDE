@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/ai_action.dart';
 import 'package:fide/models/chat_message.dart';
+import 'package:fide/models/local_model.dart';
 import 'package:fide/panels/right/ai_panel.ai_transcript_entry.dart';
 import 'package:fide/widgets/message_box.dart';
 import 'package:flutter/gestures.dart';
@@ -17,16 +18,32 @@ import 'package:fide/services/chat_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_chat_model.dart';
 
-/// An Ollama setup found ready, without checking the machine.
+/// An Ollama setup found ready, without checking the machine, recording
+/// the models picked instead of downloading them.
 class _Ready extends OllamaStatusNotifier {
+  /// The models picked, in order.
+  static final List<LocalModel> picked = [];
+
   @override
   Future<OllamaStep> build() async => OllamaStep.ready;
+
+  @override
+  Future<String?> use(LocalModel model) async {
+    picked.add(model);
+    return null;
+  }
 }
 
+/// Tag of the model the panel answers with.
+final String _mimo = LocalModel.defaultModel.tag;
+
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   /// Pumps the AI panel asking [model], with the local model ready.
   Future<ProviderContainer> pump(WidgetTester tester, ChatModel model) async {
     final container = ProviderContainer(
@@ -34,7 +51,12 @@ void main() {
         chatModelProvider.overrideWithValue(model),
         ollamaStatusProvider.overrideWith(_Ready.new),
         ollamaModelProvider.overrideWithValue(
-          const OllamaModel(name: AiModel.ollama, isFallback: false),
+          OllamaModel(
+            name: _mimo,
+            isFallback: false,
+            preferred: _mimo,
+            downloaded: {_mimo},
+          ),
         ),
       ],
     );
@@ -52,8 +74,30 @@ void main() {
   testWidgets('names the local model once it is ready', (tester) async {
     await pump(tester, FakeChatModel());
 
-    expect(find.text(AiModel.ollama), findsOneWidget);
+    expect(find.text(LocalModel.mimo.label), findsOneWidget);
     expect(find.text('Setup'), findsNothing);
+  });
+
+  testWidgets('picks the local model from a menu of those offered', (
+    tester,
+  ) async {
+    _Ready.picked.clear();
+    await pump(tester, FakeChatModel());
+
+    await tester.tap(find.text(LocalModel.mimo.label));
+    await tester.pumpAndSettle();
+
+    // Each with the memory it needs; the one in use checked, those not
+    // downloaded marked
+    for (final model in LocalModel.values) {
+      expect(find.text('${model.minMemoryGb} GB+ RAM'), findsWidgets);
+    }
+    expect(find.byIcon(Icons.check), findsOneWidget);
+    expect(find.byIcon(Icons.download), findsNWidgets(2));
+
+    await tester.tap(find.text(LocalModel.qwen38.label));
+    await tester.pumpAndSettle();
+    expect(_Ready.picked, [LocalModel.qwen38]);
   });
 
   testWidgets('shows the reply as it streams in', (tester) async {

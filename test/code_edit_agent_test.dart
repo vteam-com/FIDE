@@ -509,6 +509,42 @@ void main() {
     expect(model.chats, hasLength(1 + AppMetric.aiMaxRepeatedCalls));
   });
 
+  test('a question stopped reading is answered from what was read', () async {
+    final model = FakeChatModel(
+      chatReplies: [
+        for (var i = 0; i <= AppMetric.aiMaxRepeatedCalls; i++)
+          toolCall('read_file', {'path': 'lib/main.dart'}),
+        // A call it still writes is left out
+        {
+          ...toolCall('read_file', {'path': 'lib/main.dart'}),
+          'content': 'print(1) lacks a semicolon.',
+        },
+      ],
+    );
+
+    final reply = await agentOf(model).answer('find a typo', const []);
+
+    // Asked once more, offered no tool, after the repeated reads
+    expect(reply, 'print(1) lacks a semicolon.');
+    expect(model.toolNames.last, isEmpty);
+    expect(model.chats.last.last['content'], contains('Call no more tools'));
+  });
+
+  test('a question past its steps is answered, else stopped', () async {
+    final model = FakeChatModel(
+      chatReplies: [
+        for (var i = 0; i < AppMetric.aiMaxAnswerRounds; i++)
+          toolCall('search', {'text': 'step $i'}),
+        answer(''),
+      ],
+    );
+
+    final reply = await agentOf(model).answer('find a typo', const []);
+
+    expect(model.chats, hasLength(AppMetric.aiMaxAnswerRounds + 1));
+    expect(reply, startsWith('Stopped after'));
+  });
+
   test('a change in between makes the same call run again', () async {
     var checks = 0;
     final model = FakeChatModel(

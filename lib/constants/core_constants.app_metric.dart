@@ -84,6 +84,14 @@ class AppMetric {
   /// times over, and reloads the model whenever the size changes.
   static const int aiContextTokens = 32768;
 
+  /// Memory of the smallest computer a 9B local model runs well on, in
+  /// GB: it takes about 10 with [aiContextTokens] of context.
+  static const int aiSmallModelMinMemoryGb = 16;
+
+  /// Memory of the smallest computer a ~30B local model runs well on, in
+  /// GB: it takes about 20 with [aiContextTokens] of context.
+  static const int aiLargeModelMinMemoryGb = 32;
+
   /// Tokens the agent's conversation with the local model may reach
   /// before it drops the output of its oldest tool calls: room left in
   /// [aiContextTokens] for a reply and one more file part. Past the

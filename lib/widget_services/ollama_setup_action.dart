@@ -44,15 +44,28 @@ class OllamaSetupAction extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     OllamaStep step,
+  ) => report(
+    context,
+    ref.read(ollamaStatusProvider.notifier).fix,
+    step.errorPrefix,
+  );
+
+  /// Runs [setup], a step of the Ollama setup such as downloading a model,
+  /// telling over [context] what it did, when it says, or why it failed,
+  /// after [errorPrefix].
+  static Future<void> report(
+    BuildContext context,
+    Future<String?> Function() setup,
+    String? errorPrefix,
   ) async {
     try {
-      final done = await ref.read(ollamaStatusProvider.notifier).fix();
+      final done = await setup();
       if (context.mounted && done != null) MessageBox.showInfo(context, done);
     } catch (e) {
       if (context.mounted) {
         MessageBox.showError(
           context,
-          '${step.errorPrefix}: ${ReadableError.describe(e)}',
+          '$errorPrefix: ${ReadableError.describe(e)}',
         );
       }
     }

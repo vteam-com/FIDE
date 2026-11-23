@@ -8,5 +8,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 final ollamaModelProvider = Provider<OllamaModel>((ref) {
   ref.watch(ollamaStatusProvider);
   final client = ref.read(ollamaClientProvider);
-  return OllamaModel(name: client.model, isFallback: client.isFallbackModel);
+  return OllamaModel(
+    name: client.model,
+    isFallback: client.isFallbackModel,
+    preferred: client.preferred,
+    downloaded: client.downloaded,
+  );
 });

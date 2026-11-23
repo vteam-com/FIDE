@@ -21,19 +21,12 @@ curl -fsSL https://ollama.ai/install.sh | sh
 **Windows:**
 Download the installer from the Ollama website.
 
-### 2. Pull a Coding Model
+### 2. Download a Model
 
-Pull a model optimized for coding tasks:
+FIDE downloads the model for you: the AI panel's setup offers **Download Model**, and picking another model in the panel's model menu downloads it. To download one yourself:
 
 ```bash
-# Recommended: a coding model that supports tool calling, which
-# Fix Build needs to edit files
-ollama pull qwen2.5-coder
-
-# Alternative models
-ollama pull llama2          # General purpose
-ollama pull mistral         # Fast and capable
-ollama pull deepseek-coder  # Specialized for coding
+ollama pull mimo-v2.6:9b
 ```
 
 ### 3. Start Ollama
@@ -65,15 +58,7 @@ The service will be available at `http://localhost:11434`
 
 ### Changing the Model
 
-To use a different model, edit `lib/services/ollama_installer.dart`:
-
-```dart
-static const String model = 'your-preferred-model';
-```
-
-Fix Build needs a model that supports Ollama tool calling.
-
-Available models depend on what you've pulled with Ollama.
+Pick the model in the menu at the bottom right of the AI panel. Each one shows the memory it needs; the one in use is checked, and picking one not downloaded yet downloads it. FIDE remembers your choice.
 
 ### Troubleshooting
 
@@ -83,19 +68,17 @@ Available models depend on what you've pulled with Ollama.
 - Verify the model is pulled: `ollama pull <model-name>`
 
 **Performance:**
-- Smaller models (like `llama2:7b`) are faster but less capable
-- Larger models (like `codellama:13b`) are more accurate but slower
-- Consider your hardware capabilities when choosing models
+- A model answers slowly when it doesn't fit in memory: pick one your computer has the memory for
 
 ## 📋 Supported Models
 
-| Model | Size | Best For | Command |
-|-------|------|----------|---------|
-| qwen2.5-coder | 7B | Default; code tasks and Fix Build tool calling | `ollama pull qwen2.5-coder` |
-| codellama | 7B/13B | Code generation, refactoring (no tool calling, so no Fix Build edits) | `ollama pull codellama` |
-| llama2 | 7B/13B | General coding assistance | `ollama pull llama2` |
-| mistral | 7B | Fast responses, general tasks | `ollama pull mistral` |
-| deepseek-coder | 6B | Code-specific tasks | `ollama pull deepseek-coder` |
+The models FIDE offers all edit files through Ollama tool calling. Each was measured on FIDE's agent benchmark, where the AI answers questions, renames code, adds a feature and fixes a broken build in a Flutter app.
+
+| Model | Download | Memory | Best For |
+|-------|----------|--------|----------|
+| MiMo 9B (`mimo-v2.6:9b`) | 7–9 GB | 16 GB+ | Default: half Qwen3 Coder's memory and about as fast, a little less reliable on multi-file edits |
+| Qwen3 Coder 30B (`qwen3-coder:30b`) | 19 GB | 32 GB+ | The most reliable edits, and the fastest writer |
+| Qwen 3.8 27B (`qwen3.8:27b`) | 18 GB | 32 GB+ | Questions about a large project; slower |
 
 ## 🔒 Privacy & Security
 

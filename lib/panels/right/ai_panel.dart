@@ -6,8 +6,8 @@ import 'package:fide/models/chat_message.dart';
 import 'package:fide/models/ollama_step.dart';
 import 'package:fide/panels/right/ai_panel.ai_transcript_entry.dart';
 import 'package:fide/providers/ai_chat_notifier.dart';
-import 'package:fide/providers/ollama_model_provider.dart';
 import 'package:fide/providers/ollama_status_notifier.dart';
+import 'package:fide/widget_services/local_model_menu.dart';
 import 'package:fide/widget_services/ollama_setup_action.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_text_field.dart';
@@ -16,7 +16,6 @@ import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/icon_menu_item.dart';
 import 'package:fide/widgets/task_button.dart';
-import 'package:fide/widgets/truncated_text.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -108,7 +107,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
             spacing: AppSpacing.tiny,
             children: [
               _buildPrompt(chat.action.hint, chat.isBusy),
-              _buildFooter(chat.action, isReady),
+              _buildFooter(chat.action, hasSetup: setup.hasValue),
             ],
           ),
         ),
@@ -116,8 +115,9 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     );
   }
 
-  /// The action new prompts use, as a menu, and the model answering them.
-  Widget _buildFooter(AiAction selected, bool isReady) {
+  /// The action new prompts use and, once the setup is known ([hasSetup]),
+  /// the model answering them, as menus.
+  Widget _buildFooter(AiAction selected, {required bool hasSetup}) {
     final notifier = ref.read(aiChatProvider.notifier);
     return Row(
       spacing: AppSpacing.medium,
@@ -137,13 +137,7 @@ class _AIPanelState extends ConsumerState<AIPanel> {
           label: Text(selected.label, style: AppTextStyle.caption),
         ),
         const Spacer(),
-        if (isReady)
-          Flexible(
-            child: TruncatedText(
-              ref.watch(ollamaModelProvider).label,
-              style: AppTextStyle.secondary(context),
-            ),
-          ),
+        if (hasSetup) const Flexible(child: LocalModelMenu()),
       ],
     );
   }

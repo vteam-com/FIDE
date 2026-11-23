@@ -10,6 +10,7 @@ import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/app_update_notifier.dart';
 import 'package:fide/providers/app_view_notifier.dart';
 import 'package:fide/providers/command_runner.dart';
+import 'package:fide/providers/local_model_notifier.dart';
 import 'package:fide/providers/markdown_preview_notifier.dart';
 import 'package:fide/providers/panel_actions.dart';
 import 'package:fide/providers/ui_state_providers.dart';
@@ -67,6 +68,7 @@ class _FIDEState extends ConsumerState<FIDE> {
     await ref.read(zoomProvider.notifier).load();
     await ref.read(markdownPreviewProvider.notifier).load();
     await ref.read(mruFoldersProvider.notifier).load();
+    await ref.read(localModelProvider.notifier).load();
     if (mounted) await ref.read(appViewProvider.notifier).openRecentProject();
   }
 
