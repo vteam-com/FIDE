@@ -7,4 +7,9 @@ enum WidgetStateProblem {
 
   /// It is public though no other library names it.
   public,
+
+  /// A test reaches into it, which is wrong: the `State` is private to
+  /// its widget, and the test checks how the widget works rather than
+  /// what it does; the finding is at that test's line.
+  reachedByTest,
 }

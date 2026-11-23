@@ -164,6 +164,14 @@ class AppMetric {
 
   /// Most quality-score points widget `State`s out of place cost together.
   static const int widgetStatePointsMax = 5;
+
+  /// Quality-score points each test line reaching into a widget's `State`,
+  /// an error, costs.
+  static const int stateTestPoints = 2;
+
+  /// Most quality-score points test lines reaching into a widget's `State`
+  /// cost together.
+  static const int stateTestPointsMax = 10;
   static const int aiInputMaxLines = 3;
   static const int duplicateThreshold = 2;
   static const int gitHashShortLength = 7;

@@ -17,6 +17,9 @@ class _Planner {
   /// The scheme of a package library's URI.
   static const String _packageScheme = 'package';
 
+  /// The annotation saying a declaration is public only for tests.
+  static const String _forTesting = 'visibleForTesting';
+
   /// Key of the `dart:core` library, which every file imports implicitly.
   static final Uri _dartCore = Uri.parse('dart:core');
 
@@ -86,8 +89,10 @@ class _Planner {
       );
     }
     await _gatherStates();
-    // Public States other libraries use, which stay public by their widget
-    final shared = <String>{};
+    // Public States other libraries use, which stay public by their
+    // widget; tests reaching into one are flagged by the Widget States
+    // check, as making it private would break them
+    final settled = <String>{};
     while (true) {
       final library = await _libraryContaining(_filePath);
       final unit = _unitAt(library, _filePath);
@@ -98,7 +103,11 @@ class _Planner {
       final states = classes
           .where((c) => WidgetStates.isState(c.declaredFragment!.element))
           .toList();
-      final state = await _firstPrivatizable(library, states, shared);
+      final tidied = [
+        for (final state in states)
+          if (!_isLeftAlone(unit, state)) state,
+      ];
+      final state = await _nextPrivatizable(library, tidied, settled);
       if (state != null) {
         await _privatize(library, state);
         continue;
@@ -182,7 +191,7 @@ class _Planner {
       for (final state in declarations.whereType<ClassDeclaration>()) {
         final widget =
             widgets[WidgetStates.widgetOf(state.declaredFragment!.element)];
-        if (widget == null) continue;
+        if (widget == null || _isLeftAlone(other, state)) continue;
         final range = _declarationRange(other, state);
         edit(other.path, range.offset, range.end - range.offset, '');
         edit(
@@ -237,27 +246,44 @@ class _Planner {
     return null;
   }
 
-  /// The first of [states], a unit's public widget `State`s, no library but
-  /// [library] uses, to make private; null when each is [shared], or found
-  /// to be and added there.
-  Future<ClassDeclaration?> _firstPrivatizable(
+  /// The next of [states], a unit's public widget `State`s, to make
+  /// private, as no library but [library] uses it; null when each is
+  /// [settled], or found to be and added there, as another library uses
+  /// it.
+  Future<ClassDeclaration?> _nextPrivatizable(
     ResolvedLibraryResult library,
     List<ClassDeclaration> states,
-    Set<String> shared,
+    Set<String> settled,
   ) async {
     for (final state in states) {
       final name = state.namePart.typeName.lexeme;
-      if (shared.contains(name)) continue;
-      if (!await _usedElsewhere(library, state.declaredFragment!.element)) {
+      if (settled.contains(name)) continue;
+      if ((await _usersOf(library, state.declaredFragment!.element)).isEmpty) {
         return state;
       }
-      shared.add(name);
+      settled.add(name);
     }
     return null;
   }
 
+  /// Whether [state], a widget's `State` in [unit], is left as it is by
+  /// an `// ignore: fcheck_widget_state` comment, as the Widget States
+  /// check leaves it: one ending its line, or among the comments its file
+  /// starts with.
+  static bool _isLeftAlone(ResolvedUnitResult unit, ClassDeclaration state) =>
+      ParsedSourceFile(
+        unit.path,
+        unit.content,
+        ignoreName: WidgetStateAnalyzer.ignoreName,
+      ).isIgnoredAt(state);
+
+  /// Whether [annotation] is `@visibleForTesting`, prefixed or not.
+  static bool _isForTesting(Annotation annotation) =>
+      annotation.name.name.split('.').last == _forTesting;
+
   /// Makes [state], a widget's public `State` only [library] uses,
-  /// private: `_FooState` wherever the library names it.
+  /// private: `_FooState` wherever the library names it, without the
+  /// `@visibleForTesting` it no longer needs.
   Future<void> _privatize(
     ResolvedLibraryResult library,
     ClassDeclaration state,
@@ -286,6 +312,14 @@ class _Planner {
         unit.path,
         TextOffsets.applyEdits(unit.content, {
           for (final offset in offsets) offset: (name.length, privateName),
+          // Private, it needs no mark of being public for tests
+          if (state.root == unit.unit)
+            for (final annotation in state.metadata)
+              if (_isForTesting(annotation))
+                annotation.offset: (
+                  annotation.endToken.next!.offset - annotation.offset,
+                  '',
+                ),
         }),
       );
     }
@@ -293,8 +327,9 @@ class _Planner {
     await _analysis.applyChanges();
   }
 
-  /// Whether a library other than [library] uses [element].
-  Future<bool> _usedElsewhere(
+  /// The libraries other than [library] using [element], by the path of
+  /// the file defining each.
+  Future<Set<String>> _usersOf(
     ResolvedLibraryResult library,
     ClassElement element,
   ) async {
@@ -303,6 +338,7 @@ class _Planner {
         fragment.source.fullName,
     };
     final name = element.name!;
+    final users = <String>{};
     for (final path in {..._dartFiles, ..._created}) {
       if (own.contains(path) ||
           _merged.containsKey(path) ||
@@ -312,13 +348,16 @@ class _Planner {
       final other = await _libraryContaining(path);
       for (final unit in other.units) {
         own.add(unit.path);
-        if (DartReferenceCollector.collect(unit.unit)
-            .any((reference) => reference.top == element)) {
-          return true;
-        }
+      }
+      if (other.units.any(
+        (unit) =>
+            DartReferenceCollector.collect(unit.unit)
+                .any((reference) => reference.top == element),
+      )) {
+        users.add(other.units.first.path);
       }
     }
-    return false;
+    return users;
   }
 
   /// `snake_case` file stem for [declaration]'s class.

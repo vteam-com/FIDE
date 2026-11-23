@@ -13,8 +13,12 @@ import 'package:path/path.dart' as p;
 /// `createState` makes, which is part of the widget, not a class of its
 /// own. So the `State` lives beside its widget, in the widget's file, not
 /// in a part file or a file of its own, and is private (`_FooState`),
-/// unless another library names it, through a `GlobalKey<FooState>` or a
-/// test's `tester.state<FooState>(…)`.
+/// unless another library of the app names it, through a
+/// `GlobalKey<FooState>`. No test reaches into it,
+/// `tester.state<FooState>(…)`: a test checks the widget itself, through
+/// what it shows and the callbacks it calls, so each test line reaching
+/// into a `State` is a finding of its own, one naming a private `State`,
+/// which can't compile, too.
 ///
 /// A `State` whose line, or whose file's leading comments, say
 /// `// ignore: fcheck_widget_state` is left alone.
@@ -90,10 +94,18 @@ class WidgetStateAnalyzer {
     for (final entry in classes) {
       (classesNamed[_nameOf(entry.declaration)] ??= []).add(entry);
     }
-    final namesUsed = {
-      for (final file in files) file.path: _TypeNames.of(file.unit),
+    final typesUsed = {
+      for (final file in files) file.path: _TypeUses.of(file.unit),
     };
+    final namesUsed = {
+      for (final MapEntry(key: path, value: types) in typesUsed.entries)
+        path: {for (final type in types) type.name.lexeme},
+    };
+    final tests = files.skip(lib.length);
     final findings = <WidgetStateFinding>[];
+    // The States a test may name, each with its widget and its file: a
+    // private one too, which no test can reach, so it doesn't compile
+    final statesNamed = <String, ({String widget, String widgetPath})>{};
     var stateCount = 0;
     for (final (:file, :declaration) in classes) {
       final superclass = declaration.extendsClause?.superclass;
@@ -118,9 +130,10 @@ class WidgetStateAnalyzer {
           widgets.firstOrNull;
       if (widget == null) continue;
       stateCount++;
+      final state = _nameOf(declaration);
+      statesNamed[state] = (widget: widgetName, widgetPath: widget.file.path);
       if (file.isIgnoredAt(declaration)) continue;
 
-      final state = _nameOf(declaration);
       WidgetStateFinding finding(WidgetStateProblem problem) =>
           WidgetStateFinding(
             problem: problem,
@@ -134,11 +147,36 @@ class WidgetStateAnalyzer {
       if (widget.file.path != file.path) {
         findings.add(finding(WidgetStateProblem.apart));
       }
-      final namedElsewhere = namesUsed.entries.any(
-        (used) => libraryOf[used.key] != library && used.value.contains(state),
+      if (Identifier.isPrivateName(state)) continue;
+      bool namedIn(Iterable<ParsedSourceFile> files) => files.any(
+        (other) =>
+            libraryOf[other.path] != library &&
+            namesUsed[other.path]!.contains(state),
       );
-      if (!Identifier.isPrivateName(state) && !namedElsewhere) {
+      // One only tests name is theirs to stop reaching into: flagged there
+      if (!namedIn(lib) && !namedIn(tests)) {
         findings.add(finding(WidgetStateProblem.public));
+      }
+    }
+    for (final test in tests) {
+      final lines = <int>{};
+      for (final type in typesUsed[test.path]!) {
+        final state = statesNamed[type.name.lexeme];
+        final line = test.lineOf(type);
+        if (state == null || test.isIgnoredAt(type) || !lines.add(line)) {
+          continue;
+        }
+        findings.add(
+          WidgetStateFinding(
+            problem: WidgetStateProblem.reachedByTest,
+            path: test.path,
+            line: line,
+            state: type.name.lexeme,
+            widget: state.widget,
+            widgetPath: state.widgetPath,
+            isInWidgetLibrary: false,
+          ),
+        );
       }
     }
     return WidgetStateReport(findings: findings, stateCount: stateCount);
@@ -166,21 +204,21 @@ class WidgetStateAnalyzer {
 /// A class of the project: its declaration, in its file.
 typedef _Class = ({ParsedSourceFile file, ClassDeclaration declaration});
 
-/// Collects the names of the types a unit writes: `FooState` in
-/// `GlobalKey<FooState>` or `tester.state<FooState>(…)`.
-class _TypeNames extends RecursiveAstVisitor<void> {
-  final Set<String> _names = {};
+/// Collects the types a unit writes: `FooState` in `GlobalKey<FooState>`
+/// or `tester.state<FooState>(…)`.
+class _TypeUses extends RecursiveAstVisitor<void> {
+  final List<NamedType> _types = [];
 
-  /// The names of the types [unit] writes.
-  static Set<String> of(CompilationUnit unit) {
-    final collector = _TypeNames();
+  /// The types [unit] writes, in source order.
+  static List<NamedType> of(CompilationUnit unit) {
+    final collector = _TypeUses();
     unit.accept(collector);
-    return collector._names;
+    return collector._types;
   }
 
   @override
   void visitNamedType(NamedType node) {
-    _names.add(node.name.lexeme);
+    _types.add(node);
     super.visitNamedType(node);
   }
 }

@@ -23,15 +23,18 @@ import 'fake_chat_model.dart';
 
 /// A handler confirming once, then reporting [summary].
 class _ConfirmingHandler implements QuickFixHandler {
-  const _ConfirmingHandler(this.summary);
+  const _ConfirmingHandler(this.summary, {this.changed = const ['a.dart']});
 
   final String summary;
+
+  /// The files the fix reports written.
+  final List<String> changed;
 
   @override
   Future<QuickFixOutcome?> run(QuickFixRequest request) async {
     if (!await request.confirm('Go?')) return null;
     request.onProgress?.call('Working…');
-    return (summary: summary, changedFiles: const <String>[]);
+    return (summary: summary, changedFiles: changed);
   }
 }
 
@@ -86,6 +89,10 @@ void main() {
             strings: ref.read(stringFixerProvider),
             handlers: const {
               QuickFix.sortMembers: _ConfirmingHandler('Sorted'),
+              QuickFix.fixStates: _ConfirmingHandler(
+                'Fixed no State',
+                changed: [],
+              ),
               QuickFix.translateKeys: _ConfirmingHandler('Translated'),
             },
           ),
@@ -116,6 +123,12 @@ void main() {
       ('${QuickFix.sortMembers.label}…', StatusTone.info),
       ('Sorted', StatusTone.success),
     ]);
+  });
+
+  test('a fix writing nothing is no success', () async {
+    await apply(QuickFix.fixStates);
+
+    expect(notices.last, ('Fixed no State', StatusTone.info));
   });
 
   test('runs a fix asking the model as a task in the AI panel', () async {

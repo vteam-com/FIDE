@@ -61,7 +61,7 @@ void main() {
   tearDown(() => project.deleteSync(recursive: true));
 
   test('tidies the States of each widget file, deleting the part files it '
-      'empties, and says which it left', () async {
+      'empties, and says which it left: one in another library', () async {
     final splitter = _FakeSplitter();
 
     final outcome =

@@ -59,8 +59,16 @@ class ParsedSourceFile {
     return false;
   }
 
-  /// The 1-based line [node] starts on.
-  int lineOf(AstNode node) => unit.lineInfo.getLocation(node.offset).lineNumber;
+  /// The 1-based line [node] starts on: for a declaration, the line of
+  /// its keyword or name, after its doc comment and annotations, where an
+  /// ignore comment ends and a finding points.
+  int lineOf(AstNode node) => unit.lineInfo
+      .getLocation(
+        node is AnnotatedNode
+            ? node.firstTokenAfterCommentAndMetadata.offset
+            : node.offset,
+      )
+      .lineNumber;
 
   /// Whether [line] has a comment skipping the analyzer.
   bool _skips(String line) {

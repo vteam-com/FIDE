@@ -206,7 +206,7 @@ final projectQualityProvider = Provider<ProjectQuality?>((ref) {
       if (states.error case final error?)
         _didNotRun(WidgetStateIssues.title, error)
       else
-        ?states.value?.issue(projectPath),
+        ...?states.value?.issues(projectPath),
       ...?ref.watch(healthIndicatorsProvider).value?.issues(projectPath),
     ],
   );

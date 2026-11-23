@@ -16,6 +16,8 @@ import 'package:fide/services/compile_errors.dart';
 import 'package:fide/services/dart_references.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/name_uses.dart';
+import 'package:fide/services/parsed_source_file.dart';
+import 'package:fide/services/widget_state_analyzer.dart';
 import 'package:fide/services/widget_states.dart';
 import 'package:path/path.dart' as p;
 
@@ -27,7 +29,8 @@ part 'class_splitter.planner.dart';
 /// A widget's `State` is part of its widget, not a class of its own: one
 /// in a part file moves beside its widget, a public one no other library
 /// uses becomes private (`_FooState`), and one another library uses,
-/// through a `GlobalKey<FooState>`, stays public by its widget. Every other public class but one leaves the file for
+/// through a `GlobalKey<FooState>`, stays public by its widget; one whose
+/// line ends with `// ignore: fcheck_widget_state` is left as it is. Every other public class but one leaves the file for
 /// `<class_name>.dart` next to it, importing only what it uses; the
 /// original file and every library using the class through it get their
 /// imports updated. Private declarations only that class uses go with it,

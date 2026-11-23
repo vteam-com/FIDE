@@ -20,17 +20,22 @@ class FixStatesHandler implements QuickFixHandler {
   Future<QuickFixOutcome?> run(QuickFixRequest request) async {
     final projectPath = request.projectPath;
     final analyzer = _analyzer;
-    final findings = (await Isolate.run(() => analyzer.analyze(projectPath)))
-        .findings;
+    // Tests reaching into a State are the AI's to rewrite
+    final findings = [
+      for (final finding in (await Isolate.run(
+        () => analyzer.analyze(projectPath),
+      )).findings)
+        if (!finding.isInTest) finding,
+    ];
     if (findings.isEmpty) return _nothingToDo('Every State is in place');
     final widgetFiles = {
       for (final finding in findings)
-        if (finding.isInWidgetLibrary) finding.widgetPath,
+        if (finding.isFixableByCode) finding.widgetPath,
     };
     final splits = _SplitRun(_splitter, _files);
     splits.skipped.addAll([
       for (final finding in findings)
-        if (!finding.isInWidgetLibrary)
+        if (!finding.isFixableByCode)
           '${p.basename(finding.path)}: ${finding.state} is in another '
               'library than ${finding.widget}; move it by hand',
     ]);

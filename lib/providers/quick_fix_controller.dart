@@ -180,7 +180,11 @@ class QuickFixController {
       if (inChat) {
         _chat.endTask(outcome.summary);
       } else {
-        notify(outcome.summary, StatusTone.success);
+        // A fix that wrote nothing found nothing to do: no success
+        notify(
+          outcome.summary,
+          outcome.changedFiles.isEmpty ? StatusTone.info : StatusTone.success,
+        );
       }
     } catch (e) {
       if (inChat) {

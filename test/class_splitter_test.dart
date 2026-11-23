@@ -19,6 +19,12 @@ abstract class StatefulWidget {
 }
 
 abstract class State<T extends StatefulWidget> {}
+
+class _VisibleForTesting {
+  const _VisibleForTesting();
+}
+
+const visibleForTesting = _VisibleForTesting();
 ''';
 
 /// The import of [_framework], written as `lib/framework.dart`.
@@ -300,6 +306,45 @@ CounterState? counterOf(Object state) => state is CounterState ? state : null;
     expect(files['lib/board.dart'], isNot(contains('Counter')));
   });
 
+  test('a State marked @visibleForTesting no test uses any more is made '
+      'private, unmarked', () async {
+    write('lib/framework.dart', _framework);
+    write(
+      'lib/counter.dart',
+      '$_importFramework${_counter('CounterState').replaceFirst('class CounterState', '@visibleForTesting\nclass CounterState')}',
+    );
+
+    final result = await splitter.plan(
+      projectPath: project,
+      filePath: path('lib/counter.dart'),
+      statesOnly: true,
+    );
+
+    expect(result.privatizedStates, ['CounterState']);
+    expect(
+      result.files[path('lib/counter.dart')],
+      contains("/// [Counter]'s state.\nclass _CounterState"),
+    );
+  });
+
+  test('leaves a State its ignore comment names as it is', () async {
+    write('lib/framework.dart', _framework);
+    write(
+      'lib/counter.dart',
+      '$_importFramework${_counter('CounterState').replaceFirst('class CounterState extends State<Counter> {', 'class CounterState extends State<Counter> { '
+          '// ignore: fcheck_widget_state')}',
+    );
+
+    expect(
+      splitter.plan(
+        projectPath: project,
+        filePath: path('lib/counter.dart'),
+        statesOnly: true,
+      ),
+      throwsA(isA<ClassSplitException>()),
+    );
+  });
+
   group('a State in a part file of its widget\'s library', () {
     setUp(() {
       write('lib/framework.dart', _framework);
@@ -337,7 +382,8 @@ CounterState? counterOf(Object state) => state is CounterState ? state : null;
       );
     });
 
-    test('stays public when a test reaches it by name', () async {
+    test('stays public when a test reaches it, unmarked: the test is wrong, '
+        'not the State', () async {
       write('test/counter_test.dart', '''
 import '../lib/counter.dart';
 
@@ -354,8 +400,9 @@ int countOf(Object state) => (state as CounterState).count;
       expect(result.privatizedStates, isEmpty);
       expect(
         result.files[path('lib/counter.dart')],
-        contains('class CounterState extends State<Counter>'),
+        contains("/// [Counter]'s state.\nclass CounterState extends State"),
       );
+      expect(result.summary, 'Moved CounterState beside its widget');
     });
   });
 
