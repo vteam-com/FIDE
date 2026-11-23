@@ -8,7 +8,6 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
-import 'package:analyzer/source/line_info.dart';
 import 'package:fide/models/lookup_field.dart';
 import 'package:fide/models/search_result.dart';
 import 'package:fide/models/text_offsets.dart';
@@ -16,6 +15,9 @@ import 'package:fide/models/unique_name.dart';
 import 'package:fide/services/compile_errors.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/flutter_sdk.dart';
+import 'package:fide/services/name_locator.dart';
+import 'package:fide/services/name_uses.dart';
+import 'package:fide/services/widget_states.dart';
 import 'package:path/path.dart' as p;
 
 part 'reference_finder.callee_visitor.dart';
@@ -28,11 +30,9 @@ part 'reference_finder.find_references_request.dart';
 part 'reference_finder.lookup_field_request.dart';
 part 'reference_finder.lookup_fields.dart';
 part 'reference_finder.lookup_fields_request.dart';
-part 'reference_finder.name_locator.dart';
 part 'reference_finder.reference_request.dart';
 part 'reference_finder.reference_worker.dart';
 part 'reference_finder.rename_request.dart';
-part 'reference_finder.usage_visitor.dart';
 
 /// Finds where a project uses a declaration (its consumers), by resolving
 /// the code with the Dart analyzer rather than matching text, so `build`

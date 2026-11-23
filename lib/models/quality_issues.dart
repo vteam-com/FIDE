@@ -34,6 +34,22 @@ extension QualityIssues on fcheck.ProjectMetrics {
       '`generate: true` and `lib/l10n/app_en.arb` first (the Localization '
       'tab does it for you).\n\n';
 
+  /// Why a file declares one public class, and how a stateful widget's
+  /// two classes count as one.
+  static const String _oneClassPerFileGuidance =
+      'A file declares one public class, named as the file, so each class '
+      'is found by its file name and imported alone.\n\n'
+      'A stateful widget is two classes: the widget, and the `State` its '
+      '`createState()` makes. The `State` is part of its widget, not a '
+      'class of its own: it lives in the widget\'s file, private '
+      '(`_FooState`), and the pair counts as one class. A `State` stays '
+      'public only when other files reach it by name, through a '
+      '`GlobalKey<FooState>`, as Flutter\'s `FormState` is.\n\n'
+      'To keep a file as it is, start it with '
+      '`// ignore: fcheck_one_class_per_file`, before any code: fCheck and '
+      'Split Classes leave it alone, and the score counts it as a bypassed '
+      'check.';
+
   /// How to complete translations.
   static const String _localizationGuidance =
       'Every key of the template ARB file needs a real translation in each '
@@ -125,6 +141,7 @@ extension QualityIssues on fcheck.ProjectMetrics {
           ? _hardcodedStringsGuidance
           : '$_setUpLocalizationGuidance$_hardcodedStringsGuidance',
     fcheck.AnalyzerDomain.localization => _localizationGuidance,
+    fcheck.AnalyzerDomain.oneClassPerFile => _oneClassPerFileGuidance,
     _ => null,
   };
 
@@ -132,8 +149,8 @@ extension QualityIssues on fcheck.ProjectMetrics {
   /// [quickFixes]: localize hardcoded strings and fix the rest; none for
   /// hardcoded strings a string fix applies to, whose review hands the AI
   /// only the strings no fix rewrites, nor for translations, which
-  /// Translate with AI handles key by key, nor for sorting, which Sort
-  /// Members does.
+  /// Translate with AI handles key by key, nor for sorting and splitting
+  /// classes, which Sort Members and Split Classes do.
   String? _aiVerb(fcheck.AnalyzerDomain? domain, List<QuickFix> quickFixes) =>
       switch (domain) {
         fcheck.AnalyzerDomain.hardcodedStrings =>
@@ -142,6 +159,8 @@ extension QualityIssues on fcheck.ProjectMetrics {
         fcheck.AnalyzerDomain.localization => null,
         // Sorting is mechanical: fCheck's sorter does it at once
         fcheck.AnalyzerDomain.sourceSorting => null,
+        // So is splitting: Split Classes does it, State classes too
+        fcheck.AnalyzerDomain.oneClassPerFile => null,
         _ => 'Fix',
       };
 
@@ -197,6 +216,15 @@ extension QualityIssues on fcheck.ProjectMetrics {
                 detail.lineNumber,
                 '${issue.languageName}: ${detail.key} '
                 '(${detail.problemType.name})',
+              ),
+        ],
+        fcheck.AnalyzerDomain.oneClassPerFile => [
+          for (final file in fileMetrics)
+            if (!file.isOneClassPerFileCompliant)
+              _finding(
+                file.path,
+                null,
+                '${file.classCount.localized} public classes',
               ),
         ],
         fcheck.AnalyzerDomain.magicNumbers => [

@@ -72,6 +72,19 @@ enum QuickFix {
     domain: fcheck.AnalyzerDomain.sourceSorting,
   ),
 
+  /// Leave each file with one public class, as fCheck's one class per
+  /// file rule asks: a widget's public `State`, part of its widget, becomes
+  /// private, and every other public class but one moves into its own
+  /// file.
+  splitClasses(
+    'Split Classes',
+    'makes each widget\'s public State private and moves every other '
+        'public class but one of each file into its own file, updating '
+        'imports across the project',
+    topics: {'split', 'class per file'},
+    domain: fcheck.AnalyzerDomain.oneClassPerFile,
+  ),
+
   /// Raise the dependency constraints to their latest resolvable
   /// versions, which often bring Swift Package Manager support.
   upgradePackages(

@@ -12,7 +12,8 @@ class RepeatedSettingsLocation {
     this.isInView = false,
   });
 
-  /// The class the widget is built in; null outside a class.
+  /// The class the widget is built in, the widget for a widget's `State`,
+  /// which is part of it; null outside a class.
   final String? className;
 
   /// Whether the widget is built in a view, a file declaring a screen as

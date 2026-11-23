@@ -1,5 +1,6 @@
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/asset_kind.dart';
+import 'package:fide/models/class_split_result.dart';
 import 'package:fide/models/code_category.dart';
 import 'package:fide/models/file_system_item.dart';
 import 'package:fide/models/locale_number.dart';
@@ -24,7 +25,6 @@ import 'package:fide/widgets/tree_branch.dart';
 import 'package:fide/widgets/tree_row.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:path/path.dart' as p;
 
 /// The Organized tab: the project's files grouped by what they are
 /// (views, models, services, assets...), flagging files with more than
@@ -259,9 +259,9 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
                 icon: Icons.data_object,
                 count: classCount,
                 tooltip:
-                    'Defines $classCount public classes; '
-                    'expected one public class per file.\n'
-                    'Click to move the others into their own files.',
+                    'Defines $classCount public classes; expected one per '
+                    'file, a widget\'s State private beside it.\n'
+                    'Click to split them.',
                 onTap: _splittingPath == null
                     ? () => _splitClasses(node, classCount)
                     : null,
@@ -270,35 +270,33 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     }
   }
 
-  /// After confirmation, saves the open files and moves every public class
-  /// of [node] but one into its own file, updating imports across the
-  /// project.
+  /// After confirmation, saves the open files, makes each widget's public
+  /// State in [node] private and moves every other public class but one
+  /// into its own file, updating imports across the project.
   Future<void> _splitClasses(ProjectNode node, int classCount) async {
     final confirmed = await MessageBox.confirm(
       context,
       title: 'Split ${node.name}?',
       message:
-          'Move ${classCount - 1} of its $classCount public classes into '
-          'their own files and update imports across the project?',
+          'It declares $classCount public classes. Make each widget\'s '
+          'State private, move every other public class but one into its '
+          'own file and update imports across the project?',
       confirmLabel: 'Split',
     );
     if (!confirmed || !mounted) return;
 
     setState(() => _splittingPath = node.path);
     try {
-      var createdFiles = const <String>[];
+      ClassSplitResult? split;
       await ref.read(openDocumentsProvider.notifier).applyEdits(() async {
         final result = await ref
             .read(classSplitServiceProvider)
             .plan(projectPath: projectRoot!.path, filePath: node.path);
-        createdFiles = result.createdFiles;
+        split = result;
         return result.files;
       });
       if (!mounted) return;
-      MessageBox.showSuccess(
-        context,
-        'Moved into ${createdFiles.map(p.basename).join(', ')}',
-      );
+      MessageBox.showSuccess(context, split!.summary);
     } catch (e) {
       if (mounted) MessageBox.showError(context, 'Split failed: $e');
     } finally {

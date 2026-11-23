@@ -156,7 +156,7 @@ class _FieldUseVisitor extends RecursiveAstVisitor<void> {
     void visit(AstNode node) {
       if (found != null) return;
       if (node is VariableDeclaration &&
-          _UsageVisitor.same(node.declaredFragment!.element, field)) {
+          NameUses.same(node.declaredFragment!.element, field)) {
         found = (node.parent as VariableDeclarationList?)?.type;
         return;
       }
@@ -212,7 +212,7 @@ class _FieldUseVisitor extends RecursiveAstVisitor<void> {
 
   /// Whether [element] is the field.
   bool _isField(Element? element) =>
-      element != null && _UsageVisitor.same(element, _field);
+      element != null && NameUses.same(element, _field);
 
   /// The read [name] belongs to, with its receiver, such as `widget.name`.
   static Expression _readOf(SimpleIdentifier name) => switch (name.parent) {
@@ -256,13 +256,12 @@ class _FieldUseVisitor extends RecursiveAstVisitor<void> {
         final isStateMember =
             !current.isStatic &&
             !_contextlessStateMethods.contains(current.name.lexeme) &&
-            (current
-                        .thisOrAncestorOfType<ClassDeclaration>()
-                        ?.declaredFragment
-                        ?.element
-                        .allSupertypes ??
-                    const [])
-                .any((type) => type.element.name == 'State');
+            WidgetStates.isState(
+              current
+                  .thisOrAncestorOfType<ClassDeclaration>()
+                  ?.declaredFragment
+                  ?.element,
+            );
         return isStateMember ? 'context' : null;
       }
     }

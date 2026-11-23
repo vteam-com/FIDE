@@ -119,7 +119,7 @@ class _ReferenceWorker {
   /// See [ReferenceFinder.callees].
   List<SearchResult> _callees(_Target target) => [
     for (final callee in _CalleeVisitor.calleesOf(target.declaration))
-      if (!_UsageVisitor.same(callee, target.element)) ?_declarationOf(callee),
+      if (!NameUses.same(callee, target.element)) ?_declarationOf(callee),
   ];
 
   /// See [ReferenceFinder.definition].
@@ -138,7 +138,7 @@ class _ReferenceWorker {
     return _overlaid(edited, () async {
       final unit = await _resolvedUnit(filePath);
       if (unit == null) throw StateError('Can\'t analyze $filePath');
-      final element = _NameLocator.elementAt(unit.unit, offset);
+      final element = NameLocator.elementAt(unit.unit, offset);
       if (element == null) throw StateError('No name to go to at the caret');
       final place = _declarationOf(element);
       if (place != null) return place;
@@ -168,7 +168,7 @@ class _ReferenceWorker {
       return null;
     }
     final nameOffset = fragment.nameOffset;
-    return _UsageVisitor.resultAt(
+    return NameUses.resultAt(
       path,
       _analysis.read(path),
       library.lineInfo,
@@ -275,7 +275,7 @@ class _ReferenceWorker {
     final unit = await _resolvedUnit(filePath);
     if (unit == null) throw StateError('Can\'t analyze $filePath');
     final offset = unit.lineInfo.getOffsetOfLine(line - 1) + column - 1;
-    final declaration = _UsageVisitor.declarationAt(unit.unit, offset);
+    final declaration = NameUses.declarationAt(unit.unit, offset);
     final element = declaration?.declaredFragment?.element;
     final name = element?.name;
     if (declaration == null || element == null || name == null) {
@@ -288,17 +288,17 @@ class _ReferenceWorker {
   ///
   /// [renaming] includes the uses inside the declaration itself and, for a
   /// field, its `this.` parameters and their named arguments.
-  Future<Map<String, ({String content, List<_Use> uses})>> _usesOf(
+  Future<Map<String, ({String content, List<NameUse> uses})>> _usesOf(
     _Target target, {
     required bool renaming,
   }) async {
     final element = target.element;
     final declaration = target.declaration;
-    final uses = <String, ({String content, List<_Use> uses})>{};
+    final uses = <String, ({String content, List<NameUse> uses})>{};
     for (final path in _candidatePaths(element, target.name)) {
       final unit = await _resolvedUnit(path);
       if (unit == null) continue;
-      final fileUses = _UsageVisitor.usesOf(
+      final fileUses = NameUses.usesOf(
         element,
         unit,
         renaming: renaming,

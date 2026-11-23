@@ -11,6 +11,7 @@ extension QuickFixIcon on QuickFix {
     QuickFix.makeConstants => Icons.data_object,
     QuickFix.removeUnusedKeys => Icons.delete_sweep_outlined,
     QuickFix.sortMembers => Icons.sort,
+    QuickFix.splitClasses => Icons.call_split,
     QuickFix.upgradePackages => Icons.arrow_upward,
     QuickFix.removeCocoaPods => Icons.delete_outline,
     QuickFix.translateKeys => Icons.g_translate,

@@ -15,6 +15,8 @@ import 'package:fide/models/text_offsets.dart';
 import 'package:fide/services/compile_errors.dart';
 import 'package:fide/services/dart_references.dart';
 import 'package:fide/services/file_type_utils.dart';
+import 'package:fide/services/name_uses.dart';
+import 'package:fide/services/widget_states.dart';
 import 'package:path/path.dart' as p;
 
 part 'class_splitter.class_split_exception.dart';
@@ -22,10 +24,14 @@ part 'class_splitter.planner.dart';
 
 /// Deterministic "one public class per file" refactoring for Dart sources.
 ///
-/// Every public class but one leaves the file for `<class_name>.dart` next
-/// to it, importing only what it uses; the original file and every library
-/// using the class through it get their imports updated. Private
-/// declarations only that class uses go with it. A class tangled with
+/// A widget's `State` is part of its widget, not a class of its own: a
+/// public one no other library uses becomes private (`_FooState`), and one
+/// another library uses, through a `GlobalKey<FooState>`, stays public by
+/// its widget. Every other public class but one leaves the file for
+/// `<class_name>.dart` next to it, importing only what it uses; the
+/// original file and every library using the class through it get their
+/// imports updated. Private declarations only that class uses go with it,
+/// a stateful widget's private `State` too. A class tangled with
 /// private declarations the rest of the library also uses can't leave the
 /// library, so it moves to a `part` file (`<file>.<class_name>.dart`)
 /// instead.

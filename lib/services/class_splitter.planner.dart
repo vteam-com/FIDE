@@ -50,11 +50,16 @@ class _Planner {
   /// Files created by the plan, in split order.
   final List<String> _created = [];
 
+  /// The widget `State`s the plan made private, by their public name.
+  final List<String> _privatized = [];
+
   /// Compile errors of each changed file before the plan touched it; new
   /// files start at zero.
   final Map<String, int> _baselineErrors = {};
 
-  /// Splits [_filePath] until one public class is left, then checks that
+  /// Makes each widget's public `State` private, unless another library
+  /// uses it, then splits [_filePath] until one public class is left
+  /// besides such `State`s, each staying with its widget; then checks that
   /// no changed file gained compile errors.
   Future<ClassSplitResult> run() async {
     // Unresolved code (stale packages, broken imports) can't be split safely
@@ -67,6 +72,8 @@ class _Planner {
         '${existing.first}',
       );
     }
+    // Public States other libraries use, which stay public by their widget
+    final shared = <String>{};
     while (true) {
       final library = await _libraryContaining(_filePath);
       final unit = _unitAt(library, _filePath);
@@ -74,14 +81,24 @@ class _Planner {
           .whereType<ClassDeclaration>()
           .where((c) => !Identifier.isPrivateName(c.namePart.typeName.lexeme))
           .toList();
-      if (classes.length <= 1) break;
+      final states = classes
+          .where((c) => WidgetStates.isState(c.declaredFragment!.element))
+          .toList();
+      final state = await _firstPrivatizable(library, states, shared);
+      if (state != null) {
+        await _privatize(library, state);
+        continue;
+      }
+      final splittable = classes.where((c) => !states.contains(c)).toList();
+      if (splittable.length <= 1) break;
 
       final stem = p.basenameWithoutExtension(_filePath);
-      final keep = classes.firstWhere(
+      final keep = splittable.firstWhere(
         (c) => _fileStemFor(c) == stem,
-        orElse: () => classes.first,
+        orElse: () => splittable.first,
       );
-      final moving = classes.firstWhere((c) => c != keep);
+      final moving = splittable.firstWhere((c) => c != keep);
+      _checkNoSharedState(moving, states);
       await _move(library, unit, [
         moving,
         ..._privateHelpersOf(library, unit, moving),
@@ -92,7 +109,109 @@ class _Planner {
     }
     await _checkErrors();
     await _checkLayers();
-    return ClassSplitResult(files: Map.of(_changed), createdFiles: _created);
+    return ClassSplitResult(
+      files: Map.of(_changed),
+      createdFiles: _created,
+      privatizedStates: _privatized,
+    );
+  }
+
+  /// Throws when [widget], about to leave its file, has one of [states],
+  /// public as another library uses it, which would have to go with it.
+  static void _checkNoSharedState(
+    ClassDeclaration widget,
+    List<ClassDeclaration> states,
+  ) {
+    final element = widget.declaredFragment!.element;
+    for (final state in states) {
+      if (WidgetStates.widgetOf(state.declaredFragment!.element) == element) {
+        throw ClassSplitException(
+          'Can\'t move ${element.name}: other files use its State, '
+          '${state.namePart.typeName.lexeme}, which goes with it; '
+          'move the two together',
+        );
+      }
+    }
+  }
+
+  /// The first of [states], a unit's public widget `State`s, no library but
+  /// [library] uses, to make private; null when each is [shared], or found
+  /// to be and added there.
+  Future<ClassDeclaration?> _firstPrivatizable(
+    ResolvedLibraryResult library,
+    List<ClassDeclaration> states,
+    Set<String> shared,
+  ) async {
+    for (final state in states) {
+      final name = state.namePart.typeName.lexeme;
+      if (shared.contains(name)) continue;
+      if (!await _usedElsewhere(library, state.declaredFragment!.element)) {
+        return state;
+      }
+      shared.add(name);
+    }
+    return null;
+  }
+
+  /// Makes [state], a widget's public `State` only [library] uses,
+  /// private: `_FooState` wherever the library names it.
+  Future<void> _privatize(
+    ResolvedLibraryResult library,
+    ClassDeclaration state,
+  ) async {
+    final element = state.declaredFragment!.element;
+    final name = element.name!;
+    final privateName = WidgetStates.privateNameOf(name);
+    if (library.element.getClass(privateName) != null) {
+      throw ClassSplitException(
+        'Can\'t make $name private: the library has a $privateName already',
+      );
+    }
+    final declared = state.namePart.typeName.offset;
+    for (final unit in library.units) {
+      final offsets = {
+        for (final use in NameUses.usesOf(element, unit, renaming: true))
+          use.offset,
+        if (state.root == unit.unit) declared,
+      };
+      if (offsets.isEmpty) continue;
+      if (!_baselineErrors.containsKey(unit.path)) {
+        _baselineErrors[unit.path] = (await _analysis.errorsIn(unit.path))
+            .length;
+      }
+      _write(
+        unit.path,
+        TextOffsets.applyEdits(unit.content, {
+          for (final offset in offsets) offset: (name.length, privateName),
+        }),
+      );
+    }
+    _privatized.add(name);
+    await _analysis.applyChanges();
+  }
+
+  /// Whether a library other than [library] uses [element].
+  Future<bool> _usedElsewhere(
+    ResolvedLibraryResult library,
+    ClassElement element,
+  ) async {
+    final own = {
+      for (final fragment in library.element.fragments)
+        fragment.source.fullName,
+    };
+    final name = element.name!;
+    for (final path in {..._dartFiles, ..._created}) {
+      if (own.contains(path) || !_textOf(path).contains(name)) continue;
+      final other = await _libraryContaining(path);
+      for (final unit in other.units) {
+        own.add(unit.path);
+        if (DartReferenceCollector.collect(unit.unit)
+            .any((reference) => reference.top == element)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   /// `snake_case` file stem for [declaration]'s class.

@@ -17,6 +17,7 @@ import 'package:fide/models/repeated_settings_review.dart';
 import 'package:fide/models/unique_name.dart';
 import 'package:fide/services/dart_references.dart';
 import 'package:fide/services/file_layout_analyzer.dart';
+import 'package:fide/services/widget_states.dart';
 import 'package:path/path.dart' as p;
 
 part 'repeated_settings_analyzer.argument.dart';

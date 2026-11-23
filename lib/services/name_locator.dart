@@ -1,9 +1,10 @@
-part of 'reference_finder.dart';
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/element/element.dart';
 
 /// Finds what a name in resolved code refers to: the one name every
 /// lookup (callers, callees, renames, Go to Definition) reads it through.
-class _NameLocator {
-  const _NameLocator._();
+class NameLocator {
+  const NameLocator._();
 
   /// What [name] refers to: its element, else, for a name an assignment,
   /// `++` or `--` writes, what the writing expression records.

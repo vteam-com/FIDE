@@ -144,11 +144,7 @@ class _CallCollector {
     final location = RepeatedSettingsLocation(
       path,
       result.lineInfo.getLocation(node.offset).lineNumber,
-      className: node
-          .thisOrAncestorOfType<ClassDeclaration>()
-          ?.namePart
-          .typeName
-          .lexeme,
+      className: _ownerOf(node.thisOrAncestorOfType<ClassDeclaration>()),
       isInView: views.contains(path),
     );
     final settings = <String, String>{};
@@ -300,6 +296,13 @@ class _CallCollector {
     };
     return isStaticMember && !_StateFinder.isMemberName(node);
   }
+
+  /// The class a place in [declaration] belongs to: the widget, for a
+  /// widget's `State`, which is part of it; else [declaration]'s own;
+  /// null outside a class.
+  static String? _ownerOf(ClassDeclaration? declaration) =>
+      WidgetStates.widgetOf(declaration?.declaredFragment?.element)?.name ??
+      declaration?.namePart.typeName.lexeme;
 
   /// The field of its enclosing class [value] reads, such as `text`;
   /// null when it reads anything else.

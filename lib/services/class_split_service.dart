@@ -17,7 +17,8 @@ class ClassSplitService {
 
   /// Plans the split of [filePath] in the project at [projectPath]; throws
   /// a [FlutterSdkNotFoundException] when the SDK is missing and a
-  /// [ClassSplitException] when the split can't be done safely. A file the formatter rejects keeps its planned content.
+  /// [ClassSplitException] when the split can't be done safely. A file the
+  /// formatter rejects keeps its planned content.
   Future<ClassSplitResult> plan({
     required String projectPath,
     required String filePath,
@@ -27,6 +28,7 @@ class ClassSplitService {
     return ClassSplitResult(
       files: await _formatter.formatAllOrKeep(planned.files),
       createdFiles: planned.createdFiles,
+      privatizedStates: planned.privatizedStates,
     );
   }
 }

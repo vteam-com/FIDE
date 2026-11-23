@@ -136,11 +136,11 @@ void main() {
     expect(categories.multiClassFiles, isEmpty);
   });
 
-  test('follows fCheck: a widget and its State share a file', () async {
+  test('follows fCheck: a widget and its private State share a file', () async {
     write(
       'lib/widgets/counter.dart',
       'class Counter extends StatefulWidget {}\n'
-          'class CounterState extends State<Counter> {}',
+          'class _CounterState extends State<Counter> {}',
     );
 
     final categories = await categorize();

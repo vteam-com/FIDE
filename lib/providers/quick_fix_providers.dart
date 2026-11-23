@@ -72,6 +72,10 @@ final quickFixHandlersProvider = Provider<Map<QuickFix, QuickFixHandler>>((
       ref.read(arbKeyRemoverProvider),
     ),
     QuickFix.sortMembers: SortMembersHandler(ref.read(codeReviewProvider)),
+    QuickFix.splitClasses: SplitClassesHandler(
+      ref.read(classSplitServiceProvider),
+      ref.read(fileContentReaderProvider),
+    ),
     QuickFix.translateKeys: TranslateKeysHandler(
       ref.read(arbTranslatorProvider),
     ),

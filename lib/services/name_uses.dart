@@ -1,12 +1,18 @@
-part of 'reference_finder.dart';
+import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/source/line_info.dart';
+import 'package:fide/models/search_result.dart';
+import 'package:fide/services/name_locator.dart';
 
 /// A use of a declaration: where its name starts, and how to list it.
-typedef _Use = ({int offset, SearchResult result});
+typedef NameUse = ({int offset, SearchResult result});
 
 /// Finds outline declarations and the names in a unit that resolve to a
 /// given element.
-class _UsageVisitor extends GeneralizingAstVisitor<void> {
-  _UsageVisitor._(this._target, this._unit, this._skip, this._renaming);
+class NameUses extends GeneralizingAstVisitor<void> {
+  NameUses._(this._target, this._unit, this._skip, this._renaming);
 
   /// Whether a field's `this.` parameters and their named arguments count
   /// as its uses, as they must be renamed with it.
@@ -19,7 +25,7 @@ class _UsageVisitor extends GeneralizingAstVisitor<void> {
 
   final ResolvedUnitResult _unit;
 
-  final List<_Use> _uses = [];
+  final List<NameUse> _uses = [];
 
   /// The class, function, method or variable declaration of [unit]
   /// starting at [offset], as the outline lists them.
@@ -44,13 +50,13 @@ class _UsageVisitor extends GeneralizingAstVisitor<void> {
 
   /// Every name in [unit] resolving to [target], except within [skip];
   /// see [_renaming] for [renaming].
-  static List<_Use> usesOf(
+  static List<NameUse> usesOf(
     Element target,
     ResolvedUnitResult unit, {
     required bool renaming,
     ({int offset, int end})? skip,
   }) {
-    final visitor = _UsageVisitor._(target, unit, skip, renaming);
+    final visitor = NameUses._(target, unit, skip, renaming);
     unit.unit.accept(visitor);
     return visitor._uses;
   }
@@ -159,7 +165,7 @@ class _UsageVisitor extends GeneralizingAstVisitor<void> {
 
   @override
   void visitSimpleIdentifier(SimpleIdentifier node) {
-    _check(_NameLocator.referencedBy(node), node.offset, node.length);
+    _check(NameLocator.referencedBy(node), node.offset, node.length);
     super.visitSimpleIdentifier(node);
   }
 }

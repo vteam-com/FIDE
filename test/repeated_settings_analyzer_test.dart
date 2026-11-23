@@ -13,6 +13,13 @@ abstract class StatelessWidget extends Widget {
   const StatelessWidget();
   Widget build(BuildContext context);
 }
+abstract class StatefulWidget extends Widget {
+  const StatefulWidget();
+  State createState();
+}
+abstract class State<T extends StatefulWidget> {
+  Widget build(BuildContext context);
+}
 class Color { const Color(this.value); final int value; }
 class IconData { const IconData(this.codePoint); final int codePoint; }
 enum TextOverflow { clip, ellipsis }
@@ -299,6 +306,49 @@ class $name extends StatelessWidget {
           location.path: location.isInView,
       },
       {'lib/home_screen.dart': true, 'lib/widgets/score_card.dart': false},
+    );
+  });
+
+  test('names the widget for a place in its State', () async {
+    write('framework.dart', _framework);
+    write('score_card.dart', '''
+import 'framework.dart';
+
+class ScoreCard extends StatelessWidget {
+  const ScoreCard();
+
+  @override
+  Widget build(BuildContext context) =>
+      const Text('a', maxLines: 1, overflow: TextOverflow.ellipsis);
+}
+''');
+    write('counter.dart', '''
+import 'framework.dart';
+
+class Counter extends StatefulWidget {
+  const Counter();
+
+  @override
+  State<Counter> createState() => _CounterState();
+}
+
+class _CounterState extends State<Counter> {
+  @override
+  Widget build(BuildContext context) =>
+      const Text('b', maxLines: 1, overflow: TextOverflow.ellipsis);
+}
+''');
+
+    final found = await review();
+
+    final places = found
+        .of(RepeatedSettingsFindingKind.clone)
+        .single
+        .variants
+        .single;
+    expect(
+      {for (final location in places.locations) location.className},
+      {'ScoreCard', 'Counter'},
     );
   });
 
