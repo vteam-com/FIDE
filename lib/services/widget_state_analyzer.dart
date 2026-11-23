@@ -105,7 +105,8 @@ class WidgetStateAnalyzer {
     final findings = <WidgetStateFinding>[];
     // The States a test may name, each with its widget and its file: a
     // private one too, which no test can reach, so it doesn't compile
-    final statesNamed = <String, ({String widget, String widgetPath})>{};
+    final statesNamed =
+        <String, ({String widget, String widgetPath, bool inWidgetLibrary})>{};
     var stateCount = 0;
     for (final (:file, :declaration) in classes) {
       final superclass = declaration.extendsClause?.superclass;
@@ -131,7 +132,11 @@ class WidgetStateAnalyzer {
       if (widget == null) continue;
       stateCount++;
       final state = _nameOf(declaration);
-      statesNamed[state] = (widget: widgetName, widgetPath: widget.file.path);
+      statesNamed[state] = (
+        widget: widgetName,
+        widgetPath: widget.file.path,
+        inWidgetLibrary: libraryOf[widget.file.path] == library,
+      );
       if (file.isIgnoredAt(declaration)) continue;
 
       WidgetStateFinding finding(WidgetStateProblem problem) =>
@@ -158,12 +163,24 @@ class WidgetStateAnalyzer {
         findings.add(finding(WidgetStateProblem.public));
       }
     }
+    final stateOfWidget = {
+      for (final MapEntry(key: state, :value) in statesNamed.entries)
+        value.widget: state,
+    };
     for (final test in tests) {
       final lines = <int>{};
-      for (final type in typesUsed[test.path]!) {
-        final state = statesNamed[type.name.lexeme];
-        final line = test.lineOf(type);
-        if (state == null || test.isIgnoredAt(type) || !lines.add(line)) {
+      // Each type naming a State, and each widget's createState()
+      final reaches = [
+        for (final type in typesUsed[test.path]!)
+          (node: type as AstNode, state: type.name.lexeme),
+        for (final call in _StateMakers.of(test.unit))
+          if (stateOfWidget[call.widget] case final state?)
+            (node: call.node as AstNode, state: state),
+      ]..sort((a, b) => a.node.offset.compareTo(b.node.offset));
+      for (final (:node, state: name) in reaches) {
+        final state = statesNamed[name];
+        final line = test.lineOf(node);
+        if (state == null || test.isIgnoredAt(node) || !lines.add(line)) {
           continue;
         }
         findings.add(
@@ -171,10 +188,10 @@ class WidgetStateAnalyzer {
             problem: WidgetStateProblem.reachedByTest,
             path: test.path,
             line: line,
-            state: type.name.lexeme,
+            state: name,
             widget: state.widget,
             widgetPath: state.widgetPath,
-            isInWidgetLibrary: false,
+            isInWidgetLibrary: state.inWidgetLibrary,
           ),
         );
       }
@@ -220,5 +237,58 @@ class _TypeUses extends RecursiveAstVisitor<void> {
   void visitNamedType(NamedType node) {
     _types.add(node);
     super.visitNamedType(node);
+  }
+}
+
+/// Collects a unit's calls of a widget's `createState()`, each with the
+/// widget's name, read without resolving: the widget built in place,
+/// `Foo().createState()`, or a local given one or typed as one.
+class _StateMakers extends RecursiveAstVisitor<void> {
+  /// The method of a stateful widget making its `State`.
+  static const String _createState = 'createState';
+
+  final List<({MethodInvocation node, String widget})> _calls = [];
+
+  /// The type or value naming each local, by name, in source order.
+  final Map<String, String> _localTypes = {};
+
+  /// The `createState()` calls of [unit], each with its widget's name.
+  static List<({MethodInvocation node, String widget})> of(
+    CompilationUnit unit,
+  ) {
+    final makers = _StateMakers();
+    unit.accept(makers);
+    return makers._calls;
+  }
+
+  /// The widget [expression] builds, by name; null when it builds none it
+  /// can tell.
+  String? _widgetOf(Expression? expression) => switch (expression) {
+    InstanceCreationExpression(:final constructorName) =>
+      constructorName.type.name.lexeme,
+    // `Foo()`, read without resolving, is an invocation
+    MethodInvocation(target: null, :final methodName) => methodName.name,
+    SimpleIdentifier(:final name) => _localTypes[name],
+    _ => null,
+  };
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    if (node.methodName.name == _createState) {
+      if (_widgetOf(node.target) case final widget?) {
+        _calls.add((node: node, widget: widget));
+      }
+    }
+    super.visitMethodInvocation(node);
+  }
+
+  @override
+  void visitVariableDeclaration(VariableDeclaration node) {
+    final type = switch (node.parent) {
+      VariableDeclarationList(type: NamedType(:final name)) => name.lexeme,
+      _ => _widgetOf(node.initializer),
+    };
+    if (type != null) _localTypes[node.name.lexeme] = type;
+    super.visitVariableDeclaration(node);
   }
 }

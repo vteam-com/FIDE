@@ -86,11 +86,14 @@ enum QuickFix {
   ),
 
   /// Put each widget's `State` where Flutter's convention does: beside
-  /// its widget, in its file, private unless other files name it.
+  /// its widget, in its file, private unless other files of the app name
+  /// it, no test reaching into it.
   fixStates(
     'Fix States',
-    'moves each widget\'s State beside its widget, in its file, and makes '
-        'it private when no other file names it',
+    'moves each widget\'s State beside its widget, in its file, removes '
+        'from the tests every statement reaching into it, with the tests '
+        'left empty and the imports no longer used, and makes it private '
+        'when no other file of the app names it',
     topics: {'widget state', 'state class'},
   ),
 

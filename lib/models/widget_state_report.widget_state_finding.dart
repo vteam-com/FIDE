@@ -16,7 +16,8 @@ class WidgetStateFinding {
   });
 
   /// Whether the `State` is in its widget's library, the widget's file or
-  /// one of its part files, so moving it changes no import.
+  /// one of its part files, so moving it changes no import; for a test
+  /// reaching into it, that of the `State` it reaches into.
   final bool isInWidgetLibrary;
 
   /// The 1-based line the `State` is declared on, or a test reaches into
@@ -43,10 +44,10 @@ class WidgetStateFinding {
   /// [line] of [path], rather than about the `State` itself.
   bool get isInTest => problem == WidgetStateProblem.reachedByTest;
 
-  /// Whether Fix States fixes it, moving, renaming or marking the `State`
-  /// in its widget's library: not one in another library than its widget,
-  /// nor a test reaching into it, which the AI rewrites.
-  bool get isFixableByCode => isInWidgetLibrary && !isInTest;
+  /// Whether Fix States fixes it, moving or renaming the `State` in its
+  /// widget's library, or removing what a test does with it: not when the
+  /// `State` is in another library than its widget.
+  bool get isFixableByCode => isInWidgetLibrary;
 
   /// What is wrong and what to do, in one line.
   String get message => switch (problem) {

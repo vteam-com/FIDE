@@ -382,28 +382,302 @@ CounterState? counterOf(Object state) => state is CounterState ? state : null;
       );
     });
 
-    test('stays public when a test reaches it, unmarked: the test is wrong, '
-        'not the State', () async {
+    test('refuses a test reaching into it outside a test body, which can\'t '
+        'go whole', () async {
       write('test/counter_test.dart', '''
 import '../lib/counter.dart';
 
 int countOf(Object state) => (state as CounterState).count;
 ''');
 
-      final result = await splitter.plan(
-        projectPath: project,
-        filePath: path('lib/counter.dart'),
-        statesOnly: true,
-      );
-
-      expect(result.gatheredStates, ['CounterState']);
-      expect(result.privatizedStates, isEmpty);
       expect(
-        result.files[path('lib/counter.dart')],
-        contains("/// [Counter]'s state.\nclass CounterState extends State"),
+        splitter.plan(
+          projectPath: project,
+          filePath: path('lib/counter.dart'),
+          statesOnly: true,
+        ),
+        throwsA(
+          isA<ClassSplitException>().having(
+            (e) => e.message,
+            'message',
+            'counter_test.dart:3 reaches into CounterState outside a test; '
+                'check its widget there instead first',
+          ),
+        ),
       );
-      expect(result.summary, 'Moved CounterState beside its widget');
     });
+  });
+
+  test('fixes a State in one go: beside its widget, private, its own doc '
+      'renaming it, and no test reaching into it', () async {
+    write('lib/framework.dart', _framework);
+    write('lib/zero.dart', 'const zero = 0;\n');
+    write(
+      'lib/counter.dart',
+      "${_importFramework}part 'counter_state.dart';\n\n"
+          '${_counterWidget('CounterState')}',
+    );
+    write('lib/counter_state.dart', '''
+part of 'counter.dart';
+
+/// CounterState holds the taps of [Counter].
+class CounterState extends State<Counter> {
+  int count = 0;
+}
+''');
+    write('test/counter_test.dart', '''
+import '../lib/counter.dart';
+import '../lib/zero.dart';
+
+void test(String name, void Function() body) {}
+
+void group(String name, void Function() body) {}
+
+void expect(Object? actual, Object? matcher) {}
+
+void main() {
+  group('Counter', () {
+    test('builds', () {
+      const counter = Counter();
+      expect(counter, counter);
+      // Reach into its state
+      final CounterState state = counter.createState() as CounterState;
+      expect(state.count, 0);
+    });
+    test('counts', () {
+      final state = const Counter().createState() as CounterState;
+      expect(state.count, zero);
+    });
+  });
+  group('State', () {
+    test('starts at zero', () => expect(CounterState().count, 0));
+  });
+}
+''');
+
+    final result = await splitter.plan(
+      projectPath: project,
+      filePath: path('lib/counter.dart'),
+      statesOnly: true,
+    );
+
+    expect(result.privatizedStates, ['CounterState']);
+    expect(
+      result.files[path('lib/counter.dart')],
+      contains(
+        '/// _CounterState holds the taps of [Counter].\n'
+        'class _CounterState extends State<Counter>',
+      ),
+    );
+    expect(result.files[path('test/counter_test.dart')], '''
+import '../lib/counter.dart';
+
+void test(String name, void Function() body) {}
+
+void group(String name, void Function() body) {}
+
+void expect(Object? actual, Object? matcher) {}
+
+void main() {
+  group('Counter', () {
+    test('builds', () {
+      const counter = Counter();
+      expect(counter, counter);
+    });
+  });
+}
+''');
+    expect(result.cleanedTests, {path('test/counter_test.dart'): 5});
+    expect(
+      result.summary,
+      'Moved CounterState beside its widget; Removed 5 test statements '
+      'reaching into them from counter_test.dart; Made CounterState private',
+    );
+  });
+
+  test('removes a State a setUp makes, held as dynamic, with the group '
+      'left empty, keeping the rest', () async {
+    write('lib/framework.dart', _framework);
+    write('lib/counter.dart', '$_importFramework${_counter('CounterState')}');
+    write('test/counter_test.dart', '''
+import '../lib/counter.dart';
+
+void test(String name, void Function() body) {}
+
+void group(String name, void Function() body) {}
+
+void setUp(void Function() body) {}
+
+void expect(Object? actual, Object? matcher) {}
+
+void main() {
+  group('Counter', () {
+    test('builds', () => expect(const Counter(), isA));
+  });
+
+  // --- Its State through createState ---
+  group('Counter state', () {
+    late dynamic state;
+
+    setUp(() {
+      const counter = Counter();
+      state = counter.createState();
+    });
+
+    test('starts at zero', () {
+      expect(state.count, 0);
+    });
+  });
+}
+
+const isA = Object();
+''');
+
+    final result = await splitter.plan(
+      projectPath: project,
+      filePath: path('lib/counter.dart'),
+      statesOnly: true,
+    );
+
+    expect(result.privatizedStates, ['CounterState']);
+    expect(result.files[path('test/counter_test.dart')], '''
+import '../lib/counter.dart';
+
+void test(String name, void Function() body) {}
+
+void group(String name, void Function() body) {}
+
+void setUp(void Function() body) {}
+
+void expect(Object? actual, Object? matcher) {}
+
+void main() {
+  group('Counter', () {
+    test('builds', () => expect(const Counter(), isA));
+  });
+
+}
+
+const isA = Object();
+''');
+  });
+
+  test('moves out of a State the methods tests call that use nothing of '
+      'it, the tests calling them directly; the checks of its state go; '
+      'its widget declares State<Counter> createState', () async {
+    write('lib/framework.dart', _framework);
+    write('lib/counter.dart', '''
+import 'framework.dart';
+
+/// Counts taps.
+class Counter extends StatefulWidget {
+  const Counter();
+
+  @override
+  CounterState createState() => CounterState();
+}
+
+/// CounterState holds the taps.
+class CounterState extends State<Counter> {
+  static const String _suffix = ' taps';
+
+  int count = 0;
+
+  /// The label of [taps] taps.
+  String label(int taps) => '\$taps\$_suffix';
+
+  /// The label of the taps so far.
+  String get current => label(count);
+}
+''');
+    write('test/counter_test.dart', '''
+import '../lib/counter.dart';
+
+void test(String name, void Function() body) {}
+
+void group(String name, void Function() body) {}
+
+void setUp(void Function() body) {}
+
+void expect(Object? actual, Object? matcher) {}
+
+void main() {
+  group('Counter state', () {
+    late dynamic state;
+
+    setUp(() {
+      const counter = Counter();
+      state = counter.createState();
+    });
+
+    test('labels taps', () {
+      expect(state.label(2), '2 taps');
+    });
+
+    test('starts at zero', () {
+      expect(state.count, 0);
+    });
+  });
+}
+''');
+
+    final result = await splitter.plan(
+      projectPath: project,
+      filePath: path('lib/counter.dart'),
+      statesOnly: true,
+    );
+
+    expect(result.files[path('lib/counter.dart')], '''
+import 'framework.dart';
+
+/// Counts taps.
+class Counter extends StatefulWidget {
+  const Counter();
+
+  @override
+  State<Counter> createState() => _CounterState();
+}
+
+/// _CounterState holds the taps.
+class _CounterState extends State<Counter> {
+  static const String _suffix = ' taps';
+
+  int count = 0;
+
+  /// The label of the taps so far.
+  String get current => label(count);
+}
+
+/// The label of [taps] taps.
+String label(int taps) => '\$taps\${_CounterState._suffix}';
+''');
+    expect(result.files[path('test/counter_test.dart')], '''
+import '../lib/counter.dart';
+
+void test(String name, void Function() body) {}
+
+void group(String name, void Function() body) {}
+
+void setUp(void Function() body) {}
+
+void expect(Object? actual, Object? matcher) {}
+
+void main() {
+  group('Counter state', () {
+
+    test('labels taps', () {
+      expect(label(2), '2 taps');
+    });
+
+  });
+}
+''');
+    expect(
+      result.summary,
+      'Moved label out of CounterState, for tests to call; Removed 3 test '
+      'statements reaching into them from counter_test.dart; Made '
+      'CounterState private',
+    );
   });
 
   test('refuses a file that already has compile errors', () async {

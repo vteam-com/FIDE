@@ -4,7 +4,10 @@ import 'dart:isolate';
 import 'package:analyzer/dart/analysis/analysis_context.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/token.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:fide/models/class_split_result.dart';
 import 'package:fide/models/dart_imports.dart';
 import 'package:fide/models/import_graph.dart';
@@ -22,7 +25,10 @@ import 'package:fide/services/widget_states.dart';
 import 'package:path/path.dart' as p;
 
 part 'class_splitter.class_split_exception.dart';
+part 'class_splitter.method_finder.dart';
 part 'class_splitter.planner.dart';
+part 'class_splitter.pure_methods.dart';
+part 'class_splitter.test_cleaner.dart';
 
 /// Deterministic "one public class per file" refactoring for Dart sources.
 ///

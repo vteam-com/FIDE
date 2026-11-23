@@ -176,7 +176,7 @@ void main() {
   });
 
   test('a State only tests use is the tests\' fault, flagged as errors at '
-      'their lines, one a line, the developer\'s to rewrite', () {
+      'their lines, one a line, which Fix States removes', () {
     write(
       'lib/counter.dart',
       '${_widget('CounterState')}\n@visibleForTesting\n${_state('CounterState')}',
@@ -201,8 +201,8 @@ void check(Tester tester) {
       'Tests CounterState, private to Counter: test Counter itself',
     );
     expect(tests.findings.single.line, 2);
-    // Only the developer can tell what a test should check instead
-    expect(tests.quickFixes, isEmpty);
+    // Fix States removes them, in the same click as the State
+    expect(tests.quickFixes, [QuickFix.fixStates]);
     expect(tests.aiActionLabel, isNull);
     expect(tests.guidance, contains('is wrong'));
   });
@@ -218,5 +218,33 @@ void check(Tester tester) {
     expect(findings(), [
       ('test/counter_test.dart', WidgetStateProblem.reachedByTest),
     ]);
+  });
+
+  test('a test calling the widget\'s createState reaches into its State, '
+      'whatever holds it', () {
+    write(
+      'lib/counter.dart',
+      '${_widget('_CounterState')}\n${_state('_CounterState')}',
+    );
+    write('test/counter_test.dart', '''
+void main() {
+  late dynamic state;
+  const counter = Counter();
+  state = counter.createState();
+  final other = Counter().createState();
+}
+''');
+
+    expect(
+      [
+        for (final finding
+            in const WidgetStateAnalyzer().analyze(project).findings)
+          (finding.line, finding.message),
+      ],
+      [
+        (4, 'Tests _CounterState, private to Counter: test Counter itself'),
+        (5, 'Tests _CounterState, private to Counter: test Counter itself'),
+      ],
+    );
   });
 }

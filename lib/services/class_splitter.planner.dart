@@ -20,6 +20,12 @@ class _Planner {
   /// The annotation saying a declaration is public only for tests.
   static const String _forTesting = 'visibleForTesting';
 
+  /// The method of a stateful widget making its `State`.
+  static const String _createState = 'createState';
+
+  /// The line breaks ending a line and the blank line after it.
+  static const int _blankLine = 2;
+
   /// Key of the `dart:core` library, which every file imports implicitly.
   static final Uri _dartCore = Uri.parse('dart:core');
 
@@ -68,12 +74,21 @@ class _Planner {
   /// took in what it held.
   final Map<String, String> _merged = {};
 
+  /// How many statements reaching into a widget's `State` the plan removed
+  /// from each test file, by path.
+  final Map<String, int> _cleanedTests = {};
+
+  /// The methods the plan moved out of each widget `State`, which tests
+  /// called, by the `State`'s name.
+  final Map<String, List<String>> _movedOut = {};
+
   /// Compile errors of each changed file before the plan touched it; new
   /// files start at zero.
   final Map<String, int> _baselineErrors = {};
 
   /// Moves each widget's `State` beside it, from the part file holding
-  /// it, and makes it private, unless another library uses it; then,
+  /// it, removes, when [_statesOnly], every reach into it from the tests,
+  /// and makes it private, unless another library uses it; then,
   /// unless [_statesOnly], splits [_filePath] until one public class is
   /// left besides such `State`s, each staying with its widget; then checks
   /// that no changed file gained compile errors.
@@ -89,6 +104,7 @@ class _Planner {
       );
     }
     await _gatherStates();
+    if (_statesOnly) await _cleanTests();
     // Public States other libraries use, which stay public by their
     // widget; tests reaching into one are flagged by the Widget States
     // check, as making it private would break them
@@ -143,6 +159,8 @@ class _Planner {
       privatizedStates: _privatized,
       gatheredStates: _gathered,
       mergedFiles: _merged,
+      cleanedTests: _cleanedTests,
+      movedOutOfStates: _movedOut,
     );
   }
 
@@ -227,6 +245,97 @@ class _Planner {
     await _analysis.applyChanges();
   }
 
+  /// Removes every reach into the `State`s of the widgets [_filePath]
+  /// declares from the project's tests, outside `lib`, as a widget's
+  /// `State` is private to its widget (see [_TestCleaner]); first moves out
+  /// of each `State` the methods tests call that use nothing of it (see
+  /// [_PureMethods]), so the tests call them directly. A `State` an
+  /// `// ignore: fcheck_widget_state` comment leaves alone is kept.
+  Future<void> _cleanTests() async {
+    final lib = p.join(_projectPath, ProjectPaths.libFolder);
+    final unit = _unitAt(await _libraryContaining(_filePath), _filePath);
+    // Each State by name, with its widget's, which a test may name alone
+    final names = {
+      for (final declaration
+          in unit.unit.declarations.whereType<ClassDeclaration>())
+        if (WidgetStates.widgetOf(declaration.declaredFragment!.element)
+            case final widget? when !_isLeftAlone(unit, declaration))
+          declaration.namePart.typeName.lexeme: widget.name!,
+    };
+    for (final MapEntry(key: name, value: widget) in names.entries) {
+      final tests = [
+        for (final path in _dartFiles)
+          if (!p.isWithin(lib, path) &&
+              (_textOf(path).contains(name) || _textOf(path).contains(widget)))
+            path,
+      ];
+      // Resolved again after each change, as are their elements
+      Future<InterfaceElement> stateNow() async =>
+          (await _libraryContaining(_filePath)).element.getClass(name)!;
+
+      final called = <String>{};
+      for (final path in tests) {
+        final state = await stateNow();
+        for (final test in (await _libraryContaining(path)).units) {
+          called.addAll(_TestCleaner(test, state).calledMethods());
+        }
+      }
+      final movedOut = called.isEmpty
+          ? const <String>{}
+          : await _moveOutPure(name, called);
+
+      for (final path in tests) {
+        final state = await stateNow();
+        for (final test in (await _libraryContaining(path)).units) {
+          final (:removals, :statements) = _TestCleaner(
+            test,
+            state,
+            movedOut: movedOut,
+          ).plan();
+          if (removals.isEmpty) continue;
+          if (!_baselineErrors.containsKey(test.path)) {
+            _baselineErrors[test.path] = (await _analysis.errorsIn(test.path))
+                .length;
+          }
+          _write(
+            test.path,
+            TextOffsets.applyEdits(test.content, {
+              for (final removal in removals)
+                removal.offset: (removal.end - removal.offset, ''),
+            }),
+          );
+          _cleanedTests.update(
+            test.path,
+            (count) => count + statements,
+            ifAbsent: () => statements,
+          );
+          await _analysis.applyChanges();
+        }
+      }
+    }
+  }
+
+  /// Moves out of the `State` named [name], declared in [_filePath], the
+  /// methods among [called] that use nothing of it, as top-level functions
+  /// (see [_PureMethods]); returns those it moved.
+  Future<Set<String>> _moveOutPure(String name, Set<String> called) async {
+    final unit = _unitAt(await _libraryContaining(_filePath), _filePath);
+    final state = unit.unit.declarations
+        .whereType<ClassDeclaration>()
+        .firstWhere(
+          (declaration) => declaration.namePart.typeName.lexeme == name,
+        );
+    final (:moved, :edits) = _PureMethods(unit, state).plan(called);
+    if (moved.isEmpty) return moved;
+    if (!_baselineErrors.containsKey(unit.path)) {
+      _baselineErrors[unit.path] = (await _analysis.errorsIn(unit.path)).length;
+    }
+    _write(unit.path, TextOffsets.applyEdits(unit.content, edits));
+    _movedOut[name] = [...?_movedOut[name], ...moved];
+    await _analysis.applyChanges();
+    return moved;
+  }
+
   /// The unit of [library] holding the `part` directive naming the part
   /// file at [path], with it; null when none names it by a relative URI.
   static (ResolvedUnitResult, PartDirective)? _partDirectiveOf(
@@ -282,8 +391,9 @@ class _Planner {
       annotation.name.name.split('.').last == _forTesting;
 
   /// Makes [state], a widget's public `State` only [library] uses,
-  /// private: `_FooState` wherever the library names it, without the
-  /// `@visibleForTesting` it no longer needs.
+  /// private: `_FooState` wherever the library names it, its own doc
+  /// comment included, without the `@visibleForTesting` it no longer
+  /// needs, its widget's `createState` declaring its base, `State<Foo>`.
   Future<void> _privatize(
     ResolvedLibraryResult library,
     ClassDeclaration state,
@@ -297,13 +407,25 @@ class _Planner {
       );
     }
     final declared = state.namePart.typeName.offset;
+    final base = state.extendsClause!.superclass.toSource();
     for (final unit in library.units) {
+      // A widget's `createState` declares the `State`'s base, as Flutter's
+      // do, so the widget's API names no private type
+      final returnTypes = [
+        for (final method in _MethodFinder.of(unit.unit, _createState))
+          if (method.returnType case final NamedType type
+              when type.element == element)
+            type,
+      ];
       final offsets = {
         for (final use in NameUses.usesOf(element, unit, renaming: true))
-          use.offset,
+          if (!returnTypes.any(
+            (type) => type.offset <= use.offset && use.offset < type.end,
+          ))
+            use.offset,
         if (state.root == unit.unit) declared,
       };
-      if (offsets.isEmpty) continue;
+      if (offsets.isEmpty && returnTypes.isEmpty) continue;
       if (!_baselineErrors.containsKey(unit.path)) {
         _baselineErrors[unit.path] = (await _analysis.errorsIn(unit.path))
             .length;
@@ -312,6 +434,7 @@ class _Planner {
         unit.path,
         TextOffsets.applyEdits(unit.content, {
           for (final offset in offsets) offset: (name.length, privateName),
+          for (final type in returnTypes) type.offset: (type.length, base),
           // Private, it needs no mark of being public for tests
           if (state.root == unit.unit)
             for (final annotation in state.metadata)
@@ -320,6 +443,14 @@ class _Planner {
                   annotation.endToken.next!.offset - annotation.offset,
                   '',
                 ),
+          // Its own doc comment names it as it is now called
+          if (state.root == unit.unit)
+            for (final token
+                in state.documentationComment?.tokens ?? const <Token>[])
+              for (final match in RegExp(
+                '\\b${RegExp.escape(name)}\\b',
+              ).allMatches(token.lexeme))
+                token.offset + match.start: (name.length, privateName),
         }),
       );
     }
@@ -815,6 +946,19 @@ class _Planner {
       offset: offset,
       end: TextOffsets.lineEndAfter(content, declaration.end),
     );
+  }
+
+  /// [range], whole lines of [content], with the blank line after it too
+  /// when one is before it, so removing it leaves one blank line, not two.
+  static _Removal _tidied(String content, _Removal range) {
+    final blankBefore =
+        range.offset >= _blankLine &&
+        content[range.offset - 1] == '\n' &&
+        content[range.offset - _blankLine] == '\n';
+    final blankAfter = range.end < content.length && content[range.end] == '\n';
+    return blankBefore && blankAfter
+        ? (offset: range.offset, end: range.end + 1)
+        : range;
   }
 
   /// [node]'s whole line or lines, through the line break.

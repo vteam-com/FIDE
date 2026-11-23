@@ -9,8 +9,8 @@ import 'package:fide/models/widget_state_report.dart';
 /// The widget State check's report as the project's quality shows it: an
 /// issue listing every `State` out of place, which Fix States fixes, and
 /// one listing, as errors, every test line reaching into a `State`,
-/// explaining how to check the widget instead; and the quality-score
-/// points they cost.
+/// which Fix States removes, explaining how to check the widget instead;
+/// and the quality-score points they cost.
 extension WidgetStateIssues on WidgetStateReport {
   /// The kind of problem the `State`s' issue names.
   static const String title = 'Widget States';
@@ -35,9 +35,8 @@ extension WidgetStateIssues on WidgetStateReport {
       '`// ignore: fcheck_widget_state`, or end a `State`\'s line with it, '
       'to leave it as it is.';
 
-  /// Why a test reaching into a widget's `State` is wrong, and how to
-  /// check the widget instead, as Markdown, for the developer rewriting
-  /// the tests.
+  /// Why a test reaching into a widget's `State` is wrong, how to check
+  /// the widget instead, and what Fix States removes, as Markdown.
   static const String _testsGuidance =
       'A widget\'s `State` is private to its widget: nothing outside it, a '
       'test least of all, is meant to reach into it. A test doing so, '
@@ -52,11 +51,11 @@ extension WidgetStateIssues on WidgetStateReport {
       '(`onChanged: (value) => changed = value`);\n'
       '- acting as a user does: `tester.tap`, `tester.drag`, '
       '`tester.enterText`, then `tester.pump()`.\n\n'
-      'Keep every check: each `expect` on the `State` becomes an `expect` '
-      'of the same fact through the widget, not a bare `findsOneWidget`. '
       'A fact the widget never shows, such as a private field, is no fact '
-      'of the widget: drop the check, or have the widget show it. Once no '
-      'test reaches into a `State`, Fix States makes it private.';
+      'of the widget: its check goes. **Fix States** removes every '
+      'statement reaching into a `State`, with what only they used, a test '
+      'left empty and the imports no longer used, then makes the `State` '
+      'private; write the checks the widget calls for as you see fit.';
 
   /// The findings about the `State`s themselves.
   List<WidgetStateFinding> get _stateFindings => [
@@ -105,9 +104,12 @@ extension WidgetStateIssues on WidgetStateReport {
         guidance: _testsGuidance,
         rootPath: rootPath,
         findings: _qualityFindings(tests),
-        // No fix: code can't tell what a test should check instead, and
-        // the local model, asked to, swapped each check for a bare
-        // `findsOneWidget`, passing tests that check nothing
+        quickFixes: [
+          if (tests.any((finding) => finding.isFixableByCode))
+            QuickFix.fixStates,
+        ],
+        // Code removes them: the local model, asked to rewrite them,
+        // swapped each check for a bare `findsOneWidget`
         aiVerb: null,
       ),
   ];

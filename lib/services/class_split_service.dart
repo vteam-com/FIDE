@@ -35,6 +35,8 @@ class ClassSplitService {
       createdFiles: planned.createdFiles,
       gatheredStates: planned.gatheredStates,
       mergedFiles: planned.mergedFiles,
+      cleanedTests: planned.cleanedTests,
+      movedOutOfStates: planned.movedOutOfStates,
       privatizedStates: planned.privatizedStates,
     );
   }

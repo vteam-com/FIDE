@@ -1,10 +1,11 @@
 part of 'quick_fix_handler.dart';
 
-/// Runs [QuickFix.fixStates]: finds the widget `State`s out of place with
-/// [WidgetStateAnalyzer], then tidies each of their widgets' files with
-/// the class splitter, its `State`s only, one file after the other. A
-/// `State` in another library than its widget, or one that can't be moved
-/// safely, is left as it is, the summary saying why.
+/// Runs [QuickFix.fixStates]: finds the widget `State`s out of place, and
+/// the tests reaching into one, with [WidgetStateAnalyzer], then tidies
+/// each of their widgets' files with the class splitter, its `State`s
+/// only, one file after the other, the tests along. A `State` in another
+/// library than its widget, or one that can't be fixed safely, is left as
+/// it is, the summary saying why.
 class FixStatesHandler implements QuickFixHandler {
   /// Creates the handler finding the `State`s with [_analyzer], tidying
   /// them with [_splitter] and writing them with [_files].
@@ -20,13 +21,8 @@ class FixStatesHandler implements QuickFixHandler {
   Future<QuickFixOutcome?> run(QuickFixRequest request) async {
     final projectPath = request.projectPath;
     final analyzer = _analyzer;
-    // Tests reaching into a State are the AI's to rewrite
-    final findings = [
-      for (final finding in (await Isolate.run(
-        () => analyzer.analyze(projectPath),
-      )).findings)
-        if (!finding.isInTest) finding,
-    ];
+    final findings = (await Isolate.run(() => analyzer.analyze(projectPath)))
+        .findings;
     if (findings.isEmpty) return _nothingToDo('Every State is in place');
     final widgetFiles = {
       for (final finding in findings)
@@ -35,13 +31,14 @@ class FixStatesHandler implements QuickFixHandler {
     final splits = _SplitRun(_splitter, _files);
     splits.skipped.addAll([
       for (final finding in findings)
-        if (!finding.isFixableByCode)
+        if (!finding.isFixableByCode && !finding.isInTest)
           '${p.basename(finding.path)}: ${finding.state} is in another '
               'library than ${finding.widget}; move it by hand',
     ]);
     if (widgetFiles.isNotEmpty &&
         !await request.confirm(
-          'Fix the States of ${widgetFiles.length.count('widget file')}? '
+          'Fix the States of ${widgetFiles.length.count('widget file')}, '
+          'and the tests reaching into them? '
           '${QuickFix.fixStates.purpose.capitalized}.',
         )) {
       return null;
