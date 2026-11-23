@@ -56,7 +56,11 @@
   - every agent tool takes at least one required parameter: qwen3-coder can leave a call with none unclosed (`<function=…>` without `</function>`), which Ollama fails as "XML syntax error … unexpected EOF"
   - the routing above: a question gets read-only tools, quick fixes only when named
   - reference timings to stay at or under: "2+2=" answered in one step without tools, in ~4 s; a question needing one file read ~5 s; a rename in one file 6 steps, ~8 s; upgrading one package through `run_command` ~10 steps, ~12 s; a multi-file Fix Build of 10 errors ~20 steps, ~40 s; the step cap (`AppMetric.aiMaxToolRounds`) stays far above what a task takes
-  - the AI commit message reads a `CommitDigest` of the staged changes (files, documentation and declarations added, test names, then code), never the head of the diff, with the project's recent subjects as its style; re-measure it with `FIDE_AI_REPLAY=12 flutter test test/commit_message_replay_test.dart`, which replays recent commits on the local model: on qwen3-coder, 33% of the hand-written subject's words and its area named 7 times in 12, ~1.7 s each
+  - the AI commit message reads a `CommitDigest` of the staged changes (files, documentation and declarations added and removed, declarations renamed, code moved unchanged, tests added and removed, then the code left changed), never the head of the diff, with the project's recent subjects as its style
+    - code moved reads as moved, never as added: read as added, a State moved beside its widget made qwen3-coder write "Rectangle adjuster: Enable draggable corners…" for a refactor
+    - code decides from the recent subjects whether the message starts with an area and a colon (most of them do, or there are none) or with a verb, as a project without areas has; told to start with an area, the model does whatever the examples show
+    - tried and dropped: a word cap taken from the recent subjects, test code in the changes section (both slower, no better), an instruction that moved code is no feature (longer replies; the digest alone suffices)
+    - re-measure it with `FIDE_AI_REPLAY=12 flutter test test/commit_message_replay_test.dart`, which replays recent commits on the local model; `FIDE_AI_REPLAY_REPO=../mural` replays another project's, and `FIDE_AI_REPLAY_STAGED='<message written by hand>'` adds its staged change: on qwen3-coder, 34% of FIDE's hand-written subject's words, its area named 3 times in 12 (most recent areas are longer than the 40 characters the test reads), ~2.4 s each; 36–40% of mural's, ~1.7 s each
 
 # Workflow
 

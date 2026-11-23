@@ -50,4 +50,33 @@ void main() {
 
     expect(RegExp('- $example').allMatches(prompt), hasLength(1));
   });
+
+  group('the start of the message follows the recent messages', () {
+    const area = 'Start with the part of the app they change';
+    const verb = 'Start with a verb in the imperative';
+
+    test('an area and a colon when most of them start so', () {
+      final prompt = CommitMessageWriter.promptFor(
+        'diff',
+        examples: ['Git panel: one row per move', 'Editor: wrap lines', 'x'],
+      );
+
+      expect(prompt, contains(area));
+      expect(prompt, isNot(contains(verb)));
+    });
+
+    test('a verb when most of them have no area', () {
+      final prompt = CommitMessageWriter.promptFor(
+        'diff',
+        examples: ['Pin Flutter 3.50.0', 'Build the web app as Wasm', 'a: b'],
+      );
+
+      expect(prompt, contains(verb));
+      expect(prompt, isNot(contains(area)));
+    });
+
+    test('an area and a colon when there are none', () {
+      expect(CommitMessageWriter.promptFor('diff'), contains(area));
+    });
+  });
 }

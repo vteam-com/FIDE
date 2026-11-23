@@ -12,12 +12,15 @@ import 'package:http/http.dart' as http;
 /// replay, which needs the local Ollama model and takes minutes.
 final int? _count = int.tryParse(Platform.environment['FIDE_AI_REPLAY'] ?? '');
 
-/// The message recommended for the staged change, when one is staged: the
-/// File Layout review, written by hand.
-const String _stagedReference =
-    'Analyzer tab: File Layout review moves screens to lib/views, pure '
-    'widgets to lib/widgets and plain models to lib/models, rewriting every '
-    'import (Move / Move All)';
+/// The repository whose commits are replayed, from `FIDE_AI_REPLAY_REPO`:
+/// another project's, as `../mural`, whose messages have another style;
+/// this one's when unset.
+final String? _repo = Platform.environment['FIDE_AI_REPLAY_REPO'];
+
+/// The message written by hand for the change staged in [_repo], from
+/// `FIDE_AI_REPLAY_STAGED`; the staged change is replayed only with it.
+final String? _stagedReference =
+    Platform.environment['FIDE_AI_REPLAY_STAGED'];
 
 /// Words too common to tell two messages apart.
 const Set<String> _stopWords = {
@@ -55,9 +58,9 @@ Reply with the message only: no quotes, no prefix, no explanation.
 
 ${changes.truncated(AppMetric.aiCommitDiffChars)}''';
 
-/// Runs git with [args] in this repository; its output.
+/// Runs git with [args] in [_repo]; its output.
 String _git(List<String> args) {
-  final result = Process.runSync('git', args);
+  final result = Process.runSync('git', args, workingDirectory: _repo);
   if (result.exitCode != 0) throw StateError('git $args: ${result.stderr}');
   return result.stdout.toString();
 }
@@ -117,7 +120,7 @@ void main() {
     () async {
       final model = OllamaClient(http.Client());
       final cases = <_Case>[
-        if (_git(['diff', '--cached', '--name-only']).trim().isNotEmpty)
+        if (_stagedReference case final reference?)
           (
             name: 'staged',
             changes:
@@ -128,7 +131,7 @@ void main() {
               '-${AppMetric.aiCommitStyleExamples}',
               '--format=%s',
             ]).trim().split('\n'),
-            reference: _stagedReference,
+            reference: reference,
           ),
         for (final sha
             in _git([
