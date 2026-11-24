@@ -659,6 +659,16 @@ void main() {
     expect(model.chats.last.last['content'], contains('Call no more tools'));
   });
 
+  test('an edit that changed no file says so under its claim', () async {
+    final model = FakeChatModel(
+      chatReplies: [answer('Fixed the typo in lib/main.dart.')],
+    );
+
+    final summary = await agentOf(model).edit('fix the typo', const []);
+
+    expect(summary, 'Fixed the typo in lib/main.dart.\n\nNo file was changed.');
+  });
+
   test('caps the replies of questions, not of edits', () async {
     final model = FakeChatModel(chatReplies: [answer('4'), answer('Done.')]);
 

@@ -40,6 +40,13 @@ class CodeEditAgent {
     r'(?<path>[^\s:]+\.dart):(?<line>\d+)',
   );
 
+  /// Whether a skill that changes the project succeeded since [edit]
+  /// started.
+  bool _wroteFiles = false;
+
+  /// Appended to an edit's reply when no file changed, whatever it claims.
+  static const String noFileChangedNote = 'No file was changed.';
+
   /// Stops the agent's model requests and skills; see [cancel].
   final AiCancelToken _cancelToken;
 
@@ -500,7 +507,8 @@ class CodeEditAgent {
   ///
   /// Throws an [AiServiceException] when the model can't be reached, and
   /// an [AiCancelledException] after [cancel].
-  Future<String> edit(String request, List<Map<String, String>> history) {
+  Future<String> edit(String request, List<Map<String, String>> history) async {
+    _wroteFiles = false;
     final fixes = [
       for (final fix in QuickFix.values)
         if (fix.isNamedIn(request)) fix,
@@ -508,7 +516,7 @@ class CodeEditAgent {
     final skills = skillsFor(edits: true, fixes: fixes);
     final offersFixes = skills.any((skill) => skill.name == _quickFixName);
     final renames = skills.any((skill) => skill.name == _renameName);
-    return _converse(
+    final reply = await _converse(
       'You are a Flutter/Dart developer working on this project with the '
           'tools you are given. Make the change the user asks for in the '
           'files yourself: never reply with code for the user to apply. '
@@ -525,6 +533,8 @@ class CodeEditAgent {
           'be incomplete.',
       skills: skills,
     );
+    // The model's summary can claim changes it never made: say so
+    return _wroteFiles ? reply : '$reply\n\n$noFileChangedNote';
   }
 
   /// Asks the model to fix the build that failed with [errors], with the
@@ -629,6 +639,7 @@ class CodeEditAgent {
           result = await _runSkill(skills, name, arguments);
           if (skill != null && key != null) {
             if (skill.changesProject) {
+              if (!result.startsWith('Error:')) _wroteFiles = true;
               unchanged.clear();
             } else {
               unchanged[key] = result;
