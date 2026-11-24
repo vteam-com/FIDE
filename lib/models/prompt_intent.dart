@@ -109,6 +109,18 @@ class PromptIntent {
     return _changeVerbs.contains(_firstWord.firstMatch(text)?.group(0));
   }
 
+  /// Words asking for every match, not one: "all", "every", "each", "any",
+  /// "list" or "everything".
+  static final RegExp _allMatches = RegExp(
+    r'\b(all|every|each|any|list|everything)\b',
+    caseSensitive: false,
+  );
+
+  /// Whether [prompt] asks for every match rather than one, so an answer
+  /// that stopped early must say what it may have missed; "find a typo"
+  /// asks for one, and stopping once it's found is the job done.
+  static bool asksForAll(String prompt) => _allMatches.hasMatch(prompt);
+
   /// Whether [prompt] points at the file open in the editor, as "this
   /// file" or "here" do.
   static bool refersToOpenFile(String prompt) => _openFile.hasMatch(prompt);

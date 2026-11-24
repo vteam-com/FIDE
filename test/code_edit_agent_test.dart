@@ -649,7 +649,7 @@ void main() {
       ],
     );
 
-    final reply = await agentOf(model).answer('find a typo', const []);
+    final reply = await agentOf(model).answer('find all typos', const []);
 
     // Asked once more, offered no tool, after the repeated reads, and
     // told the user it covers only what it read
@@ -657,6 +657,21 @@ void main() {
     expect(reply, endsWith('may miss other problems.)'));
     expect(model.toolNames.last, isEmpty);
     expect(model.chats.last.last['content'], contains('Call no more tools'));
+  });
+
+  test('a question for one match stopped early gets no note', () async {
+    final model = FakeChatModel(
+      chatReplies: [
+        for (var i = 0; i < AppMetric.aiMaxAnswerRounds; i++)
+          toolCall('search', {'text': 'step $i'}),
+        answer('The typo is in lib/a.dart.'),
+      ],
+    );
+
+    final reply = await agentOf(model)
+        .answer('find a typo in this project', const []);
+
+    expect(reply, 'The typo is in lib/a.dart.');
   });
 
   test('an edit that changed no file says so under its claim', () async {
@@ -692,7 +707,7 @@ void main() {
       ],
     );
 
-    final reply = await agentOf(model).answer('find a typo', const []);
+    final reply = await agentOf(model).answer('find all typos', const []);
 
     expect(reply, startsWith('print(1) lacks a semicolon.\n\n'));
     expect(model.toolNames.last, isEmpty);
@@ -708,7 +723,7 @@ void main() {
       ],
     );
 
-    final reply = await agentOf(model).answer('find a typo', const []);
+    final reply = await agentOf(model).answer('find all typos', const []);
 
     expect(model.chats, hasLength(AppMetric.aiMaxAnswerRounds + 1));
     expect(reply, startsWith('Stopped after'));

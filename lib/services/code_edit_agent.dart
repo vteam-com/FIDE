@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/model_message.dart';
+import 'package:fide/models/prompt_intent.dart';
 import 'package:fide/models/project_command.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/text_offsets.dart';
@@ -486,6 +487,8 @@ class CodeEditAgent {
         maxTokens: AppMetric.aiAnswerMaxTokens,
         // A local model can keep reading, or read one file again and
         // again, after it found the answer
+        // Only a question asking for every match can miss some
+        withNote: PromptIntent.asksForAll(question),
         lastAsk:
             'You are out of steps: answer the question now from the files '
             'you have read. Call no more tools, and claim nothing about '
@@ -582,6 +585,7 @@ class CodeEditAgent {
     bool think = false,
     int? maxTokens,
     String? lastAsk,
+    bool withNote = false,
   }) async {
     final tools = [for (final skill in skills) skill.toTool()];
     final messages = <Map<String, dynamic>>[
@@ -658,7 +662,8 @@ class CodeEditAgent {
       think: think,
       maxTokens: maxTokens,
     );
-    return reply == null ? stopped : '$reply\n\n$_partialAnswerNote';
+    if (reply == null) return stopped;
+    return withNote ? '$reply\n\n$_partialAnswerNote' : reply;
   }
 
   /// The message answering [call] of the tool [name] with [result].
