@@ -97,6 +97,10 @@ class AppMetric {
   /// text until stopped by hand, as it did in the AI panel.
   static const int aiEditMaxTokens = 16384;
 
+  /// Longest reply still taken for a plan of what the AI will do, not an
+  /// answer, in characters.
+  static const int aiPlanMaxChars = 300;
+
   /// Memory of the smallest computer a 9B local model runs well on, in
   /// GB: it takes about 10 with [aiContextTokens] of context.
   static const int aiSmallModelMinMemoryGb = 16;

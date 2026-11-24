@@ -654,9 +654,57 @@ void main() {
     // Asked once more, offered no tool, after the repeated reads, and
     // told the user it covers only what it read
     expect(reply, startsWith('print(1) lacks a semicolon.\n\n'));
-    expect(reply, endsWith('may miss other problems.)'));
+    expect(reply, contains('may miss other problems.)'));
     expect(model.toolNames.last, isEmpty);
     expect(model.chats.last.last['content'], contains('Call no more tools'));
+  });
+
+  test('a plan given as the answer is reported, not shown', () async {
+    final model = FakeChatModel(
+      chatReplies: [
+        answer('I need to find a typo. Let me search for it.'),
+        answer('I haven\'t found a typo yet. Let me check a few more files.'),
+      ],
+    );
+
+    final first = await agentOf(model).answer('find a typo', const []);
+    final second = await agentOf(model).answer('find a typo', const []);
+
+    expect(first, startsWith('No answer: the AI stopped before finding one'));
+    expect(second, startsWith('No answer: the AI stopped before finding one'));
+  });
+
+  test('an answer says how many files it read', () async {
+    final model = FakeChatModel(
+      chatReplies: [
+        toolCall('read_file', {'path': 'lib/main.dart'}),
+        toolCall('read_file', {'path': 'lib/main.dart'}),
+        answer('It prints 1.'),
+      ],
+    );
+
+    final reply = await agentOf(model)
+        .answer('what does main print?', const []);
+
+    expect(reply, 'It prints 1.\n\n(Read 1 file to answer.)');
+  });
+
+  test('repeated calls do not use up the answer rounds', () async {
+    final model = FakeChatModel(
+      chatReplies: [
+        for (var i = 0; i < AppMetric.aiMaxAnswerRounds - 2; i++)
+          toolCall('search', {'text': 'step $i'}),
+        toolCall('read_file', {'path': 'lib/main.dart'}),
+        toolCall('read_file', {'path': 'lib/main.dart'}),
+        toolCall('read_file', {'path': 'lib/main.dart'}),
+        answer('It prints 1.'),
+      ],
+    );
+
+    final reply = await agentOf(model)
+        .answer('what does main print?', const []);
+
+    expect(reply, startsWith('It prints 1.'));
   });
 
   test('a question for one match stopped early gets no note', () async {

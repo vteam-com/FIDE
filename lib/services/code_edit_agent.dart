@@ -473,27 +473,60 @@ class CodeEditAgent {
   ///
   /// Throws an [AiServiceException] when the model can't be reached, and
   /// an [AiCancelledException] after [cancel].
-  Future<String> answer(String question, List<Map<String, String>> history) =>
-      _converse(
-        'You are a Flutter/Dart expert answering questions. Answer directly '
-            'and concisely. Only when the question is about this project\'s '
-            'code, look it up first with the tools you are given, which read '
-            'it; never change files. Paths are relative to the project root.',
-        [...history, ModelMessage.user(question)],
-        'Stopped after ${AppMetric.aiMaxAnswerRounds} steps without an '
-            'answer; ask a narrower question.',
-        skills: skillsFor(edits: false),
-        maxRounds: AppMetric.aiMaxAnswerRounds,
-        maxTokens: AppMetric.aiAnswerMaxTokens,
-        // A local model can keep reading, or read one file again and
-        // again, after it found the answer
-        // Only a question asking for every match can miss some
-        withNote: PromptIntent.asksForAll(question),
-        lastAsk:
-            'You are out of steps: answer the question now from the files '
-            'you have read. Call no more tools, and claim nothing about '
-            'files you did not read.',
-      );
+  Future<String> answer(
+    String question,
+    List<Map<String, String>> history,
+  ) async {
+    _filesRead.clear();
+    final reply = await _converse(
+      'You are a Flutter/Dart expert answering questions. Answer directly '
+          'and concisely. Only when the question is about this project\'s '
+          'code, look it up first with the tools you are given, which read '
+          'it; never change files. For a question about the whole project, '
+          'list its folders first, then search for words taken from the '
+          'question or from the names you listed, never words you guess. '
+          'Finish with the answer itself, never a plan or what you will do '
+          'next. Paths are relative to the project root.',
+      [...history, ModelMessage.user(question)],
+      'Stopped after ${AppMetric.aiMaxAnswerRounds} steps without an '
+          'answer; ask a narrower question.',
+      skills: skillsFor(edits: false),
+      maxRounds: AppMetric.aiMaxAnswerRounds,
+      maxTokens: AppMetric.aiAnswerMaxTokens,
+      // A local model can keep reading, or read one file again and
+      // again, after it found the answer
+      // Only a question asking for every match can miss some
+      withNote: PromptIntent.asksForAll(question),
+      lastAsk:
+          'You are out of steps: answer the question now from the files '
+          'you have read. Call no more tools, and claim nothing about '
+          'files you did not read.',
+    );
+    if (_isUnfinished(reply)) {
+      return 'No answer: the AI stopped before finding one. Ask again, or '
+          'narrow the question.';
+    }
+    final read = _filesRead.length;
+    if (read == 0) return reply;
+    return '$reply\n\n(Read $read ${read == 1 ? 'file' : 'files'} to answer.)';
+  }
+
+  /// Whether [reply] is a plan of what the AI will do rather than an answer:
+  /// short, and either ending in a colon or saying what it will do next,
+  /// as "Let me" or "I need to" do. A plan shown as the answer leaves the
+  /// user with no result.
+  static bool _isUnfinished(String reply) {
+    final text = reply.trim();
+    if (text.length > AppMetric.aiPlanMaxChars) return false;
+    return text.endsWith(':') ||
+        RegExp(
+          r"\b(let me|i need to|i'll|i will|i have to)\b",
+          caseSensitive: false,
+        ).hasMatch(text);
+  }
+
+  /// Files the question's answer read, by path, since [answer] started.
+  final Set<String> _filesRead = {};
 
   /// Ends an answer the model gave once stopped, as it covers only what
   /// it read: asked for a typo, MiMo wrote "I checked every file in the
@@ -600,6 +633,10 @@ class CodeEditAgent {
     rounds:
     for (var round = 0; round < maxRounds; round++) {
       _cancelToken.throwIfCancelled();
+      // Whether this round read or changed anything new; a round of only
+      // repeated calls doesn't count against maxRounds, as those are
+      // capped by AppMetric.aiMaxRepeatedCalls
+      var fresh = false;
       // Dropped outputs may be read again, once more, without repeating
       if (_fitBudget(messages, tools)) unchanged.clear();
       final reply = await _model.chat(
@@ -618,6 +655,8 @@ class CodeEditAgent {
       for (final call in calls) {
         _cancelToken.throwIfCancelled();
         final function = call is Map ? call[ModelMessage.functionKey] : null;
+        // A malformed call counts as a round, so the loop still ends
+        fresh = true;
         if (function is! Map) continue;
         final name = function[ModelMessage.nameKey]?.toString() ?? '';
         final given = function[ModelMessage.argumentsKey];
@@ -642,6 +681,8 @@ class CodeEditAgent {
               'nothing changed since. Act on it instead of calling it '
               'again, or reply with your summary.)';
         } else {
+          fresh = true;
+          if (name == 'read_file') _filesRead.add(arguments['path'].toString());
           result = await _runSkill(skills, name, arguments);
           if (skill != null && key != null) {
             if (skill.changesProject) {
@@ -654,6 +695,7 @@ class CodeEditAgent {
         }
         messages.add(_toolResult(call, name, result));
       }
+      if (!fresh) round--;
     }
     if (lastAsk == null) return stopped;
     final reply = await _replyWithoutTools(
