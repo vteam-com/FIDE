@@ -45,6 +45,9 @@ class FakeChatModel implements ChatModel {
   /// The names of the tools each [chat] request offered.
   final List<List<String>> toolNames = [];
 
+  /// The longest reply each [chat] request allowed, null for no cap.
+  final List<int?> maxTokens = [];
+
   @override
   Future<void> warmUp() async => warmUps++;
 
@@ -72,8 +75,10 @@ class FakeChatModel implements ChatModel {
     bool think = false,
     AiCancelToken? cancel,
     ReplyText? onText,
+    int? maxTokens,
   }) async {
     cancel?.throwIfCancelled();
+    this.maxTokens.add(maxTokens);
     chats.add([
       for (final message in messages) {...message},
     ]);

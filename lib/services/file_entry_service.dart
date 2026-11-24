@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+
 /// Creates, renames and deletes files and folders for the project trees.
 ///
 /// Kept apart from the tree panels' dialogs so the file-system side can be
@@ -38,12 +40,14 @@ class FileEntryService {
     return FileSystemEntity.isDirectorySync(folderPath);
   }
 
-  /// Moves the file or folder at [entryPath] to [newPath].
+  /// Moves the file or folder at [entryPath] to [newPath], creating any
+  /// missing parents of [newPath].
   Future<void> rename(
     String entryPath,
     String newPath, {
     required bool isDirectory,
   }) async {
+    await Directory(p.dirname(newPath)).create(recursive: true);
     if (isDirectory) {
       await Directory(entryPath).rename(newPath);
     } else {

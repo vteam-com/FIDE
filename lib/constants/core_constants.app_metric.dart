@@ -84,6 +84,13 @@ class AppMetric {
   /// times over, and reloads the model whenever the size changes.
   static const int aiContextTokens = 32768;
 
+  /// Longest reply of a request answering a question, in tokens, about
+  /// 30 s of writing on MiMo: room for an explanation with code, while a
+  /// model looping on one line stops instead of running until the
+  /// request times out, as MiMo did, listing "may not properly handle
+  /// edge cases" 294 times in 180 s.
+  static const int aiAnswerMaxTokens = 2048;
+
   /// Memory of the smallest computer a 9B local model runs well on, in
   /// GB: it takes about 10 with [aiContextTokens] of context.
   static const int aiSmallModelMinMemoryGb = 16;

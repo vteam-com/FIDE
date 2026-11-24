@@ -53,12 +53,15 @@ abstract interface class ChatModel {
   /// and returns the model's reply message, whose `tool_calls` list the
   /// calls it wants run; [think] lets a thinking model reason first,
   /// [cancel] stops the request and [onText] receives the reply's text as
-  /// it streams in.
+  /// it streams in. [maxTokens], when given, ends the reply at that many
+  /// tokens, as a local model can loop on one line until the request
+  /// times out.
   Future<Map<String, dynamic>> chat(
     List<Map<String, dynamic>> messages,
     List<Map<String, dynamic>> tools, {
     bool think = false,
     AiCancelToken? cancel,
     ReplyText? onText,
+    int? maxTokens,
   });
 }

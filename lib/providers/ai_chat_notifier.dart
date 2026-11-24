@@ -15,6 +15,7 @@ import 'package:fide/models/status_tone.dart';
 import 'package:fide/models/text_truncation.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/providers/command_runner.dart';
+import 'package:fide/providers/project_rename.dart';
 import 'package:fide/providers/service_providers.dart';
 import 'package:fide/services/ai_assistant.dart';
 import 'package:fide/services/chat_model.dart';
@@ -45,6 +46,12 @@ final aiChatProvider = StateNotifierProvider<AiChatNotifier, AiChat>(
     commands: ref.watch(projectCommandServiceProvider),
     reader: ref.watch(fileContentReaderProvider),
     documents: ref.watch(openDocumentsProvider.notifier),
+    rename: (from, to) async => (await renameInProject(
+      ref.read,
+      from,
+      to,
+      isDirectory: ref.read(fileEntryServiceProvider).folderExists(from),
+    )).keys,
     projectPath: () => ref.read(currentProjectPathProvider),
     selectedFile: () => ref.read(selectedFileProvider),
     platform: () => ref.read(selectedPlatformProvider),
@@ -65,7 +72,8 @@ class AiChatNotifier extends StateNotifier<AiChat> {
   /// of the current files) or through an agent that edits the
   /// project [_projectPath] gives, when the model can call tools; the
   /// agent reads files with [_reader], reloads the ones it writes in
-  /// [_documents], runs [_quickFixes] and the commands it asks for with
+  /// [_documents], renames files with [_rename], as the project tree
+  /// does, runs [_quickFixes] and the commands it asks for with
   /// [_commands], and checks its work with [_analyzer],
   /// and when fixing a build, with [_builds] for the [_platform] selected,
   /// keeping [_buildErrors] up to date through [_onBuildErrors];
@@ -81,6 +89,7 @@ class AiChatNotifier extends StateNotifier<AiChat> {
     required this._commands,
     required this._reader,
     required this._documents,
+    required this._rename,
     required this._projectPath,
     required this._selectedFile,
     required this._platform,
@@ -122,6 +131,10 @@ class AiChatNotifier extends StateNotifier<AiChat> {
   final FlutterPlatform Function() _platform;
 
   final String? Function() _projectPath;
+
+  /// Renames the file or folder at the first absolute path to the second,
+  /// imports following it, and lists the files it wrote.
+  final Future<Iterable<String>> Function(String from, String to) _rename;
 
   final QuickFixRunner _quickFixes;
 
@@ -409,6 +422,8 @@ class AiChatNotifier extends StateNotifier<AiChat> {
           }
           return outcome.summary;
         },
+        // The project tree's rename, which reloads what it writes
+        renameFile: _rename,
         checkBuild: () => _compileErrors(
           projectPath,
           platform,

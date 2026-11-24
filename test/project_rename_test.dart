@@ -62,7 +62,7 @@ void main() {
     );
     await tester.runAsync(
       () => renameInProject(
-        widgetRef,
+        widgetRef.read,
         p.join(project.path, from),
         p.join(project.path, to),
         isDirectory: isDirectory,
@@ -106,5 +106,41 @@ void main() {
     expect(read('lib/views/home.dart'), 'class Home {}\n');
     expect(read('lib/views/notes.txt'), 'notes\n');
     expect(read('lib/main.dart'), "import 'package:demo/views/home.dart';\n");
+  });
+
+  test('renaming onto an existing file refuses, changing nothing', () async {
+    final score = write('lib/score.dart', 'class Score {}\n');
+    final points = write('lib/points.dart', 'class Points {}\n');
+
+    await expectLater(
+      renameInProject(container.read, score, points, isDirectory: false),
+      throwsA(
+        isA<StateError>().having(
+          (error) => error.message,
+          'message',
+          'lib/points.dart already exists',
+        ),
+      ),
+    );
+    expect(read('lib/score.dart'), 'class Score {}\n');
+    expect(read('lib/points.dart'), 'class Points {}\n');
+  });
+
+  test('moving a Dart file into a new folder creates it, and lists the '
+      'files written', () async {
+    final score = write('lib/score.dart', 'class Score {}\n');
+    final main = write('lib/main.dart', "import 'score.dart';\n");
+    final moved = p.join(project.path, 'lib/models/score.dart');
+
+    final written = await renameInProject(
+      container.read,
+      score,
+      moved,
+      isDirectory: false,
+    );
+
+    expect(read('lib/models/score.dart'), 'class Score {}\n');
+    expect(read('lib/main.dart'), "import 'models/score.dart';\n");
+    expect(written.keys, unorderedEquals([moved, main]));
   });
 }

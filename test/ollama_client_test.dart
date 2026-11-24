@@ -231,6 +231,24 @@ void main() {
     }, hasLength(1));
   });
 
+  test('a chat reply is capped only when asked', () async {
+    final bodies = <Map<String, dynamic>>[];
+    final client = clientWithModels(
+      [_preferred],
+      {_preferred},
+      [],
+      bodies: bodies,
+    );
+
+    await client.chat([], [], maxTokens: AppMetric.aiAnswerMaxTokens);
+    await client.chat([], []);
+
+    expect(
+      [for (final body in bodies) (body['options'] as Map)['num_predict']],
+      [AppMetric.aiAnswerMaxTokens, null],
+    );
+  });
+
   test('models without thinking get no think option', () async {
     final bodies = <Map<String, dynamic>>[];
     final client = clientWithModels(

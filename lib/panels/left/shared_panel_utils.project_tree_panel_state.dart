@@ -17,7 +17,7 @@ mixin ProjectTreePanelState<T extends ConsumerStatefulWidget>
   late final FileOperations _fileOperations = FileOperations(
     ref.read(fileEntryServiceProvider),
     (from, to, {required isDirectory}) =>
-        renameInProject(ref, from, to, isDirectory: isDirectory),
+        renameInProject(ref.read, from, to, isDirectory: isDirectory),
   );
 
   /// Follows the loaded project, rebuilding when its tree changes in

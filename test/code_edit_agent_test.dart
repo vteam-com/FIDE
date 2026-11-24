@@ -422,7 +422,8 @@ void main() {
     expect(results[3], 'Error: .. is outside the project');
   });
 
-  test('offers run_command only for edits, when the caller runs it', () {
+  test('offers run_command and rename_file only for edits, when the caller '
+      'runs them', () {
     List<String> names(CodeEditAgent agent, {required bool edits}) => [
       for (final skill in agent.skillsFor(edits: edits)) skill.name,
     ];
@@ -434,16 +435,142 @@ void main() {
         onFileWritten: (_) async {},
         checkBuild: () async => '',
         runCommand: (command, _) async => command.line,
+        renameFile: (_, to) async => [to],
+      ),
+    );
+    const callerRun = ['run_command', 'rename_file'];
+
+    expect(names(running, edits: true), containsAll(callerRun));
+    // Answering a question only reads
+    for (final name in callerRun) {
+      expect(names(running, edits: false), isNot(contains(name)));
+      expect(
+        names(agentOf(FakeChatModel()), edits: true),
+        isNot(contains(name)),
+      );
+    }
+  });
+
+  test('a file written as a copy of another asks for rename_file', () async {
+    const code =
+        "import 'package:flutter/widgets.dart';\n\n"
+        'Widget adaptiveLandscape() => const SizedBox();\n';
+    store.files['lib/widgets/adaptive_landsacpe.dart'] = code;
+    final model = FakeChatModel(
+      chatReplies: [
+        for (final path in [
+          'lib/widgets/adaptive_landscape.dart',
+          'lib/widgets/adaptive_landsacpe.dart',
+        ])
+          toolCall('write_file', {'path': path, 'content': code}),
+        answer('Done.'),
+      ],
+    );
+    final agent = CodeEditAgent(
+      model,
+      files: store,
+      hooks: CodeEditHooks(
+        onStep: (_) {},
+        onFileWritten: (path) async => written.add(path),
+        checkBuild: () async => '',
+        renameFile: (_, to) async => [to],
       ),
     );
 
-    expect(names(running, edits: true), contains('run_command'));
-    // Answering a question only reads
-    expect(names(running, edits: false), isNot(contains('run_command')));
+    await agent.edit('fix the typo in its name', const []);
+
+    final results = [
+      for (final result in toolResults(model)) result['content'] as String,
+    ];
     expect(
-      names(agentOf(FakeChatModel()), edits: true),
-      isNot(contains('run_command')),
+      results[0],
+      'Error: lib/widgets/adaptive_landscape.dart would be a copy of '
+      'lib/widgets/adaptive_landsacpe.dart: call rename_file to rename or '
+      'move it.',
     );
+    // Writing a file over itself is no copy
+    expect(results[1], startsWith('Saved'));
+    expect(store.files, isNot(contains('lib/widgets/adaptive_landscape.dart')));
+  });
+
+  test('renames files through rename_file, imports following them', () async {
+    const root = _MemoryFileStore.rootPath;
+    final renamed = <(String, String)>[];
+    final steps = <String>[];
+    final model = FakeChatModel(
+      chatReplies: [
+        toolCall('rename_file', {
+          'path': 'lib/widgets/adaptive_landsacpe.dart',
+          'new_path': 'lib/widgets/adaptive_landscape.dart',
+        }),
+        toolCall('rename_file', {
+          'path': 'assets/logo.png',
+          'new_path': 'assets/brand/logo.png',
+        }),
+        toolCall('rename_file', {
+          'path': 'lib/main.dart',
+          'new_path': 'lib/app.dart',
+        }),
+        answer('Renamed adaptive_landsacpe.dart.'),
+      ],
+    );
+    final agent = CodeEditAgent(
+      model,
+      files: store,
+      hooks: CodeEditHooks(
+        onStep: steps.add,
+        onFileWritten: (_) async {},
+        checkBuild: () async => '',
+        renameFile: (from, to) async {
+          if (p.basename(to) == 'app.dart') {
+            throw StateError('lib/app.dart already exists');
+          }
+          renamed.add((from, to));
+          return [
+            if (p.extension(to) == '.dart') ...[
+              to,
+              '$root/lib/screens/editor.dart',
+              '$root/test/widgets_test.dart',
+            ],
+          ];
+        },
+      ),
+    );
+
+    final summary = await agent.edit(
+      'fix the typo in that file name',
+      const [],
+    );
+
+    expect(summary, 'Renamed adaptive_landsacpe.dart.');
+    expect(renamed, [
+      (
+        '$root/lib/widgets/adaptive_landsacpe.dart',
+        '$root/lib/widgets/adaptive_landscape.dart',
+      ),
+      ('$root/assets/logo.png', '$root/assets/brand/logo.png'),
+    ]);
+    expect(
+      steps.first,
+      '🏷️ rename_file lib/widgets/adaptive_landsacpe.dart → '
+      'lib/widgets/adaptive_landscape.dart',
+    );
+    final results = [
+      for (final result in toolResults(model)) result['content'] as String,
+    ];
+    expect(
+      results[0],
+      'Renamed lib/widgets/adaptive_landsacpe.dart to '
+      'lib/widgets/adaptive_landscape.dart, and pointed the imports of 2 '
+      'other files at it.',
+    );
+    expect(
+      results[1],
+      'Renamed assets/logo.png to assets/brand/logo.png; no other file '
+      'imports it.',
+    );
+    // A name taken renames nothing, and the model is told
+    expect(results[2], 'Error: lib/app.dart already exists');
   });
 
   test('offers a whole-project fix only when the request names it', () async {
@@ -524,10 +651,39 @@ void main() {
 
     final reply = await agentOf(model).answer('find a typo', const []);
 
-    // Asked once more, offered no tool, after the repeated reads
-    expect(reply, 'print(1) lacks a semicolon.');
+    // Asked once more, offered no tool, after the repeated reads, and
+    // told the user it covers only what it read
+    expect(reply, startsWith('print(1) lacks a semicolon.\n\n'));
+    expect(reply, endsWith('covers only the files the AI read.)'));
     expect(model.toolNames.last, isEmpty);
     expect(model.chats.last.last['content'], contains('Call no more tools'));
+  });
+
+  test('caps the replies of questions, not of edits', () async {
+    final model = FakeChatModel(chatReplies: [answer('4'), answer('Done.')]);
+
+    await agentOf(model).answer('2+2=', const []);
+    await agentOf(model).edit('fix it', const []);
+
+    // An edit may write a whole file
+    expect(model.maxTokens, [AppMetric.aiAnswerMaxTokens, null]);
+  });
+
+  test('a last answer that is only a call is asked for again', () async {
+    final model = FakeChatModel(
+      chatReplies: [
+        for (var i = 0; i <= AppMetric.aiMaxRepeatedCalls; i++)
+          toolCall('read_file', {'path': 'lib/main.dart'}),
+        toolCall('read_file', {'path': 'lib/app.dart'}),
+        answer('print(1) lacks a semicolon.'),
+      ],
+    );
+
+    final reply = await agentOf(model).answer('find a typo', const []);
+
+    expect(reply, startsWith('print(1) lacks a semicolon.\n\n'));
+    expect(model.toolNames.last, isEmpty);
+    expect(model.chats.last.last['content'], contains('was a tool call'));
   });
 
   test('a question past its steps is answered, else stopped', () async {

@@ -1,12 +1,16 @@
 import 'dart:io';
 
 import 'package:fide/models/local_model.dart';
+import 'package:fide/models/model_message.dart';
 import 'package:fide/models/status_tone.dart';
+import 'package:fide/providers/app_providers.dart';
+import 'package:fide/providers/project_rename.dart';
 import 'package:fide/services/code_edit_agent.dart';
 import 'package:fide/services/dart_analyzer.dart';
 import 'package:fide/services/ollama_client.dart';
 import 'package:fide/services/process_runner.dart';
 import 'package:fide/services/project_file_store.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
@@ -173,6 +177,12 @@ const Map<String, List<(String, String)>> _breakage = {
   ],
 };
 
+/// ProductTile's file, which the renameFile task misspells.
+const String _tilePath = 'lib/widgets/product_tile.dart';
+
+/// [_tilePath] misspelled, as the renameFile task names it.
+const String _misspeltTilePath = 'lib/widgets/prodcut_tile.dart';
+
 /// What a task's run left: the agent's reply and the project it changed.
 typedef _Outcome = ({String reply, String root, List<String> errors});
 
@@ -239,6 +249,41 @@ final List<_Task> _tasks = [
       final code = _read(outcome.root, 'lib/screens/home_screen.dart');
       if (RegExp(r'_addSample\b').hasMatch(code)) return '_addSample left';
       if (!code.contains('_addSampleProduct')) return 'no _addSampleProduct';
+      return outcome.errors.isEmpty ? null : outcome.errors.join('; ');
+    },
+  ),
+  (
+    name: 'renameFile',
+    project: null,
+    run: (agent, root) {
+      File(p.join(root, _tilePath)).renameSync(p.join(root, _misspeltTilePath));
+      final home = File(p.join(root, 'lib/screens/home_screen.dart'));
+      home.writeAsStringSync(
+        home.readAsStringSync().replaceFirst(
+          p.posix.basename(_tilePath),
+          p.posix.basename(_misspeltTilePath),
+        ),
+      );
+      // As the user asked after the agent found the typo
+      return agent.edit('fix it', [
+        ModelMessage.user('find one typo in a file name'),
+        ModelMessage.of(
+          ModelMessage.assistantRole,
+          'The file $_misspeltTilePath is misspelled: it should be '
+          '$_tilePath.',
+        ),
+      ]);
+    },
+    check: (outcome) {
+      if (!File(p.join(outcome.root, _tilePath)).existsSync()) {
+        return 'no $_tilePath';
+      }
+      if (File(p.join(outcome.root, _misspeltTilePath)).existsSync()) {
+        return '$_misspeltTilePath left';
+      }
+      if (!_read(outcome.root, _tilePath).contains('class ProductTile ')) {
+        return 'ProductTile changed';
+      }
       return outcome.errors.isEmpty ? null : outcome.errors.join('; ');
     },
   ),
@@ -360,6 +405,9 @@ void main() {
           final root = Directory.systemTemp.createTempSync('fide_bench_run');
           _copy(base.path, root.path);
           var steps = 0;
+          // The AI panel's rename, the project tree's
+          final container = ProviderContainer();
+          container.read(currentProjectPathProvider.notifier).state = root.path;
           final agent = CodeEditAgent(
             model,
             files: ProjectFileStore(task.project ?? root.path),
@@ -367,6 +415,12 @@ void main() {
               onStep: (_) => steps++,
               onFileWritten: (_) async {},
               checkBuild: () async => (await _errorsOf(root.path)).join('\n'),
+              renameFile: (from, to) async => (await renameInProject(
+                container.read,
+                from,
+                to,
+                isDirectory: FileSystemEntity.isDirectorySync(from),
+              )).keys,
             ),
           );
           final watch = Stopwatch()..start();
@@ -394,6 +448,7 @@ void main() {
               took: watch.elapsed,
             ));
           } finally {
+            container.dispose();
             root.deleteSync(recursive: true);
           }
           print(

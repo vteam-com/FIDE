@@ -32,8 +32,9 @@ class AiSkill {
   final bool usesArguments;
 
   /// Runs the skill with the model's arguments and returns its result for
-  /// the model. Throws a [FormatException] or [FileSystemException] the
-  /// agent reports back to the model.
+  /// the model. Throws a [FormatException], [FileSystemException] or
+  /// [StateError] (a file gone, a name taken) the agent reports back to
+  /// the model.
   final Future<String> Function(Map<String, dynamic> arguments) run;
 
   /// Creates a skill.

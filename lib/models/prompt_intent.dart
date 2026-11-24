@@ -76,9 +76,20 @@ class PromptIntent {
   /// The first word of a text.
   static final RegExp _firstWord = RegExp('^[a-z]+');
 
-  /// Words pointing at the file open in the editor.
+  /// Words naming the whole project, which "this" or "current" then
+  /// points at instead of the open file.
+  static const String _wholeProject =
+      'project|app|application|codebase|code base|repo|repository|'
+      'workspace|package';
+
+  /// Words pointing at the file open in the editor: "this", "current" or
+  /// "selected", unless they point at the whole project, as "this
+  /// project" does, which got MiMo reading only the open file when asked
+  /// for a typo in the project.
   static final RegExp _openFile = RegExp(
-    r'\b(this|here|current|selected|open file|the file|my file)\b',
+    r'\b(?:(?:this|current|selected)\b(?!\s+(?:whole\s+|entire\s+)?(?:'
+    '$_wholeProject'
+    r')\b)|here|open file|the file|my file)\b',
     caseSensitive: false,
   );
 

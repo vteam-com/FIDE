@@ -28,6 +28,14 @@ class CodeEditHooks {
   final Future<String> Function(ProjectCommand command, String directory)?
   runCommand;
 
+  /// Renames or moves the file or folder at the first absolute path to
+  /// the second, both inside the project, as the project tree does: every
+  /// import, export and part naming a Dart file it moves follows it.
+  /// Completes with the absolute paths of the files it wrote; throws a
+  /// [StateError] or [FileSystemException] when it can't. Null when the
+  /// caller renames none.
+  final Future<Iterable<String>> Function(String from, String to)? renameFile;
+
   /// Creates hooks from the caller's callbacks.
   const CodeEditHooks({
     required this.onStep,
@@ -35,6 +43,7 @@ class CodeEditHooks {
     required this.checkBuild,
     this.runQuickFix,
     this.runCommand,
+    this.renameFile,
     this.onText,
   });
 }

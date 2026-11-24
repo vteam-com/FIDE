@@ -35,6 +35,18 @@ void main() {
   test('a prompt pointing at the open file refers to it', () {
     expect(PromptIntent.refersToOpenFile('What does this file do?'), isTrue);
     expect(PromptIntent.refersToOpenFile('Is the bug here?'), isTrue);
+    expect(PromptIntent.refersToOpenFile('What does this widget do?'), isTrue);
     expect(PromptIntent.refersToOpenFile('2+2='), isFalse);
+  });
+
+  test('a prompt pointing at the whole project leaves the open file out', () {
+    for (final prompt in [
+      'find a typo in this project',
+      'Is there dead code in the current app?',
+      'review this entire codebase',
+      'what does this whole repo do?',
+    ]) {
+      expect(PromptIntent.refersToOpenFile(prompt), isFalse, reason: prompt);
+    }
   });
 }

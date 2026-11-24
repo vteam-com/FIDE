@@ -186,6 +186,7 @@ class OllamaClient implements ChatModel {
     bool think = false,
     AiCancelToken? cancel,
     ReplyText? onText,
+    int? maxTokens,
   }) async {
     final reply = await _stream(
       _chatPath,
@@ -199,6 +200,7 @@ class OllamaClient implements ChatModel {
       think: think,
       cancel: cancel,
       onText: onText,
+      maxTokens: maxTokens,
     );
     return _withWrittenCalls({
       ...ModelMessage.of(ModelMessage.assistantRole, reply.text),
@@ -260,7 +262,8 @@ class OllamaClient implements ChatModel {
   /// energy of a request, so only tasks needing judgment ask for it. The
   /// model stays loaded for [AppDuration.aiModelKeepAlive] so the next
   /// request doesn't reload it, with one [AppMetric.aiContextTokens]
-  /// context window for every request.
+  /// context window for every request; [maxTokens], when given, ends the
+  /// reply at that many tokens.
   Future<({String text, List<Object?> toolCalls})> _stream(
     String path,
     Map<String, Object> Function(int retry) body,
@@ -268,6 +271,7 @@ class OllamaClient implements ChatModel {
     required bool think,
     required AiCancelToken? cancel,
     required ReplyText? onText,
+    int? maxTokens,
   }) async {
     if (!_isModelResolved) {
       try {
@@ -288,7 +292,10 @@ class OllamaClient implements ChatModel {
           'model': _model,
           'stream': true,
           'keep_alive': AppDuration.aiModelKeepAlive.inSeconds,
-          'options': {'num_ctx': AppMetric.aiContextTokens},
+          'options': {
+            'num_ctx': AppMetric.aiContextTokens,
+            'num_predict': ?maxTokens,
+          },
           if (_supportsThinking) 'think': think,
           ...body(retry),
         },

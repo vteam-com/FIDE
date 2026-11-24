@@ -32,6 +32,9 @@ class CodeEditAgent {
   /// Name of the tool running Flutter, Dart and CocoaPods commands.
   static const String _commandName = 'run_command';
 
+  /// Name of the tool renaming and moving files, imports following them.
+  static const String _renameName = 'rename_file';
+
   /// Where a build or analyzer error points: a Dart file and a line.
   static final RegExp _errorLocation = RegExp(
     r'(?<path>[^\s:]+\.dart):(?<line>\d+)',
@@ -74,6 +77,7 @@ class CodeEditAgent {
   }) => [
     ..._readSkills,
     if (edits) ..._editSkills,
+    if (edits) ?_renameSkill(),
     if (edits) ?_commandSkill(),
     if (edits) ?_quickFixSkill(fixes),
   ];
@@ -148,8 +152,17 @@ class CodeEditAgent {
         'content': 'The complete new file content',
       },
       changesProject: true,
-      run: (args) =>
-          _write(_argument(args, 'path'), _argument(args, 'content')),
+      run: (args) async {
+        final path = _argument(args, 'path');
+        final content = _argument(args, 'content');
+        if (await _copied(path, content) case final original?) {
+          throw FormatException(
+            '$path would be a copy of $original: call $_renameName to '
+            'rename or move it.',
+          );
+        }
+        return _write(path, content);
+      },
     ),
     AiSkill(
       name: 'check_build',
@@ -170,6 +183,38 @@ class CodeEditAgent {
       },
     ),
   ];
+
+  /// The tool renaming or moving a project file or folder, the imports
+  /// naming it following it; null when the caller renames none.
+  AiSkill? _renameSkill() {
+    final renameFile = hooks.renameFile;
+    if (renameFile == null) return null;
+    return AiSkill(
+      name: _renameName,
+      icon: '🏷️',
+      description:
+          'Renames or moves a project file or folder, and points every '
+          'import, export and part naming a Dart file it moves at its new '
+          'path, in lib and test alike. Use it to rename a file: never '
+          'write a copy, and never edit those imports yourself.',
+      parameters: {
+        'path': 'File or folder relative to the project root',
+        'new_path': 'Its new path, relative to the project root',
+      },
+      changesProject: true,
+      run: (args) async {
+        final from = files.resolve(_argument(args, 'path'));
+        final to = files.resolve(_argument(args, 'new_path'));
+        final written = await renameFile(from, to);
+        final others = written
+            .where((path) => path != to && !p.isWithin(to, path))
+            .length;
+        return 'Renamed ${p.relative(from, from: projectPath)} to '
+            '${p.relative(to, from: projectPath)}'
+            '${others == 0 ? '; no other file imports it.' : ', and pointed the imports of $others other files at it.'}';
+      },
+    );
+  }
 
   /// The tool running one of the [ProjectCommand]s FIDE allows, such as
   /// `flutter pub upgrade`, in a project folder; null when the caller runs
@@ -371,6 +416,38 @@ class CodeEditAgent {
     return annotated.join('\n');
   }
 
+  /// The project file that [content], written to the new file [path],
+  /// would copy, when files can be renamed; null when there is none.
+  /// Asked to rename a file, MiMo wrote a copy of it and edited the
+  /// imports by hand, though the rename tool said never to.
+  Future<String?> _copied(String path, String content) async {
+    final copy = const LineSplitter().convert(content).join('\n').trim();
+    if (hooks.renameFile == null ||
+        copy.isEmpty ||
+        await _linesOf(path) != null) {
+      return null;
+    }
+    // Its longest line, which few other files hold
+    final probe = const LineSplitter()
+        .convert(copy)
+        .map((line) => line.trim())
+        .reduce(
+          (longest, line) => line.length > longest.length ? line : longest,
+        );
+    final found = await files.search(
+      probe,
+      limit: AppMetric.aiSearchMaxResults,
+    );
+    for (final candidate in {
+      for (final line in found) line.substring(0, line.indexOf(':')),
+    }) {
+      if ((await _linesOf(candidate))?.join('\n').trim() == copy) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
   /// The lines of the project file at [path], or null when it can't be
   /// read.
   Future<List<String>?> _linesOf(String path) async {
@@ -399,12 +476,21 @@ class CodeEditAgent {
             'answer; ask a narrower question.',
         skills: skillsFor(edits: false),
         maxRounds: AppMetric.aiMaxAnswerRounds,
+        maxTokens: AppMetric.aiAnswerMaxTokens,
         // A local model can keep reading, or read one file again and
         // again, after it found the answer
         lastAsk:
-            'Answer the question now from what you have read. Call no '
-            'more tools.',
+            'You are out of steps: answer the question now from the files '
+            'you have read. Call no more tools, and claim nothing about '
+            'files you did not read.',
       );
+
+  /// Ends an answer the model gave once stopped, as it covers only what
+  /// it read: asked for a typo, MiMo wrote "I checked every file in the
+  /// project" after reading 7 of 267.
+  static const String _partialAnswerNote =
+      '(Stopped before it finished looking: this answer covers only the '
+      'files the AI read.)';
 
   /// Carries out the user's [request] on the project, with the earlier
   /// chat [history] (`role`/`content` messages) for context, and returns
@@ -421,6 +507,7 @@ class CodeEditAgent {
     ];
     final skills = skillsFor(edits: true, fixes: fixes);
     final offersFixes = skills.any((skill) => skill.name == _quickFixName);
+    final renames = skills.any((skill) => skill.name == _renameName);
     return _converse(
       'You are a Flutter/Dart developer working on this project with the '
           'tools you are given. Make the change the user asks for in the '
@@ -431,6 +518,7 @@ class CodeEditAgent {
           'check_build and fix any errors you caused. Reply with a short '
           'summary naming each file you changed. Paths are relative to the '
           'project root.'
+          '${renames ? ' Rename or move a file with $_renameName, which updates the imports naming it.' : ''}'
           '${offersFixes ? ' For ${fixes.map((fix) => fix.label).join(', ')}, call $_quickFixName first, then edit by hand only what it left.' : ''}',
       [...history, ModelMessage.user(request)],
       'Stopped after ${AppMetric.aiMaxToolRounds} steps; the change may '
@@ -468,9 +556,11 @@ class CodeEditAgent {
   /// with [skills], runs those it calls, and returns its first reply that
   /// calls none, or [stoppedMessage] after [maxRounds] rounds or a call
   /// repeated [AppMetric.aiMaxRepeatedCalls] times; [think] lets a
-  /// thinking model reason before each step. Stopped so, the model is
-  /// asked [lastAsk], when given, offered no tool: its reply, unless it
-  /// says nothing, comes back instead of the stop.
+  /// thinking model reason before each step, and [maxTokens], when given,
+  /// ends each reply at that many tokens. Stopped so, the model is asked
+  /// [lastAsk], when given, offered no tool: its reply, unless it says
+  /// nothing, comes back instead of the stop, ending with
+  /// [_partialAnswerNote].
   Future<String> _converse(
     String system,
     List<Map<String, String>> conversation,
@@ -478,6 +568,7 @@ class CodeEditAgent {
     required List<AiSkill> skills,
     int maxRounds = AppMetric.aiMaxToolRounds,
     bool think = false,
+    int? maxTokens,
     String? lastAsk,
   }) async {
     final tools = [for (final skill in skills) skill.toTool()];
@@ -501,6 +592,7 @@ class CodeEditAgent {
         think: think,
         cancel: _cancelToken,
         onText: hooks.onText,
+        maxTokens: maxTokens,
       );
       messages.add(reply);
       final calls = reply[ModelMessage.toolCallsKey];
@@ -547,7 +639,13 @@ class CodeEditAgent {
       }
     }
     if (lastAsk == null) return stopped;
-    return await _replyWithoutTools(messages, lastAsk, think: think) ?? stopped;
+    final reply = await _replyWithoutTools(
+      messages,
+      lastAsk,
+      think: think,
+      maxTokens: maxTokens,
+    );
+    return reply == null ? stopped : '$reply\n\n$_partialAnswerNote';
   }
 
   /// The message answering [call] of the tool [name] with [result].
@@ -565,26 +663,49 @@ class CodeEditAgent {
 
   /// The text of the model's reply to [messages] then [ask], offered no
   /// tool, as an answer from what it read: a call it still writes is left
-  /// out, as none is run; null when no text is left. [think] lets a
-  /// thinking model reason first.
+  /// out, as none is run, and a reply that is only a call is asked for
+  /// again, saying so; null when no text is left. [think] lets a thinking
+  /// model reason first, and [maxTokens], when given, ends the reply at
+  /// that many tokens.
   Future<String?> _replyWithoutTools(
     List<Map<String, dynamic>> messages,
     String ask, {
     required bool think,
+    int? maxTokens,
   }) async {
-    _cancelToken.throwIfCancelled();
-    final asked = [...messages, ModelMessage.user(ask)];
-    _fitBudget(asked, const []);
-    final reply = await _model.chat(
-      asked,
-      const [],
-      think: think,
-      cancel: _cancelToken,
-      onText: hooks.onText,
-    );
-    final text = reply[ModelMessage.contentKey]?.toString().trim() ?? '';
+    Future<Map<String, dynamic>> reply(String ask) {
+      _cancelToken.throwIfCancelled();
+      final asked = [...messages, ModelMessage.user(ask)];
+      _fitBudget(asked, const []);
+      return _model.chat(
+        asked,
+        const [],
+        think: think,
+        cancel: _cancelToken,
+        onText: hooks.onText,
+        maxTokens: maxTokens,
+      );
+    }
+
+    final first = await reply(ask);
+    var text = _textOf(first);
+    final calls = first[ModelMessage.toolCallsKey];
+    // Offered no tool, MiMo wrote a bare call in 2 runs of 6; the same
+    // request writes the same call
+    if (text.isEmpty && calls is List && calls.isNotEmpty) {
+      text = _textOf(
+        await reply(
+          '$ask Your last reply was a tool call, which can\'t run any '
+          'more: write your answer as text.',
+        ),
+      );
+    }
     return text.isEmpty ? null : text;
   }
+
+  /// The trimmed text of the model's [reply], empty when it wrote none.
+  static String _textOf(Map<String, dynamic> reply) =>
+      reply[ModelMessage.contentKey]?.toString().trim() ?? '';
 
   /// Keeps [messages], sent with [tools], within the model's
   /// [ChatModel.contextBudget]: once they outgrow it, the output of the
@@ -696,6 +817,8 @@ class CodeEditAgent {
       return 'Error: ${e.message}';
     } on FileSystemException catch (e) {
       return 'Error: ${e.message} ${e.path ?? ''}';
+    } on StateError catch (e) {
+      return 'Error: ${e.message}';
     }
   }
 
@@ -715,7 +838,12 @@ class CodeEditAgent {
         arguments['text'] ??
         arguments['changes'] ??
         arguments['command'];
-    hooks.onStep(subject == null ? '$icon $name' : '$icon $name $subject');
+    final to = arguments['new_path'];
+    hooks.onStep(
+      subject == null
+          ? '$icon $name'
+          : '$icon $name $subject${to == null ? '' : ' → $to'}',
+    );
   }
 
   /// Writes [content] to the project file at [path] and runs
