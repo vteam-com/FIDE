@@ -2,6 +2,16 @@
 
 What changed in each FIDE release, newest first. `tool/release.sh` adds each release's entry: one line per commit since the release before.
 
+## 1.5.2 - 2026-11-24
+
+- File Serch wider scope Spelling card collapses like other sections, collapsed by default, with its score and sort kept in the header
+- AI panel: Clear Chat empties the conversation, stopping a pending reply, so the next prompt starts fresh
+- AI panel: a reply that only announces a next step is reported as no answer; answers say how many files they read; repeated reads don't use up answer rounds; broad questions list the project before searching and never guess words
+- AI panel: a question for one match that stops early gets no note; a question for all matches says the AI ran out of steps before reading every file
+- AI panel: a question that ran out of steps says in plain words that it may miss other problems
+- AI panel: an edit that changed no file says so under its claim; rename_file renames and moves files with imports following, write_file refuses to copy a file, a question's replies stop at 2048 tokens, and "this project" no longer names the open file to the model
+- AI panel: the agent renames and moves files with rename_file, the project tree's Rename, imports following, write_file refusing to copy a file; a question out of steps claims nothing it didn't read and says so; a question's replies stop at 2048 tokens, as MiMo looped until the 180 s timeout; "this project" no longer names the open file to the model
+
 ## 1.5.1 - 2026-11-23
 
 - AI panel: pick the local model in its footer among MiMo 9B (default, 16 GB+), Qwen3 Coder 30B and Qwen 3.8 27B (32 GB+), picking one not downloaded downloading it; a question stopped by its step cap or a repeated call is answered from what the model read, in one last request offered no tool; the agent benchmark (FIDE_AI_BENCH, FIDE_AI_MODEL) measures any model
