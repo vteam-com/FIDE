@@ -27,6 +27,18 @@ void main() {
 
   tearDown(() => container.dispose());
 
+  test('clears the conversation, so the next prompt starts fresh', () async {
+    final chat = container.read(aiChatProvider.notifier);
+    await chat.send('What does this do?', action: AiAction.ask);
+
+    chat.clear();
+
+    final state = container.read(aiChatProvider);
+    expect(state.messages, isEmpty);
+    expect(state.isBusy, isFalse);
+    expect(state.action, AiAction.ask);
+  });
+
   test('keeps the conversation outside the panel', () async {
     await container
         .read(aiChatProvider.notifier)

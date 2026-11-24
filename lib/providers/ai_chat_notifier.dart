@@ -203,6 +203,14 @@ class AiChatNotifier extends StateNotifier<AiChat> {
   /// Makes [action] the one new prompts use.
   void selectAction(AiAction action) => state = state.copyWith(action: action);
 
+  /// Empties the conversation, stopping a pending reply or task first, so
+  /// the next prompt starts with no earlier messages for the model.
+  void clear() {
+    cancel();
+    _clearDraft();
+    state = state.copyWith(messages: const [], isBusy: false);
+  }
+
   /// Gets the model ready to answer, so the next prompt doesn't wait for a
   /// local model to load.
   Future<void> warmUp() => _model.warmUp();

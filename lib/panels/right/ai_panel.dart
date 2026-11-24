@@ -11,6 +11,7 @@ import 'package:fide/widget_services/local_model_menu.dart';
 import 'package:fide/widget_services/ollama_setup_action.dart';
 import 'package:fide/widgets/action_card.dart';
 import 'package:fide/widgets/app_text_field.dart';
+import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/dropdown_menu_button.dart';
 import 'package:fide/widgets/empty_state.dart';
 import 'package:fide/widgets/header_bar.dart';
@@ -137,6 +138,11 @@ class _AIPanelState extends ConsumerState<AIPanel> {
           label: Text(selected.label, style: AppTextStyle.caption),
         ),
         const Spacer(),
+        CompactIconButton(
+          icon: Icons.delete_outline,
+          tooltip: 'Clear Chat',
+          onPressed: notifier.clear,
+        ),
         if (hasSetup) const Flexible(child: LocalModelMenu()),
       ],
     );
