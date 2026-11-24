@@ -654,7 +654,7 @@ void main() {
     // Asked once more, offered no tool, after the repeated reads, and
     // told the user it covers only what it read
     expect(reply, startsWith('print(1) lacks a semicolon.\n\n'));
-    expect(reply, endsWith('covers only the files the AI read.)'));
+    expect(reply, endsWith('may miss other problems.)'));
     expect(model.toolNames.last, isEmpty);
     expect(model.chats.last.last['content'], contains('Call no more tools'));
   });
@@ -675,8 +675,11 @@ void main() {
     await agentOf(model).answer('2+2=', const []);
     await agentOf(model).edit('fix it', const []);
 
-    // An edit may write a whole file
-    expect(model.maxTokens, [AppMetric.aiAnswerMaxTokens, null]);
+    // An edit may write a whole file, so its cap is far larger
+    expect(model.maxTokens, [
+      AppMetric.aiAnswerMaxTokens,
+      AppMetric.aiEditMaxTokens,
+    ]);
   });
 
   test('a last answer that is only a call is asked for again', () async {

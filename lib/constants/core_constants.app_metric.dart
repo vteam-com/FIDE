@@ -91,6 +91,12 @@ class AppMetric {
   /// edge cases" 294 times in 180 s.
   static const int aiAnswerMaxTokens = 2048;
 
+  /// Longest reply of a request editing files or fixing a build, in
+  /// tokens: room for a whole file written with write_file, about 5 minutes
+  /// of writing on MiMo. Without a cap, a model that loops writes the same
+  /// text until stopped by hand, as it did in the AI panel.
+  static const int aiEditMaxTokens = 16384;
+
   /// Memory of the smallest computer a 9B local model runs well on, in
   /// GB: it takes about 10 with [aiContextTokens] of context.
   static const int aiSmallModelMinMemoryGb = 16;

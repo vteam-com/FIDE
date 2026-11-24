@@ -496,8 +496,8 @@ class CodeEditAgent {
   /// it read: asked for a typo, MiMo wrote "I checked every file in the
   /// project" after reading 7 of 267.
   static const String _partialAnswerNote =
-      '(Stopped before it finished looking: this answer covers only the '
-      'files the AI read.)';
+      '(Note: the AI ran out of steps before reading every file, so this '
+      'may miss other problems.)';
 
   /// Carries out the user's [request] on the project, with the earlier
   /// chat [history] (`role`/`content` messages) for context, and returns
@@ -532,6 +532,7 @@ class CodeEditAgent {
       'Stopped after ${AppMetric.aiMaxToolRounds} steps; the change may '
           'be incomplete.',
       skills: skills,
+      maxTokens: AppMetric.aiEditMaxTokens,
     );
     // The model's summary can claim changes it never made: say so
     return _wroteFiles ? reply : '$reply\n\n$noFileChangedNote';
@@ -560,6 +561,7 @@ class CodeEditAgent {
         'passing build.',
     skills: skillsFor(edits: true),
     think: true,
+    maxTokens: AppMetric.aiEditMaxTokens,
   );
 
   /// Runs the tool loop: sends [system] and [conversation] to the model
