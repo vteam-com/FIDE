@@ -101,6 +101,21 @@ class AppMetric {
   /// answer, in characters.
   static const int aiPlanMaxChars = 300;
 
+  /// How many times one line of a reply may repeat before the reply counts
+  /// as a loop, as a local model can write one line until its reply is cut.
+  static const int aiRepeatedLineLimit = 3;
+
+  /// Shortest word of a question or file name a question's search may use,
+  /// in characters; shorter ones match too much to find anything.
+  static const int aiSearchTermMinChars = 3;
+
+  /// Edits (insertions, deletions, substitutions or swaps) a word may be
+  /// from a known word and still be suggested as its correction.
+  static const int spellingMaxSuggestionDistance = 2;
+
+  /// Shortest word the spelling check looks at, in characters.
+  static const int spellingMinWordChars = 3;
+
   /// Memory of the smallest computer a 9B local model runs well on, in
   /// GB: it takes about 10 with [aiContextTokens] of context.
   static const int aiSmallModelMinMemoryGb = 16;

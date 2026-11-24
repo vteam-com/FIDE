@@ -475,6 +475,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.1.0"
+  list_english_words:
+    dependency: "direct main"
+    description:
+      name: list_english_words
+      sha256: ea7856916f1a51aee0f7f1c90085647b7e55b7627388f438d09c9897ee98267a
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.0"
   listen:
     dependency: transitive
     description:

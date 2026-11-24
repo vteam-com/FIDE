@@ -19,6 +19,22 @@ void main() {
 
   const service = ProjectSearchService();
 
+  test('searches several folders and merges the hits', () async {
+    final tests = Directory.systemTemp.createTempSync('fide_search_tests_');
+    addTearDown(() => tests.deleteSync(recursive: true));
+    File(p.join(tests.path, 'c_test.dart')).writeAsStringSync('foo here\n');
+
+    final hits = await service.searchFolders(
+      [lib.path, tests.path],
+      'foo',
+      caseSensitive: true,
+    );
+
+    // Two in a.dart, one in b.dart, one in c_test.dart
+    expect(hits.total, 4);
+    expect(hits.files, hasLength(3));
+  });
+
   test('finds matches with line numbers and offsets', () async {
     final (:results, files: _, total: _) = await service.search(
       lib.path,

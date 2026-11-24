@@ -15,6 +15,10 @@ class ProjectPaths {
   /// Name of the source folder.
   static const String libFolder = 'lib';
 
+  /// The folders of a Flutter project holding its Dart code: the app's,
+  /// its unit and widget tests, and its integration tests.
+  static const List<String> sourceFolders = ['lib', 'test', 'integration_test'];
+
   /// Name of the tests folder.
   static const String testFolder = 'test';
 
@@ -45,6 +49,11 @@ class ProjectPaths {
 
   /// The `lib/` source directory.
   String get libDir => p.join(root, libFolder);
+
+  /// The absolute paths of the project's [sourceFolders].
+  List<String> get sourceDirs => [
+    for (final folder in sourceFolders) p.join(root, folder),
+  ];
 
   /// The folder of [platform]'s native project, such as `ios/`.
   String platformDir(FlutterPlatform platform) => p.join(root, platform.name);

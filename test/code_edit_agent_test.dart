@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fide/constants/core_constants.dart';
+import 'package:fide/models/model_message.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/services/chat_model.dart';
 import 'package:fide/services/code_edit_agent.dart';
@@ -705,6 +706,69 @@ void main() {
         .answer('what does main print?', const []);
 
     expect(reply, startsWith('It prints 1.'));
+  });
+
+  test(
+    'an answer that corrects itself aloud is not taken as the answer',
+    () async {
+      final model = FakeChatModel(
+        chatReplies: [
+          answer(
+            'The typo is in landsacpe. Wait, let me be precise: it is acpe.',
+          ),
+        ],
+      );
+
+      final reply = await agentOf(model).answer('find a typo', const []);
+
+      expect(reply, startsWith('No answer: the AI stopped before finding one'));
+    },
+  );
+
+  test('an answer repeating one line is reported as a loop', () async {
+    final model = FakeChatModel(
+      chatReplies: [
+        answer('The typo is here.\n${'static const double x = 4.0;\n' * 5}'),
+      ],
+    );
+
+    final reply = await agentOf(model).answer('find a typo', const []);
+
+    expect(reply, startsWith('No answer: the AI repeated itself'));
+  });
+
+  test('a question is answered with the tools, not earlier messages', () async {
+    final model = FakeChatModel(chatReplies: [answer('Nothing else.')]);
+
+    await agentOf(model).answer('there are more typos', [
+      ModelMessage.user('fix it'),
+      ModelMessage.of(
+        ModelMessage.assistantRole,
+        'Renamed lib/widgets/adaptive_landsacpe.dart.',
+      ),
+    ]);
+
+    final prompt = model.chats.single.first['content'] as String;
+    expect(prompt, contains('never report changes made in earlier turns'));
+  });
+
+  test('a question searches only for words it was asked or listed', () async {
+    final model = FakeChatModel(
+      chatReplies: [
+        toolCall('search', {'text': 'recieve'}),
+        toolCall('list_files', {'path': '.'}),
+        toolCall('search', {'text': 'main'}),
+        answer('Nothing.'),
+      ],
+    );
+
+    await agentOf(model).answer('find a typo in this project', const []);
+
+    final results = [
+      for (final result in toolResults(model)) result['content'] as String,
+    ];
+    expect(results.first, startsWith('Not searched: "recieve"'));
+    expect(results.last, contains('lib/main.dart:1:'));
   });
 
   test('a question for one match stopped early gets no note', () async {

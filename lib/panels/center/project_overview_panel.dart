@@ -15,6 +15,7 @@ import 'package:fide/widget_services/center_view_close_button.dart';
 import 'package:fide/widget_services/issue_row.dart';
 import 'package:fide/widget_services/project_header.dart';
 import 'package:fide/widget_services/project_quality_card.dart';
+import 'package:fide/widget_services/spelling_card.dart';
 import 'package:fide/widgets/badge_status.dart';
 import 'package:fide/widgets/card_grid.dart';
 import 'package:fide/widgets/empty_state.dart';
@@ -258,6 +259,8 @@ class ProjectOverviewPanel extends ConsumerWidget {
           children: [
             if (ref.watch(projectQualityProvider) case final quality?)
               ProjectQualityCard(quality),
+            if (ref.watch(spellingProvider).value case final spelling?)
+              SpellingCard(spelling),
             StatCard(
               icon: Icons.code,
               title: 'Sources',

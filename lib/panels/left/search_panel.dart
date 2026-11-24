@@ -107,8 +107,8 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     });
   }
 
-  /// Searches lib/ for the query typed, showing the matches once found,
-  /// unless a newer search or a clear came meanwhile.
+  /// Searches the project's source folders for the query typed, showing the
+  /// matches once found, unless a newer search or a clear came meanwhile.
   Future<void> _performSearch() async {
     final query = _searchController.text.trim();
     if (query.isEmpty) {
@@ -123,10 +123,10 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
     });
 
     try {
-      final libPath = ProjectPaths(widget.projectPath).libDir;
+      final paths = ProjectPaths(widget.projectPath);
       final search = ref.read(projectSearchServiceProvider);
-      final hits = await search.search(
-        libPath,
+      final hits = await search.searchFolders(
+        paths.sourceDirs,
         query,
         caseSensitive: _matchCase,
         wholeWord: _wholeWord,
@@ -134,7 +134,11 @@ class _SearchPanelState extends ConsumerState<SearchPanel> {
       if (!mounted || generation != _searchGeneration) return;
       setState(() {
         _resultsQuery = query;
-        _resultsTree = search.toTree(hits.results, libPath);
+        _resultsTree = search.toTree(hits.results, paths.root);
+        // The project and its source folders open, showing their matches
+        _expandedState
+          ..[paths.root] = true
+          ..addAll({for (final dir in paths.sourceDirs) dir: true});
         _matchingFiles = hits.files;
         _unlistedCount = hits.total - hits.results.length;
         _isSearching = false;

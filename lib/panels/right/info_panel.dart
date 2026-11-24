@@ -9,6 +9,7 @@ import 'package:fide/providers/outline_providers.dart';
 import 'package:fide/widget_services/output_panel.dart';
 import 'package:fide/widget_services/project_header.dart';
 import 'package:fide/widget_services/project_quality_card.dart';
+import 'package:fide/widget_services/spelling_card.dart';
 import 'package:fide/widgets/header_bar.dart';
 import 'package:fide/widgets/no_project_placeholder.dart';
 import 'package:fide/widgets/panel_scroll_view.dart';
@@ -51,6 +52,10 @@ class InfoPanel extends ConsumerWidget {
               // The project's quality, once fCheck has analyzed it
               if (ref.watch(projectQualityProvider) case final quality?)
                 ProjectQualityCard(quality),
+
+              // The project's spelling, once its words are checked
+              if (ref.watch(spellingProvider).value case final spelling?)
+                SpellingCard(spelling),
 
               // What dart analyze printed, links opening each place it
               // names, until cleared

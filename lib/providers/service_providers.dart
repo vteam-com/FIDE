@@ -29,6 +29,7 @@ import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/services/health_checker.dart';
 import 'package:fide/services/l10n_generator.dart';
+import 'package:fide/services/spelling_analyzer.dart';
 import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/ollama_client.dart';
 import 'package:fide/services/ollama_installer.dart';
@@ -320,6 +321,12 @@ final fileEntryServiceProvider = Provider<FileEntryService>(
 /// the project's quality.
 final colorContrastAnalyzerProvider = Provider<ColorContrastAnalyzer>(
   (_) => const ColorContrastAnalyzer(),
+);
+
+/// Provides the [SpellingAnalyzer] behind the Spelling card: FIDE's own
+/// check, a testing ground before fCheck may take it.
+final spellingAnalyzerProvider = Provider<SpellingAnalyzer>(
+  (_) => const SpellingAnalyzer(),
 );
 
 /// Provides the [WidgetStateAnalyzer] behind the widget State check of

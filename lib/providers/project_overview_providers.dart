@@ -14,6 +14,7 @@ import 'package:fide/models/project_quality.dart';
 import 'package:fide/models/quality_issue.dart';
 import 'package:fide/models/quality_issues.dart';
 import 'package:fide/models/quick_fix.dart';
+import 'package:fide/models/spelling_report.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/models/widget_state_issues.dart';
 import 'package:fide/models/widget_state_report.dart';
@@ -155,6 +156,23 @@ final colorContrastProvider = FutureProvider<ColorContrastReport?>((ref) async {
   return afterSavesPause(
     ref,
     ref.read(_colorContrastRunsProvider),
+    () => Isolate.run(() => analyzer.analyze(projectPath)),
+  );
+});
+
+/// The runs of the spelling check behind [spellingProvider], one at a time.
+final _spellingRunsProvider = Provider<SerialRuns>((_) => SerialRuns());
+
+/// The spelling of the current project's Dart code, or null without a
+/// project: its words no known word matches, run again once saves pause,
+/// one run at a time, off the UI thread.
+final spellingProvider = FutureProvider<SpellingReport?>((ref) async {
+  final projectPath = ref.watch(currentProjectPathProvider);
+  if (projectPath == null) return null;
+  final analyzer = ref.read(spellingAnalyzerProvider);
+  return afterSavesPause(
+    ref,
+    ref.read(_spellingRunsProvider),
     () => Isolate.run(() => analyzer.analyze(projectPath)),
   );
 });

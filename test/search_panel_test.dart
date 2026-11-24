@@ -45,6 +45,15 @@ class _FakeSearch extends ProjectSearchService {
     bool wholeWord = false,
     int limit = AppMetric.projectSearchMaxResults,
   }) => answers[query]!.future;
+
+  @override
+  Future<ProjectSearchHits> searchFolders(
+    List<String> directories,
+    String query, {
+    bool caseSensitive = false,
+    bool wholeWord = false,
+    int limit = AppMetric.projectSearchMaxResults,
+  }) => answers[query]!.future;
 }
 
 /// Shows the Search tab answered by [search].

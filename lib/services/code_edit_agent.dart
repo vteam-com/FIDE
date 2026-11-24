@@ -281,12 +281,22 @@ class CodeEditAgent {
   /// per line, at most [AppMetric.aiMaxListedFiles] of them.
   Future<String> listFiles(String folder) async {
     final listed = await files.list(folder, limit: AppMetric.aiMaxListedFiles);
+    for (final path in listed) {
+      _addSearchTerms(path);
+    }
     return listed.join('\n');
   }
 
   /// The lines of the project's files holding [text], one `path:line:
   /// text` per line, at most [AppMetric.aiSearchMaxResults] of them.
   Future<String> search(String text) async {
+    final terms = _searchTerms;
+    final lowered = text.toLowerCase();
+    if (terms != null && !terms.any((term) => term.contains(lowered))) {
+      return 'Not searched: "$text" is not in your question or in the file '
+          'names listed. Search only for words from those, such as a file '
+          'name you listed.';
+    }
     final found = await files.search(text, limit: AppMetric.aiSearchMaxResults);
     return found.isEmpty
         ? 'No match for "$text". Search takes plain text, not a pattern: '
@@ -478,6 +488,20 @@ class CodeEditAgent {
     List<Map<String, String>> history,
   ) async {
     _filesRead.clear();
+    _searchTerms = [];
+    _addSearchTerms(question);
+    try {
+      return await _answer(question, history);
+    } finally {
+      _searchTerms = null;
+    }
+  }
+
+  /// [answer]'s reply, once its search words are set up.
+  Future<String> _answer(
+    String question,
+    List<Map<String, String>> history,
+  ) async {
     final reply = await _converse(
       'You are a Flutter/Dart expert answering questions. Answer directly '
           'and concisely. Only when the question is about this project\'s '
@@ -486,7 +510,11 @@ class CodeEditAgent {
           'list its folders first, then search for words taken from the '
           'question or from the names you listed, never words you guess. '
           'Finish with the answer itself, never a plan or what you will do '
-          'next. Paths are relative to the project root.',
+          'next. State only what you checked in the files, and never think '
+          'aloud or correct yourself in the answer. Earlier messages may be '
+          'out of date: before saying what the project contains, look it up '
+          'with the tools, and never report changes made in earlier turns as '
+          'if they were made now. Paths are relative to the project root.',
       [...history, ModelMessage.user(question)],
       'Stopped after ${AppMetric.aiMaxAnswerRounds} steps without an '
           'answer; ask a narrower question.',
@@ -502,7 +530,11 @@ class CodeEditAgent {
           'you have read. Call no more tools, and claim nothing about '
           'files you did not read.',
     );
-    if (_isUnfinished(reply)) {
+    if (_isLooping(reply)) {
+      return 'No answer: the AI repeated itself. Ask again, or narrow the '
+          'question.';
+    }
+    if (_isUnfinished(reply) || _thinksAloud(reply)) {
       return 'No answer: the AI stopped before finding one. Ask again, or '
           'narrow the question.';
     }
@@ -523,6 +555,47 @@ class CodeEditAgent {
           r"\b(let me|i need to|i'll|i will|i have to)\b",
           caseSensitive: false,
         ).hasMatch(text);
+  }
+
+  /// Whether [reply] repeats one of its lines [AppMetric.aiRepeatedLineLimit]
+  /// times or more, as a local model's loop does until its reply is cut.
+  static bool _isLooping(String reply) {
+    final counts = <String, int>{};
+    for (final line in const LineSplitter().convert(reply)) {
+      final text = line.trim();
+      if (text.isEmpty) continue;
+      final count = (counts[text] ?? 0) + 1;
+      if (count >= AppMetric.aiRepeatedLineLimit) return true;
+      counts[text] = count;
+    }
+    return false;
+  }
+
+  /// Whether [reply] reasons out loud, correcting itself as it goes ("wait,
+  /// let me be precise"), so it states guesses as answers; such a reply
+  /// isn't taken as the answer.
+  static bool _thinksAloud(String reply) => RegExp(
+    r"\b(wait,|let me be|let me double|let me re-?check|let me correct)",
+    caseSensitive: false,
+  ).hasMatch(reply);
+
+  /// Words a question's answer may search for, lowercase: those of the
+  /// question and of the names listed; null when a search is unrestricted,
+  /// as an edit's is. A local model otherwise searches for misspellings it
+  /// guesses from memory, which find nothing in the project.
+  List<String>? _searchTerms;
+
+  /// Adds the words of [text] to [_searchTerms], when restricted.
+  void _addSearchTerms(String text) {
+    final terms = _searchTerms;
+    if (terms == null) return;
+    terms.add(text.toLowerCase());
+    terms.addAll(
+      text
+          .toLowerCase()
+          .split(RegExp(r'[^a-z0-9]+'))
+          .where((word) => word.length >= AppMetric.aiSearchTermMinChars),
+    );
   }
 
   /// Files the question's answer read, by path, since [answer] started.

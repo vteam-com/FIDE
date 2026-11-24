@@ -123,6 +123,12 @@ class _AIPanelState extends ConsumerState<AIPanel> {
     return Row(
       spacing: AppSpacing.medium,
       children: [
+        // Apart from the model menu, so it can't be taken for deleting it
+        CompactIconButton(
+          icon: Icons.delete_outline,
+          tooltip: 'Clear Chat',
+          onPressed: notifier.clear,
+        ),
         DropdownMenuButton<AiAction>(
           tooltip: 'Action',
           initialValue: selected,
@@ -138,11 +144,6 @@ class _AIPanelState extends ConsumerState<AIPanel> {
           label: Text(selected.label, style: AppTextStyle.caption),
         ),
         const Spacer(),
-        CompactIconButton(
-          icon: Icons.delete_outline,
-          tooltip: 'Clear Chat',
-          onPressed: notifier.clear,
-        ),
         if (hasSetup) const Flexible(child: LocalModelMenu()),
       ],
     );

@@ -33,6 +33,36 @@ class ProjectSearchService {
   ///
   /// The files are read and scanned on a background isolate, so a large
   /// project doesn't freeze the window.
+  /// Searches each of [directories] in turn, as [search] does, merging the
+  /// hits: at most [limit] of them shown, the rest only counted.
+  Future<ProjectSearchHits> searchFolders(
+    List<String> directories,
+    String query, {
+    bool caseSensitive = false,
+    bool wholeWord = false,
+    int limit = AppMetric.projectSearchMaxResults,
+  }) async {
+    final results = <SearchResult>[];
+    final files = <String>[];
+    var total = 0;
+    for (final directory in directories) {
+      final hits = await search(
+        directory,
+        query,
+        caseSensitive: caseSensitive,
+        wholeWord: wholeWord,
+        limit: limit - results.length,
+      );
+      results.addAll(hits.results);
+      files.addAll(hits.files);
+      total += hits.total;
+    }
+    return (results: results, files: files, total: total);
+  }
+
+  /// The matches of [query] in the files under [directoryPath], at most
+  /// [limit] shown and the rest only counted; [caseSensitive] and
+  /// [wholeWord] narrow them.
   Future<ProjectSearchHits> search(
     String directoryPath,
     String query, {
