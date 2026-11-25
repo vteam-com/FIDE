@@ -100,6 +100,7 @@ class _SpellingCardState extends ConsumerState<SpellingCard> {
     final files = {for (final f in spelling.findings) f.path}.length;
     return SectionPanel(
       title: 'Spelling',
+      icon: Icons.spellcheck,
       count: spelling.misspelled.length,
       rightWidget: Row(
         mainAxisSize: MainAxisSize.min,

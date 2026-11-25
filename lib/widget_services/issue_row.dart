@@ -11,11 +11,12 @@ import 'package:material_ui/material_ui.dart';
 /// findings, the issue's quick fixes and its AI action, such as Localize
 /// with AI.
 class IssueRow extends StatelessWidget {
-/// Creates the row for [issue].
+  /// Creates the row for [issue].
   const IssueRow(this.issue, {super.key});
-/// The issue shown.
+
+  /// The issue shown.
   final QualityIssue issue;
-@override
+  @override
   Widget build(BuildContext context) {
     final showDetails = issue.hasDetails ? () => _showDetails(context) : null;
     return Row(
@@ -33,11 +34,13 @@ class IssueRow extends StatelessWidget {
       ],
     );
   }
-/// One row per issue of [issues], in their order.
+
+  /// One row per issue of [issues], in their order.
   static List<IssueRow> all(List<QualityIssue> issues) => [
     for (final issue in issues) IssueRow(issue),
   ];
-/// The issue's label in its tone's color.
+
+  /// The issue's label in its tone's color.
   Widget _label(BuildContext context) => Text(
     issue.label,
     style: StatusIndicator.labelStyle(
@@ -45,7 +48,8 @@ class IssueRow extends StatelessWidget {
       Theme.of(context).colorScheme,
     ),
   );
-/// The best practice fixing [issue], its findings and its fixes, which
+
+  /// The best practice fixing [issue], its findings and its fixes, which
   /// run in the same dialog.
   Future<void> _showDetails(BuildContext context) => showDialog<void>(
     context: context,

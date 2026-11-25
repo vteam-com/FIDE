@@ -1,9 +1,11 @@
 import 'package:fide/constants/constants.dart';
-import 'package:fide/widgets/action_card.dart';
+import 'package:fide/widgets/section_panel.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// An [ActionCard], laid out by a `CardGrid`, headed by [icon] and [title], showing one
-/// headline [value] over [rows], then [details].
+/// A measure of the project, laid out by a `CardGrid` or stacked in a side
+/// panel: the same collapsible [SectionPanel] box as every section,
+/// headed by [icon] and [title], showing one headline [value] over
+/// [rows], then [details] and [action]; expanded at first.
 class StatCard extends StatelessWidget {
   /// Creates the card.
   const StatCard({
@@ -38,10 +40,11 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ActionCard(
+    final action = this.action;
+    return SectionPanel(
       title: title,
       icon: icon,
-      action: action,
+      isExpanded: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: AppSpacing.medium,
@@ -50,6 +53,8 @@ class StatCard extends StatelessWidget {
           ...rows,
           for (final detail in details)
             Text(detail, style: AppTextStyle.secondary(context)),
+          if (action != null)
+            Align(alignment: Alignment.centerRight, child: action),
         ],
       ),
     );

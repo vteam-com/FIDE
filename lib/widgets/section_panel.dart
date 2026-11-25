@@ -26,6 +26,7 @@ class SectionPanel extends StatefulWidget {
     this.child,
     this.builder,
     this.count,
+    this.icon,
   }) : assert(child == null || builder == null);
 
   /// Builds the content each time the expanded section builds, instead of
@@ -38,6 +39,9 @@ class SectionPanel extends StatefulWidget {
 
   /// Shown as a counter at the end of the header; none when null.
   final int? count;
+
+  /// Glyph shown before [title], in the primary color; none when null.
+  final IconData? icon;
 
   /// Whether the section starts expanded.
   final bool isExpanded;
@@ -93,7 +97,19 @@ class _SectionPanelState extends State<SectionPanel> {
               // within reach, the title ellipsizing for them
               child: PriorityRow(
                 spacing: AppSpacing.tiny,
-                leading: ExpansionChevron(isExpanded: _isExpanded),
+                leading: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: AppSpacing.small,
+                  children: [
+                    ExpansionChevron(isExpanded: _isExpanded),
+                    if (widget.icon case final icon?)
+                      Icon(
+                        icon,
+                        size: AppIconSize.medium,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                  ],
+                ),
                 // A section's heading style, kept on one line
                 title: TruncatedText(widget.title, style: SectionTitle.style),
                 trailing: trailing,

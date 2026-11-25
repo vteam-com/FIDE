@@ -7,7 +7,7 @@ import 'package:fide/models/project_overview.dart';
 import 'package:fide/panels/center/project_overview_panel.dart';
 import 'package:fide/providers/app_icon_review_provider.dart';
 import 'package:fide/providers/project_overview_providers.dart';
-import 'package:fide/widgets/action_card.dart';
+import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -67,7 +67,7 @@ void main() {
     expect(find.text('Swift packages'), findsNothing);
     final card = find.ancestor(
       of: find.text('Supported platforms'),
-      matching: find.byType(ActionCard),
+      matching: find.byType(SectionPanel),
     );
     expect(
       find.descendant(of: card, matching: find.text('No CocoaPods')),
