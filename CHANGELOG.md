@@ -2,6 +2,12 @@
 
 What changed in each FIDE release, newest first. `tool/release.sh` adds each release's entry: one line per commit since the release before.
 
+## 1.5.3 - 2026-11-25
+
+- Status and Info: every card is a collapsible SectionPanel — StatCard built on it, SectionPanel takes an icon before its title, Spelling gets one
+- Quick fixes: the issue dialog morphs into the fix, ticking off each finding as its file is fixed, the outcome shown in place; message bars centered at most 600 px wide
+- Widget States: read the check from fCheck 1.6.5 (widget_state, ProjectMetrics.widgetStateIssues), dropping FIDE's own analyzer
+
 ## 1.5.2 - 2026-11-24
 
 - File Serch wider scope Spelling card collapses like other sections, collapsed by default, with its score and sort kept in the header
