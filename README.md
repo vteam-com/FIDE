@@ -212,6 +212,12 @@ Lines of code per file:
 
 ![FIDE lines of code, drawn by fCheck](fcheck_loc.svg)
 
+## Support
+
+If FIDE helps you, you can support its development:
+
+[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/vteam-com) [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/vteam)
+
 ## License
 
 This project is licensed under the MIT License.
