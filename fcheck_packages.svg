@@ -347,7 +347,7 @@
     font-weight: 900;
   }
 </style>
-<text x="717.0" y="28.0" class="packageLabelTitle" text-anchor="middle">fide v1.5.2+16</text>
+<text x="717.0" y="28.0" class="packageLabelTitle" text-anchor="middle">fide v1.5.3+17</text>
 <g class="packageMetadataPill"><title>Dart ^3.14.0</title><rect x="644.6" y="36.0" width="61.199999999999996" height="9.0" rx="4.5" ry="4.5" class="packageMetadataPillShape"/><text x="675.2" y="41" class="packageLabelMetadata" text-anchor="middle" dominant-baseline="middle">Dart ^3.14.0</text></g>
 <g class="packageMetadataPill"><title>Flutter &gt;=3.50.0</title><rect x="711.8" y="36.0" width="77.6" height="9.0" rx="4.5" ry="4.5" class="packageMetadataPillShape"/><text x="750.5999999999999" y="41" class="packageLabelMetadata" text-anchor="middle" dominant-baseline="middle">Flutter &gt;=3.50.0</text></g>
 <text x="397.0" y="70.0" class="packageLabelSection">dependencies (30 items)</text>
@@ -1139,7 +1139,7 @@
 <rect x="397.0" y="900.0" width="200.0" height="68.0" rx="8.0" ry="8.0" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1"/>
 <g class="packageMetadataPill"><title>Flutter &gt;=3.44.0</title><rect x="458.2" y="955.0" width="77.6" height="9.0" rx="4.5" ry="4.5" class="packageMetadataPillShape"/><text x="497.0" y="960" class="packageLabelMetadata" text-anchor="middle" dominant-baseline="middle">Flutter &gt;=3.44.0</text></g>
 <text x="497.0" y="920.0" class="packageLabelNodeName packageLabelCaption" text-anchor="middle">flutter_svg</text>
-<text x="497.0" y="933.0" class="packageLabelNodeVersion" text-anchor="middle">v2.5.0</text>
+<text x="497.0" y="933.0" class="packageLabelNodeVersion" text-anchor="middle">v2.5.1</text>
 </g>
 <g class="badge outgoingBadge">
   <path d="M 391.0,934.0 L 403.0,927.0 Q 406.0,927.0 406.0,930.0 L 406.0,938.0 Q 406.0,941.0 403.0,941.0 Z" fill="#10b981"/>
@@ -1382,7 +1382,7 @@
 <g class="packageMetadataPill"><title>Dart ^3.9.0</title><rect x="908.45" y="163.0" width="57.099999999999994" height="9.0" rx="4.5" ry="4.5" class="packageMetadataPillShape"/><text x="937.0" y="168" class="packageLabelMetadata" text-anchor="middle" dominant-baseline="middle">Dart ^3.9.0</text></g>
 <g class="platformBadge platformBadge--dart"><title>Dart SDK ^3.9.0</title><rect x="923.0" y="147.0" width="28.0" height="13.0" rx="6.5" ry="6.5" fill="#0175c2" stroke="#0369a1" stroke-width="0.6"/><text x="937.0" y="153.5" class="packageLabelPlatformBadge" text-anchor="middle" dominant-baseline="middle">Dart</text></g>
 <text x="937.0" y="128.0" class="packageLabelNodeName packageLabelCaption" text-anchor="middle">coverage</text>
-<text x="937.0" y="141.0" class="packageLabelNodeVersion" text-anchor="middle">v1.16.1</text>
+<text x="937.0" y="141.0" class="packageLabelNodeVersion" text-anchor="middle">v1.16.2</text>
 </g>
 <g class="badge outgoingBadge">
   <path d="M 1043.0,142.0 L 1031.0,135.0 Q 1028.0,135.0 1028.0,138.0 L 1028.0,146.0 Q 1028.0,149.0 1031.0,149.0 Z" fill="#10b981"/>
