@@ -2,6 +2,14 @@
 
 What changed in each FIDE release, newest first. `tool/release.sh` adds each release's entry: one line per commit since the release before.
 
+## 1.5.4 - 2026-11-25
+
+- improve terminal default input cursor when opened.
+- macOS: raise the open-files soft limit at launch, so flutter test --coverage from FIDE's Terminal, Run and Test no longer hangs on "Too many open files"
+- update pubspec
+- Add support section to README
+- Add funding information to FUNDING.yml
+
 ## 1.5.3 - 2026-11-25
 
 - Status and Info: every card is a collapsible SectionPanel — StatCard built on it, SectionPanel takes an icon before its title, Spelling gets one
