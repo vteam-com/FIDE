@@ -16,8 +16,6 @@ import 'package:fide/models/quality_issues.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/spelling_report.dart';
 import 'package:fide/models/status_tone.dart';
-import 'package:fide/models/widget_state_issues.dart';
-import 'package:fide/models/widget_state_report.dart';
 import 'package:fide/providers/open_documents_notifier.dart';
 import 'package:fide/providers/project_lifecycle_providers.dart';
 import 'package:fide/providers/service_providers.dart';
@@ -60,9 +58,6 @@ final _healthRunsProvider = Provider<SerialRuns>((_) => SerialRuns());
 /// The color contrast analyses behind [colorContrastProvider], one at a
 /// time.
 final _colorContrastRunsProvider = Provider<SerialRuns>((_) => SerialRuns());
-
-/// The widget State checks behind [widgetStateProvider], one at a time.
-final _widgetStateRunsProvider = Provider<SerialRuns>((_) => SerialRuns());
 
 /// When the analysis behind [projectOverviewProvider]'s latest result
 /// started, by project folder; files changed since are not in it.
@@ -177,37 +172,20 @@ final spellingProvider = FutureProvider<SpellingReport?>((ref) async {
   );
 });
 
-/// What the widget State check finds in the current project, or null
-/// without one: each widget's `State` out of place; run again once saves
-/// pause, one run at a time, off the UI thread.
-final widgetStateProvider = FutureProvider<WidgetStateReport?>((ref) async {
-  final projectPath = ref.watch(currentProjectPathProvider);
-  if (projectPath == null) return null;
-  final analyzer = ref.read(widgetStateAnalyzerProvider);
-  return afterSavesPause(
-    ref,
-    ref.read(_widgetStateRunsProvider),
-    () => Isolate.run(() => analyzer.analyze(projectPath)),
-  );
-});
-
 /// The open project's quality: fCheck's score less what `dart analyze`'s
-/// diagnostics, the colors below WCAG 2 level AA and the widget `State`s
-/// out of place cost, over the issues of fCheck, `dart analyze` (errors
-/// first), the color contrast analyzer, the widget State check and the
-/// health checks; null until fCheck has analyzed the project. The others
-/// add their issues once they are done.
+/// diagnostics and the colors below WCAG 2 level AA cost, over the issues
+/// of fCheck, `dart analyze` (errors first), the color contrast analyzer
+/// and the health checks; null until fCheck has analyzed the project. The
+/// others add their issues once they are done.
 final projectQualityProvider = Provider<ProjectQuality?>((ref) {
   final projectPath = ref.watch(currentProjectPathProvider);
   final code = ref.watch(projectOverviewProvider).value?.code;
   if (projectPath == null || code == null) return null;
   final dart = ref.watch(dartAnalysisProvider);
   final colors = ref.watch(colorContrastProvider);
-  final states = ref.watch(widgetStateProvider);
   final deduction =
       (dart.hasError ? 0 : dart.value?.deduction ?? 0) +
-      (colors.hasError ? 0 : colors.value?.deduction ?? 0) +
-      (states.hasError ? 0 : states.value?.deduction ?? 0);
+      (colors.hasError ? 0 : colors.value?.deduction ?? 0);
   return ProjectQuality(
     score: (code.complianceScore - deduction).clamp(0, AppMetric.maxScore),
     issues: [
@@ -221,10 +199,6 @@ final projectQualityProvider = Provider<ProjectQuality?>((ref) {
         _didNotRun(ColorContrastIssues.title, error)
       else
         ?colors.value?.issue(projectPath),
-      if (states.error case final error?)
-        _didNotRun(WidgetStateIssues.title, error)
-      else
-        ...?states.value?.issues(projectPath),
       ...?ref.watch(healthIndicatorsProvider).value?.issues(projectPath),
     ],
   );
@@ -238,13 +212,11 @@ QualityIssue _didNotRun(String title, Object error) => QualityIssue(
 );
 
 /// The analyses the open project's quality is made of: fCheck's overview,
-/// `dart analyze`, the color contrast analyzer, the widget State check
-/// and the health checks.
+/// `dart analyze`, the color contrast analyzer and the health checks.
 final List<FutureProvider<Object?>> _qualitySources = [
   projectOverviewProvider,
   dartAnalysisProvider,
   colorContrastProvider,
-  widgetStateProvider,
   healthIndicatorsProvider,
 ];
 

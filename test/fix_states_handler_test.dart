@@ -5,7 +5,6 @@ import 'package:fide/models/class_split_result.dart';
 import 'package:fide/services/class_split_service.dart';
 import 'package:fide/services/file_content_reader.dart';
 import 'package:fide/services/quick_fix_handler.dart';
-import 'package:fide/services/widget_state_analyzer.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -64,12 +63,8 @@ void main() {
       'empties, and says which it left: one in another library', () async {
     final splitter = _FakeSplitter();
 
-    final outcome =
-        await FixStatesHandler(
-          const WidgetStateAnalyzer(),
-          splitter,
-          const FileContentReader(),
-        ).run(
+    final outcome = await FixStatesHandler(splitter, const FileContentReader())
+        .run(
           QuickFixRequest(
             projectPath: project.path,
             metrics: AnalyzeFolder(project).analyze(),

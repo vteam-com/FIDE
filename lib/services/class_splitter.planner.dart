@@ -383,7 +383,7 @@ class _Planner {
       ParsedSourceFile(
         unit.path,
         unit.content,
-        ignoreName: WidgetStateAnalyzer.ignoreName,
+        ignoreName: WidgetStates.ignoreName,
       ).isIgnoredAt(state);
 
   /// Whether [annotation] is `@visibleForTesting`, prefixed or not.

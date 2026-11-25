@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/models/model_message.dart';
-import 'package:fide/models/prompt_intent.dart';
 import 'package:fide/models/project_command.dart';
+import 'package:fide/models/prompt_intent.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/text_offsets.dart';
 import 'package:fide/models/text_truncation.dart';

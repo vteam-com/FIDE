@@ -1,5 +1,6 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:fcheck/fcheck.dart' as fcheck;
 
 /// Tells a widget's `State` class in resolved code, by the Flutter class
 /// it extends, `State`, which Riverpod's `ConsumerState` extends too.
@@ -12,6 +13,11 @@ import 'package:analyzer/dart/element/type.dart';
 abstract final class WidgetStates {
   /// The Flutter class a widget's state extends.
   static const String stateClass = 'State';
+
+  /// The name `// ignore:` comments give fCheck's widget state check to
+  /// leave a `State` as it is: `fcheck_widget_state`.
+  static String get ignoreName =>
+      'fcheck_${fcheck.AnalyzerDomain.widgetState.configName}';
 
   /// Whether [element] is a widget's `State`.
   static bool isState(InterfaceElement? element) =>

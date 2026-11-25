@@ -29,7 +29,6 @@ import 'package:fide/services/flutter_sdk.dart';
 import 'package:fide/services/git_service.dart';
 import 'package:fide/services/health_checker.dart';
 import 'package:fide/services/l10n_generator.dart';
-import 'package:fide/services/spelling_analyzer.dart';
 import 'package:fide/services/localization_setup.dart';
 import 'package:fide/services/ollama_client.dart';
 import 'package:fide/services/ollama_installer.dart';
@@ -45,11 +44,11 @@ import 'package:fide/services/project_search_service.dart';
 import 'package:fide/services/project_service.dart';
 import 'package:fide/services/project_template.dart';
 import 'package:fide/services/project_tree_reader.dart';
+import 'package:fide/services/spelling_analyzer.dart';
 import 'package:fide/services/string_constants_extractor.dart';
 import 'package:fide/services/string_localizer.dart';
 import 'package:fide/services/test_runner.dart';
 import 'package:fide/services/test_suite_inspector.dart';
-import 'package:fide/services/widget_state_analyzer.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -327,12 +326,6 @@ final colorContrastAnalyzerProvider = Provider<ColorContrastAnalyzer>(
 /// check, a testing ground before fCheck may take it.
 final spellingAnalyzerProvider = Provider<SpellingAnalyzer>(
   (_) => const SpellingAnalyzer(),
-);
-
-/// Provides the [WidgetStateAnalyzer] behind the widget State check of
-/// the project's quality; override in tests to fake it.
-final widgetStateAnalyzerProvider = Provider<WidgetStateAnalyzer>(
-  (_) => const WidgetStateAnalyzer(),
 );
 
 /// Provides the [HealthChecker] behind the health issues of the project's

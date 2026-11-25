@@ -5,6 +5,7 @@ import 'package:fide/models/quality_issue.quality_finding.dart';
 import 'package:fide/models/quick_fix.dart';
 import 'package:fide/models/status_tone.dart';
 import 'package:fide/models/string_review.dart';
+import 'package:fide/models/widget_state_issues.dart';
 import 'package:path/path.dart' as p;
 
 /// fCheck's results as [QualityIssue]s: one per analyzer that lowered the
@@ -98,7 +99,10 @@ extension QualityIssues on fcheck.ProjectMetrics {
           ..sort((a, b) => deductions[b.key]!.compareTo(deductions[a.key]!));
     return [
       for (final analyzer in failing)
-        _issue(analyzer, deductions[analyzer.key]!),
+        if (analyzer.key == fcheck.AnalyzerDomain.widgetState.configName)
+          ..._widgetStateIssues(deductions[analyzer.key]!)
+        else
+          _issue(analyzer, deductions[analyzer.key]!),
       if (suppressionPenaltyPoints > 0)
         QualityIssue(
           label: 'Checks bypassed: -${suppressionPenaltyPoints.localized}%',
@@ -199,6 +203,63 @@ extension QualityIssues on fcheck.ProjectMetrics {
       rootPath: analysisRootPath,
       quickFixes: quickFixes,
     );
+  }
+
+  /// The widget state check's issues, each when it has findings, sharing
+  /// its [deduction] by their counts: one listing every `State` out of
+  /// place, and one listing, as errors, every test line reaching into a
+  /// `State`; Fix States fixes both, so neither is for the AI.
+  List<QualityIssue> _widgetStateIssues(double deduction) {
+    QualityIssue? issueOf({
+      required bool inTest,
+      required String title,
+      required String guidance,
+      required String counted,
+      StatusTone tone = StatusTone.warning,
+    }) {
+      final found = [
+        for (final issue in widgetStateIssues)
+          if (issue.isInTest == inTest) issue,
+      ];
+      if (found.isEmpty) return null;
+      return QualityIssue(
+        label: QualityIssue.deductionLabel(
+          title,
+          deduction * found.length / widgetStateIssues.length,
+          found.length.count(counted),
+        ),
+        title: title,
+        tone: tone,
+        guidance: guidance,
+        rootPath: analysisRootPath,
+        findings: [
+          for (final issue in found)
+            _finding(issue.filePath, issue.lineNumber, issue.message),
+        ],
+        quickFixes: [
+          if (found.any((issue) => issue.isFixableByCode)) QuickFix.fixStates,
+        ],
+        // Code moves, renames and removes them: the local model, asked to
+        // rewrite such tests, swapped each check for a bare `findsOneWidget`
+        aiVerb: null,
+      );
+    }
+
+    return [
+      ?issueOf(
+        inTest: false,
+        title: WidgetStateIssues.title,
+        guidance: WidgetStateIssues.guidance,
+        counted: 'issue',
+      ),
+      ?issueOf(
+        inTest: true,
+        title: WidgetStateIssues.testsTitle,
+        guidance: WidgetStateIssues.testsGuidance,
+        counted: 'test line',
+        tone: StatusTone.error,
+      ),
+    ];
   }
 
   /// Where [domain] found its issues; none for analyzers without

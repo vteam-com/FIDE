@@ -1,24 +1,23 @@
-import 'package:fide/models/spelling_finding.dart';
-import 'package:fide/models/spelling_report.dart';
-
 import 'dart:io';
 
+import 'package:fide/constants/constants.dart';
+import 'package:fide/models/spelling_finding.dart';
+import 'package:fide/models/spelling_report.dart';
 import 'package:fide/models/spelling_sort.dart';
 import 'package:fide/providers/app_providers.dart';
 import 'package:fide/services/spelling_analyzer.dart';
 import 'package:fide/services/spelling_fixer.dart';
-import 'package:fide/widgets/blocking_task_dialog.dart';
-import 'package:fide/constants/constants.dart';
-import 'package:fide/widgets/section_panel.dart';
-import 'package:fide/widgets/message_box.dart';
-import 'package:path/path.dart' as p;
 import 'package:fide/widget_services/file_location_row.dart';
 import 'package:fide/widgets/badge_status.dart';
+import 'package:fide/widgets/blocking_task_dialog.dart';
 import 'package:fide/widgets/choice_buttons.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
 import 'package:fide/widgets/filter_field.dart';
+import 'package:fide/widgets/message_box.dart';
+import 'package:fide/widgets/section_panel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:path/path.dart' as p;
 
 /// The project's [spelling] on the Status screen and the Info tab: its
 /// score, the count of unknown words and the files they are in, a sort and

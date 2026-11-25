@@ -20,7 +20,6 @@ import 'package:fide/services/dart_references.dart';
 import 'package:fide/services/file_type_utils.dart';
 import 'package:fide/services/name_uses.dart';
 import 'package:fide/services/parsed_source_file.dart';
-import 'package:fide/services/widget_state_analyzer.dart';
 import 'package:fide/services/widget_states.dart';
 import 'package:path/path.dart' as p;
 

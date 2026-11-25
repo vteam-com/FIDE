@@ -1,17 +1,12 @@
-import 'package:fide/constants/core_constants.dart';
-import 'package:fide/models/locale_number.dart';
-import 'package:fide/models/quality_issue.dart';
-import 'package:fide/models/quality_issue.quality_finding.dart';
-import 'package:fide/models/quick_fix.dart';
-import 'package:fide/models/status_tone.dart';
-import 'package:fide/models/widget_state_report.dart';
+import 'package:fcheck/fcheck.dart' as fcheck;
+import 'package:path/path.dart' as p;
 
-/// The widget State check's report as the project's quality shows it: an
-/// issue listing every `State` out of place, which Fix States fixes, and
-/// one listing, as errors, every test line reaching into a `State`,
-/// which Fix States removes, explaining how to check the widget instead;
-/// and the quality-score points they cost.
-extension WidgetStateIssues on WidgetStateReport {
+/// fCheck's widget state findings as the project's quality explains them:
+/// the issue listing every `State` out of place, which Fix States fixes,
+/// and the one listing, as errors, every test line reaching into a
+/// `State`, which Fix States removes, explaining how to check the widget
+/// instead.
+extension WidgetStateIssues on fcheck.WidgetStateIssue {
   /// The kind of problem the `State`s' issue names.
   static const String title = 'Widget States';
 
@@ -20,7 +15,7 @@ extension WidgetStateIssues on WidgetStateReport {
 
   /// Flutter's convention for a stateful widget's two classes, as
   /// Markdown, for the user and the AI.
-  static const String _guidance =
+  static const String guidance =
       'A stateful widget is two classes: the widget, and the `State` its '
       '`createState()` makes. The `State` is part of its widget, not a '
       'class of its own:\n\n'
@@ -37,7 +32,7 @@ extension WidgetStateIssues on WidgetStateReport {
 
   /// Why a test reaching into a widget's `State` is wrong, how to check
   /// the widget instead, and what Fix States removes, as Markdown.
-  static const String _testsGuidance =
+  static const String testsGuidance =
       'A widget\'s `State` is private to its widget: nothing outside it, a '
       'test least of all, is meant to reach into it. A test doing so, '
       '`tester.state<FooState>(…)`, is wrong: it checks how the widget '
@@ -57,89 +52,22 @@ extension WidgetStateIssues on WidgetStateReport {
       'left empty and the imports no longer used, then makes the `State` '
       'private; write the checks the widget calls for as you see fit.';
 
-  /// The findings about the `State`s themselves.
-  List<WidgetStateFinding> get _stateFindings => [
-    for (final finding in findings)
-      if (!finding.isInTest) finding,
-  ];
+  /// Whether it is about a test reaching into the `State`, at the test's
+  /// line, rather than about the `State` itself.
+  bool get isInTest => type == fcheck.WidgetStateIssueType.reachedByTest;
 
-  /// The findings about tests reaching into a `State`.
-  List<WidgetStateFinding> get _testFindings => [
-    for (final finding in findings)
-      if (finding.isInTest) finding,
-  ];
+  /// Whether Fix States fixes it, moving or renaming the `State` in its
+  /// widget's library, or removing what a test does with it: not when the
+  /// `State` is in another library than its widget.
+  bool get isFixableByCode => isInWidgetLibrary;
 
-  /// Quality-score points the findings cost, each issue's capped.
-  int get deduction =>
-      _deductionOf(_stateFindings) + _testsDeductionOf(_testFindings);
-
-  /// The issues of the `State`s and of the tests reaching into them,
-  /// located under the project folder [rootPath], each when it has
-  /// findings.
-  List<QualityIssue> issues(String rootPath) => [
-    if (_stateFindings case final states when states.isNotEmpty)
-      QualityIssue(
-        label: QualityIssue.deductionLabel(
-          title,
-          _deductionOf(states),
-          states.length.count('issue'),
-        ),
-        title: title,
-        guidance: _guidance,
-        rootPath: rootPath,
-        findings: _qualityFindings(states),
-        quickFixes: [if (isFixableByCode) QuickFix.fixStates],
-        // Fix States moves, renames and marks them: nothing for the AI
-        aiVerb: null,
-      ),
-    if (_testFindings case final tests when tests.isNotEmpty)
-      QualityIssue(
-        label: QualityIssue.deductionLabel(
-          testsTitle,
-          _testsDeductionOf(tests),
-          tests.length.count('test line'),
-        ),
-        title: testsTitle,
-        tone: StatusTone.error,
-        guidance: _testsGuidance,
-        rootPath: rootPath,
-        findings: _qualityFindings(tests),
-        quickFixes: [
-          if (tests.any((finding) => finding.isFixableByCode))
-            QuickFix.fixStates,
-        ],
-        // Code removes them: the local model, asked to rewrite them,
-        // swapped each check for a bare `findsOneWidget`
-        aiVerb: null,
-      ),
-  ];
-
-  /// Quality-score points [findings] cost, capped.
-  static int _deductionOf(List<WidgetStateFinding> findings) =>
-      QualityIssue.deductionOf(
-        findings.length,
-        points: AppMetric.widgetStatePoints,
-        max: AppMetric.widgetStatePointsMax,
-      );
-
-  /// Quality-score points [findings], tests reaching into a `State`, an
-  /// error, cost, capped.
-  static int _testsDeductionOf(List<WidgetStateFinding> findings) =>
-      QualityIssue.deductionOf(
-        findings.length,
-        points: AppMetric.stateTestPoints,
-        max: AppMetric.stateTestPointsMax,
-      );
-
-  /// [findings] as the issues list them.
-  static List<QualityFinding> _qualityFindings(
-    List<WidgetStateFinding> findings,
-  ) => [
-    for (final finding in findings)
-      QualityFinding(
-        path: finding.path,
-        line: finding.line,
-        text: finding.message,
-      ),
-  ];
+  /// What is wrong and what to do, in one line.
+  String get message => switch (type) {
+    fcheck.WidgetStateIssueType.apart =>
+      '$state belongs beside $widget, in ${p.basename(widgetFilePath)}',
+    fcheck.WidgetStateIssueType.public =>
+      'No other file uses $state: make it private, _$state',
+    fcheck.WidgetStateIssueType.reachedByTest =>
+      'Tests $state, private to $widget: test $widget itself',
+  };
 }

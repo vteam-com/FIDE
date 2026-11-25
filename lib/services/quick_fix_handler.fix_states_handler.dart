@@ -1,17 +1,15 @@
 part of 'quick_fix_handler.dart';
 
-/// Runs [QuickFix.fixStates]: finds the widget `State`s out of place, and
-/// the tests reaching into one, with [WidgetStateAnalyzer], then tidies
+/// Runs [QuickFix.fixStates]: takes the widget `State`s out of place, and
+/// the tests reaching into one, from fCheck's findings, then tidies
 /// each of their widgets' files with the class splitter, its `State`s
 /// only, one file after the other, the tests along. A `State` in another
 /// library than its widget, or one that can't be fixed safely, is left as
 /// it is, the summary saying why.
 class FixStatesHandler implements QuickFixHandler {
-  /// Creates the handler finding the `State`s with [_analyzer], tidying
-  /// them with [_splitter] and writing them with [_files].
-  const FixStatesHandler(this._analyzer, this._splitter, this._files);
-
-  final WidgetStateAnalyzer _analyzer;
+  /// Creates the handler tidying the `State`s with [_splitter] and
+  /// writing them with [_files].
+  const FixStatesHandler(this._splitter, this._files);
 
   final FileContentReader _files;
 
@@ -19,21 +17,19 @@ class FixStatesHandler implements QuickFixHandler {
 
   @override
   Future<QuickFixOutcome?> run(QuickFixRequest request) async {
-    final projectPath = request.projectPath;
-    final analyzer = _analyzer;
-    request.onProgress?.call('Finding the States out of place…');
-    final findings = (await Isolate.run(() => analyzer.analyze(projectPath)))
-        .findings;
+    final metrics = request.metrics;
+    final findings = metrics.widgetStateIssues;
     if (findings.isEmpty) return _nothingToDo('Every State is in place');
     final widgetFiles = {
       for (final finding in findings)
-        if (finding.isFixableByCode) finding.widgetPath,
+        if (finding.isFixableByCode)
+          metrics.absolutePathOf(finding.widgetFilePath),
     };
     final splits = _SplitRun(_splitter, _files, request);
     splits.skipped.addAll([
       for (final finding in findings)
         if (!finding.isFixableByCode && !finding.isInTest)
-          '${p.basename(finding.path)}: ${finding.state} is in another '
+          '${p.basename(finding.filePath)}: ${finding.state} is in another '
               'library than ${finding.widget}; move it by hand',
     ]);
     if (widgetFiles.isNotEmpty &&

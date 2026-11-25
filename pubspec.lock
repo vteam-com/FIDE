@@ -196,10 +196,11 @@ packages:
   fcheck:
     dependency: "direct main"
     description:
-      path: "../fcheck"
-      relative: true
-    source: path
-    version: "1.6.4"
+      name: fcheck
+      sha256: ea6be590f51ad6710fb49abca9172113af4d2d20b3772f29c223c8793391e1b9
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.6.5"
   ffi:
     dependency: transitive
     description:
@@ -1012,10 +1013,10 @@ packages:
     dependency: transitive
     description:
       name: vector_graphics_compiler
-      sha256: "7d3d604c1ede26711f865f74e9273c5c5504ac449f3d92faa722878dbac88807"
+      sha256: "4a3f1ed88eb49c0ce9de15832256a3681eb4ce03350375ba588b5918ea3ed60a"
       url: "https://pub.dev"
     source: hosted
-    version: "1.3.6"
+    version: "1.3.7"
   vector_math:
     dependency: transitive
     description:
