@@ -2,15 +2,19 @@ import 'dart:async';
 
 import 'package:fide/constants/constants.dart';
 import 'package:fide/services/blocking_task.dart';
-import 'package:fide/widgets/busy_bar.dart';
+import 'package:fide/widgets/blocking_task_progress.dart';
+import 'package:fide/widgets/primary_button.dart';
 import 'package:fide/widgets/secondary_button.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The dialog blocking the app, over a scrim, while a task changes the
 /// project's files, so nothing else edits them meanwhile: the task's
-/// [title], the step it is at under a [BusyBar], and Cancel, which asks
-/// the task to stop after its current step. Nothing dismisses it but the
-/// task ending.
+/// [title], then, in the same frame, the confirmation the task asks
+/// ([BlockingTask.confirm]) and the step it is at under a [BusyBar], with
+/// Cancel, which asks the task to stop after its current step. As wide as
+/// the issue details opening it, so a fix reads as one dialog going from
+/// the problem to the plan to the steps. Nothing dismisses it but the task
+/// ending.
 class BlockingTaskDialog extends StatefulWidget {
   /// Creates the dialog of [task], titled [title].
   const BlockingTaskDialog({
@@ -52,10 +56,22 @@ class BlockingTaskDialog extends StatefulWidget {
     try {
       return await run(task);
     } finally {
-      // Dialogs the task opened, such as its confirmation, may be above
+      // Dialogs the task opened may be above
       if (route.isActive) navigator.removeRoute(route);
       task.dispose();
     }
+  }
+
+  /// [message] cut after its question: the question, and what follows it,
+  /// empty when it asks nothing or nothing follows.
+  static (String, String) splitQuestion(String message) {
+    const mark = '? ';
+    final end = message.indexOf(mark);
+    if (end < 0) return (message, '');
+    return (
+      message.substring(0, end + 1),
+      message.substring(end + mark.length).trim(),
+    );
   }
 }
 
@@ -65,39 +81,55 @@ class _BlockingTaskDialogState extends State<BlockingTaskDialog> {
     final task = widget.task;
     return PopScope(
       canPop: false,
-      child: AlertDialog(
-        title: Text(widget.title),
-        content: SizedBox(
-          width: AppSize.cardWidth,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: AppSpacing.medium,
-            children: [
-              const BusyBar(),
-              ValueListenableBuilder(
-                valueListenable: task.step,
-                builder: (context, step, _) =>
-                    Text(step, style: AppTextStyle.secondary(context)),
+      child: ValueListenableBuilder(
+        valueListenable: task.question,
+        builder: (context, question, _) => AlertDialog(
+          title: Text(widget.title),
+          content: SizedBox(
+            width: AppSize.issueDetailsWidth,
+            child: question == null
+                ? BlockingTaskProgress(task)
+                : _question(context, question.message),
+          ),
+          actions: [
+            SecondaryButton(
+              label: 'Cancel',
+              onPressed: task.isCancelled ? null : _cancel,
+            ),
+            if (question != null)
+              PrimaryButton(
+                label: question.confirmLabel,
+                onPressed: () => task.answer(confirmed: true),
               ),
-            ],
-          ),
+          ],
         ),
-        actions: [
-          SecondaryButton(
-            label: 'Cancel',
-            onPressed: task.isCancelled ? null : _cancel,
-          ),
-        ],
       ),
     );
   }
 
-  /// Asks the task to stop, telling so until it does.
+  /// Asks the task to stop, telling so until it does; declines its
+  /// pending confirmation.
   void _cancel() {
     widget.task
       ..cancel()
+      ..answer(confirmed: false)
       ..report(BlockingTaskDialog.cancellingStep);
     setState(() {});
+  }
+
+  /// The task's confirmation: its question first, the explanation
+  /// following it dimmed under it.
+  Widget _question(BuildContext context, String message) {
+    final (question, detail) = BlockingTaskDialog.splitQuestion(message);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: AppSpacing.medium,
+      children: [
+        Text(question),
+        if (detail.isNotEmpty)
+          Text(detail, style: AppTextStyle.secondary(context)),
+      ],
+    );
   }
 }

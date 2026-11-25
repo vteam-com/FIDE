@@ -1,47 +1,23 @@
-import 'package:fide/constants/constants.dart';
 import 'package:fide/models/quality_issue.dart';
-import 'package:fide/models/quality_issue.quality_finding.dart';
-import 'package:fide/models/string_review.dart';
-import 'package:fide/providers/ai_request.dart';
-import 'package:fide/providers/editor_navigation.dart';
-import 'package:fide/providers/quick_fix_controller.dart';
-import 'package:fide/widget_services/quick_fix_prompts.dart';
+import 'package:fide/widget_services/issue_details_dialog.dart';
 import 'package:fide/widgets/clickable.dart';
 import 'package:fide/widgets/compact_icon_button.dart';
-import 'package:fide/widgets/location_row.dart';
-import 'package:fide/widgets/markdown_text.dart';
-import 'package:fide/widgets/message_box.dart';
-import 'package:fide/widgets/primary_button.dart';
-import 'package:fide/widgets/quick_fix_icon.dart';
-import 'package:fide/widgets/secondary_button.dart';
-import 'package:fide/widgets/section_title.dart';
 import 'package:fide/widgets/status_indicator.dart';
 import 'package:fide/widgets/status_tone_style.dart';
-import 'package:fide/widgets/string_review_dialog.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// A [QualityIssue] as one line, the same in every panel: its label in
 /// its tone's color and a How to fix button opening the best practice, the
 /// findings, the issue's quick fixes and its AI action, such as Localize
 /// with AI.
-class IssueRow extends ConsumerWidget {
-  /// Creates the row for [issue].
+class IssueRow extends StatelessWidget {
+/// Creates the row for [issue].
   const IssueRow(this.issue, {super.key});
-
-  /// The issue shown.
+/// The issue shown.
   final QualityIssue issue;
-
-  /// One row per issue of [issues], in their order.
-  static List<IssueRow> all(List<QualityIssue> issues) => [
-    for (final issue in issues) IssueRow(issue),
-  ];
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final showDetails = issue.hasDetails
-        ? () => _showDetails(context, ref)
-        : null;
+@override
+  Widget build(BuildContext context) {
+    final showDetails = issue.hasDetails ? () => _showDetails(context) : null;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -57,8 +33,11 @@ class IssueRow extends ConsumerWidget {
       ],
     );
   }
-
-  /// The issue's label in its tone's color.
+/// One row per issue of [issues], in their order.
+  static List<IssueRow> all(List<QualityIssue> issues) => [
+    for (final issue in issues) IssueRow(issue),
+  ];
+/// The issue's label in its tone's color.
   Widget _label(BuildContext context) => Text(
     issue.label,
     style: StatusIndicator.labelStyle(
@@ -66,126 +45,10 @@ class IssueRow extends ConsumerWidget {
       Theme.of(context).colorScheme,
     ),
   );
-
-  /// Has the user pick strings of the open project to fix in a
-  /// [StringReviewDialog], then applies the fix they picked.
-  void _reviewStrings(BuildContext context, WidgetRef ref) {
-    ref
-        .read(quickFixControllerProvider)
-        .reviewStrings(
-          choose: (review) async => context.mounted
-              ? StringReviewDialog.show(
-                  context,
-                  review,
-                  onOpen: (string) =>
-                      openFileAtLine(ref, string.path, string.line),
-                )
-              : null,
-          confirm: confirmQuickFixOver(context),
-          notify: quickFixNoticesOver(context),
-          block: quickFixBlockerOver(context),
-        );
-  }
-
-  /// One finding, opening its file at its line when tapped.
-  Widget _findingRow(
-    BuildContext context,
-    WidgetRef ref,
-    QualityFinding finding,
-  ) {
-    return LocationRow(
-      icon: StatusIndicator.tone(issue.tone),
-      name: finding.text,
-      path: finding.path,
-      line: finding.line,
-      rootPath: issue.rootPath,
-      onTap: () {
-        Navigator.of(context).pop();
-        openFileAtLine(ref, finding.path, finding.line);
-      },
-    );
-  }
-
-  /// Closes the details dialog over [context] and sends [request] to the
-  /// AI panel.
-  void _askAi(BuildContext context, WidgetRef ref, String request) {
-    Navigator.of(context).pop();
-    ref.read(aiRequestsProvider).ask(request);
-  }
-
-  /// The best practice fixing [issue] and its findings, with its AI
-  /// action.
-  Future<void> _showDetails(BuildContext context, WidgetRef ref) {
-    final guidance = issue.guidance;
-    final fixRequest = issue.fixRequest;
-    final quickFixes = issue.quickFixes;
-    return MessageBox.showDetails(
-      context,
-      title: _label(context),
-      content: SizedBox(
-        width: AppSize.issueDetailsWidth,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: AppSpacing.large,
-          children: [
-            if (guidance != null) ...[
-              const SectionTitle('Best practice'),
-              MarkdownText(
-                data: guidance,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ],
-            if (issue.findings.isNotEmpty) ...[
-              SectionTitle('Findings (${issue.findings.length})'),
-              Text(
-                'Tap a finding to open it in the editor.',
-                style: AppTextStyle.secondary(context),
-              ),
-              Column(
-                children: [
-                  for (final finding in issue.findings)
-                    _findingRow(context, ref, finding),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-      actions: [
-        // The string fixes are picked per string, grouped by role
-        if (StringFix.anyIn(quickFixes))
-          PrimaryButton(
-            icon: Icons.checklist,
-            label: QuickFixController.reviewStringsLabel,
-            onPressed: () {
-              Navigator.of(context).pop();
-              _reviewStrings(context, ref);
-            },
-          ),
-        for (final quickFix in quickFixes)
-          if (StringFix.of(quickFix) == null)
-            PrimaryButton(
-              icon: quickFix.icon,
-              label: quickFix.label,
-              onPressed: () {
-                Navigator.of(context).pop();
-                applyQuickFix(context, ref, quickFix);
-              },
-            ),
-        if (fixRequest != null)
-          // Secondary to the instant quick fixes
-          quickFixes.isEmpty
-              ? PrimaryButton(
-                  icon: AppIcon.ai,
-                  label: issue.aiActionLabel!,
-                  onPressed: () => _askAi(context, ref, fixRequest),
-                )
-              : SecondaryButton(
-                  icon: AppIcon.ai,
-                  label: issue.aiActionLabel!,
-                  onPressed: () => _askAi(context, ref, fixRequest),
-                ),
-      ],
-    );
-  }
+/// The best practice fixing [issue], its findings and its fixes, which
+  /// run in the same dialog.
+  Future<void> _showDetails(BuildContext context) => showDialog<void>(
+    context: context,
+    builder: (_) => IssueDetailsDialog(issue: issue, title: _label(context)),
+  );
 }

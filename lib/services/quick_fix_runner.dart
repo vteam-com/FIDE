@@ -73,7 +73,8 @@ class QuickFixRunner {
   ) => strings.apply(review, fix, selected);
 
   /// Applies [fix] to the project at [projectPath], telling [onProgress]
-  /// about long steps, its model requests stopped by [cancel]; null when
+  /// about long steps and [onFileStart] and [onFilesDone] about each file
+  /// it changes, its model requests stopped by [cancel]; null when
   /// the user cancels through [confirm].
   ///
   /// Throws a [StateError] when [fix] has no handler.
@@ -83,6 +84,9 @@ class QuickFixRunner {
     QuickFixConfirmation? confirm,
     void Function(String)? onProgress,
     AiCancelToken? cancel,
+    void Function(String path)? onFileStart,
+    void Function(Iterable<String> paths, {required bool succeeded})?
+    onFilesDone,
   }) async {
     final handler = handlers[fix];
     if (handler == null) throw StateError('${fix.label} has no handler');
@@ -93,6 +97,8 @@ class QuickFixRunner {
         confirm: (message) async => await confirm?.call(fix, message) ?? true,
         onProgress: onProgress,
         cancel: cancel,
+        onFileStart: onFileStart,
+        onFilesDone: onFilesDone,
       ),
     );
   }

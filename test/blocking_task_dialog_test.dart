@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fide/services/blocking_task.dart';
 import 'package:fide/widgets/blocking_task_dialog.dart';
+import 'package:fide/widgets/primary_button.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -55,6 +56,58 @@ void main() {
     expect(await result, 'stopped');
     await tester.pumpAndSettle();
     expect(find.byType(BlockingTaskDialog), findsNothing);
+  });
+
+  testWidgets('asks its confirmation in place, its question above the '
+      'explanation, then shows the steps in the same dialog', (tester) async {
+    late BuildContext context;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (built) {
+            context = built;
+            return const Scaffold(body: Text('The app'));
+          },
+        ),
+      ),
+    );
+    final confirmed = Completer<bool>();
+    final done = Completer<void>();
+    late BlockingTask task;
+
+    final result = BlockingTaskDialog.run(
+      context,
+      title: 'Fix States',
+      step: 'Analyzing the project…',
+      run: (running) async {
+        task = running;
+        confirmed.complete(
+          await running.confirm(
+            'Fix 2 files? Moves each State beside its widget.',
+            confirmLabel: 'Fix States',
+          ),
+        );
+        running.report('Fixing a.dart (1 of 2)…');
+        await done.future;
+      },
+    );
+    await tester.pump();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text('Fix 2 files?'), findsOneWidget);
+    expect(find.text('Moves each State beside its widget.'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(PrimaryButton, 'Fix States'));
+    await tester.pump();
+    expect(await confirmed.future, isTrue);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text('Fix 2 files?'), findsNothing);
+    expect(find.text('Fixing a.dart (1 of 2)…'), findsOneWidget);
+    expect(task.isCancelled, isFalse);
+
+    done.complete();
+    await result;
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
   });
 
   testWidgets('closes when its task fails, passing the failure on', (

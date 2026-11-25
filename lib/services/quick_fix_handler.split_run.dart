@@ -43,6 +43,7 @@ class _SplitRun {
         '$verb ${p.basename(path)} (${(index + 1).localized} of '
         '${all.length.localized})…',
       );
+      _request.onFileStart?.call(path);
       try {
         final result = await _splitter.plan(
           projectPath: _request.projectPath,
@@ -61,8 +62,14 @@ class _SplitRun {
           ..addAll(result.files.keys)
           ..addAll(result.mergedFiles.keys);
         results.add(result);
+        _request.onFilesDone?.call({
+          path,
+          ...result.files.keys,
+          ...result.mergedFiles.keys,
+        }, succeeded: true);
       } on ClassSplitException catch (e) {
         skipped.add('${p.basename(path)}: ${e.message}');
+        _request.onFilesDone?.call([path], succeeded: false);
       }
     }
   }

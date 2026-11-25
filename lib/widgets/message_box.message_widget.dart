@@ -73,60 +73,74 @@ class _MessageWidgetState extends State<MessageWidget>
       // their ink
       child: Material(
         type: MaterialType.transparency,
-        child: Tooltip(
-          message: semanticLabel,
-          child: Container(
-            margin: AppPadding.messageMargin,
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(AppRadius.medium),
-              border: Border.all(
-                color: foregroundColor.withValues(alpha: AppOpacity.selected),
-                width: AppBorderWidth.thin,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: AppOpacity.subtle),
-                  blurRadius: AppSpacing.tiny,
-                  offset: const Offset(0, AppSpacing.micro),
-                ),
-              ],
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AppSize.messageMaxWidth,
             ),
-            // The bar's buttons read on its fill as its text does
-            child: IconButtonTheme(
-              data: IconButtonThemeData(
-                style: IconButton.styleFrom(foregroundColor: foregroundColor),
-              ),
-              child: Padding(
-                padding: AppPadding.pageContent,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      widget.type.icon,
-                      color: foregroundColor,
-                      size: AppIconSize.large,
+            child: Tooltip(
+              message: semanticLabel,
+              child: Container(
+                margin: AppPadding.messageMargin,
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(AppRadius.medium),
+                  border: Border.all(
+                    color: foregroundColor.withValues(
+                      alpha: AppOpacity.selected,
                     ),
-                    const SizedBox(width: AppSpacing.large),
-                    Expanded(
-                      child: Text(
-                        widget.message,
-                        style: AppTextStyle.label.copyWith(
-                          color: foregroundColor,
-                        ),
-                      ),
-                    ),
-                    if (widget.type.messageCopyable) ...[
-                      const SizedBox(width: AppSpacing.medium),
-                      CopyButton(text: widget.message, tooltip: 'Copy message'),
-                    ],
-                    const SizedBox(width: AppSpacing.tiny),
-                    CompactIconButton(
-                      icon: Icons.close,
-                      onPressed: _dismiss,
-                      tooltip: 'Close message',
+                    width: AppBorderWidth.thin,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: AppOpacity.subtle),
+                      blurRadius: AppSpacing.tiny,
+                      offset: const Offset(0, AppSpacing.micro),
                     ),
                   ],
+                ),
+                // The bar's buttons read on its fill as its text does
+                child: IconButtonTheme(
+                  data: IconButtonThemeData(
+                    style: IconButton.styleFrom(
+                      foregroundColor: foregroundColor,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: AppPadding.pageContent,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          widget.type.icon,
+                          color: foregroundColor,
+                          size: AppIconSize.large,
+                        ),
+                        const SizedBox(width: AppSpacing.large),
+                        Expanded(
+                          child: Text(
+                            widget.message,
+                            style: AppTextStyle.label.copyWith(
+                              color: foregroundColor,
+                            ),
+                          ),
+                        ),
+                        if (widget.type.messageCopyable) ...[
+                          const SizedBox(width: AppSpacing.medium),
+                          CopyButton(
+                            text: widget.message,
+                            tooltip: 'Copy message',
+                          ),
+                        ],
+                        const SizedBox(width: AppSpacing.tiny),
+                        CompactIconButton(
+                          icon: Icons.close,
+                          onPressed: _dismiss,
+                          tooltip: 'Close message',
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),

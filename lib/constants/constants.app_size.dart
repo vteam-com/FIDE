@@ -107,6 +107,10 @@ class AppSize {
   /// Width of an issue's best practice and findings dialog.
   static const double issueDetailsWidth = 600;
 
+  /// Widest a message bar grows, centered at the bottom of the window:
+  /// as wide as the dialogs it follows, never across the whole screen.
+  static const double messageMaxWidth = issueDetailsWidth;
+
   /// Width of a slider in a toolbar, such as an image diff's Swipe
   /// divider or the audio editor's speed.
   static const double compactSliderWidth = 160;

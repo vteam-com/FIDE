@@ -129,21 +129,30 @@ void main() {
   test('a fix without the model runs with the app blocked; cancelled, it '
       'is no success', () async {
     String? blockedBy;
+    String? askedInPlace;
 
     await container
         .read(quickFixControllerProvider)
         .apply(
           QuickFix.sortMembers,
-          confirm: (_, _) async => true,
+          confirm: (_, _) async => fail('confirmed over the blocking dialog'),
           notify: (message, tone) => notices.add((message, tone)),
           block: (title, run) async {
             blockedBy = title;
             final task = BlockingTask(QuickFixRunner.analyzingStep)..cancel();
+            // The blocking dialog asks the confirmation in place
+            task.question.addListener(() {
+              final question = task.question.value;
+              if (question == null) return;
+              askedInPlace = question.confirmLabel;
+              task.answer(confirmed: true);
+            });
             return run(task);
           },
         );
 
     expect(blockedBy, QuickFix.sortMembers.label);
+    expect(askedInPlace, QuickFix.sortMembers.label);
     // No message while blocked, and a cancelled fix is no success
     expect(notices, [('Sorted', StatusTone.info)]);
   });

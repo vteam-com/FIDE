@@ -11,7 +11,17 @@ class QuickFixRequest {
     required this.confirm,
     this.onProgress,
     this.cancel,
+    this.onFileStart,
+    this.onFilesDone,
   });
+
+  /// Receives the absolute path of each file the fix starts changing.
+  final void Function(String path)? onFileStart;
+
+  /// Receives the absolute paths of the files the fix is done with,
+  /// changed when succeeded is true, left as they were when false.
+  final void Function(Iterable<String> paths, {required bool succeeded})?
+  onFilesDone;
 
   /// Root of the project to fix.
   final String projectPath;

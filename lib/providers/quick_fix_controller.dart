@@ -181,19 +181,23 @@ class QuickFixController {
     if (rewrite != null) showInChat();
     Future<QuickFixOutcome?> runFix(
       void Function(String) onProgress,
-      AiCancelToken cancel,
-    ) =>
+      AiCancelToken cancel, {
+      QuickFixConfirmation? ask,
+      BlockingTask? task,
+    }) =>
         rewrite?.call(projectPath, cancel) ??
         _runner.run(
           projectPath,
           fix,
           confirm: (fix, message) async {
-            final confirmed = await confirm(fix, message);
+            final confirmed = await (ask ?? confirm)(fix, message);
             if (confirmed) showInChat();
             return confirmed;
           },
           onProgress: onProgress,
           cancel: cancel,
+          onFileStart: task?.startFile,
+          onFilesDone: task?.finishFiles,
         );
     // Whether the user cancelled the blocked fix, which isn't a success
     var cancelled = false;
@@ -204,7 +208,14 @@ class QuickFixController {
               cancel,
             )
           : await blocker(fix.label, (task) async {
-              final outcome = await runFix(task.report, task.cancelToken);
+              // Confirmed in the blocking dialog itself, not one over it
+              final outcome = await runFix(
+                task.report,
+                task.cancelToken,
+                ask: (fix, message) =>
+                    task.confirm(message, confirmLabel: fix.label),
+                task: task,
+              );
               cancelled = task.isCancelled;
               return outcome;
             });

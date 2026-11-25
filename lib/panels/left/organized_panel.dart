@@ -264,24 +264,14 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
     }
   }
 
-  /// After confirmation, saves the open files, makes each widget's public
+  /// Once confirmed in the blocking dialog, saves the open files, makes each widget's public
   /// State in [node] private and moves every other public class but one
   /// into its own file, updating imports across the project, with the app
   /// blocked meanwhile.
   Future<void> _splitClasses(ProjectNode node, int classCount) async {
-    final confirmed = await MessageBox.confirm(
-      context,
-      title: 'Split ${node.name}?',
-      message:
-          'It declares $classCount public classes. Make each widget\'s '
-          'State private, move every other public class but one into its '
-          'own file and update imports across the project?',
-      confirmLabel: 'Split',
-    );
-    if (!confirmed || !mounted) return;
-
     try {
       ClassSplitResult? split;
+      var declined = false;
       // The part files the split empties, filled in once it is planned:
       // they go, their tabs showing the file that took in what they held
       final merged = <String, String>{};
@@ -289,21 +279,35 @@ class _OrganizedPanelState extends ConsumerState<OrganizedPanel>
         context,
         title: 'Split ${node.name}',
         step: 'Planning the split of ${node.name}…',
-        run: (task) => ref.read(openDocumentsProvider.notifier).applyMoves(
-          merged,
-          () async {
-            final result = await ref
-                .read(classSplitServiceProvider)
-                .plan(projectPath: projectRoot!.path, filePath: node.path);
-            // Cancelled while planning: nothing is written
-            if (task.isCancelled) return const {};
-            split = result;
-            merged.addAll(result.mergedFiles);
-            return result.files;
-          },
-        ),
+        run: (task) async {
+          // Confirmed in the blocking dialog, which then shows the steps
+          final confirmed = await task.confirm(
+            'Split ${node.name}? It declares $classCount public classes: '
+            'each widget\'s State becomes private, every other public '
+            'class but one moves into its own file, and imports are '
+            'updated across the project.',
+            confirmLabel: 'Split',
+          );
+          if (!confirmed) {
+            declined = true;
+            return;
+          }
+          await ref.read(openDocumentsProvider.notifier).applyMoves(
+            merged,
+            () async {
+              final result = await ref
+                  .read(classSplitServiceProvider)
+                  .plan(projectPath: projectRoot!.path, filePath: node.path);
+              // Cancelled while planning: nothing is written
+              if (task.isCancelled) return const {};
+              split = result;
+              merged.addAll(result.mergedFiles);
+              return result.files;
+            },
+          );
+        },
       );
-      if (!mounted) return;
+      if (!mounted || declined) return;
       if (split case final split?) {
         MessageBox.showSuccess(context, split.summary);
       } else {
