@@ -23,6 +23,11 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
 
   final TerminalController controller = TerminalController();
 
+  /// The terminal's focus, taken when the panel opens so the user types
+  /// at the prompt at once: `autofocus` alone yields to the editor, which
+  /// usually holds the focus.
+  final FocusNode _focusNode = FocusNode(debugLabel: 'Terminal');
+
   /// Routes the menus' terminal commands, such as Clear Terminal, to
   /// [terminal] while the panel shows.
   late final ActiveTerminal _activeTerminal = ref.read(activeTerminalProvider);
@@ -47,6 +52,9 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
     _currentProjectPath = ref.read(currentProjectPathProvider);
 
     _startShell();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNode.requestFocus();
+    });
   }
 
   @override
@@ -54,6 +62,7 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
     _activeTerminal.detach(terminal);
     unawaited(_output.cancel());
     _session.stop();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -78,6 +87,7 @@ class _TerminalPanelState extends ConsumerState<TerminalPanel> {
     return TerminalView(
       terminal,
       controller: controller,
+      focusNode: _focusNode,
       autofocus: true,
       backgroundOpacity: 1,
       // Keeps the first and last rows and columns clear of the panel edges
